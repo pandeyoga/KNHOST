@@ -3,7 +3,8 @@
  *
  * Bagian **Komponen gaji**: daftar komponen PT aktif (isi awal bawaan + buatan pengguna). Komponen bawaan tidak bisa
  * dihapus atau diganti jenisnya; komponen baru saat ini berjenis hitung "masukan" (nilainya dari antrean di bawah).
- * Tanda Dasar BPJS, Dasar lembur, Diprorata disimpan tetapi belum dipakai hitungan gaji (menyusul) — ditulis di layar.
+ * PY-T3 — tanda Dasar BPJS dan Dasar lembur dipakai hitungan gaji (dasar iuran BPJS, upah sejam lembur); tanda
+ * Diprorata disimpan tetapi belum dipakai (menyusul serah-terima b) — ditulis di layar.
  * Sumber: GET/POST/PATCH /api/hr/payroll/components (ubah = `hr.manage_payroll`).
  *
  * Bagian **Masukan**: antrean masukan komponen (bonus, THR, potongan, …) yang masuk ke proses gaji periode bayarnya.
@@ -80,8 +81,8 @@ export function galatMasukan(f) {
   return "";
 }
 
-/** Tiga tanda yang disimpan tetapi belum dipakai hitungan gaji, dalam satu sel ("Dasar BPJS · Dasar lembur" / "—"). */
-export function tandaBelumDipakai(c) {
+/** Tiga tanda komponen dalam satu sel ("Dasar BPJS · Dasar lembur" / "—"). */
+export function tandaKomponen(c) {
   const on = [c.in_bpjs_base && "Dasar BPJS", c.in_overtime_base && "Dasar lembur", c.prorate && "Diprorata"].filter(Boolean);
   return on.length ? on.join(" · ") : "—";
 }
@@ -269,8 +270,8 @@ export default function PayComponentsView() {
           <>
             <div className="overflow-x-auto">
               <table className="data-table head-wrap w-full" data-testid="paycomp-table">
-                {/* Cek layar — muat di 1024 px tanpa bergulir: Jenis + Cara hitung satu sel dua baris; tiga tanda yang
-                    belum dipakai (Dasar BPJS, Dasar lembur, Diprorata) satu kolom bertanda. */}
+                {/* Cek layar — muat di 1024 px tanpa bergulir: Jenis + Cara hitung satu sel dua baris; tiga tanda
+                    (Dasar BPJS, Dasar lembur, Diprorata) satu kolom bertanda. */}
                 <thead><tr>
                   <th>Kode</th><th>Nama</th><th>Jenis · cara hitung</th><th>Kena pajak</th>
                   <th>Dasar BPJS · lembur · diprorata*</th><th>Akun</th><th>Aktif</th>
@@ -283,7 +284,7 @@ export default function PayComponentsView() {
                       <td>{c.name}{c.system && <span className="block text-fs-12 text-kn-text-2">Bawaan</span>}</td>
                       <td>{KIND_LABEL[c.kind] || "—"}<span className="block text-fs-12 text-kn-text-2">{CALC_LABEL[c.calc] || "—"}</span></td>
                       <td><YaTidak v={c.taxable} /></td>
-                      <td data-testid={`paycomp-flags-${c.code}`}>{tandaBelumDipakai(c)}</td>
+                      <td data-testid={`paycomp-flags-${c.code}`}>{tandaKomponen(c)}</td>
                       <td className="font-mono whitespace-nowrap">{c.account_code || <span className="font-sans text-kn-text-2">Bawaan</span>}</td>
                       <td>{c.is_active !== false
                         ? <span className="status-pill status-done inline-flex items-center gap-1 whitespace-nowrap"><CheckCircle2 size={12} aria-hidden="true" />Aktif</span>
@@ -294,7 +295,7 @@ export default function PayComponentsView() {
                 </tbody>
               </table>
             </div>
-            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Tanda Dasar BPJS, Dasar lembur, dan Diprorata disimpan tetapi belum dipakai hitungan gaji: iuran BPJS dan upah lembur masih dihitung dari gaji pokok, dan gaji belum diprorata.</p>
+            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Dasar BPJS = komponen yang menjadi dasar iuran BPJS; Dasar lembur = komponen yang menjadi dasar upah sejam lembur. Tanda Diprorata disimpan tetapi belum dipakai: gaji belum diprorata.</p>
           </>
         )}
       </div>
@@ -397,7 +398,7 @@ export default function PayComponentsView() {
             )}
             <div><label className="field-label">Urutan di slip</label>
               <input data-testid="paycomp-form-sort" className="field" inputMode="numeric" value={f.sort ?? ""} onChange={(e) => ubahKomp({ sort: e.target.value.replace(/[^\d]/g, "") })} /></div>
-            <fieldset className="sm:col-span-2"><legend className="field-label">Tanda (disimpan, belum dipakai hitungan gaji)</legend>
+            <fieldset className="sm:col-span-2"><legend className="field-label">Tanda (Diprorata belum dipakai hitungan gaji)</legend>
               <div className="flex flex-wrap gap-4 text-fs-13">
                 <label className="flex items-center gap-2"><input type="checkbox" checked={!!f.in_bpjs_base} onChange={(e) => ubahKomp({ in_bpjs_base: e.target.checked })} /> Dasar BPJS</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={!!f.in_overtime_base} onChange={(e) => ubahKomp({ in_overtime_base: e.target.checked })} /> Dasar lembur</label>

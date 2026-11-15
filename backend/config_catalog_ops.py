@@ -620,14 +620,15 @@ E("hr.pph21.biaya_jabatan_maks_bulanan", type="money", **_PPH21,
   example="Batas ini dikalikan jumlah bulan bekerja dalam setahun pajak")
 # ── akhir blok PK-46 ──────────────────────────────────────────────────────────────────────────────────────────────────
 
+# PY-T3 — dua kunci lama ini kini dibaca lewat `hr_pay_rules.rules` (satu pembaca aturan hitung gaji).
 E("hr.overtime.multiplier", group="sdm", section="lembur", type="decimal", default=1.5, min=1, max=5,
   step=0.1, unit="× upah/jam", scopes=G, simulate="payroll_overtime",
   label="Pengali upah lembur",
-  help="Kelipatan upah per jam untuk jam lembur.",
+  help="Kelipatan upah per jam untuk jam lembur. Dipakai hanya bila cara hitung pengali = flat.",
   impact="Langsung mengubah nominal lembur pada slip gaji periode berikutnya.",
   example="Upah/jam Rp 28.900 · pengali 1,5 · 4 jam → lembur Rp 173.400",
-  consumers=("services/hr_payroll_service.py", "services/hr_attendance_service.py"),
-  related=("hr.overtime.hours_divisor",), risk="medium", permission=_HR_PAYROLL)
+  consumers=("services/hr_pay_rules.py:rules",),
+  related=("hr.overtime.hours_divisor", "hr.overtime.mode"), risk="medium", permission=_HR_PAYROLL)
 
 E("hr.overtime.hours_divisor", group="sdm", section="lembur", type="int", default=173, min=1, max=400,
   step=1, unit="jam/bulan", scopes=G, simulate="payroll_overtime",
@@ -635,7 +636,86 @@ E("hr.overtime.hours_divisor", group="sdm", section="lembur", type="int", defaul
   help="Angka pembagi gaji bulanan menjadi upah per jam. Standar Kemnaker = 173.",
   impact="Mengubah dasar upah per jam sehingga seluruh nominal lembur berubah.",
   example="Gaji Rp 5.000.000 ÷ 173 → upah/jam Rp 28.902",
-  consumers=("services/hr_payroll_service.py",), risk="medium", permission=_HR_PAYROLL)
+  consumers=("services/hr_pay_rules.py:rules",), risk="medium", permission=_HR_PAYROLL)
+
+# ── PY-T3 (PY-04, PY-07, PY-08; K-38, K-39) — aturan hitung gaji per PT. Satu-satunya pembaca:
+# `services/hr_pay_rules.py:rules`. Bawaan = perilaku sebelum unit ini, kecuali `hr.overtime.sumber` (K-39). ──────────
+_PYT3 = dict(group="sdm", scopes=G, risk="high", requires_reason=True, permission=_HR_PAYROLL,
+             consumers=("services/hr_pay_rules.py:rules",))
+
+E("hr.overtime.sumber", section="lembur", type="enum", default="absensi",
+  options=({"value": "pengajuan", "label": "Pengajuan lembur yang disetujui saja"},
+           {"value": "absensi", "label": "Pengajuan, lalu menit lebih di absensi"}),
+  label="Lembur dibayar berdasarkan",
+  help="Pengajuan lembur yang disetujui saja, atau juga menit lebih di absensi pada tanggal tanpa pengajuan.",
+  impact="Pada pilihan pengajuan, lembur tanpa pengajuan tidak dibayar.",
+  example="Pulang 2 jam lebih lama tanpa pengajuan → tidak dibayar", **_PYT3)
+
+E("hr.overtime.ambang_menit", section="lembur", type="int", default=0, min=0, max=240, step=5, unit="menit",
+  label="Lembur absensi minimal (menit)",
+  help="Menit lebih di absensi di bawah angka ini tidak dihitung. 0 = semua dihitung. Hanya untuk lembur yang dibayar "
+       "dari absensi.",
+  impact="Menit lebih yang lebih pendek dari angka ini tidak dibayar.",
+  example="Minimal 30 → lebih 20 menit diabaikan", **_PYT3)
+
+E("hr.overtime.mode", section="lembur", type="enum", default="bertingkat",
+  options=({"value": "bertingkat", "label": "Bertingkat menurut aturan lembur"},
+           {"value": "flat", "label": "Flat: satu pengali untuk semua jam"}),
+  simulate="payroll_overtime",
+  label="Cara menghitung pengali lembur",
+  help="Bertingkat: 1,5× jam pertama lalu 2× (hari libur 2×/3×/4×). Flat: satu pengali dari \"Pengali upah lembur\".",
+  impact="Mengubah nominal lembur.",
+  example="2 jam, upah sejam Rp 30.000 → Rp 105.000 atau Rp 90.000", **_PYT3)
+
+E("hr.overtime.work_days_per_week", section="lembur", type="enum", default="5",
+  options=({"value": "5", "label": "5 hari (Senin–Jumat)"}, {"value": "6", "label": "6 hari (Senin–Sabtu)"}),
+  label="Hari kerja seminggu",
+  help="Menentukan Sabtu hari kerja atau hari istirahat, untuk lembur dan hitungan hari kerja.",
+  impact="Mengubah jenis hari lembur Sabtu dan banyaknya hari kerja untuk prorata dan potongan.",
+  example="6 → Sabtu dihitung hari kerja", **_PYT3)
+
+E("hr.overtime.hitung_absensi", section="lembur", type="enum", default="jam_kerja_lebih",
+  options=({"value": "jam_kerja_lebih", "label": "Jam kerja melebihi durasi shift"},
+           {"value": "lewat_jam_pulang", "label": "Hanya waktu sesudah jam pulang shift"}),
+  label="Menit lembur di absensi dihitung dari",
+  help="Jam kerja melebihi durasi shift, atau hanya waktu setelah jam pulang.",
+  impact="Datang lebih awal tidak lagi terhitung pada pilihan kedua. Berlaku untuk absensi yang dicatat sesudahnya.",
+  example="Masuk 07.00, pulang 17.30, shift 08–17 → 90 atau 30 menit", **_PYT3)
+
+E("hr.prorata_masuk_keluar", section="prorata-potongan", type="enum", default="mati",
+  options=({"value": "mati", "label": "Tidak diprorata: gaji sebulan penuh"},
+           {"value": "hari_kalender", "label": "Prorata menurut hari kalender"},
+           {"value": "hari_kerja", "label": "Prorata menurut hari kerja"}),
+  label="Gaji karyawan masuk/keluar tengah bulan",
+  help="Cara menghitung gaji bulan pertama dan terakhir. Yang dibagi hanya komponen bertanda Diprorata.",
+  impact="Selain tidak diprorata, gaji bulan itu dibayar sebanding hari bekerja.",
+  example="Masuk 16 Nov, gaji Rp 6.000.000, hari kalender → Rp 3.000.000", **_PYT3)
+
+E("hr.potongan_alpha", section="prorata-potongan", type="bool", default=False,
+  label="Potong gaji untuk hari tidak hadir",
+  help="Hari kerja tanpa absensi dan tanpa cuti dipotong sebesar upah sehari. Nyalakan hanya bila absensi dipakai "
+       "semua karyawan.",
+  impact="Mengurangi gaji bersih.",
+  example="2 hari dari 21 hari kerja, gaji Rp 6.300.000 → potong Rp 600.000", **_PYT3)
+
+E("hr.potongan_cuti_tanpa_gaji", section="prorata-potongan", type="bool", default=False,
+  label="Potong gaji untuk cuti tanpa gaji",
+  help="Hari cuti berjenis Cuti Tanpa Gaji yang disetujui dipotong sebesar upah sehari.",
+  impact="Mengurangi gaji bersih.",
+  example="1 hari → Rp 300.000", **_PYT3)
+
+E("hr.potongan_telat_per_menit", section="prorata-potongan", type="money", default=0, min=0, max=100000, step=100,
+  unit="Rp/menit",
+  label="Potongan terlambat per menit (Rp)",
+  help="Menit terlambat di absensi dikalikan angka ini. 0 = tidak dipotong.",
+  impact="Mengurangi gaji bersih.",
+  example="45 menit × Rp 1.000 → Rp 45.000", **_PYT3)
+
+E("hr.pembulatan_rupiah", section="prorata-potongan", type="bool", default=False,
+  label="Bulatkan angka slip ke rupiah penuh",
+  help="Tanpa ini slip memakai dua angka di belakang koma.",
+  impact="Semua angka slip dibulatkan ke rupiah terdekat, setengah ke atas.",
+  example="Rp 3.142.857,14 → Rp 3.142.857", **_PYT3)
 
 _TOGGLES = (
     # KF-T4 — teks Lampiran A (label, penjelasan); contoh & dampak per sakelar di `_TOGGLE_TEKS`.
@@ -692,17 +772,19 @@ E("hr.payroll_commission_mode", group="sdm", section="lembur", type="enum", defa
   risk="high", permission=_HR_PAYROLL)
 
 # PY-T2 (PY-09, K-38) — gaji/PT yang berubah di tengah bulan. Bawaan `mati` = perilaku sebelum unit ini (nilai akhir
-# bulan, sebulan penuh). Pilihan `hari_kerja` menyusul di PY-T3 (kalender kerja).
-E("hr.prorata_perubahan_gaji", group="sdm", section="lembur", type="enum", default="mati",
+# bulan, sebulan penuh). PY-T3 — pilihan `hari_kerja` (kalender kerja PT) dan sub-judul prorata.
+E("hr.prorata_perubahan_gaji", group="sdm", section="prorata-potongan", type="enum", default="mati",
   options=({"value": "mati", "label": "Tidak diprorata: pakai nilai akhir bulan"},
-           {"value": "hari_kalender", "label": "Prorata menurut hari kalender"}),
+           {"value": "hari_kalender", "label": "Prorata menurut hari kalender"},
+           {"value": "hari_kerja", "label": "Prorata menurut hari kerja"}),
   scopes=G,
   label="Gaji berubah di tengah bulan",
   help="Menentukan cara menghitung gaji bulan saat gaji atau PT karyawan berubah di tengah bulan.",
   impact="Prorata membagi gaji bulan itu menurut jumlah hari tiap nilai berlaku; karyawan yang pindah PT dibayar "
          "kedua PT sesuai harinya.",
   example="Naik dari Rp 6.000.000 ke Rp 7.500.000 per 16 November → Rp 3.000.000 + Rp 3.750.000",
-  consumers=("services/hr_compensation_service.py:segments", "services/hr_compensation_service.py:prorata_mode"),
+  consumers=("services/hr_compensation_service.py:segments", "services/hr_compensation_service.py:prorata_mode",
+             "services/hr_pay_rules.py:rules"),
   risk="high", requires_reason=True, permission=_HR_PAYROLL)
 
 # ═══════════════════════════════════════════════════════════════════════════

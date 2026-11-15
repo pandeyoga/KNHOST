@@ -90,3 +90,21 @@ class PayInputCreate(BaseModel):
 
 class PayInputCancel(BaseModel):
     reason: str = Field(default="", max_length=500)
+
+
+class HolidayCreate(BaseModel):
+    """PY-T3 — hari libur PT aktif (`02` N1: PT = PT aktif). Format & isi diperiksa layanan (pesan Indonesia)."""
+    date: str = Field(default="", max_length=20)
+    name: str = Field(default="", max_length=200)
+    kind: str = Field(default="", max_length=30)
+
+
+class TaxOpeningInput(BaseModel):
+    """PY-T3 (PY-12) — saldo awal pajak karyawan di PT aktif untuk satu tahun. Diperiksa layanan:
+    400 "Jumlah masa harus 1 sampai 11."; nominal tidak negatif."""
+    year: Any = None
+    months: Any = None
+    tax_gross: Any = 0
+    pension_deduction: Any = 0
+    pph21_withheld: Any = 0
+    note: str = Field(default="", max_length=300)

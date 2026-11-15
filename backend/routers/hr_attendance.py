@@ -433,7 +433,8 @@ async def clock_out(payload: ClockOutInput, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail="Anda sudah clock-out hari ini.")
     co_iso = att.wib_now_iso()
     shift = await att.resolve_shift(emp, entity_id)
-    metrics = att.compute_metrics(existing["clock_in"], co_iso, shift)
+    metrics = att.compute_metrics(existing["clock_in"], co_iso, shift,
+                                  await att.overtime_rule_for(entity_id))   # PY-T3 — hr.overtime.hitung_absensi
     was_outside = bool(existing.get("outside_geofence"))
     status = "flagged" if was_outside else att.determine_status(metrics, False, True)
     geo = dict(existing.get("geo") or {})
@@ -505,7 +506,8 @@ async def patch_attendance(att_id: str, payload: GenericPatch, request: Request)
             emp = await db.hr_employees.find_one({"id": cur.get("employee_id")}, {"_id": 0, "shift_id": 1})
             sh = await att.resolve_shift(emp, cur.get("entity_id", ""))
         m = att.compute_metrics(updates.get("clock_in", cur.get("clock_in")) or "",
-                                updates.get("clock_out", cur.get("clock_out")) or "", sh)
+                                updates.get("clock_out", cur.get("clock_out")) or "", sh,
+                                await att.overtime_rule_for(cur.get("entity_id", "")))   # PY-T3
         for k in ("work_min", "late_min", "early_leave_min", "overtime_min", "std_min"):
             updates[k] = m[k]
     updates["updated_at"] = now_iso()
@@ -531,6 +533,7 @@ async def _ingest_records(rows: List[Dict[str, Any]], entity_id: str) -> Dict[st
                 "message": "Belum ada karyawan dengan ID Mesin (device_user_id) di entitas ini."}
     parsed, skipped = att.parse_zkteco_rows(rows, device_map)
     emp_cache: Dict[str, Dict[str, Any]] = {}
+    ot_rule = await att.overtime_rule_for(entity_id)   # PY-T3 — sekali per impor
     out = []
     for rec in parsed:
         emp = emp_cache.get(rec["employee_id"])
@@ -540,7 +543,7 @@ async def _ingest_records(rows: List[Dict[str, Any]], entity_id: str) -> Dict[st
         if not emp:
             continue
         doc = await att.upsert_attendance(
-            emp, rec["date"], rec["clock_in"], rec["clock_out"], "fingerprint", entity_id)
+            emp, rec["date"], rec["clock_in"], rec["clock_out"], "fingerprint", entity_id, overtime_rule=ot_rule)
         out.append({"employee_name": emp.get("name", ""), "date": rec["date"],
                     "status": doc["status"], "punches": rec["punches"]})
     return {"imported": len(out), "skipped_rows": skipped, "records": out}

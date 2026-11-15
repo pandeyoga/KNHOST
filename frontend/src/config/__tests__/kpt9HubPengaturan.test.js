@@ -22,8 +22,9 @@ const SEMBILAN = [
     ["settings-cfg-purchasing", "Aturan Pembelian & Makloon"], ["settings-cfg-rnd", "R&D & Desain"]]],
   ["settings-finance", "Keuangan & Pajak", [["settings-cfg-finance", "Aturan Keuangan & Pajak"],
     ["gl-account-mappings", "Pemetaan Akun"], ["expense-categories", "Kategori Beban"], ["bank-recon-rules", "Bank"]]],
+  // PY-T3 — + tab Kalender Libur (hari libur PT; jenis hari lembur, hari kerja untuk prorata & potongan).
   ["settings-hr", "SDM", [["settings-cfg-hr", "Aturan SDM & Penggajian"], ["hr-attendance-setup", "Shift & Lokasi Absen"],
-    ["settings-attendance-devices", "Mesin Absen"]]],
+    ["settings-attendance-devices", "Mesin Absen"], ["hr-holidays", "Kalender Libur"]]],
   ["settings-documents", "Dokumen & Notifikasi", [["pdf-templates", "Template Dokumen"], ["scheduler", "Pengingat Otomatis"],
     ["settings-whatsapp", "WhatsApp"], ["settings-doc-numbering", "Penomoran Dokumen"]]],
   ["settings-system", "Sistem", [["admin", "Integrasi & Audit"], ["settings-devices", "Perangkat RFID"],
@@ -40,13 +41,13 @@ describe("U3 — grup Pengaturan: sembilan hub berurutan, tanpa sub-judul", () =
     expect(g.items.find((i) => i.id === "settings-access").roles).toEqual(["admin", "manager"]);
   });
 
-  test("tab tiap hub persis tabel unit; 3–6 tab tampak per hub; 35 tab", () => {
+  test("tab tiap hub persis tabel unit; 3–6 tab tampak per hub; 36 tab (PY-T3 + Kalender Libur)", () => {
     for (const [hub, , tabs] of SEMBILAN) {
       expect([hub, tampak(hub).map((t) => [t.view, t.label])]).toEqual([hub, tabs]);
       expect(tampak(hub).length).toBeGreaterThanOrEqual(3);
       expect(tampak(hub).length).toBeLessThanOrEqual(6);
     }
-    expect(SEMBILAN.reduce((n, [hub]) => n + tampak(hub).length, 0)).toBe(35);
+    expect(SEMBILAN.reduce((n, [hub]) => n + tampak(hub).length, 0)).toBe(36);
     // hub lama hilang dari HUB_TABS (kini alias legacy)
     ["settings-purchasing", "settings-rnd", "settings-masters", "settings-notify"].forEach((h) => {
       expect(HUB_TABS[h]).toBeUndefined();
@@ -130,16 +131,17 @@ test("U4 — 44 alamat (31 tab lama, 4 hub hilang, 5 alias, 4 hub) mendarat di l
 
 // ── U5 — jangkauan tab Pengaturan per peran bawaan = potret awal (id baru dipetakan ke wadah lamanya) ───────────────
 // Potret dibuat pada HEAD a742da9 sebelum unit ini (bukti/KP-T9/potret_jangkauan_awal.json); sama dengan & tanpa izin
-// server. Finance melihat Pemetaan Akun sejak MN-T1 (IA-06).
+// server. Finance melihat Pemetaan Akun sejak MN-T1 (IA-06). PY-T3 — + `hr-holidays` (tab BARU Kalender Libur: admin, manajer).
 const POTRET = {
   admin: ["admin", "amendment-reasons", "approval-rules", "bank-recon-rules", "client-dataset-import", "domain-registry",
     "entities-access", "entity-masters", "expense-categories", "gl-account-mappings", "grade-master", "hr-attendance-setup",
-    "pdf-templates", "return-policies", "rnd-divisions", "scheduler", "settings-cfg-approval", "settings-cfg-finance",
+    "hr-holidays", "pdf-templates", "return-policies", "rnd-divisions", "scheduler", "settings-cfg-approval", "settings-cfg-finance",
     "settings-cfg-hr", "settings-cfg-purchasing", "settings-cfg-rnd", "settings-cfg-sales", "settings-cfg-system",
     "settings-cfg-warehouse", "settings-config", "settings-devices", "settings-doc-numbering", "settings-dual-control",
     "settings-receiving-ocr"],
   manager: ["amendment-reasons", "approval-rules", "bank-recon-rules", "domain-registry", "entities-access", "entity-masters",
-    "expense-categories", "gl-account-mappings", "grade-master", "hr-attendance-setup", "pdf-templates", "return-policies",
+    "expense-categories", "gl-account-mappings", "grade-master", "hr-attendance-setup", "hr-holidays", "pdf-templates",
+    "return-policies",
     "rnd-divisions", "scheduler", "settings-cfg-approval", "settings-cfg-finance", "settings-cfg-hr",
     "settings-cfg-purchasing", "settings-cfg-rnd", "settings-cfg-sales", "settings-cfg-system", "settings-cfg-warehouse",
     "settings-config", "settings-devices", "settings-doc-numbering", "settings-dual-control", "settings-receiving-ocr"],
@@ -178,7 +180,7 @@ test("U5 — manajer dengan izin server: tab Peran & Hak Akses / Cek Peran terse
   try {
     expect(hubTabsForRole("settings-access", "manager").map((t) => t.view)).toEqual(["settings-accounts"]);
     expect(hubTabsForRole("settings-hr", "manager").map((t) => t.view))
-      .toEqual(["settings-cfg-hr", "hr-attendance-setup", "settings-attendance-devices"]);
+      .toEqual(["settings-cfg-hr", "hr-attendance-setup", "settings-attendance-devices", "hr-holidays"]);
     expect(hubTabsForRole("settings-system", "manager").map((t) => t.view))
       .toEqual(["domain-registry", "settings-cfg-system", "settings-config"]);
   } finally { setAccessContext(null); }

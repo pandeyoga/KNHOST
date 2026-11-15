@@ -383,16 +383,25 @@ def _payroll_bpjs(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _payroll_overtime(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
+    """PY-T3 (PY-07) — fungsi mesin yang sama dengan slip (`hr_payroll_service.overtime_units`): mode bertingkat
+    (bawaan) atau flat; upah sejam = gaji ÷ pembagi jam, tidak dibulatkan sebelum dikali (sama dengan mesin)."""
+    from services.hr_payroll_service import overtime_units
     gaji = _f(s.get("salary"), 5_000_000)
     hours = _f(s.get("overtime_hours"), 4)
     div = _f(c.get("hr.overtime.hours_divisor"), 173)
     mult = _f(c.get("hr.overtime.multiplier"), 1.5)
-    per_hour = round(gaji / div, 2) if div else 0
-    total = round(per_hour * mult * hours, 2)
+    flat = c.get("hr.overtime.mode") == "flat"
+    units = overtime_units(hours, "workday", {"lembur_mode": "flat" if flat else "bertingkat", "lembur_pengali": mult,
+                                              "six_day": False})
+    per_hour = gaji / div if div else 0
+    total = round(per_hour * units, 2)
+    cara = (f"Flat: pengali {_num(mult)}× × {_num(hours)} jam" if flat
+            else f"Bertingkat (hari kerja): jam pertama 1,5×, berikutnya 2× · {_num(hours)} jam")
     steps = [{"label": "Gaji bulanan", "value": _rp(gaji)},
-             {"label": f"Dibagi {_num(div)} jam", "value": f"{_rp(per_hour)}/jam"},
-             {"label": f"Pengali {_num(mult)}× × {_num(hours)} jam", "value": _rp(total)}]
-    return {"steps": steps, "result": f"Upah lembur {_rp(total)}", "verdict": "ok"}
+             {"label": f"Dibagi {_num(div)} jam", "value": f"{_rp(round(per_hour, 2))}/jam"},
+             {"label": cara, "value": f"{_num(units)} jam-upah"},
+             {"label": "Upah lembur", "value": _rp(total)}]
+    return {"steps": steps, "result": f"Upah lembur {_rp(total)}", "verdict": "ok", "nilai": total}
 
 
 def _payroll_pph21(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
@@ -589,7 +598,7 @@ SIMULATORS: Dict[str, Dict[str, Any]] = {
                      "inputs": [I("salary", "Gaji bruto", "money", 8_000_000, "Rp")],
                      "run": _payroll_bpjs},
     "payroll_overtime": {"label": "Hitung upah lembur",
-                         "needs": ["hr.overtime.multiplier", "hr.overtime.hours_divisor"],
+                         "needs": ["hr.overtime.mode", "hr.overtime.multiplier", "hr.overtime.hours_divisor"],
                          "inputs": [I("salary", "Gaji bulanan", "money", 5_000_000, "Rp"),
                                     I("overtime_hours", "Jam lembur", "decimal", 4, "jam")],
                          "run": _payroll_overtime},

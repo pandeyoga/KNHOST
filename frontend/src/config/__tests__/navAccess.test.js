@@ -93,7 +93,8 @@ test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijaka
 test("Pengaturan untuk peran kustom domain: SDM, Akuntansi, Operasi Gudang", () => {
   const hr = menu("cr_hr")["settings-hub"];
   // KP-T9 — Mesin Absen kini tab Pengaturan › SDM; modul SDM tidak lagi membuka hub Sistem (Perangkat RFID).
-  expect(hr["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup", "settings-attendance-devices"]);
+  // PY-T3 — + Kalender Libur (modul SDM; `nav` hr-holidays).
+  expect(hr["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup", "settings-attendance-devices", "hr-holidays"]);
   expect(hr["settings-system"]).toBeUndefined();
   expect(menu("cr_accounting")["settings-hub"]["settings-finance"]).toEqual(["settings-cfg-finance", "gl-account-mappings"]);
   const wh = menu("cr_warehouse_ops")["settings-hub"];

@@ -604,3 +604,19 @@ nominal insentif diputuskan di lembar insentif.
 | **jumlah pilihan** | Bilah "{n} baris dipilih · … · rata-rata Rp …" · "{n} dokumen dipilih · jumlah Rp …" | Jumlah dan rata-rata baris yang dicentang, dihitung di layar dari angka yang sedang tampil |
 | **catatan data** | Kolom "Catatan data" · "{n} catatan data" di bawah nama | Baris yang tidak ikut dihitung atau belum pasti: tanpa harga acuan, tanpa biaya (tidak ikut margin), kwitansi giro belum dipastikan cair, kasus keuangan yang bukan uang masuk |
 | **tampilan tersimpan** | Tombol "Simpan tampilan" · "Tampilan disimpan di peramban ini." | Pilihan jenis periode, pembanding, kumulatif, pengelompokan, kolom, dan cari yang dibuka lagi otomatis — hanya di peramban itu, per pengguna |
+
+### 9.24 Penggajian: aturan hitung — prorata masuk/keluar, hari kerja, potongan, lembur, saldo awal pajak (PY-T3)
+
+Istilah Pengaturan › SDM (Aturan SDM & Penggajian, Kalender Libur), kartu karyawan, dan slip gaji
+(`docs/blueprint/unit/PY-T3.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **prorata** (masuk/keluar) | Pengaturan "Gaji karyawan masuk/keluar tengah bulan" · baris slip "Gaji Pokok (16–30 Nov)" · tanda komponen "Diprorata" | Gaji bulan pertama dan terakhir dibayar sebanding hari bekerja: menurut hari kalender (hari ÷ jumlah hari bulan itu) atau hari kerja (hari kerja ÷ hari kerja bulan itu). Hanya komponen bertanda Diprorata yang dibagi. Bawaan: tidak diprorata (sebulan penuh) |
+| **hari kerja** | Pengaturan "Hari kerja seminggu" · "Prorata menurut hari kerja" | Senin–Jumat (atau Senin–Sabtu pada pola enam hari) yang bukan hari libur PT. Dipakai prorata, potongan harian, dan jenis hari lembur |
+| **kalender libur** | Tab "Kalender Libur" · "Tambah hari libur" · jenis "Nasional · Cuti bersama · Perusahaan" | Daftar hari libur PT yang diisi dari keputusan resmi. Sistem tidak mengisinya sendiri. Lembur pada hari libur memakai pengali hari libur |
+| **upah sehari** (potongan) | "Potongan tidak hadir (2 hari)" · "Potongan cuti tanpa gaji (1 hari)" | Σ komponen bertanda Diprorata ÷ hari kerja bulan itu. Hari tidak hadir = hari kerja tanpa absensi dan tanpa cuti disetujui |
+| **potongan terlambat** | Pengaturan "Potongan terlambat per menit (Rp)" · baris slip "Potongan terlambat (45 menit)" | Σ menit terlambat di absensi × tarif per menit. Potongan absensi mengurangi beban gaji dan bruto pajak |
+| **lembur dari pengajuan** | Pengaturan "Lembur dibayar berdasarkan" · tautan "Lihat dampaknya" | Bawaan: lembur hanya dibayar bila pengajuan lemburnya disetujui. Pilihan absensi juga membayar menit lebih di absensi pada tanggal tanpa pengajuan (di atas "Lembur absensi minimal") |
+| **saldo awal pajak** | Bagian kartu karyawan "Saldo awal pajak {tahun}" · "Jumlah masa di luar sistem", "Bruto", "Iuran pensiun", "PPh 21 sudah dipotong" | Penghasilan dan PPh 21 tahun berjalan yang dibayar di luar sistem sebelum penggajian dipakai. Ditambahkan saat pajak setahun dihitung ulang di masa pajak terakhir; terkunci sesudah slip masa terakhir diposting |
+

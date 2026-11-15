@@ -88,6 +88,8 @@ CANONICAL_COLLECTIONS = {
     "hr_pay_components", "hr_pay_inputs",
     # ── PY-T2 (blueprint) — riwayat kompensasi & penugasan PT karyawan bertanggal berlaku ──
     "hr_compensation_history", "hr_employee_assignments",
+    # ── PY-T3 (blueprint) — kalender libur PT + saldo awal pajak karyawan ──
+    "hr_holidays", "hr_tax_opening_balances",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

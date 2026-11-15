@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 38c715f pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: c6010a9 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -12,26 +12,26 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Ukuran | Nilai |
 |---|---:|
-| Router (`backend/routers/*.py`) | 172 |
-| Endpoint (`@router.<method>`) | 1859 |
-| Service (`backend/services/*.py`) | 429 |
-| Koleksi MongoDB disentuh kode produksi | 212 |
+| Router (`backend/routers/*.py`) | 173 |
+| Endpoint (`@router.<method>`) | 1865 |
+| Service (`backend/services/*.py`) | 431 |
+| Koleksi MongoDB disentuh kode produksi | 213 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
 ## Backend — berkas inti
 
 | Berkas | Baris |
 |---|---:|
-| `server.py` | 449 |
+| `server.py` | 451 |
 | `db.py` | 12 |
 | `core_utils.py` | 439 |
 | `schemas.py` | 1151 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
 | `permissions_config.py` | 1027 |
-| `entity_scope.py` | 752 |
+| `entity_scope.py` | 753 |
 | `pagination.py` | 145 |
-| `indexes.py` | 1093 |
+| `indexes.py` | 1109 |
 | `bootstrap.py` | 2171 |
 | `login_only_endpoints.py` | 84 |
 
@@ -189,10 +189,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `home.py` | 5 | 117 | `/admin`, `/finance`, `/manager`, `/sales`, `/warehouse` |
 | `hr.py` | 15 | 534 | `/hr/employees`, `/hr/employees/me`, `/hr/employees/{employee_id}`, `/hr/employees/{employee_id}/360`, `/hr/org-units`, `/hr/org-units/tree` … |
 | `hr_analytics.py` | 1 | 23 | `/hr/analytics/summary` |
-| `hr_attendance.py` | 22 | 584 | `/hr/attendance`, `/hr/attendance/clock-in`, `/hr/attendance/clock-out`, `/hr/attendance/import`, `/hr/attendance/ingest`, `/hr/attendance/manual` … |
+| `hr_attendance.py` | 22 | 587 | `/hr/attendance`, `/hr/attendance/clock-in`, `/hr/attendance/clock-out`, `/hr/attendance/import`, `/hr/attendance/ingest`, `/hr/attendance/manual` … |
 | `hr_compensation.py` | 8 | 160 | `/hr/assignments/{row_id}/approve`, `/hr/assignments/{row_id}/reject`, `/hr/compensation/{row_id}/approve`, `/hr/compensation/{row_id}/cancel`, `/hr/compensation/{row_id}/reject`, `/hr/employees/{employee_id}/assignments` … |
 | `hr_kpi.py` | 5 | 107 | `/hr/kpi`, `/hr/kpi/me`, `/hr/kpi/{kpi_id}` |
 | `hr_leave.py` | 18 | 278 | `/hr/leave-balance/me`, `/hr/leave-balances`, `/hr/leave-balances/set`, `/hr/leave-calendar`, `/hr/leave-requests`, `/hr/leave-requests/me` … |
+| `hr_pay_rules.py` | 6 | 143 | `/hr/employees/{employee_id}/tax-opening`, `/hr/holidays`, `/hr/holidays/{holiday_id}`, `/hr/payroll/overtime-impact` |
 | `hr_payroll.py` | 28 | 505 | `/hr/payroll/components`, `/hr/payroll/components/{comp_id}`, `/hr/payroll/inputs`, `/hr/payroll/inputs/{input_id}/approve`, `/hr/payroll/inputs/{input_id}/cancel`, `/hr/payroll/remittances` … |
 | `hr_tracking.py` | 9 | 254 | `/hr/field-tracks`, `/hr/field-tracks/latest`, `/hr/visits`, `/hr/visits/check-in`, `/hr/visits/me`, `/hr/visits/mine` … |
 | `inbound_receiving.py` | 5 | 332 | `/inbound/tasks`, `/inbound/tasks/{task_id}/complete`, `/inbound/tasks/{task_id}/escalate`, `/inbound/tasks/{task_id}/resolve-escalation`, `/inbound/tasks/{task_id}/scan-receive` |
@@ -374,7 +375,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_resolver.py` | 948 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
 | `config_scoped_rules.py` | 133 | KF-T5 — aturan khusus per pelanggan dan per barang (`docs/blueprint/unit/KF-T5.md`). |
 | `config_service.py` | 879 | Config service (Fase 1A) — Configuration Foundation. |
-| `config_simulator.py` | 650 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
+| `config_simulator.py` | 659 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
 | `consolidation_service.py` | 513 | FINANCE — Konsolidasi Grup + Eliminasi Intercompany. |
 | `consolidation_stale_service.py` | 57 | consolidation_stale_service — deteksi entri eliminasi antar-PT yang BASI (Fase 4 · R6, G1-33). |
 | `contra_bon_reminder.py` | 236 | FASE G-7 — **JADWAL TUKAR FAKTUR** per supplier + pengingat otomatis. |
@@ -467,16 +468,18 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `home_service.py` | 517 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
 | `hr_ai_service.py` | 124 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
-| `hr_attendance_service.py` | 273 | HRD H1 services — Absensi (attendance). |
+| `hr_attendance_service.py` | 292 | HRD H1 services — Absensi (attendance). |
 | `hr_compensation_service.py` | 731 | PY-T2 (PY-09, K-37, K-38) — riwayat kompensasi dan penugasan PT karyawan bertanggal berlaku. |
 | `hr_kpi_service.py` | 167 | HRD H5 services — KPI Design (input manual per karyawan/periode + rekap). |
 | `hr_leave_service.py` | 437 | HRD H3 services — Cuti, Izin & Lembur (Leave/Permit & Overtime). |
-| `hr_pay_components.py` | 457 | PY-T1 (PY-01, PY-02) — komponen gaji per PT (`hr_pay_components`): isi awal, validasi, pembangun `components[] |
+| `hr_pay_components.py` | 474 | PY-T1 (PY-01, PY-02) — komponen gaji per PT (`hr_pay_components`): isi awal, validasi, pembangun `components[] |
 | `hr_pay_inputs.py` | 296 | PY-T1 (PY-02, K-37, K-40) — antrean masukan komponen gaji (`hr_pay_inputs`). |
+| `hr_pay_rules.py` | 358 | PY-T3 (PY-04, PY-07, PY-08, PY-12; K-38, K-39) — aturan hitung gaji per PT dari Pusat Pengaturan. |
 | `hr_payroll_pdf.py` | 177 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
-| `hr_payroll_service.py` | 1114 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payroll_service.py` | 1207 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
 | `hr_remittance_service.py` | 178 | PK-22 (FY-07) — setoran kewajiban gaji: hutang BPJS (2-1700) dan PPh 21 (2-1800) turun lewat dokumen setoran. |
 | `hr_service.py` | 172 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
+| `hr_work_calendar.py` | 170 | PY-T3 (PY-07, PY-08; K-38, K-39) — kalender kerja per PT: hari libur (`hr_holidays`) + pola hari kerja semingg |
 | `inbound_complete_service.py` | 677 | Penyelesaian penerimaan tugas inbound — SATU-SATUNYA jalur yang memposting stok, `received_qty` PO, |
 | `inbound_qc_common.py` | 77 | Aturan barang MASUK GUDANG yang dipakai bersama jalur PO (`inbound_complete_service.complete_task`) dan hasil |
 | `inbound_task_state.py` | 105 | FIX-3a — TABEL TRANSISI status tugas barang masuk (`wms_tasks`, `flow_type=inbound`). |
@@ -731,13 +734,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Koleksi MongoDB (dari pola `db.<nama>.<op>` di kode produksi)
 
-`ai_action_proposals`, `ai_chat_sessions`, `ai_fact_state`, `ai_feedback`, `ai_finance_packs`, `ai_insights`, `ai_result_cache`, `ai_results`, `ai_schedule_runs`, `ai_schedules`, `ai_usage_log`, `ai_user_templates`, `amendment_reasons`, `ap_payment_intents`, `approval_policies`, `approval_rules`, `ar_receipt_failures`, `ar_receipts`, `audit_logs`, `bank_accounts`, `bank_match_rules`, `bank_statement_formats`, `bank_statement_lines`, `bin_locks`, `budgets`, `business_entities`, `cash_advance_settlements`, `cash_deposits`, `cash_holdings`, `cash_transactions`, `client_dataset_imports`, `collection_followups`, `color_library`, `complaint_reasons`, `contra_bons`, `credit_notes`, `credit_overrides`, `crm_interactions`, `crm_leads`, `custom_roles`, `customer_grade_rules`, `customer_prices`, `customers`, `cycle_count_sessions`, `data_hygiene_log`, `data_hygiene_runs`, `design_categories`, `design_gallery`, `design_requests`, `design_tags`, `doc_amendments`, `document_branding`, `document_deliveries`, `document_signatures`, `document_templates`, `entities`, `entity_prices`, `esign_requests`, `expense_categories`, `export_jobs`, `export_templates`, `fact_ar_daily`, `fact_collections`, `fact_sales_lines`, `fact_shipment_sales`, `fact_stock_daily`, `fin_budget_rules`, `fin_depreciation_entries`, `fin_fixed_assets`, `finance_cases`, `fleet_vehicles`, `generated_documents`, `gl_accounts`, `goods_receipts`, `handheld_requests`, `handheld_tag_writes`, `hr_attendance`, `hr_devices`, `hr_employee_assignments`, `hr_employees`, `hr_field_tracks`, `hr_geofences`, `hr_kpi`, `hr_leave_balances`, `hr_leave_requests`, `hr_org_units`, `hr_overtime`, `hr_pay_components`, `hr_pay_inputs`, `hr_payroll_runs`, `hr_payslips`, `hr_shifts`, `hr_visits`, `idempotency_keys`, `incentive_rates`, `initial_registration_lines`, `inspections`, `integration_settings`, `interco_accounts`, `interco_loans`, `interco_returns`, `interco_settlements`, `interco_transactions`, `intercompany_eliminations`, `internal_requests`, `inventory_balances`, `inventory_lots`, `inventory_movements`, `inventory_rolls`, `invoices`, `journal_entries`, `landed_cost_vouchers`, `location_corrections`, `location_migrations`, `login_attempts`, `logistics_deliveries`, `makloon_orders`, `makloons`, `master_governance_batches`, `material_reservation_locks`, `material_reservations`, `md_samples`, `md_specs`, `mdq_cuts`, `mfg_boms`, `mfg_work_orders`, `migrations`, `mkt_accounts`, `mkt_campaign_costs`, `mkt_campaigns`, `mkt_posts`, `mkt_templates`, `notifications`, `number_sequences`, `ocr_sample_runs`, `ocr_samples`, `payment_codes`, `payment_plans`, `payment_terms`, `payment_variance_decisions`, `pdf_templates`, `penalties`, `period_close_locks`, `period_closings`, `period_unlock_requests`, `permission_settings`, `po_variance_tasks`, `price_approvals`, `process_recipes`, `process_stages`, `product_categories`, `product_lines`, `product_templates`, `products`, `purchase_orders`, `purchase_requisitions`, `purchase_returns`, `push_subscriptions`, `putaway_orders`, `registration_area_status`, `repair_orders`, `return_create_locks`, `rfid_cycle_counts`, `rfid_devices`, `rfid_incidents`, `rfid_observations`, `rfid_passages`, `rfid_print_jobs`, `rfid_reads`, `rfid_tag_events`, `rfid_tags`, `rfid_v2_crossings`, `rfid_verify_sessions`, `rfqs`, `rnd_person_divisions`, `roll_label_prints`, `roll_scans`, `sales_incentives`, `sales_orders`, `sales_return_policies`, `sales_returns`, `sales_targets`, `sample_price_master`, `sample_types`, `sessions`, `shipments`, `special_order_reconciliation`, `special_orders`, `store_credit_ledger`, `store_credit_redemptions`, `supplier_contracts`, `supplier_dn_profiles`, `supplier_items`, `supplier_price_lists`, `supplier_roll_claims`, `suppliers`, `sys_digest_claims`, `sys_scheduler_runs`, `sys_wa_outbox`, `system_settings`, `tax_invoices`, `tax_invoices_in`, `tax_pph_records`, `turn_marks`, `uoms`, `user_onboarding`, `users`, `vendor_bills`, `warehouse_sites`, `warehouse_transfers`, `warehouses`, `wms_tasks`
+`ai_action_proposals`, `ai_chat_sessions`, `ai_fact_state`, `ai_feedback`, `ai_finance_packs`, `ai_insights`, `ai_result_cache`, `ai_results`, `ai_schedule_runs`, `ai_schedules`, `ai_usage_log`, `ai_user_templates`, `amendment_reasons`, `ap_payment_intents`, `approval_policies`, `approval_rules`, `ar_receipt_failures`, `ar_receipts`, `audit_logs`, `bank_accounts`, `bank_match_rules`, `bank_statement_formats`, `bank_statement_lines`, `bin_locks`, `budgets`, `business_entities`, `cash_advance_settlements`, `cash_deposits`, `cash_holdings`, `cash_transactions`, `client_dataset_imports`, `collection_followups`, `color_library`, `complaint_reasons`, `contra_bons`, `credit_notes`, `credit_overrides`, `crm_interactions`, `crm_leads`, `custom_roles`, `customer_grade_rules`, `customer_prices`, `customers`, `cycle_count_sessions`, `data_hygiene_log`, `data_hygiene_runs`, `design_categories`, `design_gallery`, `design_requests`, `design_tags`, `doc_amendments`, `document_branding`, `document_deliveries`, `document_signatures`, `document_templates`, `entities`, `entity_prices`, `esign_requests`, `expense_categories`, `export_jobs`, `export_templates`, `fact_ar_daily`, `fact_collections`, `fact_sales_lines`, `fact_shipment_sales`, `fact_stock_daily`, `fin_budget_rules`, `fin_depreciation_entries`, `fin_fixed_assets`, `finance_cases`, `fleet_vehicles`, `generated_documents`, `gl_accounts`, `goods_receipts`, `handheld_requests`, `handheld_tag_writes`, `hr_attendance`, `hr_devices`, `hr_employee_assignments`, `hr_employees`, `hr_field_tracks`, `hr_geofences`, `hr_holidays`, `hr_kpi`, `hr_leave_balances`, `hr_leave_requests`, `hr_org_units`, `hr_overtime`, `hr_pay_components`, `hr_pay_inputs`, `hr_payroll_runs`, `hr_payslips`, `hr_shifts`, `hr_visits`, `idempotency_keys`, `incentive_rates`, `initial_registration_lines`, `inspections`, `integration_settings`, `interco_accounts`, `interco_loans`, `interco_returns`, `interco_settlements`, `interco_transactions`, `intercompany_eliminations`, `internal_requests`, `inventory_balances`, `inventory_lots`, `inventory_movements`, `inventory_rolls`, `invoices`, `journal_entries`, `landed_cost_vouchers`, `location_corrections`, `location_migrations`, `login_attempts`, `logistics_deliveries`, `makloon_orders`, `makloons`, `master_governance_batches`, `material_reservation_locks`, `material_reservations`, `md_samples`, `md_specs`, `mdq_cuts`, `mfg_boms`, `mfg_work_orders`, `migrations`, `mkt_accounts`, `mkt_campaign_costs`, `mkt_campaigns`, `mkt_posts`, `mkt_templates`, `notifications`, `number_sequences`, `ocr_sample_runs`, `ocr_samples`, `payment_codes`, `payment_plans`, `payment_terms`, `payment_variance_decisions`, `pdf_templates`, `penalties`, `period_close_locks`, `period_closings`, `period_unlock_requests`, `permission_settings`, `po_variance_tasks`, `price_approvals`, `process_recipes`, `process_stages`, `product_categories`, `product_lines`, `product_templates`, `products`, `purchase_orders`, `purchase_requisitions`, `purchase_returns`, `push_subscriptions`, `putaway_orders`, `registration_area_status`, `repair_orders`, `return_create_locks`, `rfid_cycle_counts`, `rfid_devices`, `rfid_incidents`, `rfid_observations`, `rfid_passages`, `rfid_print_jobs`, `rfid_reads`, `rfid_tag_events`, `rfid_tags`, `rfid_v2_crossings`, `rfid_verify_sessions`, `rfqs`, `rnd_person_divisions`, `roll_label_prints`, `roll_scans`, `sales_incentives`, `sales_orders`, `sales_return_policies`, `sales_returns`, `sales_targets`, `sample_price_master`, `sample_types`, `sessions`, `shipments`, `special_order_reconciliation`, `special_orders`, `store_credit_ledger`, `store_credit_redemptions`, `supplier_contracts`, `supplier_dn_profiles`, `supplier_items`, `supplier_price_lists`, `supplier_roll_claims`, `suppliers`, `sys_digest_claims`, `sys_scheduler_runs`, `sys_wa_outbox`, `system_settings`, `tax_invoices`, `tax_invoices_in`, `tax_pph_records`, `turn_marks`, `uoms`, `user_onboarding`, `users`, `vendor_bills`, `warehouse_sites`, `warehouse_transfers`, `warehouses`, `wms_tasks`
 
 ## Frontend
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 141 | 23301 |
+| `__tests__` | 142 | 23473 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1722 |
 | `catalog` | 24 | 1459 |
@@ -750,7 +753,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `export` | 9 | 700 |
 | `finance` | 107 | 24932 |
 | `home` | 5 | 1136 |
-| `hr` | 36 | 6735 |
+| `hr` | 38 | 7050 |
 | `incentive` | 3 | 1013 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |
@@ -773,7 +776,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 98 | 15970 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 70 | 13074 |
+| `settings` | 71 | 13172 |
 | `tanya` | 27 | 2483 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |

@@ -304,6 +304,11 @@
      "id": "lembur",
      "label": "Lembur, komisi & kepegawaian",
      "advanced": false
+    },
+    {
+     "id": "prorata-potongan",
+     "label": "Prorata, potongan & pembulatan",
+     "advanced": false
     }
    ]
   },
@@ -1197,6 +1202,46 @@
    "sdm",
    "lembur"
   ],
+  "hr.overtime.sumber": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.overtime.ambang_menit": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.overtime.mode": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.overtime.work_days_per_week": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.overtime.hitung_absensi": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.prorata_masuk_keluar": [
+   "sdm",
+   "prorata-potongan"
+  ],
+  "hr.potongan_alpha": [
+   "sdm",
+   "prorata-potongan"
+  ],
+  "hr.potongan_cuti_tanpa_gaji": [
+   "sdm",
+   "prorata-potongan"
+  ],
+  "hr.potongan_telat_per_menit": [
+   "sdm",
+   "prorata-potongan"
+  ],
+  "hr.pembulatan_rupiah": [
+   "sdm",
+   "prorata-potongan"
+  ],
   "hr.feature_toggles.bpjs_kesehatan": [
    "sdm",
    "bpjs"
@@ -1223,7 +1268,7 @@
   ],
   "hr.prorata_perubahan_gaji": [
    "sdm",
-   "lembur"
+   "prorata-potongan"
   ],
   "catalog.sales_hidden_stages": [
    "stok",

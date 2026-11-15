@@ -392,7 +392,8 @@ async def test_PYT2_U13_kunci_prorata(klien, kepala_admin):
     e = registry.require("hr.prorata_perubahan_gaji")
     assert (e["type"], e["default"], e["scopes"], e["permission"], e["risk"], e["requires_reason"], e["group"]) == (
         "enum", "mati", ["global", "entity"], ["hr", "manage_payroll"], "high", True, "sdm")
-    assert [o["value"] for o in e["options"]] == ["mati", "hari_kalender"]
+    # PY-T3 — pilihan ditambah `hari_kerja` (kalender kerja PT; spesifikasi PY-T3 bagian Pengaturan).
+    assert [o["value"] for o in e["options"]] == ["mati", "hari_kalender", "hari_kerja"]
     assert "services/hr_compensation_service.py:segments" in e["consumers"]
     gagal = await putaran(klien, kepala_admin, "hr.prorata_perubahan_gaji")
     assert not gagal, "\n".join(gagal)

@@ -126,7 +126,9 @@ GROUPS: List[Dict[str, Any]] = [
      "sections": [_S("bank", "Mencocokkan mutasi bank"), _S("kasus", "Kasus keuangan")]},
     {"id": "sdm", "label": "Gaji & SDM", "order": 11,
      "question": "Berapa iuran BPJS, PPh 21, dan upah lembur?",
-     "sections": [_S("bpjs", "BPJS"), _S("pph21", "PPh 21"), _S("lembur", "Lembur, komisi & kepegawaian")]},
+     # PY-T3 — sub-judul "Prorata, potongan & pembulatan" (aturan hitung gaji per PT; "lembur" mendekati 14 kunci).
+     "sections": [_S("bpjs", "BPJS"), _S("pph21", "PPh 21"), _S("lembur", "Lembur, komisi & kepegawaian"),
+                  _S("prorata-potongan", "Prorata, potongan & pembulatan")]},
     {"id": "rnd", "label": "R&D & desain", "order": 12,
      "question": "Kapan barang hasil R&D boleh dijual, siapa memutus sample, dan bagaimana desainer dinilai?",
      "sections": [_S("boleh-dijual", "Kapan produk boleh dijual"), _S("sample", "Sample & pemasok pemenang"),

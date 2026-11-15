@@ -39,6 +39,7 @@
   "hr-payslips": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payslips"},
   "hr-payroll-remittances": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/remittances"},
   "hr-pay-components": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/inputs"},
+  "hr-holidays": {"izin": [["hr", "view"]], "endpoint": "/api/hr/holidays"},
   "sales-performance": {"izin": [["order", "view"]], "endpoint": "/api/sales/kpi"},
   "incentive-capaian": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/achievement"},
   "incentive-setup": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/targets"},

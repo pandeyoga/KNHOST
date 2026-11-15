@@ -51,6 +51,9 @@ PYT2_INDEKS = 2
 CRT2_INDEKS = 2
 #: PM-T4 — `cash_holdings.uq_holding_receipt` (satu titipan tunai per kwitansi).
 PMT4_INDEKS = 1
+# PY-T3 (D7) — `hr_holidays.uq_entity_date` (satu hari libur per PT per tanggal) + `hr_tax_opening_balances.
+# uq_entity_employee_year` (satu saldo awal pajak per karyawan per PT per tahun).
+PYT3_INDEKS = 2
 
 
 def _info_lengkap() -> dict:
@@ -95,9 +98,10 @@ def test_U12_pembanding_indeks():
     # PY-T2 — + baris riwayat kompensasi / penugasan PT sah per karyawan per tanggal berlaku: + PYT2_INDEKS.
     # CR-T2 — + `payment_plans.uq_plan_live_doc`, `customer_balances.uq_customer_entity`: + CRT2_INDEKS.
     # PM-T4 — + `cash_holdings.uq_holding_receipt` (satu titipan tunai per kwitansi): + PMT4_INDEKS.
+    # PY-T3 — + hari libur per PT per tanggal, saldo awal pajak per karyawan per PT per tahun: + PYT3_INDEKS.
     assert len(indexes.REQUIRED_UNIQUE_INDEXES) == (9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
                                                     + PMT2_INDEKS + PK39_INDEKS + AGT3_INDEKS + KMT1_INDEKS
-                                                    + PYT1_INDEKS + PYT2_INDEKS + CRT2_INDEKS + PMT4_INDEKS)
+                                                    + PYT1_INDEKS + PYT2_INDEKS + CRT2_INDEKS + PMT4_INDEKS + PYT3_INDEKS)
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

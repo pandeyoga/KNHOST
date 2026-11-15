@@ -529,6 +529,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "hr_compensation_history", "hr_employee_assignments",
     # CR-T2 — saldo piutang tersimpan per pelanggan per PT (`cbl_…`).
     "customer_balances",
+    # PY-T3 — hari libur PT (`hhol_…`) dan saldo awal pajak karyawan per PT per tahun (`htob_…`).
+    "hr_holidays", "hr_tax_opening_balances",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -894,6 +896,20 @@ REQUIRED_UNIQUE_INDEXES += [
      "finder": _finder_dup(c, '{status:"approved"}', '{k:"$employee_id",t:"$effective_from"}', "$id")}
     for c, lbl in (("hr_compensation_history", "satu perubahan kompensasi sah per karyawan per tanggal berlaku"),
                    ("hr_employee_assignments", "satu penugasan PT sah per karyawan per tanggal berlaku"))
+]
+
+# PY-T3 (D7) — satu hari libur per (PT, tanggal); satu saldo awal pajak per (PT, karyawan, tahun). Dua tambahan bersamaan
+# bertanggal sama → yang kalah `DuplicateKeyError` → 409 "Tanggal … sudah terdaftar sebagai hari libur di PT ini.";
+# saldo awal ditulis upsert berkunci sama. Koleksi baru: data lama tidak bisa kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "hr_holidays", "name": "uq_entity_date", "label": "satu hari libur per PT per tanggal",
+     "keys": [("entity_id", 1), ("date", 1)], "partial": {"date": dict(_NONEMPTY)},
+     "finder": _finder_dup("hr_holidays", '{date:{$type:"string",$gt:""}}', '{e:"$entity_id",d:"$date"}', "$id")},
+    {"collection": "hr_tax_opening_balances", "name": "uq_entity_employee_year",
+     "label": "satu saldo awal pajak per karyawan per PT per tahun",
+     "keys": [("entity_id", 1), ("employee_id", 1), ("year", 1)], "partial": {"employee_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("hr_tax_opening_balances", '{employee_id:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",k:"$employee_id",y:"$year"}', "$id")},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

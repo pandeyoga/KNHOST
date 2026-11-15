@@ -423,20 +423,6 @@
   },
   {
    "file": "backend/services/hr_payroll_service.py",
-   "key": "hr.overtime.hours_divisor",
-   "line_text": "ot.get(\"hours_divisor\", WORK_HOURS_DIVISOR)",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 173 = bawaan registry; ganti dengan `config_registry.default_of(\"hr.overtime.hours_divisor\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/hr_payroll_service.py",
-   "key": "hr.overtime.multiplier",
-   "line_text": "ot.get(\"multiplier\", 1.5)",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 1.5 = bawaan registry; ganti dengan `config_registry.default_of(\"hr.overtime.multiplier\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/hr_payroll_service.py",
    "key": "hr.payroll_commission_mode",
    "line_text": "cfg.get(\"payroll_commission_mode\", \"accrue_then_settle\")",
    "jenis": "sama_bawaan",

@@ -73,8 +73,12 @@ def _hhmm(s: str):
         return 8, 0
 
 
-def compute_metrics(clock_in_iso: str, clock_out_iso: str, shift: Dict[str, Any]) -> Dict[str, int]:
-    """Hitung work_min, late_min, early_leave_min, overtime_min, std_min dari shift."""
+def compute_metrics(clock_in_iso: str, clock_out_iso: str, shift: Dict[str, Any],
+                    overtime_rule: str = "jam_kerja_lebih") -> Dict[str, int]:
+    """Hitung work_min, late_min, early_leave_min, overtime_min, std_min dari shift.
+
+    PY-T3 (PY-08) — `overtime_rule` = `hr.overtime.hitung_absensi` PT itu: `jam_kerja_lebih` (bawaan) = menit kerja −
+    durasi shift (datang lebih awal ikut terhitung); `lewat_jam_pulang` = menit sesudah jam pulang shift saja."""
     res = {"work_min": 0, "late_min": 0, "early_leave_min": 0, "overtime_min": 0, "std_min": 0}
     if not clock_in_iso:
         return res
@@ -101,7 +105,10 @@ def compute_metrics(clock_in_iso: str, clock_out_iso: str, shift: Dict[str, Any]
                 return res
             res["work_min"] = work
             res["early_leave_min"] = max(0, int((sout - co).total_seconds() // 60))
-            res["overtime_min"] = max(0, work - res["std_min"])
+            if overtime_rule == "lewat_jam_pulang":
+                res["overtime_min"] = max(0, int((co - sout).total_seconds() // 60))
+            else:
+                res["overtime_min"] = max(0, work - res["std_min"])
         except ValueError as exc:
             logger.warning("[compute_metrics] efek samping gagal diabaikan: %s", exc)  # KN-C10
     return res
@@ -195,14 +202,26 @@ def parse_zkteco_csv(text: str, device_map: Dict[str, str]):
     return parse_zkteco_rows(csv_to_rows(text), device_map)
 
 
+async def overtime_rule_for(entity_id: str) -> str:
+    """PY-T3 — cara menghitung menit lembur absensi PT itu (`hr_pay_rules.rules` → `hr.overtime.hitung_absensi`)."""
+    from services import hr_pay_rules
+    return (await hr_pay_rules.rules(entity_id))["lembur_hitung_absensi"]
+
+
 # ─── Upsert attendance (idempotent per emp+tanggal) ───────────────────────────
 async def upsert_attendance(emp: Dict[str, Any], date: str, clock_in_iso: str, clock_out_iso: str,
                             method: str, entity_id: str, *, geo: Optional[Dict[str, Any]] = None,
                             photo_url: str = "", note: str = "", status_override: str = "",
-                            outside_geofence: bool = False, leave_request_id: str = "") -> Dict[str, Any]:
-    """Buat/update kehadiran (idempotent). Hitung metrics + status, simpan."""
+                            outside_geofence: bool = False, leave_request_id: str = "",
+                            overtime_rule: Optional[str] = None) -> Dict[str, Any]:
+    """Buat/update kehadiran (idempotent). Hitung metrics + status, simpan.
+
+    PY-T3 — menit lembur menurut `hr.overtime.hitung_absensi` PT itu (`overtime_rule`; kosong = dibaca sekali di sini,
+    hanya bila ada jam pulang)."""
     shift = await resolve_shift(emp, entity_id)
-    metrics = compute_metrics(clock_in_iso, clock_out_iso, shift)
+    if overtime_rule is None and clock_in_iso and clock_out_iso:
+        overtime_rule = await overtime_rule_for(entity_id)
+    metrics = compute_metrics(clock_in_iso, clock_out_iso, shift, overtime_rule or "jam_kerja_lebih")
     status = status_override or determine_status(metrics, outside_geofence, bool(clock_out_iso))
     existing = await db.hr_attendance.find_one(
         {"employee_id": emp["id"], "date": date}, {"_id": 0})

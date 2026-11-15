@@ -126,7 +126,8 @@ def test_U02_pemeriksa_hijau():
     # `hr_employee_assignments.uq_employee_effective_approved` (satu baris sah per karyawan per tanggal berlaku): + 2.
     # CR-T2 menambah `payment_plans.uq_plan_live_doc` dan `customer_balances.uq_customer_entity`: + 2.
     # PM-T4 menambah `cash_holdings.uq_holding_receipt` (satu titipan tunai per kwitansi): + 1.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 34
+    # PY-T3 menambah `hr_holidays.uq_entity_date` dan `hr_tax_opening_balances.uq_entity_employee_year`: + 2.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 36
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

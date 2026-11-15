@@ -333,6 +333,8 @@ export const HUB_TABS = {
     // Bagian "Mesin absen" layar Perangkat (D-29). Juga ikut tersembunyi bila Shift & Lokasi Absen disembunyikan — gerbang
     // bagian itu di layar lama (`DevicesView`) memakai id `hr-attendance-setup`.
     { view: "settings-attendance-devices", label: "Mesin Absen", roles: ["admin", "manager"], inheritsHiddenFrom: ["settings-devices", "hr-attendance-setup"] },
+    // PY-T3 — hari libur PT (jenis hari lembur, hari kerja untuk prorata & potongan); diisi pemilik, tanpa isi awal.
+    { view: "hr-holidays", label: "Kalender Libur", roles: ["admin", "manager"] },
   ],
   "settings-documents": [
     // D-01 — Template PDF + Template Dokumen Dasar digabung (alias `doc-templates-basic` → tab "dasar").

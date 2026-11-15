@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import SettingEditor from "./SettingEditor";
 import { ScopedRulesSummary } from "./ScopedRulesSection";   // KF-T5
+import SettingKeyExtra from "./SettingKeyExtra";   // PY-T3 — keterangan/tautan khusus kunci (L6)
 import KNDateTimePicker from "@/components/KNDateTimePicker";
 import { formatDateTime } from "../../../utils/formatters";
 import { entityShortById } from "../../../utils/entityLabel";
@@ -59,7 +60,7 @@ export function originLabel(item, scopeLabel = "") {
 export default function SettingCard({
   item, scopeType, scopeId, scopeLabel = "", wiring, canEdit, onSave, onReset,
   onClearEntity, onWhy, onSimulate, onHistory, onCancelScheduled, entities = [],
-  collapsible = false, open: openProp, onToggle, onDirty, onPickEntity, restore,
+  collapsible = false, open: openProp, onToggle, onDirty, onPickEntity, restore, peers = null,
 }) {
   const nav = useAppNav();
   const [draft, setDraft] = useState(undefined);
@@ -242,6 +243,8 @@ export default function SettingCard({
       </p>
       {/* KF-T5 — kunci berlapis pelanggan/barang menyebut jumlah yang diatur khusus. */}
       <ScopedRulesSummary item={item} />
+      {/* PY-T3 — catatan pengali tunggal saat mode bertingkat; "Lihat dampaknya" di bawah sumber lembur. */}
+      <SettingKeyExtra item={item} peers={peers} scopeType={scopeType} scopeId={scopeId} />
 
       {notUsed ? (
         <div className="cfg-notused-box" data-testid={`cfg-notused-${item.key}`}>

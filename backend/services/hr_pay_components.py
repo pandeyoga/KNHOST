@@ -206,6 +206,10 @@ def earning_components(comps: Dict[str, Dict[str, Any]], *, run_type: str = "reg
         if allowed(tj, run_type):
             for nama, amt in allowance_rows(allowances):
                 out.append(_line(tj, amt, f"{tj.get('name') or 'Tunjangan'} — {nama}" if nama else ""))
+    # PY-T3 — lembur dan komisi untuk SEMUA proses reguler. Sejak PY-T2 proses reguler selalu berpotongan periode
+    # (`segments`), sehingga baris ini — yang dulu hanya di cabang tanpa potongan — tidak pernah masuk slip (lembur dan
+    # komisi tidak terbayar; ditemukan uji setara PY-T3).
+    if run_type == "regular":
         lb = comps.get("LEMBUR")
         if allowed(lb, run_type) and (overtime or overtime_min):
             out.append(_line(lb, overtime, qty=round(overtime_min / 60.0, 2) if overtime_min else None))
@@ -257,7 +261,7 @@ def derive_columns(components: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
 
     `salary_earnings = base_salary + allowances + overtime + other_earnings`; `gross = salary_earnings + commission`;
     `net = gross − bpjs_emp_total − pph21 − other_deductions`; `tax_gross = Σ amount komponen kena pajak` (pendapatan dan
-    tanggungan perusahaan; potongan tidak pernah)."""
+    tanggungan perusahaan) − Σ potongan bertanda kena pajak (PY-T3: potongan tidak hadir, cuti tanpa gaji, terlambat)."""
     b = {k: 0.0 for k in BUCKETS}
     emp = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0}
     er = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0, "jkk": 0.0, "jkm": 0.0}
@@ -268,8 +272,10 @@ def derive_columns(components: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         slot = STATUTORY_SLOT.get(ln.get("statutory_code") or "")
         if slot:
             (emp if slot[0] == "bpjs_emp" else er)[slot[1]] += amt
-        if ln.get("taxable") and ln.get("kind") != "potongan":
-            tax_gross += amt
+        if ln.get("taxable"):
+            # PY-T3 — potongan bertanda kena pajak (potongan absensi) MENGURANGI bruto pajak; potongan lain (BPJS,
+            # PPh 21, potongan buatan pengguna) tidak bertanda, jadi tidak ikut.
+            tax_gross += -amt if ln.get("kind") == "potongan" else amt
     salary = _r2(b["base_salary"] + b["allowances"] + b["overtime"] + b["other_earnings"])
     gross = _r2(salary + b["commission"])
     emp_total, pph, other_ded = _r2(b["bpjs_emp"]), _r2(b["pph21"]), _r2(b["other_deductions"])
@@ -279,6 +285,17 @@ def derive_columns(components: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
             "bpjs_emp": {k: _r2(v) for k, v in emp.items()}, "bpjs_er": {k: _r2(v) for k, v in er.items()},
             "bpjs_emp_total": emp_total, "bpjs_er_total": _r2(b["bpjs_er"]), "pph21": pph,
             "other_deductions": other_ded, "net": _r2(gross - emp_total - pph - other_ded)}
+
+
+def basis(comps: Dict[str, Dict[str, Any]], lines: Iterable[Dict[str, Any]], flag: str) -> float:
+    """PY-T3 — Σ nominal baris PENDAPATAN yang komponennya bertanda `flag` (`in_bpjs_base` = dasar BPJS,
+    `in_overtime_base` = dasar upah lembur, `prorate` = dasar potongan harian). Lembur dan komisi tidak pernah ikut."""
+    tot = 0.0
+    for ln in lines or ():
+        comp = comps.get(ln.get("code") or "") or {}
+        if ln.get("kind") == "pendapatan" and ln.get("bucket") not in ("overtime", "commission") and comp.get(flag):
+            tot += float(ln.get("amount") or 0)
+    return tot
 
 
 COLUMN_KEYS = ("base_salary", "allowances", "overtime", "commission", "salary_earnings", "gross", "tax_gross",
@@ -439,7 +456,7 @@ async def update_component(comp_id: str, entity_id: str, data: Dict[str, Any], a
         patch["name"] = name
     if "sort" in data:
         patch["sort"] = int(data.get("sort") or 0)
-    for k in ("in_bpjs_base", "in_overtime_base", "prorate"):   # disimpan; belum dipakai mesin sampai PY-T3
+    for k in ("in_bpjs_base", "in_overtime_base", "prorate"):   # PY-T3 — dibaca penghitung slip (`basis`)
         if k in data:
             patch[k] = bool(data[k])
     if "account_code" in data:

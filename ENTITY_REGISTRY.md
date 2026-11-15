@@ -4449,3 +4449,26 @@ kompensasi dan penugasan di PT itu; baris slip "{nama} ({tgl awal}–{tgl akhir}
 | `hr_pay_inputs` ber-`source_type: "rapel"` | Baris kompensasi disahkan dengan `effective_from` pada periode yang proses regulernya `posted`/`paid` → satu masukan `pending` per periode (`pay_period` = bulan berjalan, `amount` = nilai baru − nilai dibayar, label "Rapel gaji {bulan tahun}", `source_key` `rapel:<id baris>:<periode>`, PT = PT karyawan akhir bulan berjalan) | `hr_compensation_service.enqueue_rapel` → `hr_pay_inputs.enqueue_input(status="pending")` |
 | PPh 21 hitung ulang tahunan | Slip terdahulu hanya di PT proses itu (`_prior_year_slips` disaring `entity_id`) | `hr_payroll_service.compute_payslip` |
 
+
+## PY-T3 — aturan hitung gaji dari pengaturan per PT: prorata, potongan, lembur, kalender libur, saldo awal pajak
+
+| Collection | Prefix/ID | Penulis (SSOT) | Pembaca | Catatan |
+|-----------|-----------|----------------|---------|---------|
+| `hr_holidays` | `hhol_` | `services/hr_work_calendar.py:add_holiday` / `delete_holiday` (`POST`/`DELETE /api/hr/holidays`, izin `hr.manage_attendance`, PT aktif; 409 saat "Semua PT") | `hr_work_calendar.calendar_for` / `is_holiday` / `work_days` → proses gaji (jenis hari lembur; hari kerja untuk prorata & potongan); `GET /api/hr/holidays`; layar Pengaturan › SDM › Kalender Libur (`HolidaysView`) | **PY-T3 (PY-07)** hari libur PT: `entity_id`, `date` (`YYYY-MM-DD`), `name`, `kind` (`nasional`·`cuti_bersama`·`perusahaan`), `created_by(_id)`, `created_at`. **Tanpa isi awal** — tanggal libur resmi diisi pemilik (H4). Unik `(entity_id, date)` (`uq_entity_date`, REQUIRED_UNIQUE_INDEXES; tanggal kembar → 409 "Tanggal {tanggal} sudah terdaftar sebagai hari libur di PT ini."). Menggantikan daftar tersembunyi `system_settings{scope:"hr"}.overtime.holidays` (tanpa layar; tidak dibaca lagi). **SCOPED**. |
+| `hr_tax_opening_balances` | `htob_` | `services/hr_pay_rules.py:set_tax_opening` (`PUT /api/hr/employees/{id}/tax-opening`, izin `hr.manage_payroll`, PT aktif; upsert per kunci unik) | `hr_pay_rules.tax_opening(s)` → `hr_payroll_service.compute_payslip` masa pajak terakhir; `GET …/tax-opening` (`hr.view` + `hr.view_pii`); kartu karyawan (`EmployeeTaxOpeningSection`) | **PY-T3 (PY-12)** saldo awal pajak per PT per karyawan per tahun: `entity_id`, `employee_id`(+`employee_name`), `year`, `months` (1–11: masa pajak tahun itu yang dibayar di luar sistem), `tax_gross`, `pension_deduction` (JHT + JP karyawan), `pph21_withheld`, `note`, `created_by(_id)/_at`, `updated_by(_id)/_at`. Terkunci (409 "Pajak {tahun} karyawan ini sudah dihitung ulang, jadi saldo awalnya tidak bisa diubah.") bila slip masa pajak terakhir (`pph21_method: annual_pasal17`) tahun itu di PT itu sudah `posted`/`paid`. Unik `(entity_id, employee_id, year)` (`uq_entity_employee_year`). Nominal = data pribadi. **SCOPED**. |
+
+Aturan hitung (`services/hr_pay_rules.py:rules` — satu-satunya pembaca kunci `hr.prorata_masuk_keluar`,
+`hr.potongan_alpha`, `hr.potongan_cuti_tanpa_gaji`, `hr.potongan_telat_per_menit`, `hr.overtime.sumber` (bawaan
+`pengajuan`, K-39), `hr.overtime.ambang_menit`, `hr.overtime.mode`, `hr.overtime.work_days_per_week`,
+`hr.overtime.hitung_absensi`, `hr.pembulatan_rupiah`, dan — juga dibaca di tempat lamanya — `hr.prorata_perubahan_gaji`,
+`hr.overtime.multiplier`, `hr.overtime.hours_divisor`). Kalender kerja PT: `services/hr_work_calendar.py`.
+
+| Field / perubahan | Arti | Ditulis oleh |
+|---|---|---|
+| `hr_payslips.pay_rules` | Potret aturan hitung yang dipakai slip (prorata, potongan, sumber/menit minimal/cara pengali lembur, hari kerja seminggu, pembulatan) — 02 §5 D3 | `hr_payroll_service.compute_payslip` |
+| `hr_payslips.overtime_base`, `bpjs_base` | Dasar upah lembur (Σ komponen ber-`in_overtime_base`) dan dasar iuran BPJS (Σ komponen ber-`in_bpjs_base`); isi awal = gaji pokok saja (angka sama dengan sebelum unit ini) | `compute_payslip` |
+| `hr_payslips.pph21_annual.opening` | Saldo awal pajak yang ikut hitung ulang setahun (`{year, months, tax_gross, pension_deduction, pph21_withheld}`) atau `null` | `compute_payslip` |
+| `hr_payslips.components[]` LEMBUR, KOMISI | Kembali masuk slip reguler (sejak PY-T2 tidak pernah masuk — lembur & komisi tidak terbayar) | `hr_pay_components.earning_components` |
+| `hr_payslips.tax_gross` | Σ pendapatan & tanggungan kena pajak − Σ potongan bertanda kena pajak | `hr_pay_components.derive_columns` |
+| `hr_pay_components.in_bpjs_base`, `in_overtime_base` | Dipakai mesin (dulu "belum dipakai") | layar Komponen & Masukan |
+| `hr_attendance.overtime_min` | `hr.overtime.hitung_absensi`: `jam_kerja_lebih` (bawaan, menit kerja − durasi shift) · `lewat_jam_pulang` (menit sesudah jam pulang shift) | `hr_attendance_service.compute_metrics` (absen manual/impor/mesin, clock-out, ubah jam) |

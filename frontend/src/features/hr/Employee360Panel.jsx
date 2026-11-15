@@ -6,6 +6,7 @@ import { ArrowLeft, Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
 import { formatCurrency } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
 import EmployeeCompensationSection from "./EmployeeCompensationSection";
+import EmployeeTaxOpeningSection from "./EmployeeTaxOpeningSection";   // PY-T3 — saldo awal pajak
 import { can } from "../../config/roles";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -221,6 +222,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
 
       {/* PY-T2 — Riwayat Kompensasi & Penugasan PT: hanya bagi pemegang izin melihat data pribadi (nilai gaji). */}
       {pii && <div className="mt-3"><EmployeeCompensationSection employee={data} currentUser={currentUser} onChanged={load} /></div>}
+      {pii && <div className="mt-3"><EmployeeTaxOpeningSection employee={data} currentUser={currentUser} /></div>}
 
       <RecordDetailModal open={!!record} onClose={() => setRecord(null)} currentUser={currentUser} {...(record || {})} />
     </div>

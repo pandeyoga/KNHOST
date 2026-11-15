@@ -19,7 +19,6 @@ from services import hr_service
 from role_registry import category_of   # PR-T4 — kategori kerja dari sifat peran
 
 INF = float("inf")
-WORK_HOURS_DIVISOR = 173  # jam kerja/bulan (rumus upah-sejam Kepmenaker)
 PAYROLL_PREFIX = "PAY-"   # K-09 (26 Okt): awalan nomor penggajian baru (dulu "PR-", bentrok Permintaan Pembelian)
 
 # PK-22 (FY-06) — daur proses gaji: draft → pending_approval → approved → posted → paid; batal dari tiga status pertama →
@@ -219,26 +218,39 @@ def overtime_hour_units(hours: float, day_type: str, six_day: bool) -> float:
     return units
 
 
-def _day_type(d: str, rate_basis: str, ot_cfg: Dict[str, Any]) -> str:
-    from datetime import date as _date
-    if rate_basis == "holiday" or d in set(ot_cfg.get("holidays") or []):
-        return "holiday"
-    try:
-        wd = _date.fromisoformat(d[:10]).weekday()
-    except ValueError:
-        wd = 0
-    six_day = int(ot_cfg.get("work_days_per_week") or 5) == 6
-    if rate_basis == "weekend" or wd == 6 or (wd == 5 and not six_day):
-        return "rest"
-    return "workday"
+def overtime_units(hours: float, day_type: str, rl: Dict[str, Any]) -> float:
+    """PY-T3 (PY-07) — jam-upah lembur menurut `hr.overtime.mode`: `flat` = jam × "Pengali upah lembur";
+    `bertingkat` (bawaan) = `overtime_hour_units` (pola enam hari kerja dari `hr.overtime.work_days_per_week`).
+    Dipakai penghitung slip dan simulator lembur Pusat Pengaturan (satu rumus)."""
+    if rl.get("lembur_mode") == "flat":
+        return hours * float(rl.get("lembur_pengali") or 0)
+    return overtime_hour_units(hours, day_type, bool(rl.get("six_day")))
 
 
-async def overtime_events(emp_id: str, period: str, entity_id: str, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _bulan(period: str) -> Tuple[str, str]:
+    from services.hr_compensation_service import period_bounds
+    p0, p1, _ = period_bounds(period)
+    return p0, p1
+
+
+async def overtime_events(emp_id: str, period: str, entity_id: str, cfg: Optional[Dict[str, Any]] = None, *,
+                          rl: Optional[Dict[str, Any]] = None, cal: Any = None) -> List[Dict[str, Any]]:
     """HR-02/IX-04 — SATU event lembur per tanggal. Pengajuan formal approved mengesahkan tanggal itu
     (dan menggantikan usulan absensi); tanpa pengajuan, menit absensi hanya dihitung bila absensinya
-    approved (flagged/belum disetujui tidak dibayar). Duplikat pengajuan pada tanggal sama → diambil satu."""
+    approved (flagged/belum disetujui tidak dibayar). Duplikat pengajuan pada tanggal sama → diambil satu.
+
+    PY-T3 (PY-07, PY-08; K-39) — aturan dari Pengaturan (`hr_pay_rules.rules`): `hr.overtime.sumber` = `pengajuan` →
+    hanya pengajuan yang disetujui; `absensi` → juga menit absensi untuk tanggal tanpa pengajuan, menit di bawah
+    `hr.overtime.ambang_menit` diabaikan. Jenis hari dari kalender kerja PT (`hr_work_calendar`: hari libur PT +
+    pola hari kerja seminggu). `cfg` tidak dipakai lagi (tanda tangan lama)."""
+    from services import hr_pay_rules as _pr
+    from services import hr_work_calendar as _wc
+    if rl is None:
+        rl = await _pr.rules(entity_id)
+    if cal is None:
+        p0, p1 = _bulan(period)
+        cal = await _wc.calendar_for(entity_id, p0, p1, rl)
     scope = {"entity_id": entity_id} if entity_id and entity_id != "all" else {}
-    ot_cfg = cfg.get("overtime", {}) or {}
     by_date: Dict[str, Dict[str, Any]] = {}
     async for r in db.hr_overtime.find({"employee_id": emp_id, "status": "approved", "period": period, **scope},
                                        {"_id": 0, "id": 1, "date": 1, "minutes": 1, "rate_basis": 1}):
@@ -246,35 +258,35 @@ async def overtime_events(emp_id: str, period: str, entity_id: str, cfg: Dict[st
         if not cur or int(r.get("minutes") or 0) > cur["minutes"]:
             by_date[r["date"]] = {"date": r["date"], "source": "filed", "ref_id": r["id"],
                                   "minutes": int(r.get("minutes") or 0), "rate_basis": r.get("rate_basis") or "normal"}
-    async for a in db.hr_attendance.find({"employee_id": emp_id, "date": {"$regex": f"^{period}"},
-                                          "overtime_min": {"$gt": 0}, "approved": True,
-                                          "method": {"$ne": "leave"}, **scope},
-                                         {"_id": 0, "id": 1, "date": 1, "overtime_min": 1}):
-        if a["date"] not in by_date:
-            by_date[a["date"]] = {"date": a["date"], "source": "attendance", "ref_id": a["id"],
-                                  "minutes": int(a.get("overtime_min") or 0), "rate_basis": "normal"}
+    if rl.get("lembur_sumber") == "absensi":
+        ambang = int(rl.get("lembur_ambang_menit") or 0)
+        async for a in db.hr_attendance.find({"employee_id": emp_id, "date": {"$regex": f"^{period}"},
+                                              "overtime_min": {"$gt": 0}, "approved": True,
+                                              "method": {"$ne": "leave"}, **scope},
+                                             {"_id": 0, "id": 1, "date": 1, "overtime_min": 1}):
+            menit = int(a.get("overtime_min") or 0)
+            if a["date"] not in by_date and menit >= ambang:
+                by_date[a["date"]] = {"date": a["date"], "source": "attendance", "ref_id": a["id"],
+                                      "minutes": menit, "rate_basis": "normal"}
     events = sorted(by_date.values(), key=lambda e: e["date"])
     for e in events:
-        e["day_type"] = _day_type(e["date"], e.pop("rate_basis"), ot_cfg)
+        e["day_type"] = cal.day_type(e["date"], e.pop("rate_basis"))
     return events
 
 
-def _overtime_amount(base: float, events: List[Dict[str, Any]], cfg: Dict[str, Any]) -> float:
-    ot = cfg.get("overtime", {}) or {}
-    divisor = int(ot.get("hours_divisor", WORK_HOURS_DIVISOR) or WORK_HOURS_DIVISOR)
-    six_day = int(ot.get("work_days_per_week") or 5) == 6
-    hourly = base / divisor if base > 0 else 0.0
+def _overtime_amount(ot_base: float, events: List[Dict[str, Any]], rl: Dict[str, Any]) -> float:
+    """Nominal lembur: upah sejam = dasar lembur (Σ komponen ber-`in_overtime_base`) ÷ `hr.overtime.hours_divisor`;
+    tiap kejadian = jam-upah (`overtime_units`) × upah sejam, dibulatkan `bulatkan` (PY-T3)."""
+    from services import hr_pay_rules as _pr
+    divisor = int(rl.get("lembur_pembagi_jam") or 0) or 1
+    hourly = ot_base / divisor if ot_base > 0 else 0.0
     total = 0.0
     for e in events:
-        hours = e["minutes"] / 60.0
-        if ot.get("mode") == "flat":  # kompatibilitas: pengali tunggal lama bila dipilih eksplisit
-            units = hours * float(ot.get("multiplier", 1.5) or 1.5)
-        else:
-            units = overtime_hour_units(hours, e["day_type"], six_day)
+        units = overtime_units(e["minutes"] / 60.0, e["day_type"], rl)
         e["hour_units"] = round(units, 4)
-        e["amount"] = round(units * hourly, 2)
+        e["amount"] = _pr.bulatkan(units * hourly, rl)
         total += e["amount"]
-    return round(total, 2)
+    return _pr.bulatkan(total, rl)
 
 
 async def _prior_year_slips(emp_id: str, period: str, entity_id: str = "") -> List[Dict[str, Any]]:
@@ -369,11 +381,15 @@ def _run_type(run: Optional[Dict[str, Any]], run_type: Optional[str]) -> str:
     return rt if rt in ("regular", "thr", "susulan") else "regular"
 
 
+_BELUM = object()   # penanda "saldo awal pajak belum dimuat pemanggil" (None = dimuat, tidak ada)
+
+
 async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
                           cfg: Dict[str, Any], aturan: Optional[Dict[str, Any]] = None, *,
                           comps: Optional[Dict[str, Dict[str, Any]]] = None, run: Optional[Dict[str, Any]] = None,
                           run_type: Optional[str] = None, inputs: Optional[List[Dict[str, Any]]] = None,
-                          month_prior: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                          month_prior: Optional[List[Dict[str, Any]]] = None, rl: Optional[Dict[str, Any]] = None,
+                          cal: Any = None, tax_opening: Any = _BELUM) -> Dict[str, Any]:
     """Slip satu karyawan sebagai DAFTAR KOMPONEN (PY-T1); kolom lama slip diturunkan dari komponen
     (`hr_pay_components.derive_columns`), sehingga jurnal, PDF, ekspor, dan rekap pajak membaca angka yang sama.
 
@@ -385,14 +401,26 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     periode itu yang hidup dan dibuat lebih dulu (`month_prior`); `pph21_month` = bruto pajak bulan × tarif(kategori,
     bruto pajak bulan); `pph21` slip ini = `pph21_month` − Σ `pph21` slip terdahulu bulan itu. Masa pajak terakhir
     (Desember / bulan keluar) = hitung ulang tahunan yang ikut memuat slip terdahulu bulan itu. Tarif dari tabel yang
-    berlaku (PK-46, `aturan_pph21`); unit ini tidak mengubah isinya."""
+    berlaku (PK-46, `aturan_pph21`); unit ini tidak mengubah isinya.
+
+    PY-T3 — aturan hitung dari Pengaturan per PT (`rl` = `hr_pay_rules.rules`, `cal` = kalender kerja PT): lembur
+    (sumber, menit minimal, cara pengali, jenis hari), dasar upah lembur = Σ komponen ber-`in_overtime_base`, dasar BPJS =
+    Σ komponen ber-`in_bpjs_base`, semua angka lewat `bulatkan`, dan saldo awal pajak (`tax_opening`) pada masa pajak
+    terakhir."""
     from services import hr_pay_components as _pc
     from services import hr_pay_inputs as _pi
+    from services import hr_pay_rules as _pr
+    from services import hr_work_calendar as _wc
     # PK-46 — `aturan` = aturan_pph21(akhir periode gaji); proses gaji membacanya sekali dan meneruskannya ke sini.
     if aturan is None:
         aturan = await aturan_pph21(akhir_periode_gaji(period))
     if comps is None:
         comps = await _components_map(entity_id)
+    if rl is None:
+        rl = await _pr.rules(entity_id)
+
+    def bul(x: Any) -> float:
+        return _pr.bulatkan(x, rl)
     rt = _run_type(run, run_type)
     if inputs is None:
         inputs = [i for i in await _pi.inputs_for_run(run["id"]) if i.get("employee_id") == emp["id"]] if run else []
@@ -408,34 +436,45 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
             segs = await _hc.segments(emp["id"], entity_id, period, emp=emp)
         if not segs:   # dipanggil langsung untuk PT yang tidak menggajinya periode itu → nilai akhir periode sebulan
             segs = await _hc.full_month_segments(emp, entity_id, period)
-        _, _, dim = _hc.period_bounds(period)
-        base = round(sum(float(sg.get("base_salary") or 0) if sg.get("full") else
-                         _hc.prorate(sg.get("base_salary"), sg["days"], dim) for sg in segs), 2)
-    else:
-        base = float(emp.get("base_salary") or 0)
+        if cal is None:
+            p0, p1 = _bulan(period)
+            cal = await _wc.calendar_for(entity_id, p0, p1, rl)
+    base = float(emp.get("base_salary") or 0)
     events: List[Dict[str, Any]] = []
-    overtime, commission = 0.0, 0.0
+    overtime, commission, ot_base, bpjs_base = 0.0, 0.0, 0.0, 0.0
     if rt == "regular":
-        events = await overtime_events(emp["id"], period, entity_id, cfg)
-        overtime = _overtime_amount(base, events, cfg)
-        commission = await _commission_for(emp, period, entity_id)
+        commission = bul(await _commission_for(emp, period, entity_id))
+        # PY-T3 — dasar upah lembur & dasar BPJS = Σ komponen bertanda (isi awal: Gaji Pokok saja = angka sebelumnya).
+        dasar = _pc.segment_lines(comps, segs, run_type=rt) + [
+            _pc.input_line(comps[i["component_code"]], i) for i in inputs or ()
+            if _pc.allowed(comps.get(i.get("component_code") or ""), rt)
+            and (comps.get(i.get("component_code") or "") or {}).get("calc") == "masukan"]
+        ot_base = _pc.basis(comps, dasar, "in_overtime_base")
+        bpjs_base = _pc.basis(comps, dasar, "in_bpjs_base")
+        base = sum(float(ln["amount"]) for ln in dasar if ln.get("code") == "GAJI_POKOK")
+        events = await overtime_events(emp["id"], period, entity_id, cfg, rl=rl, cal=cal)
+        overtime = _overtime_amount(ot_base, events, rl)
     ot_auto = sum(e["minutes"] for e in events if e["source"] == "attendance")
     ot_filed = sum(e["minutes"] for e in events if e["source"] == "filed")
     ot_min = ot_auto + ot_filed
     earn = _pc.earning_components(comps, run_type=rt, base=base, allowances=emp.get("allowances"),
                                   overtime=overtime, overtime_min=ot_min, commission=commission, inputs=inputs,
                                   segments=segs)
+    for ln in earn:
+        ln["amount"] = bul(ln["amount"])
     rates, on = bpjs_info(emp, cfg)
     if rt == "regular":
-        emp_b, er_b, _, _ = bpjs_breakdown(base, emp, cfg)
+        emp_b, er_b, _, _ = bpjs_breakdown(bpjs_base, emp, cfg)
     else:   # ASUMSI spesifikasi — iuran BPJS hanya di proses reguler
         emp_b = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0}
         er_b = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0, "jkk": 0.0, "jkm": 0.0}
         on = {"kes": False, "tk": False}
+    emp_b = {k: bul(v) for k, v in emp_b.items()}
+    er_b = {k: bul(v) for k, v in er_b.items()}
     bpjs_lines = _pc.statutory_components(comps, run_type=rt, bpjs_emp=emp_b, bpjs_er=er_b, bpjs_rates=rates,
                                           bpjs_on=on)
     # HR-01 — bruto pajak memuat premi JKK, JKM & BPJS Kesehatan yang dibayar pemberi kerja (komponen tanggungan itu
-    # bertanda kena pajak); potongan tidak pernah.
+    # bertanda kena pajak); potongan bertanda kena pajak (PY-T3) mengurangi.
     tax_gross = _pc.derive_columns(earn + bpjs_lines)["tax_gross"]
     ptkp = emp.get("ptkp_status") or "TK0"
     category = aturan["ptkp_ke_ter"].get(ptkp, "A")   # PK-46 — kategori dari pengaturan bertanggal
@@ -443,27 +482,36 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     # (sebelumnya toggle ini tersimpan tetapi tidak pernah diperiksa mesin payroll).
     _pph21_on = bool((cfg.get("feature_toggles", {}) or {}).get("pph21", True))
     tax_on = bool(cfg.get("ter_enabled", True) and _pph21_on)
-    prior_tg = round(sum(_slip_tax_gross(p) for p in month_prior), 2)
-    prior_pph = round(sum(_amt(p, "pph21") for p in month_prior), 2)
-    tg_month = round(tax_gross + prior_tg, 2)
+    prior_tg = bul(sum(_slip_tax_gross(p) for p in month_prior))
+    prior_pph = bul(sum(_amt(p, "pph21") for p in month_prior))
+    tg_month = bul(tax_gross + prior_tg)
     rate = ter_rate(category, tg_month, aturan) if tax_on else 0.0
-    pph21_month = round(tg_month * rate, 2)
-    pph21 = round(pph21_month - prior_pph, 2) if tax_on else 0.0
+    pph21_month = bul(tg_month * rate)
+    pph21 = bul(pph21_month - prior_pph) if tax_on else 0.0
     pph21_method, annual = "ter", None
     if tax_on and _is_final_tax_period(emp, period):
         prior = await _prior_year_slips(emp["id"], period, entity_id) + month_prior
         pension = lambda s: float((s.get("bpjs_emp") or {}).get("jht", 0) or 0) + \
             float((s.get("bpjs_emp") or {}).get("jp", 0) or 0)  # noqa: E731
-        months = len({str(p.get("period") or "") for p in prior} | {period})
+        # PY-T3 (PY-12) — saldo awal pajak: masa, bruto, iuran pensiun, dan PPh 21 yang dibayar di luar sistem tahun itu
+        # ditambahkan sebelum hitung ulang setahun. Tarif, PTKP, biaya jabatan tetap dari aturan yang berlaku (PK-46).
+        op = await _pr.tax_opening(entity_id, emp["id"], period[:4]) if tax_opening is _BELUM else tax_opening
+        op = op or {}
+        months = len({str(p.get("period") or "") for p in prior} | {period}) + int(op.get("months") or 0)
         annual = annual_pph21(
-            tax_gross=tax_gross + sum(float(s.get("tax_gross", s.get("gross", 0)) or 0) for s in prior),
-            pension_deduction=pension({"bpjs_emp": emp_b}) + sum(pension(s) for s in prior),
+            tax_gross=tax_gross + sum(float(s.get("tax_gross", s.get("gross", 0)) or 0) for s in prior)
+            + float(op.get("tax_gross") or 0),
+            pension_deduction=pension({"bpjs_emp": emp_b}) + sum(pension(s) for s in prior)
+            + float(op.get("pension_deduction") or 0),
             months=months, ptkp_status=ptkp, aturan=aturan)
-        annual["prior_withheld"] = round(sum(float(s.get("pph21", 0) or 0) for s in prior), 2)
+        annual["prior_withheld"] = round(sum(float(s.get("pph21", 0) or 0) for s in prior)
+                                         + float(op.get("pph21_withheld") or 0), 2)
         annual["months"] = months
+        annual["opening"] = ({k: op.get(k) for k in ("year", "months", "tax_gross", "pension_deduction",
+                                                     "pph21_withheld")} if op else None)
         # selisih negatif = lebih potong dikembalikan lewat slip ini (jurnal mendebit Hutang PPh 21)
-        pph21 = round(annual["annual_tax"] - annual["prior_withheld"], 2)
-        pph21_month = round(pph21 + prior_pph, 2)
+        pph21 = bul(annual["annual_tax"] - annual["prior_withheld"])
+        pph21_month = bul(pph21 + prior_pph)
         pph21_method, rate = "annual_pasal17", 0.0
     pph_lines = _pc.statutory_components(comps, run_type=rt, pph21=pph21, pph21_rate_pct=rate * 100,
                                          pph21_method=pph21_method)
@@ -486,6 +534,8 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
                                           "slip_id": p.get("id", ""), "tax_gross": _slip_tax_gross(p),
                                           "pph21": _amt(p, "pph21")} for p in month_prior]},
         "other_deductions": cols["other_deductions"], "net": cols["net"], "components": components,
+        # PY-T3 (02 §5 D3) — potret aturan hitung yang dipakai slip ini, dan dasar upah lembur & BPJS.
+        "pay_rules": _pr.ringkas(rl), "overtime_base": bul(ot_base), "bpjs_base": bul(bpjs_base),
         "bank": {"bank_name": emp.get("bank_name", ""), "acc_no": emp.get("bank_acc_no", ""),
                  "acc_name": emp.get("bank_acc_name", "")},
     }
@@ -535,9 +585,15 @@ async def _build_slips(entity_id: str, period: str, run_type: str, *, run: Optio
     """PY-T1 — slip satu proses. Reguler: semua karyawan yang digaji periode itu (+ masukan mereka); THR/susulan: hanya
     karyawan yang punya masukan. `inputs` = masukan yang dimuat (terambil untuk proses / `approved` untuk pratinjau)."""
     # FASE E-4 (E4.5) — BPJS/PPh21/lembur mengikuti badan usaha yang digaji.
+    from services import hr_pay_rules as _pr
+    from services import hr_work_calendar as _wc
     cfg = await hr_service.get_hr_settings(entity_id)
     aturan = await aturan_pph21(akhir_periode_gaji(period))   # PK-46 — sekali per proses gaji
     comps = await _components_map(entity_id)                  # PY-T1 — komponen PT, sekali per proses gaji
+    rl = await _pr.rules(entity_id)                           # PY-T3 — aturan hitung PT, sekali per proses gaji
+    p0, p1 = _bulan(period)
+    cal = await _wc.calendar_for(entity_id, p0, p1, rl)       # PY-T3 — hari libur PT + pola hari kerja
+    openings = await _pr.tax_openings(entity_id, period[:4])  # PY-T3 — saldo awal pajak PT itu tahun itu
     per_emp: Dict[str, List[Dict[str, Any]]] = {}
     for inp in inputs or []:
         per_emp.setdefault(inp["employee_id"], []).append(inp)
@@ -552,7 +608,8 @@ async def _build_slips(entity_id: str, period: str, run_type: str, *, run: Optio
     totals = _empty_totals()
     for emp in emps:
         s = await compute_payslip(emp, period, entity_id, cfg, aturan, comps=comps, run=run, run_type=run_type,
-                                  inputs=per_emp.get(emp["id"], []), month_prior=prior.get(emp["id"], []))
+                                  inputs=per_emp.get(emp["id"], []), month_prior=prior.get(emp["id"], []),
+                                  rl=rl, cal=cal, tax_opening=openings.get(emp["id"]))
         slips.append(s)
         _accumulate(totals, s)
     slips.sort(key=lambda x: x["employee_name"])
@@ -1085,6 +1142,42 @@ async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str
             patch["cash_txn_id"] = ctxn.get("id", "")
             patch["cash_txn_number"] = ctxn.get("number", "")
     return await _set_run(run_id, patch)
+
+
+async def overtime_impact(entity_id: str, period: str) -> Dict[str, Any]:
+    """PY-T3 (K-39) — dampak `hr.overtime.sumber`: per karyawan yang digaji PT itu pada periode itu, menit lembur
+    ABSENSI (disetujui, pada tanggal tanpa pengajuan, ≥ `hr.overtime.ambang_menit`) dan nilainya menurut aturan lembur
+    PT itu. Pada sumber `pengajuan` menit ini tidak dibayar; pada `absensi` dibayar. Upah sejam = Σ gaji pokok &
+    komponen tetap ber-`in_overtime_base` ÷ pembagi jam (masukan antrean tidak ikut — perkiraan)."""
+    from services import hr_compensation_service as _hc
+    from services import hr_pay_components as _pc
+    from services import hr_pay_inputs as _pi
+    from services import hr_pay_rules as _pr
+    from services import hr_work_calendar as _wc
+    period = _pi.check_period(period)
+    rl = await _pr.rules(entity_id)
+    p0, p1 = _bulan(period)
+    cal = await _wc.calendar_for(entity_id, p0, p1, rl)
+    comps = await _components_map(entity_id)
+    abs_rl = {**rl, "lembur_sumber": "absensi"}
+    rows: List[Dict[str, Any]] = []
+    for emp in await _active_employees(entity_id, period):
+        ev = [e for e in await overtime_events(emp["id"], period, entity_id, rl=abs_rl, cal=cal)
+              if e["source"] == "attendance"]
+        if not ev:
+            continue
+        segs = emp.get("_segments") or await _hc.segments(emp["id"], entity_id, period, emp=emp) or \
+            await _hc.full_month_segments(emp, entity_id, period)
+        ot_base = _pc.basis(comps, _pc.segment_lines(comps, segs), "in_overtime_base")
+        amount = _overtime_amount(ot_base, ev, rl)
+        rows.append({"employee_id": emp["id"], "employee_name": emp.get("name", ""), "code": emp.get("code", ""),
+                     "days": len(ev), "minutes": sum(e["minutes"] for e in ev), "amount": amount,
+                     "dates": [e["date"] for e in ev]})
+    rows.sort(key=lambda r: (-r["amount"], r["employee_name"]))
+    return {"entity_id": entity_id, "period": period, "sumber": rl["lembur_sumber"],
+            "ambang_menit": rl["lembur_ambang_menit"], "rows": rows, "count": len(rows),
+            "total_minutes": sum(r["minutes"] for r in rows),
+            "total_amount": _pr.bulatkan(sum(r["amount"] for r in rows), rl)}
 
 
 async def list_payslips(scope: Dict[str, Any], period: Optional[str] = None,

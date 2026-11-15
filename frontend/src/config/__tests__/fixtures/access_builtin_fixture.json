@@ -2961,6 +2961,10 @@
    "hr",
    "payroll"
   ],
+  "hr-holidays": [
+   "hr",
+   "payroll"
+  ],
   "hr-kpi-hub": [
    "credit_override",
    "hr",

@@ -206,6 +206,7 @@ export const PAGE_META = {
   "logistics":            { kicker: "Logistik",       title: "Pengiriman & Pelacakan \u00b7 Ekspedisi, Armada Sendiri, Foto Muat & POD" },
   "hr-attendance":        { kicker: "SDM (HRD)",      title: "Presensi & Kehadiran" },
   "hr-attendance-setup":  { kicker: "Pengaturan · SDM", title: "Shift & Lokasi Absen" },
+  "hr-holidays":          { kicker: "Pengaturan · SDM", title: "Kalender Libur" },   // PY-T3
   "hr-live-tracking":     { kicker: "SDM (HRD)",      title: "Lacak Lapangan · Live Tracking Sales" },
   "hr-visits":            { kicker: "Penjualan",      title: "Kunjungan Sales (Visit)" },
   "hr-payroll-runs":      { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // MN-T1

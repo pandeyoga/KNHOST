@@ -644,6 +644,7 @@ Dengan izin server, manajer tidak melihat Peran & Hak Akses / Cek Peran (tanpa i
 | Pengaturan › SDM (`settings-hr`) | Aturan SDM & Penggajian (`settings-cfg-hr`) | A M |
 | Pengaturan › SDM (`settings-hr`) | Shift & Lokasi Absen (`hr-attendance-setup`) | A M |
 | Pengaturan › SDM (`settings-hr`) | Mesin Absen (`settings-attendance-devices`) · ikut tersembunyi bersama `settings-devices`, `hr-attendance-setup` | A M |
+| Pengaturan › SDM (`settings-hr`) | Kalender Libur (`hr-holidays`) — PY-T3: hari libur PT per tahun (lihat `hr.view`, tambah/hapus `hr.manage_attendance`); dipakai jenis hari lembur dan hitungan hari kerja (prorata, potongan). Tanpa isi awal | A M |
 | Pengaturan › Dokumen & Notifikasi (`settings-documents`) | Template Dokumen (`pdf-templates`) | A M |
 | Pengaturan › Dokumen & Notifikasi (`settings-documents`) | Pengingat Otomatis (`scheduler`) | A M |
 | Pengaturan › Dokumen & Notifikasi (`settings-documents`) | WhatsApp (`settings-whatsapp`) · ikut tersembunyi bersama `scheduler` | A M |

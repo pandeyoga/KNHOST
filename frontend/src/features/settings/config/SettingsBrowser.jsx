@@ -31,7 +31,7 @@ function bySection(items, sections) {
   return [...out, lain].filter((x) => x.items.length);
 }
 
-function Section({ s, sec, entities, scopeName, defaultOpen }) {
+function Section({ s, sec, entities, scopeName, defaultOpen, peers }) {
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => { if (defaultOpen) setOpen(true); }, [defaultOpen]);
   const cards = (
@@ -48,7 +48,7 @@ function Section({ s, sec, entities, scopeName, defaultOpen }) {
             onHistory={(it) => s.setHist({ entry: it })}
             onCancelScheduled={s.onCancelScheduled} entities={entities}
             collapsible open={s.openKeys.has(item.key)} onToggle={s.toggleOpen} onDirty={s.onDirty}
-            onPickEntity={s.pickEntity} restore={s.restore} />
+            onPickEntity={s.pickEntity} restore={s.restore} peers={peers} />
         </div>
       ))}
     </div>
@@ -85,6 +85,8 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
   const aktif = shown.filter((i) => i.status !== "not_used");
   const tidakDipakai = shown.filter((i) => i.status === "not_used");
   const weightSets = useMemo(() => weightSetSummaries(items), [items]);
+  // PY-T3 — butir lain yang termuat (kunci → butir) untuk keterangan kunci pasangan di kartu (`SettingKeyExtra`).
+  const peers = useMemo(() => Object.fromEntries(items.map((i) => [i.key, i])), [items]);
   const shownGroups = groups.filter((g) => !s.lockedGroup || g.id === s.lockedGroup);
   const crossTheme = !s.locked && !term && ["persetujuan", "pengingat", "toleransi"].includes(s.filter);
   const sectionsOf = (gid) => (groups.find((g) => g.id === gid)?.sections
@@ -184,11 +186,11 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
           ))}
 
           {!s.loading && blocks.map((sec) => (
-            <Section key={sec.id} s={s} sec={sec} entities={entities} scopeName={scopeName}
+            <Section key={sec.id} s={s} sec={sec} entities={entities} scopeName={scopeName} peers={peers}
               defaultOpen={s.section === sec.id || sec.items.some((i) => i.key === s.highlight)} />
           ))}
           {!s.loading && tidakDipakai.length ? (
-            <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false}
+            <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false} peers={peers}
               sec={{ id: "tidak-dipakai", label: "Tidak dipakai sistem", advanced: false, items: tidakDipakai }} />
           ) : null}
         </section>

@@ -48,6 +48,8 @@ const PYT1_KOMPONEN = ["hr-pay-components"];
 // PM-T4 (K-36) — layar BARU Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai; `cash_holding.approve`): admin,
 // manajer, Finance.
 const PMT4_TITIPAN = ["cash-holdings"];
+// PY-T3 — layar BARU Pengaturan › SDM › Kalender Libur (tab hub SDM; lihat `hr.view`, ubah `hr.manage_attendance`): admin, manajer.
+const PYT3_LIBUR = ["hr-holidays"];
 // KP-T9 — id layar BARU untuk bagian layar yang SUDAH ADA: layar wadah Badan Usaha & Akses, Perangkat, dan Penjadwal &
 // Notifikasi dibuka satu bagian per tab hub (komponen sama, prop `only`). `settings-pt-profile` = tujuan alias
 // `entities-access` (sudah di baseline). Manajer: Peran & Hak Akses / Cek Peran hanya tampil menurut rancangan menu — izin
@@ -56,9 +58,9 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
   "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN],
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN,
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
