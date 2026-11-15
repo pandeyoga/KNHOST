@@ -105,6 +105,11 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
     "journal_proposal": _k("Jurnal manual — usulan menunggu orang kedua", "Keuangan", "journal_proposal",
                            ("accounting.create",), amount_field="total_debit",
                            note="Usulan hanya ada bila kontrol dua orang jurnal manual aktif untuk PT itu."),
+    # AG-T5 — kartu tindakan asisten (uang keluar dan jurnal) menunggu orang kedua: pintu `POST /api/ai/actions/{id}/
+    # second` = izin `ai_finance.approve` (+ izin pintu tindakannya); pembuat ≠ orang kedua dijaga kontrol dua orang.
+    "ai_card_second": _k("Kartu asisten — uang keluar dan jurnal menunggu orang kedua", "Keuangan", "ai_card_second",
+                         ("ai_finance.approve",), amount_field="plan.amount",
+                         note="Kartu hanya menunggu bila kontrol dua orang kartu asisten uang keluar aktif untuk PT itu."),
     "od_cancel_credit_note": _k("Nota kredit batal item", "Keuangan", "od_cancel_credit_note",
                                 ("finance_amendment.review_credit_note",)),
     # ── Gudang ─────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -466,8 +466,8 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
               <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-level-help">
                 Uang masuk: kwitansi, pencocokan bank, alokasi titipan, dan ulang jurnal yang disiapkan asisten (butuh akses
                 &apos;Siapkan dan setujui tindakan&apos;). Uang keluar dan jurnal: bayar tagihan pemasok, bayar kontrabon,
-                dan kas manual (butuh akses &apos;Tindakan uang keluar&apos;). Keduanya juga butuh pengaturan PT yang
-                menyala.
+                dan kas manual (butuh akses &apos;Tindakan uang keluar&apos;), jurnal manual dan balik jurnal (butuh akses
+                &apos;Tindakan jurnal&apos;). Keduanya juga butuh pengaturan PT yang menyala.
               </p>
               {!canConfigureAi && (
                 <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-readonly">

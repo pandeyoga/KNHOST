@@ -792,6 +792,9 @@ async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: 
     }
     if ref:
         doc["ref"] = ref
+    # AG-T5 — jurnal yang lahir dari permintaan kartu tindakan asisten (balik jurnal, kas bayar hutang/kas manual).
+    from ai_card_context import card_field
+    doc.update(card_field())
     # FASE G-5 — hard-lock periode tertutup + tandai jurnal mundur ber-unlock.
     plu = await enforce_closed_period_guard(
         doc["entity_id"], doc["date"], source_type=source_type, can_backdate=True)
@@ -905,6 +908,8 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    from ai_card_context import card_field   # AG-T5 — jurnal manual dari kartu tindakan asisten
+    doc.update(card_field())
     if disetujui:   # KF-T6 — jurnal manual dua orang: pengusul (created_by) ≠ penyetuju (approved_by)
         doc.update({"created_by_id": actor.get("id", ""), "approved_by": disetujui.get("name", ""),
                     "approved_by_id": disetujui.get("id", ""), "approved_at": now_iso(),

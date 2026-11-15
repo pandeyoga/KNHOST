@@ -19,8 +19,8 @@ Golongan A (tindak lanjut penagihan, janji bayar, tanda sudah diingatkan) tidak 
 (kwitansi piutang, pencocokan mutasi bank, alokasi titipan, ulang jurnal gagal) menuntut izin `ai_finance.create`,
 golongan `B` di `users.ai_finance.classes`, dan `ai.tindakan_uang_masuk` menyala untuk PT kartu (bawaan mati, H5).
 
-AG-T5 — golongan C (bayar tagihan pemasok, bayar kontrabon, kas manual) menuntut izin `ai_finance.pay`, golongan `C` di
-akun, dan `ai.tindakan_uang_keluar` menyala untuk PT kartu (bawaan mati, H5). Saat pembuat menyetujui, kontrol dua orang
+AG-T5 — golongan C (bayar tagihan pemasok, bayar kontrabon, kas manual: izin `ai_finance.pay`; jurnal manual, balik
+jurnal: izin `ai_finance.post`) menuntut izin kartunya, golongan `C` di akun, dan `ai.tindakan_uang_keluar` menyala untuk PT kartu (bawaan mati, H5). Saat pembuat menyetujui, kontrol dua orang
 `kontrol.asisten_uang_keluar.*` (KF-T6) diputus: tidak butuh → dijalankan seperti golongan A/B; butuh → kartu
 `awaiting_second` (potret `second_required`, `first_by`), notifikasi ke pemegang `ai_finance.approve` di PT kartu, dan
 baru dijalankan saat orang kedua menyetujui (`second`) — dengan SESI orang kedua, yang karena itu wajib memegang izin
@@ -74,6 +74,10 @@ MSG_SEDANG_DISIAPKAN = "Kartu lain di percakapan ini sedang disiapkan. Coba lagi
 MSG_AKUN_MATI_C = "Tindakan uang keluar dan jurnal lewat asisten belum dinyalakan untuk akun Anda."
 MSG_IZIN_C_PAY = ("Anda belum punya akses untuk menyiapkan dan menyetujui uang keluar lewat asisten. Minta Admin "
                   "menambahkan akses 'Asisten Tanya KN'.")
+MSG_IZIN_C_POST = ("Anda belum punya akses untuk menyiapkan dan menyetujui jurnal lewat asisten. Minta Admin "
+                   "menambahkan akses 'Asisten Tanya KN'.")
+MSG_KETIK_NOMOR = "Ketik ulang nomor jurnal persis seperti di kartu."
+MSG_JURNAL_USULAN = "Usulan jurnal menunggu persetujuan di layar Jurnal"
 MSG_IZIN_KEDUA = ("Anda belum punya akses untuk menyetujui kartu asisten sebagai orang kedua. Minta Admin menambahkan "
                   "akses 'Asisten Tanya KN'.")
 MSG_BUKAN_MENUNGGU = "Kartu ini tidak sedang menunggu orang kedua."
@@ -125,6 +129,7 @@ class CardAction:
     # AG-T5 — golongan C: izin pintu (yang juga wajib dipegang orang kedua) dan izin kartu (`ai_finance.<card_perm>`).
     door: Tuple[str, str] = ("", "")
     card_perm: str = ""
+    retype_kind: str = "amount"   # "amount" = digit nominal · "text" = nomor dokumen persis (balik jurnal)
 
 
 REGISTRY: Dict[str, CardAction] = {}
@@ -181,6 +186,11 @@ def confirm_text_of(amount: float) -> str:
 
 def _digits(v: Any) -> str:
     return re.sub(r"\D", "", str(v or ""))
+
+
+def _norm_nomor(v: Any) -> str:
+    """Nomor dokumen untuk ketik ulang: tanpa spasi, huruf besar ("ksc/je-00005" = "KSC/JE-00005")."""
+    return re.sub(r"\s+", "", str(v or "")).upper()
 
 
 def _clean_args(args: Any) -> Dict[str, Any]:
@@ -835,6 +845,125 @@ for _a in (
 ):
     REGISTRY[_a.code] = _a
 
+# ── Golongan C (AG-T5 b): jurnal manual, balik jurnal ───────────────────────────────────────────────────────────────
+def _ribuan(v: float) -> str:
+    """100000 → "100.000" (pesan jurnal tidak seimbang, tanpa "Rp")."""
+    a = round(float(v or 0), 2)
+    t = f"{abs(a):,.2f}".replace(",", "#").replace(".", ",").replace("#", ".")
+    return ("-" if a < 0 else "") + (t[:-3] if t.endswith(",00") else t)
+
+
+async def _nama_akun(api: SelfApi) -> Dict[str, str]:
+    """Nama akun untuk tampilan rencana (bagan akun PT aktif); tidak terbaca → kode saja. Akun TIDAK dipilih di sini."""
+    try:
+        rows = await api.call("GET", "/api/gl/accounts")
+    except SelfApiError:
+        return {}
+    return {str(r.get("code")): str(r.get("name") or "") for r in rows or [] if isinstance(r, dict)}
+
+
+async def _prep_journal(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    """Jurnal manual: total debit & kredit dihitung di sini (tidak seimbang → ditolak); akun dari permintaan pengguna dan
+    diperiksa PINTU (periode, akun aktif, akun kontrol PK-36 / K-02)."""
+    a = _clean_args(args)
+    lines = []
+    for ln in a.get("lines") or []:
+        if not isinstance(ln, dict):
+            continue
+        code = _text(ln.get("account_code"), 40)
+        d, k = _money(ln.get("debit")), _money(ln.get("credit"))
+        if not code:
+            raise _err(400, "Setiap baris jurnal harus memilih akun.")
+        if d < 0 or k < 0 or (d > 0 and k > 0) or (d == 0 and k == 0):
+            raise _err(400, "Setiap baris jurnal berisi debit ATAU kredit lebih dari 0.")
+        lines.append({"account_code": code, "debit": d, "credit": k, "description": _text(ln.get("description"), 200)})
+    if len(lines) < 2:
+        raise _err(400, "Jurnal minimal 2 baris (debit & kredit).")
+    total_d = round(sum(x["debit"] for x in lines), 2)
+    total_k = round(sum(x["credit"] for x in lines), 2)
+    if round(total_d * 100) != round(total_k * 100):
+        raise _err(400, f"Jurnal tidak seimbang: debit {_ribuan(total_d)} ≠ kredit {_ribuan(total_k)}.")
+    tgl = _date(a.get("date"), "Tanggal jurnal") or _today_wib()
+    desc = _text(a.get("description")) or "Jurnal manual"
+    nama = await _nama_akun(api)
+    rows = [_row(f"{'Debit' if x['debit'] else 'Kredit'} {x['account_code']} {nama.get(x['account_code'], '')}".strip(),
+                 None, x["debit"] or x["credit"], "money") for x in lines]
+    rows += [_row("Total debit = total kredit", None, total_d, "money"), _row("Tanggal jurnal", "—", tgl, "date"),
+             _row("Keterangan", "—", desc)]
+    return {"args": {"date": tgl, "description": desc, "lines": lines},
+            "plan": {"summary": f"Catat jurnal manual {rupiah(total_d)}: {desc}.", "rows": rows, "amount": total_d,
+                     "confirm_text": confirm_text_of(total_d),
+                     "note": "Akun diperiksa pintu jurnal: periode terbuka, akun aktif, bukan akun kontrol.",
+                     "meta": {"description": desc}},
+            "fingerprint_source": []}
+
+
+def _build_journal(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return {}, {"date": args.get("date", ""), "description": args.get("description", ""),
+                "lines": [dict(x) for x in args.get("lines") or []]}
+
+
+def _journal_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    from services.doc_refs_service import link_of
+    r = resp if isinstance(resp, dict) else {}
+    if r.get("status") == "menunggu_orang_kedua":   # KF-T6 — pintu jurnal sendiri menuntut dua orang (202)
+        return {"document": {"type": "journal_proposal", "label": "Usulan jurnal manual", "id": r.get("proposal_id", ""),
+                             "number": "", "link": {"view": "general-ledger", "tab": "", "focus_type": "", "focus_id": "",
+                                                    "number": ""}},
+                "gl_status": None, "message": MSG_JURNAL_USULAN}
+    return {"document": {"type": "journal_entry", "label": "Jurnal", "id": r.get("id", ""), "number": r.get("number", ""),
+                         "link": link_of("journal_entry", r)},
+            "gl_status": "posted" if r.get("status") == "posted" else r.get("status")}
+
+
+async def _prep_reverse(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    eid = _text(a.get("entry_id"), 80)
+    if not eid:
+        raise _err(400, "Jurnal yang dibalik wajib dipilih.")
+    reason = _text(a.get("reason"))
+    if len(reason) < 5:
+        raise _err(400, "Alasan pembalikan wajib diisi (minimal 5 huruf).")
+    tgl = _date(a.get("date"), "Tanggal pembalik") or _today_wib()
+    je = await api.call("GET", f"/api/gl/journal/{eid}")
+    _same_pt(api, je, "Jurnal")
+    num = je.get("number") or eid
+    if je.get("status") == "void":
+        raise _err(409, f"Jurnal {num} sudah dianulir — tidak bisa dibalik.")
+    if je.get("reversed") or je.get("reversed_by_entry_id"):
+        raise _err(409, f"Jurnal {num} sudah dibalik.")
+    total = _money(je.get("total_debit"))
+    rows = [_row(f"Jurnal {num}", "Terposting", "Dibalik"), _row("Nilai jurnal", None, total, "money"),
+            _row("Tanggal pembalik", "—", tgl, "date"), _row("Alasan pembalikan", "—", reason)]
+    return {"args": {"entry_id": eid, "date": tgl, "reason": reason},
+            "plan": {"summary": f"Balik jurnal {num} ({rupiah(total)}) bertanggal {tgl}.", "rows": rows, "amount": total,
+                     "confirm_text": num, "note": "Jurnal asal tetap; jurnal pembalik menukar debit dan kredit.",
+                     "meta": {"number": num}},
+            "fingerprint_source": [{"path": f"/api/gl/journal/{eid}", "params": {},
+                                    "pick": {"fields": ["status", "reversed", "reversed_by_entry_id", "total_debit"]}}]}
+
+
+def _build_reverse(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return {"entry_id": args["entry_id"]}, {"date": args.get("date", ""), "reason": args.get("reason", "")}
+
+
+def _reverse_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    from services.doc_refs_service import link_of
+    r = resp if isinstance(resp, dict) else {}
+    return {"document": {"type": "journal_entry", "label": "Jurnal pembalik", "id": r.get("id", ""),
+                         "number": r.get("number", ""), "link": link_of("journal_entry", r)},
+            "gl_status": "posted" if r.get("status") == "posted" else r.get("status")}
+
+
+for _a in (
+    CardAction("journal_manual", "Catat jurnal manual", "C", "high", "POST", "/api/gl/journal",
+               _prep_journal, _build_journal, _journal_result, door=("accounting", "create"), card_perm="post"),
+    CardAction("journal_reverse", "Balik jurnal", "C", "high", "POST", "/api/gl/journal/{entry_id}/reverse",
+               _prep_reverse, _build_reverse, _reverse_result, door=("accounting", "void"), card_perm="post",
+               retype_kind="text"),
+):
+    REGISTRY[_a.code] = _a
+
 # AG-T5 — penegakan 2 daftar larangan: pintu tulis terdaftar tidak boleh terlarang dan wajib ber-idempotensi.
 from services.ai_card_rules import check_write_paths as _cek_pintu  # noqa: E402
 
@@ -869,9 +998,12 @@ async def _sakelar_pt_c(entity_id: str) -> None:
 
 
 async def _sakelar_c(user: Dict[str, Any], entity_id: str, action: "CardAction") -> None:
-    """AG-T5 — golongan C: izin kartu `ai_finance.pay` → golongan `C` di akun → `ai.tindakan_uang_keluar` menyala untuk
-    PT kartu (bawaan mati, H5)."""
-    if not await has_permission(user, "ai_finance", "pay"):
+    """AG-T5 — golongan C: izin kartu (`ai_finance.pay` untuk tiga tindakan uang, `ai_finance.post` untuk dua tindakan
+    jurnal) → golongan `C` di akun → `ai.tindakan_uang_keluar` menyala untuk PT kartu (bawaan mati, H5)."""
+    if action.card_perm == "post":
+        if not await has_permission(user, "ai_finance", "post"):
+            raise denied([("ai_finance", "post")], MSG_IZIN_C_POST)
+    elif not await has_permission(user, "ai_finance", "pay"):
         raise denied([("ai_finance", "pay")], MSG_IZIN_C_PAY)
     if "C" not in _classes(user):
         raise _err(403, MSG_AKUN_MATI_C)
@@ -976,7 +1108,7 @@ async def prepare(code: str, args: Dict[str, Any], *, request: Any = None, api: 
     doc = {"id": cid, "type": action.code, "class": action.cls, "risk": action.risk, "status": "pending",
            "title": action.label, "request": _text(user_request), "args": out["args"],
            "args_initial": json.loads(json.dumps(out["args"], default=str)),
-           "editable": [dict(e) for e in action.editable], "plan": out["plan"],
+           "editable": [dict(e) for e in action.editable], "plan": out["plan"], "retype_kind": action.retype_kind,
            "fingerprint": out["fingerprint"], "fingerprint_source": out.get("fingerprint_source") or [],
            "fingerprint_snapshot": out["snapshot"], "reason": "", "edits": {},
            "user_id": user["id"], "user_name": user.get("name", ""), "entity_id": entity_id,
@@ -1163,7 +1295,10 @@ async def decide(card_id: str, *, request: Any, user: Dict[str, Any], ctx: Any, 
     plan = doc.get("plan") or {}
     if action.risk in ("medium", "high") and len(reason) < REASON_MIN:
         raise _err(400, MSG_ALASAN)
-    if action.risk == "high" and (not _digits(retype) or _digits(retype) != _digits(plan.get("confirm_text"))):
+    if action.risk == "high" and action.retype_kind == "text":   # AG-T5 — balik jurnal: nomor jurnal persis
+        if not _norm_nomor(retype) or _norm_nomor(retype) != _norm_nomor(plan.get("confirm_text")):
+            raise _err(400, MSG_KETIK_NOMOR)
+    elif action.risk == "high" and (not _digits(retype) or _digits(retype) != _digits(plan.get("confirm_text"))):
         raise _err(400, MSG_KETIK)
     # 4. isian yang boleh diubah → rencana disusun ulang (sidik tetap yang lama: perubahan data tetap terdeteksi)
     token = _token_of(request)

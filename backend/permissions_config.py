@@ -921,14 +921,15 @@ for _role, _mods in AGT3_DEFAULT_PAIRS.items():
 
 # ═══════════════════════════════════════════════════════════════════════════
 # AG-T5 (K-17, K-44) — kartu tindakan golongan C lewat asisten: `ai_finance.pay` (bayar tagihan pemasok, bayar
-# kontrabon, kas manual; Admin, Manajer, Finance — K-17) dan `ai_finance.approve` (menyetujui kartu golongan C sebagai
-# orang kedua; Admin, Manajer). Tanpa sakelar akun `C` (`users.ai_finance.classes`) dan pengaturan PT
+# kontrabon, kas manual; Admin, Manajer, Finance — K-17), `ai_finance.post` (serah-terima b: jurnal manual dan balik
+# jurnal; Admin, Manajer — peran finance tidak memegang `accounting.create`) dan `ai_finance.approve` (menyetujui kartu
+# golongan C sebagai orang kedua; Admin, Manajer). Tanpa sakelar akun `C` (`users.ai_finance.classes`) dan pengaturan PT
 # `ai.tindakan_uang_keluar` (bawaan mati, H5) izin ini belum berakibat apa pun. Instalasi lama menerima pasangan baru
 # sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
 # ═══════════════════════════════════════════════════════════════════════════
 AGT5_DEFAULT_PAIRS = {
-    "admin": {"ai_finance": ("pay", "approve")},
-    "manager": {"ai_finance": ("pay", "approve")},
+    "admin": {"ai_finance": ("pay", "post", "approve")},
+    "manager": {"ai_finance": ("pay", "post", "approve")},
     "finance": {"ai_finance": ("pay",)},
 }
 for _role, _mods in AGT5_DEFAULT_PAIRS.items():

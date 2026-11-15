@@ -12,8 +12,9 @@ PT aktif permintaan asal. Akibatnya izin, PT, cakupan data, dan saringan bidang 
     finally:
         await api.aclose()
 
-AG-T5 — mode tulis untuk kartu golongan C (`card_class="C"`): daftar larangan `services/ai_card_rules.FORBIDDEN`
-diperiksa PALING AWAL (sebelum aturan jalur di bawah) → 403 berisi alasan baris, aplikasi tidak dipanggil.
+AG-T5 — SETIAP panggilan mode tulis (kartu golongan A, B, C dan draf PO lama): daftar larangan
+`services/ai_card_rules.FORBIDDEN` diperiksa PALING AWAL (sebelum aturan jalur di bawah) → 403 berisi alasan baris,
+aplikasi tidak dipanggil.
 
 Aturan `call` (urutan tetap): jalur harus `/api/…` dan bukan `/api/ai/…` maupun `/api/auth/…` (400) → baca-saja dan
 metode bukan GET → 403 tanpa memanggil aplikasi → `params`/`json` memuat kunci `entity_id` → 400 (PT dari sesi, N1) →
@@ -128,8 +129,8 @@ class SelfApi:
                    idempotency_key: str = "") -> Any:
         method = (method or "").upper()
         path = path or ""
-        if not self.read_only and self.card_class == "C":
-            # AG-T5 — daftar larangan lebih dulu: alasan barisnya yang ditampilkan, aplikasi tidak dipanggil.
+        if not self.read_only:
+            # AG-T5 (b) — daftar larangan lebih dulu untuk semua tulisan: alasan barisnya, aplikasi tidak dipanggil.
             from services.ai_card_rules import forbidden_reason
             why = forbidden_reason(method, path)
             if why:

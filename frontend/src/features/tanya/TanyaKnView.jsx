@@ -4,6 +4,7 @@ import { toast } from "../../hooks/use-toast";
 import { entityFullById, entityShortById } from "../../utils/entityLabel";
 import { PENDING_KEY, PRESETS as ASK_PRESETS } from "../../components/AskKnButton";
 import { TanyaActions } from "./TanyaActions";
+import useViewPreset from "../../hooks/useViewPreset";
 import { TanyaInsights } from "./TanyaInsights";
 import { TanyaAnswer } from "./TanyaAnswer";
 import { TanyaBudgetCard } from "./TanyaBudgetCard";
@@ -57,6 +58,12 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const [tplAnswer, setTplAnswer] = useState(null);
   const [tplBusy, setTplBusy] = useState(false);
   const [tab, setTab] = useState(initialTab);
+  // AG-T5 (b) — tautan Pusat Persetujuan "Tindakan asisten menunggu orang kedua" → tab Tindakan, kotak "Menunggu orang lain".
+  const [actionsBox, setActionsBox] = useState({ box: "mine", nonce: 0 });
+  useViewPreset("tanya-kn", (p) => {
+    if (p?.tab && TABS.some(([k]) => k === p.tab)) setTab(p.tab);
+    if (p?.box) setActionsBox({ box: p.box, nonce: p.nonce });
+  });
   const [historyKey, setHistoryKey] = useState(0);
   const [schedKey, setSchedKey] = useState(0);
   const [mine, setMine] = useState([]);
@@ -227,7 +234,7 @@ export default function TanyaKnView({ selectedEntity, entities }) {
         {tabBar}
         {view === "chat" && <div className="tanya-main">{chatMain}</div>}
         {view === "cost" && <div className="tanya-main"><div className="section-card tanya-side">{side}</div><TanyaCostView /></div>}
-        {view === "actions" && <div className="tanya-main"><div className="section-card section-pad"><TanyaActions refreshKey={selectedEntity} /></div></div>}
+        {view === "actions" && <div className="tanya-main"><div className="section-card section-pad"><TanyaActions key={`${actionsBox.box}-${actionsBox.nonce}`} refreshKey={selectedEntity} initialBox={actionsBox.box} /></div></div>}
         {view !== "chat" && view !== "cost" && view !== "actions" && <div className="section-card tanya-side">{side}</div>}
         {dialogs}
       </div>
@@ -239,7 +246,7 @@ export default function TanyaKnView({ selectedEntity, entities }) {
       <div className="tanya-layout">
         <aside ref={sideRef} className="tanya-side section-card">{tabBar}{side}</aside>
         <main className="tanya-main">{view === "cost" ? <TanyaCostView />
-          : view === "actions" ? <div className="section-card section-pad"><TanyaActions refreshKey={selectedEntity} /></div>
+          : view === "actions" ? <div className="section-card section-pad"><TanyaActions key={`${actionsBox.box}-${actionsBox.nonce}`} refreshKey={selectedEntity} initialBox={actionsBox.box} /></div>
             : chatMain}</main>
       </div>
       {dialogs}

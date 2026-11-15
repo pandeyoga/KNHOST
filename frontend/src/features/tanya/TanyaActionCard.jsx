@@ -148,6 +148,7 @@ function CardOutcome({ doc }) {
     return (
       <div className="tanya-action-outcome" data-testid="tanya-card-outcome" role="status">
         <p data-testid="tanya-card-success">Berhasil — {[d?.label, d?.number].filter(Boolean).join(" ")}</p>
+        {res.message && <p data-testid="tanya-card-message">{res.message}</p>}
         {res.gl_status === "posted" && <p data-testid="tanya-card-gl">Jurnal: terposting</p>}
         {res.gl_status === "failed" && (
           <p data-testid="tanya-card-gl">
@@ -285,17 +286,22 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
   const ptName = doc.entity_name || entityShortById(entities, doc.entity_id, "PT kartu");
   const needReason = doc.risk === "medium" || doc.risk === "high";
   const needRetype = doc.risk === "high";
+  // AG-T5 (b) — balik jurnal: ketik ulang NOMOR jurnal (huruf besar/kecil & spasi diabaikan), bukan digit nominal.
+  const byNumber = doc.retype_kind === "text";
+  const what = byNumber ? "nomor jurnal" : "nominal";
   const combined = !canWrite || selectedEntity === "all";
   const wrongPt = !combined && selectedEntity !== doc.entity_id;
   const digits = (v) => String(v || "").replace(/\D/g, "");
   const reasonOk = !needReason || reason.trim().length >= 10;
-  const retypeOk = !needRetype || (digits(retype) !== "" && digits(retype) === digits(plan.confirm_text));
+  const nomor = (v) => String(v || "").replace(/\s+/g, "").toUpperCase();
+  const retypeOk = !needRetype || (byNumber ? (nomor(retype) !== "" && nomor(retype) === nomor(plan.confirm_text))
+    : (digits(retype) !== "" && digits(retype) === digits(plan.confirm_text)));
   let blocked = "";
   if (combined) blocked = "Pilih satu PT untuk menyetujui kartu.";
   else if (wrongPt) blocked = `Pindah ke ${ptName} untuk menyetujui.`;
-  else if (!reasonOk && !retypeOk) blocked = "Tulis alasan (minimal 10 huruf) dan ketik ulang nominal untuk menyetujui.";
+  else if (!reasonOk && !retypeOk) blocked = `Tulis alasan (minimal 10 huruf) dan ketik ulang ${what} untuk menyetujui.`;
   else if (!reasonOk) blocked = "Tulis alasan (minimal 10 huruf) untuk menyetujui.";
-  else if (!retypeOk) blocked = "Ketik ulang nominal persis seperti di kartu untuk menyetujui.";
+  else if (!retypeOk) blocked = `Ketik ulang ${what} persis seperti di kartu untuk menyetujui.`;
   const done = (d) => { setDoc(d); onChanged?.(d); };
   const run = async (fn, okMsg) => {
     setBusy(true);
@@ -355,8 +361,8 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
           )}
           {needRetype && (
             <label className="tanya-card-field">
-              <span>Ketik ulang nominal</span>
-              <input type="text" inputMode="numeric" className="input-field" placeholder={`Ketik ${plan.confirm_text} untuk menyetujui.`}
+              <span>{byNumber ? "Ketik ulang nomor jurnal" : "Ketik ulang nominal"}</span>
+              <input type="text" inputMode={byNumber ? "text" : "numeric"} className="input-field" placeholder={`Ketik ${plan.confirm_text} untuk menyetujui.`}
                 value={retype} disabled={busy} onChange={(e) => setRetype(e.target.value)} data-testid="tanya-card-retype" />
             </label>
           )}

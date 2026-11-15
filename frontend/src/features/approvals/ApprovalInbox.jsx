@@ -153,7 +153,8 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
           <button data-testid={`${base}-open-${o.id}`}
             disabled={!target}
             title={target ? `Buka ${o.queue_label}` : "Antrean ini bukan wilayah peran Anda"}
-            onClick={() => target && onNavigate?.(target.navId, target.view, target.tab)}
+            onClick={() => target && onNavigate?.(target.navId, target.view, target.tab,
+              o.preset ? { preset: o.preset } : undefined)}
             className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${
               target ? "text-[#0058CC] hover:underline" : "text-[#8E8E93] cursor-not-allowed"}`}>
             Buka layarnya <ArrowRight size={12} />
@@ -231,7 +232,8 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                         data-testid={`approval-inbox-backlog-${q.key}`}
                         disabled={!target}
                         title={target ? `Buka ${q.label}` : "Antrean ini bukan wilayah peran Anda"}
-                        onClick={() => target && onNavigate?.(target.navId, target.view, target.tab)}
+                        onClick={() => target && onNavigate?.(target.navId, target.view, target.tab,
+                          q.preset ? { preset: q.preset } : undefined)}
                         className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] ${
                           target
                             ? "border-[#CFDBEC] bg-white text-[#1C1C1E] hover:border-[#0058CC] hover:text-[#0058CC]"

@@ -299,7 +299,7 @@ export default function AppViewRouter(props) {
       {activeView === "domain-registry" && <DomainRegistryView />}
       {activeView === "uom-conversions" && <UomConversionView user={user} products={data.products || []} />}
       {activeView === "customers-crm" && <CrmView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
-      {activeView === "approval-inbox" && <ApprovalInbox currentUser={user} onNavigate={(navId, view, tab) => onNavSelect(navId, view, tab)} onOpenDocument={openDocument} />}
+      {activeView === "approval-inbox" && <ApprovalInbox currentUser={user} onNavigate={(navId, view, tab, opts) => onNavSelect(navId, view, tab, opts)} onOpenDocument={openDocument} />}
       {/* Fase 3 · P8 (D-06) — `my-approvals` = alias ke tab Matriks divisi; rute cadangan = panel yang sama. */}
       {activeView === "my-approvals" && <MyApprovalsView currentUser={user} selectedEntity={selectedEntity} onNavigate={(view) => onNavSelect(APPROVAL_HUB_OF[view] || view, view)} />}
       {activeView === "approval-rules" && <ApprovalRulesSettings currentUser={user} />}

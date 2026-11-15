@@ -632,6 +632,7 @@ ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN",
                      "ai_finance.create": "Siapkan dan setujui tindakan",
                      # AG-T5 — kartu tindakan golongan C (uang keluar) dan orang kedua
                      "ai_finance.pay": "Tindakan uang keluar",
+                     "ai_finance.post": "Tindakan jurnal",
                      "ai_finance.approve": "Menyetujui sebagai orang kedua"})
 # PK-24 (IA-05) — kas kecil: bayar hutang reimburse & terima pengembalian sisa uang muka (modul Kas Kecil).
 ACTION_LABEL.update({"cash_settlement.pay": "Bayar reimburse & terima pengembalian sisa uang muka"})

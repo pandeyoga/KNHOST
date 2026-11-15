@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import HTTPException
 
+from ai_card_context import card_field as _kartu
 from core_utils import new_id, now_iso, safe_doc
 from db import db
 from schemas_finance import JournalEntryCreate
@@ -34,6 +35,7 @@ async def ajukan(payload: JournalEntryCreate, actor: Dict[str, Any], entity_id: 
     body["entity_id"] = cek["entity_id"]
     doc = {
         "id": new_id("jprop"), "entity_id": cek["entity_id"], "payload": body,
+        **_kartu(),   # AG-T5 — usulan jurnal dari kartu tindakan asisten
         "total_debit": cek["total_debit"], "status": "pending",
         "proposed_by_id": actor.get("id", ""), "proposed_by": actor.get("name", ""), "proposed_at": now_iso(),
         "decided_by_id": "", "decided_by": "", "decided_at": "", "reject_reason": "", "journal_id": "",

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 15d3258 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 5767dbb pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -28,7 +28,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1151 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
-| `permissions_config.py` | 992 |
+| `permissions_config.py` | 993 |
 | `entity_scope.py` | 751 |
 | `pagination.py` | 145 |
 | `indexes.py` | 1047 |
@@ -301,7 +301,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `advance_report_service.py` | 111 | KEB-PDPT (Sesi #090) — Laporan Uang Muka Pelanggan. |
 | `ai_actions.py` | 373 | Tanya KN — draf tindakan dari jawaban AI. Tidak ada yang tersimpan/terkirim sebelum pengguna menekan Setujui. |
 | `ai_card_rules.py` | 139 | AG-T5 — daftar larangan kartu tindakan asisten (`docs/blueprint/unit/AG-T5.md`, rancangan `08` §4.3). |
-| `ai_cards.py` | 1436 | AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45). |
+| `ai_cards.py` | 1571 | AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45). |
 | `ai_chat_service.py` | 557 | Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model). |
 | `ai_cost.py` | 37 | Tanya KN F2.5 — biaya per panggilan model + rem anggaran bulanan (`ai.monthly_budget_usd`). |
 | `ai_finance_reports.py` | 752 | AG-T4 — Asisten Keuangan: paket tutup buku bulanan dan ringkasan pagi keuangan. |
@@ -315,7 +315,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_provider.py` | 174 | AG-T1 — satu lapisan antara mesin percakapan Tanya KN dan penyedia model. |
 | `ai_provider_fake.py` | 78 | AG-T1 — pelaksana penyedia model TIRUAN untuk tes (tanpa panggilan ke luar, tanpa kunci). |
 | `ai_schedules.py` | 198 | Tanya KN F4 — laporan terjadwal (in-app) + pemeliharaan harian (retensi sesi chat). |
-| `ai_self_api.py` | 207 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
+| `ai_self_api.py` | 208 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
 | `ai_templates.py` | 158 | Tanya KN F4 (dasar) — template laporan `tpl-v1`: resep dijalankan server TANPA model. |
 | `ai_tools.py` | 538 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
@@ -330,7 +330,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `analytics_time.py` | 218 | Tanya KN F0.1 — periode analitik dalam WIB (Asia/Jakarta) → batas UTC. |
 | `ap_payment_service.py` | 698 | PK-05 — Bayar hutang pemasok (faktur langsung atau kontrabon) lewat SATU pintu: niat bayar (`ap_payment_intent |
 | `app_url.py` | 90 | app_url — SATU sumber kebenaran **URL publik aplikasi** (untuk QR & tautan cetak). |
-| `approval_backlog_service.py` | 880 | services/approval_backlog_service.py — SATU sumber "apa yang menunggu keputusan". |
+| `approval_backlog_service.py` | 898 | services/approval_backlog_service.py — SATU sumber "apa yang menunggu keputusan". |
 | `approval_matrix_service.py` | 520 | PS-20 (D-14) — **Penegakan matriks persetujuan divisi** + antrean "Persetujuan Saya". |
 | `approval_policy_service.py` | 758 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
 | `approval_reminder.py` | 135 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
@@ -446,7 +446,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 203 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4582 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4587 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -498,7 +498,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `internal_request_service.py` | 523 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
 | `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
 | `inventory_service.py` | 241 | Inventory service: reservation expiry projections & document rendering. |
-| `journal_proposal_service.py` | 104 | KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`journal_proposals`). |
+| `journal_proposal_service.py` | 106 | KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`journal_proposals`). |
 | `label_decoder_service.py` | 268 | FASE SL — Decoder LABEL SUPPLIER (GS1-128 · QR JSON · teks berpemisah · regex). |
 | `label_printer_service.py` | 198 | Label printer service: Generate ZPL and ESC/POS commands for barcode labels. |
 | `landed_cost_service.py` | 337 | Landed Cost service (Fase 5.4 — P0-5). |
@@ -731,9 +731,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 137 | 22585 |
+| `__tests__` | 138 | 22718 |
 | `admin` | 36 | 6981 |
-| `approvals` | 9 | 1720 |
+| `approvals` | 9 | 1722 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
 | `crm` | 23 | 4941 |
@@ -768,7 +768,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
 | `settings` | 70 | 13074 |
-| `tanya` | 27 | 2470 |
+| `tanya` | 27 | 2483 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
 

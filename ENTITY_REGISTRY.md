@@ -1377,6 +1377,8 @@ Key Fields:
   status            enum    posted | void (hanya manual yg boleh di-void)
   entity_id         string  FK entities.id
   created_by / created_at / updated_at
+  ai_card_id        string  AG-T5 — id kartu tindakan asisten bila jurnal lahir dari permintaan kartu (jurnal manual,
+                            jurnal pembalik, jurnal kas bayar hutang / kas manual); tidak ada = dari layar / sistem
   -- Penanda pembalik (PK-10; satu aturan untuk pembalik manual, pembatalan dokumen, batal kas/deposit) --
   reversed_by_entry_id      string  (di jurnal ASAL) id pembalik; "pending" selama klaim
   reversed_by_entry_number  string  nomor pembalik
@@ -2060,8 +2062,12 @@ Dokumen hasil ber-`ai_card_id` (id kartu; diisi dari konteks `ai_card_context` h
   bank_statement_lines.holding_allocated[].ai_card_id · ulang jurnal: `audit_logs` `posting_failure_retried` saja.
 ```
 
-**AG-T5 — kartu golongan C (uang keluar) dan orang kedua.** Tindakan `vendor_bill_pay` (`POST /api/vendor-bills/{id}/pay`),
-`contra_bon_pay` (`POST /api/contra-bons/{id}/pay`), `cash_manual` (`POST /api/cash-transactions`); semua `high`. Kode di
+**AG-T5 — kartu golongan C (uang keluar dan jurnal) dan orang kedua.** Tindakan `vendor_bill_pay`
+(`POST /api/vendor-bills/{id}/pay`), `contra_bon_pay` (`POST /api/contra-bons/{id}/pay`), `cash_manual`
+(`POST /api/cash-transactions`) — izin kartu `ai_finance.pay`; `journal_manual` (`POST /api/gl/journal`) dan
+`journal_reverse` (`POST /api/gl/journal/{id}/reverse`, ketik ulang NOMOR jurnal) — izin kartu `ai_finance.post`; semua
+`high`. Antrean Pusat Persetujuan `ai_card_second` (`approval_backlog_service.QUEUES`, preset tab Tindakan › Menunggu orang
+lain). Kode di
 luar REGISTRY yang cocok daftar larangan (`services/ai_card_rules.FORBIDDEN`, L1–L13) dijawab alasan barisnya. Field tambahan:
 ```
   class             + C (uang keluar dan jurnal)
@@ -2073,9 +2079,12 @@ luar REGISTRY yang cocok daftar larangan (`services/ai_card_rules.FORBIDDEN`, L1
   first_by · first_at              {id, name} · ISO — pembuat yang menyetujui tahap pertama
   second_by · second_at · second_reason   {id, name} · ISO · teks — orang kedua (alasan wajib saat menolak)
   executor_id       id pengguna yang sesinya menjalankan pintu (pembuat, atau orang kedua) — dibaca `ai_card_context`
+  retype_kind       amount (ketik ulang digit nominal) | text (ketik ulang nomor dokumen persis: balik jurnal)
 Index:  (entity_id, status) yang sudah ada melayani kotak "Menunggu orang lain" (`box=others`)
 Dokumen hasil ber-`ai_card_id`: cash_transactions.ai_card_id (kas bayar hutang dan kas manual) · ap_payment_intents.ai_card_id ·
-  vendor_bills.payments[].ai_card_id · contra_bons.payments[].ai_card_id.
+  vendor_bills.payments[].ai_card_id · contra_bons.payments[].ai_card_id · journal_entries.ai_card_id (jurnal manual, jurnal
+  pembalik, dan jurnal kas yang lahir di permintaan kartu) · journal_proposals.ai_card_id (usulan bila pintu jurnal
+  menuntut dua orang, KF-T6).
 ```
 
 ### ai_chat_sessions · ai_results — field AG-T2 (Asisten Keuangan)

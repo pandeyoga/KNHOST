@@ -152,6 +152,11 @@ QUEUES: List[tuple] = [
     # keputusannya `gl.py` `/gl/journal-proposals/{id}/approve|reject`, layarnya pita di Buku Besar.
     ("journal_proposal", "Usulan jurnal manual menunggu orang kedua", "general-ledger", "journal_proposals",
      {"status": "pending"}),
+    # AG-T5 — kartu tindakan asisten golongan C (uang keluar dan jurnal) yang disetujui pembuatnya dan menunggu orang
+    # kedua (`kontrol.asisten_uang_keluar.*`). Pintu keputusannya `POST /api/ai/actions/{id}/second`; layar Tanya KN ›
+    # Tindakan › Menunggu orang lain (preset `QUEUE_PRESETS`).
+    ("ai_card_second", "Tindakan asisten menunggu orang kedua", "tanya-kn", "ai_action_proposals",
+     {"status": "awaiting_second"}),
     ("hr_leave", "Pengajuan cuti menunggu ACC", "hr-leave", "hr_leave_requests",
      {"status": "pending"}),
     ("hr_overtime", "Pengajuan lembur menunggu ACC", "hr-overtime", "hr_overtime",
@@ -211,6 +216,16 @@ QUEUES: List[tuple] = [
     ("sales_return_exception", "Pengecualian retur menunggu keputusan", "returns", "sales_returns",
      {"exceptions.status": "pending", "status": {"$nin": ["pending_approval", "rejected", "cancelled"]}}),
 ]
+
+
+#: AG-T5 — preset layar tujuan baris antrean (tab/saringan di layar `view`), dikirim bersama barisnya ke Pusat
+#: Persetujuan. Baris tanpa preset tidak membawa field ini.
+QUEUE_PRESETS: Dict[str, Dict[str, str]] = {"ai_card_second": {"tab": "actions", "box": "others"}}
+
+
+def _preset(key: str) -> Dict[str, Any]:
+    p = QUEUE_PRESETS.get(key)
+    return {"preset": dict(p)} if p else {}
 
 
 def _scope(entity_id: Optional[Any]) -> Dict[str, Any]:
@@ -307,6 +322,9 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
                       "title": ["reason", "period_label"]},
     "journal_proposal": {"since": ["proposed_at"], "number": ["id"],
                          "title": ["payload.description", "proposed_by"]},
+    # AG-T5 — umur tunggu sejak pembuat menyetujui (`first_at`), bukan sejak kartu disiapkan.
+    "ai_card_second": {"since": ["first_at", "created_at"], "number": ["title"],
+                       "title": ["user_name"]},
     "hr_leave": {"since": ["created_at"], "number": ["number"],
                  "title": ["employee_name", "leave_label"]},
     "hr_overtime": {"since": ["created_at"], "number": ["number"],
@@ -407,7 +425,7 @@ async def oldest(entity_id: Optional[Any] = None, limit: int = 8) -> List[Dict[s
         for d in docs:
             since = _pick(d, meta["since"])
             row = {
-                "key": key, "queue_label": label, "view": view,
+                "key": key, "queue_label": label, "view": view, **_preset(key),
                 "id": d.get("id", ""),
                 "number": _pick(d, meta["number"], d.get("id", "")),
                 "title": _pick(d, meta["title"], "—"),
@@ -872,7 +890,7 @@ async def backlog(entity_id: Optional[str] = None,
             count = await db[coll].count_documents({**scope, **query})
         except Exception:  # noqa: BLE001 — koleksi belum ada di instalasi baru
             count = 0
-        rows.append({"key": key, "label": label, "view": view, "count": int(count)})
+        rows.append({"key": key, "label": label, "view": view, "count": int(count), **_preset(key)})
     out = {"total": sum(r["count"] for r in rows),
            "items": [r for r in rows if r["count"] > 0], "all_items": rows}
     if with_oldest:

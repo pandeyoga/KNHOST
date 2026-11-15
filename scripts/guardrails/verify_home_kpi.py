@@ -103,6 +103,7 @@ EXPECT = {
     "makloon_claim": ("makloon_orders", {"steps.claim.status": "pending_approval"}),
     "period_unlock": ("period_unlock_requests", {"status": "pending"}),
     "journal_proposal": ("journal_proposals", {"status": "pending"}),   # KF-T6 — jurnal manual dua orang
+    "ai_card_second": ("ai_action_proposals", {"status": "awaiting_second"}),   # AG-T5 — kartu asisten orang kedua
     "hr_leave": ("hr_leave_requests", {"status": "pending"}),
     "hr_overtime": ("hr_overtime", {"status": "pending"}),
     # ── UTANG ALUR F-6.7 DIBAYAR (2026-08-18) — opini kedua untuk 4 antrean baru.

@@ -207,6 +207,9 @@ async def test_AGT5_U2_setujui_bayar_satu_orang(klien, db, siap):
     assert await db.idempotency_keys.count_documents({"key": k["id"]}) == 1
     SIMPAN["contoh_u2"] = {"kas": kas[0]["number"], "jurnal": je["number"], "lines": je["lines"],
                            "sisa_hutang": vb["grand_total"] - vb["amount_paid"]}
+    print("CONTOH_U2", json.dumps({"tagihan": b1["bill_number"], "saldo_2_1100_sebelum": h0,
+                                   "saldo_2_1100_sesudah": await saldo_akun("2-1100", KSC), **SIMPAN["contoh_u2"]},
+                                  ensure_ascii=False, default=str))
 
 
 # ── U3 — PT mewajibkan dua orang: kartu menunggu, tidak ada uang keluar, notifikasi ke pemegang izin ─────────────────
