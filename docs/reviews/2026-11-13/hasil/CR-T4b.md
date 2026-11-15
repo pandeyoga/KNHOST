@@ -1,8 +1,9 @@
 # CR-T4b — "Hari ini" akrual denda dari Umur Piutang = tanggal buku server, bukan `?today=` klien
 
 - Commit awal: `fc95d36` (ujung `claude/nifty-carson-jjx3c8`, `[CR-T4]`)        - Commit akhir: `20c6096` (kode + uji; laporan dan tracker di commit berikutnya)        - Branch: `claude/sleepy-allen-c6cnpi` (maju-cepat dari `fc95d36`)
-- ID ditangani: **T4-01** (usulan; temuan baru, ditemukan saat CR-T4 dikerjakan — bagian keraguan laporan CR-T4, yang
-  saat unit ini dikerjakan belum ada di cabang mana pun: kode CR-T4 sudah `fc95d36`, laporannya belum di-commit).
+- ID ditangani: **T4-01** (usulan; temuan baru, ditemukan saat CR-T4 dikerjakan — bagian "Ditemukan, di luar lingkup"
+  laporan [CR-T4](CR-T4.md), di-commit `4580bd9` di `claude/nifty-carson-jjx3c8` sesudah cabang ini dibuat dari
+  `fc95d36`; cabang ini bergabung dengan ujung itu tanpa konflik).
   Kelas yang sama dengan butir 2 PK-08 ("hari ini" dari server, `docs/blueprint/unit/PK-08.md`).
 - Unit: lanjutan CR-T4 (pemecahan `00_ATURAN_EKSEKUSI.md` §8, akhiran `b`) atas arahan pemilik sesi 15 Nov. Berkas
   CR-T4 (laporan, baris CR-07 di tracker, baris CR-T4 di `docs/blueprint/STATUS.md`) **tidak disentuh** — unit itu masih
@@ -34,7 +35,8 @@
   piutang 5.000.000 telat 30 hari menjadi nota **Rp 87.966.666,67 / 26.390 hari** berkunci periode `…|2099-01`, dan
   karena kunci periodenya lain, nota itu tidak bertabrakan dengan nota bulan berjalan sehingga hari-harinya ikut
   dihitung sebagai "sudah ditagih" (`_days_already_billed`) oleh akrual berikutnya; atau (b) menekan denda dengan tanggal
-  mundur (`?today=2026-09-15` → 0 nota).
+  mundur (`?today=2026-09-15` → 0 nota). Di PT ber-`payment.penalty_mode` `auto` nota (a) langsung terbit dan berjurnal
+  (Dr 1-1270 / Cr 4-9300, pola jurnal terbit PK-08) tanpa tahap usulan.
 - Perubahan perilaku (sebelum → sesudah):
 
   | | Sebelum | Sesudah |
