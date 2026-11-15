@@ -256,7 +256,8 @@ export const HUB_TABS = {
     { view: "payment-plans",     label: "Rencana & Denda",       roles: ["admin", "manager"] },
     // Pembungkus Uang Muka Pelanggan + Saldo Kredit (CustomerCreditView); id lama = alias + rute cadangan.
     { view: "customer-credit",   label: "Titipan & Saldo Kredit", roles: ["admin", "manager"] },
-    // Persetujuan Kredit (dulu sub-tab CRM): daftar = `customer.view`; tombol memutus = `credit_override.approve`.
+    // CR-T5 — daftar kerja kredit enam antrean (`CreditDeskView`): tampil = `credit_profile.view` (katalog akses,
+    // modul `ar`); tombol memutus = `credit_override.approve` / `credit_profile.approve`.
     { view: "credit-overrides",  label: "Kredit & Plafon",       roles: ["admin", "manager"] },
     // FASE G-9 — sales boleh MELAPOR & memantau (finance_case: view+create), tidak menutup kasus uang.
     { view: "finance-cases",     label: "Kasus",                 roles: ["admin", "manager", "sales"] },

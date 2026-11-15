@@ -241,6 +241,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "customer_balances": [           # CR-T2 — saldo piutang tersimpan (unik pasangan: REQUIRED_UNIQUE_INDEXES)
         [("entity_id", A), ("overdue_as_of", A)],
     ],
+    "collection_followups": [        # CR-T5 — antrean "Janji bayar" per PT (status janji dihitung saat dibaca)
+        [("entity_id", A), ("outcome", A), ("promise_date", A)],
+    ],
     "budget_history": [              # PK-39 — riwayat pagu per pagu (terbaru dulu) · pagu unik: REQUIRED_UNIQUE_INDEXES
         [("budget_id", A), ("at", D)],
     ],

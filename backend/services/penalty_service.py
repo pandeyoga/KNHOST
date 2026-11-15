@@ -740,8 +740,10 @@ async def _resume_payment(p: Dict[str, Any], item: Dict[str, Any], actor: Dict[s
 
 # ── Pembacaan & invarian ──────────────────────────────────────────────
 async def list_penalties(entity_id: str = "", status: str = "", doc_id: str = "",
-                        q: str = "", limit: int = 200) -> List[Dict[str, Any]]:
+                        q: str = "", limit: int = 200, customer_id: str = "") -> List[Dict[str, Any]]:
     flt: Dict[str, Any] = {}
+    if customer_id:   # CR-T5 — kartu pelanggan › tab Tagihan (nota denda satu pelanggan)
+        flt["customer_id"] = customer_id
     # FASE E-0 (L4) — dukung filter entitas siap-pakai dari `entity_scope.scope_value()`.
     if isinstance(entity_id, dict):
         flt["entity_id"] = entity_id

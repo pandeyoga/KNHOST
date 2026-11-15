@@ -17,6 +17,7 @@ import { useSubpageBack } from "./subpageBack";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "../../../components/KNDatePicker";
 import FormModal from "../../../components/FormModal";
+import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 
 export const errText = (e, fb) => {
   const d = e?.response?.data?.detail;
@@ -109,11 +110,15 @@ export const outcomeLabel = (o) => (OUTCOMES.find(([k]) => k === o) || [o, o])[1
 
 export function CustomerFollowupSheet({ customer, orders = [], onClose, onSaved }) {
   const [f, setF] = useState({ note: "", outcome: "contacted", next_action_date: "", order_id: "" });
+  const [janji, setJanji] = useState({ date: "", amount: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
+    const salah = f.outcome === "promised" ? promiseError(janji.date, janji.amount) : "";
+    if (salah) { setErr(salah); return; }
     setBusy(true); setErr("");
-    try { const r = await axios.post(`${API}/customers/${customer.id}/followups`, { customer_id: customer.id, ...f }); onSaved?.(r.data); }
+    const extra = f.outcome === "promised" ? { promise_date: janji.date, promise_amount: Number(janji.amount) } : {};
+    try { const r = await axios.post(`${API}/customers/${customer.id}/followups`, { customer_id: customer.id, ...f, ...extra }); onSaved?.(r.data); }
     catch (e) { setErr(errText(e, "Tindak lanjut gagal disimpan.")); } finally { setBusy(false); }
   };
   // Fase 4 · R1 — FormModal baku (dulu lembar overlay buatan sendiri). Isian ≥ desktop (Customer360 "Catat Tindak Lanjut
@@ -133,6 +138,10 @@ export function CustomerFollowupSheet({ customer, orders = [], onClose, onSaved 
             ))}
           </div>
         </div>
+        {f.outcome === "promised" && (
+          <PromiseFields touch date={janji.date} amount={janji.amount} testIdPrefix="m-followup-promise"
+            onDate={(v) => setJanji((j) => ({ ...j, date: v || "" }))} onAmount={(v) => setJanji((j) => ({ ...j, amount: v }))} />
+        )}
         {orders.length > 0 && (
           <Field label="Untuk pesanan (opsional)">
             <KNSelect className="field" value={f.order_id} onValueChange={(v) => setF({ ...f, order_id: v })} data-testid="m-followup-order" aria-label="Pesanan"

@@ -110,3 +110,7 @@ class CollectionFollowupCreate(BaseModel):
     note: str
     outcome: str = "contacted"            # contacted|promised|paid|no_response|escalated
     next_action_date: str = ""
+    # CR-T5 — janji bayar: wajib bila `outcome == "promised"` (diperiksa `credit_desk_service.promise_fields`; tipe
+    # longgar disengaja supaya isian salah dijawab 400 berkalimat, bukan 422 skema).
+    promise_date: Optional[Any] = ""       # YYYY-MM-DD, tidak boleh lampau
+    promise_amount: Optional[Any] = None   # > 0

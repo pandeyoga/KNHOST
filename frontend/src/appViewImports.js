@@ -199,6 +199,8 @@ export const DivisionsView = lazy(() => import("./features/designer/DivisionsVie
 // dua pembungkus ber-chip (Titipan & Saldo Kredit, Kas Kecil).
 export const CollectionWorklist = lazy(() => import("./features/crm/CollectionWorklist"));
 export const CreditOverridesPanel = lazy(() => import("./features/crm/CreditOverridesPanel"));
+// CR-T5 — Piutang › Kredit & Plafon: daftar kerja kredit enam antrean (isi tab `credit-overrides`).
+export const CreditDeskView = lazy(() => import("./features/finance/CreditDeskView"));
 // CR-T1 — antrean pengajuan perubahan kredit di bawah panel izin lewat batas kredit (tab Kredit & Plafon).
 export const CreditProfileRequestsPanel = lazy(() => import("./features/crm/CreditProfileRequestsPanel"));
 export const SalesForceDashboard = lazy(() => import("./features/crm/SalesForceDashboard"));

@@ -3679,6 +3679,12 @@ campaigns              Prefix: camp_  — product focus / campaign + target per 
 collection_followups   Prefix: cfu_   — jejak follow-up penagihan jatuh tempo [KN_17 S39]
                        AG-T3 — `ai_card_id` bila dicatat lewat kartu tindakan asisten (tindak lanjut, janji bayar
                        `outcome=promised` + `next_action_date` = tanggal janji, tanda sudah diingatkan)
+                       CR-T5 — janji bayar: `promise_date` (YYYY-MM-DD, tidak lampau) + `promise_amount` (> 0) WAJIB bila
+                       `outcome=promised` (POST /api/customers/{id}/followups → 400 berkalimat). Status janji TIDAK disimpan,
+                       dihitung saat dibaca (`credit_desk_service.promise_status`): ditepati = Σ kwitansi tidak-batal
+                       pelanggan itu di PT itu bertanggal catatan s.d. `promise_date` ≥ nominal; menunggu (tanggal belum
+                       lewat) / ingkar. Indeks (`entity_id`, `outcome`, `promise_date`). Catatan lama tanpa `promise_date`
+                       tidak masuk antrean "Janji bayar".
 credit_overrides       Prefix: cro_   — bypass blokir kredit via approval Finance + bukti (case-by-case) [KN_17 S37]
 ⚠️ KPI salesperson = DERIVED (dari sales_orders/invoices/payments/customers), BUKAN koleksi.
 ⚠️ JANGAN buat: discounts, faktur, returns_generic, salespersons (pakai users role=sales), leads/crm_* (fase lanjut)
@@ -4034,7 +4040,7 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. PK-19: `status` `pending` → `done` · `failed` · `reversed` (niat dulu; ulang dengan pilihan sama meneruskan), `plan[]` (baris rencana efek: `{order_id, amount, deposit_taken, allocated, ar}` untuk alih deposit; `{order_id, amount}` untuk hapus sisa), `gl_status`/`gl_error`/`journal_entry_id` (jurnal keputusan, PK-18; jenis registri `payment_variance`), `reversal_gl_status`/`reversal_gl_error` + `reversal_steps.deposit_restored` (pembatalan), `error` (galat efek terakhir). Jurnal alih deposit per baris `source_id = <id>:<id pesanan>`. |
 | credit_overrides | cro_ | services/credit_override_service.py, services/credit_gate.py, routers/crm.py, routers/so_approvals.py | Izin kredit (pending→approved). CR-T3: `scope` pesanan/pelanggan, `amount` > 0, `remaining_amount`, `valid_until`, `reason_code`/`reason_label`, `used_by[]`. |
 | credit_gate_rejections | cgr_ | services/credit_gate.py, routers/crm.py | CR-T3 — pesanan yang ditolak gerbang kredit saat dibuat (potret eksposur + isi permintaan). Scoped `entity_id`. |
-| collection_followups | cf_ | routers/crm.py | Follow-up penagihan AR. |
+| collection_followups | cf_ | routers/crm.py | Follow-up penagihan AR. CR-T5: + `promise_date`, `promise_amount` (janji bayar; status dihitung saat dibaca, `services/credit_desk_service.py`). |
 | sales_targets | st_ | routers/hr_kpi, home | Target penjualan per sales/periode. |
 | sales_incentives | si_ | routers/incentive_rates, home | Perhitungan insentif sales. |
 | login_attempts | la_ | routers/auth.py | Log percobaan login (rate-limit/security). |

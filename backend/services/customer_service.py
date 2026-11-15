@@ -302,7 +302,8 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
         "order_history": order_history,
         "document_history": [safe_doc(d) for d in docs],
         "special_price_history": [safe_doc(s) for s in special_prices],
-        "collection_followups": [safe_doc(f) for f in followups],
+        # CR-T5 — janji bayar berlencana status (dihitung saat dibaca: menunggu · ditepati · ingkar)
+        "collection_followups": await _janji_berstatus([safe_doc(f) for f in followups]),
         "credit_overrides": [safe_doc(o) for o in overrides],
         "sample_history": [safe_doc(s) for s in samples],
         "stats": {
@@ -312,6 +313,11 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
             "samples_cut": sum(1 for s in samples if s.get("status") == "done"),
         },
     }
+
+
+async def _janji_berstatus(followups: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    from services.credit_desk_service import with_promise_status   # CR-T5
+    return await with_promise_status(followups)
 
 
 def own_customer_clause(user: Dict[str, Any]) -> Dict[str, Any]:

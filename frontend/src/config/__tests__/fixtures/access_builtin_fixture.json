@@ -2508,6 +2508,16 @@
   }
  },
  "view_actions": {
+  "credit-overrides": [
+   [
+    "credit_profile",
+    "view"
+   ],
+   [
+    "credit_override",
+    "view"
+   ]
+  ],
   "cs-kpi": [
    [
     "hr",
@@ -3413,8 +3423,7 @@
   ],
   "credit-overrides": [
    "credit_override",
-   "customer",
-   "sales_force"
+   "credit_profile"
   ],
   "cs-bi-hrd": [
    "audit",

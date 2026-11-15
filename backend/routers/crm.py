@@ -342,6 +342,8 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_collect_customer(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
+    from services.credit_desk_service import promise_fields   # CR-T5 — janji bayar bertanggal & bernominal
+    janji = promise_fields(payload.outcome, payload.promise_date, payload.promise_amount)
     doc = {
         "id": new_id("cfu"),
         "customer_id": customer_id,
@@ -350,6 +352,7 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
         "note": payload.note,
         "outcome": payload.outcome,
         "next_action_date": payload.next_action_date,
+        **janji,
         "entity_id": customer.get("entity_id", DEFAULT_ENTITY_ID),
         "created_by": actor["name"],
         "created_by_id": actor["id"],

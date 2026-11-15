@@ -151,6 +151,21 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   Kewajiban** (hutang BPJS & PPh 21 per masa, Catat Setoran → kas keluar + jurnal; koleksi `hr_statutory_remittances`).
   Lima izin `payroll.create/approve/post/void/pay` (Admin, Manajer; peran yang memegang `hr.manage_payroll` diberi sekali
   lewat migrasi `pk22:izin-penggajian`). Tarif PPh 21 tetap dari PK-46 (H4).
+- 2026-11-15 CR-T5 (CR-08, K-31 — daftar kerja "Kredit & Plafon", janji bayar, rekening koran pelanggan): tab
+  Keuangan › Piutang › **Kredit & Plafon** (`CreditDeskView.jsx`, syarat tampil `credit_profile.view`, id menu pindah ke
+  modul `ar`) = enam antrean berjumlah (`services/credit_desk_service.py`, `GET /api/credit-desk?queue=` +
+  `/summary`): menunggu keputusan (izin kredit + pengajuan profil, tertua dulu, Setujui/Tolak menurut izin), ditahan
+  (`credit_hold` + penolakan gerbang CR-T3 bila ada), jatuh tempo (baris jadwal ≤ hari ini + 3 per pelanggan; Salin
+  pengingat, Catat janji bayar), janji bayar (status dihitung saat dibaca: menunggu · ditepati · ingkar), kaji ulang
+  (plafon khusus / bebas denda berakhir ≤ 14 hari), denda draf (+ tanda jadwal tagihan void, usul CR-T4); cakupan PT +
+  cakupan pelanggan peran; "Semua PT" = gabungan hanya-baca. Janji bayar: `collection_followups.promise_date` +
+  `promise_amount` wajib untuk "Dijanjikan bayar". **Rekening koran** (`services/customer_statement_service.py`,
+  `GET /api/customers/{id}/statement` + `.pdf` berkop PT) dari baris jurnal akun piutang yang sumbernya milik pelanggan
+  (`customer_of_journal`), saldo = buku besar per tanggal; bagian denda (akun piutang denda) terpisah. Naskah pengingat
+  `GET /api/customers/{id}/reminder-text` (templat unit + kode bayar/rekening PM-T2 bila ada). Kartu pelanggan: kotak
+  **Eksposur** (K-31; `GET /api/customers/{id}/exposure`, baris tak dihitung = "tidak dihitung"; kunci `ar.eksposur_*`
+  dibaca bila sudah terdaftar CR-T3), tab Pesanan · Dokumen · Harga Khusus · Sample · Penagihan (janji berlencana) ·
+  Kredit (+ bagian Izin kredit) · Tagihan (jadwal + nota denda) · Rekening Koran. `GET /api/penalties` + `customer_id`.
 - 2026-11-15 CR-T4 (CR-07, K-30 — denda berlapis PT → pelanggan → rencana, dari jadwal tagihan): usulan denda lahir
   untuk **semua** tagihan telat — job harian & tombol "Buat Nota Denda" umur piutang memindai semua jadwal hidup
   (`origin` `term` jadwal tagihan CR-T2 maupun rencana cicilan), jalur lama `accrue_order` (jatuh tempo = tanggal pesanan

@@ -267,13 +267,14 @@ async def customer_penalty_policy(customer_id: str, request: Request,
 @router.get("/penalties")
 async def list_penalties(request: Request, entity_id: str = Query(""), status: str = Query(""),
                         doc_id: str = Query(""), q: str = Query(""),
-                        limit: int = Query(200, ge=1, le=500)) -> Dict[str, Any]:
-    """FASE E-0 (L4) — dulu tanpa cakupan entitas: nota denda KSC terlihat oleh sales Kanda."""
+                        limit: int = Query(200, ge=1, le=500), customer_id: str = Query("")) -> Dict[str, Any]:
+    """FASE E-0 (L4) — dulu tanpa cakupan entitas: nota denda KSC terlihat oleh sales Kanda. CR-T5 — `customer_id`
+    menyaring nota satu pelanggan (kartu pelanggan › Tagihan)."""
     await require_permission(request, "penalty", "view")
     ctx = await entity_ctx(request)
     scope = scope_value(ctx, entity_id or None)
     rows = await penalties.list_penalties(entity_id=scope, status=status,
-                                          doc_id=doc_id, q=q, limit=limit)
+                                          doc_id=doc_id, q=q, limit=limit, customer_id=customer_id)
     return {"count": len(rows), "items": rows, "entity_id": ctx.active_entity_id,
             "stats": await penalties.stats(scope)}
 

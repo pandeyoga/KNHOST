@@ -3,6 +3,7 @@ import { AlertTriangle, BellRing, CheckCircle2, PhoneCall, Trophy, X } from "luc
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
+import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
 const thisMonth = () => new Date().toISOString().slice(0, 7);
@@ -113,12 +114,16 @@ function Collection({ selectedEntity }) {
 function FollowupSheet({ row, onClose, onDone }) {
   const [note, setNote] = useState("");
   const [outcome, setOutcome] = useState("contacted");
+  const [janji, setJanji] = useState({ date: "", amount: row.outstanding ? String(row.outstanding) : "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const go = async () => {
+    const salah = outcome === "promised" ? promiseError(janji.date, janji.amount) : "";
+    if (salah) { setErr(salah); return; }
     setBusy(true); setErr("");
+    const extra = outcome === "promised" ? { promise_date: janji.date, promise_amount: Number(janji.amount) } : {};
     try {
-      await axios.post(`${API}/customers/${row.customer_id}/followups`, { customer_id: row.customer_id, order_id: row.order_id, note, outcome });
+      await axios.post(`${API}/customers/${row.customer_id}/followups`, { customer_id: row.customer_id, order_id: row.order_id, note, outcome, ...extra });
       onDone(`Follow-up untuk ${row.customer_name} dicatat.`);
     } catch (e) { setErr(errOf(e, "Gagal menyimpan.")); setBusy(false); }
   };
@@ -133,6 +138,10 @@ function FollowupSheet({ row, onClose, onDone }) {
         <div className="m-sheet-scroll space-y-2 px-4">
           <p className="text-[11px] m-muted">{row.order_number} · {formatCurrency(row.outstanding)}{row.overdue ? ` · telat ${row.days_late} hari` : ""}</p>
           <KNSelect value={outcome} onValueChange={setOutcome} options={OUTCOMES} data-testid="m-collection-fu-outcome" />
+          {outcome === "promised" && (
+            <PromiseFields touch date={janji.date} amount={janji.amount} testIdPrefix="m-collection-fu-promise"
+              onDate={(v) => setJanji((j) => ({ ...j, date: v || "" }))} onAmount={(v) => setJanji((j) => ({ ...j, amount: v }))} />
+          )}
           <textarea className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" rows={3} placeholder="Hasil kontak penagihan…" value={note} onChange={(e) => setNote(e.target.value)} data-testid="m-collection-fu-note" />
           {err && <p className="text-[11px] text-[#C62828]" data-testid="m-collection-fu-error">{err}</p>}
           <button className="primary-button w-full justify-center py-3" disabled={busy || !note.trim()} onClick={go} data-testid="m-collection-fu-submit">{busy ? "Menyimpan…" : "Simpan"}</button>

@@ -391,6 +391,10 @@ async def _prep_promise(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
     a = _clean_args(args)
     tgl = _date(a.get("promise_date"), "Tanggal janji bayar", required=True)
     amount = _money(a.get("amount"))
+    # CR-T5 — janji bayar wajib bertanggal (tidak lampau) & bernominal: aturan & kalimat yang sama dengan
+    # POST /api/customers/{id}/followups (`credit_desk_service.promise_fields`), diperiksa sebelum kartu disiapkan.
+    from services.credit_desk_service import promise_fields
+    janji = promise_fields("promised", tgl, amount)
     cid, name, rows = await _followup_common(api, a)
     note = _text(a.get("note")) or (f"Janji bayar {rupiah(amount)} pada {tgl}" if amount > 0 else f"Janji bayar pada {tgl}")
     rows += [_row("Hasil", "—", "Janji bayar"), _row("Tanggal janji bayar", "—", tgl, "date")]
@@ -398,7 +402,7 @@ async def _prep_promise(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
         rows.append(_row("Nominal dijanjikan", None, amount, "money"))
     rows.append(_row("Catatan", "—", note))
     return {"args": {"customer_id": cid, "order_id": _text(a.get("order_id"), 80), "note": note, "outcome": "promised",
-                     "next_action_date": tgl},
+                     "next_action_date": tgl, **janji},
             "plan": {"summary": f"Catat janji bayar {name} pada {tgl}.", "rows": rows, "amount": 0, "confirm_text": "",
                      "meta": {"customer_name": name}},
             "fingerprint_source": []}
@@ -417,8 +421,9 @@ async def _prep_reminder(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _build_followup(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
-    return ({"customer_id": args["customer_id"]},
-            {k: args.get(k, "") for k in ("customer_id", "order_id", "note", "outcome", "next_action_date")})
+    body = {k: args.get(k, "") for k in ("customer_id", "order_id", "note", "outcome", "next_action_date")}
+    body.update({k: args[k] for k in ("promise_date", "promise_amount") if k in args})   # CR-T5 — janji bayar
+    return ({"customer_id": args["customer_id"]}, body)
 
 
 def _build_reminder(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:

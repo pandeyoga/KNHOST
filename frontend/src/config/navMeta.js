@@ -225,7 +225,7 @@ export const PAGE_META = {
   // MN-T1 — view baru (tab hub yang merender layar lama tanpa perubahan) + Kas Kecil (dulu id hub, kini pembungkus).
   "collection-worklist":  { kicker: "Keuangan \u00b7 Piutang", title: "Penagihan & Penerimaan \u00b7 Daftar Kerja Penagihan" },
   "customer-credit":      { kicker: "Keuangan \u00b7 Piutang", title: "Titipan & Saldo Kredit Pelanggan" },
-  "credit-overrides":     { kicker: "Keuangan \u00b7 Piutang", title: "Kredit & Plafon \u00b7 Persetujuan Lewat Batas Kredit" },
+  "credit-overrides":     { kicker: "Keuangan \u00b7 Piutang", title: "Kredit & Plafon \u00b7 Daftar Kerja Kredit" },   // CR-T5
   "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Kinerja Sales \u00b7 KPI, Komisi & Papan Peringkat" },
   "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema Insentif (Arsip) \u00b7 Target & Skema per Sales" },
   "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },

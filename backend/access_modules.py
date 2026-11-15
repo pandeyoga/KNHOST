@@ -837,6 +837,20 @@ VIEW_ACTION_REQUIREMENTS: Dict[str, List[Tuple[str, str]]] = {
     "sample-admin-desk": [("sample_order", "view")],
 }
 
+# CR-T5 — Keuangan › Piutang › tab "Kredit & Plafon" (`credit-overrides`) kini daftar kerja kredit enam antrean
+# (GET /api/credit-desk = `credit_profile.view`). Id menu pindah dari modul Pelanggan (MN-T1: `customer.view`) ke modul
+# piutang `ar` (pemilik `credit_profile`); syarat tampil tab = `credit_profile.view` (sumber izin + aksi). Hub `ar-aging`
+# dan grup `keuangan` sudah di `nav` modul `ar`. CR-T3 (digabung) — pemegang `credit_override.view` (modul Pengawasan Tim
+# Sales & Kredit) tetap membuka tab ini untuk daftar izin kredit (`GET /api/credit-overrides`), tanpa antrean.
+for _m in MODULE_CATALOG:
+    if _m["id"] == "customer":
+        _m["nav"] = [v for v in _m["nav"] if v != "credit-overrides"]
+    elif _m["id"] == "ar" and "credit-overrides" not in _m["nav"]:
+        _m["nav"].append("credit-overrides")
+del _m
+VIEW_RESOURCE_OVERRIDES["credit-overrides"] = ["credit_profile", "credit_override"]
+VIEW_ACTION_REQUIREMENTS["credit-overrides"] = [("credit_profile", "view"), ("credit_override", "view")]
+
 
 # PY-T4 (PY-11, K-41) — modul "SDM & Penggajian" memuat dua sumber daya (`hr`, `payroll`); Finance bawaan kini memegang
 # `payroll.pay` saja. Tanpa syarat ini SELURUH menu modul SDM dianggap "dibuka" izin bayar gaji (`nav_allowed_for_perms`

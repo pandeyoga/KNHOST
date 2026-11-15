@@ -122,15 +122,21 @@ describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
     return { kredit: hubTabsForRole("ar-aging", role).some((t) => t.view === "credit-overrides"),
              skema: hubTabsForRole("hr-kpi-hub", role).some((t) => t.view === "incentive-schemes") };
   };
-  test("U7 peran kustom tanpa peran dasar + credit_override.approve → tab Kredit & Plafon, tanpa Skema", () => {
+  // CR-T5 — tab Kredit & Plafon kini daftar kerja kredit: syarat tampil `credit_profile.view` (dulu `customer.view`,
+  // MN-T1); `customer.view` saja tidak lagi membukanya.
+  test("U7 peran kustom tanpa peran dasar + credit_profile.view + credit_override.approve → tab Kredit & Plafon, tanpa Skema", () => {
     registerDynamicRoles([{ id: "cr_tagih", custom: true, base_role: "", label: "Staf Penagihan Uji", nav: { add: NAV, remove: [] } }]);
-    const perms = { customer: ["view"], credit_override: ["approve"] };
+    const perms = { customer: ["view"], credit_profile: ["view"], credit_override: ["approve"] };
     expect(crm({ role: "cr_tagih", permissions: perms })).toEqual({ kredit: false, skema: false });
     expect(tabHub("cr_tagih", perms)).toEqual({ kredit: true, skema: false });
+    expect(tabHub("cr_tagih", { customer: ["view"], credit_override: ["approve"] })).toEqual({ kredit: false, skema: false });
   });
-  test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → Skema tidak ada; Kredit & Plafon hanya baca", () => {
+  test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → Skema & Kredit & Plafon tidak ada", () => {
     registerDynamicRoles([{ id: "cr_mgr", custom: true, base_role: "manager", label: "Manajer Kosong", nav: { add: NAV, remove: [] } }]);
-    expect(tabHub("cr_mgr", { customer: ["view"] })).toEqual({ kredit: true, skema: false });
+    expect(tabHub("cr_mgr", { customer: ["view"] })).toEqual({ kredit: false, skema: false });
+    expect(tabHub("cr_mgr", { customer: ["view"], credit_profile: ["view"] })).toEqual({ kredit: true, skema: false });
+    // CR-T3 (digabung) — pembaca izin kredit saja tetap membuka tabnya (daftar izin kredit, tanpa antrean).
+    expect(tabHub("cr_mgr", { credit_override: ["view"] })).toEqual({ kredit: true, skema: false });
   });
   test("Manajer bawaan (izin bawaan) tetap melihat kedua tab di tempat barunya", () => {
     expect(tabHub("manager", BUILTIN.permissions.manager)).toEqual({ kredit: true, skema: true });

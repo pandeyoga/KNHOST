@@ -12,6 +12,7 @@ import ARReceiptModal from "./ARReceiptModal";
 import ARReceiptsHistory from "./ARReceiptsHistory";
 import FocusNotice from "../../components/FocusNotice";
 import useFocusDoc from "../../hooks/useFocusDoc";
+import { PromiseFields, promiseError } from "./promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 
 /** Collection worklist + reminder (KN_17 §7 / owner 4b). */
 export default function CollectionWorklist({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
@@ -158,16 +159,21 @@ const FOLLOWUP_OUTCOMES = [{ value: "contacted", label: "Dihubungi" }, { value: 
 export function WorklistFollowup({ row, onClose, onDone }) {
   const [note, setNote] = useState("");
   const [outcome, setOutcome] = useState("contacted");
+  const [promiseDate, setPromiseDate] = useState("");
+  const [promiseAmount, setPromiseAmount] = useState(row.outstanding ? String(row.outstanding) : "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   async function save() {
     if (busy) return;
     if (!note.trim()) { setErr("Catatan wajib diisi."); return; }
+    const janji = outcome === "promised" ? promiseError(promiseDate, promiseAmount) : "";
+    if (janji) { setErr(janji); return; }
     setBusy(true);
     setErr("");
     try {
       await axios.post(`${API}/customers/${row.customer_id}/followups`, {
-        customer_id: row.customer_id, order_id: row.order_id, note, outcome });
+        customer_id: row.customer_id, order_id: row.order_id, note, outcome,
+        ...(outcome === "promised" ? { promise_date: promiseDate, promise_amount: Number(promiseAmount) } : {}) });
       onDone?.(`Tindak lanjut untuk ${row.customer_name} dicatat.`);
     } catch (e) {
       setErr(apiErrorText(e, "Gagal menyimpan tindak lanjut."));
@@ -190,6 +196,10 @@ export function WorklistFollowup({ row, onClose, onDone }) {
           <KNSelect value={outcome} onValueChange={setOutcome} className="field" data-testid="worklist-followup-outcome"
             options={FOLLOWUP_OUTCOMES} />
         </div>
+        {outcome === "promised" && (
+          <PromiseFields date={promiseDate} amount={promiseAmount} onDate={setPromiseDate} onAmount={setPromiseAmount}
+            testIdPrefix="worklist-followup-promise" />
+        )}
       </div>
     </FormModal>
   );

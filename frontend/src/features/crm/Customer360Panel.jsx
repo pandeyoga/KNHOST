@@ -2,10 +2,10 @@ import { AskKnButton } from "../../components/AskKnButton";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, CreditCard, X } from "lucide-react";
+import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
-import { CreditStatusPill, SegmentBadge, OutcomePill, KpiTile, fmtDate, money, paymentMethodLabel, payStatusLabel, lotPolicyLabel } from "./crmUtils";
+import { CreditStatusPill, SegmentBadge, OutcomePill, fmtDate, money, paymentMethodLabel, payStatusLabel, lotPolicyLabel } from "./crmUtils";
 import { docStatusLabel } from "../../utils/docStatus";
 import { apiErrorText } from "../../utils/apiError";
 import CustomerFormModal from "./CustomerFormModal";
@@ -16,7 +16,11 @@ import { can } from "../../config/roles";
 import ScopedRulesSection from "../settings/config/ScopedRulesSection";   // KF-T5
 import CustomerCreditTab from "./CustomerCreditTab";   // CR-T1
 import CreditOverrideModal from "./CreditOverrideModal";   // CR-T3 — pop-up izin kredit baku
-import { SCOPE_LABEL } from "./creditOverrideUi";
+// CR-T5 — kotak Eksposur, tab Tagihan & Rekening Koran, bagian Izin kredit, janji bayar
+import CustomerExposureBox from "./CustomerExposureBox";
+import CustomerStatementTab from "./CustomerStatementTab";
+import CustomerBillingTab, { CustomerOverrideSection } from "./CustomerBillingTab";
+import { PromiseFields, PromiseStatusPill, promiseError, promiseText } from "./promiseUi";
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -24,8 +28,7 @@ const HIST_TABS = [
   { key: "prices", label: "Harga Khusus" },
   { key: "samples", label: "Sample" },
   { key: "followups", label: "Penagihan" },
-  { key: "overrides", label: "Izin Kredit" },   // CR-T3 — glosarium "izin kredit"
-];
+];   // CR-T5 — tab "Izin Kredit" (CR-T3) pindah ke tab Kredit (bagian "Izin kredit"); + Tagihan, Rekening Koran
 
 /** Detail pelanggan 360 — profil + kredit + riwayat + aksi. */
 export default function Customer360Panel({ customerId, currentUser, salesUsers, selectedEntity, onBack, onChanged, onError }) {
@@ -39,6 +42,9 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canCredit = can(currentUser?.permissions, "credit_profile", "view");   // CR-T1 — tab Kredit
   const canAskCredit = can(currentUser?.permissions, "credit_override", "create");   // CR-T3 — = POST …/credit-override
+  // CR-T5 — tab Tagihan (jadwal tagihan / nota denda) dan Rekening Koran (= izin endpoint masing-masing)
+  const canBilling = can(currentUser?.permissions, "payment_plan", "view") || can(currentUser?.permissions, "penalty", "view");
+  const canStatement = can(currentUser?.permissions, "credit_profile", "view") || can(currentUser?.permissions, "ar_receipt", "view");
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line
 
@@ -57,9 +63,6 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   if (!data) return null;
 
   const credit = data.credit || {};
-  const limit = Number(credit.credit_limit || 0);   // CR-T1 — plafon yang BERLAKU (profil kredit), bukan data pelanggan
-  const limitSource = credit.limit_source === "khusus" || credit.limit_source === "tanpa_batas" ? "khusus"
-    : credit.limit_source === "data_lama" ? "data lama" : "ikut PT";
 
   return (
     <div data-testid="customer-360-panel">
@@ -84,19 +87,12 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[320px_1fr]">
+      {/* CR-T5 — dua kolom mulai 1280 px; di 1024 px ditumpuk supaya tabel Tagihan/Rekening Koran memakai lebar penuh. */}
+      <div className="grid gap-3 xl:grid-cols-[320px_1fr]">
         {/* Left: credit + profile */}
         <div className="space-y-3">
-          {/* Credit card */}
-          <div className="section-card">
-            <div className="section-head"><div className="flex items-center gap-2"><CreditCard size={14} className="text-[#0058CC]" /><h3 className="text-[12.5px] font-bold">Kontrol Kredit</h3></div></div>
-            <div className="section-body grid grid-cols-2 gap-2">
-              <KpiTile label="Plafon Kredit" value={limit > 0 ? formatCurrency(limit) : "Tanpa batas"} sub={limitSource} testId="customer-360-limit" />
-              <KpiTile label="Belum Lunas" value={formatCurrency(credit.ar_outstanding)} tone="text-[#0058CC]" testId="customer-360-ar"
-                sub={`Piutang tercatat ${formatCurrency(credit.ar_ledger || 0)} · pesanan belum dikirim ${formatCurrency(credit.exposure || 0)}`} />
-              <KpiTile label="Jatuh Tempo (Lewat Tempo)" value={formatCurrency(credit.overdue_amount)} tone={Number(credit.overdue_amount) > 0 ? "text-[#C0392B]" : ""} sub={credit.max_overdue_days ? `${credit.max_overdue_days} hari` : ""} testId="customer-360-overdue" />
-              <KpiTile label="Sisa Kredit" value={credit.available_credit != null ? formatCurrency(credit.available_credit) : "∞"} sub={`${credit.open_orders || 0} pesanan terbuka`} />
-            </div>
+          {/* CR-T5 (K-31) — kotak Eksposur (nilai yang dipakai mesin = gerbang kredit) menggantikan empat ubin "Kontrol Kredit". */}
+          <CustomerExposureBox customerId={data.id} selectedEntity={selectedEntity}>
             {/* CR-T3 — izin kredit juga melepas tahanan karena telat (bukan hanya lewat plafon): tombol untuk pemegang
                 `credit_override.create`; tanpa izin itu ditulis siapa yang mengajukan. */}
             {canAskCredit ? (
@@ -108,7 +104,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
             ) : (
               <p className="px-3 pb-3 text-fs-12 text-kn-text-2" data-testid="customer-360-override-none">Izin kredit diajukan pemegang akses mengajukan izin kredit.</p>
             )}
-          </div>
+          </CustomerExposureBox>
 
           {/* KF-T5 — aturan Pusat Pengaturan yang bisa dibedakan per pelanggan (denda, masa tenggang, selisih bayar). */}
           <ScopedRulesSection scopeType="customer" scopeId={data.id} scopeLabel={data.name} entityId={data.entity_id || ""} />
@@ -198,6 +194,16 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
                   Kredit
                 </button>
               )}
+              {canBilling && (
+                <button data-testid="customer-360-tab-billing" className={`tab-button ${tab === "billing" ? "active" : ""}`} onClick={() => setTab("billing")}>
+                  Tagihan
+                </button>
+              )}
+              {canStatement && (
+                <button data-testid="customer-360-tab-statement" className={`tab-button ${tab === "statement" ? "active" : ""}`} onClick={() => setTab("statement")}>
+                  Rekening Koran
+                </button>
+              )}
               {canAudit && (
                 <button data-testid="customer-360-tab-changes" className={`tab-button ${tab === "changes" ? "active" : ""}`} onClick={() => setTab("changes")}>
                   Riwayat Perubahan
@@ -205,7 +211,12 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               )}
             </div>
             {tab === "credit" && canCredit
-              ? <CustomerCreditTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} onChanged={load} />
+              ? <><CustomerCreditTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} onChanged={load} />
+                <CustomerOverrideSection rows={data.credit_overrides || []} /></>
+              : tab === "billing" && canBilling
+                ? <CustomerBillingTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} />
+              : tab === "statement" && canStatement
+                ? <CustomerStatementTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} />
               : tab === "changes" && canAudit
                 ? <AuditHistoryPanel entityType="customer" entityId={customerId} testIdPrefix="customer-360-changes" />
                 : <HistoryTable data={data} tab={tab} />}
@@ -237,7 +248,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
 
 function listFor(data, tab) {
   return ({ orders: data.order_history, documents: data.document_history, prices: data.special_price_history,
-    samples: data.sample_history, followups: data.collection_followups, overrides: data.credit_overrides }[tab]) || [];
+    samples: data.sample_history, followups: data.collection_followups }[tab]) || [];
 }
 
 function HistoryTable({ data, tab }) {
@@ -272,21 +283,13 @@ function HistoryTable({ data, tab }) {
       ))}
       {tab === "followups" && rows.map((fu, i) => (
         <div key={i} className="flex items-start justify-between py-2 text-[11.5px] gap-2">
-          <div className="min-w-0"><p className="truncate">{fu.note}</p><p className="text-[10px] text-[#6B6B73]">{fu.created_by} · {fmtDate(fu.created_at)}</p></div>
-          <OutcomePill outcome={fu.outcome} />
-        </div>
-      ))}
-      {tab === "overrides" && rows.map((ov) => (
-        <div key={ov.id} className="flex items-start justify-between py-2 text-[11.5px] gap-2" data-testid={`customer-360-izin-${ov.id}`}>
-          <div className="min-w-0">
-            <p className="truncate">{ov.reason_label || ov.reason}{ov.reason_label && ov.reason && ov.reason !== ov.reason_label ? ` — ${ov.reason}` : ""}</p>
-            {/* CR-T3 — lingkup, sisa, masa berlaku, dan jejak pemakaian izin */}
-            <p className="text-fs-12 text-kn-text-2">{formatCurrency(ov.amount)} · {SCOPE_LABEL[ov.scope === "pesanan" ? "pesanan" : "pelanggan"]}{ov.order_number ? ` ${ov.order_number}` : ""} · sisa {formatCurrency(ov.remaining_amount ?? (ov.consumed ? 0 : ov.amount))}{ov.valid_until ? ` · berlaku sampai ${fmtDate(ov.valid_until)}` : ""} · {ov.requested_by} · {fmtDate(ov.created_at)}</p>
-            {(ov.used_by || []).map((u) => (
-              <p key={u.order_id} className="text-fs-12 text-kn-text-2">Dipakai pesanan {u.order_number || u.order_id} · {formatCurrency(u.amount)} · {fmtDate(u.at)}</p>
-            ))}
+          <div className="min-w-0"><p className="truncate">{fu.note}</p><p className="text-[10px] text-[#6B6B73]">{fu.created_by} · {fmtDate(fu.created_at)}</p>
+            {/* CR-T5 — janji bayar: tanggal + nominal + lencana status (dihitung server saat dibaca) */}
+            {fu.promise_date && <p className="text-fs-12 text-kn-text" data-testid={`customer-360-promise-${fu.id}`}>{promiseText(fu, fmtDate)}</p>}</div>
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            <OutcomePill outcome={fu.outcome} />
+            {fu.promise_status && <PromiseStatusPill status={fu.promise_status} testId={`customer-360-promise-status-${fu.id}`} />}
           </div>
-          <span className={`status-pill ${ov.status === "approved" ? "status-done" : ov.status === "rejected" ? "status-rejected" : "status-pending"}`}>{docStatusLabel(ov.status)}</span>
         </div>
       ))}
     </div>
@@ -348,13 +351,18 @@ function FollowupModal({ customer, onClose, onDone, onError }) {
   const [note, setNote] = useState("");
   const [outcome, setOutcome] = useState("contacted");
   const [next, setNext] = useState("");
+  const [promiseDate, setPromiseDate] = useState("");   // CR-T5 — wajib bila "Dijanjikan bayar"
+  const [promiseAmount, setPromiseAmount] = useState("");
   const [busy, setBusy] = useState(false);
   async function go() {
     if (!note.trim()) { onError?.("Catatan follow-up wajib diisi."); return; }
+    const janji = outcome === "promised" ? promiseError(promiseDate, promiseAmount) : "";
+    if (janji) { onError?.(janji); return; }
     setBusy(true);
     try {
       await axios.post(`${API}/customers/${customer.id}/followups`, {
-        customer_id: customer.id, note, outcome, next_action_date: next });
+        customer_id: customer.id, note, outcome, next_action_date: next,
+        ...(outcome === "promised" ? { promise_date: promiseDate, promise_amount: Number(promiseAmount) } : {}) });
       onDone?.("Follow-up penagihan dicatat.");
     } catch (e) { onError?.(apiErrorText(e, "Gagal menyimpan tindak lanjut.")); } finally { setBusy(false); }
   }
@@ -374,6 +382,10 @@ function FollowupModal({ customer, onClose, onDone, onError }) {
           options={[{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
             { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak ada respon" }, { value: "escalated", label: "Eskalasi" }]} />
       </div>
+      {outcome === "promised" && (
+        <PromiseFields date={promiseDate} amount={promiseAmount} onDate={setPromiseDate} onAmount={setPromiseAmount}
+          testIdPrefix="followup-promise" />
+      )}
       <div>
         <MLabel optional>Tindak lanjut berikutnya</MLabel>
         <KNDatePicker data-testid="followup-next" value={next} onChange={setNext} />

@@ -381,13 +381,20 @@ async def test_AGT3_U15_janji_bayar(klien, db, siap):
     so = await _pesanan(db, siap["C"], 8_000_000)
     r = await _siapkan(klien, siap["h_fin"], "payment_promise", {"customer_id": siap["C"], "order_id": so["id"]})
     assert r.status_code == 400 and r.json()["detail"] == "Tanggal janji bayar wajib diisi.", r.text
+    # CR-T5 — janji bayar wajib bernominal dan tidak boleh bertanggal lampau (dulu "2026-12-01" tetap): tanggal relatif.
+    from services.book_date import tanggal_buku
+    tgl = (datetime.date.fromisoformat(tanggal_buku()) + datetime.timedelta(days=16)).isoformat()
+    r = await _siapkan(klien, siap["h_fin"], "payment_promise", {"customer_id": siap["C"], "order_id": so["id"],
+                                                                 "promise_date": tgl})
+    assert r.status_code == 400 and r.json()["detail"] == "Nominal janji bayar wajib lebih dari nol.", r.text
     k = await _kartu(klien, siap["h_fin"], "payment_promise", {"customer_id": siap["C"], "order_id": so["id"],
-                                                               "promise_date": "2026-12-01", "amount": 3_000_000})
+                                                               "promise_date": tgl, "amount": 3_000_000})
     assert k["class"] == "A" and k["risk"] == "low" and k["plan"]["confirm_text"] == ""
     r = await _setujui(klien, siap["h_fin"], k["id"])
     assert r.status_code == 200 and r.json()["status"] == "confirmed", r.text
     fu = await db.collection_followups.find({"ai_card_id": k["id"]}, {"_id": 0}).to_list(10)
-    assert len(fu) == 1 and fu[0]["outcome"] == "promised" and fu[0]["next_action_date"] == "2026-12-01"
+    assert len(fu) == 1 and fu[0]["outcome"] == "promised" and fu[0]["next_action_date"] == tgl
+    assert (fu[0]["promise_date"], fu[0]["promise_amount"]) == (tgl, 3_000_000)
     # Pintu tindak lanjut ber-idempotensi lewat pola sempit (bukan seluruh `/api/customers/`).
     from idempotency import is_idempotent_path
     assert await db.idempotency_keys.count_documents({"key": k["id"]}) == 1
