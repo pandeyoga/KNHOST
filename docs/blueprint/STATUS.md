@@ -90,7 +90,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | selesai | efc1cc6 | [PY-T4](../reviews/2026-11-13/hasil/PY-T4.md) | Konfirmasi pemilik: peran kustom payroll.* tanpa hr.* tidak lagi melihat menu SDM; bug lama daftar bulan WIB diperbaiki |
 | 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | selesai | 5410979 | [KM-T3](../reviews/2026-11-13/hasil/KM-T3.md) | Nomor LIN- (INS- dipakai Inspeksi); tab Skema (Arsip) disembunyikan — dinilai pemilik/reviewer |
 | 85 | KM-T4 | Lembar Insentif masuk gaji dan buku besar | KM-T3, PY-T1 | selesai | d458cd5 | [KM-T4](../reviews/2026-11-13/hasil/KM-T4.md) | H5: sakelar hr.payroll_commission_mode tetap bawaan di semua PT (Menunggu pemilik); usulan koreksi uji U5 (PPh 21 Desember); cek layar: tabel tagihan antar-PT 5 kolom |
-| 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | dikerjakan |  |  | Dikerjakan agen paralel sejak sebelum KM-T4 ditutup (basis fee66fe = KM-T4 (b)), 15 Nov |
+| 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | selesai | 7183e4f | [KM-T5](../reviews/2026-11-13/hasil/KM-T5.md) | Gate 7183e4f 12/39; U15/U16 lulus uji jalan; tinjau: peran kustom sales_force tanpa incentive kehilangan menu tarif/jenjang lama; usulan koreksi U7 |
 | 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | selesai | b014a38 | [PY-T5](../reviews/2026-11-13/hasil/PY-T5.md) | Perilaku berubah: slip baru terlihat karyawan sesudah dibayar (hr.slip_swalayan_sejak) |
 | 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | selesai | 76a337d | [CR-T2](../reviews/2026-11-13/hasil/CR-T2.md) | H3: build_billing_schedule.py --apply di data nyata (dry-run data acuan: 0 pelanggan berubah status kredit) |
 | 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | selesai | eaba57f | [CR-T3](../reviews/2026-11-13/hasil/CR-T3.md) | H5: titik periksa gerbang kredit, masa berlaku izin, tahan-kirim tunai tetap bawaan (perilaku lama); H3: migrasi profil kredit CR-T1 (cadangan data_lama tetap); data acuan 0 pelanggan berubah |
@@ -130,7 +130,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 
 Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan dan mengapa.
 
-**Sesi 13–14 Nov 2026** (berjalan)
+**Sesi 13–14 Nov 2026**
 
 - Cabang kerja: `claude/nifty-carson-jjx3c8` (satu-satunya cabang yang boleh didorong sesi ini), bukan `bp/integrasi`
   dan `bp/<ID>`. Tanda `dikerjakan` dan `selesai` ditulis dalam satu commit unit karena hanya satu agen yang bekerja.
@@ -139,3 +139,34 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   rekomendasi namun catat". Dipakai untuk titik henti yang bersifat tinjauan (H1) dan pertanyaan aturan bisnis
   (`00` §4.1). **Tidak** dipakai untuk H2 (jalur produksi), H3 (data nyata), H4 (isi tabel peraturan, akun/arah jurnal
   yang tidak disebut unit), H8 (rahasia): unit itu tetap `tahan`.
+
+**Sesi 14–15 Nov 2026** (lanjutan, berakhir 15 Nov)
+
+- Kerja paralel atas persetujuan pemilik 14 Nov ("bisakah pisah agar dikerjakan lebih cepat" · "agen gabung sendiri"):
+  pelaksana bekerja di worktree terpisah (basis B → W), menggabung sendiri ke HEAD terbaru (T); integrator memasang di
+  cabang (unit risiko tinggi: commit (a) lalu (b)), menjalankan lingkungan A (lapis A, uji jalan layar), gate, menutup unit.
+- Arahan pemilik 14 Nov: setiap layar baru dicek terhadap `KN_37`, `KN_08`, `UX_USABILITY_STANDARD` di 1280/1024/390 px;
+  cacat diperbaiki sebelum unit ditutup (commit "Cek layar" per unit; rinciannya di bagian "Integrator" tiap laporan).
+- **Hemat uji** (pemilik 15 Nov, "uji berulang tidak efisien"): `tests_mem` integrator hanya untuk keadaan yang belum diuji
+  penuh pelaksana (keadaan antara (a), atau bila integrator menyelesaikan bentrok sendiri); pohon (b) yang identik dengan T
+  pelaksana (diperiksa berkas demi berkas) memakai angka pelaksana; satu `restore_demo` untuk lapis A + potret; gate
+  dijalankan saat lingkungan A menganggur sehingga tidak menambah waktu tunggu. Potret layar dan lapis A tetap wajib.
+- Penyimpangan urutan kecil (sengaja, untuk waktu): MN-T3 diluncurkan sebelum CR-T5 resmi ditutup, KM-T5 sebelum KM-T4
+  resmi ditutup — basisnya commit unit prasyarat yang sudah lengkap di cabang; gate unit prasyarat tetap dijalankan dan
+  hijau setara garis dasar sebelum unit lanjutannya ditutup.
+- Garis dasar gate sepanjang sesi: `--quick` 12 FAIL / `--ci` 39 FAIL (garis dasar berkas 16/43); "lebih merah" satu =
+  ganti nama `guard:page_tabs` oleh MN-T1 (merah garis dasar yang sama). `restore_demo` selalu berakhir "GAGAL:
+  seed_demo_transaksi_kn.py seed_p03_kn.py" (garis dasar lingkungan).
+- Temuan di luar cakupan unit (dicatat, tidak dikerjakan): `services/handheld_tasks.py` membaca nama PT dari `db.entities`
+  (kosong) → handheld "Daftar Awal" menampilkan kode PT mentah (bug sama dengan yang diperbaiki di kartu pemasok MN-T3);
+  `SoTrackerCard` masih memakai hex & huruf < 12 px; `penalty_service.waive` memeriksa nama peran; parameter `?today=`
+  pada akrual denda; daftar Pesanan sempit di 1024 px saat panel rincian terbuka; Pusat Amandemen di 1024 px; beberapa
+  tanggal bawaan memakai zona peramban.
+- Butir tinjauan (bukan titik henti; rinciannya di laporan unit): MN-T3 — peran ber-`customer.view`/`supplier.view` tanpa izin
+  kredit/bayar tidak lagi melihat nominal di kartu (K-18), uang muka pemasok lewat kasus keuangan belum ikut angka kartu;
+  KM-T4 — usulan koreksi uji U5 (PPh 21 Desember); KM-T5 — peran kustom yang hanya memegang `sales_force` tanpa `incentive`
+  kehilangan menu tarif/jenjang komisi lama (kini di layar ber-izin `incentive.view`), usulan koreksi uji U7 (persen tanpa
+  pembagi = `null`).
+- Akhir sesi: **semua unit `siap` habis** — 97 `selesai`, 7 `tahan` — PK-03 (H3 cek data nyata), PK-04, PK-34 (H2), PK-35 (H2, H3), PK-46 (H4 berkas PPh 21),
+  PM-T5, TX-T3 (H8 kredensial penyedia/Coretax). Tidak ada unit
+  `menunggu` yang prasyaratnya terpenuhi.

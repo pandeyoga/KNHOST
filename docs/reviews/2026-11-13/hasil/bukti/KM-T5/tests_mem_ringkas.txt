@@ -1,0 +1,7 @@
+basis B (salinan fee66fe):
+2298 passed, 2 skipped, 2 xfailed, 12 warnings in 451.19s (0:07:31)
+W (sebelum penyesuaian PRT6 U4):
+=========================== short test summary info ============================
+FAILED tests_mem/test_PRT6_layar_peran.py::test_PRT6_U4_pratinjau_memuat_ringkasan_dan_menu_tambahan
+1 failed, 2311 passed, 2 skipped, 2 xfailed, 12 warnings in 411.47s (0:06:51)
+PRT6 sesudah penyesuaian: 18 passed (terarah)

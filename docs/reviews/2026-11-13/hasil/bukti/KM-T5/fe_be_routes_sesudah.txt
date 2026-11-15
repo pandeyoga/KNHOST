@@ -1,0 +1,76 @@
+panggilan API di frontend: 2014 | unik: 1571
+TIDAK ADA rute: 72
+   POST   /purchase-orders/{}/${decision === "approve"               features/approvals/ApprovalDecisionModal.jsx:60
+   POST   /cycle-count/sessions/{}/{}                                features/approvals/ApprovalDecisionModal.jsx:62
+   POST   /{}/{}/${decision === "approve"                            features/approvals/ApprovalDecisionModal.jsx:70
+   ?      /master-governance/cleanup                                 features/catalog/masterCleanupApi.js:4
+   GET    /sheet                                                     features/catalog/masterCleanupApi.js:20
+   POST   /preview                                                   features/catalog/masterCleanupApi.js:21
+   POST   /apply                                                     features/catalog/masterCleanupApi.js:22
+   GET    /batches                                                   features/catalog/masterCleanupApi.js:23
+   POST   /batches/{}/rollback                                       features/catalog/masterCleanupApi.js:24
+   ?      /credit-profile-requests/{}/{}                             features/crm/creditProfileUi.jsx:132
+   ?      /bank-reconciliation/lines/{}/{}                           features/finance/BankReconciliationView.jsx:156
+   ?      /finance-cases/{}/{}                                       features/finance/cases/CaseDetailPanel.jsx:63
+   ?      /interco/loans/{}/{}                                       features/finance/interco/IntercoLoansPanel.jsx:81
+   ?      /interco/returns/{}/{}                                     features/finance/interco/IntercoReturnInbox.jsx:27
+   ?      /interco/transactions/{}/{}                                features/finance/interco/IntercoView.jsx:202
+   ?      /interco/returns/{}/{}                                     features/finance/interco/IntercoView.jsx:220
+   GET    /interco/${fd.focus_type === "interco_charge"              features/finance/interco/IntercoView.jsx:255
+   GET    /${type === "contra_bon"                                   features/finance/payments/PaySupplierModal.jsx:88
+   ?      /hr/{}/{}/approve                                          features/hr/EmployeeCompensationSection.jsx:188
+   ?      /hr/{}/{}/reject                                           features/hr/EmployeeCompensationSection.jsx:204
+   ?      /incentive/sheets/{}/{}                                    features/incentive/IncentiveSheetDetail.jsx:337
+   ?      /logistics                                                 features/logistics/logisticsApi.js:4
+   ?      /cash-advances/{}/{}                                       features/pettycash/CashAdvanceDetail.jsx:72
+   ?      /cash-advance-settlements/{}/{}                            features/pettycash/SettlementCashModal.jsx:79
+   ?      /cash-advance-settlements/{}/{}                            features/pettycash/SettlementDetail.jsx:78
+   POST   /production/work-orders/{}/{}                              features/production/ProductionView.jsx:122
+   ?      /contra-bons/{}/{}                                         features/purchasing/contrabon/ContraBonDetailPanel.jsx:74
+   ?      /contra-bons/{}/{}                                         features/purchasing/contrabon/ReasonNoteModal.jsx:54
+   POST   /makloon-orders/{}/steps/{}/${kind === "loss"              features/purchasing/makloon/MakloonReturnMaterial.jsx:68
+   POST   /rfid/incidents/{}/{}                                      features/rfid/RfidSecurityPanel.jsx:44
+   GET    /sources                                                   features/rfid/U300DocSession.jsx:63
+   POST   /manifest                                                  features/rfid/U300DocSession.jsx:70
+   DELETE /manifest                                                  features/rfid/U300DocSession.jsx:74
+   POST   /gate-latch/acknowledge                                    features/rfid/U300Operations.jsx:105
+   GET    /passages/{}/evidence                                      features/rfid/U300Operations.jsx:112
+   PUT    /config                                                    features/rfid/U300Operations.jsx:127
+   POST   /simulate                                                  features/rfid/U300Operations.jsx:137
+   ?      /api/design-gallery/{}/files/{}                            features/rnd/design/DesignDetailPage.jsx:111
+   POST   /design-gallery/{}/lifecycle/{}                            features/rnd/rndApi.js:129
+   POST   /color-library/use-requests/{}/{}                          features/sales/ColorUseRequestsPanel.jsx:21
+   POST   /sales-returns/{}/disposition/{}                           features/sales/ReturnDispositionPanel.jsx:60
+   POST   /design-requests/{}/{}                                     features/sales/mobile/MobileMdViews.jsx:118
+   GET    /{}                                                        features/sales/mobile/MobileMdViews.jsx:389
+   ?      /config                                                    features/settings/config/configApi.js:12
+   GET    /registry                                                  features/settings/config/configApi.js:16
+   GET    /effective                                                 features/settings/config/configApi.js:19
+   GET    /explain                                                   features/settings/config/configApi.js:22
+   POST   /simulate                                                  features/settings/config/configApi.js:25
+   PUT    /values                                                    features/settings/config/configApi.js:28
+   POST   /values/reset                                              features/settings/config/configApi.js:32
+   POST   /values/clear                                              features/settings/config/configApi.js:35
+   POST   /values/cancel-scheduled                                   features/settings/config/configApi.js:38
+   GET    /history                                                   features/settings/config/configApi.js:42
+   GET    /layers                                                    features/settings/config/configApi.js:45
+   GET    /health                                                    features/settings/config/configApi.js:48
+   POST   /impact-preview                                            features/settings/config/configApi.js:51
+   POST   /impact-apply                                              features/settings/config/configApi.js:54
+   POST   /client-dataset/batches/{}/{}                              features/settings/masters/ClientDatasetImportView.jsx:50
+   GET    /inbound/tasks{}                                           features/wms/InboundScanInterface.jsx:119
+   GET    /outbound/tasks{}                                          features/wms/OutboundScanInterface.jsx:107
+   POST   /inventory/rolls/{}/{}                                     features/wms/inventory/RollHoldControl.jsx:25
+   GET    /dashboard{}                                               hooks/useAppActions.js:193
+   GET    /notifications/unread-count{}                              hooks/useAppActions.js:201
+   GET    /settings/effective{}                                      hooks/useAppActions.js:202
+   GET    /rnd/meta{}                                                hooks/useAppActions.js:210
+   POST   /{}                                                        hooks/useAppActions.js:569
+   PATCH  /{}/{}                                                     hooks/useAppActions.js:582
+   DELETE /{}/{}                                                     hooks/useAppActions.js:610
+   ?      /master-data/{}${dry_run                                   hooks/useAppActions.js:625
+   GET    /master-data/{}                                            hooks/useAppActions.js:648
+METODE berbeda: 3
+   POST   /design-gallery/{}{}                               ada=('DELETE', 'GET', 'PUT') features/hr/DesignOwnershipPanel.jsx:69
+   POST   /hr/attendance/{}                                  ada=('PATCH',) features/hr/EmployeeSelfService.jsx:65
+   POST   /purchase-requisitions/{}{}                        ada=('GET',) features/purchasing/PurchaseRequisitionDetailPanel.jsx:46

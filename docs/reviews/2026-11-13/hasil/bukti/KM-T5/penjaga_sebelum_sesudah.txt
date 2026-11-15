@@ -1,0 +1,70 @@
+== hitung_penjaga.sh basis B (fee66fe)
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 9 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 102 temuan di 59 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+== hitung_penjaga.sh W (sesudah)
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 9 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 101 temuan di 58 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+== penjaga lain (B lalu W)
+== /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/km5_base
+verify_config_fallback: [PASS] 162 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1866 cek lolos, 0 pelanggaran.
+verify_posting_coverage: [PASS] 140 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 753 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_text: [PASS] 3486 cek lolos, 0 pelanggaran.
+verify_view_aliases: [PASS] 168 cek lolos, 0 pelanggaran.
+verify_scope_guard: 
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_config_fallback --entity: [PASS] 162 cek lolos, 0 pelanggaran.
+== /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21
+verify_config_fallback: [PASS] 162 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1867 cek lolos, 0 pelanggaran.
+verify_posting_coverage: [PASS] 140 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 754 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_text: [PASS] 3486 cek lolos, 0 pelanggaran.
+verify_view_aliases: [PASS] 186 cek lolos, 0 pelanggaran.
+verify_scope_guard: 
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_config_fallback --entity: [PASS] 162 cek lolos, 0 pelanggaran.
+
+== sensus verify_ui_standard (total B -> W)
+font_lt12 6602 -> 6564
+hp_font_lt14 15 -> 15
+hex 15950 -> 15879
+btn_custom 763 -> 763
+btn_force 551 -> 549
+hp_touch 13 -> 13
+list_no_excel 12 -> 12

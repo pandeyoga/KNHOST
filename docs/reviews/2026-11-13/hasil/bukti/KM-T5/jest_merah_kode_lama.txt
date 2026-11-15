@@ -1,0 +1,27 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/kmt5KartuSales.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../incentive/LegacyRatesEditor' from 'src/features/__tests__/kmt5KartuSales.test.js'
+
+    [0m [90m 46 |[39m jest[33m.[39mmock([32m"../../components/KNDatePicker"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [36mnull[39m)[33m;[39m
+     [90m 47 |[39m jest[33m.[39mmock([32m"../../components/EntityScopeBanner"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [33m<[39m[33mdiv[39m data[33m-[39mtestid[33m=[39m[32m"scope"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 48 |[39m jest[33m.[39mmock([32m"../incentive/LegacyRatesEditor"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [33m<[39m[33mdiv[39m data[33m-[39mtestid[33m=[39m[32m"legacy-rates"[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m    |[39m      [31m[1m^[22m[39m
+     [90m 49 |[39m jest[33m.[39mmock([32m"../incentive/LegacySchemeEditor"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [33m<[39m[33mdiv[39m data[33m-[39mtestid[33m=[39m[32m"legacy-scheme"[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m 50 |[39m jest[33m.[39mmock([32m"../sales_admin/KeepPendingPanel"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [36mnull[39m)[33m;[39m
+     [90m 51 |[39m jest[33m.[39mmock([32m"../home/HomeWaitingBoards"[39m[33m,[39m () [33m=>[39m () [33m=>[39m [36mnull[39m)[33m;[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/kmt5KartuSales.test.js:48:6)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.605 s, estimated 2 s
+Ran all test suites matching /kmt5KartuSales/i.

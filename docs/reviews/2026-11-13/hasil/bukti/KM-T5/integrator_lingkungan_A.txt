@@ -1,0 +1,14 @@
+== tests/test_bp_PRT3_login_saja.py
+...                                                                      [100%]
+3 passed in 2.78s
+
+== API sesudah data contoh (sales@, PT Sukacita mode sheet)
+komponen 200 
+mode 200 
+lembar 200 
+nominal 200 
+ajukan 200
+sahkan 200 
+lembar {'number': 'KSC/LIN-00001', 'status': 'approved', 'gl_status': 'posted', 'payroll_linked': True}
+me 200 sheet sheets 1 [('Insentif Bulanan', 2500000)]
+home incentive_mode sheet commission None

@@ -1,0 +1,84 @@
+HEAD tujuan: 47b48d6 (basis B fee66fe)
+Berkas unit yang diubah HEAD sesudah B: tidak ada (semua SALIN/BARU/HAPUS)
+SALIN CODEBASE_MAP.md
+SALIN ENTITY_REGISTRY.md
+SALIN backend/access_modules.py
+SALIN backend/login_only_endpoints.py
+SALIN backend/routers/crm.py
+SALIN backend/routers/incentive.py
+SALIN backend/scripts/seed_demo_lengkap_kn.py
+SALIN backend/services/gl_service.py
+SALIN backend/services/home_service.py
+SALIN backend/services/incentive_payroll.py
+SALIN backend/services/sales_force_service.py
+SALIN backend/test_core_e0_isolation_poc.py
+SALIN backend/tests/audit_numbers.py
+SALIN backend/tests/test_bp_PRT3_login_saja.py
+SALIN backend/tests_mem/test_KMT1_pengalihan.py
+SALIN backend/tests_mem/test_MNT1_menu_keuangan.py
+SALIN backend/tests_mem/test_PRT2_gerbang.py
+SALIN backend/tests_mem/test_PRT3_login_saja.py
+SALIN backend/tests_mem/test_PRT3_sapuan.py
+SALIN backend/tests_mem/test_PRT4_sifat_peran.py
+SALIN backend/tests_mem/test_PRT6_layar_peran.py
+SALIN docs/KN_13_NAVIGATION_MAP.md
+SALIN docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md
+SALIN frontend/src/AppViewRouter.jsx
+SALIN frontend/src/appViewImports.js
+SALIN frontend/src/config/__tests__/fixtures/access_builtin_fixture.json
+SALIN frontend/src/config/__tests__/fixtures/access_nav_fixture.json
+SALIN frontend/src/config/__tests__/kpt9HubPengaturan.test.js
+SALIN frontend/src/config/__tests__/mnt1MenuKeuangan.test.js
+SALIN frontend/src/config/hubTabs.js
+SALIN frontend/src/config/navMeta.js
+SALIN frontend/src/config/navStructure.js
+SALIN frontend/src/config/viewAliases.js
+SALIN frontend/src/features/__tests__/mnt1Pembungkus.test.js
+SALIN frontend/src/features/__tests__/phase3Settings.test.js
+SALIN frontend/src/features/__tests__/prt7TombolIzin.test.js
+SALIN frontend/src/features/crm/CrmView.jsx
+HAPUS frontend/src/features/crm/IncentiveRatesEditor.jsx
+HAPUS frontend/src/features/crm/IncentiveSchemeEditor.jsx
+HAPUS frontend/src/features/crm/SalesForceDashboard.jsx
+SALIN frontend/src/features/home/AdminHome.jsx
+SALIN frontend/src/features/home/SalesHome.jsx
+SALIN frontend/src/features/hr/EmployeeSelfService.jsx
+SALIN frontend/src/features/incentive/IncentiveSetupView.jsx
+SALIN frontend/src/features/incentive/IncentiveSheetsView.jsx
+SALIN frontend/src/features/sales/mobile/MobileCollectionTargets.jsx
+SALIN frontend/src/features/sales/mobile/MobileSalesHome.jsx
+SALIN frontend/src/features/settings/config/SettingsHub.jsx
+SALIN frontend/src/features/settings/config/configGroupViews.js
+SALIN frontend/src/features/settings/masters/EntityMastersView.jsx
+SALIN memory/PRD.md
+SALIN scripts/entity_audit/verify_leaks.py
+BARU backend/services/incentive_me.py
+BARU backend/tests_mem/test_KMT5_kartu_sales.py
+BARU frontend/src/features/__tests__/kmt5KartuSales.test.js
+BARU frontend/src/features/incentive/LegacyRatesEditor.jsx
+BARU frontend/src/features/incentive/LegacySchemeEditor.jsx
+BARU frontend/src/features/incentive/MyIncentiveCard.jsx
+
+T tests_mem:
+2312 passed, 2 skipped, 2 xfailed, 12 warnings in 408.19s (0:06:48)
+T jest:
+Test Suites: 35 failed, 138 passed, 173 total
+Tests:       1121 passed, 1121 total
+
+T hitung_penjaga.sh:
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 9 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 101 temuan di 58 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 

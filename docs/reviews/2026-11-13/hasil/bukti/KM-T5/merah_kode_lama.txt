@@ -1,0 +1,337 @@
+FFFFFFFFFFFFFF                                                           [100%]
+=================================== FAILURES ===================================
+______________ test_KMT5_U1_capaian_oktober_tanpa_lembar_diajukan ______________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U1_capaian_oktober_tanpa_lembar_diajukan(klien, f5):
+        K["L1"] = await _lembar(klien, f5, f5["adm"], "2026-11", [("andi", "BLN", "month", "2026-10", 2_000_000),
+                                                                 ("andi", "TW", "quarter", "2026-Q3", 3_000_000),
+                                                                 ("budi", "BLN", "month", "2026-10", 3_500_000)])
+        assert K["L1"]["status"] == "submitted"
+>       j = await _me(klien, f5["h"]["andi"], period="2026-10")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_f2f1c2dcb09f4b23ab2e40d82db36fc4', 'X-Entity-Id': 'ent_kanda'}
+params = {'period': '2026-10'}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): yzWc135vKtKfucrZ
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+_______________ test_KMT5_U2_lembar_disahkan_baris_milik_sendiri _______________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U2_lembar_disahkan_baris_milik_sendiri(klien, f5):
+        K["L1"] = await _sahkan(klien, f5["adm"], K["L1"]["id"])
+        assert (K["L1"]["status"], K["L1"]["payroll_linked"]) == ("approved", True)
+>       j = await _me(klien, f5["h"]["andi"], period="2026-11")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:237: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_f2f1c2dcb09f4b23ab2e40d82db36fc4', 'X-Entity-Id': 'ent_kanda'}
+params = {'period': '2026-11'}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+_______________________ test_KMT5_U3_sales_id_diabaikan ________________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U3_sales_id_diabaikan(klien, f5):
+>       j = await _me(klien, f5["h"]["budi"], period="2026-11", sales_id=f5["u"]["andi"]["id"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_648e71fe00474e94a9120909d061397e', 'X-Entity-Id': 'ent_kanda'}
+params = {'period': '2026-11', 'sales_id': 'usr_uji_80031b024b'}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+__________________ test_KMT5_U10a_beranda_admin_belum_dibayar __________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U10a_beranda_admin_belum_dibayar(klien, f5):
+        r = await klien.get("/api/home/admin", headers=f5["adm"])
+        assert r.status_code == 200, r.text
+>       assert (r.json()["incentive_payout"], r.json()["incentive_payout_label"]) == (8_500_000, "Belum dibayar"), {
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            k: r.json().get(k) for k in ("incentive_payout", "incentive_payout_label")}
+E       KeyError: 'incentive_payout_label'
+
+tests_mem/test_KMT5_kartu_sales.py:267: KeyError
+__________________ test_KMT5_U4_gaji_diposting_lembar_dibayar __________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U4_gaji_diposting_lembar_dibayar(klien, f5):
+        h = f5["adm"]
+        r = await klien.post("/api/hr/payroll/runs", headers=h, json={"entity_id": KANDA, "period": "2026-11",
+                                                                      "run_type": "regular"})
+        assert r.status_code == 200, r.text
+        run = r.json()
+        for aksi in ("submit", "approve"):
+            r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/{aksi}", headers=h, json={})
+            assert r.status_code == 200, r.text
+        r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/post-gl", headers=h, json={})
+        assert r.status_code == 200, r.text
+        run = r.json()
+        assert run["status"] == "posted", run["status"]
+>       j = await _me(klien, f5["h"]["andi"], period="2026-11")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_f2f1c2dcb09f4b23ab2e40d82db36fc4', 'X-Entity-Id': 'ent_kanda'}
+params = {'period': '2026-11'}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+__________________ test_KMT5_U10b_beranda_admin_sesudah_gaji ___________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U10b_beranda_admin_sesudah_gaji(klien, f5):
+        r = await klien.get("/api/home/admin", headers=f5["adm"])
+        assert r.status_code == 200, r.text
+>       assert (r.json()["incentive_payout"], r.json()["incentive_payout_label"]) == (0, "Belum dibayar")
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'incentive_payout_label'
+
+tests_mem/test_KMT5_kartu_sales.py:300: KeyError
+____________________ test_KMT5_U5_komisi_otomatis_pt_bawaan ____________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U5_komisi_otomatis_pt_bawaan(klien, f5):
+>       j = await _me(klien, f5["h"]["citra"])   # periode bawaan = bulan berjalan WIB (beku: November 2026)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_cd16c38dc69b4407b0acf6889f447982', 'X-Entity-Id': 'ent_ksc'}
+params = {}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+___________________ test_KMT5_U6_beranda_sales_menurut_mode ____________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd2d1a7a650>
+
+    async def test_KMT5_U6_beranda_sales_menurut_mode(klien, f5, monkeypatch):
+        from services import sales_force_service as sf
+        dipanggil: List[str] = []
+        asli = sf.compute_commission
+    
+        async def _hitung(uid, period, entity_id=None):
+            dipanggil.append(uid)
+            return await asli(uid, period, entity_id=entity_id)
+        monkeypatch.setattr(sf, "compute_commission", _hitung)
+        r = await klien.get("/api/home/sales", headers=f5["h"]["andi"])
+        assert r.status_code == 200, r.text
+        j = r.json()
+>       assert (j["incentive_mode"], j["commission"], j["history"]) == ("sheet", None, []), {
+                ^^^^^^^^^^^^^^^^^^^
+            k: j.get(k) for k in ("incentive_mode", "commission", "history")}
+E       KeyError: 'incentive_mode'
+
+tests_mem/test_KMT5_kartu_sales.py:325: KeyError
+____________________ test_KMT5_U7_akun_gudang_tanpa_pesanan ____________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U7_akun_gudang_tanpa_pesanan(klien, f5):
+>       j = await _me(klien, f5["h"]["gudang"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:336: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_1f42cb631e6a496a950bcde7ca13af72', 'X-Entity-Id': 'ent_kanda'}
+params = {}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+____________________ test_KMT5_U8_peran_kustom_acuan_sales _____________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+akun = <function akun.<locals>._akun at 0x7fd2d198e7a0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U8_peran_kustom_acuan_sales(klien, akun, f5):
+        r = await klien.post("/api/access/roles", headers=f5["adm"], json={
+            "label": "Sales Lapangan KM-T5", "base_role": "sales", "description": "peran uji KM-T5"})
+        assert r.status_code == 200, r.text
+        rid = (r.json().get("role") or r.json())["id"]
+        senior = await akun(rid, entitas=(KANDA,))
+        r = await klien.get("/api/sales-users", headers=f5["adm"])
+        assert r.status_code == 200, r.text
+        ids = {x["id"] for x in r.json()}
+        assert {senior["id"], f5["u"]["andi"]["id"], f5["u"]["budi"]["id"]} <= ids, ids
+        assert f5["u"]["citra"]["id"] not in ids   # sales PT lain tidak ikut
+        r = await klien.get("/api/sales/leaderboard", headers=f5["adm"])
+        assert r.status_code == 200, r.text
+        papan = {x["sales_id"] for x in r.json()}
+>       assert senior["id"] in papan and f5["u"]["citra"]["id"] not in papan, papan
+E       AssertionError: {'user_sales_01', 'usr_uji_7eb2096f1b', 'usr_uji_80031b024b', 'usr_uji_e4091a7d0f', 'usr_uji_f165885a22'}
+E       assert ('usr_uji_f165885a22' in {'user_sales_01', 'usr_uji_7eb2096f1b', 'usr_uji_80031b024b', 'usr_uji_e4091a7d0f', 'usr_uji_f165885a22'} and 'usr_uji_7eb2096f1b' not in {'user_sales_01', 'usr_uji_7eb2096f1b', 'usr_uji_80031b024b', 'usr_uji_e4091a7d0f', 'usr_uji_f165885a22'})
+
+tests_mem/test_KMT5_kartu_sales.py:358: AssertionError
+_____________________ test_KMT5_U9_komisi_otomatis_ditolak _____________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U9_komisi_otomatis_ditolak(klien, f5):
+        for jalur, isi in (("/api/sales/commission", {"period": "2026-11"}),
+                           ("/api/sales/commission-history", {"anchor": "2026-11"})):
+            r = await klien.get(jalur, headers=f5["h"]["andi"], params=isi)
+>           assert r.status_code == 409, (jalur, r.text)
+E           AssertionError: ('/api/sales/commission', '{"sales_id": "usr_uji_80031b024b", "period": "2026-11", "strategy": "per_sku", "basis": "pe...nt": 1, "new_customers": 0, "blocked_customers": 0, "warning_customers": 0, "orders_count": 0, "avg_order_value": 0}}')
+E           assert 200 == 409
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:369: AssertionError
+_____________________ test_KMT5_U11_sales_targets_dihapus ______________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+aplikasi = <fastapi.applications.FastAPI object at 0x7fd2d4853b90>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-937/test_KMT5_U11_sales_targets_di0')
+
+    async def test_KMT5_U11_sales_targets_dihapus(klien, aplikasi, f5, tmp_path):
+        r = await klien.post("/api/sales-targets", headers=f5["adm"], json={"sales_id": f5["u"]["andi"]["id"],
+                                                                            "period": "2026-12", "target_sales_amount": 1})
+>       assert r.status_code in (404, 405), r.text
+E       AssertionError: {"entity_id":"ent_kanda","sales_id":"usr_uji_80031b024b","period_type":"month","period":"2026-12","sales_name":"Andi","target_sales_amount":1.0,"target_collection_amount":0.0,"target_new_customers":0,"notes":"","updated_by":"Budi Santoso","updated_at":"2026-11-15T14:36:13.786185+00:00","id":"starg_6f0498ce296e","created_by":"Budi Santoso","created_at":"2026-11-15T14:36:13.786185+00:00"}
+E       assert 200 in (404, 405)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:379: AssertionError
+_____________________ test_KMT5_U12_hanya_lembar_pt_aktif ______________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_U12_hanya_lembar_pt_aktif(klien, f5):
+        s = await _lembar(klien, f5, f5["adm_ksc"], "2026-11", [("andi", "BLN_KSC", "month", "2026-10", 1_000_000)])
+        s = await _sahkan(klien, f5["adm_ksc"], s["id"])
+        assert (s["status"], s["payroll_linked"]) == ("approved", False)
+>       j = await _me(klien, f5["h"]["andi"], period="2026-11")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_KMT5_kartu_sales.py:414: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+h = {'Authorization': 'Bearer tok_uji_f2f1c2dcb09f4b23ab2e40d82db36fc4', 'X-Entity-Id': 'ent_kanda'}
+params = {'period': '2026-11'}
+
+    async def _me(klien, h, **params) -> Dict[str, Any]:
+        r = await klien.get(URL_ME, headers=h, params=params)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:186: AssertionError
+______________________ test_KMT5_periode_salah_dan_login _______________________
+
+klien = <httpx.AsyncClient object at 0x7fd2d2cff7d0>
+f5 = {'u': {'andi': {'id': 'usr_uji_80031b024b', 'name': 'Andi', 'email': 'uji1.usr_uji_80031b024b@uji.id', 'role': 'sales'...kanda'}}, 'adm': {'Authorization': 'Bearer tok_uji_9dffc4935d974aae81d088ad0b82feaa', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_KMT5_periode_salah_dan_login(klien, f5):
+        r = await klien.get(URL_ME, headers=f5["h"]["andi"], params={"period": "2026-Q4"})
+>       assert r.status_code == 400 and r.json()["detail"] == "Periode harus satu bulan, contoh: 2026-10.", r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert (404 == 400)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KMT5_kartu_sales.py:426: AssertionError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U1_capaian_oktober_tanpa_lembar_diajukan
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U2_lembar_disahkan_baris_milik_sendiri
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U3_sales_id_diabaikan - ...
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U10a_beranda_admin_belum_dibayar
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U4_gaji_diposting_lembar_dibayar
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U10b_beranda_admin_sesudah_gaji
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U5_komisi_otomatis_pt_bawaan
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U6_beranda_sales_menurut_mode
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U7_akun_gudang_tanpa_pesanan
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U8_peran_kustom_acuan_sales
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U9_komisi_otomatis_ditolak
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U11_sales_targets_dihapus
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_U12_hanya_lembar_pt_aktif
+FAILED tests_mem/test_KMT5_kartu_sales.py::test_KMT5_periode_salah_dan_login
+14 failed, 1 warning in 2.04s
