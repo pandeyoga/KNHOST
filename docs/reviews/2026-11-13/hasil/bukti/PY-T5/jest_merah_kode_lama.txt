@@ -1,0 +1,84 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/pyt5SlipSaya.test.js
+  ✕ U11 — dua baris riwayat Reguler & THR; rincian reguler berkomponen dan Gaji bersih Rp 8.646.000 (102 ms)
+  ✕ U12 — permintaan gagal (500) → teks galat + Coba lagi, lalu berhasil dimuat ulang (9 ms)
+  ✕ kosong — 'Belum ada slip gaji yang terbit.' dengan keterangan menurut pengaturan PT (4 ms)
+  ✕ tahun berjalan tanpa slip → tahun terbaru yang punya slip dibuka; pilih tahun memuat ulang (3 ms)
+
+  ● U11 — dua baris riwayat Reguler & THR; rincian reguler berkomponen dan Gaji bersih Rp 8.646.000
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "Slip Gaji Saya"
+    Received string:    "Slip Gaji TerakhirPeriode Oktober 2026Rp 7.314.000Gaji bersih diterima Lihat Slip (PDF)2 slip tersedia"
+
+      52 |   mockGet.mockResolvedValue({ data: U7 });
+      53 |   const host = await mount();
+    > 54 |   expect(teks(q(host, "ess-payslip-card"))).toContain("Slip Gaji Saya");
+         |                                             ^
+      55 |   // riwayat: dua baris berlabel jenis
+      56 |   const baris = host.querySelectorAll('[data-testid^="ess-payslip-row-"]');
+      57 |   expect(baris).toHaveLength(2);
+
+      at Object.<anonymous> (src/features/__tests__/pyt5SlipSaya.test.js:54:45)
+
+  ● U12 — permintaan gagal (500) → teks galat + Coba lagi, lalu berhasil dimuat ulang
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      93 |   const host = await mount();
+      94 |   const galat = q(host, "ess-payslip-error");
+    > 95 |   expect(galat).not.toBeNull();
+         |                     ^
+      96 |   expect(TEKS_GALAT).toBe("Slip belum bisa dimuat.");
+      97 |   expect(teks(galat)).toContain("Slip belum bisa dimuat. Coba lagi");
+      98 |   expect(teks(galat)).not.toContain("boom");
+
+      at Object.<anonymous> (src/features/__tests__/pyt5SlipSaya.test.js:95:21)
+
+  ● kosong — 'Belum ada slip gaji yang terbit.' dengan keterangan menurut pengaturan PT
+
+    expect(Belum ada slip gaji terbit.).toContain(undefined) // indexOf
+
+    Matcher error: expected value must be a string if received value is a string
+
+    Expected has value: undefined
+    Received has type:  string
+    Received has value: "Belum ada slip gaji terbit."
+
+      107 |   mockGet.mockResolvedValue({ data: { employee: { id: "e" }, visible_since: "dibayar", year: 2026, years: [], payslips: [] } });
+      108 |   let host = await mount();
+    > 109 |   expect(teks(q(host, "ess-payslip-empty"))).toContain(TEKS_KOSONG);
+          |                                              ^
+      110 |   expect(teks(q(host, "ess-payslip-empty-hint"))).toBe("Slip muncul setelah gaji dibayar.");
+      111 |   expect(q(host, "ess-payslip-latest")).toBeNull();
+      112 |   document.body.innerHTML = "";
+
+      at Object.<anonymous> (src/features/__tests__/pyt5SlipSaya.test.js:109:46)
+
+  ● tahun berjalan tanpa slip → tahun terbaru yang punya slip dibuka; pilih tahun memuat ulang
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 2
+    Received length: 0
+    Received object: []
+
+      127 |   });
+      128 |   const host = await mount();
+    > 129 |   expect(host.querySelectorAll('[data-testid^="ess-payslip-row-"]')).toHaveLength(2);
+          |                                                                      ^
+      130 |   expect(teks(q(host, "ess-payslip-latest"))).toContain("Periode Desember 2025");
+      131 |   expect(mockGet).toHaveBeenLastCalledWith("/api/hr/payslips/me", { params: { year: 2025 } });
+      132 |   await click(q(host, "ess-payslip-years-2024"));
+
+      at Object.<anonymous> (src/features/__tests__/pyt5SlipSaya.test.js:129:70)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 4 total
+Snapshots:   0 total
+Time:        1.475 s, estimated 2 s
+Ran all test suites matching /pyt5SlipSaya/i.

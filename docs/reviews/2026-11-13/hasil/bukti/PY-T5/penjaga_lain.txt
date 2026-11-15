@@ -1,0 +1,20 @@
+Penjaga lain (statik), B = 4580bd9 (salinan bersih) · W = B + PY-T5 · HEAD = eaba57f (salinan bersih) · T = HEAD + PY-T5
+
+| Penjaga | B | W | T |
+|---|---|---|---|
+| verify_role_gate_ui | 31/0 | 31/0 | 31/0 |
+| verify_config_fallback | 159/0 | 160/0 | 161/0 |
+| verify_config_fallback --entity | — | 160/0 | 161/0 |
+| verify_payment_vocab | 1835/0 | 1836/0 | 1843/0 |
+| verify_access_catalog_nav | 0 temuan | 0 temuan | 0 temuan |
+| verify_config_text | — | 3409/0 | 3472/0 |
+| verify_permission_checked | 615/0 | 615/0 | — |
+| verify_atomic_claim | 161/0 | 161/0 | — |
+| verify_posting_coverage | — | 138/0 | — |
+| verify_detail_modal | 29/0 | 29/0 | — |
+| verify_cash_single_door | 740/0 | 741/0 | — |
+| verify_ui_contrast | — | 58/0 | — |
+| verify_codebase_map | PASS | PASS | PASS |
+| verify_ui_standard | 11 | 11 | 11 (HEAD 11) |
+| audit_config_wiring --strict (salinan berjalur) | — | hijau | hijau |
+| check_nav_map.py (salinan berjalur) | — | — | PASS |

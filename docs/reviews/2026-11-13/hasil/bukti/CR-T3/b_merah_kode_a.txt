@@ -1,0 +1,29 @@
+E   KeyError: 'gate'
+tests_mem/test_CRT3_pemasangan.py:87: KeyError: 'gate'
+E   TypeError: string indices must be integers, not 'str'
+tests_mem/test_CRT3_pemasangan.py:105: TypeError: string indices must be integers, not 'str'
+E   KeyError: 'credit_override_used'
+tests_mem/test_CRT3_pemasangan.py:133: KeyError: 'credit_override_used'
+E   AssertionError: {"id": "so_2657ea403414", "number": "KANDA/SO-00052", "status": "reserved", "entity_id": "ent_kanda", "customer_id": "cus_crt3_559521ac", "customer_name": "Toko G1 21ac", "customer_city": "Bandung", "shipping_address": {"id": "adr_crt3_e77c
+tests_mem/test_CRT3_pemasangan.py:150: AssertionError: {"id": "so_2657ea403414", "number": "KANDA/SO-00052", "status": "reserved", "entity_id": "ent_kanda", "customer_id": "cus_crt3_559521ac", "customer_name": "Toko G1 21ac", "customer_city": "Bandung", "shipp
+E   assert (5000000.0 == (5 * 1000000) and False is True)
+tests_mem/test_CRT3_pemasangan.py:173: assert (5000000.0 == (5 * 1000000) and False is True)
+E   AssertionError: {"order":{"id":"so_6d264033cab4","number":"KANDA/SO-00055","status":"reserved","entity_id":"ent_kanda","customer_id":"cus_crt3_ea553a72","customer_name":"Toko G1 3a72","customer_city":"Bandung","shipping_address":{"id":"adr_crt3_3528ea04","
+tests_mem/test_CRT3_pemasangan.py:226: AssertionError: {"order":{"id":"so_6d264033cab4","number":"KANDA/SO-00055","status":"reserved","entity_id":"ent_kanda","customer_id":"cus_crt3_ea553a72","customer_name":"Toko G1 3a72","customer_city":"Bandung","shipping_a
+E   AssertionError: {"id": "so_db3ef118fbba", "number": "KANDA/SO-00057", "status": "reserved", "entity_id": "ent_kanda", "customer_id": "cus_crt3_567fca3b", "customer_name": "Toko G1 ca3b", "customer_city": "Bandung", "shipping_address": {"id": "adr_crt3_017e
+tests_mem/test_CRT3_pemasangan.py:235: AssertionError: {"id": "so_db3ef118fbba", "number": "KANDA/SO-00057", "status": "reserved", "entity_id": "ent_kanda", "customer_id": "cus_crt3_567fca3b", "customer_name": "Toko G1 ca3b", "customer_city": "Bandung", "shipp
+E   AssertionError: {"detail": {"code": "CREDIT_BLOCKED", "reasons": ["Ada tunggakan jatuh tempo Rp 6.000.000 (20 hari)"], "message": "Kredit Toko G1 f28a terblokir — pesanan tidak bisa dibuat. Ajukan izin kredit ke Manajer dulu; setelah disetujui, ulangi ch
+tests_mem/test_CRT3_pemasangan.py:246: AssertionError: {"detail": {"code": "CREDIT_BLOCKED", "reasons": ["Ada tunggakan jatuh tempo Rp 6.000.000 (20 hari)"], "message": "Kredit Toko G1 f28a terblokir — pesanan tidak bisa dibuat. Ajukan izin kredit ke Manajer
+E   Failed: DID NOT RAISE HTTPException
+tests_mem/test_CRT3_pemasangan.py:271: Failed: DID NOT RAISE HTTPException
+E   AssertionError: {"id":"so_02e4021155fa","number":"KANDA/SO-00059","status":"confirmed","entity_id":"ent_kanda","customer_id":"cus_crt3_3fade030","customer_name":"Toko G1 e030","customer_city":"Bandung","shipping_address":{"id":"adr_crt3_84a3b780","label":"
+tests_mem/test_CRT3_pemasangan.py:312: AssertionError: {"id":"so_02e4021155fa","number":"KANDA/SO-00059","status":"confirmed","entity_id":"ent_kanda","customer_id":"cus_crt3_3fade030","customer_name":"Toko G1 e030","customer_city":"Bandung","shipping_address":
+E   Failed: DID NOT RAISE HTTPException
+tests_mem/test_CRT3_pemasangan.py:340: Failed: DID NOT RAISE HTTPException
+E   KeyError: 'scope'
+tests_mem/test_CRT3_pemasangan.py:360: KeyError: 'scope'
+E   AssertionError: assert (not True)
+tests_mem/test_CRT3_pemasangan.py:378: AssertionError: assert (not True)
+E   TypeError: evaluate() got an unexpected keyword argument 'saldo'
+$S/crt3_a_tree/scripts/crt3_beda_gerbang_kredit.py:79: TypeError: evaluate() got an unexpected keyword argument 'saldo'
+14 failed, 2 passed, 1 warning in 6.42s

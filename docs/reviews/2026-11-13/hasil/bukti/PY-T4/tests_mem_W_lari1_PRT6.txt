@@ -1,0 +1,2 @@
+FAILED tests_mem/test_PRT6_layar_peran.py::test_PRT6_U6_menu_peran_bawaan_bertambah_dari_izin
+1 failed, 2116 passed, 2 skipped, 2 xfailed, 12 warnings in 1172.36s (0:19:32)

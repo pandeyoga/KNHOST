@@ -1,0 +1,16 @@
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 743 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 29 cek lolos, 0 pelanggaran.
+verify_permission_checked: [PASS] 617 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1842 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 19 cek lolos, 0 pelanggaran.
+verify_codebase_map: [PASS] 5 cek lolos, 0 pelanggaran.
+verify_ui_contrast: [PASS] 58 cek lolos, 0 pelanggaran.
+config_fallback : [PASS] 160 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 160 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3465 cek lolos, 0 pelanggaran.
+audit_config_wiring: ✅ INV-CFG: setiap setting terdeklarasi
+check_nav_map: ✓ NAV MAP: PASS

@@ -1,0 +1,20 @@
+     32 E   ImportError: cannot import name 'credit_gate' from 'services' ($S/crt3_lama/backend/services/__init__.py)
+     26 $S/crt3_lama/backend/tests_mem/test_CRT3_gerbang.py:17: ImportError: cannot import name 'credit_gate' from 'services' ($S/crt3_lama/backend/services/__init__.py)
+      3 E   KeyError: "Setting 'ar.periksa_kredit_pesanan_dibuat' tidak ada di registry"
+      3 $S/crt3_lama/backend/config_registry.py:399: KeyError: "Setting 'ar.periksa_kredit_pesanan_dibuat' tidak ada di registry"
+      2 E   KeyError: "Setting 'ar.eksposur_titipan_mengurangi' tidak ada di registry"
+      2 $S/crt3_lama/backend/config_registry.py:399: KeyError: "Setting 'ar.eksposur_titipan_mengurangi' tidak ada di registry"
+      1 FAILED tests_mem/test_CRT3_izin.py::test_CRT3_U6b_isian_pengajuan - KeyError:...
+      1 FAILED tests_mem/test_CRT3_gerbang.py::test_CRT3_U3_titipan_per_pt - KeyError...
+      1 E   KeyError: 'detail'
+      1 E   KeyError: "Setting 'finance.tahan_kirim_tunai' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.periksa_kredit_surat_jalan' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.periksa_kredit_pesanan_diubah' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.periksa_kredit_lepas_gudang' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.izin_kredit_masa_berlaku_hari' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.eksposur_pesanan_belum_kirim' tidak ada di registry"
+      1 E   KeyError: "Setting 'ar.eksposur_giro_belum_cair' tidak ada di registry"
+      1 E   AssertionError: {"detail":"Aksi ['view'] tidak berlaku untuk “Pengecualian Batas Kredit”."}
+      1 E   AssertionError: assert False
+      1 E   AssertionError: admin
+      1 48 failed, 1 warning in 2.98s

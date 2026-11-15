@@ -1,0 +1,2 @@
+2102 passed, 2 skipped, 2 xfailed, 14 warnings in 1236.97s (0:20:36)
+EXIT 0

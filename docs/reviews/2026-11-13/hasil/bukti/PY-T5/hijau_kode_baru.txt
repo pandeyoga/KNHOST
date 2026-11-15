@@ -1,0 +1,13 @@
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U4_slip_draf_belum_terbit_bagi_pemilik[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U1_disahkan_belum_terlihat_pada_bawaan[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U3_pengaturan_disahkan_per_pt[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U2_terlihat_setelah_dibayar[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U5_slip_orang_lain_403[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U9_pdf_slip_sendiri[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U7_riwayat_per_tahun_reguler_dan_thr[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U6_anulir_dan_batal_tidak_pernah_terlihat[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U6b_penentu_status[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U8_akun_tanpa_karyawan[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U10_kunci_pengaturan[asyncio]
+PASSED tests_mem/test_KFT8_putaran_pengaturan.py::test_KFT8_putaran[hr.slip_swalayan_sejak]
+12 passed, 1 warning in 4.07s

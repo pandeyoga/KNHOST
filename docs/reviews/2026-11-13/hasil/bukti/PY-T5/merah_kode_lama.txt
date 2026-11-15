@@ -1,0 +1,242 @@
+bringing up nodes...
+bringing up nodes...
+
+FFFF..FFFFF                                                              [100%]
+=================================== FAILURES ===================================
+__________ test_PYT5_U4_slip_draf_belum_terbit_bagi_pemilik[asyncio] ___________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U4_slip_draf_belum_terbit_bagi_pemilik(klien, uji):
+        r = await klien.post("/api/hr/payroll/runs", json={"entity_id": KANDA, "period": OKT}, headers=uji["adm"])
+        assert r.status_code == 200, r.text
+        run = r.json()
+        assert run["status"] == "draft"
+        SIMPAN["okt"] = run
+        sid = _slip_milik(run, uji["e1"])["id"]
+        SIMPAN["slip_e1"] = sid
+        for jalur in (f"/api/hr/payslips/{sid}", f"/api/hr/payslips/{sid}/pdf"):
+            r = await klien.get(jalur, headers=uji["h1"])
+>           assert r.status_code == 404, (jalur, r.text)
+E           AssertionError: ('/api/hr/payslips/slip_750c46d5faf6', '{"id": "slip_750c46d5faf6", "number": "KANDA/SLIP-00001", "run_id": "prun_243c... "E1 Uji PY-T5"}, "created_at": "2026-11-15T11:11:53.608677+00:00", "updated_at": "2026-11-15T11:11:53.608680+00:00"}')
+E           assert 200 == 404
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PYT5_swalayan_slip.py:123: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): Eko13PW2BUCMw1Ns
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+__________ test_PYT5_U1_disahkan_belum_terlihat_pada_bawaan[asyncio] ___________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U1_disahkan_belum_terlihat_pada_bawaan(klien, uji):
+        run = await _alur(klien, uji["adm"], SIMPAN["okt"]["id"], "submit", "approve")
+        assert run["status"] == "approved"
+        j = await _me(klien, uji["h1"])
+>       assert j["payslips"] == [] and j["years"] == []
+E       AssertionError: assert ([{'id': 'slip..._kanda', ...}] == []
+E         
+E         Left contains one more item: {'id': 'slip_750c46d5faf6', 'number': 'KANDA/SLIP-00001', 'run_id': 'prun_243cd21158a1', 'entity_id': 'ent_kanda', ...}
+E         Use -v to get more diff)
+
+tests_mem/test_PYT5_swalayan_slip.py:134: AssertionError
+_______________ test_PYT5_U3_pengaturan_disahkan_per_pt[asyncio] _______________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe5fa868090>
+akun = <function akun.<locals>._akun at 0x7fe5e6f1b420>
+sesi = <function sesi.<locals>._sesi at 0x7fe5e6f1b560>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U3_pengaturan_disahkan_per_pt(klien, db, akun, sesi, uji):
+        # Fixture (disisipkan): karyawan E3 ent_ksc tertaut akun e3 + proses ent_ksc Oktober `approved` dengan slipnya.
+        e3 = "emp_pyt5_e3"
+        await db.hr_employees.insert_one({"id": e3, "name": "E3 Uji PY-T5", "entity_id": KSC, "status": "active",
+                                          "base_salary": 6_000_000, "ptkp_status": "TK0",
+                                          "created_at": "2026-01-01T00:00:00+00:00"})
+        h3 = await _tautkan(db, akun, sesi, e3, KSC)
+        await db.hr_payroll_runs.insert_one({"id": "prun_pyt5_ksc", "number": "KSC/PAY-PYT5", "entity_id": KSC,
+                                             "period": OKT, "run_type": "regular", "status": "approved",
+                                             "paid_at": "", "created_at": "2026-11-01T01:00:00+00:00"})
+        await db.hr_payslips.insert_one({"id": "slip_pyt5_ksc", "number": "KSC/SLIP-PYT5", "run_id": "prun_pyt5_ksc",
+                                         "entity_id": KSC, "period": OKT, "run_type": "regular", "status": "approved",
+                                         "employee_id": e3, "employee_name": "E3 Uji PY-T5", "gross": 6_000_000,
+                                         "pph21": 0, "net": 6_000_000, "components": []})
+>       await _atur(klien, uji["adm"], "disahkan", KANDA)
+
+tests_mem/test_PYT5_swalayan_slip.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+h = {'Authorization': 'Bearer tok_uji_64af1eff7255468eaf214a090299d393', 'X-Entity-Id': 'ent_kanda'}
+nilai = 'disahkan', eid = 'ent_kanda'
+
+    async def _atur(klien, h, nilai: str, eid: str = KANDA) -> None:
+        r = await klien.put("/api/config/values", headers=h, json={"items": [{
+            "key": KUNCI, "value": nilai, "scope_type": "entity", "scope_id": eid, "reason": "uji PY-T5 slip swalayan"}]})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'hr.slip_swalayan_sejak' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT5_swalayan_slip.py:105: AssertionError
+________________ test_PYT5_U2_terlihat_setelah_dibayar[asyncio] ________________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe5fa868090>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U2_terlihat_setelah_dibayar(klien, db, uji):
+        from services import book_date
+        run = await _alur(klien, uji["adm"], SIMPAN["okt"]["id"], "post-gl")
+        assert run["status"] == "posted"
+        j = await _me(klien, uji["h1"])
+>       assert j["payslips"] == [] and j["years"] == []
+E       AssertionError: assert ([{'id': 'slip..._kanda', ...}] == []
+E         
+E         Left contains one more item: {'id': 'slip_750c46d5faf6', 'number': 'KANDA/SLIP-00001', 'run_id': 'prun_243cd21158a1', 'entity_id': 'ent_kanda', ...}
+E         Use -v to get more diff)
+
+tests_mem/test_PYT5_swalayan_slip.py:178: AssertionError
+___________ test_PYT5_U7_riwayat_per_tahun_reguler_dan_thr[asyncio] ____________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe5fa868090>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U7_riwayat_per_tahun_reguler_dan_thr(klien, db, uji):
+        h = uji["adm"]
+        r = await klien.post("/api/hr/payroll/inputs", headers=h, json={
+            "employee_id": uji["e1"], "component_code": "THR", "pay_period": OKT, "amount": 8_000_000,
+            "label": "THR 2026", "reason": "isian uji PY-T5"})
+        assert r.status_code == 200, r.text
+        r = await klien.post(f"/api/hr/payroll/inputs/{r.json()['id']}/approve", headers=h)
+        assert r.status_code == 200, r.text
+        r = await klien.post("/api/hr/payroll/runs", json={"entity_id": KANDA, "period": OKT, "run_type": "thr"}, headers=h)
+        assert r.status_code == 200, r.text
+        thr = r.json()
+        assert _slip_milik(thr, uji["e1"])["net"] == 7_314_000   # 8.000.000 − (840.000 − 154.000)
+        await _alur(klien, h, thr["id"], "submit", "approve", "post-gl")
+        await _bayar(klien, db, h, thr["id"])
+        j = await _me(klien, uji["h1"], year="2026")
+>       assert [(s["period"], s["run_type"]) for s in j["payslips"]] == [(OKT, "thr"), (OKT, "regular")], j
+E       AssertionError: {'employee': {'id': 'emp_pyt5_e1', 'name': 'E1 Uji PY-T5'}, 'payslips': [{'id': 'slip_750c46d5faf6', 'number': 'KANDA/...id': 'slip_3bf0c6052a45', 'number': 'KANDA/SLIP-00003', 'run_id': 'prun_53abc325e8f8', 'entity_id': 'ent_kanda', ...}]}
+E       assert [('2026-10', ...6-10', 'thr')] == [('2026-10', ...', 'regular')]
+E         
+E         At index 0 diff: ('2026-10', 'regular') != ('2026-10', 'thr')
+E         Use -v to get more diff
+
+tests_mem/test_PYT5_swalayan_slip.py:232: AssertionError
+_________ test_PYT5_U6_anulir_dan_batal_tidak_pernah_terlihat[asyncio] _________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U6_anulir_dan_batal_tidak_pernah_terlihat(klien, uji):
+        h = uji["adm"]
+>       await _atur(klien, h, "disahkan", KANDA)
+
+tests_mem/test_PYT5_swalayan_slip.py:248: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+h = {'Authorization': 'Bearer tok_uji_64af1eff7255468eaf214a090299d393', 'X-Entity-Id': 'ent_kanda'}
+nilai = 'disahkan', eid = 'ent_kanda'
+
+    async def _atur(klien, h, nilai: str, eid: str = KANDA) -> None:
+        r = await klien.put("/api/config/values", headers=h, json={"items": [{
+            "key": KUNCI, "value": nilai, "scope_type": "entity", "scope_id": eid, "reason": "uji PY-T5 slip swalayan"}]})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'hr.slip_swalayan_sejak' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT5_swalayan_slip.py:105: AssertionError
+____________________ test_PYT5_U6b_penentu_status[asyncio] _____________________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+uji = {'e1': 'emp_pyt5_e1', 'e2': 'emp_pyt5_e2', 'h1': {'Authorization': 'Bearer tok_uji_233135ac272246518096f256c47020ee', ...t_kanda'}, 'h2': {'Authorization': 'Bearer tok_uji_3e722e300fb043eb8c0e19da2f83f12e', 'X-Entity-Id': 'ent_kanda'}, ...}
+
+    async def test_PYT5_U6b_penentu_status(uji):
+        """Penentu murni: daftar status per pengaturan; status tertutup selalu salah; status antara proses mengikuti asalnya."""
+>       from services import hr_payslip_self as hs
+E       ImportError: cannot import name 'hr_payslip_self' from 'services' ($S/pyt5_base/backend/services/__init__.py)
+
+tests_mem/test_PYT5_swalayan_slip.py:274: ImportError
+__________________ test_PYT5_U8_akun_tanpa_karyawan[asyncio] ___________________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+akun = <function akun.<locals>._akun at 0x7fe5e6f1b420>
+sesi = <function sesi.<locals>._sesi at 0x7fe5e6f1b560>
+
+    async def test_PYT5_U8_akun_tanpa_karyawan(klien, akun, sesi):
+        u = await akun("sales", entitas=(KANDA,))
+        h = await sesi(u, entitas=KANDA)
+        r = await klien.get("/api/hr/payslips/me", headers=h)
+        assert r.status_code == 200, r.text
+>       assert r.json() == {"employee": None, "years": [], "payslips": []}
+E       AssertionError: assert {'employee': ...payslips': []} == {'employee': ...payslips': []}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'years': []}
+E         Use -v to get more diff
+
+tests_mem/test_PYT5_swalayan_slip.py:295: AssertionError
+___________________ test_PYT5_U10_kunci_pengaturan[asyncio] ____________________
+[gw0] linux -- Python 3.11.18 $S/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe5e8382590>
+kepala_admin = {'Authorization': 'Bearer tok_uji_5b79fd2d870a491ab92e63ce7dce6301', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PYT5_U10_kunci_pengaturan(klien, kepala_admin):
+        import config_registry as registry
+        from test_KFT8_putaran_pengaturan import putaran
+>       e = registry.require(KUNCI)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT5_swalayan_slip.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'hr.slip_swalayan_sejak'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'hr.slip_swalayan_sejak' tidak ada di registry"
+
+config_registry.py:401: KeyError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  $S/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U5_slip_orang_lain_403[asyncio]
+PASSED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U9_pdf_slip_sendiri[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U4_slip_draf_belum_terbit_bagi_pemilik[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U1_disahkan_belum_terlihat_pada_bawaan[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U3_pengaturan_disahkan_per_pt[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U2_terlihat_setelah_dibayar[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U7_riwayat_per_tahun_reguler_dan_thr[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U6_anulir_dan_batal_tidak_pernah_terlihat[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U6b_penentu_status[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U8_akun_tanpa_karyawan[asyncio]
+FAILED tests_mem/test_PYT5_swalayan_slip.py::test_PYT5_U10_kunci_pengaturan[asyncio]
+9 failed, 2 passed, 3 warnings in 27.79s

@@ -1,0 +1,103 @@
+FFFFFFFFFFFFFFFFF                                                        [100%]
+=================================== FAILURES ===================================
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): FWrTK1ZlES9I_Pc7
+[bootstrap] migrasi bentuk status_history lot skip: No module named 'migrate_lot_status_history_keys'
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:138: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert 403 == 200
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:158: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"id":"prun_pyt4_u2gagal","number":"KND/PAY-U2GAGAL","entity_id":"ent_kanda","period":"2026-11","status":"paid","run_type":"regular","commission_mode":"accrue_then_settle","totals":{"employees":3,"salary_earnings":12750000.0,"commission":0.0,"gross":12750000.0,"bpjs_emp":0.0,"bpjs_er":0.0,"pph21":0.0,"net":12750000.0},"gl_posted":true,"journal_id":"je_3c89f5297f7b","journal_num
+    assert 200 == 409
+     +  where 200 = <Response [200 OK]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:195: AssertionError: {"id":"prun_pyt4_u2gagal","number":"KND/PAY-U2GAGAL","entity_id":"ent_kanda","period":"2026-11","status":"paid","run_type":"regular","commission_mode":"accrue_then_settle","totals":{"employees":3,"salary_earnings":12750000.0,"commission":0.0,"gross":12750000.0,"bpjs_emp":0.0,"bpjs_er":0.0,"pph21":0.0,"net":12750000.0},"gl_
+E   AssertionError: {"id":"prun_pyt4_u2ulang","number":"KND/PAY-U2ULANG","entity_id":"ent_kanda","period":"2026-11","status":"paid","run_type":"regular","commission_mode":"accrue_then_settle","totals":{"employees":3,"salary_earnings":12750000.0,"commission":0.0,"gross":12750000.0,"bpjs_emp":0.0,"bpjs_er":0.0,"pph21":0.0,"net":12750000.0},"gl_posted":true,"journal_id":"je_15bb1c32da7f","journal_num
+    assert 200 == 409
+     +  where 200 = <Response [200 OK]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:217: AssertionError: {"id":"prun_pyt4_u2ulang","number":"KND/PAY-U2ULANG","entity_id":"ent_kanda","period":"2026-11","status":"paid","run_type":"regular","commission_mode":"accrue_then_settle","totals":{"employees":3,"salary_earnings":12750000.0,"commission":0.0,"gross":12750000.0,"bpjs_emp":0.0,"bpjs_er":0.0,"pph21":0.0,"net":12750000.0},"gl_
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert 403 == 400
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:229: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert 403 == 200
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:242: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert 403 == 400
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:264: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert (403 == 400)
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:273: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert (403 == 409)
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:284: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+    assert 403 == 409
+     +  where 403 = <Response [403 Forbidden]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:293: AssertionError: {"detail":"Anda belum punya akses untuk membayar Proses Penggajian. Minta Admin menambahkan akses 'SDM & Penggajian'."}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:304: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 403
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:349: AssertionError: {"detail": "Not Found"}
+E   AssertionError: assert 'posted' == 'paid'
+      
+      - paid
+      + posted
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:356: AssertionError: assert 'posted' == 'paid'
+E   AssertionError: {"detail":"Not Found"}
+    assert (404 == 403)
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:390: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert (404 == 200)
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:423: AssertionError: {"detail":"Not Found"}
+E   AssertionError: ('cr_manajer_kosong', '{"detail": "Not Found"}')
+    assert 404 == 403
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:441: AssertionError: ('cr_manajer_kosong', '{"detail": "Not Found"}')
+E   AssertionError: assert {'hr-payroll-...-remittances'} <= {'accounts-pa...alytics', ...}
+      
+      Extra items in the left set:
+      'hr-payroll-hub'
+      'hr-payroll-remittances'
+$S/pyt4_lama/backend/tests_mem/test_PYT4_bayar_gaji.py:452: AssertionError: assert {'hr-payroll-...-remittances'} <= {'accounts-pa...alytics', ...}
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  $S/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U1_daftar_transfer_sama_dengan_total_bersih[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U2_bayar_dari_rekening_gaji[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U2b_jurnal_gagal_lalu_ulang_dari_panel[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U2c_jurnal_gagal_lalu_bayar_ulang[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U3_rekening_bukan_gaji_ditolak[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U4_rekening_kosong_satu_dipakai_dua_ditolak[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U5_rekening_pt_lain_atau_nonaktif[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U6_tanggal_bayar_sebelum_jurnal_gaji[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U7_periode_tertutup_409[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U8_gaji_bersih_negatif_409[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U9_finance_bayar_tanpa_data_karyawan[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U10_peran_hr_kustom_hanya_menyiapkan[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U11_unduh_excel_daftar_transfer[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U12_batal_setoran_bpjs[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U13_pt_tanpa_rekening_gaji[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U15_manajer_kosong_dan_sopir_ditolak[asyncio]
+FAILED tests_mem/test_PYT4_bayar_gaji.py::test_PYT4_U9b_menu_finance_hanya_setoran_dan_pajak[asyncio]
+17 failed, 1 warning in 3.02s

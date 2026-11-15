@@ -1,0 +1,42 @@
+== verify_role_gate_ui
+== INV-ROLE-02 — tombol & panggilan data di layar mengikuti izin, bukan nama peran ==
+[PASS] 31 cek lolos, 0 pelanggaran.
+== verify_atomic_claim
+== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+[PASS] 161 cek lolos, 0 pelanggaran.
+== verify_posting_coverage
+== INV-POST-01 — jurnal dokumen lewat pintu tahan-gagal & jenisnya terdaftar di registri posting ==
+[PASS] 138 cek lolos, 0 pelanggaran.
+== verify_cash_single_door
+== INV-CASH-01 — kas hanya lahir dari satu pembuat (`cash_ledger.create_cash`) ==
+[PASS] 736 cek lolos, 0 pelanggaran.
+== verify_detail_modal
+== INV-UI-08 — panel rincian wajib pop-up (bukan diselipkan di bawah daftar) ==
+[PASS] 30 cek lolos, 0 pelanggaran.
+== verify_config_fallback
+    import bcrypt
+ModuleNotFoundError: No module named 'bcrypt'
+== verify_payment_vocab
+== INV-PAY-VOCAB-01 — kosakata cara bayar hanya dari daftar induk (PM-T1) ==
+[PASS] 1827 cek lolos, 0 pelanggaran.
+== verify_permission_checked
+== INV-PERM-01 — setiap izin di katalog diperiksa server; sumber daya bermodul & berlabel ==
+[PASS] 613 cek lolos, 0 pelanggaran.
+== verify_config_text
+    import bcrypt
+ModuleNotFoundError: No module named 'bcrypt'
+== verify_config_fallback
+$S/venv311/bin/python: can't open file '$S/wt23/scripts/guardrails/verify_config_fallback': [Errno 2] No such file or directory
+== verify_config_fallback --entity
+$S/venv311/bin/python: can't open file '$S/wt23/scripts/guardrails/verify_config_fallback': [Errno 2] No such file or directory
+== verify_config_text
+$S/venv311/bin/python: can't open file '$S/wt23/scripts/guardrails/verify_config_text': [Errno 2] No such file or directory
+== verify_config_fallback.py
+== INV-CFG-09 — cadangan kode = bawaan registry ==
+[PASS] 159 cek lolos, 0 pelanggaran.
+== verify_config_fallback.py --entity
+== INV-CFG-10 — kunci berlapis PT dibaca dengan PT dokumennya ==
+[PASS] 159 cek lolos, 0 pelanggaran.
+== verify_config_text.py
+== INV-CFG-TXT — teks Pengaturan berbahasa awam (label ≤ 45, satuan, arti 0, glosarium, sub-judul) ==
+[PASS] 3332 cek lolos, 0 pelanggaran.
