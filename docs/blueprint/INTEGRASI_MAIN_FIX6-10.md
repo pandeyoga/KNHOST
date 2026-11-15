@@ -5,7 +5,7 @@ Cabang blueprint `claude/nifty-carson-jjx3c8` = `cd6963a` + 309 commit. Penggabu
 satu commit gabungan (`git merge --no-ff origin/main`, judul "R0 — gabung main (FIX-6…FIX-10)…"). **`main` tidak disentuh.**
 Sesudah tinjauan, `main` bisa maju ke cabang ini tanpa bentrok (cabang ini sudah memuat `bfb3d0c`).
 
-Status: **diimplementasikan, menunggu tinjauan** (bukan `verified`). Bacaan yang dipakai: `docs/finance/AUDIT_KEUANGAN_2026-11-13.md`
+Status: **diimplementasikan; 8 keputusan §1 disetujui pemilik 15 Nov; `main` dimajukan ke cabang ini atas izin pemilik** (status tinjauan reviewer tetap bukan `verified`). Bacaan yang dipakai: `docs/finance/AUDIT_KEUANGAN_2026-11-13.md`
 (retur/jurnal), laporan PK-27, PK-28, PK-32, KF-T6, KP-T4, PR-T2 di `docs/reviews/2026-11-13/hasil/`, laporan FIX-6…FIX-10 di
 `docs/audit/2026-11-09-wms-rfid/hasil/`, `docs/rfid/KEPUTUSAN_GATE_RFID.md` (H7 — berkas RFID hanya tampilan, logika gerbang
 tidak diubah).

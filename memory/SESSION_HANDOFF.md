@@ -10,7 +10,8 @@
 > **R0 dikerjakan (15 Nov, menunggu tinjauan):** `main` `bfb3d0c` (FIX-6…FIX-10) sudah digabung ke cabang blueprint dengan
 > satu commit gabungan; `main` tidak disentuh. 22 bentrok + 2 duplikasi yang tergabung otomatis (qty tertagih retur beli
 > dikurangi dua kali; registri pengaturan/izin) diselesaikan — keputusan, uji, temuan sampingan dan gate di
-> `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Tinjau R0 dulu sebelum `main` dimajukan ke cabang ini.
+> `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Pemilik menyetujui 8 keputusannya; `main` sudah dimajukan ke cabang ini
+> (fast-forward) dan 4 cabang lama dihapus. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
 
 ## Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
 > **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
