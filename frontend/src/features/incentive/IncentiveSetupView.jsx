@@ -9,6 +9,10 @@
  * GET /api/incentive/definitions/current · GET /api/incentive/reconciliation?period · POST /api/incentive/facts/rebuild.
  * Lihat = `incentive.view`; ubah = `incentive.configure` (`can`, bukan nama peran). Mode "Semua PT" hanya baca: tombol
  * simpan mati dan alasannya tertulis di samping tombol (L4). Memuat · galat · kosong dibedakan per bagian.
+ *
+ * KM-T4 — kartu **Kesiapan beralih ke Lembar Insentif** (`GET /api/incentive/switch-readiness`, `incentive.configure`):
+ * cara insentif yang berlaku di PT ini dan empat butir periksa (ikon + teks + warna). Tidak ada tombol alih di sini —
+ * sakelarnya diubah di Pusat Pengaturan (tautan "Ubah di Pusat Pengaturan"; titik henti H5: pemilik yang menyalakan).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleSlash, Copy, Layers, Pencil, Plus, RefreshCw, Scale, Search, Settings2, Target } from "lucide-react";
@@ -484,6 +488,58 @@ function BagianDefinisi({ canWrite, canConfigure, entity, pt }) {
   );
 }
 
+/** KM-T4 — butir kesiapan beralih: ikon + teks + warna (kelas `status-*` yang ada). */
+export function ButirKesiapan({ c }) {
+  const Icon = c.ok ? CheckCircle2 : AlertTriangle;
+  return (
+    <li className="flex items-start gap-2" data-testid={`ins-ready-${c.code}`} data-ok={c.ok ? "1" : "0"}>
+      <span className={`status-pill ${c.ok ? "status-done" : "status-pending"} inline-flex shrink-0 items-center gap-1 whitespace-nowrap`}>
+        <Icon size={12} aria-hidden="true" />{c.ok ? "Siap" : "Belum"}</span>
+      <span className="text-fs-13 text-kn-text">{c.text}</span>
+    </li>
+  );
+}
+
+function BagianKesiapan({ canWrite, canConfigure, entity }) {
+  const [data, setData] = useState(null);
+  const [state, setState] = useState("loading");
+  const [err, setErr] = useState("");
+  const load = useCallback(async () => {
+    if (!canWrite) { setState("all"); return; }
+    setState("loading");
+    try { const r = await axios.get(`${API}/incentive/switch-readiness`); setData(r.data); setErr(""); setState("ready"); }
+    catch (e) { setErr(apiErrorText(e) || ""); setState("error"); }
+  }, [canWrite]);
+  useEffect(() => { if (canConfigure) load(); }, [load, entity, canConfigure]);
+  if (!canConfigure) return null;
+  const siap = (data?.checks || []).every((c) => c.ok);
+  return (
+    <div className="section-card" data-testid="ins-ready">
+      <div className="section-head"><h2 className="flex items-center gap-2"><CheckCircle2 size={16} className="text-kn-action" aria-hidden="true" />Kesiapan beralih ke Lembar Insentif</h2></div>
+      {state === "all" ? (
+        <div className="section-pad text-fs-13 text-kn-text-2" data-testid="ins-ready-all">Kesiapan dihitung per PT. Pilih satu PT di pemilih PT (kanan atas).</div>
+      ) : state === "loading" ? (
+        <div className="section-pad text-fs-13 text-kn-text-2" role="status" data-testid="ins-ready-loading">Memeriksa kesiapan…</div>
+      ) : state === "error" ? (
+        <div className="section-pad"><ErrorNotice testId="ins-ready-error" message={`Kesiapan tidak bisa diperiksa. ${err}`.trim()} onRetry={load} /></div>
+      ) : (
+        <div className="section-body space-y-3">
+          <p className="text-fs-13 text-kn-text" data-testid="ins-ready-mode">Cara insentif sales masuk penggajian di PT ini: <b>{data?.mode_label}</b></p>
+          <ul className="space-y-2" data-testid="ins-ready-list">{(data?.checks || []).map((c) => <ButirKesiapan key={c.code} c={c} />)}</ul>
+          <div className="flex flex-wrap items-center gap-3 text-fs-12 text-kn-text-2">
+            <span data-testid="ins-ready-summary">{data?.mode === "sheet" ? "PT ini sudah memakai Lembar Insentif." : siap
+              ? "Semua butir siap. Pemilik bisa mengalihkan PT ini di Pusat Pengaturan."
+              : "Selesaikan butir yang belum siap sebelum PT ini dialihkan."}</span>
+            <button type="button" data-testid="ins-ready-open-config" className="link-button text-fs-12"
+              onClick={() => openConfig({ key: "hr.payroll_commission_mode" })}>
+              <Settings2 size={12} aria-hidden="true" /> Ubah di Pusat Pengaturan</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function IncentiveSetupView() {
   const { canWrite, selectedEntity, entities } = useEntityScope();
   const canConfigure = canCurrent("incentive", "configure");
@@ -495,6 +551,7 @@ export default function IncentiveSetupView() {
       <BagianTarget {...props} />
       <BagianKomponen {...props} />
       <BagianDefinisi {...props} />
+      <BagianKesiapan {...props} />
     </div>
   );
 }

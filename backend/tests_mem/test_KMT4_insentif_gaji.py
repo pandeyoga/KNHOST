@@ -264,7 +264,6 @@ async def test_KMT4_U4a_invarian_hutang_sebelum_gaji(db, f4, capsys):
 
 
 # ═══ U2 — proses reguler 2026-11: dua baris insentif, mesin tidak dipanggil ═══════════════════════════════════════
-@pytest.mark.xfail(strict=True, reason="PY-06 — komisi mesin masih dipanggil di PT bermode Lembar Insentif (serah-terima b)")
 async def test_KMT4_U2_slip_dari_lembar_tanpa_komisi_mesin(klien, db, f4, monkeypatch):
     """Pratinjau proses reguler (jalur hitung yang sama dengan proses dibuat, `_build_slips`); slip proses yang dibuat
     diperiksa lagi di U3. Data komisi mesin ada (500.000 bila mesin dipanggil) lalu dicabut di akhir."""
@@ -373,7 +372,6 @@ async def test_KMT4_U6_pt_bawaan_tanpa_jurnal_tanpa_masukan(klien, db, f4):
 
 
 # ═══ U7 — pratinjau gaji: `accrue_then_settle` memuat komisi mesin, `off` tidak ═══════════════════════════════════
-@pytest.mark.xfail(strict=True, reason="PY-06 — pilihan off masih memuat komisi mesin di slip (serah-terima b)")
 async def test_KMT4_U7_mode_off_mematikan_komisi_mesin(klien, db, f4):
     await _data_mesin(db, KSC, f4["u"]["citra"], "citra")
     try:
@@ -557,8 +555,31 @@ async def test_KMT4_U13_pelunasan_dan_invarian(klien, db, f4, capsys):
     await db.interco_charges.update_one({"id": c["id"]}, {"$set": {"status": "settled", "outstanding": 0}})
 
 
+# ═══ U16 (pengganti lapis B; lapis A = tests/test_bp_KMT4_sahkan_bersamaan_mongo.py) — dua pengesahan bersamaan ═══
+async def test_KMT4_U16_dua_pengesahan_bersamaan_lapis_b(klien, db, f4):
+    import asyncio
+    s = await _lembar(klien, f4, "2027-01", [("budi", "KHS", "month", "2026-08", 400_000)])
+    hasil = await asyncio.gather(*[klien.post(f"{URL}/{s['id']}/approve", headers=f4["h"], json={}) for _ in range(2)])
+    assert sorted(r.status_code for r in hasil) == [200, 409], [r.text for r in hasil]
+    kalah = next(r for r in hasil if r.status_code == 409).json()["detail"]
+    assert kalah in (f"Lembar {s['number']} sedang diproses. Muat ulang.",
+                     f"Lembar {s['number']} berstatus Disahkan, jadi tidak bisa diubah."), kalah
+    assert len(await _jurnal(db, "incentive_sheet", s["id"])) == 1 and len(await _masukan(db, s["id"])) == 1
+    # NIAT yang terhenti di tengah (`approving`, jatah kerja habis) diteruskan oleh Sahkan berikutnya — tanpa dobel
+    s2 = await _lembar(klien, f4, "2027-01", [("budi", "KHS", "month", "2026-07", 600_000)])
+    await db.incentive_sheets.update_one({"id": s2["id"]}, {"$set": {"status": "approving", "payroll_linked": True,
+                                                                      "journal_date": "2026-07-31", "gl_status": "pending",
+                                                                      "approved_by": {"id": "u", "name": "Uji"},
+                                                                      "approving_lease_until": "2000-01-01T00:00:00+00:00",
+                                                                      "lines.0.employee_id": "emp_kmt4_budi",
+                                                                      "lines.0.pay_entity_id": KANDA,
+                                                                      "lines.0.input_key": f"isheet:{s2['id']}:x"}})
+    r = await klien.post(f"{URL}/{s2['id']}/approve", headers=f4["h"], json={})
+    assert r.status_code == 200 and (r.json()["status"], r.json()["gl_status"]) == ("approved", "posted"), r.text
+    assert len(await _jurnal(db, "incentive_sheet", s2["id"])) == 1 and len(await _masukan(db, s2["id"])) == 1
+
+
 # ═══ (b) langkah 4 — `incentive_unit` dicabut dari API tarif; kuncinya "tidak dipakai" ════════════════════════════
-@pytest.mark.xfail(strict=True, reason="KM-07 — satuan insentif masih diterima dan dikirim API tarif (serah-terima b)")
 async def test_KMT4_b_satuan_insentif_dicabut(klien, db, f4):
     import config_registry as registry
     e = registry.require("commission.incentive_unit")
@@ -588,8 +609,9 @@ async def test_KMT4_kesiapan_beralih(klien, db, f4, peran_manajer_kosong, akun, 
     assert j["mode"] == "sheet" and j["mode_label"] == "Dari Lembar Insentif yang disahkan"
     assert [c["code"] for c in j["checks"]] == ["pencocokan", "saldo_hutang", "tautan_karyawan", "proses_gaji"]
     hut = next(c for c in j["checks"] if c["code"] == "saldo_hutang")
-    # saldo hutang insentif ent_kanda: L1 (8.500.000, proses Nov dianulir) + lembar U9 (3.000.000) belum dibayar
-    assert hut["ok"] is False and "Rp 11.500.000" in hut["text"], hut
+    # saldo hutang insentif ent_kanda belum dibayar: L1 8.500.000 (proses Nov dianulir) + lembar U9 3.000.000
+    # + lembar U16 400.000 + 600.000 = 12.500.000
+    assert hut["ok"] is False and "Rp 12.500.000" in hut["text"], hut
     tautan = next(c for c in j["checks"] if c["code"] == "tautan_karyawan")
     assert tautan["ok"] is False and "Eko" in tautan["text"], tautan   # lembar U8 masih diajukan
     hk = await sesi(await akun(await peran_manajer_kosong(), entitas=(KANDA,)), entitas=KANDA)

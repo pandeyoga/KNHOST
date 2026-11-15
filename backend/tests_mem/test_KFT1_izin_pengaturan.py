@@ -157,6 +157,9 @@ PYT5_KUNCI = 1
 # KM-T3 — dua kunci kontrol dua orang baru `kontrol.lembar_insentif.{min_orang,batas_nominal}` (keluarga KF-T6, izin
 # `settings.manage`): ikut U02 dan U04.
 KMT3_KUNCI_KONTROL = 2
+# KM-T4 — `commission.incentive_unit` ditandai tidak dipakai (mesin komisi memakai satuan dasar barang): tidak lagi bisa
+# diubah pemegang `settings.manage` (U02 − 1); tetap terhitung di katalog (U04 tetap).
+KMT4_TIDAK_DIPAKAI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -196,7 +199,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
         - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI + PMT1_KUNCI + CRT1_KUNCI_KONTROL + AGT1_KUNCI \
-        + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL + KMT3_KUNCI_KONTROL
+        + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL + KMT3_KUNCI_KONTROL - KMT4_TIDAK_DIPAKAI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):

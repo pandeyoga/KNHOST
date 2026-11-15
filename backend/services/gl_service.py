@@ -3513,11 +3513,12 @@ async def post_incentive_accrual(entity_id: str, period: str,
     await seed_default_coa()
     if total is None:
         from services import sales_force_service as sf
-        from role_registry import roles_in_category   # PR-T4 — akrual insentif: semua akun berkategori kerja "sales"
-        sales_users = await db.users.find(
-            {"role": {"$in": roles_in_category("sales")}, "status": "active"}, {"_id": 0, "id": 1}).to_list(500)
+        from services.incentive_targets import sales_roster
+        # KM-T4 (KM-07) — daftar sales akrual manual = daftar sales PT itu (`sales_roster`: akun berperan acuan sales
+        # yang ditugaskan di PT + yang punya fakta/target bulan itu), sama dengan Meja Insentif. Dulu: semua akun
+        # berkategori sales di seluruh grup.
         total = 0.0
-        for u in sales_users:
+        for u in await sales_roster(entity_id, "month", period):
             c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
             total += float(c.get("total_incentive", 0) or 0)
     total = round(float(total or 0), 2)

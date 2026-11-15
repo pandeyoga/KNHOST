@@ -22,8 +22,6 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency } from "../../utils/formatters";
 import { entityFullById, entityOptions } from "../../utils/entityLabel";
 import { askReason } from "@/services/confirmService";
-import useUomConversions from "../../hooks/useUomConversions";
-import { uomSelectOptions } from "../../utils/uomCatalog";
 import { SettingsBrowser, SettingsNotice, useSettingsBrowser } from "../settings/config/SettingsHub";
 import { COMMISSION_PREFIX } from "../settings/config/configGroupViews";
 
@@ -31,7 +29,6 @@ const THRESHOLD_TYPES = [
   { value: "pct", label: "% diskon" },
   { value: "rp_per_unit", label: "Rp / unit" },
 ];
-const HIDDEN_UNITS = ["cm", "mm", "km", "dm", "inch", "in", "ft", "feet", "g", "gr", "gram", "mg", "ton", "ons"];
 const MECHANICS = [
   { value: "tier_factor", label: "Faktor (komisi × faktor)" },
   { value: "potong_rp", label: "Potong Rp/unit" },
@@ -39,7 +36,7 @@ const MECHANICS = [
 ];
 const EMPTY = {
   // Audit UI 111 — bawaan "yard" (seluruh matriks memakai /yard; dulu bawaan "Meter (m)").
-  entity_id: "all", category: "", incentive_unit: "yard", per_unit_amount: 0,
+  entity_id: "all", category: "", per_unit_amount: 0,
   discount_threshold_type: "pct", discount_threshold: 10, discount_mechanic: "tier_factor",
   discount_factor: 0.5, discount_potong_rp: 0, margin_cap_pct: 50, status: "active",
 };
@@ -82,13 +79,7 @@ export default function IncentiveRatesEditor({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [entities, setEntities] = useState([]);
-  // FASE U — satuan insentif dari MASTER satuan (produk per `panel` tetap bisa diberi tarif).
-  useUomConversions();
-  // UAT 24 Okt (audit UI tahap 2) — G2-26: satuan ukur yang tidak pernah dipakai menjual kain tidak ditawarkan.
-  const unitOpts = uomSelectOptions({
-    dimensions: ["length", "weight", "count"],
-    extra: [form?.incentive_unit].filter(Boolean),
-  }).filter((o) => !HIDDEN_UNITS.includes(o.value) || o.value === String(form?.incentive_unit || "").toLowerCase());
+  // KM-T4 (KM-07) — isian "Satuan" dicabut: mesin komisi mengalikan tarif dengan jumlah satuan dasar barang.
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,6 +117,7 @@ export default function IncentiveRatesEditor({
       discount_potong_rp: Number(form.discount_potong_rp) || 0,
       margin_cap_pct: Number(form.margin_cap_pct) || 0,
     };
+    delete payload.incentive_unit;   // KM-T4 — dokumen lama boleh masih membawa satuan; tidak dikirim
     try {
       if (editingId) await axios.patch(`${API}/incentive-rates/${editingId}`, { data: payload });
       else await axios.post(`${API}/incentive-rates`, payload);
@@ -195,7 +187,7 @@ export default function IncentiveRatesEditor({
                     <tr key={r.id} data-testid={`rate-row-${r.id}`}>
                       <td className="text-[11px] text-[#6B6B73]">{r.entity_id === "all" ? "Semua" : entityFullById(entities, r.entity_id)}</td>
                       <td className="font-semibold">{r.category}</td>
-                      <td className="text-right tabular-nums">{formatCurrency(r.per_unit_amount)}<span className="text-[10px] text-[#9A9BA3]">/{r.incentive_unit}</span></td>
+                      <td className="text-right tabular-nums">{formatCurrency(r.per_unit_amount)}<span className="text-[10px] text-[#9A9BA3]">/satuan dasar</span></td>
                       <td className="text-[11px] text-[#6B6B73] tabular-nums">{r.discount_mechanic === "cutoff" ? "Komisi 0" : r.discount_mechanic === "potong_rp" ? `−${formatCurrency(r.discount_potong_rp)}` : `×${String(r.discount_factor).replace(".", ",")}`} bila diskon ≥ {r.discount_threshold_type === "pct" ? `${String(r.discount_threshold).replace(".", ",")}%` : formatCurrency(r.discount_threshold)}</td>
                       <td className="text-right tabular-nums">{r.margin_cap_pct}%</td>
                       <td>
@@ -226,8 +218,7 @@ export default function IncentiveRatesEditor({
             <L label="Kategori *">
               <KNSelect data-testid="rate-category-input" className="field" value={form.category} onValueChange={(v) => set({ category: v })} options={catOptions} placeholder="Pilih kategori" />
             </L>
-            <L label="Tarif (Rp/satuan)"><MoneyInput testId="rate-per-unit-input" className="field" value={form.per_unit_amount} onChange={(v) => set({ per_unit_amount: v })} /></L>
-            <L label="Satuan"><KNSelect data-testid="rate-unit-input" className="field" value={form.incentive_unit} onValueChange={(v) => set({ incentive_unit: v })} options={unitOpts} /></L>
+            <L label="Tarif (Rp per satuan dasar)"><MoneyInput testId="rate-per-unit-input" className="field" value={form.per_unit_amount} onChange={(v) => set({ per_unit_amount: v })} /></L>
             <L label="Ambang diskon (basis)"><KNSelect data-testid="rate-threshold-type" className="field" value={form.discount_threshold_type} onValueChange={(v) => set({ discount_threshold_type: v })} options={THRESHOLD_TYPES} /></L>
             <L label="Ambang"><input data-testid="rate-threshold-input" type="number" className="field" value={form.discount_threshold} onChange={(e) => set({ discount_threshold: e.target.value })} /></L>
             <L label="Mekanik diskon"><KNSelect data-testid="rate-mechanic-input" className="field" value={form.discount_mechanic} onValueChange={(v) => set({ discount_mechanic: v })} options={MECHANICS} /></L>
@@ -236,7 +227,7 @@ export default function IncentiveRatesEditor({
               <L label="Faktor komisi (× komisi)"><input data-testid="rate-factor-input" type="number" step="0.1" min="0" className="field" value={form.discount_factor} onChange={(e) => set({ discount_factor: e.target.value })} /></L>
             )}
             {form.discount_mechanic === "potong_rp" && (
-              <L label={`Potong (Rp/${form.incentive_unit || "satuan"})`}><MoneyInput testId="rate-potong-input" className="field" value={form.discount_potong_rp} onChange={(v) => set({ discount_potong_rp: v })} /></L>
+              <L label="Potong (Rp per satuan dasar)"><MoneyInput testId="rate-potong-input" className="field" value={form.discount_potong_rp} onChange={(v) => set({ discount_potong_rp: v })} /></L>
             )}
             {form.discount_mechanic === "cutoff" && (
               <p className="self-end text-[11px] text-[#6B6B73]" data-testid="rate-cutoff-note">Diskon di atas ambang → komisi baris itu 0.</p>

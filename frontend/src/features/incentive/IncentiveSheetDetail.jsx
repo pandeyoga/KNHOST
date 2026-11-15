@@ -14,6 +14,12 @@
  *
  * Lebar tabel (pop-up `xl`, ±990 px di layar 1024): 8 kolom tanpa kolom aksi — tombol buka-tutup di sel Sales, hapus
  * baris di rincian baris; judul kolom boleh dua baris (`head-wrap`), angka uang tanpa "Rp" (keterangan di atas tabel).
+ *
+ * KM-T4 — sambungan ke gaji & buku besar menurut sakelar PT (`sheet.payroll` dari server): bilah "Jurnal" (lencana PK-18 +
+ * "Lihat jurnal", L8) untuk lembar berjurnal; per baris "Dibayar lewat {nomor proses gaji}" sesudah gajinya diposting;
+ * pita keterangan di PT yang belum dialihkan (lembar = keputusan saja); konfirmasi Sahkan di PT bermode Lembar Insentif
+ * menyebut beban, tanggal jurnal, banyak baris, dan bulan gaji. Status antara "Sedang disahkan" → tombol "Lanjutkan
+ * pengesahan" (pengesahan yang terhenti diteruskan server).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Ban, CheckCircle2, ChevronDown, ChevronRight, Clock, Download, FilePen, Plus, RefreshCw,
@@ -27,20 +33,24 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyDelete, moneyPatch, moneyPost } from "../../utils/moneyRequest";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { canCurrent } from "../../config/roles";
+import { useAppNav } from "../../context/AppNavContext";
+import { JournalStatusBar } from "../../components/JournalStatusBadge";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { entityFullById } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
 import { docStatusLabel } from "../../utils/docStatus";
-import { formatCurrency, formatDateTime, formatDecimal, formatPeriod, todayWib } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatDateTime, formatDecimal, formatPeriod, todayWib } from "../../utils/formatters";
 import { pilihanPeriode } from "./IncentiveSetupView";
 
 // ── Pembantu bersama (dipakai juga daftar lembar dan tombol di Capaian) ─────────────────────────────────────────────
 /** Label lokal status lembar (didahulukan sebelum peta bersama `docStatusLabel`). */
-const LABEL_STATUS = { draft: "Draf", submitted: "Diajukan", approved: "Disahkan", paid: "Dibayarkan", cancelled: "Dibatalkan" };
+const LABEL_STATUS = { draft: "Draf", submitted: "Diajukan", approving: "Sedang disahkan", approved: "Disahkan", paid: "Dibayarkan",
+  cancelled: "Dibatalkan" };
 /** Status = ikon + teks + warna (KN_37 §8) memakai kelas `status-*` yang ADA di `styles/components.css`. */
 export const STATUS_LEMBAR = {
   draft: { cls: "status-draft", Icon: FilePen },
   submitted: { cls: "status-pending", Icon: Clock },
+  approving: { cls: "status-pending", Icon: Clock },
   approved: { cls: "status-done", Icon: CheckCircle2 },
   paid: { cls: "status-shipped", Icon: Wallet },
   cancelled: { cls: "status-cancelled", Icon: XCircle },
@@ -84,6 +94,27 @@ export function teksKonfirmasiSahkan(sheet, pt, total) {
     + "Setelah disahkan, lembar tidak bisa diubah; koreksi dibuat sebagai penyesuaian di lembar berikutnya.";
 }
 
+/** KM-T4 — kalimat tambahan konfirmasi Sahkan di PT bermode Lembar Insentif (N5): beban, tanggal jurnal, baris, bulan gaji. */
+export function teksSahkanGaji(payroll, total, lines) {
+  if (!payroll?.sheet_mode) return "";
+  const n = (lines || []).filter((x) => Number(x.amount || 0) !== 0).length;
+  const tgl = payroll.journal_date ? formatDate(payroll.journal_date) : "akhir bulan periode dasarnya";
+  return `Beban insentif ${formatCurrency(total)} dibukukan per ${tgl} dan ${n} baris masuk gaji ${formatPeriod(payroll.pay_period)}.`;
+}
+
+/** KM-T4 — pita keterangan lembar yang tidak masuk gaji (PT belum dialihkan / dialihkan sesudah lembar disahkan). "" = tidak ada. */
+export function teksPitaGaji(sheet) {
+  const p = sheet?.payroll;
+  if (!p || sheet?.payroll_linked || sheet?.status === "cancelled") return "";
+  if (p.sheet_mode) {
+    return ["approved", "paid"].includes(sheet?.status)
+      ? "Lembar ini disahkan sebelum PT beralih ke Lembar Insentif, jadi tercatat sebagai keputusan dan tidak masuk gaji."
+      : "";
+  }
+  if (p.mode === "off") return "PT ini tidak membayar insentif lewat gaji. Lembar ini tercatat sebagai keputusan dan tidak masuk gaji.";
+  return "PT ini masih memakai komisi otomatis. Lembar ini tercatat sebagai keputusan dan tidak masuk gaji.";
+}
+
 /** "Berubah sejak dipotret: Omzet bersih −Rp 50.000.000" (uang) atau "… Realisasi harga −1,2 poin" (persen). */
 export function teksBerubah(d) {
   if (!d) return "";
@@ -98,7 +129,7 @@ export function teksBerubah(d) {
 export function alasanLembar({ canWrite, status, canPrepare, canApprove }) {
   if (!canWrite) return "Pilih satu PT dulu.";
   if (status === "draft" && !canPrepare) return "Mengubah lembar butuh akses Siapkan lembar insentif di modul Kinerja & Insentif.";
-  if (status === "submitted" && !canApprove) return "Menunggu pengesahan oleh pemegang akses Sahkan lembar insentif.";
+  if ((status === "submitted" || status === "approving") && !canApprove) return "Menunggu pengesahan oleh pemegang akses Sahkan lembar insentif.";
   if (status === "approved" || status === "paid") return "Lembar sudah disahkan — koreksi dibuat sebagai baris penyesuaian di lembar berikutnya.";
   if (status === "cancelled") return "Lembar sudah dibatalkan.";
   return "";
@@ -121,7 +152,8 @@ export function pilihanDasar(jenis, cur = "") {
 }
 /** Riwayat lembar: aksi → kalimat. */
 export const AKSI_RIWAYAT = { create: "Dibuat", submit: "Diajukan", approve: "Disahkan", return: "Dikembalikan ke penyiap",
-  cancel: "Dibatalkan", refresh: "Angka dasar disegarkan", paid: "Dibayarkan lewat gaji" };
+  cancel: "Dibatalkan", refresh: "Angka dasar disegarkan", paid: "Dibayarkan lewat gaji",
+  unpaid: "Pembayaran lewat gaji dianulir" };
 const JENIS_DASAR = [{ value: "month", label: "Bulan" }, { value: "quarter", label: "Triwulan" }, { value: "year", label: "Tahun" }];
 const RINCIAN = [["Target omzet", "target_sales", "uang"], ["Omzet", "omzet", "uang"], ["Retur", "retur", "uang"],
   ["Omzet bersih", "omzet_bersih", "uang"], ["% capaian omzet", "pct_omzet", "pct"], ["Target pencairan", "target_collection", "uang"],
@@ -222,6 +254,7 @@ function FormBaris({ open, onClose, sheet, penyesuaian, onSaved }) {
 // ── Rincian lembar ───────────────────────────────────────────────────────────────────────────────────────────────────
 export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
   const { canWrite, entities } = useEntityScope();
+  const { openDocument } = useAppNav();
   const canPrepare = canCurrent("incentive", "prepare");
   const canApprove = canCurrent("incentive", "approve");
   const [sheet, setSheet] = useState(null);
@@ -256,6 +289,7 @@ export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
   const alasan = alasanLembar({ canWrite, status, canPrepare, canApprove });
   const bisaUbah = status === "draft" && !alasan;
   const bisaPutus = status === "submitted" && !alasan;
+  const bisaLanjut = status === "approving" && !alasan;   // KM-T4 — pengesahan terhenti di tengah
   const lines = useMemo(() => sheet?.lines || [], [sheet]);
   const drift = useMemo(() => {
     const by = {};
@@ -318,12 +352,14 @@ export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
   const sahkan = async () => {
     const tanpaCatatan = dikoreksi.filter((id) => !String(koreksi[id]?.note || "").trim());
     if (tanpaCatatan.length) { setActErr("Beri catatan untuk setiap nominal yang dikoreksi."); return; }
-    const ok = await askConfirm({ title: `Sahkan lembar ${sheet.number}?`, message: teksKonfirmasiSahkan(sheet, pt, totalKoreksi),
-      confirmLabel: "Sahkan" });
+    const gaji = teksSahkanGaji(sheet.payroll, totalKoreksi, lines.map((x) => (dikoreksi.includes(x.id) ? { ...x, amount: koreksi[x.id].amount } : x)));
+    const ok = await askConfirm({ title: `Sahkan lembar ${sheet.number}?`,
+      message: `${teksKonfirmasiSahkan(sheet, pt, totalKoreksi)}${gaji ? ` ${gaji}` : ""}`, confirmLabel: "Sahkan" });
     if (!ok) return;
     const corrections = dikoreksi.map((id) => ({ line_id: id, amount: Number(koreksi[id].amount), note: koreksi[id].note.trim() }));
     aksi("sahkan", "approve", { corrections }, "Lembar disahkan.");
   };
+  const lanjutkan = () => aksi("lanjut", "approve", {}, "Pengesahan lembar diteruskan.");
   const kembalikan = async () => {
     const reason = await askReason({ title: `Kembalikan lembar ${sheet.number}?`,
       message: "Lembar kembali menjadi draf supaya penyiap bisa memperbaikinya.", confirmLabel: "Kembalikan" });
@@ -403,6 +439,10 @@ export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
                         <Ban size={13} aria-hidden="true" /> Batalkan</button>
                     </>
                   )}
+                  {status === "approving" && (
+                    <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid="isheet-resume" disabled={!bisaLanjut || !!busy} onClick={lanjutkan}>
+                      <CheckCircle2 size={13} aria-hidden="true" /> Lanjutkan pengesahan</button>
+                  )}
                   {status === "submitted" && (
                     <>
                       <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid="isheet-approve" disabled={!bisaPutus || !!busy} onClick={sahkan}>
@@ -417,6 +457,17 @@ export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
                   {!alasan && ajukanAlasan && <span className="text-fs-12 text-kn-text-2" data-testid="isheet-submit-why">{ajukanAlasan}</span>}
                   {bisaPutus && <span className="text-fs-12 text-kn-text-2" data-testid="isheet-correct-hint">Ubah nominal di tabel untuk mengoreksi; catatan wajib.</span>}
                 </div>
+                {teksPitaGaji(sheet) && (
+                  <div className="notice-bar info" data-testid="isheet-payroll-note"><span className="text-fs-12">{teksPitaGaji(sheet)}</span></div>)}
+                {sheet.payroll_linked && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="isheet-journal-row">
+                    <JournalStatusBar doc={sheet} testId="isheet-journal" />
+                    {sheet.journal_date && <span className="text-fs-12 text-kn-text-2">per {formatDate(sheet.journal_date)}</span>}
+                    {sheet.gl_status === "posted" && sheet.journal_entry_id && canCurrent("accounting", "view") && (
+                      <button type="button" className="link-button text-fs-12" data-testid="isheet-journal-link"
+                        onClick={() => openDocument({ view: "general-ledger", focus_type: "journal_entry", focus_id: sheet.journal_entry_id })}>Lihat jurnal</button>)}
+                  </div>
+                )}
                 {msg && <div className="notice-bar success" role="status" data-testid="isheet-msg"><span className="text-fs-12">{msg}</span></div>}
                 {actErr && <ErrorNotice testId="isheet-act-error" message={actErr} />}
               </div>
@@ -477,6 +528,8 @@ export default function IncentiveSheetDetail({ sheetId, onClose, onChanged }) {
                                 )}
                                 {x.amount_prepared !== undefined && x.amount_prepared !== null && x.amount_prepared !== x.amount && (
                                   <span className="block text-fs-12 text-kn-text-2 whitespace-nowrap">penyiap {formatCurrency(x.amount_prepared)}</span>)}
+                                {x.paid_run_id && (
+                                  <span className="block text-fs-12 text-kn-success-text" data-testid={`isheet-paid-${x.id}`}>Dibayar lewat {x.paid_run_number || "penggajian"}</span>)}
                               </td>
                               <td className="break-words">
                                 {bisaUbah ? (

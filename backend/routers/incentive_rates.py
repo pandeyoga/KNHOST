@@ -18,9 +18,10 @@ router = APIRouter(prefix="/api")
 
 
 class RatePayload(BaseModel):
+    """KM-T4 (KM-07) — `incentive_unit` tidak lagi diterima: mesin komisi memakai jumlah satuan dasar baris
+    (`sales_force_service`, `base_qty`). Isian tambahan di permintaan diabaikan (Pydantic bawaan)."""
     entity_id: str = "all"
     category: str
-    incentive_unit: str = "meter"
     per_unit_amount: float = 0.0
     discount_threshold_type: str = "pct"      # pct | rp_per_unit
     discount_threshold: float = 10.0
@@ -35,9 +36,14 @@ class GenericPatch(BaseModel):
     data: Dict[str, Any] = Field(default_factory=dict)
 
 
-_FIELDS = ["entity_id", "category", "incentive_unit", "per_unit_amount",
+_FIELDS = ["entity_id", "category", "per_unit_amount",
            "discount_threshold_type", "discount_threshold", "discount_mechanic",
            "discount_factor", "discount_potong_rp", "margin_cap_pct", "status"]
+
+
+def _out(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """KM-T4 (KM-07) — `incentive_unit` dokumen lama tidak dikirim (tidak dipakai mesin komisi)."""
+    return {k: v for k, v in safe_doc(doc).items() if k != "incentive_unit"}
 
 
 @router.get("/incentive-rates")
@@ -49,7 +55,7 @@ async def list_rates(request: Request, entity_id: Optional[str] = None) -> List[
     query: Dict[str, Any] = resolve_list_scope_inherit("incentive_rates", {}, ctx, entity_id)
     rows = await db.incentive_rates.find(query, {"_id": 0}).to_list(1000)
     rows.sort(key=lambda r: (r.get("entity_id", ""), r.get("category", "")))
-    return [safe_doc(r) for r in rows]
+    return [_out(r) for r in rows]
 
 
 @router.post("/incentive-rates")
@@ -62,16 +68,10 @@ async def create_rate(payload: RatePayload, request: Request) -> Dict[str, Any]:
     if dup:
         raise HTTPException(status_code=409, detail="Rate untuk entitas+kategori ini sudah ada")
     doc = payload.model_dump()
-    # FASE G-0 — `commission.incentive_unit` DULU tidak dibaca kode mana pun. Sekarang
-    # menjadi satuan dasar bawaan tarif komisi baru bila tidak diisi eksplisit.
-    if not (doc.get("incentive_unit") or "").strip():
-        from services.config_resolver import value_of
-        doc["incentive_unit"] = str(
-            await value_of("commission.incentive_unit", {"entity_id": payload.entity_id}) or "meter")
     doc.update({"id": new_id("irate"), "created_at": now_iso(), "updated_at": now_iso()})
     await db.incentive_rates.insert_one(doc)
     await audit(actor["name"], "incentive_rate_created", "incentive_rate", doc["id"], doc)
-    return safe_doc(doc)
+    return _out(doc)
 
 
 @router.patch("/incentive-rates/{rate_id}")
@@ -86,7 +86,7 @@ async def update_rate(rate_id: str, payload: GenericPatch, request: Request) -> 
     if not updated:
         raise HTTPException(status_code=404, detail="Rate tidak ditemukan")
     await audit(actor["name"], "incentive_rate_updated", "incentive_rate", rate_id, updated)
-    return safe_doc(updated)
+    return _out(updated)
 
 
 @router.delete("/incentive-rates/{rate_id}")

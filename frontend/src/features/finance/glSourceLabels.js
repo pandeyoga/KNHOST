@@ -29,6 +29,10 @@ export const SOURCE_LABELS = {
   makloon_claim: "Klaim Makloon", makloon_material_loss: "Susut Bahan Makloon",
   payroll_run: "Penggajian", payroll_pay: "Pembayaran Gaji", payroll_run_reversal: "Pembalik Penggajian",   // PK-22
   incentive_accrual: "Akrual Insentif", incentive_accrual_adj: "Koreksi Akrual Insentif",
+  // KM-T4 — Lembar Insentif disahkan & tagihan insentif antar-PT
+  incentive_sheet: "Lembar Insentif", interco_incentive_charge: "Tagihan Insentif Antar-PT",
+  interco_incentive_charge_reversal: "Pembalik Tagihan Insentif Antar-PT",
+  interco_incentive_charge_settlement: "Pelunasan Tagihan Insentif Antar-PT",
   fixed_asset_acquisition: "Perolehan Aset", fixed_asset_depreciation: "Penyusutan Aset", fixed_asset_disposal: "Pelepasan Aset",
   fixed_asset_transfer: "Mutasi Aset", fixed_asset_transfer_settlement: "Pelunasan Mutasi Aset",
   closing: "Tutup Buku", suspense_reclass: "Reklas Akun Penampung", finance_case: "Kasus Keuangan",

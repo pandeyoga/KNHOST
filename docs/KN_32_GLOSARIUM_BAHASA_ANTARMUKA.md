@@ -732,3 +732,18 @@ K-34, K-46).
 | **kartu pemasok** | Pop-up/halaman dari nama pemasok · angka "Saldo hutang", "Jatuh tempo 7 hari", "Uang muka ke pemasok" · bagian "Tagihan", "Kontrabon", "Pembayaran", "Retur", "PO & Biaya Masuk", "Lainnya" (chip Daftar harga · Dokumen · Skor · Riwayat perubahan) | Seluruh posisi hutang seorang pemasok; baris tagihan/kontrabon bersisa punya tombol "Bayar". Semua PT: angka per PT, tidak dijumlah |
 | **dokumen sumber** | Rincian jurnal › "Buka Dokumen Sumber" (PK-43) · angka laporan bertautan "Lihat mutasi akun ini di buku besar" | Dokumen yang melahirkan jurnal. Dari angka laporan (Laba-Rugi, Neraca, Neraca Saldo, Arus Kas, Perubahan Ekuitas, realisasi Anggaran, Konsolidasi) → buku besar akun → jurnal → dokumen sumber |
 | **telusuri angka** | Petunjuk "Pilih satu PT untuk menelusuri angka ini." · "Pindah ke … untuk menelusuri angka ini." | Telusur hanya di satu PT: di Semua PT atau angka milik PT lain, layar menyebut PT yang harus dipilih |
+
+### 9.33 Lembar Insentif ke gaji: cara insentif masuk penggajian, tagihan insentif antar-PT (KM-T4)
+
+Istilah sambungan Lembar Insentif ke gaji dan buku besar (`docs/blueprint/unit/KM-T4.md`, keputusan K-22, K-26). Sakelar
+per PT diubah di Pusat Pengaturan; layar Target & Aturan hanya menampilkan kesiapannya.
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **cara insentif sales masuk penggajian** | Pengaturan "Cara insentif sales masuk penggajian": "Komisi otomatis: dicadangkan, dilunasi lewat gaji" · "Dibayar saat faktur terbit" · "Tidak ada komisi di gaji" · "Dari Lembar Insentif yang disahkan" | Sakelar per PT. Pada pilihan Lembar Insentif, komisi otomatis berhenti masuk slip PT itu; lembar yang disahkan menjadi beban insentif dan baris slip gaji bulan bayarnya |
+| **kesiapan beralih** | Kartu "Kesiapan beralih ke Lembar Insentif" · lencana Siap / Belum · "Ubah di Pusat Pengaturan" | Daftar periksa sebelum PT dialihkan: pencocokan angka dua bulan terakhir, saldo hutang insentif nol, sales tertaut karyawan, tidak ada proses gaji belum diposting yang memuat komisi otomatis |
+| **masuk gaji** (baris lembar) | Konfirmasi Sahkan "Beban insentif Rp … dibukukan per {tanggal} dan {n} baris masuk gaji {bulan tahun}" · "Dibayar lewat {nomor penggajian}" | Baris lembar yang disahkan di PT bermode Lembar Insentif menjadi baris Insentif di slip gaji bulan bayarnya; sesudah gajinya diposting baris itu ditandai dibayar |
+| **keputusan saja** | Pita "PT ini masih memakai komisi otomatis. Lembar ini tercatat sebagai keputusan dan tidak masuk gaji." | Lembar di PT yang belum dialihkan: disahkan tanpa jurnal dan tanpa baris gaji |
+| **tagihan insentif antar-PT** | Daftar "Tagihan insentif antar-PT" (Nomor, Dari PT, Kepada PT, Nominal, Sisa, Status) · lencana Menunggu jurnal gaji · Belum lunas · Lunas · Dibatalkan · tombol "Catat pelunasan" | Tagihan PT yang menggaji sales (penagih) kepada PT pemilik Lembar Insentif (tertagih) untuk insentif yang dibayar lewat gajinya. Lahir saat gaji diposting; dilunasi dengan kas keluar di PT tertagih dan kas masuk di PT penagih |
+| **satuan dasar** (tarif komisi) | Kolom "Tarif" "/satuan dasar" · isian "Tarif (Rp per satuan dasar)" | Tarif komisi otomatis dikalikan jumlah satuan dasar barang; isian "Satuan" di tarif tidak ada lagi |
+

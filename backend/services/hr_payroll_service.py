@@ -334,6 +334,10 @@ async def commission_mode(entity_id: str) -> str:
 
 
 async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> float:
+    """Komisi mesin satu karyawan sales untuk slip. KM-T4 (PY-06) — PT bermode `off` (tidak ada komisi di gaji) atau
+    `sheet` (insentif dari Lembar Insentif yang disahkan) → 0 dan mesin komisi tidak dipanggil."""
+    if await commission_mode(entity_id) in ("off", "sheet"):
+        return 0.0
     uid = emp.get("user_id")
     if not uid:
         return 0.0

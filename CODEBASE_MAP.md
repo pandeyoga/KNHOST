@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: c4dad6a pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 2bb1a76 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -458,7 +458,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 204 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4649 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4650 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -483,7 +483,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_pay_rules.py` | 358 | PY-T3 (PY-04, PY-07, PY-08, PY-12; K-38, K-39) — aturan hitung gaji per PT dari Pusat Pengaturan. |
 | `hr_payroll_pay.py` | 374 | PY-T4 (PY-11; keputusan K-41, K-34) — bayar gaji dari rekening berperuntukan Gaji, dengan daftar transfer per  |
 | `hr_payroll_pdf.py` | 177 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
-| `hr_payroll_service.py` | 1221 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payroll_service.py` | 1225 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
 | `hr_payslip_self.py` | 157 | PY-T5 — swalayan slip gaji karyawan (Profil Saya › kartu "Slip Gaji Saya"). |
 | `hr_remittance_service.py` | 277 | PK-22 (FY-07) — setoran kewajiban gaji: hutang BPJS (2-1700) dan PPh 21 (2-1800) turun lewat dokumen setoran. |
 | `hr_service.py` | 172 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
@@ -566,7 +566,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `od_pricing_service.py` | 363 | UAT 24 Okt (P2) — harga Pesanan Khusus sesuai arahan pemilik SO-12 + nego lewat harga khusus SO. |
 | `order_journey_service.py` | 332 | FASE E-8 (E8.14 · US12) — **PERJALANAN PESANAN** (read-only, untuk sales lapangan). |
 | `outbound_task_state.py` | 139 | FIX-3b — TABEL TRANSISI status tugas ambil BARANG KELUAR (`wms_tasks`, `flow_type=outbound`, sumber SO & sampe |
-| `party_card.py` | 201 | MN-T3 — kartu pelanggan & kartu pemasok: bagian kartu menurut izin (K-18) dan bagian keuangan kartu pemasok. |
+| `party_card.py` | 204 | MN-T3 — kartu pelanggan & kartu pemasok: bagian kartu menurut izin (K-18) dan bagian keuangan kartu pemasok. |
 | `payment_code_service.py` | 409 | PM-T2 — cara bayar & rekening tujuan di pesanan, kode bayar, dan instruksi bayar (`docs/blueprint/unit/PM-T2.m |
 | `payment_method_service.py` | 263 | PM-T1 — SATU daftar induk cara bayar (`docs/blueprint/unit/PM-T1.md`, keputusan K-34, K-35). |
 | `payment_plan_service.py` | 781 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
@@ -752,21 +752,21 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 151 | 25485 |
+| `__tests__` | 152 | 25675 |
 | `admin` | 36 | 6983 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 30 | 5625 |
+| `crm` | 30 | 5616 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 113 | 26825 |
+| `finance` | 114 | 27050 |
 | `home` | 6 | 1191 |
 | `hr` | 40 | 7751 |
-| `incentive` | 5 | 1835 |
+| `incentive` | 5 | 1945 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
@@ -788,7 +788,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 98 | 15989 |
 | `sales_admin` | 11 | 1883 |
 | `samples` | 8 | 776 |
-| `settings` | 71 | 13172 |
+| `settings` | 71 | 13171 |
 | `tanya` | 27 | 2483 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
@@ -801,7 +801,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Berkas melewati batas ukuran
 
-25 berkas.
+26 berkas.
 
 | Berkas | Baris | Batas |
 |---|---:|---:|
@@ -817,16 +817,17 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
+| `frontend/src/features/incentive/IncentiveSheetDetail.jsx` | 596 | 500 |
 | `frontend/src/features/finance/TaxInvoices.jsx` | 595 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
-| `frontend/src/features/incentive/IncentiveSheetDetail.jsx` | 543 | 500 |
+| `frontend/src/features/incentive/IncentiveSetupView.jsx` | 557 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 521 | 500 |
+| `frontend/src/features/finance/interco/IntercoView.jsx` | 519 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
 | `frontend/src/features/finance/InventoryReconTab.jsx` | 513 | 500 |
-| `frontend/src/features/finance/interco/IntercoView.jsx` | 513 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
 | `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |

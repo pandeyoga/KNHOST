@@ -390,8 +390,11 @@ E("commission.incentive_unit", group="penjualan", section="komisi", type="text",
        "diubah ke satuan ini sebelum dikalikan tarif.",
   impact="Jumlah penjualan dikonversi ke satuan ini sebelum dikalikan tarif komisi.",
   example="Satuan 'meter' · tarif Rp 500/meter → 100 yard ≈ 91,44 m → Rp 45.720",
-  consumers=("routers/incentive_rates.py:create_rate",), risk="medium",
-  ref="uom")
+  consumers=(), risk="medium",
+  ref="uom",
+  # KM-T4 (KM-07) — mesin komisi mengalikan tarif dengan jumlah SATUAN DASAR baris (`sales_force_service`, `base_qty`);
+  # satuan yang disimpan di tarif tidak pernah dibaca. Isian dicabut dari API & layar tarif; dokumen lama dibiarkan.
+  status="not_used", not_used_reason="Tarif komisi dihitung dari satuan dasar barang; isian ini tidak dipakai.")
 
 E("commission.default_margin_cap_pct", group="penjualan", section="komisi", type="pct", default=50.0,
   min=0, max=100, step=5, unit="% margin", scopes=("global", "entity"),

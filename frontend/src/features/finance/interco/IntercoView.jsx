@@ -42,6 +42,7 @@ import IntercoReturnInbox from "./IntercoReturnInbox";
 import IntercoMarginPanel from "./IntercoMarginPanel";
 // FASE E-7 (E7f) — pinjaman uang antar-PT (dokumen kembar + eliminasi non-dagang).
 import IntercoLoansPanel from "./IntercoLoansPanel";
+import IntercoChargesPanel from "./IntercoChargesPanel";   // KM-T4 — tagihan insentif antar-PT (tab Pinjaman Antar-PT)
 import { TransactionsPanel, BalancesPanel, SettlementsPanel } from "./IntercoPanels";
 import DetailModal from "../../../components/DetailModal";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
@@ -69,7 +70,8 @@ const RETURN_TABS = ["returns", "return-inbox"];
 
 // PK-44 (IA-04) — jenis dokumen antar-PT → [tab = jalur API rincian, `data-testid` baris yang disorot].
 const FOCUS_TAB = { interco_transaction: ["transactions", ""], interco_settlement: ["settlements", "interco-set"],
-  interco_return: ["returns", "interco-ret"], interco_loan: ["loans", "loan-row"] };
+  interco_return: ["returns", "interco-ret"], interco_loan: ["loans", "loan-row"],
+  interco_charge: ["loans", "charge-row"] };   // KM-T4 — tagihan insentif antar-PT (rincian `GET /interco/charges/{id}`)
 
 export default function IntercoView({ currentUser, selectedEntity, entities = [], only = null, focusDoc, onClearFocus }) {
   const [tab, setTab] = useState(() => {
@@ -250,7 +252,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   const [sorot, setSorot] = useState("");
   const fokus = useFocusDoc(focusDoc, Object.keys(FOCUS_TAB), async (id, fd) => {
     const [t, row] = FOCUS_TAB[fd.focus_type];
-    await axios.get(`${API}/interco/${t}/${id}`);
+    await axios.get(`${API}/interco/${fd.focus_type === "interco_charge" ? "charges" : t}/${id}`);
     if (!tabs.some((x) => x.id === t)) return false;   // tab di luar izin/menu layar ini
     setTab(t);
     if (row) { setSorot(id); gulirKe(`${row}-${id}`, 600); } else setDetailId(id);
@@ -422,7 +424,11 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           canAct={can(perms, "interco", "approve") || can(perms, "interco", "receive") || can(perms, "sales_return", "approve")} />
       )}
       {tab === "loans" && (
-        <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} focusId={sorot} />
+        <div className="space-y-6">
+          <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} focusId={sorot} />
+          <IntercoChargesPanel entityId={entityId} focusId={sorot}
+            allowedEntityIds={Array.isArray(currentUser?.allowed_entity_ids) ? currentUser.allowed_entity_ids : null} />
+        </div>
       )}
       {tab === "margin" && <IntercoMarginPanel report={margin} entityId={entityId} />}
 

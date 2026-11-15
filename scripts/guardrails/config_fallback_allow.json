@@ -58,25 +58,11 @@
    "alasan": "Bukan pengaturan: isian permintaan simpan (`payload`); kosong = tidak diubah."
   },
   {
-   "file": "backend/routers/incentive_rates.py",
-   "key": "commission.incentive_unit",
-   "line_text": "doc.get(\"incentive_unit\") or \"\"",
-   "jenis": "bukan_pengaturan",
-   "alasan": "Bukan pengaturan: isian tarif baru (`doc` = isi permintaan); kosong → baris berikutnya membaca pengaturan."
-  },
-  {
    "file": "backend/routers/inbound_scan_label.py",
    "key": "receiving.label_variance_tolerance_percent",
    "line_text": "await value_of(\"receiving.label_variance_tolerance_percent\", {\"entity_id\": entity_id or \"\"}) or 0",
    "jenis": "hanya_bila_kosong",
    "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/routers/incentive_rates.py",
-   "key": "commission.incentive_unit",
-   "line_text": "await value_of(\"commission.incentive_unit\", {\"entity_id\": payload.entity_id}) or \"meter\"",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'meter' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.incentive_unit\")`, lalu hapus butir ini."
   },
   {
    "file": "backend/routers/purchase_orders.py",
@@ -406,13 +392,6 @@
    "line_text": "cfg.get(\"ocr_price_table\") or {}",
    "jenis": "hanya_bila_kosong",
    "alasan": "Garis dasar KF-T8: cadangan `or {}` ≠ bawaan '{\"gpt-6-sol\": {\"in\": 2.0, \"cached_in\": 0.2, \"out\": 10.0}, \"gpt-6-luna\": {\"in\": 0.5, \"cached_in\": 0.05, \"out\": 2.0}, \"gpt-5.6-sol\": {\"in\": 5.0, \"cached_in\": 0.5, \"out\": 30.0}, \"price_version\": \"2026-09-28\"}', hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/hr_payroll_service.py",
-   "key": "hr.payroll_commission_mode",
-   "line_text": "cfg.get(\"payroll_commission_mode\", \"accrue_then_settle\")",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'accrue_then_settle' = bawaan registry; ganti dengan `config_registry.default_of(\"hr.payroll_commission_mode\")`, lalu hapus butir ini."
   },
   {
    "file": "backend/services/inbound_complete_service.py",

@@ -78,8 +78,7 @@ export const COLUMNS = {
   ],
   "incentive-rates": [
     { key: "category", label: "Kategori produk" },
-    { key: "incentive_unit", label: "Satuan" },
-    { key: "per_unit_amount", label: "Per satuan", align: "right", money: true },
+    { key: "per_unit_amount", label: "Per satuan dasar", align: "right", money: true },   // KM-T4 — tanpa kolom Satuan
     { key: "margin_cap_pct", label: "Batas margin %", align: "right" },
   ],
   "approval-rules": [
