@@ -20,11 +20,19 @@ export const REQ_STATUS = {
 const WIB_OFFSET_MS = 7 * 3600 * 1000;
 export const wibToday = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
 export const curMonth = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 7);
+// Bulan WIB dihitung dengan pengambil UTC (waktu + 7 jam sudah = jam WIB). Dulu `setDate`/`setMonth` waktu LOKAL: di
+// peramban ber-zona WIB pukul 17.00–24.00 hasilnya mundur satu bulan (bulan berjalan hilang dari pilihan) — uji jalan
+// PY-T4 15 Nov.
 export function recentMonths(n = 12) {
   const out = [];
   const d = new Date(Date.now() + WIB_OFFSET_MS);
-  d.setDate(1);
-  for (let i = 0; i < n; i++) { out.push(d.toISOString().slice(0, 7)); d.setMonth(d.getMonth() - 1); }
+  let y = d.getUTCFullYear();
+  let m = d.getUTCMonth();
+  for (let i = 0; i < n; i++) {
+    out.push(`${y}-${String(m + 1).padStart(2, "0")}`);
+    m -= 1;
+    if (m < 0) { m = 11; y -= 1; }
+  }
   return out;
 }
 export const rp = (v) => formatCurrency(v || 0);
