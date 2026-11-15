@@ -567,8 +567,10 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Penggajian (`hr-payroll-hub`) | ~~Slip Gaji (`hr-payslips`)~~ — PY-T1: tab dihapus; id lama = alias ke Proses Gaji (panel "Cari slip" terbuka) | — |
 | SDM › Penggajian (`hr-payroll-hub`) | Setoran Kewajiban (`hr-payroll-remittances`) — PK-22: hutang BPJS & PPh 21 per masa, Catat Setoran (`payroll.pay`) | A M |
 | SDM › Penggajian (`hr-payroll-hub`) | Komponen & Masukan (`hr-pay-components`) — PY-T1: komponen gaji per PT (ubah `hr.manage_payroll`) dan antrean masukan (tambah `payroll.create`, sahkan/batalkan `payroll.approve`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Capaian (`incentive-capaian`) — KM-T2: tab pertama; angka dasar insentif per sales per PT (cari, telusur ke dokumen, jumlah pilihan, ekspor Excel; hanya baca, `incentive.view`, kolom margin `incentive.view_margin`) | A M F |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-rates`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan | A M F |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Komisi Otomatis (`incentive-rates`) — KM-T1: label baru (dulu "Target & Aturan") | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | KPI Karyawan (`cs-kpi`) | A M |
 

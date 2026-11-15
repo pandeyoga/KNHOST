@@ -237,7 +237,8 @@
    ],
    "incentive": [
     "view",
-    "configure"
+    "configure",
+    "view_margin"
    ],
    "input_tax": [
     "view",
@@ -1093,7 +1094,8 @@
    ],
    "incentive": [
     "view",
-    "configure"
+    "configure",
+    "view_margin"
    ],
    "input_tax": [
     "view",
@@ -3025,6 +3027,9 @@
    "payroll",
    "sales_force",
    "sales_return"
+  ],
+  "incentive-capaian": [
+   "incentive"
   ],
   "incentive-rates": [
    "sales_force"

@@ -66,7 +66,8 @@ const SERVER_GATED = { sales: ["inventory-lots"], manager: ["permission-matrix"]
 const REMOVED = { warehouse_admin: ["my-desk"], sales_admin: ["my-desk"] };
 // MN-T1 — id menu/hub yang kini mendarat di tab pertama lain di hub yang sama (tercatat di roleReach.test.js
 // `ROLE_REACH_RELANDED`); layar lamanya tetap diperiksa terjangkau.
-const RELANDED = { manager: { "hr-kpi-hub": "sales-performance" }, finance: { "cash-bank": "bank-accounts" } };
+// KM-T2 — tab pertama SDM › Kinerja & Insentif kini Capaian (`incentive-capaian`).
+const RELANDED = { manager: { "hr-kpi-hub": "incentive-capaian" }, finance: { "cash-bank": "bank-accounts" } };
 
 test("R5: Lot & Silsilah tersembunyi untuk sales (tanpa field_visibility.lot), tetap untuk gudang & manajer", () => {
   expect(builtin.view_resources["inventory-lots"]).toEqual(["field_visibility"]);

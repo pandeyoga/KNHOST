@@ -9,19 +9,25 @@
   GET   /api/incentive/definitions/current                     incentive.view       versi berlaku + label
   GET   /api/incentive/reconciliation?period=YYYY-MM           incentive.view       INV-KM-1 (omzet) + INV-KM-2 (pencairan)
   POST  /api/incentive/facts/rebuild                           incentive.configure  {rows_shipment, rows_collection}
+  GET   /api/incentive/achievement                             incentive.view       KM-T2 — Capaian per sales (margin: view_margin)
+  GET   /api/incentive/achievement/sources                     incentive.view       KM-T2 — dokumen di balik satu sel
+  GET   /api/incentive/achievement/export                      incentive.view       KM-T2 — .xlsx Definisi · Capaian · Dokumen
 
 PT = PT konteks pengguna (`02_STANDAR.md` §3.4 N1); mode "Semua PT" hanya baca (tulis → 409 `assert_write_entity`, N3).
-Logika di `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`.
+Logika di `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`;
+Capaian (KM-T2, hanya baca; "Semua PT" → 400) di `services/incentive_achievement.py`.
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import Response
 
 from db import db
-from dependencies import audit, require_permission
+from dependencies import audit, has_permission, require_permission
 from entity_scope import assert_write_entity, entity_ctx, guard_doc
 from schemas_incentive import (IncentiveComponentCreate, IncentiveComponentUpdate, IncentiveFactRebuild,
                                IncentiveTargetCopy, IncentiveTargetSave)
+from services import incentive_achievement as iach
 from services import incentive_definitions as idef
 from services import incentive_facts as ifacts
 from services import incentive_periods as ip
@@ -32,6 +38,7 @@ router = APIRouter(prefix="/api/incentive")
 MODUL = "Kinerja & Insentif"
 PESAN_LIHAT = f"Anda belum punya akses untuk melihat target dan aturan insentif. Minta Admin menambahkan akses '{MODUL}'."
 PESAN_ATUR = f"Anda belum punya akses untuk mengatur target dan aturan insentif. Minta Admin menambahkan akses '{MODUL}'."
+PESAN_CAPAIAN = f"Anda belum punya akses untuk melihat capaian insentif. Minta Admin menambahkan akses '{MODUL}'."
 
 
 def _err(exc: Exception) -> HTTPException:
@@ -189,3 +196,96 @@ async def post_rebuild(payload: Optional[IncentiveFactRebuild], request: Request
     await audit(actor.get("name", ""), "incentive_facts_rebuilt", "incentive_facts", eid, res)
     return {"rows_shipment": res["rows_shipment"], "rows_collection": res["rows_collection"],
             "orders": res["orders"], "date_from": res["from"]}
+
+
+# ── KM-T2 — Capaian (hanya baca) ─────────────────────────────────────────────────────────────────────────────────────
+async def _capaian_ctx(request: Request, period_type: str, period: str, date_from: str, date_to: str,
+                       cumulative: bool):
+    """Izin `incentive.view` (Z1) → PT konteks (Semua PT → 400) → periode → fakta segar → versi definisi PT."""
+    actor = await require_permission(request, "incentive", "view", detail=PESAN_CAPAIAN)
+    ctx = await entity_ctx(request)
+    if _all_pt(ctx):
+        raise HTTPException(status_code=400, detail=iach.PESAN_SEMUA_PT)
+    eid = ctx.active_entity_id
+    try:
+        per = await iach.resolve_period(eid, period_type, period, date_from, date_to, cumulative)
+    except iach.CapaianError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    synced = await ifacts.ensure_fresh(60)
+    defn = await idef.current_definition(eid)
+    if defn.get("dasar_omzet") in ("pesanan", "lunas"):
+        from services import analytics_facts
+        await analytics_facts.ensure_fresh(60)
+    margin_ok = await has_permission(actor, "incentive", "view_margin")
+    return actor, eid, per, defn, synced, margin_ok
+
+
+def _flt(sales_ids: Optional[List[str]], customer_id: str, category: str, line_code: str, price_source: str):
+    return iach.saringan(sales_ids, customer_id, category, line_code, price_source)
+
+
+@router.get("/achievement")
+async def get_achievement(request: Request, period_type: str = Query("month"), period: str = Query(""),
+                          date_from: str = Query(""), date_to: str = Query(""), compare: str = Query("none"),
+                          cumulative: bool = Query(False), group_by: str = Query("sales"),
+                          sales_ids: Optional[List[str]] = Query(None, alias="sales_id[]"),
+                          customer_id: str = Query(""), category: str = Query(""), line_code: str = Query(""),
+                          price_source: str = Query("")) -> Dict[str, Any]:
+    """Capaian per sales (atau per pelanggan/kategori/sumber harga) untuk satu PT dan satu periode."""
+    _actor, eid, per, defn, synced, margin_ok = await _capaian_ctx(request, period_type, period, date_from, date_to,
+                                                                   cumulative)
+    flt = _flt(sales_ids, customer_id, category, line_code, price_source)
+    try:
+        cmp = await iach.compare_period(eid, per, compare)
+        res = await iach.achievement(eid, per, defn, flt, (group_by or "sales").strip().lower(), margin_ok, cmp)
+    except iach.CapaianError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"entity_id": eid, "period": per.out(), "definition": iach.definition_out(defn, per),
+            "facts_as_of": synced, "reconciliation": await iach.reconciliation(eid, per), "group_by": group_by,
+            "margin_visible": margin_ok, "piutang_as_of": iach.piutang_per(per), **res,
+            "compare": res.get("compare") or {"label": "", "by_key": {}}}
+
+
+@router.get("/achievement/sources")
+async def get_achievement_sources(request: Request, metric: str = Query(...), sales_id: Optional[str] = Query(None),
+                                  key: Optional[str] = Query(None), period_type: str = Query("month"),
+                                  period: str = Query(""), date_from: str = Query(""), date_to: str = Query(""),
+                                  cumulative: bool = Query(False), group_by: str = Query("sales"),
+                                  customer_id: str = Query(""), category: str = Query(""),
+                                  line_code: str = Query(""), price_source: str = Query(""),
+                                  page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+    """Dokumen di balik satu angka (omzet · retur · uang masuk) satu sales — jumlahnya = angka sel."""
+    _actor, eid, per, defn, _synced, _m = await _capaian_ctx(request, period_type, period, date_from, date_to,
+                                                             cumulative)
+    gb = (group_by or "sales").strip().lower()
+    k = sales_id if gb == "sales" else key
+    if k is None:
+        raise HTTPException(status_code=400, detail=iach.PESAN_KUNCI)
+    try:
+        return {"period": per.out(), **await iach.sources(
+            eid, per, defn, _flt(None, customer_id, category, line_code, price_source), metric=metric, key=k,
+            group_by=gb, page=page, page_size=page_size)}
+    except iach.CapaianError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/achievement/export")
+async def get_achievement_export(request: Request, period_type: str = Query("month"), period: str = Query(""),
+                                 date_from: str = Query(""), date_to: str = Query(""), cumulative: bool = Query(False),
+                                 group_by: str = Query("sales"),
+                                 sales_ids: Optional[List[str]] = Query(None, alias="sales_id[]"),
+                                 customer_id: str = Query(""), category: str = Query(""), line_code: str = Query(""),
+                                 price_source: str = Query(""), q: str = Query(""),
+                                 only_numbers: bool = Query(False)) -> Response:
+    """Berkas `capaian-<kode PT>-<periode>.xlsx`: Definisi · Capaian · Dokumen (kolom margin hanya `view_margin`)."""
+    actor, eid, per, defn, _synced, margin_ok = await _capaian_ctx(request, period_type, period, date_from, date_to,
+                                                                   cumulative)
+    try:
+        body, name = await iach.export_xlsx(eid, per, defn, _flt(sales_ids, customer_id, category, line_code,
+                                                                 price_source),
+                                            (group_by or "sales").strip().lower(), margin_ok, actor, q=q,
+                                            only_numbers=only_numbers)
+    except iach.CapaianError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return Response(content=body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})

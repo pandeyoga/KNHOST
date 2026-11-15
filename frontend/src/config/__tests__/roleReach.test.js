@@ -41,6 +41,8 @@ const PK28_GRIR = ["gr-ir"];
 const PK22_SETORAN = ["hr-payroll-remittances"];
 // KM-T1 — layar BARU SDM › Kinerja & Insentif › Target & Aturan (Meja Insentif; `incentive.view`): admin, manajer, Finance.
 const KMT1_TARGET_ATURAN = ["incentive-setup"];
+// KM-T2 — layar BARU SDM › Kinerja & Insentif › Capaian (Meja Insentif; `incentive.view`): admin, manajer, Finance.
+const KMT2_CAPAIAN = ["incentive-capaian"];
 // PY-T1 (K-37) — layar BARU SDM › Penggajian › Komponen & Masukan (tab hub Penggajian): admin, manajer.
 const PYT1_KOMPONEN = ["hr-pay-components"];
 // PM-T4 (K-36) — layar BARU Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai; `cash_holding.approve`): admin,
@@ -54,9 +56,9 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
   "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN],
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN,
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
@@ -82,15 +84,16 @@ export const ROLE_REACH_ADDITIONS = {
   // Piutang yang dulu sub-tab CRM (Penagihan & Penerimaan; Kredit & Plafon tanpa hak memutus).
   finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
     "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides",
-    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...PMT4_TITIPAN],
+    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN],
 };
 /** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
  *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.
  *  · MN-T1 — SDM › Kinerja & Insentif: tab pertama kini Kinerja Sales (urutan tabel MN-T1); KPI Karyawan tetap tab hub.
- *  · MN-T1 — Kas & Bank untuk Finance: kini memuat Rekening & Saldo (K-09) sebagai tab pertama; Transaksi Kas tetap. */
+ *  · MN-T1 — Kas & Bank untuk Finance: kini memuat Rekening & Saldo (K-09) sebagai tab pertama; Transaksi Kas tetap.
+ *  · KM-T2 — SDM › Kinerja & Insentif: tab pertama kini Capaian (spesifikasi KM-T2 "Layar"); Kinerja Sales tetap tab hub. */
 export const ROLE_REACH_RELANDED = {
-  admin: { "hr-kpi-hub": "sales-performance" },
-  manager: { "hr-kpi-hub": "sales-performance" },
+  admin: { "hr-kpi-hub": "incentive-capaian" },
+  manager: { "hr-kpi-hub": "incentive-capaian" },
   finance: { "cash-bank": "bank-accounts" },
 };
 /** Pencabutan jangkauan yang SAH (layar yang server-nya menolak peran itu): { peran: ["id", …] } + alasan. */

@@ -31,7 +31,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   AmendmentCenterView, ApprovalRulesSettings, EntityMastersView, MakloonClaimRecapView, ClientDatasetImportView,
   GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
   ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
-  AmendmentReasonsPanel, IncentiveRatesEditor, IncentiveSetupView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
+  AmendmentReasonsPanel, IncentiveRatesEditor, IncentiveSetupView, CapaianView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
   CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
@@ -350,6 +350,7 @@ export default function AppViewRouter(props) {
       {activeView === "amendment-reasons" && <AmendmentReasonsPanel currentUser={user} />}
       {activeView === "incentive-rates" && <IncentiveRatesEditor currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />}
       {activeView === "incentive-setup" && <IncentiveSetupView />}
+      {activeView === "incentive-capaian" && <CapaianView currentUser={user} />}
       {activeView === "bank-recon-rules" && <BankRulesSettingsView />}
       {/* FASE F — hub R&D & Desain (4 tab). `rndFocus` = deep-link dari Pustaka Warna,
           Kontrak Supplier, atau kartu desain (event global `kn-open-rnd`). */}

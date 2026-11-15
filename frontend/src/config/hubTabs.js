@@ -213,6 +213,9 @@ export const HUB_TABS = {
   // MN-T1 — SDM › Kinerja & Insentif: Kinerja Sales & Skema (dulu sub-tab CRM) + Target & Aturan (dulu Pengaturan ›
   // Penjualan › Komisi & Insentif) + KPI Karyawan. Komponen lama dirender tanpa perubahan.
   "hr-kpi-hub": [
+    // KM-T2 — Meja Insentif › Capaian: angka dasar insentif per sales per PT (hanya baca; `incentive.view`, margin
+    // `incentive.view_margin`). Tab pertama hub (spesifikasi KM-T2 "Layar").
+    { view: "incentive-capaian", label: "Capaian",               roles: ["admin", "manager", "finance"] },
     { view: "sales-performance", label: "Kinerja Sales",         roles: ["admin", "manager", "sales"] },
     // KM-T1 — Meja Insentif: target per PT per jenis periode, komponen, definisi angka, pencocokan (`incentive.*`).
     { view: "incentive-setup",   label: "Target & Aturan",       roles: ["admin", "manager", "finance"] },

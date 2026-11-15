@@ -40,6 +40,7 @@
   "hr-payroll-remittances": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/remittances"},
   "hr-pay-components": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/inputs"},
   "sales-performance": {"izin": [["order", "view"]], "endpoint": "/api/sales/kpi"},
+  "incentive-capaian": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/achievement"},
   "incentive-setup": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/targets"},
   "incentive-rates": {"izin": [["sales_force", "view"]], "endpoint": "/api/incentive-rates"},
   "incentive-schemes": {"izin": [["sales_force", "view"]], "endpoint": "/api/sales-users"},

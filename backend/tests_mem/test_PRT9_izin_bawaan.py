@@ -105,6 +105,10 @@ for _r, _tambah in _pc.KMT1_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.PMT4_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# KM-T2 — kolom margin di Capaian `incentive.view_margin` (Admin, Manajer) (`permissions_config.KMT2_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.KMT2_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

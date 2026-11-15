@@ -1010,3 +1010,18 @@ for _role, _mods in PMT4_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KM-T2 — Capaian (`docs/blueprint/unit/KM-T2.md`, bagian "Izin dan peran"): aksi baru `incentive.view_margin`
+# ("Lihat margin") membuka kolom margin di tiga endpoint Capaian (tabel, telusur, ekspor). Bawaan Admin & Manajer (yang
+# hari ini melihat HPP); Finance melihat Capaian tanpa margin. Instalasi lama menerima pasangan baru sekali lewat
+# `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+KMT2_DEFAULT_PAIRS = {
+    "admin": {"incentive": ("view_margin",)},
+    "manager": {"incentive": ("view_margin",)},
+}
+for _role, _mods in KMT2_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

@@ -369,6 +369,8 @@ MODULE_CATALOG.insert(next(i for i, m in enumerate(MODULE_CATALOG) if m["id"] ==
     "description": "Target omzet dan pencairan per sales per PT (bulan, triwulan, tahun), komponen insentif, definisi "
                    "angka, dan pencocokan omzet dengan buku besar serta pencairan dengan kas masuk.",
     "resources": ["incentive"], "nav": ["hrd", "hr-kpi-hub", "incentive-setup",
+                                        # KM-T2 — tab Capaian (`incentive.view`; kolom margin `incentive.view_margin`)
+                                        "incentive-capaian",
                                         # definisi angka `insentif.*` diubah di Pengaturan › Penjualan › Aturan
                                         "settings-hub", "settings-sales", "settings-cfg-sales"]})
 
@@ -529,7 +531,9 @@ _SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
     ("mengelola akun dan hak akses orang lain",
      (("user", "create"), ("user", "update"), ("user", "delete"), ("permission", "update"))),
     ("mengubah pengaturan perusahaan", (("settings", "manage"),)),
-    ("melihat HPP dan margin", (("costing", "view"), ("ai", "view_margin"), ("od_pricing", "view_cost"))),
+    # KM-T2 — `incentive.view_margin`: kolom margin di Capaian (tabel, telusur, ekspor).
+    ("melihat HPP dan margin", (("costing", "view"), ("ai", "view_margin"), ("od_pricing", "view_cost"),
+                                ("incentive", "view_margin"))),
     ("menyetujui nilai persediaan, melepas aset, dan mencatat akrual insentif",
      (("inventory", "approve_value"), ("fixed_asset", "dispose"), ("sales_force", "post"))),
     ("mengatur perangkat dan alat sistem", (("rfid_device", "configure"), ("system_tools", "configure"))),
@@ -660,6 +664,8 @@ ACTION_LABEL.update({"cash_holding.view": "Lihat titipan tunai (milik sendiri; s
 # KM-T1 — Meja Insentif (modul Kinerja & Insentif).
 RESOURCE_LABEL["incentive"] = "Kinerja & Insentif"
 ACTION_LABEL.update({"incentive.view": "Lihat", "incentive.configure": "Konfigurasi"})
+# KM-T2 — kolom margin di Capaian (tabel, telusur, ekspor).
+ACTION_LABEL.update({"incentive.view_margin": "Lihat margin"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
