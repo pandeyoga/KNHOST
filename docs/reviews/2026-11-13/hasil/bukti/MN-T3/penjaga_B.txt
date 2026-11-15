@@ -1,0 +1,44 @@
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 11 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 102 temuan di 59 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+== verify_role_gate_ui
+    · features/wms/StockOpnameTab.jsx: 1 — Titik henti H7 (RFID) — metode Sapu RFID dikecualikan untuk Manajer (keputusan D-15)
+== INV-ROLE-02 — tombol & panggilan data di layar mengikuti izin, bukan nama peran ==
+[PASS] 31 cek lolos, 0 pelanggaran.
+== verify_detail_modal
+  panel rincian diperiksa: 30 → pop-up 27 · berdampingan (2 kolom) 3 · INLINE (pelanggaran) 0 · pengecualian terdaftar: 0
+== INV-UI-08 — panel rincian wajib pop-up (bukan diselipkan di bawah daftar) ==
+[PASS] 30 cek lolos, 0 pelanggaran.
+== verify_cash_single_door
+== INV-CASH-01 — kas hanya lahir dari satu pembuat (`cash_ledger.create_cash`) ==
+[PASS] 748 cek lolos, 0 pelanggaran.
+== verify_posting_coverage
+== INV-POST-01 — jurnal dokumen lewat pintu tahan-gagal & jenisnya terdaftar di registri posting ==
+[PASS] 137 cek lolos, 0 pelanggaran.
+== verify_atomic_claim
+== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+[PASS] 161 cek lolos, 0 pelanggaran.
+== verify_payment_vocab
+== INV-PAY-VOCAB-01 — kosakata cara bayar hanya dari daftar induk (PM-T1) ==
+[PASS] 1855 cek lolos, 0 pelanggaran.
+== verify_config_fallback
+  File "/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/core_utils.py", line 5, in <module>
+    import bcrypt
+ModuleNotFoundError: No module named 'bcrypt'
+  [PASS] kode nyata saat ini HIJAU (0 pelanggaran) → hijau
+  SELF-TEST HIJAU (64 kasus, 0 gagal).
+    import bcrypt
+ModuleNotFoundError: No module named 'bcrypt'

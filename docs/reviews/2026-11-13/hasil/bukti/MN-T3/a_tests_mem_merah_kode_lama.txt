@@ -1,0 +1,19 @@
+E       KeyError: 'sections_allowed'
+tests_mem/test_MNT3_kartu_pintu.py:201: KeyError
+E       KeyError: 'sections_allowed'
+tests_mem/test_MNT3_kartu_pintu.py:208: KeyError
+E       AssertionError: [{'id': 'fcs_mnt3_90056b47', 'number': 'KS-dda12', 'entity_id': 'ent_ksc', 'customer_id': 'cus_mnt3_d87dda12', ...}, {'id': 'fcs_mnt3_fbb0b483', 'number': 'KS-ab89b', 'entity_id': 'ent_ksc', 'customer_id': 'cus_mnt3_a8aab89b', ...}]
+tests_mem/test_MNT3_kartu_pintu.py:242: AssertionError
+E       KeyError: 'payables'
+tests_mem/test_MNT3_kartu_pintu.py:254: KeyError
+E           KeyError: 'payables'
+tests_mem/test_MNT3_kartu_pintu.py:269: KeyError
+E       AssertionError: [{"id":"vb_mnt3_83b32509","bill_number":"VB-B32509","entity_id":"ent_ksc","supplier_id":"sup_mnt3_5c53ed2b","supplier_name":"Pemasok ed2b","status":"paid","grand_total":4000000.0,"subtotal":4000000.0,"amount_paid":4000000.0,"payments":[{"id":"pay_6ad507af2456112d5cbd0c28_1","
+tests_mem/test_MNT3_kartu_pintu.py:277: AssertionError
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_U8_customer_view_saja_tanpa_nominal
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_U8b_admin_semua_bagian
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_X1_kasus_per_pelanggan
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_U12_kartu_pemasok_hutang_dan_pembayaran
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_U13_supplier_view_saja_bagian_keuangan_null
+FAILED tests_mem/test_MNT3_kartu_pintu.py::test_MNT3_U14_tagihan_per_pemasok
+6 failed, 5 passed, 3 warnings in 9.58s

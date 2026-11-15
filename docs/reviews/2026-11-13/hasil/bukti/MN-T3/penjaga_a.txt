@@ -1,0 +1,28 @@
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 11 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 102 temuan di 59 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [FAIL] 1 pelanggaran :
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+== verify_role_gate_ui
+[PASS] 31 cek lolos, 0 pelanggaran.
+== verify_detail_modal
+[PASS] 30 cek lolos, 0 pelanggaran.
+== verify_cash_single_door
+[PASS] 749 cek lolos, 0 pelanggaran.
+== verify_posting_coverage
+[PASS] 137 cek lolos, 0 pelanggaran.
+== verify_atomic_claim
+[PASS] 161 cek lolos, 0 pelanggaran.
+== verify_payment_vocab
+[PASS] 1861 cek lolos, 0 pelanggaran.

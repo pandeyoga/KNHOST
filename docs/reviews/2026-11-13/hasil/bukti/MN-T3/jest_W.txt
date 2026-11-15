@@ -1,0 +1,3 @@
+Test Suites: 36 failed, 134 passed, 170 total
+Tests:       1 failed, 1097 passed, 1098 total
+sesudah perbaikan pmt3 (ReconLinesTable): 7 suite terkait 96/96 lulus

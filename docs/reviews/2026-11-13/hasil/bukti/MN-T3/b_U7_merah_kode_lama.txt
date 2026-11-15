@@ -1,0 +1,8 @@
+E       AssertionError: assert ['features/cr...iptModal.jsx'] == ['features/fi...entModal.jsx']
+E         
+E         At index 0 diff: 'features/crm/ARReceiptModal.jsx' != 'features/finance/payments/ReceivePaymentModal.jsx'
+E         Use -v to get more diff
+E       AssertionError: assert ['features/fi...PayModal.jsx'] == ['features/fi...ierModal.jsx']
+E         
+E         At index 0 diff: 'features/finance/bank/ReconContraBonModal.jsx' != 'features/finance/payments/PaySupplierModal.jsx'
+E         Left contains 2 more items, first extra item: 'features/purchasing/VendorBillDetailPanel.jsx'
