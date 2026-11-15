@@ -274,6 +274,9 @@ async def test_MNT3_U12_kartu_pemasok_hutang_dan_pembayaran(klien, kepala_admin,
     # 7.000.000 + 3.000.000 − 2.000.000 = 8.000.000
     assert j["payables"]["outstanding"] == 8 * JT, j["payables"]
     assert j["payables"]["entity_id"] == KSC and j["payables"]["by_entity"][0]["outstanding"] == 8 * JT
+    # Cek layar integrator: label PT = nama dari `business_entities`, bukan kode mentah ("PT ent_ksc" di kepala kartu).
+    assert all(e["label"] != e["entity_id"] for e in j["scope_entities"]), j["scope_entities"]
+    assert j["payables"]["by_entity"][0]["label"] != KSC, j["payables"]["by_entity"]
     assert [p["amount"] for p in j["payments"]] == [2 * JT]
     assert {b["id"] for b in j["bills"]} == {data["T1"], data["T2"]}
     assert j["contra_bons"] == [] and j["landed_costs"] == []

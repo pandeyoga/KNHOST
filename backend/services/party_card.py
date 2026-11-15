@@ -84,8 +84,11 @@ async def customer_card(data: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str
 
 async def _nama_pt(ids: List[str]) -> Dict[str, str]:
     names: Dict[str, str] = {}
-    async for e in db.entities.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "short_name": 1, "name": 1}):
-        names[e["id"]] = e.get("short_name") or e.get("name") or e["id"]
+    # Cek layar MN-T3 (integrator): PT ada di `business_entities` (bukan `entities`) — dulu label jatuh ke kode mentah
+    # "PT ent_ksc" di kepala kartu pemasok dan baris hutang per PT.
+    async for e in db.business_entities.find({"id": {"$in": ids}},
+                                             {"_id": 0, "id": 1, "short_name": 1, "name": 1, "legal_name": 1}):
+        names[e["id"]] = e.get("short_name") or e.get("name") or e.get("legal_name") or e["id"]
     return names
 
 
