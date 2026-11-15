@@ -13,6 +13,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { askConfirm, askReason, REASON_MIN_LENGTH } from "../../services/confirmService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { docStatusLabel } from "../../utils/docStatus";
+import { ruleText } from "../finance/payments/penaltyRuleUi";
 
 export const FIELD_LABEL = {
   limit_mode: "Jenis plafon", credit_limit: "Plafon kredit", limit_valid_until: "Berlaku sampai",
@@ -41,7 +42,7 @@ export function valueText(field, v, terms = []) {
   if (field === "default_term_code") return v ? termName(v, terms) : "—";
   if (field === "overdue_block_days") return v === null || v === undefined ? "Ikut PT" : `${v} hari`;
   if (field === "credit_status") return (CREDIT_STATUS_OPTIONS.find((o) => o.value === v) || {}).label || (v ? String(v) : "Normal");
-  if (field === "penalty_rule") return v ? "Aturan denda khusus" : "Ikut PT";
+  if (field === "penalty_rule") return ruleText(v);   // CR-T4 — "Khusus: tarif 1 % per bulan" / "Bebas denda s.d. …"
   if (v === null || v === undefined || v === "") return "—";
   return String(v);
 }

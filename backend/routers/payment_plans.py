@@ -239,6 +239,31 @@ async def accrue_now(plan_id: str, request: Request) -> Dict[str, Any]:
 
 
 # ── Denda ─────────────────────────────────────────────────────────────
+@router.get("/customers/{customer_id}/penalty-policy")
+async def customer_penalty_policy(customer_id: str, request: Request,
+                                  entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """CR-T4 — aturan denda yang BERLAKU untuk (pelanggan, PT): aturan grup → PT → profil kredit pelanggan, beserta asal
+    tiap unsur (`sources`: global · pt · pelanggan) dan bebas denda yang berlaku (`waiver`). Izin `penalty.view` +
+    pelanggan terlihat pembaca (`can_view_credit`, 404 bila tidak); PT lewat `resolve_requested_entity` (N1)."""
+    actor = await require_permission(request, "penalty", "view")
+    from db import db as _db
+    from services.customer_service import can_view_credit
+    customer = await _db.customers.find_one({"id": customer_id}, {"_id": 0, "id": 1, "name": 1, "entity_id": 1})
+    if not customer or not can_view_credit(actor, customer):
+        raise HTTPException(status_code=404, detail="Pelanggan tidak ditemukan.")
+    eid = resolve_requested_entity(await entity_ctx(request), entity_id)
+    pol = await penalties.penalty_policy(eid, customer_id)
+    rule = await _db.customer_credit_profiles.find_one({"customer_id": customer_id, "entity_id": eid},
+                                                       {"_id": 0, "penalty_rule": 1}) or {}
+    return {
+        "customer": {"id": customer["id"], "name": customer.get("name", "")}, "entity_id": eid,
+        "effective": {k: pol[k] for k in ("mode", "rate_pct_per_month", "base", "cap_pct", "grace_days",
+                                          "min_amount")},
+        "sources": pol["sources"], "waiver": pol["waiver"], "expired_waiver": pol.get("expired_waiver"),
+        "customer_rule_mode": pol.get("customer_rule_mode") or "ikut_pt", "rule": rule.get("penalty_rule"),
+    }
+
+
 @router.get("/penalties")
 async def list_penalties(request: Request, entity_id: str = Query(""), status: str = Query(""),
                         doc_id: str = Query(""), q: str = Query(""),

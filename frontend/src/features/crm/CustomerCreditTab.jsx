@@ -11,6 +11,8 @@
  *    (pengaju sendiri atau pemutus); pengaju sendiri saat wajib dua orang → tombol mati + alasan tertulis.
  *  · "Riwayat perubahan kredit" (20 pengajuan terakhir yang sudah diputus). Memuat / kosong / galat dibedakan, galat di
  *    dalam tab.
+ *  · CR-T4 — bagian "Aturan denda" (`CustomerPenaltyRule`): nilai denda yang berlaku beserta asalnya; diubah lewat
+ *    "Ajukan perubahan" yang sama (pilihan Ikut PT · Khusus · Bebas denda).
  * Sumber: `GET /api/customers/{id}/credit-profile?entity_id=`.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -23,6 +25,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import CreditProfileRequestModal from "./CreditProfileRequestModal";
+import CustomerPenaltyRule from "./CustomerPenaltyRule";
 import { ChangeLines, RequestStatusPill, SourcePill, useCreditRequestActions, valueText } from "./creditProfileUi";
 
 const entityLabel = (e) => e?.short_name || e?.legal_name || "PT";
@@ -141,6 +144,10 @@ export default function CustomerCreditTab({ customer, currentUser, selectedEntit
           ))}
         </dl>
       </section>
+
+      {/* CR-T4 — aturan denda yang dipakai mesin untuk pelanggan ini di PT ini (ikut PT / khusus pelanggan / bebas). */}
+      <CustomerPenaltyRule customerId={customer?.id} entityId={data.entity?.id || entityId} currentUser={currentUser}
+        reloadKey={data} />
 
       {canUpdate && (
         <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="customer-credit-actions">

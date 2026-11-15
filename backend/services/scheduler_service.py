@@ -160,7 +160,7 @@ JOBS: List[Dict[str, Any]] = [
      "link": "ar-aging"},
     # ── FASE G-2 ──────────────────────────────────────────────────────────
     {"id": "penalty_accrual", "label": "Hitung Denda Keterlambatan",
-     "description": "Pindai seluruh rencana pembayaran aktif; cicilan/milestone yang melewati jatuh tempo + masa tenggang dibuatkan USULAN nota denda (draft, tanpa jurnal) agar masih bisa dinegosiasikan. Idempotent: satu nota per baris per bulan.",
+     "description": "Pindai seluruh jadwal tagihan dan rencana pembayaran aktif; tagihan yang melewati jatuh tempo + masa tenggang dibuatkan USULAN nota denda (draft, tanpa jurnal) menurut aturan PT, pelanggan, atau rencana, agar masih bisa dinegosiasikan. Pelanggan bebas denda dilewati. Idempotent: satu nota per baris per bulan.",
      "kind": "daily", "hour": 7, "minute": 45, "fn": penalties.job_penalty_accrual,
      "link": "payment-plans"},
     # ── FASE G-9 ──────────────────────────────────────────────────────────

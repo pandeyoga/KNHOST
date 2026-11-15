@@ -76,6 +76,51 @@ class PlanError(ValueError):
     """Kesalahan rencana pembayaran dengan pesan siap tampil (Bahasa Indonesia)."""
 
 
+#: CR-T4 — pilihan perlakuan denda per rencana ("" = ikut aturan pelanggan atau PT).
+PENALTY_PLAN_MODES = ("", "off", "draft", "auto")
+
+
+def penalty_override(raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """CR-T4 — aturan denda khusus SATU rencana (`plan.penalty`), dibaca `penalty_service.penalty_policy` paling akhir
+    (paling khusus). Unsur kosong = mengikuti aturan pelanggan atau PT. Batas angka dari registry kunci yang sama:
+    tarif & batas atas 0–100 %, tenggang bulat 0–batas `ar.grace_days`, dasar dari pilihan `payment.penalty_base`."""
+    import config_registry as registry
+    p = raw or {}
+    mode = str(p.get("mode") or "")
+    if mode not in PENALTY_PLAN_MODES:
+        raise PlanError("Perlakuan denda rencana tidak dikenal.")
+    out: Dict[str, Any] = {"mode": mode, "grace_days": None, "rate_pct_per_month": None, "base": "", "cap_pct": None}
+    for k, kunci, pesan in (
+            ("rate_pct_per_month", "ar.denda_rate_pct_per_month", "Tarif denda harus antara {a} dan {b} % per bulan."),
+            ("cap_pct", "payment.penalty_cap_pct", "Batas atas denda harus antara {a} dan {b} % dari dasar.")):
+        v = p.get(k)
+        if v in (None, ""):
+            continue
+        e = registry.require(kunci)
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            f = -1.0
+        if not float(e["min"]) <= f <= float(e["max"]) or isinstance(v, bool):
+            raise PlanError(pesan.format(a=f"{e['min']:g}", b=f"{e['max']:g}"))
+        out[k] = f
+    g = p.get("grace_days")
+    if g not in (None, ""):
+        maks = int(registry.require("ar.grace_days")["max"])
+        try:
+            gi = int(g) if float(g) == int(float(g)) and not isinstance(g, bool) else -1
+        except (TypeError, ValueError):
+            gi = -1
+        if not 0 <= gi <= maks:
+            raise PlanError(f"Hari tenggang denda harus bilangan bulat 0–{maks}.")
+        out["grace_days"] = gi
+    base = p.get("base") or ""
+    if base and base not in {o["value"] for o in (registry.require("payment.penalty_base").get("options") or [])}:
+        raise PlanError("Dasar hitung denda tidak dikenal.")
+    out["base"] = base
+    return out
+
+
 # ── Kebijakan (registry FASE G-0 — tidak ada angka hardcode) ───────────────
 def _float_or_default(v: Any, key: str) -> float:
     """KF-T3 — nilai kosong/0 → bawaan registry (standar §2.2), bukan cadangan kode sendiri."""
@@ -325,6 +370,7 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
     mode = str(payload.get("mode") or "custom")
     if mode not in MANUAL_MODES:
         raise PlanError(f"Mode rencana '{mode}' tidak dikenal.")
+    penalty_cfg = penalty_override(payload.get("penalty"))   # CR-T4 — diperiksa sebelum apa pun ditulis
 
     raw_lines = payload.get("lines")
     if raw_lines:
@@ -353,7 +399,6 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
 
     now = now_iso()
     number = await next_doc_number(COLL, "number", "RPB-", entity_id=entity_id or None)
-    penalty_cfg = payload.get("penalty") or {}
     plan = {
         "id": new_id("pyp"), "number": number, "entity_id": entity_id,
         "doc_type": doc_type, "doc_id": doc_id, "doc_number": order.get("number", ""),
@@ -361,13 +406,7 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
         "origin": "manual", "rev": 0,   # CR-T2
         "mode": mode, "mode_label": MODE_LABEL.get(mode, mode),
         "total_amount": total, "lines": lines,
-        "penalty": {
-            "mode": str(penalty_cfg.get("mode") or ""),      # kosong = ikut kebijakan global
-            "grace_days": penalty_cfg.get("grace_days"),
-            "rate_pct_per_month": penalty_cfg.get("rate_pct_per_month"),
-            "base": penalty_cfg.get("base") or "",
-            "cap_pct": penalty_cfg.get("cap_pct"),
-        },
+        "penalty": penalty_cfg,   # kosong = ikut aturan pelanggan atau PT (CR-T4)
         "note": str(payload.get("note") or ""),
         "status": "active",
         "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
@@ -441,12 +480,7 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
                                         "reason": str(payload.get("reason") or "").strip(),
                                         "lines_before": plan.get("lines") or []}
     if payload.get("penalty") is not None:
-        p = payload["penalty"] or {}
-        set_doc["penalty"] = {
-            "mode": str(p.get("mode") or ""), "grace_days": p.get("grace_days"),
-            "rate_pct_per_month": p.get("rate_pct_per_month"),
-            "base": p.get("base") or "", "cap_pct": p.get("cap_pct"),
-        }
+        set_doc["penalty"] = penalty_override(payload["penalty"])   # CR-T4
     if payload.get("note") is not None:
         set_doc["note"] = str(payload["note"])
     await db[COLL].update_one({"id": plan_id}, {"$set": set_doc, **({"$push": push_doc} if push_doc else {})})

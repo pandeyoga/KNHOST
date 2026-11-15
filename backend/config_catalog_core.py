@@ -240,24 +240,24 @@ E("wms.rfid_simulation", group="sistem", section="rfid-proses", type="bool", def
 # ═══════════════════════════════════════════════════════════════════════════
 E("ar.denda_rate_pct_per_month", group="pembayaran-pelanggan", section="denda", type="pct", default=2.0,
   min=0, max=100, step=0.25, unit="% / bulan",
-  scopes=("global", "entity", "customer"), simulate="ar_penalty",
+  scopes=("global", "entity"), simulate="ar_penalty",
   label="Bunga denda keterlambatan",
-  # KF-T5 — aturan khusus pelanggan diatur dari kartu pelanggan (Customer360Panel › Aturan khusus pelanggan ini).
+  # CR-T4 — lapisan pelanggan dicabut: tarif khusus satu pelanggan diatur di profil kreditnya (kartu pelanggan › Kredit).
   help="Persen denda per bulan atas tagihan yang lewat jatuh tempo, dihitung harian (30 hari = 1 bulan). Isi 0 = "
-       "tidak ada denda. Bisa dibedakan per pelanggan dari kartu pelanggan.",
-  impact="Mengubah kolom 'Denda' pada laporan Umur Piutang.",
+       "tidak ada denda. Untuk pelanggan tertentu, atur di kartu pelanggan (Aturan denda).",
+  impact="Mengubah nota denda dan kolom 'Denda' pada laporan Umur Piutang.",
   example="Outstanding Rp 10.000.000 · telat 45 hari · 2%/bulan → denda Rp 300.000",
-  consumers=("services/ar_aging_service.py:get_ar_config",),
+  consumers=("services/penalty_service.py:penalty_policy", "services/ar_aging_service.py:get_ar_config"),
   related=("ar.grace_days",), risk="medium")
 
 E("ar.grace_days", group="pembayaran-pelanggan", section="denda", type="duration", default=0, min=0, max=180, step=1,
-  unit="hari", scopes=("global", "entity", "customer"), simulate="ar_penalty",
+  unit="hari", scopes=("global", "entity"), simulate="ar_penalty",
   label="Masa tenggang sebelum denda",
-  help="Jumlah hari setelah jatuh tempo yang masih bebas denda. Bisa dibedakan per pelanggan dari kartu pelanggan. "
-       "Isi 0 = denda dihitung sejak hari pertama lewat jatuh tempo.",  # KF-T5
+  help="Jumlah hari setelah jatuh tempo yang masih bebas denda. Untuk pelanggan tertentu, atur di kartu pelanggan "
+       "(Aturan denda). Isi 0 = denda dihitung sejak hari pertama lewat jatuh tempo.",  # KF-T5, CR-T4
   impact="Hari keterlambatan dikurangi masa tenggang sebelum denda dihitung.",
   example="Tenggang 7 hari · telat 10 hari → denda hanya dihitung 3 hari",
-  consumers=("services/ar_aging_service.py:get_ar_config",),
+  consumers=("services/penalty_service.py:penalty_policy", "services/ar_aging_service.py:get_ar_config"),
   related=("ar.denda_rate_pct_per_month",), risk="low")
 
 E("ar.aging_buckets", group="pembayaran-pelanggan", section="syarat-bayar", type="list", default=[30, 60, 90],

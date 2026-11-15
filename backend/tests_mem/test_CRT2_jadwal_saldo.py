@@ -458,8 +458,11 @@ async def test_CRT2_a_pembaca_lama_mengabaikan_jadwal_mesin(f1, db, klien, adm):
     assert r.status_code == 200 and r.json()["plan"] is None, r.text
     r = await klien.get("/api/payment-plans", headers=await adm(KANDA))
     assert r.status_code == 200 and all(p.get("origin") != "term" for p in r.json()["items"]), r.text
+    # CR-T4 — perilaku denda SENGAJA berubah: job memindai jadwal tagihan mesin juga (pesanan tanpa rencana cicilan
+    # ikut terhitung; angka & aturan diuji di `test_CRT4_denda_berlapis.py`). Panel rencana & daftar rencana tetap
+    # mengabaikan jadwal mesin (di atas).
     hasil = await pen.job_penalty_accrual()
-    assert await db.penalties.count_documents({"plan_id": (await _jadwal(db, f1["S1"]["id"]))["id"]}) == 0, hasil
+    assert hasil["by_origin"]["term"]["scanned"] >= 1, hasil
 
 
 # ═══ Skrip `scripts/build_billing_schedule.py` — baca-saja dulu, lalu tulis; idempoten; daftar status kredit berubah ═

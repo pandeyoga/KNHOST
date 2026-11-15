@@ -635,3 +635,17 @@ Keuangan › Perlu Tindakan (`docs/blueprint/unit/MN-T2.md`).
 | **akun sementara** | Seksi "Akun sementara" · "Saldo akun penampung (Suspense 1-9999) harus nol sebelum tutup buku; reklasifikasi di sini." | Akun penampung (Suspense) untuk mutasi yang belum dikenali; dulu tab "Suspense" di Jurnal & Buku Besar |
 | **perlu tindakan** | Tab "Perlu Tindakan" · kelompok "Uang masuk perlu dicatat · Selisih bayar perlu diputus · Faktur pajak perlu terbit · Nota kredit perlu ditinjau · Hutang jatuh tempo · Kontrabon menunggu · Posting gagal · Denda perlu diterbitkan · Piutang lewat jatuh tempo · Sample berbayar menunggu ACC bayar · Retur selesai QC — putuskan nilai" · kosong "Tidak ada yang perlu ditindak hari ini." | Satu daftar pekerjaan uang berkelompok. Kelompok hanya tampil bila pengguna berhak atas modul sumbernya dan ada isinya; tiap baris satu tombol ke layar penanganannya |
 | **kartu Keuangan** (beranda) | Kartu "Keuangan": "Kas & bank" · "Piutang lewat jatuh tempo" · "Hutang belum dibayar" · tautan "Buka Beranda Keuangan" | Ringkasan tiga angka di Beranda Admin dan Dasbor Manajer, dari sumber yang sama dengan tab Beranda Keuangan › Posisi |
+
+### 9.26 Aturan denda berlapis: PT, pelanggan, rencana (CR-T4)
+
+Istilah kartu pelanggan › Kredit › "Aturan denda", pop-up "Ajukan perubahan kredit", form rencana bayar, dan panel denda
+(`docs/blueprint/unit/CR-T4.md`, keputusan K-30).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **aturan denda** | Bagian "Aturan denda" (Perlakuan denda · Tarif denda · Dasar hitung · Batas atas · Hari tenggang · Denda paling kecil yang dibuatkan nota) · lencana asal "ikut PT" / "khusus pelanggan" | Aturan yang dipakai usulan denda keterlambatan seorang pelanggan di satu PT. Dibaca berlapis: aturan PT (Pusat Pengaturan) → aturan khusus pelanggan (profil kredit) → aturan khusus rencana bayar (paling khusus) |
+| **ikut PT** · **khusus** (aturan denda) | Pilihan "Aturan denda": "Ikut PT · Khusus · Bebas denda" · isian "Tarif denda (% per bulan)", "Dasar hitung" ("Sisa tagihan yang telat" · "Seluruh sisa pesanan"), "Batas atas (% dari dasar)", "Hari tenggang" · keterangan "Kosong = ikut aturan PT." | Khusus = pelanggan ini punya tarif/tenggang/batas sendiri; isian kosong tetap ikut PT. Diubah hanya lewat pengajuan perubahan kredit yang diputus pemegang akses memutus |
+| **bebas denda** | Lencana "Bebas denda s.d. {tanggal}" · isian "Alasan", "Berlaku sampai" · galat "Bebas denda wajib beralasan dan punya tanggal berakhir." · kalimat "Bebas denda berakhir {tanggal} — sekarang ikut PT." | Pelanggan tidak dibuatkan usulan denda baru sampai tanggal itu (usulan yang sudah ada tidak diubah). Wajib beralasan dan bertanggal; tidak ada bebas selamanya |
+| **aturan denda khusus rencana** | Form rencana bayar › bagian lipat "Aturan denda khusus rencana ini" · keterangan "Kosong = mengikuti aturan pelanggan atau PT." | Tarif/dasar/batas/tenggang untuk satu rencana cicilan; menimpa aturan pelanggan dan PT untuk pesanan itu saja |
+| **aturan dari** (nota denda) | Panel denda: "Aturan dari: PT · pelanggan · rencana" | Asal unsur aturan yang dipakai nota itu (tercatat di potret aturan nota) |
+| **taksiran denda** | Kolom "Denda" umur piutang, angka *est.* | Denda yang akan lahir bila dibuatkan nota sekarang — rumus dan aturannya sama dengan nota denda (harian, 30 hari = 1 bulan), bukan lagi dibulatkan per bulan penuh |

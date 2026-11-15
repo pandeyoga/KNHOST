@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: c3fa3f8 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: b7837de pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 173 |
-| Endpoint (`@router.<method>`) | 1866 |
+| Endpoint (`@router.<method>`) | 1867 |
 | Service (`backend/services/*.py`) | 431 |
 | Koleksi MongoDB disentuh kode produksi | 213 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -226,7 +226,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `outbound_picking.py` | 17 | 701 | `/outbound/loading-check/{session_id}/cancel`, `/outbound/loading-check/{session_id}/complete`, `/outbound/loading-check/{session_id}/scan`, `/outbound/loading-check/{session_id}/scan-label`, `/outbound/so/{order_id}/dispatch-batch`, `/outbound/so/{order_id}/loading-check` … |
 | `outbound_picking_extra.py` | 3 | 318 | `/outbound/so/{order_id}/surat-jalan`, `/shipments`, `/shipments/{shipment_id}/surat-jalan` |
 | `payment_methods.py` | 2 | 47 | `/payment-methods`, `/sales-orders/{order_id}/payment-instruction` |
-| `payment_plans.py` | 14 | 321 | `/payment-plans`, `/payment-plans/by-doc/{doc_type}/{doc_id}`, `/payment-plans/meta`, `/payment-plans/preview`, `/payment-plans/{plan_id}`, `/payment-plans/{plan_id}/accrue` … |
+| `payment_plans.py` | 15 | 346 | `/customers/{customer_id}/penalty-policy`, `/payment-plans`, `/payment-plans/by-doc/{doc_type}/{doc_id}`, `/payment-plans/meta`, `/payment-plans/preview`, `/payment-plans/{plan_id}` … |
 | `payment_variance.py` | 8 | 208 | `/payment-variances`, `/payment-variances/assess`, `/payment-variances/meta`, `/payment-variances/pending`, `/payment-variances/receipt/{receipt_id}`, `/payment-variances/receipt/{receipt_id}/decide` … |
 | `pdf.py` | 13 | 373 | `/branding/{entity_id}`, `/branding/{entity_id}/identity`, `/doc-types`, `/documents/{doc_type}`, `/preview`, `/render/{doc_type}/{source_id}` … |
 | `pegging.py` | 3 | 120 | `/inventory/rolls/{roll_id}/earmark`, `/pegging/rolls` |
@@ -338,7 +338,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_policy_service.py` | 758 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
 | `approval_reminder.py` | 135 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
-| `ar_aging_service.py` | 579 | EPIC7-A — AR / Piutang Aging (read/derived report). |
+| `ar_aging_service.py` | 625 | EPIC7-A — AR / Piutang Aging (read/derived report). |
 | `ar_allocation_service.py` | 412 | PK-19 (SL-05, SL-06, SL-08, SL-14, FX-05, FX-06, FX-07, IA-07) — SATU fungsi alokasi pembayaran pesanan. |
 | `ar_receipt_service.py` | 925 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
 | `ar_reduction_guard.py` | 105 | PK-38 (FX-10, K-11) — satu pintu pemeriksaan **pengurang piutang tanpa uang masuk**. |
@@ -384,7 +384,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `contract_service.py` | 581 | FASE D — KONTRAK MITRA/SUPPLIER (`supplier_contracts`) + MESIN TARIF CONFIGURABLE. |
 | `costing_service.py` | 146 | Costing service (EPIC3A) — Weighted Average Cost (WAC) per produk/entitas. |
 | `credit_note_service.py` | 641 | PK-32 (FX-12, FX-13, FX-14, FX-15) — SATU mesin nota kredit dan nota debit pesanan. |
-| `credit_profile_service.py` | 660 | CR-T1 — profil kredit per pelanggan per PT, diubah HANYA lewat pengajuan (`docs/blueprint/unit/CR-T1.md`, K-27 |
+| `credit_profile_service.py` | 688 | CR-T1 — profil kredit per pelanggan per PT, diubah HANYA lewat pengajuan (`docs/blueprint/unit/CR-T1.md`, K-27 |
 | `crm_omnichannel_service.py` | 249 | CRM Omnichannel (MVP manual) — Lead pipeline + timeline interaksi. |
 | `csv_money.py` | 39 | SATU definisi “cara membaca angka rupiah dari CSV” untuk seluruh sistem. |
 | `custom_role_service.py` | 942 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
@@ -430,7 +430,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `fabric_type_master_service.py` | 51 | L01 — MASTER JENIS KAIN (`md_fabric_types`): woven/knit benih + tambahan admin (mis. dari laporan |
 | `field_visibility.py` | 245 | L01 (LN-012) — visibilitas atribut stok per peran: grade · LOT · asal lokal/impor. |
 | `finance_bi_service.py` | 133 | FINANCE — BI Keuangan (dashboard analitik) diturunkan dari GL. |
-| `finance_case_actions.py` | 1174 | FASE G-9 — EKSEKUTOR AKSI PLAYBOOK KASUS KEUANGAN. |
+| `finance_case_actions.py` | 1173 | FASE G-9 — EKSEKUTOR AKSI PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_playbooks.py` | 245 | FASE G-9 — REGISTRY 11 PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_scan.py` | 288 | FASE G-9 — PEMINDAI KASUS OTOMATIS + PEMERIKSA INVARIAN. |
 | `finance_case_service.py` | 761 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
@@ -557,12 +557,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `outbound_task_state.py` | 139 | FIX-3b — TABEL TRANSISI status tugas ambil BARANG KELUAR (`wms_tasks`, `flow_type=outbound`, sumber SO & sampe |
 | `payment_code_service.py` | 409 | PM-T2 — cara bayar & rekening tujuan di pesanan, kode bayar, dan instruksi bayar (`docs/blueprint/unit/PM-T2.m |
 | `payment_method_service.py` | 263 | PM-T1 — SATU daftar induk cara bayar (`docs/blueprint/unit/PM-T1.md`, keputusan K-34, K-35). |
-| `payment_plan_service.py` | 747 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
+| `payment_plan_service.py` | 781 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
 | `payment_variance_service.py` | 1513 | FASE G-3 — **SELISIH PEMBAYARAN: LEBIH & KURANG BAYAR** (`payment_variance_decisions`). |
 | `pdf_engine.py` | 390 | pdf_engine.py — Mesin render PDF asli (server-side) untuk semua dokumen bisnis. |
 | `pdf_resolvers.py` | 1366 | pdf_resolvers.py — Ubah dokumen sumber (per doc_type) menjadi CONTEXT ternormalisasi |
 | `pdf_service.py` | 732 | pdf_service.py — Orkestrasi render dokumen: template config + branding entitas + |
-| `penalty_service.py` | 784 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
+| `penalty_service.py` | 847 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
 | `period_unlock_service.py` | 293 | FASE G-5 — UNLOCK PERIODE BEROTORITAS ("wajib dua orang & menutup sendiri"). |
 | `periodic_posting.py` | 64 | PK-22 (FY-02, keputusan K-13) — tanggal buku jurnal PERIODIK: gaji, penyusutan aset, dan akrual insentif. |
 | `placement_rules.py` | 304 | P02 (IMP-22/24/25) — evaluator penempatan BERSAMA untuk semua jalur (putaway manual, scan |
@@ -740,18 +740,18 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 143 | 23784 |
+| `__tests__` | 144 | 24008 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1722 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 23 | 4978 |
+| `crm` | 24 | 5139 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 106 | 24990 |
+| `finance` | 107 | 25178 |
 | `home` | 6 | 1191 |
 | `hr` | 38 | 7083 |
 | `incentive` | 3 | 1013 |
@@ -774,7 +774,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 98 | 15970 |
-| `sales_admin` | 11 | 1880 |
+| `sales_admin` | 11 | 1882 |
 | `samples` | 8 | 776 |
 | `settings` | 71 | 13172 |
 | `tanya` | 27 | 2483 |

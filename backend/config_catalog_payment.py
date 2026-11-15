@@ -20,6 +20,11 @@ G = ("global", "entity")
 GC = ("global", "entity", "customer")
 # KF-T5 — kunci ber-`GC` bisa dibedakan per pelanggan dari kartu pelanggan (Customer360Panel › Aturan khusus pelanggan
 # ini); `help`-nya diakhiri kalimat "Bisa dibedakan per pelanggan dari kartu pelanggan."
+# CR-T4 — kunci DENDA (`payment.penalty_mode`/`_base`/`_cap_pct`, `ar.denda_rate_pct_per_month`, `ar.grace_days`) hanya
+# global → PT: aturan denda satu pelanggan (per PT) diatur di profil kreditnya (kartu pelanggan › Kredit › Aturan denda,
+# lewat pengajuan perubahan kredit) — satu pemilik (`02` D1). Nilai lapisan pelanggan lama dipindah
+# `scripts/migrate_penalty_customer_layer.py`.
+_DENDA_PELANGGAN = " Untuk pelanggan tertentu, atur di kartu pelanggan (Aturan denda)."
 
 # ── Rencana pembayaran ──────────────────────────────────────────────────────
 # KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
@@ -178,11 +183,10 @@ E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="e
   options=({"value": "off", "label": "Mati (tidak ada denda)"},
            {"value": "draft", "label": "Usulan denda (draf, tanpa jurnal)"},
            {"value": "auto", "label": "Otomatis terbit (langsung berjurnal)"}),
-  scopes=GC,
+  scopes=G,
   label="Denda telat: usulan atau langsung terbit",
   help="Usulan: denda dibuat sebagai konsep yang masih bisa dinegosiasikan atau dibatalkan dan belum masuk "
-       "pembukuan. Otomatis terbit: denda langsung dicatat sebagai piutang dan pendapatan denda. Bisa dibedakan per "
-       "pelanggan dari kartu pelanggan.",
+       "pembukuan. Otomatis terbit: denda langsung dicatat sebagai piutang dan pendapatan denda." + _DENDA_PELANGGAN,
   impact="Menentukan apakah denda hasil pemindaian harian berjurnal atau tidak.",
   example="Usulan · cicilan telat 12 hari → nota denda DRAFT Rp 80.000 menunggu keputusan",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
@@ -191,21 +195,19 @@ E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="e
 E("payment.penalty_base", group="pembayaran-pelanggan", section="denda", type="enum", default="installment",
   options=({"value": "installment", "label": "Nilai cicilan yang telat"},
            {"value": "outstanding", "label": "Seluruh sisa piutang pesanan"}),
-  scopes=GC,
+  scopes=G,
   label="Dasar perhitungan denda",
   help="Denda dihitung dari nominal baris cicilan yang telat, atau dari seluruh sisa piutang "
-       "pesanan itu. Basis cicilan lebih adil bagi pelanggan yang sudah bayar sebagian."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+       "pesanan itu. Basis cicilan lebih adil bagi pelanggan yang sudah bayar sebagian." + _DENDA_PELANGGAN,
   impact="Mengubah besar denda pada nota yang terbentuk.",
   example="Basis cicilan · cicilan Rp 5.000.000 telat 30 hari · 2%/bulan → denda Rp 100.000",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
   related=("payment.penalty_mode", "payment.penalty_cap_pct"))
 
 E("payment.penalty_cap_pct", group="pembayaran-pelanggan", section="denda", type="pct", default=0.0,
-  min=0, max=100, step=1, unit="% dari dasar", scopes=GC,
+  min=0, max=100, step=1, unit="% dari dasar", scopes=G,
   label="Batas maksimum denda",
-  help="Batas atas denda sebagai persen dari dasar perhitungan. Isi 0 untuk tanpa batas."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  help="Batas atas denda sebagai persen dari dasar perhitungan. Isi 0 untuk tanpa batas." + _DENDA_PELANGGAN,
   impact="Melindungi hubungan dagang: denda tidak membengkak tanpa batas pada tunggakan lama.",
   example="Batas 10% · dasar Rp 5.000.000 → denda tidak akan melebihi Rp 500.000",
   consumers=("services/penalty_service.py:penalty_policy",), risk="medium",

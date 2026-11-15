@@ -47,10 +47,11 @@ def test_KFT5_A_pelanggan_data_acuan_atur_lalu_kembali():
     h = _login()
     c = DB.customers.find_one({"entity_id": "ent_ksc", "status": {"$ne": "merged"}}, {"_id": 0, "id": 1, "name": 1})
     assert c, "data acuan tidak punya pelanggan ent_ksc"
-    key = "ar.grace_days"
+    # CR-T4 — kunci denda tidak lagi berlapis pelanggan (8 → 3 kunci); dipakai kunci selisih bayar yang tetap berlapis.
+    key = "payment.variance_overpay_default"
     items, awal = _butir(h, "customer", c["id"], key, "ent_ksc")
-    assert len(items) == 8 and "inherited_value" in awal
-    target = int(awal["inherited_value"] or 0) + 3
+    assert len(items) == 3 and "inherited_value" in awal
+    target = "refund" if awal["inherited_value"] != "refund" else "allocate"
     try:
         r = requests.put(f"{BASE}/config/values", headers=h, timeout=30, json={"items": [
             {"key": key, "value": target, "scope_type": "customer", "scope_id": c["id"], "reason": ALASAN}]})
@@ -92,7 +93,9 @@ def test_KFT5_A_penolakan_tanpa_baris_baru():
     h = _login()
     c = DB.customers.find_one({"entity_id": "ent_ksc"}, {"_id": 0, "id": 1})
     sebelum = DB.config_values.count_documents({})
-    kasus = [("ar.grace_days", 5, "customer", "kft5_tidak_ada", 404, "Pelanggan tidak ditemukan."),
+    kasus = [("payment.variance_tolerance_rupiah", 5000, "customer", "kft5_tidak_ada", 404, "Pelanggan tidak ditemukan."),
+             # CR-T4 — kunci denda tanpa lapisan pelanggan
+             ("ar.grace_days", 5, "customer", c["id"], 400, "“Masa tenggang sebelum denda” tidak bisa dibedakan per pelanggan."),
              ("cutting.waste_limit_pct", 5, "product", "kft5_tidak_ada", 404, "Barang tidak ditemukan."),
              ("allocation.lot_mode", "strict_single", "customer", c["id"], 400,
               "“Kebijakan campur lot” tidak bisa dibedakan per pelanggan."),

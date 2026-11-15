@@ -59,40 +59,139 @@ class PenaltyConflict(PenaltyError):
     """PK-08 — keadaan berubah saat diproses / jurnal gagal sesudah kas tercatat → router menjawab 409."""
 
 
-# ── Kebijakan (registry) ───────────────────────────────────────────────
+# ── Kebijakan (registry → profil kredit → rencana) ─────────────────────
+#: CR-T4 — asal tiap unsur aturan denda (`policy_snapshot.sources`, layar "Aturan dari: …").
+SRC_GLOBAL, SRC_PT, SRC_PELANGGAN, SRC_RENCANA = "global", "pt", "pelanggan", "rencana"
+SOURCE_LABEL = {SRC_GLOBAL: "aturan grup", SRC_PT: "PT", SRC_PELANGGAN: "pelanggan", SRC_RENCANA: "rencana"}
+#: Unsur aturan → kunci Pusat Pengaturan (lapisan global → PT; `scopes` lima kunci pertama tanpa `customer` sejak CR-T4).
+POLICY_KEYS = {"mode": "payment.penalty_mode", "base": "payment.penalty_base", "cap_pct": "payment.penalty_cap_pct",
+               "rate_pct_per_month": "ar.denda_rate_pct_per_month", "grace_days": "ar.grace_days",
+               "min_amount": "payment.penalty_min_amount"}
+#: Unsur yang bisa ditimpa profil kredit (`khusus`) dan rencana bayar (`plan.penalty`).
+RULE_FIELDS = ("rate_pct_per_month", "cap_pct", "grace_days", "base")
+_LAPISAN_PT = ("entity", "legacy_entity")
+_TIPE = {"mode": str, "base": str, "grace_days": lambda v: int(float(v))}
+
+
+def _cast(unsur: str, value: Any, key: str = "") -> Any:
+    """Nilai unsur sesuai tipenya; kosong / tak terbaca → bawaan registry (`02` §2.2, tanpa cadangan lain)."""
+    from config_registry import default_of
+    key = key or POLICY_KEYS[unsur]
+    fn = _TIPE.get(unsur, float)
+    if value in (None, ""):
+        value = default_of(key)
+    try:
+        return fn(value)
+    except (TypeError, ValueError):
+        return fn(default_of(key))
+
+
+async def _customer_rule(customer_id: str, entity_id: str, today: str) -> Dict[str, Any]:
+    """CR-T4 — `customer_credit_profiles.penalty_rule` pasangan (pelanggan, PT) yang BERLAKU hari `today`:
+    `{mode: ikut_pt|khusus|bebas, …}`. Bebas denda yang tanggal berakhirnya lewat (atau tanpa alasan/tanggal) dibaca
+    `ikut_pt` — tidak ada bebas selamanya."""
+    if not customer_id or not entity_id:
+        return {"mode": "ikut_pt"}
+    from services import credit_profile_service as cps
+    prof = await db[cps.COLL].find_one({"customer_id": customer_id, "entity_id": entity_id},
+                                       {"_id": 0, "penalty_rule": 1}) or {}
+    rule = prof.get("penalty_rule") or {}
+    mode = str(rule.get("mode") or "ikut_pt")
+    if mode == "bebas":
+        valid = str(rule.get("valid_until") or "")[:10]
+        if not valid or valid < today or not str(rule.get("reason") or "").strip():
+            return {**rule, "mode": "ikut_pt", "expired_waiver": {"reason": rule.get("reason") or "",
+                                                                  "valid_until": valid}}
+    if mode not in ("khusus", "bebas"):
+        return {"mode": "ikut_pt"}
+    return {**rule, "mode": mode}
+
+
 async def penalty_policy(entity_id: str = "", customer_id: str = "",
-                         plan: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Kebijakan denda yang BERLAKU: global → entitas → pelanggan → override rencana.
+                         plan: Optional[Dict[str, Any]] = None, *, today: Optional[str] = None,
+                         pt_cache: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Kebijakan denda yang BERLAKU, CR-T4 (`docs/blueprint/unit/CR-T4.md`) — urutan:
 
-    Bunga & masa tenggang sengaja memakai kunci yang sudah dipakai laporan Umur Piutang
-    (`ar.denda_rate_pct_per_month`, `ar.grace_days`) supaya laporan dan nota denda tidak
-    pernah bercerita beda.
+    1. aturan grup → PT lewat resolver dengan konteks `{"entity_id"}` saja (lapisan `customer` lima kunci dicabut);
+    2. profil kredit pasangan (pelanggan, PT): `khusus` menimpa unsur yang terisi; `bebas` yang masih berlaku menyetel
+       `mode: off` dan mengisi `waiver: {reason, valid_until}`;
+    3. `plan.penalty` (rencana bayar) menimpa unsur yang terisi — tetap paling khusus.
+    Jawaban membawa `sources` (asal tiap unsur: `global` · `pt` · `pelanggan` · `rencana`).
+
+    Kunci yang dibaca (`POLICY_KEYS`): `payment.penalty_mode`, `payment.penalty_base`, `payment.penalty_cap_pct`,
+    `ar.denda_rate_pct_per_month`, `ar.grace_days`, `payment.penalty_min_amount`, ditambah
+    `payment.penalty_waive_requires_approval` dan `payment.penalty_waive_approver_role`.
+
+    PT kosong + pelanggan terisi → PT pemilik data pelanggan (sama dengan `credit_profile_service.effective`). Bunga &
+    tenggang memakai kunci laporan Umur Piutang (`ar.*`) — taksiran laporan dan nota denda satu aturan. `pt_cache`
+    (opsional, per panggilan daftar) = aturan grup → PT dibaca sekali per PT.
     """
-    ctx = {"entity_id": entity_id or "", "customer_id": customer_id or ""}
-
-    async def val(key: str) -> Any:
-        return (await resolve(key, ctx))["value"]
-
-    pol = {
-        "mode": str(await val("payment.penalty_mode") or "draft"),
-        "base": str(await val("payment.penalty_base") or "installment"),
-        "cap_pct": float(await val("payment.penalty_cap_pct") or 0),
-        "min_amount": float(await val("payment.penalty_min_amount") or 0),
-        "waive_requires_approval": bool(await val("payment.penalty_waive_requires_approval")),
-        "approver_role": str(await val("payment.penalty_waive_approver_role") or "manager"),
-        "rate_pct_per_month": float(await val("ar.denda_rate_pct_per_month") or 0),
-        "grace_days": int(await val("ar.grace_days") or 0),
-    }
-    # Override per rencana pembayaran (kesepakatan khusus pelanggan tertentu).
+    from services.book_date import tanggal_buku
+    day = (today or tanggal_buku())[:10]
+    eid = entity_id if entity_id and entity_id != "all" else ""
+    if not eid and customer_id:
+        cust = await db.customers.find_one({"id": customer_id}, {"_id": 0, "entity_id": 1}) or {}
+        eid = cust.get("entity_id") or ""
+    if pt_cache is not None and eid in pt_cache:
+        pol, sources = dict(pt_cache[eid][0]), dict(pt_cache[eid][1])
+    else:
+        ctx = {"entity_id": eid}
+        pol, sources = {}, {}
+        for unsur, key in POLICY_KEYS.items():
+            res = await resolve(key, ctx)
+            pol[unsur] = _cast(unsur, res["value"])
+            sources[unsur] = SRC_PT if res.get("source_layer") in _LAPISAN_PT else SRC_GLOBAL
+        pol["waive_requires_approval"] = bool((await resolve("payment.penalty_waive_requires_approval", ctx))["value"])
+        pol["approver_role"] = _cast("mode", (await resolve("payment.penalty_waive_approver_role", ctx))["value"],
+                                     "payment.penalty_waive_approver_role")
+        if pt_cache is not None:
+            pt_cache[eid] = (dict(pol), dict(sources))
+    # 2. Profil kredit pelanggan di PT ini (satu pemilik lapisan pelanggan, D1).
+    rule = await _customer_rule(customer_id or "", eid, day)
+    waiver = None
+    if rule["mode"] == "khusus":
+        _timpa(pol, sources, rule, SRC_PELANGGAN)
+    elif rule["mode"] == "bebas":
+        pol["mode"], sources["mode"] = "off", SRC_PELANGGAN
+        waiver = {"reason": str(rule.get("reason") or ""), "valid_until": str(rule.get("valid_until") or "")[:10]}
+    # 3. Aturan khusus rencana pembayaran (kesepakatan satu pesanan).
     over = (plan or {}).get("penalty") or {}
-    for src, dst in (("mode", "mode"), ("base", "base")):
-        if over.get(src):
-            pol[dst] = str(over[src])
-    for src, dst in (("grace_days", "grace_days"), ("cap_pct", "cap_pct"),
-                     ("rate_pct_per_month", "rate_pct_per_month")):
-        if over.get(src) not in (None, ""):
-            pol[dst] = float(over[src]) if dst != "grace_days" else int(over[src])
+    if over.get("mode"):
+        pol["mode"], sources["mode"] = str(over["mode"]), SRC_RENCANA
+    _timpa(pol, sources, over, SRC_RENCANA)
+    pol["sources"] = sources
+    pol["waiver"] = waiver if pol["mode"] == "off" and sources["mode"] == SRC_PELANGGAN else None
+    pol["expired_waiver"] = rule.get("expired_waiver") or None
+    pol["customer_rule_mode"] = rule["mode"]
+    pol["entity_id"] = eid
     return pol
+
+
+def _timpa(pol: Dict[str, Any], sources: Dict[str, str], rule: Dict[str, Any], asal: str) -> None:
+    """Unsur `rule` yang TERISI (bukan None/"") menimpa `pol`; asalnya dicatat di `sources`."""
+    for unsur in RULE_FIELDS:
+        v = rule.get(unsur)
+        if v in (None, ""):
+            continue
+        pol[unsur] = _cast(unsur, v)
+        sources[unsur] = asal
+
+
+def estimate(line_outstanding: float, days_late: int, policy: Dict[str, Any],
+             order_outstanding: Optional[float] = None) -> float:
+    """CR-T4 — taksiran denda SATU baris tagihan = nominal nota yang akan lahir untuk baris itu (aturan, dasar,
+    tenggang, batas atas, dan minimum sama dengan `accrue_plan`; dipakai laporan Umur Piutang). Mode mati → 0."""
+    if policy.get("mode") == "off" or int(days_late or 0) <= int(policy["grace_days"]):
+        return 0.0
+    base = float(line_outstanding or 0)
+    if policy.get("base") != "installment":
+        base = max(float(order_outstanding if order_outstanding is not None else line_outstanding or 0), 0.0)
+    if base <= EPS:
+        return 0.0
+    calc = compute_amount(base, int(days_late), policy)
+    if calc["billable_days"] <= 0 or calc["amount"] < float(policy["min_amount"]) - EPS:
+        return 0.0
+    return calc["amount"]
 
 
 # ── Perhitungan (auditable) ───────────────────────────────────────────
@@ -123,7 +222,8 @@ def compute_amount(base_amount: float, days_late: int, policy: Dict[str, Any],
         limit = round(float(base_amount) * cap_pct / 100.0, 2)
         capped = min(raw, limit)
     explain = [
-        f"Dasar denda {rupiah(float(base_amount))} ({'nilai cicilan' if policy['base'] == 'installment' else 'sisa piutang order'})",
+        f"Dasar denda {rupiah(float(base_amount))} "
+        f"({'sisa tagihan yang telat' if policy['base'] == 'installment' else 'seluruh sisa pesanan'})",
         f"Telat {days_late} hari − tenggang {grace} hari = {cumulative} hari kena denda",
     ]
     if days_prior > 0:
@@ -163,13 +263,24 @@ async def _days_already_billed(*, plan_id: str, doc_id: str, line_seq: Any, due_
 # ── Akrual (dipakai job harian & tombol "hitung sekarang") ─────────────────
 async def accrue_plan(plan: Dict[str, Any], today: Optional[str] = None,
                       actor_name: str = "system") -> List[Dict[str, Any]]:
-    """Bentuk / perbarui nota denda untuk semua baris yang telat pada satu rencana."""
-    day = (today or now_iso())[:10]
+    """Bentuk / perbarui nota denda untuk semua baris yang telat pada satu jadwal hidup.
+
+    CR-T4 — jadwal apa pun asalnya: rencana cicilan buatan orang (`origin: manual`) maupun jadwal tagihan mesin
+    (`origin: term`, CR-T2). Aturan dari `penalty_policy` (PT → profil kredit pelanggan → rencana); mode mati (termasuk
+    pelanggan bebas denda yang masih berlaku) → tidak ada nota baru, nota draf yang sudah ada tidak disentuh. Jadwal
+    mesin pesanan yang tidak ikut piutang (bertermin tunai, `report_basis.pesanan_piutang`) dilewati seperti sebelumnya.
+    "Hari ini" = tanggal buku WIB (`book_date.tanggal_buku`)."""
+    from services.book_date import tanggal_buku
+    day = (today or tanggal_buku())[:10]
     policy = await penalty_policy(plan.get("entity_id") or "",
-                                  plan.get("customer_id") or "", plan)
+                                  plan.get("customer_id") or "", plan, today=day)
     if policy["mode"] == "off":
         return []
     order = await db.sales_orders.find_one({"id": plan.get("doc_id")}, {"_id": 0}) or {}
+    if plan.get("origin") == plans.ORIGIN_TERM:
+        from services.report_basis import pesanan_piutang
+        if not order or not pesanan_piutang(order):
+            return []
     outstanding = round(plans.source_total(safe_doc(order)) - plans.source_paid(safe_doc(order)), 2)
     out: List[Dict[str, Any]] = []
 
@@ -197,10 +308,13 @@ async def accrue_plan(plan: Dict[str, Any], today: Optional[str] = None,
             if existing.get("status") != "draft":
                 out.append(safe_doc(existing))
                 continue
-            await db[COLL].update_one({"id": existing["id"]}, {"$set": {
-                "amount": calc["amount"], "base_amount": base_amount,
+            # CR-T4 — usulan yang belum diputus mengikuti aturan yang berlaku sekarang (potret aturan ikut diperbarui).
+            await db[COLL].update_one({"id": existing["id"], "status": "draft"}, {"$set": {
+                "amount": calc["amount"], "base_amount": base_amount, "base": policy["base"],
                 "days_late": calc["days_late"], "billable_days": calc["billable_days"],
-                "days_prior": calc["days_prior"], "explain": calc["explain"], "updated_at": now_iso()}})
+                "days_prior": calc["days_prior"], "rate_pct_per_month": calc["rate_pct_per_month"],
+                "grace_days": calc["grace_days"], "cap_pct": calc["cap_pct"], "policy_snapshot": policy,
+                "explain": calc["explain"], "updated_at": now_iso()}})
             out.append(await get(existing["id"]))
             continue
 
@@ -257,92 +371,31 @@ async def _create(plan: Dict[str, Any], line: Dict[str, Any], calc: Dict[str, An
     return safe_doc(doc)
 
 
-async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
-                       actor_name: str = "system") -> List[Dict[str, Any]]:
-    """FASE G-3 (pelengkap G-2) — nota denda untuk pesanan yang **tidak punya rencana**.
+async def accrue_for_order(order_id: str, today: Optional[str] = None,
+                           actor_name: str = "system") -> List[Dict[str, Any]]:
+    """CR-T4 — nota denda satu pesanan dari JADWAL HIDUP-nya (rencana cicilan atau jadwal tagihan mesin CR-T2).
 
-    Laporan Umur Piutang menghitung denda untuk SETIAP pesanan yang telat, sementara
-    FASE G-2 hanya bisa menerbitkan nota dari baris rencana pembayaran. Akibatnya kolom
-    denda di laporan tidak bisa ditautkan ke dokumen nyata untuk pesanan tanpa rencana —
-    tepat masalah yang diminta pemilik untuk ditutup.
-
-    Di sini pesanannya diperlakukan sebagai **satu baris jatuh tempo** (tempo = tanggal
-    pesanan + term pelanggan), memakai kebijakan, perhitungan, jurnal, dan siklus
-    keputusan yang SAMA — jadi tidak ada mesin denda kedua yang bisa bercerita beda.
-    """
-    day = (today or now_iso())[:10]
-    if await plans.get_manual("sales_order", order.get("id", "")):
-        return []   # ada rencana → nota denda lahir dari barisnya (jangan dobel). CR-T2: jadwal mesin bukan rencana
-    policy = await penalty_policy(order.get("entity_id") or "",
-                                  order.get("customer_id") or "")
-    if policy["mode"] == "off":
+    Pengganti `accrue_order` (D8, dihapus): jalur lama memperlakukan pesanan tanpa rencana sebagai satu baris
+    bertempo "tanggal pesanan + termin profil"; kini setiap pesanan yang menimbulkan piutang punya jadwal tagihan per
+    surat jalan, jadi denda selalu lahir dari baris jadwal (`accrue_plan`). Pesanan tanpa jadwal tersimpan (data lama
+    sebelum `scripts/build_billing_schedule.py --apply`) belum melahirkan nota."""
+    plan = await plans.get_active("sales_order", order_id or "")
+    if not plan or plan.get("status") != "active":
         return []
-    from services.customer_service import (_order_grand_total as gt_of,
-                                           _order_paid as paid_of,
-                                           order_payment_method, _parse_dt as parse_dt,
-                                           DEAD_STATUSES, NON_AR_METHODS)
-    from services.report_basis import hari_termin as term_days   # CR-T2 — aturan hari termin pindah (D8)
-    if order.get("status") in DEAD_STATUSES or order_payment_method(order) in NON_AR_METHODS:
-        return []
-    outstanding = round(gt_of(order) - paid_of(order), 2)
-    if outstanding <= EPS:
-        return []
-    cust = await db.customers.find_one({"id": order.get("customer_id")},
-                                       {"_id": 0, "payment_profile": 1, "name": 1}) or {}
-    from datetime import timedelta as _td
-    created = parse_dt(order.get("created_at")) or datetime.now(timezone.utc)
-    due = (created + _td(days=term_days(cust, order))).date().isoformat()
-    days = _days_late(due, day)
-    if days <= int(policy["grace_days"]):
-        return []
-    pkey = _period_key(due, day)
-    prior = await _days_already_billed(plan_id="", doc_id=order.get("id", ""), line_seq=0, due_date=due,
-                                       period_key=pkey)
-    calc = compute_amount(outstanding, days, policy, days_prior=prior)
-    if calc["billable_days"] <= 0:
-        return []
-    if calc["amount"] < float(policy["min_amount"]) - EPS:
-        return []
-    pseudo_plan = {
-        "id": "", "number": "", "entity_id": order.get("entity_id") or "",
-        "doc_type": "sales_order", "doc_id": order.get("id", ""),
-        "doc_number": order.get("number", ""),
-        "customer_id": order.get("customer_id", ""),
-        "customer_name": order.get("customer_name") or cust.get("name", ""),
-    }
-    line = {"seq": 0, "label": f"Sisa tagihan pesanan {order.get('number', '')}",
-            "due_date": due, "amount": outstanding, "paid_amount": 0.0}
-    existing = await db[COLL].find_one(
-        {"doc_id": order.get("id"), "plan_id": "", "line_seq": 0, "period_key": pkey},
-        {"_id": 0})
-    if existing:
-        if existing.get("status") != "draft":
-            return [safe_doc(existing)]
-        await db[COLL].update_one({"id": existing["id"]}, {"$set": {
-            "amount": calc["amount"], "base_amount": outstanding,
-            "days_late": calc["days_late"], "billable_days": calc["billable_days"],
-            "days_prior": calc["days_prior"], "explain": calc["explain"], "updated_at": now_iso()}})
-        return [await get(existing["id"])]
-    doc = await _create(pseudo_plan, line, calc, outstanding, pkey, policy, actor_name)
-    if policy["mode"] == "auto":
-        doc = await issue(doc["id"], {"name": actor_name, "role": "system"}, auto=True)
-    return [doc]
+    return await accrue_plan(plan, today=today, actor_name=actor_name)
 
 
 async def accrue_customer(customer_id: str, today: Optional[str] = None,
                           actor_name: str = "system") -> List[Dict[str, Any]]:
-    """Hitung denda untuk SEMUA pesanan telat satu pelanggan (dengan / tanpa rencana).
+    """Hitung denda untuk SEMUA jadwal hidup satu pelanggan (tombol "Buat Nota Denda" laporan Umur Piutang).
 
-    Inilah tombol "Buat Nota Denda" pada laporan Umur Piutang: kolom denda estimasi
-    berubah menjadi dokumen nyata yang bisa ditagih, dinegosiasikan, atau dibebaskan.
+    CR-T4 — memindai jadwal `active` apa pun asalnya (`origin` `term` maupun `manual`); cabang "pesanan tanpa rencana"
+    dihapus karena pesanan itu kini punya jadwal tagihan (CR-T2). Kolom denda estimasi berubah menjadi dokumen nyata
+    yang bisa ditagih, dinegosiasikan, atau dibebaskan.
     """
     out: List[Dict[str, Any]] = []
-    # CR-T2 — jadwal tagihan mesin (`origin: "term"`) belum melahirkan denda (pengalihan denda = CR-T4)
-    async for row in db[plans.COLL].find({"customer_id": customer_id, "status": "active",
-                                          "origin": {"$ne": plans.ORIGIN_TERM}}, {"_id": 0}):
+    async for row in db[plans.COLL].find({"customer_id": customer_id, "status": "active"}, {"_id": 0}):
         out.extend(await accrue_plan(safe_doc(row), today=today, actor_name=actor_name))
-    async for row in db.sales_orders.find({"customer_id": customer_id}, {"_id": 0}):
-        out.extend(await accrue_order(safe_doc(row), today=today, actor_name=actor_name))
     return out
 
 
@@ -768,17 +821,27 @@ async def decided_without_reason(limit: int = 20) -> List[Dict[str, Any]]:
 
 
 # ── Job penjadwal ─────────────────────────────────────────────────────
-async def job_penalty_accrual() -> Dict[str, Any]:
-    """Pindai seluruh rencana aktif → bentuk/perbarui usulan denda. Idempotent per periode."""
+async def job_penalty_accrual(today: Optional[str] = None) -> Dict[str, Any]:
+    """Pindai seluruh jadwal hidup → bentuk/perbarui usulan denda. Idempotent per periode.
+
+    CR-T4 — semua jadwal `active` (`origin` `term` jadwal tagihan CR-T2 maupun `manual` rencana cicilan), jadi pesanan
+    tanpa rencana cicilan ikut terhitung. `today` kosong = tanggal buku WIB. Jawaban memuat jumlah per asal jadwal
+    (`by_origin`) — bahan laporan RISIKO "putaran pertama" unit."""
+    from services.book_date import tanggal_buku
+    day = (today or tanggal_buku())[:10]
     created = updated = 0
     scanned = 0
-    async for row in db[plans.COLL].find({"status": "active", "origin": {"$ne": plans.ORIGIN_TERM}},
-                                         {"_id": 0}):   # CR-T2 — jadwal mesin: denda di CR-T4
+    by_origin: Dict[str, Dict[str, int]] = {}
+    async for row in db[plans.COLL].find({"status": "active"}, {"_id": 0}):
         plan = safe_doc(row)
         scanned += 1
         before = await db[COLL].count_documents({"plan_id": plan["id"]})
-        rows = await accrue_plan(plan, actor_name="scheduler")
+        rows = await accrue_plan(plan, today=day, actor_name="scheduler")
         after = await db[COLL].count_documents({"plan_id": plan["id"]})
-        created += max(0, after - before)
-        updated += max(0, len(rows) - max(0, after - before))
-    return {"scanned_plans": scanned, "created": created, "updated": updated}
+        lahir = max(0, after - before)
+        created += lahir
+        updated += max(0, len(rows) - lahir)
+        o = by_origin.setdefault(plan.get("origin") or "manual", {"scanned": 0, "created": 0})
+        o["scanned"] += 1
+        o["created"] += lahir
+    return {"scanned_plans": scanned, "created": created, "updated": updated, "by_origin": by_origin, "as_of": day}

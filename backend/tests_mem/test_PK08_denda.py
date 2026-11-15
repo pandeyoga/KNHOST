@@ -192,15 +192,32 @@ async def test_U07_tenggang_dipotong_sekali(db, kepala_admin, klien):
 
 
 async def test_U08_pesanan_tanpa_rencana(db):
+    # CR-T4 (D8) — jalur "pesanan tanpa rencana" (`accrue_order`, jatuh tempo = tanggal pesanan + termin) dihapus:
+    # pesanan itu kini punya jadwal tagihan per surat jalan (CR-T2) dan dendanya lahir dari baris jadwal. Fixture
+    # setara: surat jalan 10 Jan 2027 berjurnal, termin 0 hari → baris 3.000.000 jatuh tempo 2027-01-10; angka harapan
+    # PK-08 sama (21 hari / 42.000, lalu 28 hari / 56.000).
+    from services import billing_schedule_service as bss
+    from services import gl_service as gl
     from services import penalty_service as ps
     order = {"id": "so_pk08_u8", "number": "SO-PK08-U8", "entity_id": E1, "customer_id": "cus_pk08",
-             "status": "confirmed", "grand_total": 3000000, "payments": [], "payment_term_days": 0,
-             "payment_term_code": "NET0", "created_at": "2027-01-10T00:00:00+00:00"}
+             "status": "shipped", "grand_total": 3000000, "total_amount": 3000000, "payments": [],
+             "payment_term_days": 0, "payment_term_code": "NET0", "created_at": "2027-01-10T00:00:00+00:00",
+             "confirmed_at": "2027-01-10T00:00:00+00:00"}
     await db.sales_orders.insert_one(dict(order))
-    jan = (await ps.accrue_order(order, today="2027-01-31"))[0]
-    feb = (await ps.accrue_order(order, today="2027-02-28"))[0]
+    await db.shipments.insert_one({"id": "shp_pk08_u8", "shipment_no": "SJ-PK08-U8", "order_id": order["id"],
+                                   "entity_id": E1, "status": "dispatched", "created_at": "2027-01-10T03:00:00+00:00"})
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": 3000000.0, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": 3000000.0}],
+                           description="Pengakuan penjualan SO-PK08-U8 · SJ-PK08-U8", date="2027-01-10T03:00:00+00:00",
+                           source_type="shipment_revenue", source_id="shp_pk08_u8", entity_id=E1, created_by="system",
+                           source_label="SJ-PK08-U8", ref={"order_id": order["id"], "order_number": order["number"]})
+    plan = await bss.on_shipment_posted(order["id"], "SJ-PK08-U8")
+    assert plan["origin"] == "term" and plan["lines"][0]["due_date"] == "2027-01-10"
+    jan = (await ps.accrue_for_order(order["id"], today="2027-01-31"))[0]
+    feb = (await ps.accrue_for_order(order["id"], today="2027-02-28"))[0]
     assert (jan["billable_days"], jan["amount"]) == (21, 42000)
     assert (feb["billable_days"], feb["amount"]) == (28, 56000)
+    assert not hasattr(ps, "accrue_order")
 
 
 async def test_U09_hari_ini_dari_server(klien, db, kepala_admin):

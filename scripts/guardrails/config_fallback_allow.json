@@ -163,20 +163,6 @@
    "alasan": "Garis dasar KF-T8: cadangan 'net_order' = bawaan registry; ganti dengan `config_registry.default_of(\"ai.sales_definition\")`, lalu hapus butir ini."
   },
   {
-   "file": "backend/services/ar_aging_service.py",
-   "key": "ar.denda_rate_pct_per_month",
-   "line_text": "cfg.get(\"denda_rate_pct_per_month\", default_of(\"ar.denda_rate_pct_per_month\")) or 0",
-   "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/ar_aging_service.py",
-   "key": "ar.grace_days",
-   "line_text": "cfg.get(\"grace_days\", 0)",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"ar.grace_days\")`, lalu hapus butir ini."
-  },
-  {
    "file": "backend/services/bank_recon_service.py",
    "key": "bank.amount_tolerance",
    "line_text": "raw.get(\"amount_tolerance\") or 0",
@@ -644,41 +630,6 @@
    "line_text": "await val(\"payment.variance_writeoff_max_amount\") or 0",
    "jenis": "hanya_bila_kosong",
    "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 1000000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/penalty_service.py",
-   "key": "payment.penalty_base",
-   "line_text": "await val(\"payment.penalty_base\") or \"installment\"",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'installment' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_base\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/penalty_service.py",
-   "key": "payment.penalty_cap_pct",
-   "line_text": "await val(\"payment.penalty_cap_pct\") or 0",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_cap_pct\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/penalty_service.py",
-   "key": "payment.penalty_min_amount",
-   "line_text": "await val(\"payment.penalty_min_amount\") or 0",
-   "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/penalty_service.py",
-   "key": "payment.penalty_mode",
-   "line_text": "await val(\"payment.penalty_mode\") or \"draft\"",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'draft' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_mode\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/penalty_service.py",
-   "key": "payment.penalty_waive_approver_role",
-   "line_text": "await val(\"payment.penalty_waive_approver_role\") or \"manager\"",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'manager' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_waive_approver_role\")`, lalu hapus butir ini."
   },
   {
    "file": "backend/services/pos_recommendation_service.py",

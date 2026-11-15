@@ -984,10 +984,9 @@ async def act_batalkan_kwitansi(case: Dict[str, Any], p: Dict[str, Any],
         order_ids = [a.get("order_id") for a in (rec.get("allocations") or [])
                      if a.get("order_id")]
         for oid in order_ids:
-            o = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
-            if not o:
-                continue
-            for pn in (await pen.accrue_order(o, actor_name=actor.get("name", "system")) or []):
+            # CR-T4 — nota denda dari jadwal hidup pesanan (rencana cicilan / jadwal tagihan), bukan jalur lama
+            # "pesanan tanpa rencana" (`accrue_order`, dihapus D8).
+            for pn in (await pen.accrue_for_order(oid, actor_name=actor.get("name", "system")) or []):
                 docs.append(_doc("penalty", pn.get("id", ""), pn.get("number", ""),
                                  f"Nota denda {pn.get('number', '')} "
                                  f"({_rp(pn.get('amount'))} · {pn.get('status', '')})"))

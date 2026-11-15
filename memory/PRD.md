@@ -124,6 +124,20 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   Kewajiban** (hutang BPJS & PPh 21 per masa, Catat Setoran → kas keluar + jurnal; koleksi `hr_statutory_remittances`).
   Lima izin `payroll.create/approve/post/void/pay` (Admin, Manajer; peran yang memegang `hr.manage_payroll` diberi sekali
   lewat migrasi `pk22:izin-penggajian`). Tarif PPh 21 tetap dari PK-46 (H4).
+- 2026-11-15 CR-T4 (CR-07, K-30 — denda berlapis PT → pelanggan → rencana, dari jadwal tagihan): usulan denda lahir
+  untuk **semua** tagihan telat — job harian & tombol "Buat Nota Denda" umur piutang memindai semua jadwal hidup
+  (`origin` `term` jadwal tagihan CR-T2 maupun rencana cicilan), jalur lama `accrue_order` (jatuh tempo = tanggal pesanan
+  + termin) dihapus (D8; kasus keuangan memakai `accrue_for_order`). `penalty_service.penalty_policy` berlapis: aturan
+  grup → PT (resolver, konteks PT saja) → profil kredit pelanggan di PT itu (`customer_credit_profiles.penalty_rule`:
+  `khusus` menimpa unsur terisi; `bebas` beralasan & bertanggal → mode mati sampai tanggal itu, nota draf lama tidak
+  disentuh) → aturan khusus rencana (`plan.penalty`, diperiksa 0–100 %); jawaban + `policy_snapshot.sources` nota memuat
+  asal tiap unsur. Lima kunci denda (`payment.penalty_mode`/`_base`/`_cap_pct`, `ar.denda_rate_pct_per_month`,
+  `ar.grace_days`) kehilangan lapisan `customer` (Pusat Pengaturan menolak 400; nilai lama dipindah
+  `scripts/migrate_penalty_customer_layer.py`, H3). Taksiran umur piutang = nota (`penalty_service.estimate`: harian,
+  tenggang, batas atas, minimum, mode; dulu dibulatkan per bulan). Endpoint `GET /api/customers/{id}/penalty-policy`
+  (`penalty.view`). Layar: kartu pelanggan › Kredit › "Aturan denda" (asal "ikut PT"/"khusus pelanggan", lencana "Bebas
+  denda s.d. …"), pop-up pengajuan perubahan kredit (Ikut PT · Khusus · Bebas denda), form rencana bayar (bagian lipat
+  aturan denda khusus rencana), panel denda ("Aturan dari: PT · pelanggan · rencana", dikelompokkan per pelanggan).
 - 2026-11-15 CR-T2 (CR-06, CR-09, K-16, K-31 — jadwal tagihan & saldo piutang tersimpan): **satu tempat jatuh tempo** =
   `payment_plans` (tanpa koleksi kedua): jadwal `origin: term` lahir otomatis (`services/billing_schedule_service.py`) —
   baris per NOMOR surat jalan berjurnal (nilai = Σ debit akun piutang jurnalnya; jatuh tempo = tanggal surat jalan +

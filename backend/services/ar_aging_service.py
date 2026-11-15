@@ -18,11 +18,10 @@ Pelanggan dan pesanan dibaca dengan kursor tanpa batas (`02` D4); jawaban membaw
 Buckets aging (berdasar hari telat jatuh tempo):
   current (belum jatuh tempo), lalu kolom dari batas `ar.aging_buckets` (judul kolom: `bucket_labels`).
 
-Denda (late fee) = **ESTIMASI informasional** (tidak posting ke order/GL),
-configurable via `system_settings.ar` (`denda_rate_pct_per_month`, `grace_days`).
+Denda (late fee) = **ESTIMASI informasional** (tidak posting ke order/GL). CR-T4 — taksiran per baris tagihan =
+`penalty_service.estimate` dengan aturan `penalty_policy` (PT → profil kredit pelanggan → rencana), sama dengan nota.
 """
 from typing import Any, Dict, List, Optional, Tuple
-import math
 
 from db import db
 from core_utils import from_cents, to_cents
@@ -42,28 +41,33 @@ BUCKET_KEYS = ["current", "b1_30", "b31_60", "b61_90", "b90_plus"]
 
 
 async def get_ar_config(entity_id: Optional[str] = None,
-                        customer_id: Optional[str] = None) -> Dict[str, Any]:
+                        customer_id: Optional[str] = None,
+                        plan: Optional[Dict[str, Any]] = None,
+                        pt_cache: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Kebijakan denda & kelompok umur piutang yang BERLAKU.
 
-    FASE G-0 — dibaca lewat `config_resolver` sehingga bisa berbeda **per pelanggan**
-    (global -> entitas -> pelanggan), lengkap dengan lapisan asal untuk ditampilkan ke user.
-    Fallback ke `system_settings` lama tetap terjaga oleh resolver.
+    CR-T4 — denda dari `penalty_service.penalty_policy` (aturan grup → PT → profil kredit pelanggan di PT itu), satu
+    aturan dengan nota denda, sehingga taksiran laporan = nota. `ar.denda_rate_pct_per_month` dan `ar.grace_days`
+    tidak lagi dibaca per pelanggan dari Pusat Pengaturan (lapisan `customer` dicabut; satu pemilik = profil kredit).
+    `aging_buckets` (`ar.aging_buckets`) tetap global → PT. `source` = asal tiap angka untuk layar (L6). `plan` =
+    rencana cicilan pesanan yang punya aturan denda sendiri (`plan.penalty`, paling khusus — sama dengan nota).
     """
+    from services import penalty_service as _pen
     from services.config_resolver import resolve
-    ctx = {"entity_id": entity_id, "customer_id": customer_id}
-    rate = await resolve("ar.denda_rate_pct_per_month", ctx)
-    grace = await resolve("ar.grace_days", ctx)
-    buckets = await resolve("ar.aging_buckets", ctx)
+    pol = await _pen.penalty_policy(entity_id or "", customer_id or "", plan, pt_cache=pt_cache)
+    buckets = await resolve("ar.aging_buckets", {"entity_id": pol.get("entity_id") or entity_id or ""})
     try:
         edges = sorted(int(float(x)) for x in (buckets["value"] or [30, 60, 90]))
     except (TypeError, ValueError):
         edges = [30, 60, 90]
+    asal = pol["sources"]
     return {
-        "denda_rate_pct_per_month": float(rate["value"] or 0),
-        "grace_days": int(float(grace["value"] or 0)),
+        "denda_rate_pct_per_month": pol["rate_pct_per_month"],
+        "grace_days": pol["grace_days"],
         "aging_buckets": edges,
-        "source": {"denda_rate_pct_per_month": rate["source_label"],
-                   "grace_days": grace["source_label"],
+        "penalty": pol,   # CR-T4 — aturan lengkap untuk taksiran (`_denda_estimate`)
+        "source": {"denda_rate_pct_per_month": _pen.SOURCE_LABEL[asal["rate_pct_per_month"]],
+                   "grace_days": _pen.SOURCE_LABEL[asal["grace_days"]],
                    "aging_buckets": buckets["source_label"]},
     }
 
@@ -79,14 +83,35 @@ def _bucket(days_late: int, edges: Optional[List[int]] = None) -> str:
     return BUCKET_KEYS[-1]
 
 
-def _denda_estimate(outstanding: float, days_late: int, cfg: Dict[str, Any]) -> float:
-    from config_registry import default_of   # KF-T2 (KF-06) — cadangan = bawaan registry (dulu 0)
-    rate = float(cfg.get("denda_rate_pct_per_month", default_of("ar.denda_rate_pct_per_month")) or 0)
-    eff = days_late - int(cfg.get("grace_days", 0) or 0)
-    if rate <= 0 or eff <= 0 or outstanding <= EPS:
-        return 0.0
-    months = math.ceil(eff / 30)
-    return round(outstanding * (rate / 100.0) * months, 2)
+async def _rencana_berdenda(order_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+    """CR-T4 — rencana cicilan hidup yang punya aturan denda SENDIRI (`plan.penalty` terisi), per pesanan — satu kueri.
+    Pesanan lain memakai aturan PT/pelanggan."""
+    from services import payment_plan_service as plans
+    out: Dict[str, Dict[str, Any]] = {}
+    for i in range(0, len(order_ids), rb.KELOMPOK):
+        async for p in db[plans.COLL].find({"doc_type": "sales_order", "doc_id": {"$in": order_ids[i:i + rb.KELOMPOK]},
+                                            "status": {"$ne": "void"}, "origin": {"$ne": plans.ORIGIN_TERM}},
+                                           {"_id": 0, "id": 1, "doc_id": 1, "penalty": 1, "created_at": 1}):
+            if any(v not in (None, "") for v in (p.get("penalty") or {}).values()):
+                lama = out.get(p["doc_id"])
+                if not lama or str(p.get("created_at") or "") > str(lama.get("created_at") or ""):
+                    out[p["doc_id"]] = p
+    return out
+
+
+def _policy_bawaan() -> Dict[str, Any]:
+    """Aturan denda = bawaan registry (pemanggil tanpa `get_ar_config`; KF-T2 KF-06: cadangan = bawaan registry)."""
+    from config_registry import default_of
+    from services import penalty_service as _pen
+    return {u: _pen._cast(u, default_of(k)) for u, k in _pen.POLICY_KEYS.items()}   # noqa: SLF001
+
+
+def _denda_estimate(outstanding: float, days_late: int, cfg: Dict[str, Any],
+                    order_outstanding: Optional[float] = None) -> float:
+    """CR-T4 — taksiran denda satu baris tagihan = `penalty_service.estimate` (rumus harian, tenggang, batas atas,
+    minimum, dan mode yang sama dengan nota). Dulu dibulatkan ke bulan penuh (`ceil(hari / 30)`), berbeda dari nota."""
+    from services import penalty_service as _pen
+    return _pen.estimate(outstanding, days_late, cfg.get("penalty") or _policy_bawaan(), order_outstanding)
 
 
 def _empty_buckets() -> Dict[str, float]:
@@ -212,16 +237,23 @@ def _add_penalties(target: Dict[str, Any], pen: Dict[str, Any]) -> None:
         target[key] = round(target[key] + val, 2) if isinstance(val, float) else target[key] + val
 
 
-def _line_out(r: Dict[str, Any], edges: List[int], cfg: Dict[str, Any]) -> Dict[str, Any]:
+def _sisa_pesanan(lines: List[Dict[str, Any]]) -> float:
+    """Σ sisa semua baris tagihan satu pesanan (dasar denda `payment.penalty_base` = seluruh sisa pesanan)."""
+    return from_cents(sum(to_cents(r["sisa"]) for r in lines))
+
+
+def _line_out(r: Dict[str, Any], edges: List[int], cfg: Dict[str, Any],
+              order_out: Optional[float] = None) -> Dict[str, Any]:
     """Baris tagihan untuk jawaban (rincian pelanggan): baris `report_basis` + kelompok umur + estimasi denda."""
     return {**r, "bucket": _bucket(r["hari_lewat"], edges),
-            "denda_estimate": _denda_estimate(r["sisa"], r["hari_lewat"], cfg)}
+            "denda_estimate": _denda_estimate(r["sisa"], r["hari_lewat"], cfg, order_out)}
 
 
 def _sum_lines(acc: Dict[str, Any], lines: List[Dict[str, Any]], edges: List[int], cfg: Dict[str, Any]) -> float:
     """Tambahkan baris tagihan satu pesanan ke `acc` (kolom umur, total, lewat jatuh tempo, denda, tercatat/belum
     dikirim) dalam SEN BULAT; kembalikan estimasi denda pesanan itu."""
     denda = 0.0
+    order_out = _sisa_pesanan(lines)
     for r in lines:
         sen = to_cents(r["sisa"])
         b = _bucket(r["hari_lewat"], edges)
@@ -235,7 +267,7 @@ def _sum_lines(acc: Dict[str, Any], lines: List[Dict[str, Any]], edges: List[int
             acc["_sen"]["overdue"] = acc["_sen"].get("overdue", 0) + sen
             if "oldest_days" in acc:
                 acc["oldest_days"] = max(acc["oldest_days"], r["hari_lewat"])
-        denda += _denda_estimate(r["sisa"], r["hari_lewat"], cfg)
+        denda += _denda_estimate(r["sisa"], r["hari_lewat"], cfg, order_out)
     denda = round(denda, 2)
     acc["denda"] = round(acc["denda"] + denda, 2)
     return denda
@@ -290,7 +322,8 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
         _one = (entity_id.get("$in") or [])
         _cfg_entity = _one[0] if len(_one) == 1 else None
     cfg = await get_ar_config(_cfg_entity)
-    cust_cfg: Dict[str, Dict[str, Any]] = {}
+    cust_cfg: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+    pt_cache: Dict[str, Any] = {}   # CR-T4 — aturan denda grup → PT sekali per PT
     customers, smap = await _load_scope(entity_id, sales_id)
     cmap = {c["id"]: c for c in customers}
     cust_ids = list(cmap.keys())
@@ -311,17 +344,20 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
         # Nota denda nyata untuk seluruh pesanan pelanggan dalam SATU query.
         from services import penalty_service as penalties
         pen_by_doc = await penalties.for_docs([o.get("id") for o in open_orders])
+        rencana_denda = await _rencana_berdenda([o["id"] for o in open_orders])   # CR-T4
 
         for o in open_orders:
             lines = lines_by_order[o["id"]]
             cid = o.get("customer_id")
             cust = cmap.get(cid, {})
-            # FASE G-0 — kelompok umur & denda kini bisa berbeda PER PELANGGAN
-            # (global → entitas → pelanggan) lewat config_resolver.
-            ccfg = cust_cfg.get(cid)
+            # CR-T4 — aturan denda per pasangan (PT pesanan, pelanggan): aturan PT → profil kredit pelanggan di PT itu,
+            # sama dengan nota denda pesanan ini (`accrue_plan` memakai PT jadwal = PT pesanan).
+            rencana = rencana_denda.get(o["id"])
+            kunci_cfg = (o.get("entity_id") or _cfg_entity or "", cid, (rencana or {}).get("id", ""))
+            ccfg = cust_cfg.get(kunci_cfg)
             if ccfg is None:
-                ccfg = await get_ar_config(_cfg_entity, cid)
-                cust_cfg[cid] = ccfg
+                ccfg = await get_ar_config(kunci_cfg[0], cid, rencana, pt_cache)
+                cust_cfg[kunci_cfg] = ccfg
             pen = penalties.summarize(pen_by_doc.get(o.get("id")) or [])
 
             row = per_customer.get(cid)
@@ -484,7 +520,9 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     if not customer:
         return None
     per = _per(as_of)
-    cfg = await get_ar_config(customer_id=customer_id)
+    # CR-T4 — aturan PT pemilik data pelanggan untuk ringkasan; tiap pesanan memakai aturan (PT pesanan, pelanggan,
+    # rencana berdenda) yang sama dengan notanya.
+    cfg = await get_ar_config(customer.get("entity_id") or "", customer_id)
     edges = cfg.get("aging_buckets")
     orders = await _open_orders([customer_id], include_paid=bool(as_of), projection={"_id": 0})
     lines_by_order = await rb.baris_tagihan(orders, {customer_id: customer}, per=per)
@@ -493,6 +531,9 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     from services import penalty_service as penalties
     from services import payment_plan_service as plans
     pen_by_doc = await penalties.for_docs([o.get("id") for o in orders])
+    rencana_denda = await _rencana_berdenda([o["id"] for o in orders])
+    cfg_cache: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    pt_cache: Dict[str, Any] = {}
 
     items: List[Dict[str, Any]] = []
     totals = {**_empty_buckets(), "total": 0.0, "overdue": 0.0, "denda": 0.0,
@@ -504,7 +545,12 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     for o in orders:
         lines = lines_by_order[o["id"]]
         sm = rb.ringkas_baris(lines)
-        denda = _sum_lines(totals, lines, edges, cfg)
+        rencana = rencana_denda.get(o["id"])
+        kunci_cfg = (o.get("entity_id") or customer.get("entity_id") or "", (rencana or {}).get("id", ""))
+        ocfg = cfg_cache.get(kunci_cfg)
+        if ocfg is None:
+            ocfg = cfg_cache[kunci_cfg] = await get_ar_config(kunci_cfg[0], customer_id, rencana, pt_cache)
+        denda = _sum_lines(totals, lines, edges, ocfg)
         days_late = sm["max_days"] if sm["due_date"] else 0   # belum dikirim → belum jatuh tempo
         pen_rows = pen_by_doc.get(o.get("id")) or []
         pen = penalties.summarize(pen_rows)
@@ -536,7 +582,7 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
             "overdue": days_late > 0,
             "overdue_amount": sm["overdue"],
             "denda_estimate": denda,
-            "lines": [_line_out(r, edges, cfg) for r in lines],   # PK-41 — baris per surat jalan + belum dikirim
+            "lines": [_line_out(r, edges, ocfg, _sisa_pesanan(lines)) for r in lines],   # PK-41 — per surat jalan
             # FASE G-3 — dokumen denda nyata pada pesanan ini
             "penalties": [{"id": p.get("id"), "number": p.get("number"),
                            "status": p.get("status"), "status_label": p.get("status_label", ""),
@@ -571,7 +617,7 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
         "config": cfg,
         "bucket_labels": rb.label_kelompok_umur(edges),   # PK-41 (RP-12)
         "definitions": AR_DEFINITIONS,
-        "penalty_policy": await penalties.penalty_policy(customer_id=customer_id),
+        "penalty_policy": cfg["penalty"],   # CR-T4 — aturan (PT pemilik data, pelanggan) + asal tiap unsur
         "totals": totals,
         "items": items,
         "penalties": all_penalties,

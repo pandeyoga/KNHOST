@@ -5,6 +5,9 @@
  * DP + cicilan, milestone, atau NET — lalu setiap baris (label, nominal, jatuh tempo)
  * bisa diubah, ditambah, dan dihapus. Validasi Σ ditampilkan LIVE supaya user tahu
  * sebelum menyimpan, bukan setelah ditolak server.
+ *
+ * CR-T4 — bagian lipat "Aturan denda khusus rencana ini": tarif (% per bulan), dasar hitung, batas atas (% dari dasar),
+ * hari tenggang. Kosong = mengikuti aturan pelanggan atau PT; terisi = paling khusus (dibaca mesin denda terakhir).
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "../../../components/MoneyInput";
@@ -14,6 +17,7 @@ import KNSelect from "../../../components/KNSelect";
 import { createPlan, errText, money, previewPlan, updatePlan } from "./paymentApi";
 import { todayWib } from "../../../utils/formatters";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { FIELD_WORD, PenaltyRuleFields, formFromRule, numbersFromForm } from "./penaltyRuleUi";
 
 const KIND_OPTS = [
   { value: "dp", label: "Uang Muka (DP)" },
@@ -39,6 +43,11 @@ export default function PaymentPlanBuilder({
   const [netDays, setNetDays] = useState(30);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  // CR-T4 — aturan denda khusus rencana (teks isian); kosong = ikut aturan pelanggan atau PT.
+  const [pen, setPen] = useState(() => formFromRule({ ...(plan?.penalty || {}), mode: "khusus" }));
+  const penCheck = numbersFromForm(pen);
+  const penFilled = ["rate_pct_per_month", "cap_pct", "grace_days", "base"].some((k) => String(pen[k] ?? "") !== "");
+  const [penOpen] = useState(penFilled);   // terbuka sejak awal bila rencana sudah punya aturan denda sendiri
   // PK-12 — satu niat simpan rencana = satu Idempotency-Key (pratinjau template hanya menghitung: tanpa kunci).
   const saveIntent = useIntentKey("pp");
 
@@ -76,9 +85,14 @@ export default function PaymentPlanBuilder({
     idx === i ? { ...l, amount: Math.round((Number(l.amount || 0) + diff) * 100) / 100 } : l)));
 
   const save = async () => {
+    if (penCheck.bad.length) {
+      setErr(`Periksa ${penCheck.bad.map((k) => FIELD_WORD[k]).join(", ")} pada aturan denda khusus rencana ini.`);
+      return;
+    }
     setBusy("save"); setErr("");
     try {
-      const body = { mode, lines: lines.map((l, i) => ({ ...l, seq: i + 1, basis: "amount" })) };
+      const body = { mode, lines: lines.map((l, i) => ({ ...l, seq: i + 1, basis: "amount" })),
+        penalty: { mode: plan?.penalty?.mode || "", ...penCheck.values } };
       const createBody = { doc_type: docType, doc_id: docId, ...body };
       const saved = plan?.id
         ? await saveIntent.send({ id: plan.id, ...body }, (k) => updatePlan(plan.id, body, k))
@@ -198,6 +212,18 @@ export default function PaymentPlanBuilder({
           </tbody>
         </table>
       </div>
+
+      <details className="mt-2 rounded-lg border border-kn-divider" open={penOpen || undefined} data-testid="ppb-penalty">
+        <summary className="cursor-pointer px-3 py-2 text-fs-13 font-semibold text-kn-text" data-testid="ppb-penalty-toggle">
+          Aturan denda khusus rencana ini
+          {penFilled && <span className="ml-2 text-fs-12 font-normal text-kn-text-2">(terisi)</span>}
+        </summary>
+        <div className="border-t border-kn-divider px-3 py-2">
+          <PenaltyRuleFields value={pen} testPrefix="ppb-penalty" bad={penCheck.bad}
+            hint="Kosong = mengikuti aturan pelanggan atau PT."
+            onChange={(k, v) => setPen((s) => ({ ...s, [k]: v }))} />
+        </div>
+      </details>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <button type="button" className="secondary-button" onClick={addLine} data-testid="ppb-add-line">

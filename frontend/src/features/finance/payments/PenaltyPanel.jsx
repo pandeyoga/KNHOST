@@ -9,6 +9,10 @@
  * Fase 4 · R2 (L-03) — dialog keputusan `.modal-card` buatan sendiri → `FormModal` baku (Esc, klik latar gestur
  * utuh, layar penuh di HP); galat tetap di DALAM pop-up (`penalty-dialog-error`). "Terbitkan" (menjurnal piutang
  * denda) kini dikonfirmasi dulu lewat `askConfirm`. Testid tetap (`penalty-dialog`, `penalty-dialog-*`).
+ *
+ * CR-T4 — tiap nota menulis "Aturan dari: PT · pelanggan · rencana" (asal unsur aturan, `policy_snapshot.sources`);
+ * nota beberapa pelanggan dikelompokkan per pelanggan (judul kelompok: nama, jumlah nota, Σ nominal). Bentuk nota tetap
+ * PK-08: satu nota per baris tagihan per bulan.
  */
 import MoneyInput from "../../../components/MoneyInput";
 import { useCallback, useEffect, useState } from "react";
@@ -22,6 +26,18 @@ import {
 } from "./paymentApi";
 import { can } from "../../../config/roles";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { sourceText } from "./penaltyRuleUi";
+
+/** CR-T4 — nota per pelanggan, urut nama (nota tanpa nama pelanggan dikelompokkan terakhir). */
+function groupByCustomer(rows) {
+  const map = new Map();
+  rows.forEach((p) => {
+    const key = p.customer_id || p.customer_name || "";
+    if (!map.has(key)) map.set(key, { key, name: p.customer_name || "Tanpa nama pelanggan", rows: [] });
+    map.get(key).rows.push(p);
+  });
+  return [...map.values()].sort((a, b) => (a.key ? 0 : 1) - (b.key ? 0 : 1) || a.name.localeCompare(b.name, "id"));
+}
 
 export default function PenaltyPanel({ rows = [], currentUser, entityId = "", onChanged }) {
   const [reasons, setReasons] = useState([]);
@@ -109,66 +125,82 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
     <div data-testid="penalty-panel" className="space-y-1.5">
       {err && !dialog && <div className="notice-bar danger !py-1.5" data-testid="penalty-error">
         <span className="text-[11.5px]">{err}</span></div>}
-      {rows.map((p) => {
-        const meta = penaltyMeta(p.status);
-        return (
-          <div key={p.id} data-testid={`penalty-row-${p.id}`}
-            className="rounded-md border border-[#EFF0F2] bg-white px-2.5 py-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <button type="button" data-testid={`penalty-trace-${p.id}`}
-                    onClick={() => openTrace({ docType: "penalty", docId: p.id, number: p.number })}
-                    className="text-[11.5px] font-bold text-[#0058CC] hover:underline">
-                    {p.number}
-                  </button>
-                  <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                    style={{ background: meta.bg, color: meta.fg }}>{meta.label}</span>
-                </div>
-                <p className="truncate text-[10.5px] text-[#6B6B73]">
-                  {p.line_label} · jatuh tempo {(p.due_date || "").slice(0, 10)} · telat {p.days_late} hari
-                  {Number(p.days_prior || 0) > 0 ? ` (${p.billable_days} hari di nota ini)` : ""}
-                  {p.reason_label ? ` · ${p.reason_label}` : ""}
-                </p>
-                {(p.explain || []).length > 0 && (
-                  <p className="truncate text-[9.5px] text-[#9A9BA3]" title={(p.explain || []).join(" · ")}>
-                    {(p.explain || [])[2] || (p.explain || [])[0]}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[12.5px] font-bold tabular-nums" data-testid={`penalty-amount-${p.id}`}>
-                  {money(p.amount)}
-                </span>
-                {canIssue && p.status === "draft" && (
-                  <button type="button" className="secondary-button !py-1" data-testid={`penalty-issue-${p.id}`}
-                    disabled={busy === p.id} onClick={() => act("issue", p)}>
-                    {busy === p.id ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Terbitkan
-                  </button>
-                )}
-                {(canAdjust || canWaive) && ["draft", "issued", "adjusted"].includes(p.status) && (
-                  <>
-                    {canAdjust && <button type="button" className="secondary-button !py-1" data-testid={`penalty-adjust-${p.id}`}
-                      onClick={() => { setErr(""); setDialog({ kind: "adjust", row: p }); setAmount(String(p.amount)); }}>
-                      <PencilLine size={12} /> Ubah Nominal
-                    </button>}
-                    {canWaive && <button type="button" className="secondary-button !py-1" data-testid={`penalty-waive-${p.id}`}
-                      onClick={() => { setErr(""); setDialog({ kind: "waive", row: p }); }}>
-                      <Ban size={12} /> Bebaskan
-                    </button>}
-                  </>
-                )}
-                {canPay && ["issued", "adjusted"].includes(p.status) && (
-                  <button type="button" className="secondary-button !py-1" data-testid={`penalty-pay-${p.id}`}
-                    onClick={() => openPay(p)}>
-                    <Receipt size={12} /> Catat Bayar
-                  </button>
-                )}
-              </div>
+      {groupByCustomer(rows).map((g, gi, groups) => (
+        <div key={g.key || `g${gi}`} className="space-y-1.5" data-testid={`penalty-group-${gi}`}>
+          {groups.length > 1 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1" data-testid={`penalty-group-head-${gi}`}>
+              <span className="text-fs-13 font-bold text-kn-text">{g.name}</span>
+              <span className="text-fs-12 text-kn-text-2 tabular-nums">
+                {g.rows.length} nota · {money(g.rows.reduce((a, r) => a + Number(r.amount || 0), 0))}
+              </span>
             </div>
-          </div>
-        );
-      })}
+          )}
+          {g.rows.map((p) => {
+            const meta = penaltyMeta(p.status);
+            const asal = sourceText(p.policy_snapshot?.sources);
+            return (
+              <div key={p.id} data-testid={`penalty-row-${p.id}`}
+                className="rounded-md border border-[#EFF0F2] bg-white px-2.5 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <button type="button" data-testid={`penalty-trace-${p.id}`}
+                        onClick={() => openTrace({ docType: "penalty", docId: p.id, number: p.number })}
+                        className="text-[11.5px] font-bold text-[#0058CC] hover:underline">
+                        {p.number}
+                      </button>
+                      <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                        style={{ background: meta.bg, color: meta.fg }}>{meta.label}</span>
+                    </div>
+                    <p className="truncate text-[10.5px] text-[#6B6B73]">
+                      {p.line_label} · jatuh tempo {(p.due_date || "").slice(0, 10)} · telat {p.days_late} hari
+                      {Number(p.days_prior || 0) > 0 ? ` (${p.billable_days} hari di nota ini)` : ""}
+                      {p.reason_label ? ` · ${p.reason_label}` : ""}
+                    </p>
+                    {(p.explain || []).length > 0 && (
+                      <p className="truncate text-[9.5px] text-[#9A9BA3]" title={(p.explain || []).join(" · ")}>
+                        {(p.explain || [])[2] || (p.explain || [])[0]}
+                      </p>
+                    )}
+                    {asal && (
+                      <p className="text-fs-12 text-kn-text-2" data-testid={`penalty-source-${p.id}`}>Aturan dari: {asal}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12.5px] font-bold tabular-nums" data-testid={`penalty-amount-${p.id}`}>
+                      {money(p.amount)}
+                    </span>
+                    {canIssue && p.status === "draft" && (
+                      <button type="button" className="secondary-button !py-1" data-testid={`penalty-issue-${p.id}`}
+                        disabled={busy === p.id} onClick={() => act("issue", p)}>
+                        {busy === p.id ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Terbitkan
+                      </button>
+                    )}
+                    {(canAdjust || canWaive) && ["draft", "issued", "adjusted"].includes(p.status) && (
+                      <>
+                        {canAdjust && <button type="button" className="secondary-button !py-1" data-testid={`penalty-adjust-${p.id}`}
+                          onClick={() => { setErr(""); setDialog({ kind: "adjust", row: p }); setAmount(String(p.amount)); }}>
+                          <PencilLine size={12} /> Ubah Nominal
+                        </button>}
+                        {canWaive && <button type="button" className="secondary-button !py-1" data-testid={`penalty-waive-${p.id}`}
+                          onClick={() => { setErr(""); setDialog({ kind: "waive", row: p }); }}>
+                          <Ban size={12} /> Bebaskan
+                        </button>}
+                      </>
+                    )}
+                    {canPay && ["issued", "adjusted"].includes(p.status) && (
+                      <button type="button" className="secondary-button !py-1" data-testid={`penalty-pay-${p.id}`}
+                        onClick={() => openPay(p)}>
+                        <Receipt size={12} /> Catat Bayar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
 
       {dialog && (
         <FormModal open onClose={() => setDialog(null)} size="sm" testId="penalty-dialog" busy={busy !== ""}

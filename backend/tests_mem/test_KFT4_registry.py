@@ -45,7 +45,10 @@ PILIHAN_BARU = {"allocation.priority_order", "rnd.variant_axes_default", "rnd.va
 #: Bidang perilaku yang SENGAJA diubah unit sesudah KF-T4 (potret tetap foto sebelum KF-T4).
 #: PK-38 (K-11) — batas pengurang piutang tanpa uang masuk: bawaan = batas hapus sisa hari ini (Rp 1.000.000),
 #: maksimum Rp 1.000.000.000 (spesifikasi unit).
-BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"}}
+BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"},
+                   # CR-T4 — lima kunci denda kehilangan lapisan pelanggan (aturan satu pelanggan = profil kredit).
+                   **{k: {"scopes"} for k in ("payment.penalty_mode", "payment.penalty_base", "payment.penalty_cap_pct",
+                                              "ar.denda_rate_pct_per_month", "ar.grace_days")}}
 
 
 def _penjaga():

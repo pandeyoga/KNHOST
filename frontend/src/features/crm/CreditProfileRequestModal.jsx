@@ -2,7 +2,9 @@
  * CreditProfileRequestModal (CR-T1) — pop-up baku "Ajukan perubahan kredit" dari tab Kredit kartu pelanggan.
  *
  * Isian = baris profil yang tampil di tab (plafon, berlaku sampai, termin, tahan pesanan, status & alasan blokir) +
- * "Alasan pengajuan" (wajib, ≥ 5 huruf) + "Lampiran (tautan)". Hanya isian yang BERUBAH dari nilai yang berlaku yang
+ * "Alasan pengajuan" (wajib, ≥ 5 huruf) + "Lampiran (tautan)". CR-T4 — bagian "Aturan denda": Ikut PT · Khusus (tarif,
+ * dasar hitung, batas atas, hari tenggang; kosong = ikut PT) · Bebas denda (alasan + berlaku sampai, keduanya wajib).
+ * Hanya isian yang BERUBAH dari nilai yang berlaku yang
  * dikirim (`POST /api/customers/{id}/credit-profile-requests`). Pemegang `credit_profile.approve` di PT yang aturannya
  * "cukup satu orang" melihat tombol kedua "Ajukan & setujui" (konfirmasi menyebut pelanggan, PT, plafon baru).
  * Galat server tampil di dalam pop-up (INV-UI-03); isian pengguna tidak dihapus.
@@ -22,6 +24,9 @@ import { askConfirm } from "../../services/confirmService";
 import { parseDecimal } from "../../utils/decimalInput";
 import { formatCurrency } from "../../utils/formatters";
 import { CREDIT_STATUS_OPTIONS, LIMIT_MODE_OPTIONS, confirmSummary } from "./creditProfileUi";
+import {
+  FIELD_WORD, PenaltyRuleFields, RULE_MODE_OPTIONS, formFromRule, normRule, numbersFromForm, ruleFromForm,
+} from "../finance/payments/penaltyRuleUi";
 
 const MIN_LETTERS = 5;   // K-14 — dihitung HURUF, sama dengan server (input_rules.count_letters)
 const countLetters = (t) => (String(t || "").match(/\p{L}/gu) || []).length;
@@ -38,6 +43,7 @@ export function baseOf(eff) {
     overdue_block_days: eff?.block_days_source === "bawaan_pt" ? null : (eff?.overdue_block_days ?? null),
     credit_status: eff?.credit_status || "normal",
     block_reason: eff?.block_reason || "",
+    penalty_rule: normRule(eff?.penalty_rule),   // CR-T4 — null = ikut PT
   };
 }
 
@@ -51,6 +57,7 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
   const [blockDaysText, setBlockDaysText] = useState("");
   const [reason, setReason] = useState("");
   const [attachment, setAttachment] = useState("");
+  const [pen, setPen] = useState(() => formFromRule(eff.penalty_rule));   // CR-T4 — isian aturan denda (teks)
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -63,7 +70,8 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
     setLimitText(base.credit_limit === null ? "" : String(base.credit_limit));
     setBlockDaysText(base.overdue_block_days === null ? "" : String(base.overdue_block_days));
     setReason(""); setAttachment(""); setTried(false); setError("");
-  }, [open, base]);
+    setPen(formFromRule(eff.penalty_rule));
+  }, [open, base, eff]);
 
   const terms = data?.term_options || [];
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
@@ -75,6 +83,7 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
     limit_valid_until: f.limit_mode === "khusus" ? f.limit_valid_until : base.limit_valid_until,
     overdue_block_days: f.overdue_block_days === null ? null : blockDays,
     block_reason: f.credit_status === "blokir_manual" ? f.block_reason : "",
+    penalty_rule: ruleFromForm(pen),
   };
   const changes = Object.fromEntries(Object.entries(next).filter(([k, v]) => !same(v, base[k])));
   const newLimit = "credit_limit" in changes ? Number(changes.credit_limit || 0) : null;
@@ -87,6 +96,9 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
     f.limit_mode === "khusus" && (limitNum === null || !Number.isFinite(limitNum) || limitNum < 0) && "plafon khusus",
     f.overdue_block_days !== null && (!Number.isInteger(blockDays) || blockDays < 0) && "jumlah hari tahan pesanan",
     f.credit_status === "blokir_manual" && countLetters(f.block_reason) < MIN_LETTERS && "alasan blokir",
+    ...(pen.mode === "khusus" ? numbersFromForm(pen).bad.map((k) => FIELD_WORD[k]) : []),
+    pen.mode === "bebas" && countLetters(pen.reason) < MIN_LETTERS && "alasan bebas denda",
+    pen.mode === "bebas" && !pen.valid_until && "tanggal berakhir bebas denda",
     countLetters(reason) < MIN_LETTERS && "alasan pengajuan",
   ].filter(Boolean);
 
@@ -222,7 +234,33 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
         </div>
       </FormSection>
 
-      <FormSection number={4} title="Dasar pengajuan" testId="credit-request-section-reason" required>
+      <FormSection number={4} title="Aturan denda" testId="credit-request-section-penalty"
+        subtitle="Dipakai usulan denda keterlambatan pelanggan ini di PT ini. Rencana bayar satu pesanan bisa menimpanya.">
+        <div className="grid gap-3">
+          <Field label="Aturan denda">
+            <KNSelect value={pen.mode} onValueChange={(v) => setPen((s) => ({ ...s, mode: v }))} className="field"
+              data-testid="credit-request-penalty-mode" options={RULE_MODE_OPTIONS} />
+          </Field>
+          {pen.mode === "khusus" && (
+            <PenaltyRuleFields value={pen} testPrefix="credit-request-penalty" hint="Kosong = ikut aturan PT."
+              bad={tried ? numbersFromForm(pen).bad : []} onChange={(k, v) => setPen((s) => ({ ...s, [k]: v }))} />
+          )}
+          {pen.mode === "bebas" && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Alasan" req hint={`Minimal ${MIN_LETTERS} huruf — tampil di kartu pelanggan.`}>
+                <input className="field" data-testid="credit-request-penalty-reason" value={pen.reason}
+                  onChange={(e) => setPen((s) => ({ ...s, reason: e.target.value }))} placeholder="mis. kesepakatan direksi" />
+              </Field>
+              <Field label="Berlaku sampai" req hint="Sesudah tanggal ini denda kembali ikut aturan PT.">
+                <KNDatePicker data-testid="credit-request-penalty-until" value={pen.valid_until} min={todayWib()}
+                  onChange={(v) => setPen((s) => ({ ...s, valid_until: v || "" }))} />
+              </Field>
+            </div>
+          )}
+        </div>
+      </FormSection>
+
+      <FormSection number={5} title="Dasar pengajuan" testId="credit-request-section-reason" required>
         <div className="grid gap-3">
           <Field label="Alasan pengajuan" req hint={`Minimal ${MIN_LETTERS} huruf — dibaca pemutus dan tercatat di riwayat.`}>
             <textarea className="field" rows={2} data-testid="credit-request-reason" value={reason}

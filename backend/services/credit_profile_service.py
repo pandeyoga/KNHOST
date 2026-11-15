@@ -281,33 +281,61 @@ def _tanggal(field: str, v: Any, today: str) -> str:
     return s
 
 
+PESAN_BEBAS_DENDA = "Bebas denda wajib beralasan dan punya tanggal berakhir."
+
+
+def pesan_tarif_denda() -> str:
+    """Galat tarif denda di luar batas registry `ar.denda_rate_pct_per_month` (0–100 % per bulan)."""
+    import config_registry as registry
+    e = registry.require("ar.denda_rate_pct_per_month")
+    return f"Tarif denda harus antara {e['min']:g} dan {e['max']:g} % per bulan."
+
+
 def _aturan_denda(v: Any, today: str) -> Optional[Dict[str, Any]]:
-    """`penalty_rule` disimpan apa adanya (dibaca mesin denda di CR-T4); diperiksa bentuknya saja."""
+    """CR-T4 — `penalty_rule` dibaca mesin denda (`penalty_service.penalty_policy`), diperiksa menurut tabel Data unit:
+
+    * `ikut_pt` (atau kosong) → None (tanpa aturan khusus);
+    * `khusus` → `rate_pct_per_month` / `cap_pct` 0–100, `grace_days` bulat 0–batas `ar.grace_days`, `base` dari pilihan
+      `payment.penalty_base`; `null` = ikut PT untuk unsur itu;
+    * `bebas` → alasan ≥ 5 huruf DAN `valid_until` (≥ hari ini) wajib — tidak ada bebas selamanya."""
     if v is None:
         return None
     if not isinstance(v, dict):
         raise _tak_sah("penalty_rule", "harus berupa aturan")
     import config_registry as registry
+    from input_rules import MIN_REASON_LETTERS, count_letters
     mode = str(v.get("mode") or MODE_IKUT)
     if mode not in PENALTY_MODES:
         raise _tak_sah("penalty_rule", "pilihan aturan denda tidak dikenal")
-    out: Dict[str, Any] = {"mode": mode}
-    for k in ("rate_pct_per_month", "cap_pct"):
+    if mode == MODE_IKUT:
+        return None
+    out: Dict[str, Any] = {"mode": mode, "rate_pct_per_month": None, "cap_pct": None, "grace_days": None, "base": "",
+                           "reason": str(v.get("reason") or "").strip()[:500], "valid_until": ""}
+    if mode == "bebas":
+        if count_letters(out["reason"]) < MIN_REASON_LETTERS or not str(v.get("valid_until") or "").strip():
+            raise Galat(400, PESAN_BEBAS_DENDA)
+        out["valid_until"] = _tanggal("penalty_rule", v.get("valid_until"), today)
+        return out
+    for k, kunci in (("rate_pct_per_month", "ar.denda_rate_pct_per_month"), ("cap_pct", "payment.penalty_cap_pct")):
         x = v.get(k)
-        if x is not None and (not _angka_sah(x) or x < 0):
-            raise _tak_sah("penalty_rule", "persen harus angka nol atau lebih")
-        out[k] = x
+        if x in (None, ""):
+            continue
+        e = registry.require(kunci)
+        if not _angka_sah(x) or not float(e["min"]) <= x <= float(e["max"]):
+            raise Galat(400, pesan_tarif_denda() if k == "rate_pct_per_month" else
+                        f"Batas atas denda harus antara {e['min']:g} dan {e['max']:g} % dari dasar.")
+        out[k] = float(x)
     g = v.get("grace_days")
-    if g is not None and (not isinstance(g, int) or isinstance(g, bool) or g < 0):
-        raise _tak_sah("penalty_rule", "hari tenggang harus bilangan bulat nol atau lebih")
-    out["grace_days"] = g
+    if g not in (None, ""):
+        maks = int(registry.require("ar.grace_days")["max"])
+        if not isinstance(g, int) or isinstance(g, bool) or not 0 <= g <= maks:
+            raise _tak_sah("penalty_rule", f"hari tenggang harus bilangan bulat 0–{maks}")
+        out["grace_days"] = g
     base = v.get("base")
     dasar_sah = {o["value"] for o in (registry.require("payment.penalty_base").get("options") or [])}
     if base not in (None, "") and base not in dasar_sah:
         raise _tak_sah("penalty_rule", "dasar denda tidak dikenal")
     out["base"] = base or ""
-    out["reason"] = str(v.get("reason") or "").strip()[:500]
-    out["valid_until"] = _tanggal("penalty_rule", v.get("valid_until"), today)
     return out
 
 

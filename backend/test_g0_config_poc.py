@@ -209,12 +209,17 @@ def test_layers(entity_id: str, customer_id: str) -> None:
     check(abs(float(g2["value"]) - 3.5) < 1e-6,
           "tanpa konteks entitas, nilai global TETAP 3,5% (tidak tercemar)")
 
-    check(set_cfg(KEY, 7.5, "customer", customer_id).status_code == 200,
-          "set pelanggan 7,5%")
+    # CR-T4 — bunga denda tidak lagi berlapis pelanggan di Pusat Pengaturan (aturan denda satu pelanggan = profil
+    # kreditnya): tulisan lapisan pelanggan DITOLAK. Lapisan pelanggan diuji dengan kunci yang tetap berlapis.
+    r = set_cfg(KEY, 7.5, "customer", customer_id)
+    check(r.status_code == 400, "bunga denda per pelanggan lewat Pusat Pengaturan DITOLAK (CR-T4)", r.text[:160])
+    KEY_PEL = "payment.variance_tolerance_rupiah"
+    check(set_cfg(KEY_PEL, 7500, "customer", customer_id).status_code == 200,
+          "set pelanggan Rp 7.500 (toleransi selisih bayar)")
     c = api.get("/config/explain",
-                params={"key": KEY, "entity_id": entity_id, "customer_id": customer_id}).json()
-    check(abs(float(c["value"]) - 7.5) < 1e-6,
-          f"pelanggan MENGALAHKAN entitas → {c['value']}% (lapisan: {c['source_label']})")
+                params={"key": KEY_PEL, "entity_id": entity_id, "customer_id": customer_id}).json()
+    check(abs(float(c["value"]) - 7500) < 1e-6,
+          f"pelanggan MENGALAHKAN entitas → {c['value']} (lapisan: {c['source_label']})")
     layers = [x["layer"] for x in c["explain"] if x["present"]]
     check("code_default" in layers and "customer" in layers,
           f"jejak memperlihatkan seluruh lapisan yang berisi nilai: {layers}")
@@ -248,8 +253,8 @@ def test_layers(entity_id: str, customer_id: str) -> None:
               "hanya-global → entity DITOLAK)",
               r.text[:160])
 
-    CLEANUP.append({"key": KEY, "scopes": [("global", ""), ("entity", entity_id),
-                                          ("customer", customer_id)]})
+    CLEANUP.append({"key": KEY, "scopes": [("global", ""), ("entity", entity_id)]})
+    CLEANUP.append({"key": KEY_PEL, "scopes": [("customer", customer_id)]})   # CR-T4
 
 
 # ════════════════════════════════════════════════════════════════════════════

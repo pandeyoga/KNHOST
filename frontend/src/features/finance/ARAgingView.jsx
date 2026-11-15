@@ -37,9 +37,9 @@ import ARReceiptModal from "../crm/ARReceiptModal";   // PK-43 — form kwitansi
 const WARN_KEYS = new Set(["b1_30", "b31_60"]);
 const DANGER_KEYS = new Set(["b61_90", "b90_plus"]);
 
-const BASE_LABEL = {
-  installment: "nilai cicilan yang telat",
-  outstanding: "seluruh sisa piutang pesanan",
+const BASE_LABEL = {   // CR-T4 — kata sama dengan form aturan denda (`payments/penaltyRuleUi`)
+  installment: "sisa tagihan yang telat",
+  outstanding: "seluruh sisa pesanan",
 };
 
 import PagedRows from "@/components/PagedRows";
@@ -334,10 +334,11 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             Umur dihitung per surat jalan: tanggal surat jalan + termin pembayaran; bagian pesanan yang belum dikirim
             belum jatuh tempo. Kolom <b>Denda</b> menampilkan
             <b> nota denda nyata</b> (dokumen yang bisa ditagih/dinegosiasikan); angka{" "}
-            <i>est.</i> adalah estimasi {dendaRate}%/bulan yang <b>belum</b> dibuatkan nota.
-            Nota denda dihitung atas dasar <b>{BASE_LABEL[penaltyPolicy.base] || penaltyPolicy.base || "kebijakan"}</b>
-            {Number(penaltyPolicy.grace_days || 0) > 0 ? ` dengan tenggang ${penaltyPolicy.grace_days} hari` : ""} —
-            karena itu nilainya bisa berbeda dari estimasi kasar di kolom ini.
+            <i>est.</i> adalah taksiran {dendaRate}%/bulan yang <b>belum</b> dibuatkan nota.
+            Taksiran dihitung dengan aturan yang sama dengan nota denda (harian, dasar{" "}
+            <b>{BASE_LABEL[penaltyPolicy.base] || "aturan PT"}</b>
+            {Number(penaltyPolicy.grace_days || 0) > 0 ? `, tenggang ${penaltyPolicy.grace_days} hari` : ""}); pelanggan
+            dengan aturan denda khusus atau rencana bayar beraturan denda sendiri memakai aturannya.
           </p>
         </div>
       </div>
