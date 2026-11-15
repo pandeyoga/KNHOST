@@ -24,7 +24,7 @@ BASIS_KEY = "finance.tahan_kirim_dasar_bayar"   # PM-T3 — dasar "terbayar": te
 CLOSED = ("done", "cancelled", "rejected", "void", "expired")
 PROJ = {"_id": 0, "id": 1, "entity_id": 1, "status": 1, "is_sample": 1, "payment_term_code": 1, "payment_term": 1,
         "payment_term_name": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "dispatch_payment_release": 1,
-        "extra_billing_lines": 1,
+        "extra_billing_lines": 1, "pay_before_ship": 1,
         "order_number": 1, "number": 1, "sample_billing": 1, "sample_payment_status": 1}
 
 
@@ -44,6 +44,15 @@ async def _mode(entity_id: str, cache: Dict) -> str:
             cache[key] = str(await value_of("finance.dispatch_payment_gate", {"entity_id": entity_id or ""}) or "block")
         except Exception:   # noqa: BLE001 — registry belum termuat: tetap blok (aman)
             cache[key] = "block"
+    return cache[key]
+
+
+async def _tunai_ditahan(entity_id: str, cache: Dict) -> bool:
+    """CR-T3 — `finance.tahan_kirim_tunai` (per PT, bawaan mati): termin tunai diperlakukan bayar dulu 100 %."""
+    key = ("tunai", entity_id or "")
+    if key not in cache:
+        from services.nilai_pengaturan import nilai
+        cache[key] = bool(await nilai("finance.tahan_kirim_tunai", entity_id or ""))
     return cache[key]
 
 
@@ -110,6 +119,11 @@ async def evaluate(order: Dict[str, Any], cache: Optional[Dict] = None) -> Dict[
     code = order.get("payment_term_code") or order.get("payment_term") or ""
     term = await _term(code, order.get("entity_id") or "", cache)
     pct = float((term or {}).get("dp_percent") or 0)
+    # CR-T3 — wajib bayar 100 % bila pesanan lahir "bayar penuh sebelum kirim" (K-27, pelanggan sedang ditahan), atau
+    # termin `type: cash` dan `finance.tahan_kirim_tunai` menyala untuk PT pesanan.
+    if order.get("pay_before_ship") or (str((term or {}).get("type") or "").lower() == "cash"
+                                        and await _tunai_ditahan(order.get("entity_id") or "", cache)):
+        pct = 100.0
     from services.customer_service import _order_grand_total   # PK-32 — nilai tagihan (+ tagihan tambahan)
     grand = round(float(order.get("grand_total") or order.get("total_amount") or 0), 2)
     if order.get("extra_billing_lines"):

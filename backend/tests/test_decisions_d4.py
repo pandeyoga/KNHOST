@@ -194,8 +194,10 @@ def test_k01_overdue_starts_one_full_day_after_due():
         DB.sales_orders.update_one({"id": so_late["id"]}, {"$set": {"payment_status": "paid"}})
         cc2 = run(cs.compute_customer_credit(dict(cust), ent))
         assert cc2["overdue_amount"] == 0.0 and cc2["max_overdue_days"] == 0 and cc2["status"] == "active", cc2
-        chk = run(cs.check_credit_for_order(dict(cust), 100_000))
-        assert not any("tunggakan" in r for r in chk["reasons"]), chk["reasons"]
+        # CR-T3 — `check_credit_for_order` dihapus (D8): satu mesin gerbang kredit; tagihan hari-H bukan "telat".
+        from services import credit_gate as cg
+        chk = run(cg.evaluate(customer_id=cust["id"], entity_id=ent, checkpoint=cg.PESANAN_DIBUAT, order_amount=100_000))
+        assert not any(r["code"] in ("TELAT", "TELAT_RINGAN") for r in chk["reasons"]), chk["reasons"]
     finally:
         DB.customers.delete_many({"id": cust["id"]})
         DB.sales_orders.delete_many({"entity_id": ent})

@@ -81,6 +81,10 @@ async def confirm_core(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
                         f"(status: {_pre.get('status')}). Ajukan/tunggu persetujuan "
                         "nilai & kredit dulu — konfirmasi hanya untuk pesanan berstatus "
                         "Disetujui."))
+        # CR-T3 — titik periksa `lepas_gudang` (`ar.periksa_kredit_lepas_gudang`, bawaan mati) SEBELUM transisi:
+        # pesanan yang sudah "Tahan kredit" ditolak walau titiknya mati; gagal diperiksa → `hold(...)` lalu 409.
+        from services import credit_gate as _cg
+        await _cg.gate_checkpoint(order_id, _cg.LEPAS_GUDANG, actor)
     result = await _transition(order_id, ["approved", "waiting_approval", "reserved"], "confirmed",
                                actor["name"], "order_confirmed")
     # Sub-fase 1.8 — otomatis buat task outbound saat confirmed (idempotent)

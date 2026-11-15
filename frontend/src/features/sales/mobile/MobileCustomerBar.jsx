@@ -28,7 +28,8 @@ export default function MobileCustomerBar({ customers = [], selectedCustomer, on
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const credit = useCreditStatus(selectedCustomer?.id, amount);
-  const blocked = !!credit?.blocked && !credit?.has_approved_override;
+  // CR-T3 — hasil akhir satu mesin gerbang kredit (izin kredit / bayar penuh dulu sudah dihitung server)
+  const blocked = credit?.gate ? ["tahan", "tolak"].includes(credit.gate.result) : (!!credit?.blocked && !credit?.has_approved_override);
   const list = useMemo(() => {
     const t = q.toLowerCase().trim();
     return customers.filter((c) => !t || [c.name, c.city, c.code].filter(Boolean).join(" ").toLowerCase().includes(t)).slice(0, 80);
@@ -58,8 +59,8 @@ export default function MobileCustomerBar({ customers = [], selectedCustomer, on
       </button>
       {blocked && (
         <div data-testid="m-customer-blocked" className="mt-1.5 rounded-lg border border-[#F1B0AB] bg-[#FDECEA] px-3 py-2 text-[11px] text-[#9B1C13]">
-          <b>Pelanggan ini tidak bisa membeli</b> — {(credit.reasons || []).join("; ") || "kredit lewat batas / diblokir"}.
-          Checkout terkunci sampai izin kredit disetujui Manajer.
+          <b>Pelanggan ini tidak bisa membeli dengan termin kredit</b> — {(credit.reasons || []).join(" ") || "kredit lewat batas / diblokir"}
+          {" "}Checkout terkunci sampai izin kredit disetujui (pesanan bayar penuh sebelum kirim tetap boleh).
           <div className="mt-1.5"><CreditOverrideRequest customer={selectedCustomer} amount={amount} /></div>
         </div>
       )}

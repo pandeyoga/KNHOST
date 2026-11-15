@@ -179,7 +179,7 @@ export default function CreditProfileRequestModal({ open, data, canApprove, onCl
       </FormSection>
 
       <FormSection number={2} title="Termin pembayaran" testId="credit-request-section-terms"
-        subtitle="Belum dipakai: termin belum diperiksa saat pesanan dibuat (menyusul pada pembaruan gerbang kredit pesanan).">
+        subtitle="Termin di luar daftar ditolak saat pesanan dibuat. Termin bawaan belum dipakai saat pesanan dibuat.">
         <div className="grid gap-2">
           <p className="text-fs-12 text-kn-text-2">Tidak ada yang dicentang = semua termin aktif PT boleh.</p>
           <div className="flex flex-wrap gap-x-3 gap-y-2">

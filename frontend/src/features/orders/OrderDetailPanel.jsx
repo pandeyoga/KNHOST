@@ -17,6 +17,7 @@ import { openLogistics } from "../logistics/logisticsDeepLink";
 import { STATUS_LABEL as LG_LABEL, STATUS_PILL as LG_PILL } from "../logistics/logisticsApi";
 import SoPaymentPanel from "../finance/payments/SoPaymentPanel";
 import DispatchPaymentGatePanel from "./DispatchPaymentGatePanel";
+import OrderCreditHold from "./OrderCreditHold";   // CR-T3 — Tahan kredit, izin kredit dipakai, bayar penuh dulu
 import PodProgressNote from "./PodProgressNote";
 import SoApprovalsPanel from "./SoApprovalsPanel";
 import OrderPaymentInstructionCard from "./OrderPaymentInstructionCard";   // PM-T2 — cara bayar, rekening, kode bayar
@@ -293,6 +294,9 @@ export function OrderDetailPanel({
         {/* PS-21 — pendingan + repeat/restock 1 klik (SO → PR + notifikasi MD) */}
         <RestockPanel order={sel} currentUser={user} onNavigate={onOpenDocument}
           onChanged={onRefresh} />
+
+        {/* CR-T3 — gerbang kredit: lencana Tahan kredit + alasan + Periksa ulang kredit */}
+        <OrderCreditHold order={sel} user={user} onRefresh={onRefresh} />
 
         {/* F-10 — termin CBD/DP: wajib bayar sebelum kirim + pengecualian berizin (alasan wajib) */}
         <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh}

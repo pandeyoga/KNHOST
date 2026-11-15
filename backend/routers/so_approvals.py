@@ -231,7 +231,11 @@ async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str
 
 @router.post("/sales-orders/{order_id}/request-credit-approval")
 async def request_credit_approval(order_id: str, payload: SoCreditApprovalRequest, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "order", "update")
+    """CR-T3 — pembungkus: izin kredit lingkup PESANAN lewat layanan yang sama (`credit_override_service.create`); entri
+    persetujuan `kredit` tetap ditulis. Izin `credit_override.create` (dulu `order.update`)."""
+    actor = await require_permission(request, "credit_override", "create",
+                                     detail="Anda belum punya akses untuk mengajukan izin kredit. Minta Admin menambahkan "
+                                            "akses 'Pengawasan Tim Sales & Kredit'.")
     ctx = await entity_ctx(request)
     order = await _load_so(order_id, ctx)
     if order.get("status") not in OPEN_STATES:
@@ -241,27 +245,33 @@ async def request_credit_approval(order_id: str, payload: SoCreditApprovalReques
     # Cegah duplikat: bila sudah ada entri kredit pending → kembalikan apa adanya.
     if any(p.get("type") == "kredit" and p.get("status") == "pending" for p in pa):
         raise HTTPException(status_code=409, detail="Sudah ada permintaan approval kredit yang menunggu.")
-    amount = float(order.get("grand_total", 0) or 0)
-    cro_id = new_id("cro")
+    from services.customer_service import _order_grand_total
+    amount = float(_order_grand_total(order) or 0)
+    customer = safe_doc(await db.customers.find_one({"id": order.get("customer_id")}, {"_id": 0})) or \
+        {"id": order.get("customer_id"), "name": order.get("customer_name", "")}
     # INV-ATOMIC-01 — klaim SO SESUDAH validasi, sebelum credit_overrides lahir; dua permintaan
     # bersamaan tidak boleh sama-sama lolos cek "belum ada entri kredit pending".
     from services import atomic_claim as _saga
+    from services import credit_override_service as _cos
     await _saga.claim("sales_orders", order_id, "so_request_credit_approval", actor=actor["name"])
-    await db.credit_overrides.insert_one({
-        "id": cro_id, "customer_id": order.get("customer_id"), "customer_name": order.get("customer_name"),
-        "order_id": order_id, "order_number": order.get("number"), "amount": amount,
-        "reason": (payload.reason or "").strip() or "Permintaan approval kredit (over-limit).",
-        "evidence_url": "", "entity_id": order.get("entity_id", DEFAULT_ENTITY_ID),
-        "status": "pending", "requested_by": actor["name"], "requested_by_id": actor["id"],
-        "created_at": now_iso(),
-    })
+    try:
+        izin = await _cos.create(customer, order.get("entity_id", DEFAULT_ENTITY_ID), scope="pesanan", amount=amount,
+                                 reason_code=(payload.reason_code or "").strip() or "cr_lain",
+                                 note=(payload.reason or "").strip() or "Permintaan izin kredit untuk pesanan ini.",
+                                 actor=actor, order=order)
+    except Exception:
+        await _saga.release("sales_orders", order_id)
+        raise
+    cro_id = izin["id"]
+    await db.credit_overrides.update_one({"id": cro_id}, {"$set": {"has_so_entry": True}})
     entry = so_approvals.make_approval(
         "kredit", required_role="manager", reason=(payload.reason or "").strip() or "Over-limit kredit.",
         requested_by=actor["name"], requested_by_id=actor["id"], ref_id=cro_id, amount=amount)
     # F-09 — pengajuan ulang menggantikan penolakan kredit sebelumnya (credit_overrides lama tetap 'rejected').
     replaced = so_approvals.supersede_rejected(pa, entry)
     await _persist_pending(order_id, pa + [entry])
-    await db.sales_orders.update_one({"id": order_id}, _saga.finish_set({"credit_hold": True}))
+    # CR-T3 — tanda "Tahan kredit" hanya dari gerbang kredit (dulu permintaan ACC menyetel `credit_hold: true`).
+    await _saga.release("sales_orders", order_id)
     await audit(actor["name"], "so_credit_approval_requested", "sales_order", order_id,
                 {"amount": amount, "replaces": [p["id"] for p in replaced]})
     return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
@@ -362,14 +372,16 @@ async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, p
             from services import od_pricing_service as odp
             await odp.apply_nego(order, idx, entry, actor, old_price)
     elif atype == "kredit":
+        # CR-T3 — keputusan izin kredit lewat layanan yang sama (masa berlaku, sisa, pesanan yang ditahan diperiksa ulang).
+        # Wewenang sudah dinilai di atas (Aturan Persetujuan `sales_order.kredit` + `order.approve`).
         ref = entry.get("ref_id")
-        if ref:
-            await db.credit_overrides.update_one({"id": ref}, {"$set": {
-                "status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],
-                "decision_reason": (payload.notes or "").strip(), "decided_at": now_iso(),
-                **({"consumed": True, "consumed_order_id": order_id, "consumed_at": now_iso()} if new_status == "approved" else {})}})
+        izin = await db.credit_overrides.find_one({"id": ref}, {"_id": 0, "status": 1}) if ref else None
+        if izin and izin.get("status") == "pending":
+            from services import credit_override_service as _cos
+            await _cos.decide(ref, "approve" if new_status == "approved" else "reject", (payload.notes or "").strip(),
+                              actor, check_policy=False, dual=False)
         if new_status == "approved":
-            await db.sales_orders.update_one({"id": order_id}, {"$set": {"credit_hold": False, "credit_override_id": ref or ""}})
+            await db.sales_orders.update_one({"id": order_id}, {"$set": {"credit_override_id": ref or ""}})
 
     result = await _persist_pending(order_id, pa)
     # F5 — bila SEMUA approved → SO otomatis naik ke Approved + commit roll.

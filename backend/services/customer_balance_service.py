@@ -200,6 +200,12 @@ async def refresh(customer_id: str, entity_id: Optional[str] = None, today: Any 
             await db[COLL].update_one({"customer_id": customer_id, "entity_id": eid},
                                       {"$set": {"stale": True, "stale_reason": str(exc)[:300], "updated_at": now_iso()},
                                        "$setOnInsert": {"id": new_id("cbl"), "created_at": now_iso()}}, upsert=True)
+    # CR-T3 — saldo berubah (pembayaran, nota, pesanan) → pesanan yang DITAHAN kredit pelanggan itu diperiksa ulang;
+    # yang kini lolos dilepas sendiri (tertua dulu). Tidak pernah melempar; penjaga masuk-ulang di `credit_gate`.
+    if today is None:
+        from services import credit_gate as _cg
+        for eid in ents:
+            await _cg.recheck_holds_safe(customer_id, eid, None, "Pembayaran tercatat — kredit kini memenuhi syarat")
     return out
 
 

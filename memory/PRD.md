@@ -138,6 +138,28 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   (`penalty.view`). Layar: kartu pelanggan › Kredit › "Aturan denda" (asal "ikut PT"/"khusus pelanggan", lencana "Bebas
   denda s.d. …"), pop-up pengajuan perubahan kredit (Ikut PT · Khusus · Bebas denda), form rencana bayar (bagian lipat
   aturan denda khusus rencana), panel denda ("Aturan dari: PT · pelanggan · rencana", dikelompokkan per pelanggan).
+- 2026-11-15 CR-T3 (CR-02, CR-04, CR-05; K-14, K-27–K-29, K-31 — gerbang kredit): **satu mesin gerbang kredit**
+  `services/credit_gate.evaluate` di empat titik periksa, diatur per PT: pesanan dibuat (`create_order`, bawaan menyala;
+  menggantikan `evaluate_credit_gate` & `check_credit_for_order` yang dihapus), nilai pesanan naik (override & amandemen,
+  sesudah tersimpan), dilepas ke gudang (`confirm_core`), barang dikirim (`dispatch_guard`, sesudah gerbang bayar, sebelum
+  pemeriksaan muat/RFID — logika gerbang RFID tidak diubah). Angka per (pelanggan, PT pesanan) dari saldo tersimpan
+  CR-T2 + profil kredit CR-T1; eksposur = terkirim + belum dikirim + giro belum cair − titipan + pesanan ini (tiga
+  sakelar `ar.eksposur_*`). Alasan berkode: `BLOKIR_MANUAL`, `TERMIN_TIDAK_DIIZINKAN` (400 `TERM_NOT_ALLOWED`),
+  `LEWAT_PLAFON`, `TELAT`, `MENDEKATI_PLAFON`, `TELAT_RINGAN`, `PLAFON_KEDALUWARSA`. Pesanan baru yang ditahan = 409
+  `CREDIT_BLOCKED` + satu dokumen `credit_gate_rejections` (`cgr_`, isi permintaan + potret eksposur); pesanan yang sudah
+  ada = **Tahan kredit** (`credit_hold`, `credit_hold_info`, `credit_hold_history`, sub-status `tahan_kredit`), dilepas
+  sendiri saat pembayaran tercatat (`customer_balance_service.refresh` → `recheck_holds`), saat izin kredit disetujui, atau
+  tombol "Periksa ulang kredit" (`POST /api/sales-orders/{id}/credit-recheck`). K-27: pelanggan yang ditahan tetap boleh
+  memesan bertermin bayar-penuh-dulu (`pay_before_ship`, gerbang bayar 100 %); `finance.tahan_kirim_tunai` (bawaan mati)
+  menahan pesanan tunai sampai lunas dan menghitung tagihan tunai terkirim sebagai piutang & telat. **Izin kredit**
+  (`credit_overrides`): `scope` pesanan/pelanggan, nominal > 0, `remaining_amount` (dipakai lewat pembaruan bersyarat
+  — dua pesanan bersamaan, satu lolos), `valid_until` (`ar.izin_kredit_masa_berlaku_hari`, bawaan 0 = tanpa batas), alasan
+  dari master (`cr_riwayat_baik`, `cr_jaminan`, `cr_lain`), `used_by[]`; diputus `credit_override.approve` + Aturan
+  Persetujuan + kontrol dua orang `kontrol.lewat_batas_kredit.*` (label "Izin kredit"); izin baru `credit_override.view`
+  (dulu `customer.view`) dan `.create` (dulu `order.create`). Layar: kotak kredit checkout & HP (empat baris eksposur,
+  plafon, sisa, alasan, "Ajukan izin kredit"), termin hanya yang diizinkan, pop-up izin baku, panel Izin Kredit (lingkup,
+  sisa, berlaku sampai, alasan), kartu kredit di detail pesanan. Menyalakan titik lain / masa berlaku / tahan-kirim tunai
+  untuk PT nyata = H5. Skrip baca-saja `scripts/crt3_beda_gerbang_kredit.py` (pelanggan yang hasilnya berubah; H3).
 - 2026-11-15 CR-T2 (CR-06, CR-09, K-16, K-31 — jadwal tagihan & saldo piutang tersimpan): **satu tempat jatuh tempo** =
   `payment_plans` (tanpa koleksi kedua): jadwal `origin: term` lahir otomatis (`services/billing_schedule_service.py`) —
   baris per NOMOR surat jalan berjurnal (nilai = Σ debit akun piutang jurnalnya; jatuh tempo = tanggal surat jalan +

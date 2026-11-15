@@ -309,6 +309,10 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     # (dapat dimatikan per PT lewat `finance.dispatch_payment_gate`).
     from services import dispatch_payment_gate
     await dispatch_payment_gate.guard(order_id)
+    # CR-T3 — titik periksa `surat_jalan` (`ar.periksa_kredit_surat_jalan`, bawaan mati) SESUDAH gerbang bayar, SEBELUM
+    # pemeriksaan muat/RFID (logika gerbang RFID tidak diubah): "Tahan kredit" → 409 walau titiknya mati.
+    from services import credit_gate
+    await credit_gate.gate_checkpoint(order_id, credit_gate.SURAT_JALAN)
     await qc_request_guard(order_id)
     from services.cutting_service import pending_handoffs   # L06 LN-061 — potong → Admin Cutting → kirim
     waiting = await pending_handoffs(order_id)

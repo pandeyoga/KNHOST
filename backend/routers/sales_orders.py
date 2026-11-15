@@ -24,7 +24,8 @@ from services.config_service import (
 from services import so_approvals
 from routers.price_approvals import get_effective_special_price
 from services.uom_service import to_base, load_fixed_factors
-from services.customer_service import evaluate_credit_gate, group_sales_max, resolve_customer_sales_team
+from services.customer_service import group_sales_max, resolve_customer_sales_team
+from services import credit_gate as _cg   # CR-T3 — satu mesin gerbang kredit
 from entity_scope import entity_ctx, assert_entity_access
 from services import costing_service
 from services import pricelist_service
@@ -423,19 +424,32 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     term = await _ems.resolve_row("payment-terms", term_code, entity_id)
     # Fase 1B — kebutuhan approval dinamis dari approval_rules (basis grand_total)
     appr = await evaluate_approval("sales_order", pricing["grand_total"], entity_id)
-    credit_gate = await evaluate_credit_gate(customer, pricing["grand_total"])
+    # CR-T3 — titik periksa `pesanan_dibuat` (`ar.periksa_kredit_pesanan_dibuat`, bawaan menyala): satu mesin gerbang kredit
+    # untuk PT pesanan (K-29), termin pesanan ikut dinilai (`allowed_term_codes`), izin kredit dan K-27 dihitung di sana.
+    credit_gate = (_cg._kosong(_cg.PESANAN_DIBUAT, customer["id"], entity_id, term_code) if is_sample_order else
+                   await _cg.evaluate(customer_id=customer["id"], entity_id=entity_id, checkpoint=_cg.PESANAN_DIBUAT,
+                                      order_amount=pricing["grand_total"], term_code=term_code, actor=actor))
     if is_sample_order:
         # Sample: bukan persetujuan nilai/kredit manajer — gerbangnya PEMBAYARAN (bila berbayar),
         # diputus Finance/Admin Sample, lalu Admin Sample meneruskan ke gudang.
         appr = {"requires_approval": False, "required_role": ""}
-    elif credit_gate["blocked"] and not credit_gate["override"]:
+    elif credit_gate["result"] == _cg.TOLAK:
+        raise HTTPException(status_code=400, detail={
+            "code": "TERM_NOT_ALLOWED", "reasons": _cg.ringkas(credit_gate)["reasons"],
+            "message": _cg.alasan_utama(credit_gate)})
+    elif credit_gate["result"] == _cg.TAHAN:
         # Trial 22 Okt (E3, keputusan pemilik "Blokir, kecuali ACC Manajer") — pelanggan lewat batas / diblokir karena
-        # belum bayar TIDAK bisa membeli. Dulu SO tetap lahir dengan entri ACC kredit menunggu; kini ditolak, dan jalan
-        # keluarnya izin kredit yang disetujui Manajer SEBELUM checkout (Ajukan izin kredit di checkout).
+        # belum bayar TIDAK bisa membeli; jalan keluarnya izin kredit yang disetujui SEBELUM checkout. CR-T3 — satu
+        # dokumen `credit_gate_rejections` (isi permintaan + potret eksposur) per penolakan.
+        rej = await _cg.record_rejection(result=credit_gate, customer=customer, entity_id=entity_id, actor=actor,
+                                         amount=pricing["grand_total"], term_code=term_code,
+                                         payload_snapshot=payload.model_dump())
         raise HTTPException(status_code=409, detail={
-            "code": "CREDIT_BLOCKED", "reasons": credit_gate.get("reasons") or [],
-            "message": (f"Kredit {customer.get('name', 'pelanggan')} terblokir — pesanan tidak bisa dibuat. Ajukan izin "
-                        "kredit ke Manajer dulu; setelah disetujui, ulangi checkout.")})
+            "code": "CREDIT_BLOCKED", "reasons": [{"code": r["code"], "message": r["message"]}
+                                                  for r in credit_gate["reasons"] if r["result"] in ("tahan", "tolak")],
+            "rejection_id": rej["id"],
+            "message": (f"Kredit {customer.get('name', 'pelanggan')} tertahan — pesanan tidak bisa dibuat. Ajukan izin "
+                        "kredit dulu; setelah disetujui, ulangi checkout.")})
     # Trial 22 Okt (E10) — harga khusus per baris dari checkout wajib beralasan (diputus Manajer).
     for _it in payload.items:
         if _it.requested_price and not _it.is_sample and not (_it.special_price_reason or "").strip():
@@ -488,6 +502,19 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                 "message": "Pesanan akan dipenuhi dari beberapa lot berbeda. Konfirmasi diperlukan.",
                 "mixed_items": mixed_items,
             })
+    # CR-T3 — izin kredit yang melepas tahan dipakai SEKARANG (pembaruan bersyarat sisa + masa berlaku): dua pesanan
+    # bersamaan atas satu izin pelanggan → satu lolos, satu 409. Gagal sesudah ini → pemakaian dikembalikan.
+    izin_dipakai = ""
+    if (credit_gate.get("override") or {}).get("id") and not credit_gate.get("override_used_before"):
+        if not await _cg.use_override(credit_gate["override"]["id"], order_id, pricing["grand_total"], number):
+            rej = await _cg.record_rejection(result={**credit_gate, "result": _cg.TAHAN}, customer=customer,
+                                             entity_id=entity_id, actor=actor, amount=pricing["grand_total"],
+                                             term_code=term_code, payload_snapshot=payload.model_dump())
+            raise HTTPException(status_code=409, detail={
+                "code": "CREDIT_BLOCKED", "rejection_id": rej["id"],
+                "reasons": [{"code": "IZIN_HABIS", "message": "Izin kredit pelanggan ini baru saja habis dipakai pesanan lain."}],
+                "message": f"Kredit {customer.get('name', 'pelanggan')} tertahan — izin kredit sudah habis dipakai."})
+        izin_dipakai = credit_gate["override"]["id"]
     # Multi-item reservation di LEVEL ROLL (owner-scoped = entitas penjual; KN_15)
     # Sub-fase 1.6 — bila allow_backorder: reservasi parsial + sisa jadi backorder.
     all_allocations: List[Dict[str, Any]] = []
@@ -597,12 +624,16 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         for _tid in created_transfer_ids:
             await _release_rolls_by_ref_id(_tid)
         await _rollback_created_transfers(created_transfer_ids)
+        if izin_dipakai:
+            await _cg.release_use(izin_dipakai, order_id)   # CR-T3 — pesanan tidak lahir: izin dikembalikan
         raise
     except Exception as e:
         await release_order_rolls(order_id)
         for _tid in created_transfer_ids:
             await _release_rolls_by_ref_id(_tid)
         await _rollback_created_transfers(created_transfer_ids)
+        if izin_dipakai:
+            await _cg.release_use(izin_dipakai, order_id)
         raise HTTPException(status_code=500, detail=str(e))
     from services.inventory_service import reservation_expires_at   # KF-T7 — masa reservasi PT pesanan (pengaturan)
     expires = (await reservation_expires_at(entity_id)).isoformat()
@@ -690,11 +721,20 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "payment_status": "pending",
         # PM-T2 — cara bayar, rekening tujuan + potretnya (D3); kode bayar lahir saat pesanan bayar-dulu dikonfirmasi.
         **tujuan_bayar, "payment_code": "",
-        # KN_17 — snapshot kredit saat order + flag warning + override yang dipakai
-        "credit_status_at_order": credit_gate["credit"]["status"],
-        "credit_warning": credit_gate["level"] == "warning",
-        "credit_hold": False,   # Trial 22 Okt (E3) — kredit terblokir kini ditolak sebelum SO lahir
-        "credit_override_id": (credit_gate["override"] or {}).get("id", ""),
+        # KN_17 — snapshot kredit saat order + flag warning + izin kredit yang dipakai. CR-T3 — potret hasil gerbang
+        # (`credit_gate_at_order`, D3), `pay_before_ship` (K-27: termin bayar dulu untuk pelanggan yang sedang ditahan).
+        "credit_status_at_order": {"tahan": "blocked", "tolak": "blocked", "peringatan": "warning"}.get(
+            credit_gate.get("raw_result") or "", "active"),
+        "credit_warning": credit_gate.get("raw_result") == _cg.PERINGATAN,
+        "credit_hold": False,   # Trial 22 Okt (E3) — kredit tertahan ditolak sebelum SO lahir; "Tahan kredit" = titik lain
+        "credit_override_id": izin_dipakai,
+        "credit_override_used": ({"id": izin_dipakai, "amount": round(float(pricing["grand_total"]), 2),
+                                  "reason_label": (credit_gate.get("override") or {}).get("reason_label", ""),
+                                  "decided_by": (credit_gate.get("override") or {}).get("decided_by", "")}
+                                 if izin_dipakai else None),
+        "pay_before_ship": bool(credit_gate.get("pay_before_ship")),
+        "credit_gate_at_order": _cg.ringkas(credit_gate) if credit_gate.get("checked") else None,
+        "credit_hold_history": [],
         # F5 — Unified Approval SSOT (nilai | kredit | special_price)
         "pending_approvals": pending_approvals,
         # Approval (dinamis dari approval_rules + validasi admin wajib)
@@ -778,12 +818,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         await _refs.safe_link(("sales_order", order_id),
                               ("special_order", order["source_special_order_id"]),
                               "parent", note="berasal dari Special Order")
-    # Konsumsi override kredit bila dipakai untuk melewati blokir (sekali pakai)
-    if credit_gate["override"]:
-        await db.credit_overrides.update_one(
-            {"id": credit_gate["override"]["id"]},
-            {"$set": {"consumed": True, "consumed_order_id": order_id, "consumed_at": now_iso()}},
-        )
+    # CR-T3 — izin kredit sudah dipakai SEBELUM reservasi (`credit_gate.use_override`, bersyarat); jalur "consumed" lama
+    # (sekali pakai tanpa syarat sisa) dihapus.
     # Trial 22 Okt (E10) — harga khusus dari checkout = lingkup PESANAN INI: terikat SO sejak lahir.
     sp_lines = [it for it in payload.items if it.requested_price and not it.is_sample]
     if sp_lines:
@@ -830,6 +866,27 @@ async def get_order(order_id: str, request: Request) -> Dict[str, Any]:
             "E9.2 janji pasokan antar-PT gagal dimuat utk order %s: %s", order_id, exc)
         doc["interco_supply"] = []
     return doc
+
+
+@router.post("/sales-orders/{order_id}/credit-recheck")
+async def credit_recheck(order_id: str, request: Request) -> Dict[str, Any]:
+    """CR-T3 — "Periksa ulang kredit": pesanan yang ditahan diperiksa ulang (sakelar titik diabaikan); lolos → tahanan
+    dilepas (izin kredit yang melepas dipakai). Pesanan tidak ditahan → hasil penilaian saja."""
+    actor = await require_permission(request, "order", "update")
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    sales_ownership.assert_may_open(order, actor)
+    if order.get("credit_hold"):
+        res = await _cg.recheck_order(order, actor, f"Periksa ulang kredit oleh {actor.get('name', '')}")
+    else:
+        res = {**await _cg.evaluate(customer_id=order.get("customer_id", ""), entity_id=order.get("entity_id", ""),
+                                    checkpoint=_cg.PERIKSA_ULANG, order=order, actor=actor), "released": False}
+    return {"released": bool(res.get("released")), "result": res["result"], "message": _cg.alasan_utama(res),
+            "gate": _cg.ringkas(res),
+            "order": strip_cost_fields(safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})),
+                                       actor.get("role"))}
 
 
 @router.patch("/sales-orders/{order_id}")

@@ -126,6 +126,9 @@ async def _header(order: Dict[str, Any], header: Dict[str, Any], *,
             if loosened and not can_loosen_term:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=403, detail=PESAN_TERMIN_LONGGAR.format(lama=old or "—", baru=new))
+            # CR-T3 — termin di luar daftar pelanggan ditolak SEBELUM apa pun disimpan (titik `pesanan_diubah` menyala)
+            from services import credit_gate as _cg
+            await _cg.term_change_allowed(order, new)
         patch[f] = new
         diff.append(_chg("Pesanan", f, label, shown_old, shown_new))
         if f == "payment_term_code" and loosened:
@@ -444,6 +447,12 @@ async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any], *,
         if line_touch and order["status"] == "confirmed":
             await _regen_tasks(order_id, actor.get("name", ""))
 
+    # CR-T3 — titik `pesanan_diubah` SESUDAH perubahan tersimpan, hanya bila nilai tagihan naik atau termin lebih
+    # longgar: perubahan tetap berlaku; gagal diperiksa → "Tahan kredit".
+    if hdr_patch or line_touch:
+        from services import credit_gate as _cg
+        from services.customer_service import _order_grand_total
+        await _cg.after_order_changed(order_id, _order_grand_total(order), order.get("payment_term_code") or "", actor)
     fresh = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     event = None
     if diff:

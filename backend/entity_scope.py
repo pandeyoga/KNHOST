@@ -89,6 +89,8 @@ SCOPE_FIELD: Dict[str, Optional[str]] = {
     # CR-T1 — profil kredit dan pengajuannya milik PT PESANAN (bukan PT pemilik data pelanggan).
     "customer_credit_profiles": "entity_id",
     "credit_profile_requests": "entity_id",
+    # CR-T3 — penolakan gerbang kredit milik PT pesanan yang ditolak.
+    "credit_gate_rejections": "entity_id",
     # PM-T2 — kode bayar milik PT pesanannya (unik lintas PT, dibaca lewat pesanan).
     "payment_codes": "entity_id",
     "number_sequences": SHARED,
@@ -269,6 +271,8 @@ SCOPED_COLLECTIONS = {
     "journal_proposals",
     # CR-T1 — profil kredit per (pelanggan, PT) dan pengajuan perubahannya: plafon satu PT tidak terbaca PT lain.
     "customer_credit_profiles", "credit_profile_requests",
+    # CR-T3 — penolakan gerbang kredit (isi permintaan pesanan + potret eksposur satu PT).
+    "credit_gate_rejections",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

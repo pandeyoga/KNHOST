@@ -246,7 +246,8 @@ def _kosong(checkpoint: str, customer_id: str, entity_id: str, term_code: str) -
 
 async def evaluate(*, customer_id: str, entity_id: str, checkpoint: str, order_id: str = "",
                    order_amount: float = 0.0, term_code: str = "", actor: Optional[Dict[str, Any]] = None,
-                   order: Optional[Dict[str, Any]] = None, today: Any = None) -> Dict[str, Any]:
+                   order: Optional[Dict[str, Any]] = None, today: Any = None,
+                   saldo: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Hasil gerbang kredit `{result: lolos|peringatan|tahan|tolak, checked, reasons[{code, message, data}], exposure,
     limit, overdue, override, pay_before_ship}` (spesifikasi "Urutan dan aturan `evaluate`").
 
@@ -267,7 +268,8 @@ async def evaluate(*, customer_id: str, entity_id: str, checkpoint: str, order_i
         order_id = order.get("id") or order_id
         term_code = term_code or str(order.get("payment_term_code") or "")
     eff = await cps.effective(customer_id, eid, hari)
-    bal = await cbs.get(customer_id, eid, today)
+    # `saldo` = saldo yang sudah dihitung pemanggil baca-saja (skrip pembanding: `compute` + `with_days`, tanpa menulis)
+    bal = saldo if saldo is not None else await cbs.get(customer_id, eid, today)
     tunai_ikut = await _flag("finance.tahan_kirim_tunai", eid)
     hitung = {"open_orders": await _flag("ar.eksposur_pesanan_belum_kirim", eid),
               "giro": await _flag("ar.eksposur_giro_belum_cair", eid),
@@ -363,7 +365,7 @@ async def evaluate(*, customer_id: str, entity_id: str, checkpoint: str, order_i
         "override_used_before": bool(izin and izin.get("_sudah_dipakai")),
         "override_amount_needed": from_cents(perlu_c),
         "pay_before_ship": bayar_dulu,
-        "allowed_term_codes": allowed,
+        "allowed_term_codes": allowed, "default_term_code": eff.get("default_term_code") or "",
     }
 
 
@@ -477,7 +479,10 @@ async def _pakai_izin_bila_perlu(result: Dict[str, Any], order_id: str) -> bool:
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "number": 1}) or {}
     ok = await use_override(ov["id"], order_id, float(result.get("override_amount_needed") or 0), so.get("number", ""))
     if ok:
-        await db.sales_orders.update_one({"id": order_id}, {"$set": {"credit_override_id": ov["id"]}})
+        await db.sales_orders.update_one({"id": order_id}, {"$set": {
+            "credit_override_id": ov["id"],
+            "credit_override_used": {"id": ov["id"], "amount": float(result.get("override_amount_needed") or 0),
+                                     "reason_label": ov.get("reason_label", ""), "decided_by": ov.get("decided_by", "")}}})
     return ok
 
 

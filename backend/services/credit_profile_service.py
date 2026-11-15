@@ -17,7 +17,8 @@ Fungsi inti:
 Masa peralihan (RISIKO unit): selama skrip `scripts/migrate_credit_profiles.py --terapkan` belum dijalankan (penanda
 `system_settings{scope:"__migrations__"}.crt1_profil_kredit`), pelanggan yang BELUM punya profil di PT pemilik datanya
 dibaca dari `customers.credit_limit` / `customers.status == "blocked"` (asal `data_lama`) — nilai yang sama persis
-dengan yang akan ditulis skrip. Cadangan ini dihapus di CR-T3.
+dengan yang akan ditulis skrip. CR-T3 — cadangan TIDAK dihapus selama skrip belum dijalankan ke data nyata (H3): menghapusnya
+sebelum migrasi membuka blokir & plafon pelanggan lama tanpa jejak; cadangan mati sendiri saat penanda dipasang skrip.
 """
 from __future__ import annotations
 

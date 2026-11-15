@@ -220,6 +220,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("employee_id", A), ("status", A), ("effective_from", A)],
         [("entity_id", A), ("status", A)],
     ],
+    "credit_gate_rejections": [      # CR-T3 — pesanan yang ditolak gerbang kredit saat dibuat (antrean per PT)
+        [("entity_id", A), ("status", A), ("created_at", A)],
+    ],
     "credit_profile_requests": [     # CR-T1 — pengajuan perubahan profil kredit (antrean per PT, riwayat per pelanggan)
         [("entity_id", A), ("status", A), ("created_at", A)],
         [("customer_id", A), ("entity_id", A), ("status", A), ("decided_at", D)],
@@ -531,6 +534,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "customer_balances",
     # PY-T3 — hari libur PT (`hhol_…`) dan saldo awal pajak karyawan per PT per tahun (`htob_…`).
     "hr_holidays", "hr_tax_opening_balances",
+    # CR-T3 — penolakan gerbang kredit saat pesanan dibuat (`cgr_…`).
+    "credit_gate_rejections",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh

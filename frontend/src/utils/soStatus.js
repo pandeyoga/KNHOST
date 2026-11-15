@@ -27,6 +27,7 @@ export const SUBSTATUS_LABELS = {
   sebagian_dikirim: "Sebagian dikirim",
   dibatalkan: "Dibatalkan",
   kedaluwarsa: "Kedaluwarsa",
+  tahan_kredit: "Tahan kredit",                        // CR-T3 — `credit_hold` (gerbang kredit menahan pesanan)
 };
 
 export function subStatusLabel(key) {
@@ -79,8 +80,16 @@ function approvalSubs(order) {
   return subs.length ? subs : ["menunggu_validasi"];
 }
 
-// Mirror backend derive_stage_substatus(order) → [stage, [sub_status]].
+// CR-T3 — "Tahan kredit" mendahului alasan lain selama pesanan belum selesai dikirim (mirror backend).
+const HOLD_SKIP = ["cancelled", "expired", "done", "delivered", "shipped", "dispatched"];
 export function deriveStageSub(order) {
+  const [stage, subs] = deriveStageSubBase(order);
+  const o = order || {};
+  return o.credit_hold && !HOLD_SKIP.includes(o.status || "") ? [stage, ["tahan_kredit", ...subs]] : [stage, subs];
+}
+
+// Mirror backend derive_stage_substatus(order) → [stage, [sub_status]].
+function deriveStageSubBase(order) {
   const o = order || {};
   const status = o.status || "reserved";
   // KN-D14 (mirror BE) — baris backorder `fulfilled` tetap di daftar: hitung yang sisa qty-nya > 0.

@@ -82,5 +82,5 @@ E("finance.tahan_kirim_tunai", group="uang-masuk", section="syarat-bayar", type=
        "ikut dihitung sebagai piutang dan telat.",
   impact="Bila menyala, pesanan tunai tidak bisa dikirim sebelum dibayar, kecuali dengan pengecualian berizin.",
   example="Tunai Rp 1 jt belum dibayar → tertahan",
-  consumers=("services/credit_gate.py:evaluate",),
+  consumers=("services/credit_gate.py:evaluate", "services/dispatch_payment_gate.py:_tunai_ditahan"),
   related=("finance.dispatch_payment_gate",), **_IZIN)

@@ -233,32 +233,8 @@ async def enrich_customer(customer: Dict[str, Any], with_credit: bool = True) ->
     return c
 
 
-async def check_credit_for_order(customer: Dict[str, Any], new_amount: float) -> Dict[str, Any]:
-    """Gate kredit saat buat SO (KN_17 §5.2). allowed=False bila blocked.
-    CR-T1 — plafon & rasio peringatan dari profil kredit yang berlaku (PT pemilik data pelanggan; PT pesanan = CR-T3)."""
-    credit = await compute_customer_credit(customer)
-    limit = credit["credit_limit"]
-    projected = credit["ar_outstanding"] + float(new_amount or 0)
-    blocked = credit["status"] == "blocked" or (limit > 0 and projected > limit)
-    warn = (not blocked) and (
-        credit["status"] == "warning" or (limit > 0 and projected >= credit["warning_ratio"] * limit)
-        or credit["overdue_amount"] > 0
-    )
-    reasons = []
-    if limit > 0 and projected > limit:
-        reasons.append(f"Proyeksi AR {rupiah(projected)} melebihi limit {rupiah(limit)}")
-    if credit["overdue_amount"] > 0:
-        reasons.append(f"Ada tunggakan jatuh tempo {rupiah(credit['overdue_amount'])} ({credit['max_overdue_days']} hari)")
-    if credit.get("credit_status_manual") == "blokir_manual":
-        alasan = credit.get("block_reason") or ""
-        reasons.append("Pelanggan diblokir manual" + (f": {alasan}" if alasan else ""))
-    return {
-        "allowed": not blocked,
-        "level": "blocked" if blocked else ("warning" if warn else "ok"),
-        "credit": credit,
-        "projected_ar": round(projected, 2),
-        "reasons": reasons,
-    }
+# CR-T3 (D8) — `check_credit_for_order` dan `evaluate_credit_gate` DIHAPUS: satu mesin gerbang kredit di
+# `services/credit_gate.evaluate` (pesanan dibuat/diubah, lepas gudang, surat jalan, pratinjau checkout).
 
 
 # SO yang tidak dihitung sebagai pesanan/omzet pelanggan (riwayat tetap menampilkannya).
@@ -462,34 +438,6 @@ async def collection_worklist(
         })
     rows.sort(key=lambda r: r["days_late"], reverse=True)
     return rows
-
-
-async def evaluate_credit_gate(customer: Dict[str, Any], amount: float) -> Dict[str, Any]:
-    """Gate kredit saat buat SO (KN_17 S37 / pilihan owner 1b+2a).
-
-    blocked + tanpa override approved -> tolak. blocked + override approved (cukup nilainya)
-    -> boleh lanjut (override akan dikonsumsi). warning -> boleh lanjut (flag).
-    """
-    gate = await check_credit_for_order(customer, amount)
-    override = None
-    if not gate["allowed"]:
-        ov = await db.credit_overrides.find_one(
-            {"customer_id": customer["id"], "status": "approved", "consumed": {"$ne": True}},
-            {"_id": 0}, sort=[("decided_at", -1)],
-        )
-        if ov:
-            amt = float(ov.get("amount") or 0)
-            if amt <= 0 or float(amount or 0) <= amt + 1e-6:
-                override = ov
-    return {
-        "level": gate["level"],                       # ok | warning | blocked
-        "blocked": not gate["allowed"],
-        "allowed_after_override": bool(override),
-        "reasons": gate["reasons"],
-        "credit": gate["credit"],
-        "projected_ar": gate["projected_ar"],
-        "override": override,
-    }
 
 
 async def collection_reminders(

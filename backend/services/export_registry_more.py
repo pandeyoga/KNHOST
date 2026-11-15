@@ -133,8 +133,9 @@ MORE = [
     S("entity_prices", "Harga Jual per Badan Usaha", "Penjualan", "entity_prices", ("pricelist", "view"),
       "sku:SKU|product_name:Produk|sell_price:Harga jual:m|currency:Mata uang|valid_from:Berlaku dari:d"
       "|valid_until:Berlaku s/d:d|status:Status|entity_id:ID badan usaha"),
-    S("credit_overrides", "Pengecualian Kredit", "Penjualan", "credit_overrides", ("customer", "view"),
-      "customer_name:Pelanggan|order_number:No. SO|amount:Nilai:m|reason:Alasan|status:Status|requested_by:Diminta oleh"
+    S("credit_overrides", "Izin Kredit", "Penjualan", "credit_overrides", ("credit_override", "view"),   # CR-T3
+      "customer_name:Pelanggan|scope:Lingkup|order_number:No. SO|amount:Nilai:m|remaining_amount:Sisa:m"
+      "|valid_until:Berlaku sampai:d|reason_label:Alasan|reason:Catatan|status:Status|requested_by:Diminta oleh"
       "|entity_id:ID badan usaha"),
     S("sales_targets", "Target Sales", "Penjualan", "sales_targets", ("order", "view"),
       "sales_name:Sales|period:Periode|period_type:Jenis periode|target_sales_amount:Target penjualan:m"

@@ -18,6 +18,7 @@ import OrderPriceRequestModal from "./OrderPriceRequestModal";
 import { CheckoutItemCard, Row } from "./CheckoutItemCard";
 import { MixedCartNotice } from "./MixedCartNotice";
 import CheckoutStep3 from "./CheckoutStep3";
+import { gateBlocked } from "./CreditGateBox";
 import CheckoutPaymentDestination from "./CheckoutPaymentDestination";
 import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTeamEditor";
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
@@ -185,11 +186,13 @@ export default function CheckoutDrawer({
     if (!open || !cid || cart.length === 0) { setCredit(null); return undefined; }
     let active = true;
     const t = setTimeout(() => {
-      axios.get(`${API}/customers/${cid}/credit-status`, { params: { amount: p.grand } })
+      // CR-T3 — termin & PT pesanan ikut dinilai (termin di luar daftar pelanggan = ditolak; angka per PT, K-29)
+      axios.get(`${API}/customers/${cid}/credit-status`, { params: { amount: p.grand, term_code: paymentTerm || "",
+        entity_id: entityFor && entityFor !== "all" ? entityFor : "" } })
         .then((r) => { if (active) setCredit(r.data); }).catch(() => { if (active) setCredit(null); });
     }, 350);
     return () => { active = false; clearTimeout(t); };
-  }, [open, selectedCustomer, p.grand, cart.length]); // eslint-disable-line
+  }, [open, selectedCustomer, p.grand, cart.length, paymentTerm, entityFor]); // eslint-disable-line
 
   // Cek UI UAT v3 (S7) — kekurangan yang bisa dipenuhi PT lain (`inter_company`) juga butuh izin backorder di server
   // ("Stok milik entitas tidak mencukupi … Aktifkan backorder"); dulu kartu backorder tidak muncul → SO ditolak tanpa jalan.
@@ -204,7 +207,15 @@ export default function CheckoutDrawer({
   useEffect(() => { if (hasBackorderLine) setAllowBackorder(true); }, [hasBackorderLine]);
   const mixedLotLines = (lotPlan?.lines || []).filter((l) => l.requires_confirmation);
   const requiresLotConfirmation = !!lotPlan?.requires_confirmation && mixedLotLines.length > 0;
-  const creditBlocked = !!credit && credit.blocked && !credit.has_approved_override;
+  const creditBlocked = gateBlocked(credit);   // CR-T3 — hasil akhir gerbang (izin kredit / bayar dulu sudah dihitung)
+  // CR-T3 — "Termin Pembayaran" hanya memuat termin yang diizinkan profil kredit pelanggan (kosong = semua termin PT).
+  const allowedTerms = credit?.gate?.allowed_term_codes || [];
+  const termOptions = allowedTerms.length ? paymentTerms.filter((t) => allowedTerms.includes(t.code)) : paymentTerms;
+  useEffect(() => {
+    if (!allowedTerms.length || allowedTerms.includes(paymentTerm)) return;
+    const pick = allowedTerms.includes(credit?.gate?.default_term_code) ? credit.gate.default_term_code : allowedTerms[0];
+    if (pick) setPaymentTerm(pick);
+  }, [allowedTerms.join(","), paymentTerm]); // eslint-disable-line
 
   const updateQty = (id, q) => setCart(cart.map((it) => it.product.id === id ? { ...it, quantity: it.is_sample ? clampSampleQty(it.product, q, it.sample_kind) : (Number(q) || 0) } : it));
   const updateDiscount = (id, d) => setCart(cart.map((it) => it.product.id === id ? { ...it, discount_percent: Math.max(0, Math.min(100, Number(d) || 0)) } : it));
@@ -441,7 +452,8 @@ export default function CheckoutDrawer({
                   <div>
                     <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Termin Pembayaran</label>
                     <KNSelect data-testid="payment-term-select" className="field" value={paymentTerm} onValueChange={setPaymentTerm}
-                      options={paymentTerms.length === 0 ? [{ value: "", label: "Default" }] : paymentTerms.map((t) => ({ value: t.code, label: t.name }))} />
+                      options={termOptions.length === 0 ? [{ value: "", label: "Default" }] : termOptions.map((t) => ({ value: t.code, label: t.name }))} />
+                    {allowedTerms.length > 0 && <p className="mt-0.5 text-fs-12 text-kn-text-2" data-testid="payment-term-allowed-note">Hanya termin yang diizinkan untuk pelanggan ini.</p>}
                   </div>
                   <CheckoutPaymentDestination entityId={entityFor} value={payDest} onChange={setPayDest} required={payMethodRequired} />
                   {allowOrderDiscount && (
@@ -509,7 +521,7 @@ export default function CheckoutDrawer({
               p={p} cart={cart} pricedCart={cartPriced} paymentTerm={paymentTerm}
               needsTaxInvoice={needsTaxInvoice} setNeedsTaxInvoice={setNeedsTaxInvoice}
               nonPpn={canNonPpn ? { on: nonPpn, setOn: setNonPpn, reason: nonPpnReason, setReason: setNonPpnReason } : null}
-              credit={credit} creditBlocked={creditBlocked}
+              credit={credit} creditBlocked={creditBlocked} entityId={entityFor && entityFor !== "all" ? entityFor : ""}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
               spReq={spReq} requestedGrand={pReq?.grand ?? null}
@@ -537,7 +549,7 @@ export default function CheckoutDrawer({
               </button>
             ) : (
               <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || payMethodMissing || nonPpnInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
-                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : nonPpnInvalid ? "Isi Alasan Tanpa PPN" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : payMethodMissing ? "Pilih Cara Bayar" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
+                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? (credit?.gate?.result === "tolak" ? "Termin Tidak Diizinkan" : "Kredit Tertahan") : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : nonPpnInvalid ? "Isi Alasan Tanpa PPN" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : payMethodMissing ? "Pilih Cara Bayar" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
               </button>
             )}
           </div>

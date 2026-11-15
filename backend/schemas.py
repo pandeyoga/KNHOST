@@ -813,8 +813,9 @@ class SoSpecialPriceRequest(BaseModel):
 
 
 class SoCreditApprovalRequest(BaseModel):
-    """Minta approval kredit untuk SO over-limit (SO tetap tersimpan, tak diblokir)."""
-    reason: str = ""                       # WAJIB alasan
+    """Minta izin kredit untuk satu pesanan (CR-T3 — pembungkus izin kredit lingkup pesanan)."""
+    reason: str = ""                       # catatan
+    reason_code: str = ""                  # CR-T3 — master alasan izin kredit; kosong = "Lainnya" + catatan
 
 
 class SoApprovalDecision(BaseModel):

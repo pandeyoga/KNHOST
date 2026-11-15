@@ -1,6 +1,6 @@
 // F4 — Komponen badge & timeline berbasis STAGE+SUB-STATUS (SSOT 2-level).
 // Reusable di OrderDetailPanel, OrdersView, OrderDashboard.
-import { Check, Package, Truck, PackageCheck, Circle, X } from "lucide-react";
+import { Check, Package, Truck, PackageCheck, Circle, X, ShieldAlert } from "lucide-react";
 import {
   STAGE_FLOW, STAGE_LABEL_LONG, getStage, getSubStatus, stageMeta, stageIndex, subStatusLabel,
 } from "../utils/soStatus";
@@ -25,7 +25,12 @@ export function SubStatusChips({ order, subs, testIdPrefix = "substatus", classN
   if (!list || !list.length) return null;
   return (
     <span className={`inline-flex flex-wrap gap-1 ${className}`}>
-      {list.map((k) => (
+      {list.map((k) => (k === "tahan_kredit" ? (
+        // CR-T3 — "Tahan kredit": ikon + teks + warna (bukan warna saja)
+        <span key={k} data-testid={`${testIdPrefix}-${k}`} className="status-pill status-rejected whitespace-nowrap">
+          <ShieldAlert size={11} aria-hidden="true" /> {subStatusLabel(k)}
+        </span>
+      ) : (
         <span
           key={k}
           data-testid={`${testIdPrefix}-${k}`}
@@ -33,7 +38,7 @@ export function SubStatusChips({ order, subs, testIdPrefix = "substatus", classN
         >
           {subStatusLabel(k)}
         </span>
-      ))}
+      )))}
     </span>
   );
 }

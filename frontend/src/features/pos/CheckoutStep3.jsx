@@ -6,6 +6,7 @@ import { Truck, PackageCheck, Receipt, ShieldAlert, ShieldCheck, CreditCard } fr
 import { formatCurrency } from "../../utils/formatters";
 import { Row } from "./CheckoutItemCard";
 import CreditOverrideRequest from "./CreditOverrideRequest";
+import CreditGateBox from "./CreditGateBox";   // CR-T3 — hasil satu mesin gerbang kredit
 import CheckoutNonPpn from "./CheckoutNonPpn";
 
 export default function CheckoutStep3({
@@ -14,7 +15,7 @@ export default function CheckoutStep3({
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked, spReq = {}, requestedGrand = null,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
-  sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null,
+  sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null, entityId = "",
 }) {
   const today = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();   // tanggal lokal (WIB)
   const [pickDate, setPickDate] = useState(!!deliveryDate);
@@ -170,7 +171,8 @@ export default function CheckoutStep3({
         </div>
       )}
 
-      {credit && credit.level !== "ok" && (
+      {credit?.gate && <CreditGateBox credit={credit} customer={selectedCustomer} amount={p.grand} entityId={entityId} />}
+      {credit && !credit.gate && credit.level !== "ok" && (
         <div data-testid="credit-status-banner" className={`rounded-md border p-2.5 ${creditBlocked ? "border-[#F1B0AB] bg-[#FDECEA]" : credit.has_approved_override ? "border-[#A7D8B0] bg-[#EAF7EE]" : "border-[#F5C9A6] bg-[#FFF7EF]"}`}>
           <div className="flex items-start gap-2">
             {creditBlocked ? <ShieldAlert size={14} className="mt-0.5 shrink-0 text-[#C0392B]" /> : <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#9A5B00]" />}
@@ -185,7 +187,7 @@ export default function CheckoutStep3({
           </div>
         </div>
       )}
-      {credit && credit.level === "ok" && (
+      {credit && !credit.gate && credit.level === "ok" && (
         <div className="flex items-center gap-2 rounded-md border border-[#A7D8B0] bg-[#EAF7EE] p-2.5 text-[11.5px] text-[#126E2C]"><ShieldCheck size={14} /> Kredit OK · ATP & alokasi tervalidasi.</div>
       )}
 

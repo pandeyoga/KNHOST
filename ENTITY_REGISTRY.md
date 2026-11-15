@@ -1638,6 +1638,14 @@ Key Fields:
   allocations  list    [{warehouse_id, warehouse_name, warehouse_city, product_id, quantity}]
                         SNAPSHOT fulfillment (top-level, dipakai render dokumen)
   status       enum    (lihat lifecycle di atas)
+  credit_hold  bool    CR-T3 — penanda TUNGGAL "Tahan kredit" (gerbang kredit; sub-status `tahan_kredit`): ditolak
+                       `confirm_core` & `dispatch_guard` walau titik periksanya mati
+  credit_hold_info     {since, checkpoint, reasons[{code, result, message}], exposure, by} — tahanan berjalan (null = tidak)
+  credit_hold_history  [{…info, released_at, released_by, release_reason, release_result, override_id}] satu baris/tahanan
+  pay_before_ship bool CR-T3 (K-27) — lahir untuk pelanggan yang sedang ditahan dengan termin bayar penuh dulu →
+                       gerbang bayar kirim memakai 100 %
+  credit_gate_at_order potret hasil gerbang kredit saat pesanan dibuat (D3) · credit_override_id · credit_override_used
+                       {id, amount, reason_label, decided_by}
   total_amount float    = Σ items.subtotal (GROSS — invarian verify_data_integrity L4)
   # Fase 1B — breakdown diskon + PPN (field TERPISAH agar total_amount tetap GROSS):
   items_discount_total   float
@@ -2122,6 +2130,47 @@ Index:       uq_id (unik) · uq_open_request (customer_id, entity_id) UNIK parsi
   requested_by(_id) · created_at · decided_by(_id) · decided_at · decision_note · profile_version
 Putus: `credit_profile.approve` + `kontrol.ubah_profil_kredit.*` (nominal = plafon baru). `from` berbeda dari profil
 sekarang → 409 "Profil kredit sudah berubah sejak pengajuan dibuat. Buat pengajuan baru." (pengajuan dibatalkan otomatis).
+
+### credit_overrides  [KN_17 S37 · CR-T3 — izin kredit bernominal, berlingkup, bermasa berlaku]
+```
+Collection:  credit_overrides          Prefix: cro_
+Layanan:     services/credit_override_service.py (`create`, `decide`, `reasons`, `tampil`) · services/credit_gate.py
+             (`use_override` — pembaruan bersyarat sisa + masa berlaku; `release_use`)
+Router:      routers/crm.py (`POST /customers/{id}/credit-override` credit_override.create · `GET /credit-overrides`,
+             `GET …/{id}` credit_override.view · `POST …/{id}/decision` credit_override.approve + Aturan Persetujuan
+             `credit_override` + `kontrol.lewat_batas_kredit.*`) · routers/so_approvals.py (pembungkus
+             `request-credit-approval` → lingkup pesanan + entri persetujuan `kredit`)
+SCOPED lewat `entity_id` (PT izin = PT pesanan; `guard_doc`).
+
+  id · customer_id · customer_name · entity_id · status pending → approved | rejected | cancelled
+  scope            pesanan | pelanggan   (CR-T3; dokumen lama tanpa `scope` = pelanggan)
+  order_id · order_number    wajib bila `scope: pesanan` · has_so_entry (true = diajukan lewat entri persetujuan pesanan)
+  amount (> 0, PK-45) · remaining_amount (mulai = amount; dikurangi tiap pemakaian, tidak pernah negatif)
+  valid_until      ISO | ""  — diisi saat disetujui = waktu putus + `ar.izin_kredit_masa_berlaku_hari` (0 = "" tanpa batas)
+  reason_code · reason_label (master alasan `amendment_reasons`, applies_to `credit_override`) · reason (catatan)
+  used_by[]        {order_id, order_number, amount, at}   jejak pemakaian (kartu pelanggan, pesanan)
+  credit_snapshot · gate_snapshot (potret saat diajukan, D3) · rejection_id · evidence_url
+  requested_by(_id) · created_at · decided_by(_id) · decided_at · decision_reason · consumed (jejak lama)
+⚠️ Izin lama bernominal 0 (dulu "tanpa batas") yang belum dipakai dianggap KEDALUWARSA (tidak melepas tahan). Kueri pencari:
+   db.credit_overrides.find({status:"approved", $or:[{amount:0},{amount:null}], consumed:{$ne:true}})
+```
+
+### credit_gate_rejections  [CR-T3 — pesanan yang ditolak gerbang kredit saat dibuat]
+```
+Collection:  credit_gate_rejections    Prefix: cgr_
+Layanan:     services/credit_gate.py (`record_rejection`, `tandai_penolakan_dilanjutkan`)
+Router:      routers/crm.py (`GET /credit-gate-rejections?status=&customer_id=` berhalaman, `GET …/{id}` memuat
+             `payload_snapshot`; credit_override.view — pembuat pesanan sendiri selalu boleh)
+Index:       uq_id (unik) · (entity_id, status, created_at)
+**SCOPED** (`entity_id` = PT pesanan yang ditolak).
+
+  id · entity_id · customer_id · customer_name · actor_id · actor_name · amount · term_code · result
+  reasons[]        {code, result, message, data}
+  exposure · limit · overdue    potret hasil gerbang (D3; tidak dihitung ulang)
+  payload_snapshot isi permintaan `POST /api/sales-orders`
+  status           terbuka → dilanjutkan (izin kredit pelanggan itu di PT itu disetujui) | kedaluwarsa · override_id
+  created_at · updated_at
+```
 
 ### ai_action_proposals  [AG-T1 — kartu tindakan Tanya KN: draf PO, pengingat tagih, tindak lanjut pelanggan]
 Kartu disiapkan asisten (alat `propose_action`) dan baru dijalankan saat pembuatnya menekan Setujui. **USER_SCOPED**
@@ -3507,6 +3556,7 @@ pmeth_  → payment_methods           [PM-T1]
 bac_    → bank_account_changes      [PM-T1]
 ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
+cgr_    → credit_gate_rejections    [CR-T3]
 aiact_  → ai_action_proposals       [AG-T1]
 pyc_    → payment_codes             [PM-T2]
 bgh_    → budget_history            [PK-39]
@@ -3982,7 +4032,8 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | payment_plans | pyp_ | services/payment_plan_service.py, services/billing_schedule_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. CR-T2: juga jadwal tagihan mesin (`origin: term`, tanpa nomor) — satu jadwal hidup per pesanan. Scoped `entity_id`. PK-09: `schedule_history[]` (`at` · `by` · `reason` · `lines_before`) — satu butir tiap ubah baris jadwal; status & terbayar baris tidak dari klien. PM-T2: `lines[].pay_code` = kode bayar baris tagihan (`payment_codes`, diisi `payment_code_service.ensure_for_line`). |
 | penalties | pnl_ | services/penalty_service.py, routers/payment_plans.py | FASE G-2 — nota denda keterlambatan (`draft` tanpa jurnal → `issued`/`waived`/`adjusted`/`paid`), nomor `<ENT>/DN-DENDA-#####`. Scoped `entity_id`. CR-T4: lahir dari SEMUA jadwal hidup (`payment_plans` `origin` `term` jadwal tagihan CR-T2 maupun `manual`; `plan_id` = jadwal, `line_seq` = baris) — jalur "pesanan tanpa rencana" (`plan_id: ""`, `line_seq: 0`) tidak lagi membuat nota baru; `policy_snapshot` = aturan yang dipakai (`penalty_service.penalty_policy`) + `sources` {mode, base, rate_pct_per_month, cap_pct, grace_days, min_amount: `global`·`pt`·`pelanggan`·`rencana`} + `waiver` ({reason, valid_until} bila bebas denda) — diperbarui selama nota masih `draft`. PK-08: `days_prior` (hari yang sudah dimuat nota sebelumnya untuk baris yang sama; `billable_days` = hari nota ini saja, `days_late` kumulatif), `payments[]` (`id` pnp_ · `amount` · `method` · `account_id` · `cash_txn_id` · `status` pending→applied→done · `at` · `by` · `cash_doc`), `adjustments[]` (`seq` · `from` · `to` · `delta` · `reason_code` · `je_id` · `at` · `by`; jurnal pembalik `<id>:adjust:<seq>`). Bayar denda = kas `cash_transactions` `cash_pnl_<id pembayaran>` (`ref_type: "penalty"`, `ref_id` = nota, lawan 1-1270). |
 | payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. PK-19: `status` `pending` → `done` · `failed` · `reversed` (niat dulu; ulang dengan pilihan sama meneruskan), `plan[]` (baris rencana efek: `{order_id, amount, deposit_taken, allocated, ar}` untuk alih deposit; `{order_id, amount}` untuk hapus sisa), `gl_status`/`gl_error`/`journal_entry_id` (jurnal keputusan, PK-18; jenis registri `payment_variance`), `reversal_gl_status`/`reversal_gl_error` + `reversal_steps.deposit_restored` (pembatalan), `error` (galat efek terakhir). Jurnal alih deposit per baris `source_id = <id>:<id pesanan>`. |
-| credit_overrides | cro_ | routers/sales_orders.py, so_approvals | Override limit kredit (pending→approved). |
+| credit_overrides | cro_ | services/credit_override_service.py, services/credit_gate.py, routers/crm.py, routers/so_approvals.py | Izin kredit (pending→approved). CR-T3: `scope` pesanan/pelanggan, `amount` > 0, `remaining_amount`, `valid_until`, `reason_code`/`reason_label`, `used_by[]`. |
+| credit_gate_rejections | cgr_ | services/credit_gate.py, routers/crm.py | CR-T3 — pesanan yang ditolak gerbang kredit saat dibuat (potret eksposur + isi permintaan). Scoped `entity_id`. |
 | collection_followups | cf_ | routers/crm.py | Follow-up penagihan AR. |
 | sales_targets | st_ | routers/hr_kpi, home | Target penjualan per sales/periode. |
 | sales_incentives | si_ | routers/incentive_rates, home | Perhitungan insentif sales. |

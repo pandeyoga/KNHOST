@@ -260,10 +260,15 @@ async def test_KFT7_U4_persen_peringatan_plafon(klien, kepala_admin, db):
     # 7 jt ≥ 60 % × 10 jt = 6 jt → peringatan, di kedua pembaca.
     assert await _status_kredit(c) == "warning" and await _status_umur_piutang(c) == "warning"
     # Pemeriksaan kredit saat membuat pesanan memakai persen yang sama: proyeksi 7 jt + 0 → "warning".
-    from services.customer_service import check_credit_for_order
-    assert (await check_credit_for_order(c, 0))["level"] == "warning"
+    # CR-T3 — `check_credit_for_order` dihapus (D8); satu mesin gerbang kredit `credit_gate.evaluate` (peringatan/lolos).
+    from services import credit_gate as cg
+
+    async def _gerbang():
+        return (await cg.evaluate(customer_id=c["id"], entity_id=KSC, checkpoint=cg.PESANAN_DIBUAT,
+                                  order_amount=0))["result"]
+    assert await _gerbang() == "peringatan"
     await _pulihkan(klien, kepala_admin, "ar.credit_warning_pct", KSC)
-    assert (await check_credit_for_order(c, 0))["level"] == "ok"
+    assert await _gerbang() == "lolos"
 
 
 # ── U5 — satu pembaca: umur piutang dan kartu pelanggan sama (dirangkum di U3/U4) ──────────────────────────────────

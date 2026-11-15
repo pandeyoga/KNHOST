@@ -102,7 +102,9 @@ test("CR-T1 U17 (sales): plafon 50 jt 'khusus', Ajukan perubahan, tanpa Setujui;
   expect(q("customer-credit-source-limit").textContent).toBe("khusus");
   expect(q("customer-credit-source-block-days").textContent).toBe("ikut PT");
   expect(q("customer-credit-value-block-days").textContent).toBe("14 hari");
-  expect(q("customer-credit-row-terms").textContent).toContain("belum dipakai saat pesanan dibuat");
+  // CR-T3 — termin yang diizinkan kini ditegakkan gerbang kredit saat pesanan dibuat; "Termin bawaan" tetap bertanda.
+  expect(q("customer-credit-row-terms").textContent).not.toContain("belum dipakai saat pesanan dibuat");
+  expect(q("customer-credit-row-default-term").textContent).toContain("belum dipakai saat pesanan dibuat");
   expect(q("customer-credit-request")).not.toBeNull();
   expect(q("customer-credit-request").disabled).toBe(false);
   expect(q("customer-credit-approve")).toBeNull();

@@ -874,10 +874,19 @@ async def _assert_note_still_valid(amd: Dict[str, Any]) -> None:
 
 # ── Penerapan ────────────────────────────────────────────────────────────────
 async def _apply(amd: Dict[str, Any], actor: Dict[str, Any], auto: bool) -> Dict[str, Any]:
+    sebelum = await _load_order(amd["doc_id"])   # CR-T3 — nilai tagihan sebelum diterapkan (titik `pesanan_diubah`)
     if amd["method"] == "re_derive":
         refs = await _apply_re_derive(amd, actor)
     else:
         refs = await _apply_note(amd, actor)
+    try:   # CR-T3 — sesudah tersimpan: nilai tagihan naik (hitung ulang / nota debit) → gerbang kredit `pesanan_diubah`
+        from services import credit_gate as _cg
+        from services.customer_service import _order_grand_total
+        await _cg.after_order_changed(amd["doc_id"], _order_grand_total(sebelum), sebelum.get("payment_term_code") or "",
+                                      actor)
+    except Exception as exc:  # noqa: BLE001 — amandemen tetap berlaku; penilaian kredit dicatat
+        import logging
+        logging.getLogger(__name__).warning("[CR-T3] gerbang kredit sesudah amandemen %s gagal: %s", amd.get("number"), exc)
 
     now = now_iso()
     await db[AMD_COLL].update_one({"id": amd["id"]}, {"$set": {

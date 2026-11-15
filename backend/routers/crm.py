@@ -16,7 +16,7 @@ from schemas import (
 )
 from services.customer_service import (
     customer_360, compute_customer_credit, can_access_customer, can_collect_customer, can_view_credit, collection_worklist,
-    evaluate_credit_gate, collection_reminders,
+    collection_reminders,
 )
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
 from services import credit_override_service as cos   # CR-T3 — izin kredit
@@ -187,7 +187,57 @@ async def list_credit_overrides(request: Request, status: str = None, scope: str
         rows = [r for r in rows if r["scope"] == scope]
     if str(valid or "").lower() in ("1", "true", "ya"):
         rows = [r for r in rows if r["usable"]]
+    from services.credit_profile_service import ringkas_pt
+    pt = {e["id"]: e for e in await ringkas_pt({r.get("entity_id") for r in rows})}
+    for r in rows:   # N5 — konfirmasi layar menyebut PT (bukan id teknis)
+        e = pt.get(r.get("entity_id")) or {}
+        r["entity_name"] = e.get("short_name") or e.get("legal_name") or ""
     return rows
+
+
+@router.get("/credit-gate-rejections")
+async def list_credit_gate_rejections(request: Request, status: str = Query(""), customer_id: str = Query(""),
+                                      page: int = Query(1, ge=1),
+                                      page_size: int = Query(25, ge=1, le=100)) -> Dict[str, Any]:
+    """CR-T3 — pesanan yang ditolak gerbang kredit saat dibuat, terbaru dulu, berhalaman, PT aktif. Pemegang
+    `credit_override.view` melihat cakupan datanya; pembuat pesanan (tanpa izin itu) selalu melihat penolakannya sendiri."""
+    actor = await require_any_permission(request, [("credit_override", "view"), ("order", "create")],
+                                         detail=PESAN_IZIN_LIHAT)
+    q: Dict[str, Any] = {}
+    if status:
+        q["status"] = status
+    if customer_id:
+        q["customer_id"] = customer_id
+    if not await has_permission(actor, "credit_override", "view"):
+        q["actor_id"] = actor.get("id")
+    elif own_scoped(actor):
+        from services.customer_service import scope_query
+        cids = await db.customers.distinct("id", scope_query(actor, {}))
+        q["$or"] = [{"actor_id": actor.get("id")}, {"customer_id": {"$in": cids}}]
+    q = resolve_list_scope("credit_gate_rejections", q, await entity_ctx(request))
+    total = await db.credit_gate_rejections.count_documents(q)
+    rows = await db.credit_gate_rejections.find(q, {"_id": 0, "payload_snapshot": 0}).sort("created_at", -1) \
+        .skip((page - 1) * page_size).limit(page_size).to_list(page_size)
+    return {"items": [safe_doc(r) for r in rows], "total": total, "page": page, "page_size": page_size}
+
+
+@router.get("/credit-gate-rejections/{rejection_id}")
+async def get_credit_gate_rejection(rejection_id: str, request: Request) -> Dict[str, Any]:
+    """CR-T3 — rincian penolakan, termasuk `payload_snapshot` (isi permintaan pesanan)."""
+    actor = await require_any_permission(request, [("credit_override", "view"), ("order", "create")],
+                                         detail=PESAN_IZIN_LIHAT)
+    doc = await db.credit_gate_rejections.find_one({"id": rejection_id}, {"_id": 0})
+    if doc and doc.get("actor_id") != actor.get("id"):
+        boleh = await has_permission(actor, "credit_override", "view")
+        if boleh and own_scoped(actor):
+            cust = await db.customers.find_one({"id": doc.get("customer_id")}, {"_id": 0}) or {}
+            boleh = await can_access_customer(actor, cust)
+        if not boleh:
+            doc = None
+    if not doc:
+        raise HTTPException(status_code=404, detail="Penolakan gerbang kredit tidak ditemukan")
+    await guard_doc(request, "credit_gate_rejections", doc, strict=False)
+    return safe_doc(doc)
 
 
 @router.get("/credit-overrides/{override_id}")
@@ -226,8 +276,10 @@ async def get_collection_worklist(request: Request, sales_id: str = None, entity
 
 
 @router.get("/customers/{customer_id}/credit-status")
-async def get_credit_status(customer_id: str, request: Request, amount: float = 0) -> Dict[str, Any]:
-    """Preview gate kredit (tanpa konsumsi override) untuk UI buat SO."""
+async def get_credit_status(customer_id: str, request: Request, amount: float = 0, term_code: str = "",
+                            entity_id: str = "") -> Dict[str, Any]:
+    """Pratinjau gerbang kredit (tanpa memakai izin) untuk layar buat pesanan. CR-T3 — field lama dipertahankan, ditambah
+    `gate` (hasil `credit_gate.evaluate` titik `pesanan_dibuat`, PT pesanan: `entity_id` → PT pelanggan → PT aktif)."""
     actor = await require_permission(request, "order", "view")
     customer = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0}))
     if not customer:
@@ -235,12 +287,21 @@ async def get_credit_status(customer_id: str, request: Request, amount: float = 
     # INV-ENTITY-01 (KN-079-IDOR-CREDIT-STATUS P1): konsisten dgn /360 — cegah bocor kredit/AR lintas-PT.
     if not can_view_credit(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
-    gate = await evaluate_credit_gate(customer, float(amount or 0))
+    from entity_scope import resolve_requested_entity
+    from services import credit_gate as cg
+    ctx = await entity_ctx(request)
+    eid = resolve_requested_entity(ctx, entity_id) if entity_id else (customer.get("entity_id") or ctx.active_entity_id)
+    gate = await cg.evaluate(customer_id=customer_id, entity_id=eid, checkpoint=cg.PESANAN_DIBUAT,
+                             order_amount=float(amount or 0), term_code=term_code, actor=actor)
+    raw = gate.get("raw_result") or cg.LOLOS
     return {
-        "level": gate["level"], "blocked": gate["blocked"],
-        "allowed_after_override": gate["allowed_after_override"],
-        "reasons": gate["reasons"], "credit": gate["credit"], "projected_ar": gate["projected_ar"],
-        "has_approved_override": bool(gate["override"]),
+        "level": {"tahan": "blocked", "tolak": "blocked", "peringatan": "warning"}.get(raw, "ok"),
+        "blocked": gate["result"] in (cg.TAHAN, cg.TOLAK),
+        "allowed_after_override": gate["result"] == cg.LOLOS and bool(gate.get("override")),
+        "reasons": [r["message"] for r in gate.get("reasons") or []],
+        "credit": await compute_customer_credit(customer, eid), "projected_ar": (gate.get("exposure") or {}).get("total", 0),
+        "has_approved_override": bool(gate.get("override")),
+        "gate": gate,
     }
 
 

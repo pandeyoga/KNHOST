@@ -40,8 +40,9 @@ function rowsOf(eff, terms) {
     ["limit", "Plafon kredit", limitText, eff.limit_source],
     ["valid-until", "Berlaku sampai", eff.limit_mode === "khusus" ? valueText("limit_valid_until", eff.limit_valid_until) : "—",
       eff.limit_mode === "khusus" ? "khusus" : "bawaan_pt"],
+    // CR-T3 — termin di luar daftar kini ditolak gerbang kredit saat pesanan dibuat (tanda "belum dipakai" dicabut)
     ["terms", "Termin yang diizinkan", valueText("allowed_term_codes", eff.allowed_term_codes, terms),
-      (eff.allowed_term_codes || []).length ? "khusus" : "bawaan_pt", true],
+      (eff.allowed_term_codes || []).length ? "khusus" : "bawaan_pt"],
     ["default-term", "Termin bawaan", valueText("default_term_code", eff.default_term_code, terms),
       eff.default_term_code ? "khusus" : "bawaan_pt", true],
     ["block-days", "Tahan pesanan bila telat lebih dari", `${eff.overdue_block_days ?? 0} hari`, khusus(eff.block_days_source)],

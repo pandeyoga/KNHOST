@@ -199,7 +199,9 @@ QUEUES: List[tuple] = [
     # Override batas kredit MANDIRI (Pelanggan/POS, tanpa SO; diputus Manajer di Pusat Persetujuan tab Kredit).
     # Yang tertaut SO (`order_id`) sudah dihitung baris `sales_order` lewat entri `pending_approvals` kredit.
     ("credit_override", "Override batas kredit pelanggan menunggu ACC", "approval-inbox", "credit_overrides",
-     {"status": "pending", "$or": [{"order_id": ""}, {"order_id": None}, {"order_id": {"$exists": False}}]}),
+     {"status": "pending", "$or": [{"order_id": ""}, {"order_id": None}, {"order_id": {"$exists": False}},
+                                   # CR-T3 — izin lingkup pesanan dari kartu pelanggan/checkout (tanpa entri di pesanan)
+                                   {"scope": "pesanan", "has_so_entry": {"$ne": True}}]}),
     # Nota kredit batal item Pesanan Khusus (SO terbit) menunggu tinjauan Finance (`finance_amendment.
     # review_credit_note`: koreksi/terbitkan/batalkan) — antreannya di Meja Finance ("Nota kredit batal item").
     ("od_cancel_credit_note", "Nota kredit batal item menunggu Finance", "finance-desk", "credit_notes",

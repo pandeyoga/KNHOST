@@ -56,8 +56,21 @@ def _approval_subs(order: Dict[str, Any]) -> List[str]:
     return subs or ["menunggu_validasi"]
 
 
+#: CR-T3 — status yang tidak lagi diberi sub-status "Tahan kredit" (selesai / batal / terkirim penuh).
+TANPA_TAHAN = {"cancelled", "expired", "done", "delivered", "shipped", "dispatched"}
+
+
 def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
-    """Petakan `status` (+ konteks) → (stage, [sub_status]). Pure function."""
+    """Petakan `status` (+ konteks) → (stage, [sub_status]). Pure function. CR-T3 — `credit_hold: true` mendahulukan
+    sub-status `tahan_kredit` ("Tahan kredit") selama pesanan belum selesai/terkirim penuh."""
+    stage, subs = _derive_dasar(order)
+    o = order or {}
+    if o.get("credit_hold") and (o.get("status") or "reserved") not in TANPA_TAHAN:
+        return stage, ["tahan_kredit", *[s for s in subs if s != "tahan_kredit"]]
+    return stage, subs
+
+
+def _derive_dasar(order: Dict[str, Any]) -> Tuple[str, List[str]]:
     o = order or {}
     status = o.get("status") or "reserved"
     # KN-D14 — baris backorder yang sudah `fulfilled` tidak dihapus dari daftar, jadi
@@ -158,6 +171,7 @@ SUBSTATUS_LABELS: Dict[str, str] = {
     "sebagian_dikirim": "Sebagian dikirim",
     "dibatalkan": "Dibatalkan",
     "kedaluwarsa": "Kedaluwarsa",
+    "tahan_kredit": "Tahan kredit",   # CR-T3 — gerbang kredit menahan pesanan (`credit_hold`)
 }
 
 
@@ -165,7 +179,7 @@ async def backfill_so_status(database) -> Dict[str, int]:
     """Backfill `stage`+`sub_status` ke SEMUA sales_orders (idempotent, additive).
     Tidak menyentuh `status`. Return statistik {updated, total, invalid}."""
     orders = await database.sales_orders.find(
-        {}, {"_id": 0, "id": 1, "status": 1, "has_backorder": 1, "backorders": 1,
+        {}, {"_id": 0, "id": 1, "status": 1, "has_backorder": 1, "backorders": 1, "credit_hold": 1,
              "approval_required": 1, "required_approval_role": 1, "pending_approvals": 1}
     ).to_list(100000)
     updated = 0

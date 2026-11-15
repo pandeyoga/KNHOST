@@ -457,7 +457,8 @@ export function useAppActions(state) {
       const detail = error.response?.data?.detail;
       // KN_17 — 409 gate kredit (customer terblokir tanpa override approved)
       if (typeof detail === "object" && detail && detail.code === "CREDIT_BLOCKED") {
-        const reasons = (detail.reasons || []).join("; ");
+        // CR-T3 — alasan kini {code, message}
+        const reasons = (detail.reasons || []).map((r) => (typeof r === "string" ? r : r?.message || "")).filter(Boolean).join(" ");
         setNotice(`⛔ ${detail.message}${reasons ? " — " + reasons : ""}`);
         return false;
       }
