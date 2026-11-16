@@ -143,3 +143,8 @@ temuan review berikutnya.
 | K-75 | Barang keluar gudang | Semua wajib surat jalan yang memuat packing list | Permintaan klien — MP-T5 |
 | K-76 | Gudang greige, PFD, PFP | Satu gudang, satu admin gudang | Permintaan klien — MP-T5 (pengaturan gudang, bukan kode) |
 | K-77 | Akses pembelian greige/PFP/PFD | Dibuka untuk semua MD dulu | Permintaan klien — MP-T5 |
+| K-78 | Akun penampung jasa makloon yang sudah diterima tetapi fakturnya belum dicocokkan (K-63) | **GR/IR 2-1150** — sama dengan barang PO diterima belum ditagih; hutang 2-1100 lahir saat faktur mitra dicocokkan | Jawaban pemilik 16 Nov (di sesi) — MP-T4b |
+| K-79 | Jurnal klaim potong bon (K-64) | Roll hasil masih di stok: **Dr Hutang 2-1100 / Cr Persediaan 1-1300** (nilai roll turun). Roll sudah terjual: tetap **Cr Pendapatan Klaim Makloon 4-9200** | Jawaban pemilik 16 Nov — MP-T4b |
+| K-80 | Cara memasang perubahan jurnal makloon | **Sakelar per PT**, bawaan cara lama; dinyalakan per PT sesudah angkanya dicocokkan manual dengan buku hutang (H5 tetap: menyalakan untuk PT nyata = pemilik) | Jawaban pemilik 16 Nov — MP-T4b |
+| K-81 | Tagihan jasa tarif borongan (K-68) | **Sekali di langkah terakhir** — satu tagihan jasa seluruh SPK saat hasil akhir diterima; langkah antara tidak ditagih sendiri | Jawaban pemilik 16 Nov — MP-T4b |
+
