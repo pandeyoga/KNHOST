@@ -274,8 +274,11 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
 - Selesai: MP-T1, MP-T2, MP-T3, MP-T4a, MP-T5 (5a/5b/5c). MP-T4 dipecah (`00` §8): MP-T4b `tahan` (H4 akun/arah jurnal
   hutang jasa & hasil klaim, H5 sakelar per PT) — pertanyaan dan usulan di "Menunggu pemilik".
 - Uji: per unit uji penerimaan (database tiruan + MongoDB asli untuk penerimaan/teruskan) dan uji lama yang terdampak;
-  uji jalan peramban untuk tab Rute, wizard, isi mitra, teruskan, PO bahan MD, surat jalan. Gate `--ci` sekali di akhir
-  gelombang (hasil di bawah bila sudah selesai).
+  uji jalan peramban untuk tab Rute, wizard, isi mitra, teruskan, PO bahan MD, surat jalan.
+- Gate `--ci` akhir gelombang: putaran pertama menemukan 3 pelanggaran baru (dua cadangan pengaturan `[]` ≠ bawaan registri;
+  layar Order Makloon memanggil `/customers` untuk peran gudang) → diperbaiki (`[MP-T5] Pelanggaran baru …`); putaran
+  konfirmasi: **tidak ada pelanggaran baru** terhadap garis dasar R0 (`scripts/blueprint/bandingkan_pelanggaran_gate.py`),
+  gate tetap merah seperti garis dasar (38 pemeriksaan FAIL; garis dasar R0 38). Log: `garis-dasar-gate/2026-11-16_MP_gate_ci.log`.
 - Hambatan lingkungan: server dev frontend lama tidak mati oleh pola `pkill "craco start"` (proses bernama
   `craco/dist/scripts/start.js`) sehingga satu uji jalan sempat membaca bundel lama — dimatikan dengan PID.
 
