@@ -1,0 +1,42 @@
+== F-S2 realokasi roll sesudah DP dibayar
+  saldo awal {'ar_delivered': 23449527.0, 'open_orders_amount': 23207225.1, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+[sales] POST /sales-orders -> 200 {"id": "so_512257925716", "number": "KSC/SO-00009", "status": "reserved", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "customer_city": "Jakarta", "shipping_address": {"id": "addr_001", "label": "To
+  SO {'number': 'KSC/SO-00009', 'status': 'reserved', 'grand_total': 5493523.2, 'payment_status': 'pending', 'paid_amount': None, 'amount_paid': None, 'has_backorder': False} qty 260.48 line_total 4949120.0 rolls [('roll_26591ebc08f4', 125.84), ('roll_17c1added9fb', 134.64)]
+  roll dipegang [('roll_26591ebc08f4', 'reserved', 125.84), ('roll_17c1added9fb', 'reserved', 134.64)] alok AR []
+[finance] POST /ar-receipts -> 200 {"id": "arc_ce71deb86c97", "number": "KSC/AR-00008", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "receipt_d
+  SO {'number': 'KSC/SO-00009', 'status': 'reserved', 'grand_total': 5493523.2, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': False} qty 260.48 line_total 4949120.0 rolls [('roll_26591ebc08f4', 125.84), ('roll_17c1added9fb', 134.64)]
+  roll dipegang [('roll_26591ebc08f4', 'reserved', 125.84), ('roll_17c1added9fb', 'reserved', 134.64)] alok AR [('KSC/AR-00008', [(True, None)])]
+  saldo {'ar_delivered': 23449527.0, 'open_orders_amount': 25953986.3, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+[salesadmin] GET /sales-orders/so_512257925716/items/prod_b3580abfdfea/roll-candidates -> 200 {"order_id": "so_512257925716", "product_id": "prod_b3580abfdfea", "unit": "yard", "line_is_bs": false, "rule": null, "recommendation": {"grade": "", "reason": "Belum ada aturan grade untuk pelanggan ini — Admin Sales memilih sendiri."}, "items": [{"id": "roll_c3e8fb05c977", "roll_no": "RL-33440", "
+  kandidat pengganti [('roll_9cbfc263041c', 136.44)]
+-- ganti 2 roll (260.48) dengan 1 roll lain (136.44)
+[salesadmin] POST /sales-orders/so_512257925716/items/prod_b3580abfdfea/reallocate -> 200 {"id": "so_512257925716", "number": "KSC/SO-00009", "status": "reserved", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "customer_city": "Jakarta", "shipping_address": {"id": "addr_001", "label": "Toko Utama", "recipient_name": "Pak Hendra", "phone": "6281234567890", "city": "Jakarta", "address": "
+  SO {'number': 'KSC/SO-00009', 'status': 'reserved', 'grand_total': 5493523.2, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': True} qty 260.48 line_total 4949120.0 rolls [('roll_9cbfc263041c', 136.44)]
+  roll dipegang [('roll_9cbfc263041c', 'reserved', 136.44)] alok AR [('KSC/AR-00008', [(True, None)])]
+  saldo {'ar_delivered': 23449527.0, 'open_orders_amount': 25953986.3, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+  DP 2746762 vs total baru 5493523.2 total lama 5493523.2
+== F-S2 lanjut: konfirmasi → kirim roll pengganti (136,44 dari 260,48) → tagihan vs DP
+[salesadmin] POST /sales-orders/so_512257925716/confirm -> 200 {"id": "so_512257925716", "number": "KSC/SO-00009", "status": "confirmed", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain 
+[warehouse] POST /outbound/tasks/wms_6d267d978287/scan-pick -> 200 {"id": "wms_6d267d978287", "entity_id": "ent_ksc", "flow_type": "outbound", "source_type": "sales_order", "order_id": "so_512257925716", "order_number": "KSC/SO
+[manager] POST /outbound/so/so_512257925716/loading-check/override -> 200 {"session_id": null, "result": "override", "reason": "[UJI-AUDIT-1116] roll belum bertag RFID", "by": "Dewi Manager", "warehouse_id": null, "manifest": [{"roll_
+[warehouse] POST /outbound/tasks/wms_6d267d978287/dispatch -> 200 {"task": {"id": "wms_6d267d978287", "entity_id": "ent_ksc", "flow_type": "outbound", "source_type": "sales_order", "order_id": "so_512257925716", "order_number": "KSC/SO-00009", "allocation_id": "allo
+  SO {'number': 'KSC/SO-00009', 'status': 'partially_shipped', 'grand_total': 5493523.2, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': True} qty 260.48 line_total 4949120.0 rolls [('roll_9cbfc263041c', 136.44)]
+  roll dipegang [('roll_9cbfc263041c', 'in_transit_sales', 136.44)] alok AR [('KSC/AR-00008', [(True, None)])]
+  backorders [{'id': 'bo_f324a9088f2f', 'product_id': 'prod_b3580abfdfea', 'sku': 'KNWVN0012-L-4XXX-XA-XX-XX', 'product_name': 'CLOVERTEA 4 A', 'entity_id': 'ent_ksc', 'customer_city': 'Jakarta', 'requested_qty': 260.48, 'reserved_qty': 136.44, 'backorder_qty': 124.04, 'status': 'waiting_stock', 'created_at': '2026-11-16T07:34:12.095288+00:00', 'updated_at': '2026-11-16T07:34:12.095294+00:00'}] status partially_shipped
+  jurnal [('KSC/JE-00080', 'advance_reclass', [('2-1400', 2746762.0, 0.0), ('1-1200', 0.0, 2746762.0)]), ('KSC/JE-00079', 'shipment_cogs', [('5-1000', 1866499.2, 0.0), ('1-1300', 0.0, 1866499.2)])]
+  saldo {'ar_delivered': 23580284.6, 'open_orders_amount': 25823228.7, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+[finance] GET /ar-receipts/open-orders -> 200 [{"order_i
+  piutang terbuka (layar kasir AR) [('KSC/SO-00009', 5493523.2, None, 2746761.2)]
+[salesadmin] GET /sales-orders -> 200 [{"id": "s
+  daftar pesanan [('KSC/SO-00009', 'partially_shipped', 5493523.2, 'partial', True)]
+-- F-S5 batalkan pesanan sesudah terkirim sebagian (sisa backorder 124,04)
+[salesadmin] POST /sales-orders/so_512257925716/cancel -> 409 {"detail": "Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)"}
+[salesadmin] POST /sales-orders/so_512257925716/mark-delivered -> 409 {"detail": "Hanya order 'shipped' yang bisa ditandai diterima (saat ini 'partially_shipped')."}
+  SO {'number': 'KSC/SO-00009', 'status': 'partially_shipped', 'grand_total': 5493523.2, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': True} qty 260.48 line_total 4949120.0 rolls [('roll_9cbfc263041c', 136.44)]
+  roll dipegang [('roll_9cbfc263041c', 'in_transit_sales', 136.44)] alok AR [('KSC/AR-00008', [(True, None)])]
+  backorders [{'id': 'bo_f324a9088f2f', 'product_id': 'prod_b3580abfdfea', 'sku': 'KNWVN0012-L-4XXX-XA-XX-XX', 'product_name': 'CLOVERTEA 4 A', 'entity_id': 'ent_ksc', 'customer_city': 'Jakarta', 'requested_qty': 260.48, 'reserved_qty': 136.44, 'backorder_qty': 124.04, 'status': 'waiting_stock', 'created_at': '2026-11-16T07:34:12.095288+00:00', 'updated_at': '2026-11-16T07:34:12.095294+00:00'}] status partially_shipped
+  saldo {'ar_delivered': 23580284.6, 'open_orders_amount': 25823228.7, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+-- jalan keluar SO terkirim sebagian: PATCH kurangi qty ke yang terkirim
+[salesadmin] PATCH /sales-orders/so_512257925716 -> 422 {"detail": [{"type": "missing", "loc": ["body", "data"], "msg": "Field required", "input": {"items": [{"product_id": "prod_b3580abfdfea", "quantity": 136.44, "unit": "yard"}]}, "url": "https://errors.pydantic.dev/2.13/v/missing"}]}
+[salesadmin] POST /sales-orders/so_512257925716/release-reservation -> 409 {"detail": "Order tidak dalam status yang di-reserve"}
+[salesadmin] GET /fulfillment/wizard/so_512257925716 -> 200 {"so": {"id": "so_512257925716", "number": "KSC/SO-00009", "entity_id": "ent_ksc", "entity_name": "Sukacita", "status": "partially_shipped"}, "items": [{"product_id": "prod_b3580abfdfea", "sku": "KNWVN0012-L-4XXX-XA-XX-XX", "product_name": "CLOVERTEA 4 A", "qty_needed": 260.48, "unit": "yard", "own_available": 24128.27, "own_warehouses": [{"warehouse_id": "wh_jakarta", "warehouse_name": "Jakarta · Gudang Sukacita", "available_qty": 24128.27}], "other_entities": [], "recommendation": "alokasi_sto

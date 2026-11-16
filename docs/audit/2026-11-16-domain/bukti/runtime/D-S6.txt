@@ -1,0 +1,20 @@
+== D-S6 retur beli (dari tolak QC, potong tagihan) → ACC → kirim → supplier terima → tagihan → reverse
+-- pembuat (mdquality via SPK) vs penyetuju: manager
+[manager] POST /purchase-returns/pret_5f157773d291/approve -> 200 {"id": "pret_5f157773d291", "number": "PRET-00005", "supplier_id": "sup_20bb38b3cddf", "supplier_name": "CV Grey Mandiri Majalaya", "po_id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "warehouse_
+  PRET {'status': 'approved', 'supplier_state': None, 'doc_state': None, 'total_amount': 1400000.0, 'grand_total': 1554000.0, 'debit_note_id': None, 'debit_note_number': 'DN-00003', 'settlement': None}
+  jurnal [('KSC/JE-00074', 'purchase_return', 'Retur beli DN-00003', [('2-1150', 1400000.0, 0.0), ('1-1300', 0.0, 1400000.0)]), ('KSC/JE-00073', 'goods_receipt', 'Goods Receipt KSC/PO-00004', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)])]
+  roll [('RL-46498', 'returned_supplier'), ('RL-46499', 'returned_supplier')] PO {'status': 'closed_short', 'closed_short': None, 'grand_total': 4662000.0}
+[warehouse] POST /purchase-returns/pret_5f157773d291/ship-to-supplier -> 403 {"detail": "Anda belum punya akses untuk menyetujui Retur Pembelian. Minta Admin menambahkan akses 'Pembelian & Pengadaan'."}
+[manager] POST /purchase-returns/pret_5f157773d291/supplier-accept -> 400 {"detail": "Aksi RMA hanya untuk retur beli ber-alur supplier."}
+  PRET {'status': 'approved', 'supplier_state': None, 'doc_state': None, 'total_amount': 1400000.0, 'grand_total': 1554000.0, 'debit_note_id': None, 'debit_note_number': 'DN-00003', 'settlement': None}
+  jurnal [('KSC/JE-00074', 'purchase_return', 'Retur beli DN-00003', [('2-1150', 1400000.0, 0.0), ('1-1300', 0.0, 1400000.0)]), ('KSC/JE-00073', 'goods_receipt', 'Goods Receipt KSC/PO-00004', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)])]
+  roll [('RL-46498', 'returned_supplier'), ('RL-46499', 'returned_supplier')] PO {'status': 'closed_short', 'closed_short': None, 'grand_total': 4662000.0}
+-- tagihan supplier penuh 300 yard padahal 100 yard diretur (potong tagihan)
+[manager] POST /vendor-bills -> 400 {"detail": "3-way match GAGAL (over-billing di luar toleransi). Perbaiki qty tagihan dulu."}
+[manager] POST /vendor-bills -> 200 {"id": "vbill_728996410f23", "bill_number": "VB-00002", "supplier_invoice_no": "INV-UJI-1116b", "po_id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "supplier_id": "sup_20bb38b3cddf", "supplier_name": "CV Grey Mandiri Majalaya", "supplier_npwp": "", "warehouse_id": "wh_jakarta", "warehouse_name"
+-- reverse retur beli sesudah diterima supplier
+[manager] POST /purchase-returns/pret_5f157773d291/reverse -> 200 {"id": "pret_5f157773d291", "number": "PRET-00005", "supplier_id": "sup_20bb38b3cddf", "supplier_name": "CV Grey Mandiri Majalaya", "po_id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "warehouse_id": "wh_jakarta", "warehouse_name": "Jakarta · Gudang Sukacita", "entity_id": "ent_ksc", "items": [
+  PRET {'status': 'cancelled', 'supplier_state': None, 'doc_state': None, 'total_amount': 1400000.0, 'grand_total': 1554000.0, 'debit_note_id': None, 'debit_note_number': 'DN-00003', 'settlement': None}
+  jurnal [('KSC/JE-00076', 'purchase_return_reversal', 'Reversal KSC/JE-00074 — Pembatalan/koreksi re', [('2-1150', 0.0, 1400000.0), ('1-1300', 1400000.0, 0.0)]), ('KSC/JE-00075', 'vendor_bill', 'Vendor Bill VB-00002', [('2-1150', 2800000.0, 0.0), ('1-1500', 308000.0, 0.0), ('2-1100', 0.0, 3108000.0)])]
+  roll [('RL-46498', 'quarantine'), ('RL-46499', 'quarantine')] PO {'status': 'completed', 'closed_short': None, 'grand_total': 4662000.0}
+[manager] POST /purchase-returns/pret_5f157773d291/reverse -> 200 {"id": "pret_5f157773d291", "number": "PRET-00005", "supplier_id": "sup_20bb38b3cddf", "supplier_name": "CV Grey Mandiri Majalaya", "po_id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "warehouse_

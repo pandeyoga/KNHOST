@@ -1,0 +1,39 @@
+  step1 {'stage_code': 'pfd', 'stage_label': 'PFD — Pre-treatment untuk celup', 'stage_kind': 'makloon', 'stage_seq': 50, 'stage_from_stage': 'grey', 'stage_to_stage': 'pfd', 'stage_source': "stage_code='pfd'", 'changes_stage': True, 'input_qty': 200.0, 'qty_rolls': None, 'qty_rolls_out': 4, 'yield_factor': 0.0, 'yield_override_reason': '', 'expected_output_qty': 200.0, 'expected_byproduct_qty': 0.0, 'actual_output_qty': 100.0, 'actual_byproduct_qty': 0.0, 'tariff_rate': 0.0, 'aux_cost': 0, 'claim': {'status': 'open', 'required': True, 'action': '', 'amount': 0.0, 'amount_suggested': 10880000.0, 'reason': '', 'history': [{'at': '2026-11-16T07:37:16.386787+00:00', 'event': 'opened', 'actor': 'system', 'note': 'Hasil kurang 50.00% dari estimasi (100 vs 200 kg) — melewati toleransi 3%. Kekurangan 100 kg ≈ Rp 10.880.000.'}], 'variance_qty': -100.0, 'variance_pct': -50.0, 'tolerance_pct': 3.0, 'shortfall_qty': 100.0, 'unit': 'kg', 'unit_value': 108800.0, 'message': 'Hasil kurang 50.00% dari estimasi (100 vs 200 kg) — melewati toleransi 3%. Kekurangan 100 kg ≈ Rp 10.880.000.', 'opened_at': '2026-11-16T07:37:16.386781+00:00'}, 'status': 'received', 'gl_status': 'posted', 'output_unit_cost': 108800.0}
+  SPK {'costing': {'material_cost': 10880000.0, 'service_cost': 0.0, 'aux_cost': 0.0, 'byproduct_credit': 0.0, 'hpp_output': 10880000.0, 'hpp_per_unit': 108800.0, 'service_absorption_pending': 0.0, 'service_unabsorbed': 0.0, 'steps': [{'seq': 1, 'process_type': 'pre_treatment', 'stage_code': 'pfd', 'stage_label': 'PFD — Pre-treatment untuk celup', 'changes_stage': True, 'material_flow': 'moves', 'absorbed_service_value': 0.0, 'makloon_name': 'PT Celup Warna Dayeuhkolot', 'status': 'received', 'input_qty': 200.0, 'input_unit': 'kg', 'expected_output_qty': 200.0, 'actual_output_qty': 100.0, 'output_unit': 'kg', 'material_value': 10880000.0, 'service_value': 0.0, 'aux_cost': 0.0, 'byproduct_value': 0.0, 'output_value': 10880000.0, 'hpp_per_unit': 108800.0, 'tariff_basis': 'lumpsum', 'contract_number': '', 'variance_pct': -50.0, 'claim_status': 'open'}, {'seq': 2, 'process_type': 'celup', 'stage_code': 'celup', 'stage_label': 'Celup (Dyeing)', 'changes_stage': True, 'material_flow': 'moves', 'absorbed_service_value': 0.0, 'makloon_name': 'PT Celup Warna Dayeuhkolot', 'status': 'pending', 'input_qty': 100.0, 'input_unit': 'kg', 'expected_output_qty': 100.0, 'actual_output_qty': 0.0, 'output_unit': 'kg', 'material_value': 0.0, 'service_value': 0.0, 'aux_cost': 0.0, 'byproduct_value': 0.0, 'output_value': 0.0, 'hpp_per_unit': 0.0, 'tariff_basis': 'lumpsum', 'contract_number': '', 'variance_pct': None, 'claim_status': 'none'}]}, 'planned_service_cost': 0.0, 'claim_summary': {'open': 1, 'pending_approval': 0, 'approved': 0, 'rejected': 0, 'approved_amount': 0.0, 'needs_action': 1}, 'status': 'partially_received'}
+  roll hasil []
+  loss/claim docs {'makloon_orders': 7, 'makloons': 4}
+  vendor bill jasa []
+-- terima lagi sisa 100 kg (langkah sudah 'received')
+[manager] POST /makloon-orders/mko_d8f1975c5d85/receive -> 409 {"detail": "Step 1 belum di-issue / sudah diterima"}
+== B-S6 batal di tengah saat bahan sudah di mitra (MKO-00004: printing dari greige)
+[manager] POST /makloon-orders/mko_e50c274be5c3/issue -> 200 {"id": "mko_e50c274be5c3", "mko_number": "CST/MKO-00004", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "
+  SPK CST/MKO-00004 in_process [(1, 'printing', 'issued', None, None, 50.0, None, None, None)]
+85:@router.post("/makloon-orders")
+108:@router.post("/makloon-orders/estimate")
+167:@router.post("/makloon-orders/{mko_id}/issue")
+201:@router.post("/makloon-orders/{mko_id}/receive")
+227:@router.post("/makloon-orders/{mko_id}/steps/{seq}/partial-receipts/{grn_id}/cancel")
+240:@router.post("/makloon-orders/{mko_id}/record-service")
+261:@router.post("/makloon-orders/{mko_id}/claim")
+279:@router.post("/makloon-orders/{mko_id}/claim/approve")
+303:@router.post("/makloon-orders/{mko_id}/claim/reject")
+321:@router.post("/makloon-orders/{mko_id}/cancel")
+361:@router.post("/makloon-orders/{mko_id}/steps/{seq}/tolerance")
+383:@router.post("/makloon-orders/{mko_id}/steps/{seq}/material-loss")
+397:@router.post("/makloon-orders/{mko_id}/steps/{seq}/material-loss/{loss_id}/decide")
+421:@router.post("/makloon-orders/{mko_id}/steps/{seq}/return-material")
+
+  MKO-00004 step printing: stage_from_stage pfp stage_to_stage finished | bahan masuk stage: grey
+  stok greige (tersedia, di mitra, status2) (1221.9, 3, ['available', 'consumed', 'subcon'])
+== B-S6 batal saat bahan 50 kg sudah di mitra
+[manager] POST /makloon-orders/mko_e50c274be5c3/cancel -> 200 {"id": "mko_e50c274be5c3", "mko_number": "CST/MKO-00004", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "material_name": "Grey Knit Single Jersey 30s", "material_qty": 50.0, "material_unit": "kg", "material_sou
+  SPK CST/MKO-00004 cancelled [(1, 'printing', 'issued', None, None, 50.0, None, None, None)]
+  jurnal [('CST/JE-00013', 'subcon_issue', 'Subcon Issue CST/MKO-00004 step1', [('1-1350', 2720000.0, 0.0), ('1-1300', 0.0, 2720000.0)]), ('CST/JE-00012', 'subcon_receipt', 'Subcon Receipt CST/MKO-00006 step1', [('1-1300', 10880000.0, 0.0), ('1-1350', 0.0, 10880000.0)])]
+  stok greige (1221.9, 3, ['available', 'consumed', 'subcon'])
+[manager] POST /makloon-orders/mko_e50c274be5c3/steps/1/return-material -> 200 {"id": "mko_e50c274be5c3", "mko_number": "CST/MKO-00004", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "material_name": "Grey Knit Single Jersey 30s", "material_qty": 50.0, "material_unit": "kg", "material_sou
+[manager] POST /makloon-orders/mko_e50c274be5c3/cancel -> 409 {"detail": "Order sudah selesai/dibatalkan"}
+  SPK CST/MKO-00004 cancelled [(1, 'printing', 'returned', None, None, 50.0, None, None, None)]
+  jurnal [('CST/JE-00014', 'subcon_issue_reversal', 'Subcon Issue Reversal CST/MKO-00004 step1', [('1-1300', 2720000.0, 0.0), ('1-1350', 0.0, 2720000.0)]), ('CST/JE-00013', 'subcon_issue', 'Subcon Issue CST/MKO-00004 step1', [('1-1350', 2720000.0, 0.0), ('1-1300', 0.0, 2720000.0)])]
+  stok greige (1271.9, 0, ['available', 'consumed'])
+== B-S5/B-S8 klaim susut MKO-00006: nilai saran vs nilai sebenarnya
+[manager] POST /makloon-orders/mko_d8f1975c5d85/claim -> 400 {"detail": "Tindakan klaim harus salah satu: potong_bon, tagih_ganti, terima_catatan."}

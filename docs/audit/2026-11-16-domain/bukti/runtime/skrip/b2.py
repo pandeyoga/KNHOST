@@ -1,0 +1,20 @@
+from b1 import *
+gk,pfd,pfp,yw=P("DMO-GRY-KNT-001"),P("DMO-PFD-KNT-001"),P("DMO-PFP-WVN-001"),P("DMO-YRN-WVN-30S")
+fin=d.products.find_one({"import_batch":"MIGRASI_MASTER_PRODUK_KN","line_code":"knit","entity_ids":C},{"_id":0})
+celup,prn=M("PT Celup Warna Dayeuhkolot"),M("CV Printing Sablon Cimahi"); w=W("RCM-KNITTING")
+print("-- (1) printing langsung dari GREIGE (belum PFP), hasil = bahan jadi")
+s,a1=mk([{"process_type":"printing","stage_code":"printing","makloon_id":prn["id"],"input_product_id":gk["id"],"output_product_id":fin["id"],"input_qty":50,"colors":2}],gk,50,"kg",w,"A-S6 printing dari greige")
+print("-- (2) celup di mitra PRINTING (process_types mitra tanpa celup), bahan BENANG → bahan jadi")
+s,a2=mk([{"process_type":"celup","stage_code":"celup","makloon_id":prn["id"],"input_product_id":yw["id"],"output_product_id":fin["id"],"input_qty":20}],yw,20,"kg",W("RCM-WOVEN"),"A-S6 celup benang di mitra printing")
+for a in (a1,a2):
+    if isinstance(a,dict) and a.get("id"): ms(a["id"])
+print("== B-S1/B-S4/B-S8 greige → PFD → celup → bahan jadi (200 kg), terima sebagian, HPP")
+s,m=mk([{"process_type":"pre_treatment","stage_code":"pfd","target_use":"dye","makloon_id":celup["id"],"input_product_id":gk["id"],"output_product_id":pfd["id"],"input_qty":200,"rate":5000},
+        {"process_type":"celup","stage_code":"celup","makloon_id":celup["id"],"input_product_id":pfd["id"],"output_product_id":fin["id"],"rate":12000}],gk,200,"kg",w,"B-S1")
+mid=m["id"]; ms(mid)
+call("POST",f"/makloon-orders/{mid}/issue","manager",{"step_seq":1,"from_warehouse_id":w},ent=C,show=200); ms(mid); JJ(2)
+print("-- terima langkah 1 SEBAGIAN: 100 kg (4 roll x 25)")
+call("POST",f"/makloon-orders/{mid}/receive","warehouse",{"step_seq":1,"actual_output_qty":100,"output_warehouse_id":w,"supplier_dn":"SJ-UJI-1","supplier_invoice_no":"INV-UJI-1","rolls":[{"lot":"UJI-MK1","length":25,"grade":"A","dye_lot":""} for _ in range(4)]},ent=C,show=260)
+s,j=call("POST",f"/makloon-orders/{mid}/receive","manager",{"step_seq":1,"actual_output_qty":100,"output_warehouse_id":w,"supplier_dn":"SJ-UJI-1","supplier_invoice_no":"INV-UJI-1","rolls":[{"lot":"UJI-MK1","length":25,"grade":"A","dye_lot":""} for _ in range(4)]},ent=C,show=260)
+m=ms(mid); JJ(3)
+print("  roll hasil",[(r.get("roll_no"),r["status"],r.get("stage"),r.get("length_remaining"),r.get("unit_cost"),r.get("product_id")==pfd["id"]) for r in d.inventory_rolls.find({"lot":"UJI-MK1"})][:4], "HPP bahan greige/kg",[r.get("unit_cost") for r in d.inventory_rolls.find({"product_id":gk["id"],"owner_entity_id":C}).limit(1)])

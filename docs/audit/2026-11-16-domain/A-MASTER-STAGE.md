@@ -36,8 +36,8 @@ Validator transisi `resolve_transition` (`backend/domain_registry.py:949`) dipan
 | A-S2 | lulus | bukti/A-S2.txt — PATCH ubah stage produk ber-stok finished→grey **200 tanpa penjaga transisi** (MS-06), cascade ke template, lalu buntu saat restore |
 | A-S3 | terhambat | varian/spec R&D: data acuan 0 `product_specs`/`special_orders`; form A-F3 butuh alur R&D (disiapkan sesi C) |
 | A-S4 | lulus | bukti/A-S4.txt — katalog orderable memuat 3 produk non-finished (pfd/pfp) → POS bisa jual greige-siap (MS-05) |
-| A-S5 | terhambat | PO benang(kg)/greige(meter): butuh buat PO + terima lewat layar; konversi satuan diinventaris di A-F6 (UomConversionView) |
-| A-S6 | terhambat | langkah makloon tak-cocok-stage lewat layar DAN API: butuh buat SPK baru (mutasi berantai); dugaan kode di MS-02/MK-02, dijalankan sesi B |
+| A-S5 | lulus | bukti/runtime/E-S1.txt — PO greige: satuan `kg` diterima (ada aturan konversi), `lusin` ditolak 400 (tanpa aturan konversi); PO 300 yard diterima, jurnal GR Dr 1-1300/Cr 2-1150 Rp4.200.000 |
+| A-S6 | gagal | bukti/runtime/A-S6.txt — lewat API: (1) printing dari bahan GREIGE padahal langkah `stage_from_stage=pfp` → 200; (2) celup di mitra yang `process_types`-nya tanpa celup, bahan benang → 200; (3) bahan jadi → benang (transisi mundur) → 200 (MK-02, MS-02). Lewat layar belum dijalankan |
 | A-S7 | terhambat | tambah/nonaktifkan tahapan master `process_stages`: butuh layar master tahapan + SPK pemakai; disiapkan sesi B |
 | A-S8 | lulus | bukti/A-S8.txt — dua label PFP/PFD di domain_registry + grey/greige & benang/yarn tersebar (MS-03) |
 | A-S9 | lulus | bukti/A-S9.txt — 282 produk, 41 needs_review, 0 domain_gaps keras, 0 roll tanpa stage |

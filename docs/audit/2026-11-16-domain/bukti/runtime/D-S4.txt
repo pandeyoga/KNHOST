@@ -1,0 +1,48 @@
+== D-S4 cutloss sebagian roll (SO-00005 roll0)
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_5c13772df634", "number": "SRET-00010", "order_id": "so_e8a17adb6989", "order_number": "KSC/SO-00005", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_cb4dcbf68fcb",
+[qc] POST /inspections/ins_ab9889ae868d/lines/insl_25cbb1abfb20/inspect -> 400 {"detail": "Pilih grade RL-35413 — grade ditentukan petugas QC dari total poin (0 poin); sistem tidak mengisi grade otomatis."}
+[qc] POST /inspections/ins_ab9889ae868d/finish -> 400 {"detail": "Belum ada satu baris pun yang diperiksa — keputusan tanpa pemeriksaan membuat tanggalnya jadi bukti palsu."}
+[qc] POST /inspections/ins_ab9889ae868d/lines/insl_25cbb1abfb20/inspect -> 200 {"id": "ins_ab9889ae868d", "number": "KSC/INS-00005", "entity_id": "ent_ksc", "line_code": "woven", "kind": "return_customer", "ref_doc_type": "sales_return", "ref_doc_id": "sret_5c13772df634", "ref_doc_number": "SRET-00010", "task_id": "", "supplier_id": "", 
+[qc] POST /inspections/ins_ab9889ae868d/finish -> 200 {"id": "ins_ab9889ae868d", "number": "KSC/INS-00005", "entity_id": "ent_ksc", "line_code": "woven", "kind": "return_customer", "ref_doc_type": "sales_return", "ref_doc_id": "sret_5c13772df634", "ref_doc_number": "SRET-00010", "task_id": "", "supplier_id": "", 
+[md] POST /sales-returns/sret_5c13772df634/cutloss -> 400 {"detail": "Perlakuan potongan cacat: bs | dispose"}
+[manager] POST /sales-returns/sret_5c13772df634/cutloss -> 400 {"detail": "Perlakuan potongan cacat: bs | dispose"}
+[finance] GET /sales-returns/sret_5c13772df634/compensation -> 200 {"cutloss": [], "compensation": {}, "basis": "Harga transaksi awal (neto setelah diskon/harga khusus) × qty cacat"}
+[finance] POST /sales-returns/sret_5c13772df634/compensation -> 400 {"detail": "Qty cacat cutloss belum dicatat MD untuk produk ini"}
+-- kompensasi melebihi nilai roll (uji batas): 99 juta
+[finance] POST /sales-returns/sret_5c13772df634/compensation -> 400 {"detail": "Qty cacat cutloss belum dicatat MD untuk produk ini"}
+[manager] GET /sales-returns/sret_5c13772df634/roll-settlement -> 200 {"mode": t
+  opsi [('refund', True, ''), ('store_credit', True, ''), ('exchange', True, ''), ('cutloss', False, 'Catat qty cacat roll ini dulu (MD, panel Cutloss & diskon).'), ('discount', False, 'Nominal diskon barang ini belum diputus Finance.'), ('reject', True, '')]
+[manager] POST /sales-returns/sret_5c13772df634/roll-settlement/preview -> 400 {"detail": "RL-35413: Catat qty cacat roll ini dulu (MD, panel Cutloss & diskon)."}
+[md] POST /sales-returns/sret_5c13772df634/cutloss -> 200 {"id": "ctl_b30bc58cf2b3", "product_id": "prod_cb4dcbf68fcb", "product_name": "", "roll_id": "roll_f93965c1a00d", "defect_yard": 15.0, "qty_base": 15.0, "unit_base": "yard", "converted": false, "note": "[UJI-AUDIT-1116]", "treatment": "bs", "defect_from": 10.0, "defect_to": 25.0, "recorded_by": "Rin
+-- kompensasi melebihi nilai (99 juta untuk 15 yard @25rb=375rb)
+[finance] POST /sales-returns/sret_5c13772df634/compensation -> 200 {"status": "decided", "lines": [{"kind": "cutloss", "product_id": "prod_cb4dcbf68fcb", "product_name": "", "unit": "yard", "qty": 15.0, "amount": 375000.0, "evidence_ids": []}], "total": 375000.0, "note": "[UJI-AUDIT-1116]", "decided_by": "Sri Mulyani", "decided_by_id": "user_e07db4a345ff", "decided
+[finance] POST /sales-returns/sret_5c13772df634/compensation -> 200 {"status": "decided", "lines": [{"kind": "cutloss", "product_id": "prod_cb4dcbf68fcb", "product_name": "", "unit": "yard", "qty": 15.0, "amount": 375000.0, "evidence_ids": []}], "total": 375000.0, "note": "[UJI-AUDIT-1116]", "decided_by": "Sri Mulyani", "decided_by_id": "user_e07db4a345ff", "decided
+[manager] GET /sales-returns/sret_5c13772df634/roll-settlement -> 200 {"mode": t
+  opsi [('refund', True, ''), ('store_credit', True, ''), ('exchange', True, ''), ('cutloss', True, ''), ('discount', False, 'Nominal diskon barang ini belum diputus Finance.'), ('reject', True, '')]
+[manager] POST /sales-returns/sret_5c13772df634/roll-settlement/preview -> 200 {"rolls": [{"roll_id": "roll_f93965c1a00d", "roll_no": "RL-35413", "item_index": 0, "product_id": "prod_cb4dcbf68fcb", "product_name": "", "unit": "yard", "outcome": "cutloss", "outcome_label": "Cutloss", "actual_qty": 121.58, "qty_stock": 0.0, "qty_cut": 15.0, "cut_treatment": "bs", "qty_back": 106.58, "credit_qty": 15.0, "unit_price": 25000.0, "credit_amount": 375000.0, "cogs": 0.0, "received_at": "wh_jakarta", "condition": "ok"}], "lines": [{"product_id": "prod_cb4dcbf68fcb", "product_name": 
+[manager] POST /sales-returns/sret_5c13772df634/roll-settlement -> 200 {"id": "sret_5c13772df634", "number": "SRET-00010", "order_id": "so_e8a17adb6989", "order_number": "KSC/SO-00005", "cust
+RET {'number': 'SRET-00010', 'status': 'nego_settled', 'outcome': 'nego', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_1c7f65a355e2', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.58, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_f93965c1a00d'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_f93965c1a00d', 'delivered', 'wh_jakarta', 121.58, 'A', {'type': 'sales_order', 'id': 'so_e8a17adb6989'})]
+  jurnal [('KSC/JE-00067', 'sales_return', [('4-1000', 375000.0, 0.0), ('2-1200', 41250.0, 0.0), ('1-1200', 0.0, 416250.0)])]
+  credit_notes [('CN-00004', None, 'posted')] cash []
+  cutloss [{'id': 'ctl_b30bc58cf2b3', 'qty_base': 15.0, 'treatment': 'bs', 'split': None}]
+[warehouse] GET /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/split-preview -> 403 {"detail": "Anda belum punya akses untuk melihat Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+[warehouse] POST /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/split -> 403 {"detail": "Anda belum punya akses untuk melakukan “Proses pemecahan roll cutloss” pada Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+  roll anak [('roll_f93965c1a00d', 'RL-35413', 'delivered', 121.58, 'A', None)]
+[manager] GET /sales-returns/sret_5c13772df634/roll-settlement -> 200 {"mode": t
+  status nego_settled events []
+  jurnal [('KSC/JE-00067', 'sales_return', [('4-1000', 375000.0, 0.0), ('2-1200', 41250.0, 0.0), ('1-1200', 0.0, 416250.0)]), ('KSC/JE-00066', 'inventory_writeoff_reversal', [('5-9500', 0.0, 1668002.4), ('1-1300', 1668002.4, 0.0)])]
+[whadmin] POST /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/split -> 403 {"detail": "Anda belum punya akses untuk melakukan “Proses pemecahan roll cutloss” pada Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+[md] POST /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/split -> 200 {"status": "done", "pieces": [{"kind": "good", "treatment": "return_customer", "from": 0.0, "to": 10.0, "qty": 10.0, "unit": "yard", "grade": "A", "value": 180000.0, "label": "Baik — kirim balik ke customer", "roll_id": "roll_f93965c1a00d", "roll_no": "RL-3541
+  roll & anak [('roll_f93965c1a00d', 'RL-35413', 'hold', 10.0, 'A', 18000.0, 'wh_jakarta'), ('roll_f2d7f5f31ffe', 'RL-35413-1', 'available', 15.0, 'BS', 18000.0, 'wh_jakarta'), ('roll_689cb4ccf10f', 'RL-35413-2', 'hold', 96.58, 'A', 18000.0, 'wh_jakarta')]
+[salesadmin] POST /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/return-shipment -> 403 {"detail": "Anda belum punya akses untuk melakukan “Proses pemecahan roll cutloss” pada Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+[manager] GET /sales-returns/sret_5c13772df634/roll-settlement -> 200 {"mode": t
+  back ['mode', 'status', 'rows', 'settlements', 'exchange_pending', 'outcomes']
+[warehouse] POST /sales-returns/sret_5c13772df634/roll-settlement/back-shipment -> 400 {"detail": "Tidak ada roll Diskon/Tolak yang menunggu dikirim balik."}
+  jurnal [('KSC/JE-00068', 'return_cutloss', [('1-1300', 2188440.0, 0.0), ('5-1000', 0.0, 2188440.0)]), ('KSC/JE-00067', 'sales_return', [('4-1000', 375000.0, 0.0), ('2-1200', 41250.0, 0.0), ('1-1200', 0.0, 416250.0)])]
+  roll & anak [('roll_f93965c1a00d', 'RL-35413', 'hold', 10.0, 'A', 18000.0), ('roll_f2d7f5f31ffe', 'RL-35413-1', 'available', 15.0, 'BS', 18000.0), ('roll_689cb4ccf10f', 'RL-35413-2', 'hold', 96.58, 'A', 18000.0)]
+[md] POST /sales-returns/sret_5c13772df634/cutloss/ctl_b30bc58cf2b3/return-shipment -> 200 {"id": "shp_6dc1827be75e", "shipment_no": "KSC/SJ-00007", "kind": "cutloss_return", "entity_id": "ent_ksc", "order_id": "", "ref_order_id": "so_e8a17adb6989", "ref_order_number": "KSC/SO-00005", "ref_shipment_id": "shp_872243964be5", "ref_shipment_no": "KSC/SJ-00004", "return_id": "sret_5c13772df634", "return_number": "SRET-00010", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejah
+  roll & anak [('roll_f93965c1a00d', 'RL-35413', 'delivered', 10.0, 'A', 18000.0), ('roll_f2d7f5f31ffe', 'RL-35413-1', 'available', 15.0, 'BS', 18000.0), ('roll_689cb4ccf10f', 'RL-35413-2', 'delivered', 96.58, 'A', 18000.0)]
+  jurnal [('KSC/JE-00069', 'return_cutloss', 'Potongan baik cutloss dikirim balik · KSC/SJ-00007', [('5-1000', 1918440.0, 0.0), ('1-1300', 0.0, 1918440.0)]), ('KSC/JE-00068', 'return_cutloss', 'Roll cutloss masuk gudang · retur SRET-00010 · RL-35413', [('1-1300', 2188440.0, 0.0), ('5-1000', 0.0, 2188440.0)]), ('KSC/JE-00067', 'sales_return', 'Credit Note / Retur penjualan CN-00004', [('4-1000', 375000.0, 0.0), ('2-1200', 41250.0, 0.0), ('1-1200', 0.0, 416250.0)])]
+  tugas/shipments baru [] [(None, 'dispatched', 'cutloss_return')]

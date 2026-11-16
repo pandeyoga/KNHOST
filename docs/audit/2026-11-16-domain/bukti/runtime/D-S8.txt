@@ -1,0 +1,22 @@
+== D-S8a tolak retur yang masih menunggu ACC (SRET-00006)
+[manager] POST /sales-returns/sret_e21f12fc35d8/reject -> 200 {"id": "sret_e21f12fc35d8", "number": "SRET-00006", "order_id": "so_f2f40fcc04fb", "order_number": "KSC/SO-00003", "cust
+   [('roll_6bfbf8cc16c4', 'delivered', 'wh_jakarta', 'A', None)]
+== D-S8b buang draf
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_3e639215788c", "number": "SRET-00007", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_5dcf9090e7c0",
+[salesadmin] POST /sales-returns/sret_3e639215788c/cancel-draft -> 200 {"id": "sret_3e639215788c", "number": "SRET-00007", "order_id": "so_c453202ee991", "order_number": "
+== D-S8c tolak SESUDAH barang diterima gudang (approved + scan terima) — nasib roll?
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_20ec946df459", "number": "SRET-00008", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_5dcf9090e7c0",
+[salesadmin] POST /sales-returns/sret_20ec946df459/submit -> 200 {"id": "sret_20ec946df459", "number": "SRET-00008", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "cust
+[manager] POST /sales-returns/sret_20ec946df459/approve -> 200 {"id": "sret_20ec946df459", "number": "SRET-00008", "order_id": "so_c453202ee991
+[warehouse] POST /sales-returns/sret_20ec946df459/journey/scan -> 200 {"event": {"id": "rjev_6d6c47d3c653", "stage": "received", "label": "Diterima di
+  sebelum tolak [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 'A', None)]
+[manager] POST /sales-returns/sret_20ec946df459/reject -> 200 {"id": "sret_20ec946df459", "number": "SRET-00008", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_na
+  status rejected roll [('roll_4cde1de07f78', 'delivered', 'wh_jakarta', 'A', None)]
+  SPK [('KSC/INS-00003', 'draft')]
+[manager] GET /sales-returns/sret_20ec946df459/roll-settlement -> 200 {"mode": true, "status": "rejected", "rows": [{"roll_id": "roll_4cde1de07f78", "roll_no": "RL-35018", "item_index": 0, "product_id": "prod_5dcf9090e7c0", "product_name": "", "unit": "yard", "claim_qty": 121.93, "actual_qty": 121.93, "grade": "", "condition": "
+[warehouse] POST /sales-returns/sret_20ec946df459/roll-settlement/back-shipment -> 400 {"detail": "Tidak ada roll Diskon/Tolak yang menunggu dikirim balik."}
+[warehouse] GET /sales-returns/sret_20ec946df459/quarantine -> 403 {"detail": "Anda belum punya akses untuk melihat Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+[whadmin] POST /sales-returns/sret_20ec946df459/quarantine/release -> 403 {"detail": "Anda belum punya akses untuk menyetujui Retur Penjualan. Minta Admin menambahkan akses 'Pesanan Penjualan'."}
+  akhir [('roll_4cde1de07f78', 'delivered', 'wh_jakarta', 'A', None)]
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_5dcf9090e7c0",
+[salesadmin] POST /sales-returns/sret_a85ea1f4bbc1/submit -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "cust

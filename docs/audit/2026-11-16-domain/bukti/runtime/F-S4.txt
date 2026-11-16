@@ -1,0 +1,54 @@
+== F-S4 Keep → lewat batas reservasi → kedaluwarsa → buka lagi; DP sudah dibayar
+[sales] POST /sales-orders -> 200 {"id": "so_56b583924e98", "number": "KSC/SO-00010", "status": "reserved", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "customer_city": "Jakarta", "shipping_address": {"id": "addr_001", "label": "To
+  SO {'number': 'KSC/SO-00010', 'status': 'reserved', 'grand_total': 6327222.0, 'payment_status': 'pending', 'paid_amount': None, 'amount_paid': None, 'has_backorder': False} qty 259.1 line_total 5700200.0 rolls [('roll_1ebe13cd67ff', 130.86), ('roll_79494cc585d2', 128.24)]
+  roll dipegang [('roll_1ebe13cd67ff', 'reserved', 130.86), ('roll_79494cc585d2', 'reserved', 128.24)] alok AR []
+[finance] POST /ar-receipts -> 200 {"id": "arc_97831dfb7357", "number": "KSC/AR-00009", "customer_id": "cust_toko_kain", "customer_name
+  saldo sebelum {'ar_delivered': 23580284.6, 'open_orders_amount': 28986839.7, 'deposit_balance': 0.0, 'store_credit_balance': 0.0} reservation_expires_at 2026-11-19T07:35:30.145321+00:00
+  [catatan auditor] reservation_expires_at SO uji ini dimundurkan langsung di DB lokal (hanya dokumen uji berlabel) untuk mensimulasikan lewat batas
+[admin] GET /scheduler/jobs -> 200 {"running"
+[admin] POST /scheduler/jobs/reservation_expiry/run -> 200 {"id": "srun_3cdd274dae48", "job_id": "reservation_expiry", "job_label": "Kedaluwarsa Reservasi Pesanan", "trigger": "manual", "actor": "Budi Santoso", "started_at": "2026-11-16T07:35:30.791577+00:00", "status": "success", "created": 0, "scanned": 0, "wa_queued": 0, "detail": "", "error": "", "durat
+  SO {'number': 'KSC/SO-00010', 'status': 'reserved', 'grand_total': 6327222.0, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': False} qty 259.1 line_total 5700200.0 rolls [('roll_1ebe13cd67ff', 130.86), ('roll_79494cc585d2', 128.24)]
+  roll dipegang [('roll_1ebe13cd67ff', 'reserved', 130.86), ('roll_79494cc585d2', 'reserved', 128.24)] alok AR [('KSC/AR-00009', [(True, None)])]
+  saldo sesudah {'ar_delivered': 23580284.6, 'open_orders_amount': 28986839.7, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+  kuitansi DP {'number': 'KSC/AR-00009', 'status': 'posted', 'amount': 3163611.0, 'unallocated': None, 'deposit_amount': None} [{'order_id': 'so_56b583924e98', 'order_number': 'KSC/SO-00010', 'applied': 3163611.0, 'outstanding_after': 3163611.0, 'payment_status': 'partial', 'entity_id': 'ent_ksc', 'plan_line_seq': 0, 'parts': [{'kind': 'kas', 'amount': 3163611.0, 'payment_id': 'pay_bdf1cd834dc3db177b8171d3'}]}]
+  jurnal [('KSC/JE-00081', 'cash_transaction', 'Kas in · Penerimaan KSC/AR-00009 — Toko Kain Sejah', [('1-1100', 3163611.0, 0.0), ('2-1400', 0.0, 3163611.0)]), ('KSC/JE-00080', 'advance_reclass', 'Uang muka KSC/SO-00009 diakui sebagai pelunasan pi', [('2-1400', 2746762.0, 0.0), ('1-1200', 0.0, 2746762.0)])]
+[finance] GET /ar-receipts/deposit -> 200 {"customer_id": "cust_toko_kain", "deposit_balance": 0.0}
+[finance] GET /ar-receipts/open-orders -> 200 [{"order_i
+  layar kasir AR masih menagih SO kedaluwarsa? [('KSC/SO-00010', None, 3163611.0)]
+-- buka lagi pesanan kedaluwarsa
+[salesadmin] POST /sales-orders/so_56b583924e98/confirm -> 409 {"detail": "Verifikasi kelengkapan dulu (alamat · syarat bayar · isi pesanan) sebelum pesanan ini dikonfirmasi — buka Meja Admin Sales → antrean “Perlu diverifikasi”."}
+[salesadmin] POST /sales-orders/so_56b583924e98/verify -> 200 {"order_id": "so_56b583924e98", "order_number": "KSC/SO-00010", "status": "reserved", "verification": {"status": "verified", "by": "Rina Kartika", "by_id": "user_f175adac
+[salesadmin] POST /sales-orders/so_56b583924e98/submit-for-approval -> 200 {"id": "so_56b583924e98", "number": "KSC/SO-00010", "status": "approved", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera",
+[salesadmin] POST /sales-orders/so_56b583924e98/release -> 409 {"detail": "Pesanan belum diperiksa Admin Sales — gunakan Periksa & lepas ke gudang."}
+[salesadmin] POST /sales-orders/so_56b583924e98/cancel -> 200 {"id": "so_56b583924e98", "number": "KSC/SO-00010", "status": "cancelled", "entity_id": "ent_ksc", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera"
+  void kuitansi DP untuk mengembalikan dana?
+[finance] POST /ar-receipts/arc_97831dfb7357/void -> 403 {"detail": "Anda belum punya akses untuk membatalkan Kwitansi / Uang Masuk (AR). Minta Admin menambahkan akses 'Uang Masuk, Piutang & Faktur Pajak'."}
+  saldo akhir {'ar_delivered': 23580284.6, 'open_orders_amount': 25823228.7, 'deposit_balance': 0.0, 'store_credit_balance': 0.0}
+  SO {'number': 'KSC/SO-00010', 'status': 'cancelled', 'grand_total': 6327222.0, 'payment_status': 'partial', 'paid_amount': None, 'amount_paid': None, 'has_backorder': False} qty 259.1 line_total 5700200.0 rolls [('roll_1ebe13cd67ff', 130.86), ('roll_79494cc585d2', 128.24)]
+  roll dipegang [] alok AR [('KSC/AR-00009', [(True, None)])]
+-- F-S5 nasib DP Rp3.163.611 sesudah SO-00010 DIBATALKAN
+  SO {'status': 'cancelled', 'payment_status': 'partial', 'reservation_expires_at': '2026-11-19T07:35:30.145321+00:00', 'cancel_reason': '[UJI-AUDIT-1116] batal sesudah kedaluwarsa', 'refund_due': None, 'deposit_converted': None, 'advance_status': None}
+[finance] GET /ar-receipts/deposit -> 200 {"customer_id": "cust_toko_kain", "deposit_balance": 0.0}
+  saldo pelanggan {'deposit_balance': 0.0, 'store_credit_balance': 0.0, 'stale': False, 'stale_reason': '', 'updated_at': '2026-11-16T07:35:31.160961+00:00'}
+  cash_deposits 0 finance_cases [] notif []
+  GL 2-1400 uang muka pelanggan (KSC):  [{'_id': None, 'dr': 12316762.0, 'cr': 15480373.0}]
+[finance] GET /ar-receipts/open-orders -> 200 [{"order_i
+  SO batal di daftar tagihan kasir? []
+-- alokasikan ulang DP ke pesanan lain? (kuitansi baru dari deposit)
+[finance] POST /ar-receipts -> 200 {"id": "arc_6e0a9f33af73", "number": "KSC/AR-00010", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "receipt_date": "2026-11-16T07:35:47.754076+00:00", "method": "deposit", "amount": 1000000.0, "used_deposit": 
+-- job kedaluwarsa: status yang bisa kedaluwarsa
+/app/backend/services/inventory_service.py:26:EXPIRABLE_SO_STATUSES = ("reserved", "waiting_approval")
+/app/backend/services/inventory_service.py-27-"""FIX-3b (ANOM-06, keputusan K-B2b-12) — kedaluwarsa reservasi (masa reservasi menurut pengaturan, bawaan 3 hari) HANYA
+/app/backend/services/inventory_service.py-28-untuk pesanan yang belum disetujui. SO `approved` (sudah diputus atasan) dan `waiting_stock` (menunggu barang/backorder)
+/app/backend/services/inventory_service.py-29-TIDAK pernah kedaluwarsa otomatis — dulu ikut dilepas diam-diam saat seseorang membuka daftar SO/dasbor/katalog."""
+--
+/app/backend/services/inventory_service.py:49:            "status": {"$in": list(EXPIRABLE_SO_STATUSES)},
+/app/backend/services/inventory_service.py-50-            "reservation_expires_at": {"$lte": cutoff.isoformat()},
+/app/backend/services/inventory_service.py-51-        },
+
+  AR-00010 {'method': 'deposit', 'amount': 1000000.0, 'used_deposit': 0.0, 'deposit_before': None, 'deposit_after': None, 'status': 'posted', 'cash_amount': None} [('KSC/SO-00007', 1000000.0, [{'kind': 'kas', 'amount': 1000000.0, 'payment_id': 'pay_96487fdb67d2ab18237f3f8e'}])]
+  AR-00009 {'status': 'posted', 'amount': 3163611.0, 'released': None, 'unapplied': None} [('KSC/SO-00010', 3163611.0, None)]
+[finance] GET /ar-receipts/deposit -> 200 {"customer_id": "cust_toko_kain", "deposit_balance": 0.0}
+  payments SO-00010 no payments coll
+  jurnal [('KSC/JE-00082', 'cash_transaction', 'Kas in · Penerimaan KSC/AR-00010 — Toko Kain Sejahtera ', [('1-1100', 1000000.0, 0.0), ('1-1200', 0.0, 1000000.0)]), ('KSC/JE-00081', 'cash_transaction', 'Kas in · Penerimaan KSC/AR-00009 — Toko Kain Sejahtera', [('1-1100', 3163611.0, 0.0), ('2-1400', 0.0, 3163611.0)])]
+  SO-00007 {'grand_total': 5954262.0, 'payment_status': 'partial'}

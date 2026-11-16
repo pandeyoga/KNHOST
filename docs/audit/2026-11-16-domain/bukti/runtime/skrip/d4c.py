@@ -1,0 +1,16 @@
+from d2 import *
+rid=d.sales_returns.find_one({"number":"SRET-00009"})["id"]; roll="roll_4cde1de07f78"
+print("  grade_history",[(g.get("old_grade") or g.get("from_grade"),g.get("new_grade") or g.get("to_grade"),g.get("source"),g.get("reason","")[:40]) for g in d.grade_history.find({"roll_id":roll})], d.grade_history.count_documents({}))
+call("GET",f"/sales-returns/{rid}/quarantine","manager",ent=E,show=500)
+call("POST",f"/sales-returns/{rid}/disposition/internal","manager",{"roll_ids":[roll],"decision":"keep","reason":TAG},ent=E,show=300)
+print("-- lepas karantina: scrap")
+call("POST",f"/sales-returns/{rid}/quarantine/release","manager",{"decisions":[{"roll_id":roll,"action":"scrap"}],"notes":TAG},ent=E,show=400)
+ret_snap(rid)
+print("  jurnal terbaru",[(j.get("number"),j.get("source_type"),j.get("description","")[:50],[(l.get("account_code"),l.get("debit"),l.get("credit")) for l in j.get("lines",[])]) for j in d.journal_entries.find().sort("created_at",-1).limit(2)])
+print("-- batal scrap")
+call("POST",f"/sales-returns/{rid}/reverse-writeoff","manager",{"roll_ids":[roll],"reason":TAG},ent=E,show=300)
+ret_snap(rid)
+print("  jurnal terbaru",[(j.get("number"),j.get("source_type"),j.get("description","")[:50],[(l.get("account_code"),l.get("debit"),l.get("credit")) for l in j.get("lines",[])]) for j in d.journal_entries.find().sort("created_at",-1).limit(2)])
+call("GET",f"/sales-returns/{rid}/grade-impairments","manager",ent=E,show=300)
+x=d.inventory_rolls.find_one({"id":roll},{"_id":0}); print("  roll",{k:x.get(k) for k in("status","grade","unit_cost","cost_per_unit","hpp","length_remaining","hold_reason","quality_status")})
+call("POST",f"/sales-returns/{rid}/reverse-writeoff","manager",{"roll_ids":[roll],"reason":TAG},ent=E,show=200)

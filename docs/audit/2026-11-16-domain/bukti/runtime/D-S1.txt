@@ -1,0 +1,67 @@
+== D-S1 retur jual per roll: SO terkirim → ACC → scan karantina → inspeksi → masuk stok → refund
+[salesadmin] GET /sales-returns/returnable -> 200 {"order_id": "so_5b747c3430d0", "rolls": [{"roll_id": "roll_c12bec196c26", "shipment_id": "shp_0b87a6eb27eb", "shipment_no": "KSC/SJ-00001", "product_id": "prod_ab83a40fdf72", "lot": "KSC/LOT-2611-0109", "shipped_qty": 117.37, "unit": "yard", "roll_no": "RL-36307", "product_name": "DENIM TENCEL TAUPE A", "sku": "KNWVN0015-L-TAUX-XA-XX-XX", "color": "TAUPE", "returned_qty": 0, "remaining": 117.37}, {"roll_id": "roll_0ae73ed33bbc", "shipment_id": "shp_0b87a6eb27eb", "shipment_no": "KSC/SJ-00001", 
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_ab83a40fdf72",
+[salesadmin] POST /sales-returns/sret_519e733ef38f/submit -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "cust
+[manager] POST /sales-returns/sret_519e733ef38f/approve -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id":
+RET {'number': 'SRET-00004', 'status': 'approved', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'delivered', 'wh_jakarta', 117.37, 'A', {'type': 'sales_order', 'id': 'so_5b747c3430d0'})]
+  jurnal []
+  credit_notes [] cash []
+[qc] POST /sales-returns/sret_519e733ef38f/inspect/start -> 400 {"detail": "Scan terima barang retur dulu — 1 dari 1 roll belum diterima di gudang. QC baru bisa dimulai/diselesaikan sesudah barangnya ada."}
+[warehouse] POST /sales-returns/sret_519e733ef38f/journey/scan -> 200 {"event": {"id": "rjev_3dc6781df57e", "stage": "received", "label": "Diterima di gudang", "doc_no": "SRET-00004/TRM-1", "roll_ids": ["roll_c12bec196c26"], "roll_nos": ["RL-36307"], "warehouse_id": "wh_jakarta", "warehouse_name": "Jakarta · Gudang Sukacita", "to_warehouse_id": "", "to_warehouse_name"
+[qc] POST /sales-returns/sret_519e733ef38f/inspect/start -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "inspecting", "items": [{"product_id": "prod_ab83a40fd
+[manager] GET /sales-returns/sret_519e733ef38f -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "
+RET {'number': 'SRET-00004', 'status': 'inspecting', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'quarantine', 'wh_jakarta', 117.37, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+  inspection docs []
+  SPK [('KSC/INS-00001', 'return_customer', 'draft', '', [('roll_c12bec196c26', None, None)])]
+-- pintu 1: inspect/complete langsung di retur (tanpa menyentuh SPK QC)
+[qc] POST /sales-returns/sret_519e733ef38f/inspect/complete -> 400 {"detail": "Pilih grade untuk prod_ab83a40fdf72 — grade ditentukan petugas QC dari total poin (0 poin); sistem tidak mengisi grade otomatis."}
+  SPK [('KSC/INS-00001', 'return_customer', 'draft', '', [('roll_c12bec196c26', None, None)])]
+RET {'number': 'SRET-00004', 'status': 'inspecting', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'quarantine', 'wh_jakarta', 117.37, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+[manager] POST /sales-returns/sret_519e733ef38f/settle-preview -> 200 {"outcome": "refund", "settlement": "cash", "post_stock": true, "lines": [{"product_id": "prod_ab83a40fdf72", "product_name": "", "quantity": 117.37, "unit": "yard", "unit_price": 25000.0, "line_total": 2934250.0, "reason": "[UJI-AUDIT-1116]", "condition": "ok"}], "net_amount": 2934250.0, "ppn_amount": 322767.5, "gross_amount": 3257017.5, "cogs_amount": 2112660.0, "split": [{"kind": "source_bill", "label": "Potong sisa tagihan KSC/SO-00002", "amount": 3257017.5}], "journal": [{"account_code": "4-1000", "debit": 2934250.0, "credit": 0.0, "description": "Retur penjualan (nomor Nota Kredit saat terbit)", "account_name": "Pendapatan Penjualan", "cost": false}, {"account_code": "2-1200", "debit":
+[manager] GET /sales-returns/sret_519e733ef38f/roll-settlement -> 200 {"mode": true, "status": "inspecting", "rows": [{"roll_id": "roll_c12bec196c26", "roll_no": "RL-36307", "item_index": 0, "product_id": "prod_ab83a40fdf72", "product_name": "", "unit": "yard", "claim_qty": 117.37, "actual_qty": 117.37, "grade": "", "condition": "ok", "received_at": "wh_jakarta", "cut_qty": 0, "cut_treatment": "", "split_done": false, "settled": {}, "options": [{"value": "refund", "label": "Pengembalian Dana", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "store_credit", "label": "Store Credit", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "exchange", "label": "Tukar Barang", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "cutloss",
+  SPK [('KSC/INS-00001', 'return_customer', 'draft', '', [('roll_c12bec196c26', None, None)])]
+-- pintu 1: inspect/complete langsung di retur (tanpa menyentuh SPK QC)
+[qc] POST /sales-returns/sret_519e733ef38f/inspect/complete -> 400 {"detail": "Pilih grade untuk prod_ab83a40fdf72 — grade ditentukan petugas QC dari total poin (0 poin); sistem tidak mengisi grade otomatis."}
+  SPK [('KSC/INS-00001', 'return_customer', 'draft', '', [('roll_c12bec196c26', None, None)])]
+RET {'number': 'SRET-00004', 'status': 'inspecting', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'quarantine', 'wh_jakarta', 117.37, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+[manager] POST /sales-returns/sret_519e733ef38f/settle-preview -> 200 {"outcome": "refund", "settlement": "cash", "post_stock": true, "lines": [{"product_id": "prod_ab83a40fdf72", "product_name": "", "quantity": 117.37, "unit": "yard", "unit_price": 25000.0, "line_total": 2934250.0, "reason": "[UJI-AUDIT-1116]", "condition": "ok"}], "net_amount": 2934250.0, "ppn_amount": 322767.5, "gross_amount": 3257017.5, "cogs_amount": 2112660.0, "split": [{"kind": "source_bill", "label": "Potong sisa tagihan KSC/SO-00002", "amount": 3257017.5}], "journal": [{"account_code": "4-1000", "debit": 2934250.0, "credit": 0.0, "description": "Retur penjualan (nomor Nota Kredit saat terbit)", "account_name": "Pendapatan Penjualan", "cost": false}, {"account_code": "2-1200", "debit":
+[manager] GET /sales-returns/sret_519e733ef38f/roll-settlement -> 200 {"mode": true, "status": "inspecting", "rows": [{"roll_id": "roll_c12bec196c26", "roll_no": "RL-36307", "item_index": 0, "product_id": "prod_ab83a40fdf72", "product_name": "", "unit": "yard", "claim_qty": 117.37, "actual_qty": 117.37, "grade": "", "condition": "ok", "received_at": "wh_jakarta", "cut_qty": 0, "cut_treatment": "", "split_done": false, "settled": {}, "options": [{"value": "refund", "label": "Pengembalian Dana", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "store_credit", "label": "Store Credit", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "exchange", "label": "Tukar Barang", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "cutloss",
+-- inspect/complete dgn grade A lewat pintu retur
+[qc] POST /sales-returns/sret_519e733ef38f/inspect/complete -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id":
+  SPK [('KSC/INS-00001', 'return_customer', 'closed', '', [('roll_c12bec196c26', None, None)])]
+RET {'number': 'SRET-00004', 'status': 'inspected', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'quarantine', 'wh_jakarta', 117.37, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+[manager] GET /sales-returns/sret_519e733ef38f/roll-settlement -> 200 {"mode": true, "status": "inspected", "rows": [{"roll_id": "roll_c12bec196c26", "roll_no": "RL-36307", "item_index": 0, "product_id": "prod_ab83a40fdf72", "product_name": "", "unit": "yard", "claim_qty": 117.37, "actual_qty": 117.37, "grade": "", "condition": "ok", "received_at": "wh_jakarta", "cut_qty": 0, "cut_treatment": "", "split_done": false, "settled": {}, "options": [{"value": "refund", "label": "Pengembalian Dana", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "store_credit", "label": "Store Credit", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "exchange", "label": "Tukar Barang", "ok": false, "why": "QC roll ini belum selesai."}, {"value": "cutloss", "label": "Cutloss", "ok": false, "why": "Catat qty cacat roll ini dulu (MD, panel Cutloss & diskon)."}, {"value": "discount", "label": "Diskon", "ok": false, "why": "Nominal diskon barang ini belum di
+-- settle refund (header) oleh manager
+[manager] POST /sales-returns/sret_519e733ef38f/settle -> 200 {"id": "sret_519e733ef38f", "number": "SRET-00004", "order_id": "so_5b747c3430d0", "order_number": "KSC/SO-00002", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "refund_settled", "items": [{"product_id": "prod_ab83a40fdf72", "product_name": "", "quantity_returned": 117.37, "unit": "yard", "reason": "[UJI-AUDIT-111
+  SPK [('KSC/INS-00001', 'return_customer', 'closed', '', [('roll_c12bec196c26', None, None)])]
+RET {'number': 'SRET-00004', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_308fdf5cd43c', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 117.37, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_c12bec196c26'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_c12bec196c26', 'quarantine', 'wh_jakarta', 117.37, 'A', None)]
+  jurnal [('KSC/JE-00060', 'sales_return', [('4-1000', 2934250.0, 0.0), ('2-1200', 322767.5, 0.0), ('1-1200', 0.0, 3257017.5), ('1-1300', 2112660.0, 0.0), ('5-1000', 0.0, 2112660.0)])]
+  credit_notes [('CN-00001', None, 'posted')] cash []
+-- ulangi settle (klik ganda)
+[manager] POST /sales-returns/sret_519e733ef38f/settle -> 400 {"detail": "Keputusan akhir (refund / store credit / nego) baru bisa diambil sesudah QC selesai. Status retur sekarang: refund_settled."}
+-- SPK QC yatim: coba kerjakan SPK sesudah retur selesai
+[whadmin] POST /inspections/ins_45bc5236b1fa/assign -> 400 {"detail": "Inspeksi berstatus “Ditutup” tidak bisa ditugaskan ulang."}
+[qc] POST /inspections/ins_45bc5236b1fa/start -> 400 {"detail": "Inspeksi berstatus “Ditutup” tidak bisa dimulai."}
+so {'status': 'done', 'grand_total': 6549000.0, 'payment_status': 'partial'}
+bal {'ar_delivered': 31795694.7, 'deposit_balance': 0.0, 'open_orders_amount': 17754616.5, 'store_credit_balance': 0.0}
+jurnal baru [('KSC/JE-00060', 'sales_return', 'Credit Note / Retur penjualan CN-00001', [('4-1000', 2934250.0, 0.0), ('2-1200', 322767.5, 0.0), ('1-1200', 0.0, 3257017.5), ('1-1300', 2112660.0, 0.0), ('5-1000', 0.0, 2112660.0)]), ('KSC/JE-00059', 'shipment_cogs', 'HPP penjualan KSC/SO-00007 · KSC/SJ-00006', [('5-1000', 3862224.0, 0.0), ('1-1300', 0.0, 3862224.0)]), ('KSC/JE-00058', 'shipment_revenue', 'Pengakuan penjualan KSC/SO-00007 · KSC/SJ-00006', [('1-1200', 5954262.0, 0.0), ('4-1000', 0.0, 5364200.0), ('2-1200', 0.0, 590062.0)]), ('KSC/JE-00057', 'shipment_cogs', 'HPP penjualan KSC/SO-00006 · KSC/SJ-00005', [('5-1000', 3482517.6, 0.0), ('1-1300', 0.0, 3482517.6)])]

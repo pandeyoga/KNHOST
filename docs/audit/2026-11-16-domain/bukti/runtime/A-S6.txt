@@ -1,0 +1,27 @@
+stok bahan [('DMO-GRY-KNT-001', 'grey', 'kg', 1471.9), ('DMO-PFD-KNT-001', 'pfd', 'kg', 1493.6), ('DMO-PFP-WVN-001', 'pfp', 'yard', 2505.0), ('DMO-YRN-WVN-30S', 'yarn', 'kg', 829.9)] mitra printing process_types ['pre_treatment', 'screen', 'printing'] celup ['pre_treatment', 'celup', 'finishing']
+== A-S6 langkah tak cocok stage lewat API
+-- (1) printing langsung dari GREIGE (belum PFP), hasil = bahan jadi
+[manager] POST /makloon-orders -> 409 {"detail": "Order Makloon: default artikel ALICE KNIT (94139 - 45) adalah pembelian supplier — tulis alasan memilih jalur makloon."}
+-- (2) celup dengan mitra PRINTING (process_types mitra tak cocok), bahan BENANG, hasil bahan jadi
+[manager] POST /makloon-orders -> 409 {"detail": "Order Makloon: default artikel ALICE KNIT (94139 - 45) adalah pembelian supplier — tulis alasan memilih jalur makloon."}
+-- (3) hasil langkah = BENANG dari bahan jadi (transisi mundur)
+[manager] POST /makloon-orders -> 200 {"id": "mko_bd2ff64a3458", "mko_number": "CST/MKO-00003", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_7caa06a614c8", "material_sku": "KNKNT0005-I-10XX-XA-XX-XX", "material_name": "ALICE KNIT (94139 - 45) 10 A", "material_qty": 20.0, "material_unit": "kg", "material_source": "stock", "fro
+  SPK CST/MKO-00003 draft [(1, 'celup', 'pending', None, None, 20.0, None, None, None)]
+-- (1) printing langsung dari GREIGE (belum PFP), hasil = bahan jadi
+[manager] POST /makloon-orders -> 200 {"id": "mko_e50c274be5c3", "mko_number": "CST/MKO-00004", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "material_name": "Grey Knit Single Jersey 30s", "material_qty": 50.0, "material_unit": "kg", "material_source": "stock", "from_warehouse
+-- (2) celup di mitra PRINTING (process_types mitra tanpa celup), bahan BENANG → bahan jadi
+[manager] POST /makloon-orders -> 200 {"id": "mko_ab9c9bb2fd1d", "mko_number": "CST/MKO-00005", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_2ddf057216c9", "material_sku": "DMO-YRN-WVN-30S", "material_name": "Benang Katun 30s (untuk Tenun)", "material_qty": 20.0, "material_unit": "kg", "material_source": "stock", "from_wareho
+  SPK CST/MKO-00004 draft [(1, 'printing', 'pending', None, None, 50.0, None, None, None)]
+  SPK CST/MKO-00005 draft [(1, 'celup', 'pending', None, None, 20.0, None, None, None)]
+== B-S1/B-S4/B-S8 greige → PFD → celup → bahan jadi (200 kg), terima sebagian, HPP
+[manager] POST /makloon-orders -> 200 {"id": "mko_d8f1975c5d85", "mko_number": "CST/MKO-00006", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "material_name": "Grey Knit Single Jersey 30s", "material_qty": 200.0, "material_unit": "kg", "material_source": "stock", "from_warehous
+  SPK CST/MKO-00006 draft [(1, 'pre_treatment', 'pending', None, None, 200.0, None, None, None), (2, 'celup', 'pending', None, None, 200.0, None, None, None)]
+[manager] POST /makloon-orders/mko_d8f1975c5d85/issue -> 200 {"id": "mko_d8f1975c5d85", "mko_number": "CST/MKO-00006", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "mater
+  SPK CST/MKO-00006 in_process [(1, 'pre_treatment', 'issued', None, None, 200.0, None, None, None), (2, 'celup', 'pending', None, None, 200.0, None, None, None)]
+  jurnal [('CST/JE-00011', 'subcon_issue', 'Subcon Issue CST/MKO-00006 step1', [('1-1350', 10880000.0, 0.0), ('1-1300', 0.0, 10880000.0)]), ('CST/JE-00010', 'cash_transaction', 'Kas in · Penjualan karung & kardus bekas (demo)', [('1-1110', 2000000.0, 0.0), ('1-9999', 0.0, 2000000.0)])]
+-- terima langkah 1 SEBAGIAN: 100 kg (4 roll x 25)
+[warehouse] POST /makloon-orders/mko_d8f1975c5d85/receive -> 403 {"detail": "Anda tidak ditugaskan di “CV Cipta Sandang Textile”. Hubungi admin bila memang perlu akses ke badan usaha ini."}
+[manager] POST /makloon-orders/mko_d8f1975c5d85/receive -> 200 {"id": "mko_d8f1975c5d85", "mko_number": "CST/MKO-00006", "entity_id": "ent_95a87a634457", "mode": "process_only", "material_product_id": "prod_e9fe90e5eff8", "material_sku": "DMO-GRY-KNT-001", "material_name": "Grey Knit Single Jersey 30s", "material_qty": 20
+  SPK CST/MKO-00006 partially_received [(1, 'pre_treatment', 'received', None, None, 200.0, None, None, None), (2, 'celup', 'pending', None, None, 100.0, None, None, None)]
+  jurnal [('CST/JE-00012', 'subcon_receipt', 'Subcon Receipt CST/MKO-00006 step1', [('1-1300', 10880000.0, 0.0), ('1-1350', 0.0, 10880000.0)]), ('CST/JE-00011', 'subcon_issue', 'Subcon Issue CST/MKO-00006 step1', [('1-1350', 10880000.0, 0.0), ('1-1300', 0.0, 10880000.0)]), ('CST/JE-00010', 'cash_transaction', 'Kas in · Penjualan karung & kardus bekas (demo)', [('1-1110', 2000000.0, 0.0), ('1-9999', 0.0, 2000000.0)])]
+  roll hasil [] HPP bahan greige/kg [54400.0]

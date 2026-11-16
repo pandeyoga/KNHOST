@@ -21,8 +21,8 @@ Penulis: `backend/routers/products.py:114` (master) · `backend/routers/product_
 
 | Skenario | Status | Bukti/alasan |
 |---|---|---|
-| C-S1 | terhambat | permintaan→sample→SKU E2E: 0 data R&D di seed |
-| C-S2 | terhambat | Pesanan Khusus→create-sku: 0 special_orders; akar strict=False terbukti via MS-01 (`bukti/RUNTIME-DOMAIN-A.md`) |
+| C-S1 | terhambat | pintu R&D `POST /rnd/specs` menolak 400 ("Pilih Asal yang sah untuk induk") — alur sample→SKU belum dilanjutkan; bukti/runtime/C-S1-S2.txt |
+| C-S2 | gagal | bukti/runtime/C-S1-S2.txt — `create-sku` Pesanan Khusus melahirkan MTO-261116-0002 tanpa GSM/lebar (`needs_review`, 2 `domain_gaps`) dan SKU itu langsung muncul di katalog `orderable_only` POS (RD-02) |
 | C-S3 | terhambat | sample tolak/revisi: butuh data sample |
 | C-S4 | terhambat | gerbang R&D layar vs server: butuh alur rnd_gate berjalan |
 | C-S5 | terhambat | SKU R&D→produksi/makloon: butuh rilis produk |
@@ -62,3 +62,14 @@ Penulis: `backend/routers/products.py:114` (master) · `backend/routers/product_
 - Arah perbaikan: satu kebijakan validasi domain di semua pintu.
 - Keputusan pemilik: tolak atau needs_review pintu non-form?
 - Sudah ada: MS-01.
+
+### RD-02 — SKU dari Pesanan Khusus lahir cacat-domain dan langsung bisa dijual di POS
+- Keparahan: Tinggi
+- Jenis akar: aturan tidak ditegakkan
+- Tingkat bukti: terbukti runtime (API, data uji berlabel `[UJI-AUDIT-1116]`)
+- Bukti: `backend/routers/special_orders.py:1303` · `backend/routers/rnd.py:218` (pintu R&D menolak) · `bukti/runtime/C-S1-S2.txt`
+- Reproduksi: `POST /special-orders/sord_ae9d5543756c/create-sku` → 200, SKU `MTO-261116-0002` stage finished tanpa GSM/lebar, `needs_review: true`; `GET /products?orderable_only=true&q=MTO-261116-0002` (akun sales) memuatnya. `POST /rnd/specs` dengan isian minimal → 400.
+- Dampak: Barang yang datanya belum lengkap bisa masuk pesanan; konversi satuan dan laporan per gramasi salah.
+- Arah perbaikan: Produk `needs_review` dikeluarkan dari katalog jual sampai dilengkapi; satu aturan untuk semua pintu.
+- Keputusan pemilik: Sama dengan pertanyaan 1 ringkasan (tolak vs tandai).
+- Sudah ada: MS-01, MS-05, RD-01

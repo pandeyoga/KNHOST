@@ -17,12 +17,14 @@ Tiap klaim ditelusuri ke kode sampai terbukti/gugur. **Dua klaim pass awal dikor
 
 | Domain | Status |
 |---|---|
-| A master & stage | dikerjakan sebagian — akan DIULANG PENUH sesuai katalog §8 (skenario lewat layar 1280/390 + 8 form) |
-| B makloon | belum dikerjakan |
-| C R&D | belum dikerjakan |
-| D retur | belum dikerjakan |
-| E QC & MD Quality | belum dikerjakan |
-| F pesanan sesudah POS | belum dikerjakan |
+| A master & stage | 7 dari 9 skenario dijalankan; A-S3, A-S7 terhambat |
+| B makloon | 3 dari 10 dijalankan; sisanya terhambat |
+| C R&D | 1 dari 6 dijalankan; sisanya terhambat |
+| D retur | 6 dari 8 dijalankan; D-S3, D-S7 terhambat |
+| E QC & MD Quality | 3 dari 6 dijalankan; sisanya terhambat |
+| F pesanan sesudah POS | 5 dari 8 dijalankan; F-S4, F-S6, F-S7 terhambat |
+
+Pendalaman runtime 16 Nov (16 temuan baru, koreksi QM-01/SO-01/MK-02): [`PENDALAMAN_RUNTIME.md`](PENDALAMAN_RUNTIME.md). Layar belum dipotret.
 
 | ID | Tingkat bukti |
 |---|---|

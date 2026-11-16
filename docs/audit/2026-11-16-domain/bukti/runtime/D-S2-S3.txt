@@ -1,0 +1,78 @@
+== D-S2/D-S3 retur rusak → disposisi (scrap / klaim supplier)
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/approve -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991
+[warehouse] POST /sales-returns/sret_a85ea1f4bbc1/journey/scan -> 200 {"event": {"id": "rjev_6541a747833f", "stage": "received", "label": "Diterima di
+[whadmin] POST /inspections/ins_e4e7cc97dae5/assign -> 200 {"id": "ins_e4e7cc97dae5", "number": "KSC/INS-00004", "entit
+[qc] POST /inspections/ins_e4e7cc97dae5/start -> 200 {"id": "ins_e4e7cc97dae5", "number": "KSC/INS-00004", "entit
+[qc] POST /inspections/ins_e4e7cc97dae5/lines/insl_2c637c31b7a3/inspect -> 400 {"detail": "Grade C historis — tidak bisa dipakai untuk input baru. Grade aktif: A, A1, B, BS."}
+[qc] POST /inspections/ins_e4e7cc97dae5/finish -> 400 {"detail": "Belum ada satu baris pun yang diperiksa — keputusan tanpa pemeriksaan membuat tanggalnya jadi bukti palsu."}
+RET {'number': 'SRET-00009', 'status': 'approved', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 121.93, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+  insp {'status': None, 'grade': None, 'recommended_outcome': None} {}
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/disposition -> 200 {"rows": [{"roll_id": "roll_4cde1de07f78", "roll_no": "RL-35018", "product_id": "prod_5dcf9090e7c0", "qty": 121.93, "unit": "yard", "grade": "A", "status": "quarantine", "warehouse_id": "wh_jakarta", "owner_entity_id": "ent_ksc", "owner_name": "Sukacita", "origin_interco_number": "", "buyer_name": "", "seller_name": "", "supplier_name": "", "po_number": "", "supplier_deadline": "", "supplier_window_expired": false, "claim_date": "2026-11-16", "stage": "no_internal_origin", "internal": null, "supplier": null, "sellable": false}], "supplier_window_days": 21, "stage1_options": {"keep": "Simpan di pemilik sekarang", "return_internal": "Kembalikan ke PT pemasok internal"}, "stage2_options": {"keep": "Simpan sebagai stok", "supplier_return": "Retur ke supplier", "dispose": "Buang (BS) dengan bukti"}}
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/grade-impairments -> 200 {"items": [], "total": 0, "factors": {"A": 100.0, "A1": 95.0, "A2": 90.0, "B": 70.0, "B1": 60.0, "C": 40.0, "BS": 10.0}}
+[qc] POST /inspections/ins_e4e7cc97dae5/lines/insl_2c637c31b7a3/inspect -> 200 {"id": "ins_e4e7cc97dae5", "number": "KSC/INS-00004", "entity_id": "ent_ksc", "line_code": "woven", "kind": "return_cust
+[qc] POST /inspections/ins_e4e7cc97dae5/finish -> 200 {"id": "ins_e4e7cc97dae5", "number": "KSC/INS-00004", "entity_id": "ent_ksc", "line_code": "woven", "kind": "return_cust
+RET {'number': 'SRET-00009', 'status': 'inspected', 'outcome': '', 'refund_amount': None, 'refund_due': None, 'credit_note_id': None, 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 121.93, 'A', None)]
+  jurnal []
+  credit_notes [] cash []
+  grade_history []
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/roll-settlement -> 200 {"mode": t
+  opsi [('refund', True, ''), ('store_credit', True, ''), ('exchange', True, ''), ('cutloss', False, 'Catat qty cacat roll ini dulu (MD, panel Cutloss &'), ('discount', False, 'Nominal diskon barang ini belum diputus Finance.'), ('reject', True, '')] grade BS
+-- disposisi SEBELUM penyelesaian uang: buang (BS)
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 400 {"detail": "Roll RL-35018 tidak sedang menunggu keputusan tahap ini."}
+[md] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 403 {"detail": "Anda belum punya akses ke layar ini. Minta Admin menambahkan salah satu akses: 'Pesanan Penjualan', 'Transaksi Antar-PT', 'Stok & Persediaan'."}
+[admin] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 400 {"detail": "Roll RL-35018 tidak sedang menunggu keputusan tahap ini."}
+-- refund per roll
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/roll-settlement -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "cust
+RET {'number': 'SRET-00009', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_24ffc9dbb92a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 121.93, 'BS', None)]
+  jurnal [('KSC/JE-00064', 'sales_return', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)])]
+  credit_notes [('CN-00003', None, 'posted')] cash []
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/grade-impairments -> 200 {"items": [], "total": 0, "factors": {"A": 100.0, "A1": 95.0, "A2": 90.0, "B": 70.0, "B1": 60.0, "C": 40.0, "BS": 10.0}}
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/disposition -> 200 {"rows": [
+  disp row {'grade': 'BS', 'status': 'quarantine', 'stage': 'no_internal_origin', 'internal': None, 'supplier': None, 'sellable': False}
+-- disposisi SESUDAH penyelesaian: buang (BS)
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 400 {"detail": "Roll RL-35018 tidak sedang menunggu keputusan tahap ini."}
+[md] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 403 {"detail": "Anda belum punya akses ke layar ini. Minta Admin menambahkan salah satu akses: 'Pesanan Penjualan', 'Transaksi Antar-PT', 'Stok & Persediaan'."}
+[admin] POST /sales-returns/sret_a85ea1f4bbc1/disposition/supplier -> 400 {"detail": "Roll RL-35018 tidak sedang menunggu keputusan tahap ini."}
+RET {'number': 'SRET-00009', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_24ffc9dbb92a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 121.93, 'BS', None)]
+  jurnal [('KSC/JE-00064', 'sales_return', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)])]
+  credit_notes [('CN-00003', None, 'posted')] cash []
+  jurnal terbaru [('KSC/JE-00064', 'sales_return', 'Credit Note / Retur penjualan CN-00003', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)]), ('KSC/JE-00063', 'sales_return_reversal', 'Reversal KSC/JE-00062 — Koreksi penyelesaian retur', [('4-1000', 0.0, 2403400.0), ('2-1200', 0.0, 264374.0), ('1-1100', 2667774.0, 0.0), ('1-1300', 0.0, 1730448.0), ('5-1000', 1730448.0, 0.0)]), ('KSC/JE-00062', 'sales_return', 'Credit Note / Retur penjualan CN-00002', [('4-1000', 2403400.0, 0.0), ('2-1200', 264374.0, 0.0), ('1-1100', 0.0, 2667774.0), ('1-1300', 1730448.0, 0.0), ('5-1000', 0.0, 1730448.0)])]
+-- batal scrap (reverse-writeoff)
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/reverse-writeoff -> 400 {"detail": "Tidak ada roll write-off (scrap) yang bisa dibatalkan untuk retur ini (hanya roll ber-status 'damaged' dengan jurnal write-off & belum dibalik)."}
+RET {'number': 'SRET-00009', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_24ffc9dbb92a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'quarantine', 'wh_jakarta', 121.93, 'BS', None)]
+  jurnal [('KSC/JE-00064', 'sales_return', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)])]
+  credit_notes [('CN-00003', None, 'posted')] cash []
+  grade_history [] 0
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/quarantine -> 200 [{"id": "roll_4cde1de07f78", "product_id": "prod_5dcf9090e7c0", "owner_entity_id": "ent_ksc", "ownership_type": "internal", "consignor_ref": null, "warehouse_id": "wh_jakarta", "bin_id": null, "lot": "KSC/LOT-2611-0106", "lot_id": "lot_92f7193a1e67", "supplier_lot": "", "dye_lot": "KSC/LOT-2611-0106", "batch": "SA-KNWVN0015", "roll_no": "RL-35018", "length_initial": 121.93, "length_remaining": 121.93, "unit": "yard", "grade": "BS", "stage": "finished", "fabric_type": "woven", "line_code": "woven
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/disposition/internal -> 400 {"detail": "Roll RL-35018 tidak sedang menunggu keputusan tahap ini."}
+-- lepas karantina: scrap
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/quarantine/release -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "refund_settled", "items": [{"product_id": "prod_5dcf9090e7c0", "product_name": "", "quantity_returned": 121.93, "unit": "yard", "reason": "[UJI-AUDIT-111
+RET {'number': 'SRET-00009', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_24ffc9dbb92a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'damaged', 'wh_jakarta', 121.93, 'BS', None)]
+  jurnal [('KSC/JE-00064', 'sales_return', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)]), ('KSC/JE-00065', 'inventory_writeoff', [('5-9500', 1668002.4, 0.0), ('1-1300', 0.0, 1668002.4)])]
+  credit_notes [('CN-00003', None, 'posted')] cash []
+  jurnal terbaru [('KSC/JE-00065', 'inventory_writeoff', 'Write-off persediaan roll_4cde1de07f78 (retur SRET', [('5-9500', 1668002.4, 0.0), ('1-1300', 0.0, 1668002.4)]), ('KSC/JE-00064', 'sales_return', 'Credit Note / Retur penjualan CN-00003', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)])]
+-- batal scrap
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/reverse-writeoff -> 200 {"id": "sret_a85ea1f4bbc1", "number": "SRET-00009", "order_id": "so_c453202ee991", "order_number": "KSC/SO-00004", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "refund_settled", "items": [{"product_id": "prod_5dcf9
+RET {'number': 'SRET-00009', 'status': 'refund_settled', 'outcome': 'refund', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_24ffc9dbb92a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 121.93, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_4cde1de07f78'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_4cde1de07f78', 'available', 'wh_jakarta', 121.93, 'BS', None)]
+  jurnal [('KSC/JE-00064', 'sales_return', [('4-1000', 2316670.0, 0.0), ('2-1200', 254833.7, 0.0), ('1-1200', 0.0, 2571503.7), ('1-1300', 1668002.4, 0.0), ('5-1000', 0.0, 1668002.4)]), ('KSC/JE-00065', 'inventory_writeoff', [('5-9500', 1668002.4, 0.0), ('1-1300', 0.0, 1668002.4)])]
+  credit_notes [('CN-00003', None, 'posted')] cash []
+  jurnal terbaru [('KSC/JE-00066', 'inventory_writeoff_reversal', 'Reversal KSC/JE-00065 — [UJI-AUDIT-1116]', [('5-9500', 0.0, 1668002.4), ('1-1300', 1668002.4, 0.0)]), ('KSC/JE-00065', 'inventory_writeoff', 'Write-off persediaan roll_4cde1de07f78 (retur SRET', [('5-9500', 1668002.4, 0.0), ('1-1300', 0.0, 1668002.4)])]
+[manager] GET /sales-returns/sret_a85ea1f4bbc1/grade-impairments -> 200 {"items": [], "total": 0, "factors": {"A": 100.0, "A1": 95.0, "A2": 90.0, "B": 70.0, "B1": 60.0, "C": 40.0, "BS": 10.0}}
+  roll {'status': 'available', 'grade': 'BS', 'unit_cost': 13680.0, 'cost_per_unit': None, 'hpp': None, 'length_remaining': 121.93, 'hold_reason': None, 'quality_status': None}
+[manager] POST /sales-returns/sret_a85ea1f4bbc1/reverse-writeoff -> 400 {"detail": "Tidak ada roll write-off (scrap) yang bisa dibatalkan untuk retur ini (hanya roll ber-status 'damaged' dengan jurnal write-off & belum dibalik)."}

@@ -1,0 +1,11 @@
+== C-S2 Pesanan Khusus → create-sku (pintu Pesanan Khusus) vs C-S1 spesifikasi R&D → release-product (pintu R&D)
+[manager] POST /special-orders/sord_ae9d5543756c/create-sku -> 200 {"product": {"id": "prod_e4e247d9bf62", "sku": "MTO-261116-0002", "name": "Katun premium bordir custom seragam", "catego
+  SKU lahir {'sku': 'MTO-261116-0002', 'name': 'Katun premium bordir custom seragam', 'stage': 'finished', 'base_unit': 'yard', 'category': 'Custom', 'lifecycle_status': None, 'needs_review': True, 'domain_gaps': ["Gramasi/GSM (gram per m²) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)' (jenis kain woven).", "Lebar kain (meter) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)' (jenis kain woven)."], 'gsm': None, 'width_cm': None, 'composition': None, 'line_code': None, 'is_orderable': None}
+[manager] POST /special-orders/sord_ae9d5543756c/create-sku -> 200 {"product"
+  panggilan kedua (idempoten?) sku sama: True
+[sales] GET /products -> 200 [{"sku": "
+  muncul di katalog POS/orderable? ['MTO-261116-0002']
+[manager] POST /special-orders/sord_e3b0981bfe7f/create-sku -> 400 {"detail": "SKU hanya dapat dibuat untuk special order yang sudah disetujui (confirmed)."}
+-- pintu R&D: spesifikasi minimal tanpa GSM/lebar/komposisi (stage finished)
+[md] POST /rnd/specs -> 400 {"detail": "Pilih Asal yang sah untuk induk ALICE KNIT (94139 - 45)."}
+[manager] POST /rnd/specs -> 400 {"detail": "Pilih Asal yang sah untuk induk ALICE KNIT (94139 - 45)."}

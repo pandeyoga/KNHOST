@@ -1,0 +1,16 @@
+from e1 import *
+print("== D-S6 retur beli (dari tolak QC, potong tagihan) → ACC → kirim → supplier terima → tagihan → reverse")
+pr=d.purchase_returns.find_one({"number":"PRET-00005"}); pid=pr["id"]; po=d.purchase_orders.find_one({"po_number":"KSC/PO-00004"},{"_id":0})
+def S():
+    p=d.purchase_returns.find_one({"id":pid},{"_id":0}); print("  PRET",{k:p.get(k) for k in("status","supplier_state","doc_state","total_amount","grand_total","debit_note_id","debit_note_number","settlement")}); J(2)
+    print("  roll",[(r.get("roll_no"),r["status"]) for r in d.inventory_rolls.find({"batch":"UJI1116B","grade":"BS"})],"PO",{k:d.purchase_orders.find_one({"id":po["id"]}).get(k) for k in("status","closed_short","grand_total")})
+print("-- pembuat (mdquality via SPK) vs penyetuju: manager")
+call("POST",f"/purchase-returns/{pid}/approve","manager",{"notes":TAG},ent=E,show=200); S()
+call("POST",f"/purchase-returns/{pid}/ship-to-supplier","warehouse",{"notes":TAG,"carrier":"UJI","tracking_no":"UJI"},ent=E,show=200)
+call("POST",f"/purchase-returns/{pid}/supplier-accept","manager",{"notes":TAG},ent=E,show=200); S()
+print("-- tagihan supplier penuh 300 yard padahal 100 yard diretur (potong tagihan)")
+s,vb=call("POST","/vendor-bills","manager",{"po_id":po["id"],"supplier_invoice_no":"INV-UJI-1116","items":[{"product_id":po["items"][0]["product_id"],"billed_qty":300,"price":14000}],"tax_mode":"ppn","entity_id":E,"submit_now":True,"notes":TAG},ent=E,show=400)
+s,vb2=call("POST","/vendor-bills","manager",{"po_id":po["id"],"supplier_invoice_no":"INV-UJI-1116b","items":[{"product_id":po["items"][0]["product_id"],"billed_qty":200,"price":14000}],"tax_mode":"ppn","entity_id":E,"submit_now":True,"notes":TAG},ent=E,show=300)
+print("-- reverse retur beli sesudah diterima supplier")
+call("POST",f"/purchase-returns/{pid}/reverse","manager",{"reason":TAG},ent=E,show=300); S()
+call("POST",f"/purchase-returns/{pid}/reverse","manager",{"reason":TAG},ent=E,show=200)

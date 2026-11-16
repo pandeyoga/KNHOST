@@ -1,0 +1,104 @@
+== E-S1 / A-S5 PO greige (yard) → terima ber-QC → tolak sebagian + retur (potong tagihan)
+  produk DMO-GRY-WVN-001 grey yard supplier CV Grey Mandiri Majalaya
+-- A-S5: PO greige dengan satuan kg (bukan satuan dasar) & satuan ngawur
+[manager] POST /purchase-orders -> 200 {"id": "po_0ff0619ff714", "po_number": "KSC/PO-00002", "pr_id": "", "pr_number": "", "source": "manual", "source_so_ids": [], "sales_user_id": "", "sales_name": "", "stage_progress": [], "po_type": "standard", "parent_po_id": "", "parent_po_number": "", "call_
+[manager] POST /purchase-orders -> 400 {"detail": "Item DMO-GRY-WVN-001: Konversi 'dozen' → 'yard' belum punya aturan untuk produk DMO-GRY-WVN-001. Tambahkan aturan di Produk & Harga → Konversi Satuan, atau isi gramasi & lebar produk (untuk konversi panjang ↔ berat)."}
+[manager] POST /purchase-orders -> 200 {"id": "po_a1fabfcd2f89", "po_number": "KSC/PO-00003", "pr_id": "", "pr_number": "", "source": "manual", "source_so_ids": [], "sales_user_id": "", "sales_name": "", "stage_progress": [], "po_type": "s
+[manager] POST /purchase-orders/po_a1fabfcd2f89/approve -> 409 {"detail": "PO status 'pending' tidak menunggu approval"}
+[md] POST /purchase-orders/po_a1fabfcd2f89/approve -> 409 {"detail": "PO status 'pending' tidak menunggu approval"}
+  PO KSC/PO-00003 pending 4662000.0
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/scan-receive -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": 
+[warehouse] POST /inbound/tasks/wms_715beb895da8/complete -> 200 {"id": "wms_715beb895da8", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": "purchase_order", "po_id": "po_a1fabfcd2f89", "po_number": "KSC/PO-000
+  task qc_pending
+  SPK KSC/INS-00007 po_receipt draft 1
+  roll [('RL-46493', 'quarantine', 'A', 'grey', 'yard', 14000.0)]
+  jurnal [('KSC/JE-00072', 'goods_receipt', 'Goods Receipt KSC/PO-00003', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00071', 'sales_return_reversal', 'Reversal KSC/JE-00070 — Koreksi penyelesaian ', [('4-1000', 0.0, 2456130.0), ('2-1200', 0.0, 270174.3), ('1-1200', 2726304.3, 0.0), ('1-1300', 0.0, 1768413.6), ('5-1000', 1768413.6, 0.0)])]
+  task {'status': 'qc_pending', 'expected_qty': 300.0, 'quantity': 300.0, 'received_qty': 300.0, 'actual_qty': None, 'unit': 'yard'} scan_log 6 [('UJI1116-001', 50.0), ('UJI1116-002', 50.0), ('UJI1116-003', 50.0), ('UJI1116-004', 50.0), ('UJI1116-005', 50.0), ('UJI1116-006', 50.0)]
+  roll PO [('roll_c2a5b4858930', 'RL-46493', 'quarantine', 300.0, 'KSC/LOT-2611-0127')]
+  SPK lines [('roll_c2a5b4858930', 'RL-46493', None)]
+== E-S1b PO greige 300 yard, 6 roll (complete dgn rolls[]) → SPK QC → tolak 2 roll + retur potong tagihan
+[manager] POST /purchase-orders -> 200 {"id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "pr_i
+[warehouse] POST /inbound/tasks/wms_b65c9187e45d/scan-receive -> 200 {"id": "wms_b65c9187e45d", "entity_id": "ent_ksc", "flow_typ
+[warehouse] POST /inbound/tasks/wms_b65c9187e45d/complete -> 200 {"id": "wms_b65c9187e45d", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": "purchase_order", "po_id": "po_2d375e3c6f91", "po_number": "KSC/PO-00004", "product_id": "prod_8297a7df4444", 
+  task qc_pending SPK KSC/INS-00008 draft 6
+-- pintu lama: qc-decision langsung di tugas (tanpa SPK)
+[qc] POST /inbound/tasks/wms_b65c9187e45d/qc-decision -> 409 {"detail": "Keputusan karantina mengikuti SPK KSC/INS-00008 — tutup SPK itu dengan keputusan (Gudang → SPK Inspeksi); roll diterima/ditolak otomatis."}
+[whadmin] POST /inbound/tasks/wms_b65c9187e45d/qc-decision -> 409 {"detail": "Keputusan karantina mengikuti SPK KSC/INS-00008 — tutup SPK itu dengan keputusan (Gudang → SPK Inspeksi); roll diterima/ditolak otomatis."}
+-- pintu lama: inspeksi 4-point per roll langsung (/inbound/rolls/{id}/inspect)
+[qc] POST /inbound/rolls/roll_2c86cbaa40be/inspect -> 403 {"detail": "Anda belum punya akses untuk mengubah Operasi Gudang. Minta Admin menambahkan akses 'Operasi Gudang'."}
+-- grade-override pada roll karantina oleh qc / warehouse / manager / mdquality (E-S6)
+[qc] POST /inventory/rolls/roll_2c86cbaa40be/grade-override -> 403 {"detail": "Anda belum punya akses untuk menyetujui Operasi Gudang. Minta Admin menambahkan akses 'Operasi Gudang'."}
+[warehouse] POST /inventory/rolls/roll_2c86cbaa40be/grade-override -> 403 {"detail": "Anda belum punya akses untuk menyetujui Operasi Gudang. Minta Admin menambahkan akses 'Operasi Gudang'."}
+[mdquality] POST /inventory/rolls/roll_2c86cbaa40be/grade-override -> 403 {"detail": "Anda belum punya akses untuk menyetujui Operasi Gudang. Minta Admin menambahkan akses 'Operasi Gudang'."}
+[whadmin] POST /inventory/rolls/roll_2c86cbaa40be/grade-override -> 403 {"detail": "Hanya manager/admin yang boleh mengubah grade tanpa inspeksi (D-23)."}
+[manager] POST /inventory/rolls/roll_2c86cbaa40be/grade-override -> 200 {"roll": {"id": "roll_2c86cbaa40be", "product_id": "prod_8297a7df4444", "owner_entity_id": "ent_ksc", "ownership_type": "internal", "consignor_ref": null, "warehouse_id":
+  roll0 {'grade': 'B', 'status': 'quarantine'} grade_history 0
+[whadmin] POST /inspections/ins_e82db0094f5d/assign -> 200 {"id": "ins_e82db0094f5d", "number": "KSC/INS-00008", "entit
+[qc] POST /inspections/ins_e82db0094f5d/start -> 200 {"id": "ins_e82db0094f5d", "number": "KSC/INS-00008", "entit
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_9e76efbc4cfc/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_d4fdf47ef7d3/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_2a1906c92414/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_25662cf17e1b/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_7cdab0a7869f/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/lines/insl_d53f5efcad90/inspect -> 400 {"detail": "QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol 'Buat SPK QC 4-point' di SPK
+[qc] POST /inspections/ins_e82db0094f5d/finish -> 400 {"detail": "Belum ada satu baris pun yang diperiksa — keputusan tanpa pemeriksaan membuat tanggalnya jadi bukti palsu."}
+  task qc_pending PO {'po_number': 'KSC/PO-00004', 'status': 'completed'}
+  roll [('RL-46494', 'quarantine', 'B', 50.0), ('RL-46495', 'quarantine', 'A', 50.0), ('RL-46496', 'quarantine', 'A', 50.0), ('RL-46497', 'quarantine', 'A', 50.0), ('RL-46498', 'quarantine', 'A', 50.0), ('RL-46499', 'quarantine', 'A', 50.0)]
+  retur beli []
+  jurnal [('KSC/JE-00073', 'goods_receipt', 'Goods Receipt KSC/PO-00004', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00072', 'goods_receipt', 'Goods Receipt KSC/PO-00003', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00071', 'sales_return_reversal', 'Reversal KSC/JE-00070 — Koreksi penyelesaian ', [('4-1000', 0.0, 2456130.0), ('2-1200', 0.0, 270174.3), ('1-1200', 2726304.3, 0.0), ('1-1300', 0.0, 1768413.6), ('5-1000', 1768413.6, 0.0)]), ('KSC/JE-00070', 'sales_return', 'Credit Note / Retur penjualan CN-00005', [('4-1000', 2456130.0, 0.0), ('2-1200', 270174.3, 0.0), ('1-1200', 0.0, 2726304.3), ('1-1300', 1768413.6, 0.0), ('5-1000', 0.0, 1768413.6)])]
+roll retur A→BS: grade BS grade_source None history []
+potongan cutloss BS: grade BS history []
+-- warehouse mencoba inspeksi 4-point langsung (pintu /inbound/rolls/{id}/inspect)
+[warehouse] POST /inbound/rolls/roll_9e24a3204b92/inspect -> 400 {"detail": "Isi grade roll RL-46495 — grade ditentukan petugas QC dari total poin (200.0 poin); sistem tidak mengisi grade otomatis."}
+  roll1 quarantine A None
+-- SPK QC 4-point tersendiri dari SPK penerimaan
+[qc] POST /inspections/qc-4point -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "qc_4point", "ref_doc_type": "inspection", "ref_doc_id": "ins_e82db0094f5d", "ref_doc_number
+  q4 KSC/INS-00009 qc_4point assigned 6
+[whadmin] POST /inspections/ins_8125dbaf00fe/assign -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entit
+[qc] POST /inspections/ins_8125dbaf00fe/start -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entit
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_98ed5c11d194/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_f8cd8998ebc7/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_12e0cd427af7/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_7c223b652214/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_231b3f49928e/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/lines/insl_0fb457bd3250/inspect -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "q
+[qc] POST /inspections/ins_8125dbaf00fe/finish -> 200 {"id": "ins_8125dbaf00fe", "number": "KSC/INS-00009", "entity_id": "ent_ksc", "line_code": "woven", "kind": "qc_4point", "ref_doc_type": "inspection", "ref_doc_id": "ins_e82db0094f5d", "ref_doc_number": "KSC/INS-00008", "task_id": "", "supplier_id": "", "supplier_name": "", "customer_id": "", "custo
+  sesudah tutup SPK 4-point: task qc_pending SPK penerimaan in_progress
+  roll [('RL-46494', 'quarantine', 'A'), ('RL-46495', 'quarantine', 'A'), ('RL-46496', 'quarantine', 'A'), ('RL-46497', 'quarantine', 'A'), ('RL-46498', 'quarantine', 'BS'), ('RL-46499', 'quarantine', 'BS')]
+-- tutup SPK penerimaan (keputusan karantina)
+[qc] POST /inspections/ins_e82db0094f5d/finish -> 400 {"detail": "Belum ada satu baris pun yang diperiksa — keputusan tanpa pemeriksaan membuat tanggalnya jadi bukti palsu."}
+[whadmin] POST /inspections/ins_e82db0094f5d/finish -> 400 {"detail": "Belum ada satu baris pun yang diperiksa — keputusan tanpa pemeriksaan membuat tanggalnya jadi bukti palsu."}
+  task qc_pending SPK penerimaan in_progress
+  roll [('RL-46494', 'quarantine', 'A'), ('RL-46495', 'quarantine', 'A'), ('RL-46496', 'quarantine', 'A'), ('RL-46497', 'quarantine', 'A'), ('RL-46498', 'quarantine', 'BS'), ('RL-46499', 'quarantine', 'BS')]
+  retur beli []
+  jurnal [('KSC/JE-00073', 'goods_receipt', 'Goods Receipt KSC/PO-00004', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00072', 'goods_receipt', 'Goods Receipt KSC/PO-00003', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00071', 'sales_return_reversal', 'Reversal KSC/JE-00070 — Koreksi penyelesaian ', [('4-1000', 0.0, 2456130.0), ('2-1200', 0.0, 270174.3), ('1-1200', 2726304.3, 0.0), ('1-1300', 0.0, 1768413.6), ('5-1000', 1768413.6, 0.0)])]
+  RL-46494 history [('A', 'B', 'manager_override'), ('B', 'A', 'qc_inspection')]
+-- SPK penerimaan: bagian MD Quality mengisi warna/handfeel
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_9e76efbc4cfc/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KSC/INS-00008", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "p
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_d4fdf47ef7d3/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KS
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_2a1906c92414/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KS
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_25662cf17e1b/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KS
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_7cdab0a7869f/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KS
+[mdquality] POST /inspections/ins_e82db0094f5d/lines/insl_d53f5efcad90/inspect -> 200 {"id": "ins_e82db0094f5d", "number": "KS
+[mdquality] POST /inspections/ins_e82db0094f5d/finish -> 200 {"id": "ins_e82db0094f5d", "number": "KSC/INS-00008", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "purchase_order", "ref_doc_id": "po_2d375e3c6f91", "ref_doc_number": "KSC/PO-00004", "task_id": "wms_b65c9187e45d", "suppl
+  task completed SPK penerimaan done
+  roll [('RL-46494', 'available', 'A'), ('RL-46495', 'available', 'A'), ('RL-46496', 'available', 'A'), ('RL-46497', 'available', 'A'), ('RL-46498', 'returned_supplier', 'BS'), ('RL-46499', 'returned_supplier', 'BS')]
+  retur beli [{'id': 'pret_5f157773d291', 'number': 'PRET-00005', 'status': 'pending_approval', 'doc_status': None, 'supplier_status': None, 'remedy': {'choice': 'bill_cut', 'label': 'Potong tagihan', 'reason': '[UJI-AUDIT-1116]', 'hint': 'PO ditutup kurang; tagihan supplier dikurangi (Nota Debit) dengan jurnal pembalik GR-IR.', 'by': 'Lestari Wulandari', 'by_id': 'user_98f4d33a241b', 'at': '2026-11-16T07:33:10.267557+00:00', 'task_id': 'wms_b65c9187e45d', 'po_applied': False}, 'return_remedy': None, 'grand_total': 1554000.0, 'total_amount': 1400000.0, 'source': 'qc_reject', 'origin': None}]
+  jurnal [('KSC/JE-00073', 'goods_receipt', 'Goods Receipt KSC/PO-00004', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00072', 'goods_receipt', 'Goods Receipt KSC/PO-00003', [('1-1300', 4200000.0, 0.0), ('2-1150', 0.0, 4200000.0)]), ('KSC/JE-00071', 'sales_return_reversal', 'Reversal KSC/JE-00070 — Koreksi penyelesaian ', [('4-1000', 0.0, 2456130.0), ('2-1200', 0.0, 270174.3), ('1-1200', 2726304.3, 0.0), ('1-1300', 0.0, 1768413.6), ('5-1000', 1768413.6, 0.0)]), ('KSC/JE-00070', 'sales_return', 'Credit Note / Retur penjualan CN-00005', [('4-1000', 2456130.0, 0.0), ('2-1200', 270174.3, 0.0), ('1-1200', 0.0, 2726304.3), ('1-1300', 1768413.6, 0.0), ('5-1000', 0.0, 1768413.6)])]
+  stok grey available 4
+== E-S1c dua pintu keputusan tak direkonsiliasi: QC 4-point 'tolak' vs MD Quality 'terima' (PO-00003, 1 roll 300 yd)
+[qc] POST /inspections/qc-4point -> 200 {"id": "ins_7d9bd3eec45a", "number": "KSC/INS-00010", "entit
+[qc] POST /inspections/ins_7d9bd3eec45a/start -> 200 {"id": "ins_7d9bd3eec45a", "number": "KSC/INS-00010", "entit
+[qc] POST /inspections/ins_7d9bd3eec45a/lines/insl_77c1012fabbc/inspect -> 200 {"id": "ins_7d9bd3eec45a", "number": "KSC/INS-00010", "entit
+[qc] POST /inspections/ins_7d9bd3eec45a/finish -> 200 {"id": "ins_7d9bd3eec45a", "number": "KSC/INS-00010", "entit
+  sesudah QC tolak: [('RL-46493', 'quarantine', 'BS')]
+[whadmin] POST /inspections/ins_db9ddd7c529b/assign -> 200 {"id": "ins_db9ddd7c529b", "number": "KSC/INS-00007", "entit
+[mdquality] POST /inspections/ins_db9ddd7c529b/start -> 403 {"detail": "Anda belum punya akses ke layar ini. Minta Admin
+[mdquality] POST /inspections/ins_db9ddd7c529b/lines/insl_1f3de47b923c/inspect -> 200 {"id": "ins_db9ddd7c529b", "number": "KSC/INS-00007", "entit
+[mdquality] POST /inspections/ins_db9ddd7c529b/finish -> 200 {"id": "ins_db9ddd7c529b", "number": "KSC/INS-00007", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "purchase_order", "ref_doc_id": "po_a1fabfcd2f89", "ref_doc_nu
+  akhir: [('RL-46493', 'blocked', 'BS', 300.0)] task completed retur beli 0

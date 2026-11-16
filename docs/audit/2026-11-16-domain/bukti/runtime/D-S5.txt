@@ -1,0 +1,19 @@
+== D-S5 tukar barang (SO-00006 roll0, exchange) → pesanan pengganti
+[salesadmin] POST /sales-returns -> 200 {"id": "sret_92673041775b", "number": "SRET-00011", "order_id": "so_d8edd835ae7c", "order_number": "KSC/SO-00006", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "draft", "items": [{"product_id": "prod_b1b9cfc06087",
+[manager] POST /sales-returns/sret_92673041775b/roll-settlement -> 200 {"id": "sret_92673041775b", "number": "SRET-00011", "order_id": "so_d8edd835ae7c", "order_number": "KSC/SO-00006", "cust
+RET {'number': 'SRET-00011', 'status': 'credit_settled', 'outcome': 'store_credit', 'refund_amount': None, 'refund_due': None, 'credit_note_id': 'cn_0d61dfa6e31a', 'total_amount': None, 'return_type': 'retur'}
+  item {'quantity_returned': 129.27, 'unit_price': None, 'line_total': None, 'roll_ids': ['roll_f28a025ad6fc'], 'condition': 'ok', 'disposition': None, 'outcome': None, 'accepted_qty': None}
+  rolls [('roll_f28a025ad6fc', 'quarantine', 'wh_jakarta', 129.27, 'A', None)]
+  jurnal [('KSC/JE-00070', 'sales_return', [('4-1000', 2456130.0, 0.0), ('2-1200', 270174.3, 0.0), ('1-1200', 0.0, 2726304.3), ('1-1300', 1768413.6, 0.0), ('5-1000', 0.0, 1768413.6)])]
+  credit_notes [('CN-00005', None, 'posted')] cash []
+  type retur bal sc 0.0
+[salesadmin] GET /sales-returns/sret_92673041775b/replacement -> 200 {"obligation": [{"product_id": "prod_b1b9cfc06087", "product_name": "", "unit_base": "yard", "qty_base": 129.27, "qty_yard": 129.27, "conversion_error": "", "grade": "A", "sold_grade": "A", "roll_ids": ["roll_f28a025ad6fc"], "unit_price_base": 19000.0, "value": 2456130.0}], "order_id": "", "order_number": "", "summary": {}}
+-- pesanan pengganti qty 2x kewajiban (uji batas)
+[salesadmin] POST /sales-returns/sret_92673041775b/replacement-order -> 200 {"order": {"id": "so_08536a7c3e74", "number": "KSC/SO-00008"}, "summary": {"obligation_yard": 129.27, "obligation_value": 0.0, "replacement_total": 5452608.6, "credit_applied": 0.0, "to_bill": 5452608.6, "remaining_credit": 0.0, "credit_error": "Saldo retur tidak tersedia — nilai tukar sudah memotong tagihan SO asal yang belum lunas", "redemption_number": "", "rule": "Lebih → selisih ditagih (harg
+[salesadmin] POST /sales-returns/sret_92673041775b/replacement-order -> 409 {"detail": {"code": "STATE_CHANGED", "message": "Dokumen sudah berubah (status 'credit_settled') sebelum aksi 'sales_return_replacement_order' dijalankan. Muat ulang layar.", "current_status": "credit_settled"}}
+-- pesanan pengganti kedua (ganda)
+[salesadmin] POST /sales-returns/sret_92673041775b/replacement-order -> 409 {"detail": {"code": "STATE_CHANGED", "message": "Dokumen sudah berubah (status 'credit_settled') sebelum aksi 'sales_return_replacement_order' dijalankan. Muat ulang layar.", "current_status": "credit_settled"}}
+  SO pengganti {'number': 'KSC/SO-00008', 'status': 'reserved', 'grand_total': 5452608.6, 'payment_status': 'pending', 'order_type': 'regular', 'payment_term_code': 'NET30'} store credit 0.0
+-- reverse retur sesudah pesanan pengganti dibuat
+[manager] POST /sales-returns/sret_92673041775b/reverse -> 200 {"id": "sret_92673041775b", "number": "SRET-00011", "order_id": "so_d8edd835ae7c", "order_number": "KSC/SO-00006", "customer_id": "cust_toko_kain", "customer_name": "Toko Kain Sejahtera", "entity_id": "ent_ksc", "return_type": "retur", "status": "cancelled", "items": [{"product_id": "prod_b1b9cfc060
+  retur cancelled SO pengganti reserved store credit 0.0

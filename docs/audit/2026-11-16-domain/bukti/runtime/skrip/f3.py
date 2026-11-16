@@ -1,0 +1,15 @@
+from f2 import *
+oid=d.sales_orders.find_one({"number":"KSC/SO-00009"})["id"]
+print("== F-S2 lanjut: konfirmasi → kirim roll pengganti (136,44 dari 260,48) → tagihan vs DP")
+push(oid,upto="dispatched"); so=so_line(oid)
+print("  backorders",so.get("backorders"),"status",so["status"])
+J=lambda n: print("  jurnal",[(j.get("number"),j.get("source_type"),[(l.get("account_code"),l.get("debit"),l.get("credit")) for l in j.get("lines",[])]) for j in d.journal_entries.find({"entity_id":E}).sort("created_at",-1).limit(n)])
+J(2); print("  saldo",bal())
+s,j=call("GET","/ar-receipts/open-orders","finance",q={"customer_id":"cust_toko_kain"},ent=E,show=10)
+print("  piutang terbuka (layar kasir AR)",[(o.get("number") or o.get("order_number"),o.get("grand_total"),o.get("paid"),o.get("outstanding") or o.get("remaining")) for o in (j if isinstance(j,list) else j.get("items",[])) if (o.get("number") or o.get("order_number"))=="KSC/SO-00009"])
+s,j=call("GET","/sales-orders","salesadmin",q={"q":"KSC/SO-00009"},ent=E,show=10)
+print("  daftar pesanan",[(o.get("number"),o.get("status"),o.get("grand_total"),o.get("payment_status"),o.get("has_backorder")) for o in (j.get("items") if isinstance(j,dict) else j) if o.get("number")=="KSC/SO-00009"])
+print("-- F-S5 batalkan pesanan sesudah terkirim sebagian (sisa backorder 124,04)")
+call("POST",f"/sales-orders/{oid}/cancel","salesadmin",{"reason":TAG+" batal sisa backorder"},ent=E,show=250)
+call("POST",f"/sales-orders/{oid}/mark-delivered","salesadmin",{},ent=E,show=200)
+so=so_line(oid); print("  backorders",so.get("backorders"),"status",so["status"]); print("  saldo",bal())

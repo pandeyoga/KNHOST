@@ -483,3 +483,10 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 
 ## Next tasks
 - Persetujuan D1–D8 lalu penggabungan duplikasi; UAT pemetaan akun oleh Finance.
+
+## Audit baca-saja 2026-11-16 (cabang `review/2026-11-16`, `main` tetap `91a3ec0`)
+- Review B1: 17/17 lengkap (10 verified, 4 reopened, 3 perlu keputusan pemilik); usulan perbaikan di `docs/reviews/2026-11-16/USULAN_PERBAIKAN_B1.md`.
+- Audit domain §8: 25/47 skenario dijalankan lewat API (12 lulus, 13 gagal), 22 terhambat; ringkasan `docs/audit/2026-11-16-domain/PENDALAMAN_RUNTIME.md`; skrip reproduksi `bukti/runtime/skrip/`.
+- 16 temuan baru `open` di TRACKER (MK-05/06, RD-02, RT-03…08, QM-02…05, SO-02…04) + RV-04/05 (lint lama di main, tidak diubah).
+- Belum: potret layar, 22 skenario terhambat, batch B2–B8. Hasil belum dikonfirmasi pemilik.
+- Data uji berlabel `[UJI-AUDIT-1116]` tertinggal di DB lokal (tidak dihapus).

@@ -29,12 +29,12 @@ Bukti runtime: ke-3 SPK seed menyimpan `from_stage`/`to_stage` KOSONG (`bukti/B-
 
 | Skenario | Status | Bukti/alasan |
 |---|---|---|
-| B-S1 | terhambat | greige→PFD→celup→finished E2E: butuh buat+jalankan SPK multi-langkah (issue/terima/QC); SPK seed tak berjalan. Bukti struktural: `bukti/B-S1-S8.txt` (from/to_stage kosong) |
+| B-S1 | terhambat | langkah 1 (greige→PFD) dijalankan sampai terima — bukti/runtime/B-S1-S4-S6.txt; langkah 2 celup + HPP akhir belum dijalankan (sesi habis), tarif jasa terbaca 0 |
 | B-S2 | terhambat | greige→PFP→screen→printing→finished E2E: idem |
 | B-S3 | terhambat | benang→tenun/rajut→greige E2E: idem (SPK tenun/rajut seed ada tapi belum dijalankan) |
-| B-S4 | terhambat | terima sebagian + susut>batas: butuh receive_step dgn qty sebagian (mutasi berantai) |
+| B-S4 | gagal | bukti/runtime/B-S1-S4-S6.txt — kirim 200 kg, terima 100 kg: langkah langsung `received`, sisa 100 kg ditolak 409, seluruh Rp10.880.000 dibebankan ke 100 kg (HPP 2×), saran klaim 2× nilai kurang (MK-05) |
 | B-S5 | terhambat | hasil ditolak QC→kembali/klaim mitra: butuh QC hasil makloon (data QC 0) |
-| B-S6 | terhambat | batal di tengah saat bahan di mitra: butuh issue lalu cancel |
+| B-S6 | gagal | bukti/runtime/B-S1-S4-S6.txt — batal SPK saat 50 kg di mitra → 200 `cancelled`, langkah tetap `issued`, roll `subcon`, WIP Rp2.720.000 menggantung sampai `return-material` dijalankan manual (MK-06) |
 | B-S7 | lulus | bukti/B-S7.txt — dua pintu aktif + sumber stage tak konsisten (master vs STAGE_OPTS hardcode) |
 | B-S8 | terhambat | tagihan jasa/HPP ke roll+jurnal: SPK seed tarif=0, `makloon_material_ledger`=0, jurnal makloon=0 (`bukti/B-S1-S8.txt`); butuh jalankan sampai selesai |
 | B-S9 | terhambat | repair/rework: butuh SPK selesai lalu repair order |
@@ -116,3 +116,25 @@ Bukti runtime: ke-3 SPK seed menyimpan `from_stage`/`to_stage` KOSONG (`bukti/B-
 - Arah perbaikan: resep baca stage/proses dari server (satu sumber).
 - Keputusan pemilik: —
 - Sudah ada: MS-03.
+
+### MK-05 — Terima hasil kurang langsung menutup langkah; nilai bahan penuh dibebankan ke hasil dan saran klaim dihitung dua kali
+- Keparahan: Tinggi
+- Jenis akar: cacat logika
+- Tingkat bukti: terbukti runtime (API, data uji berlabel `[UJI-AUDIT-1116]`)
+- Bukti: `backend/services/makloon_order_service.py:1358` (`unit_value=out_uc` = HPP hasil sesudah dibebani) · `backend/services/makloon_order_service.py:1026` (terima kedua ditolak) · `bukti/runtime/B-S1-S4-S6.txt`
+- Reproduksi: SPK greige→PFD 200 kg (Rp10.880.000) → `issue` → `receive` 100 kg tanpa tanda parsial. Hasil: langkah `received`, HPP 108.800/kg (bahan 54.400/kg), klaim terbuka `amount_suggested` Rp10.880.000 untuk kekurangan 100 kg; `receive` sisa → 409.
+- Dampak: HPP hasil menggelembung 2×; nilai klaim yang disarankan ke mitra = seluruh bahan, bukan nilai yang hilang (Rp5.440.000); 100 kg di mitra hilang dari sistem.
+- Arah perbaikan: Hitung nilai kurang dengan HPP bahan sebelum pembebanan; saat hasil < toleransi tanya dulu "sisa masih di mitra?" sebelum menutup langkah.
+- Keputusan pemilik: Susut di atas toleransi: tahan penutupan langkah sampai klaim diputus?
+- Sudah ada: —
+
+### MK-06 — SPK makloon bisa dibatalkan saat bahan masih di mitra tanpa menarik bahan
+- Keparahan: Tinggi
+- Jenis akar: status
+- Tingkat bukti: terbukti runtime (API, data uji berlabel `[UJI-AUDIT-1116]`)
+- Bukti: `backend/services/makloon_order_service.py:1583` (`cancel_order`) · `backend/routers/makloon_orders.py:321` · `bukti/runtime/B-S1-S4-S6.txt`
+- Reproduksi: SPK 50 kg → `issue` → `POST /makloon-orders/{id}/cancel`. Hasil: 200, SPK `cancelled`, langkah tetap `issued`, 3 roll `subcon`, saldo 1-1350 Rp2.720.000. `return-material` masih bisa dijalankan sesudahnya (jurnal balik) tetapi tidak diwajibkan.
+- Dampak: Bahan dan nilai WIP menggantung di SPK yang sudah batal; tidak ada antrean yang menagih penarikan.
+- Arah perbaikan: Tolak batal selama ada bahan di mitra, atau jadikan batal = tarik bahan dalam satu aksi.
+- Keputusan pemilik: —
+- Sudah ada: —
