@@ -135,6 +135,17 @@ Usulan: hapus menu Eskalasi Gudang; jadikan kartu "Perlu keputusan" di Meja Guda
 Catatan Claude (foto 28): ringkasan "Belum lunas Rp 6.743.694 (tercatat Rp 0 · belum dikirim Rp 6.743.694)" dan kolom
 "Tercatat · Belum dikirim" sulit dipahami orang awam — istilahnya perlu ditinjau bersama M19 (Pelanggan).
 
+### Kiriman 7 — Bagan Akun, rekonsiliasi, penggajian, insentif, Pusat Export, Jejak Dokumen
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M37 | Bagan Akun › "Lingkup" (Template Global · Sukacita · Kanda Fabric · Cipta Sandang) | **Warnanya beda sendiri** (ungu), dan **relevankah bila PT sudah dipilih di bilah atas?** — pilihan PT dobel. | 31 |
+| M38 | Rekonsiliasi bank | "Rekonsiliasi saya bisa cocokkan otomatis **tanpa input file**." Perlu dikonfirmasi maksudnya: (a) temuan — tombol cocokkan otomatis tersedia walau belum ada mutasi diimpor; atau (b) permintaan — mutasi bank masuk/dicocokkan otomatis tanpa unggah berkas. | — |
+| M39 | Penggajian › rincian per karyawan | **UI rincian (breakdown) masih bermasalah**: blok Pendapatan/Potongan/Tanggungan perusahaan tidak sejajar kolom tabel; PPh 21 "Rp 0 0,00%". | 32 |
+| M40 | Kinerja & Insentif › Lembar Insentif | **Boros ruang** (kartu berjudul + keterangan + tombol + label saringan + chip status + baris kosong). | 33 |
+| M41 | Pusat Export | **"Saya admin tapi tidak punya akses."** Kode memberi peran `admin` izin `data_export` view/export (`backend/permissions_config.py`); dugaan: izin peran yang tersimpan di database (atau akun berperan kustom berlabel Admin) belum memuat "Pusat Export Data" — perlu dicek di data. | 34 |
+| M42 | Pusat Dokumen › Jejak Dokumen | **Cari dokumen harus menampilkan daftar** (dokumen terbaru/tersaring), bukan hanya kotak cari. Juga: panel "Alat admin · susun ulang relasi dokumen lama" tampil di layar utama (sejenis M20). | 35 |
+
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
   Inggris) — seharusnya label Indonesia.
