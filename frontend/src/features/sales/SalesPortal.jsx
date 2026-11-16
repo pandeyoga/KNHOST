@@ -17,10 +17,36 @@ import CreateCustomerModal from "../pos/CreateCustomerModal";
 import PosStartGate, { loadPosCtx, savePosCtx } from "../pos/PosStartGate";
 import { useSites } from "../../components/SiteSelect";
 import { LOCATION_SCOPE_KEY } from "../../components/LocationScopeBar";
+import { useCreditStatus } from "./mobile/MobileCustomerBar";
 import ProductQuickView from "../../components/ProductQuickView";
 import { SupersedeHintList, localSupersedeHints } from "../../components/SupersedeHint";   // PREP-A
 import { useEffectivePrices, pickPrice } from "../../hooks/useEffectivePrices";
 import { roleIs } from "../../config/roles";
+
+/** M6 (pemilik 16 Nov) — plafon kredit pelanggan terpilih di bilah POS: plafon · terpakai · sisa (mesin gerbang kredit
+ *  yang sama dengan checkout; "terpakai" = eksposur: piutang + pesanan belum dikirim + giro − titipan). */
+function PosCreditChip({ customerId }) {
+  const credit = useCreditStatus(customerId, 0);
+  const g = credit?.gate || {};
+  const c = credit?.credit || {};
+  if (!customerId || !credit) return null;
+  // Gerbang kredit bisa dimatikan per PT (tidak diperiksa saat pesanan) — angka plafon tetap informasi bagi kasir.
+  const limit = Number(g.limit?.credit_limit ?? c.credit_limit ?? 0);
+  const used = Number(g.exposure?.total ?? c.ar_outstanding ?? 0);
+  const available = Number(g.limit?.available ?? c.available_credit ?? Math.max(limit - used, 0));
+  const over = limit > 0 && used > limit;
+  return (
+    <span data-testid="pos-credit-chip"
+      className={`inline-flex flex-wrap items-center gap-x-1.5 rounded-md border px-2 py-1 text-fs-12 ${over ? "border-kn-danger-text text-kn-danger-text" : "border-kn-divider text-kn-text"}`}>
+      <span className="text-kn-text-2">Plafon</span>
+      <b className="tabular-nums" data-testid="pos-credit-limit">{limit > 0 ? formatCurrency(limit) : "Tanpa batas"}</b>
+      <span className="text-kn-text-2">· terpakai</span>
+      <b className="tabular-nums" data-testid="pos-credit-used">{formatCurrency(used)}</b>
+      {limit > 0 && <><span className="text-kn-text-2">· sisa</span>
+        <b className="tabular-nums" data-testid="pos-credit-available">{formatCurrency(available)}</b></>}
+    </span>
+  );
+}
 
 /** Area yang dipilih di bilah "Lokasi" atas (`site:<id>`), "" bila lokasi kerja / semua / gudang. */
 function headerSiteId() {
@@ -205,6 +231,7 @@ export function SalesPortal({
               placeholder="Pilih pelanggan (harga langganan otomatis)"
               options={customerOptions} searchable />
           </div>
+          <PosCreditChip customerId={selectedCustomer?.id} />
           <span data-testid="pos-site-chip" className="inline-flex items-center gap-1 rounded-full bg-[#EEF4FF] px-2.5 py-1 text-[11.5px] font-semibold text-[#0058CC]">
             <MapPin size={12} /> {siteName || "Lokasi"}
           </span>

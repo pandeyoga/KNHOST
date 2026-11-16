@@ -795,7 +795,24 @@ async def search(q: str, limit: int = 20, entity_id: str = "",
     """Cari dokumen lintas jenis berdasarkan nomor / nama pihak. PK-17: nominal disaring `redact_node`."""
     ql = (q or "").strip()
     if len(ql) < 2:
-        return []
+        # M42 (pemilik 16 Nov: "cari dokumen juga bisa dilihatkan listnya, jangan hanya search") — tanpa kata cari =
+        # dokumen TERBARU lintas jenis (3 per jenis, diurut tanggal), jadi layar langsung berisi daftar.
+        recent: List[Dict[str, Any]] = []
+        for meta in sorted(DOC_TYPES.values(), key=lambda m: m["order"]):
+            flt0: Dict[str, Any] = dict(meta["filter"])
+            if entity_id and entity_id != "all":
+                flt0["entity_id"] = entity_id
+            try:
+                rows0 = await db[meta["collection"]].find(flt0, {"_id": 0}).sort("created_at", -1).limit(3).to_list(3)
+            except Exception:  # noqa: BLE001 — koleksi belum ada di DB baru
+                continue
+            for row in rows0:
+                node = redact_node(node_of(meta["doc_type"], safe_doc(row)), viewer_perms)
+                node["ref_count"] = len(row.get("refs") or [])
+                node["_sort"] = str(row.get("created_at") or node.get("date") or "")
+                recent.append(node)
+        recent.sort(key=lambda n: n.pop("_sort", ""), reverse=True)
+        return recent[:limit]
     import re as _re
     rx = _re.compile(_re.escape(ql), _re.I)
     out: List[Dict[str, Any]] = []

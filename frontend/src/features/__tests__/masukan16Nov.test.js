@@ -109,3 +109,35 @@ describe("M39 — baris slip gaji", () => {
     expect(Array.from(cells).map((c) => c.colSpan)).toEqual([2, 2, 1]);
   });
 });
+
+// M21 — riwayat harga yang benar-benar dibeli pelanggan; M42 — Jejak Dokumen tanpa kata cari = dokumen terbaru.
+describe("M21 + M42", () => {
+  const CustomerPriceHistoryModal = jest.requireActual("../sales/customerPricelist/CustomerPriceHistoryModal").default;
+  const TraceSearch = jest.requireActual("../documents/trace/TraceSearch").default;
+
+  test("M21 — 'Pernah dibeli': pesanan, qty, harga, asal harga", async () => {
+    mockGet.mockImplementation((url) => Promise.resolve({ data: url.includes("purchase-history")
+      ? { items: [{ so_id: "s1", so_number: "SO-9", date: "2026-11-01", qty: 10, unit: "yard", price: 90000,
+        normal_price: 100000, price_source_label: "Harga khusus" }] } : [] }));
+    const host = await mount(<CustomerPriceHistoryModal row={{ product_id: "p1", product_name: "Rayon", sku: "R1",
+      global_price: 100000, base_unit: "yard" }} customer={{ id: "c1", name: "Toko A" }} entityId="ent_ksc"
+      canManage={false} onClose={() => {}} onChanged={() => {}} />);
+    const row = q(host, "cpl-bought-row-0");
+    expect(row.textContent).toContain("SO-9");
+    expect(row.textContent).toContain("Harga khusus");
+    expect(row.textContent).toContain("90.000");
+  });
+
+  test("M42 — tanpa kata cari tampil 'Dokumen terbaru'", async () => {
+    jest.useFakeTimers();
+    mockGet.mockResolvedValue({ data: [{ key: "k1", doc_id: "d1", number: "SO-1", label: "SO", title: "Toko A",
+      date: "2026-11-16", ref_count: 2 }] });
+    const host = await mount(<TraceSearch entityId="ent_ksc" onPick={() => {}} onError={() => {}} />);
+    await act(async () => { jest.advanceTimersByTime(400); });
+    await act(async () => {});
+    jest.useRealTimers();
+    expect(mockGet.mock.calls[0][1].params.q).toBe("");
+    expect(q(host, "trace-recent-label")).not.toBeNull();
+    expect(q(host, "trace-result-d1")).not.toBeNull();
+  });
+});

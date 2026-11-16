@@ -803,19 +803,85 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         "— SKU baru yang belum dirilis hanya bisa direalisasi Manajer (rilis produk = wewenang Manajer).",
         od_rows, action_label="Buka", owner="md", value_kind="count", value_label="Pesanan"))
 
-    # 3 — pengajuan pembelian bahan (PR) yang belum diajukan / masih menunggu
+    # 3 — pengajuan pembelian bahan (PR) yang belum diajukan / masih menunggu / disetujui tapi belum direalisasi
+    # M5 (pemilik 16 Nov) — PR disetujui yang realisasinya masih terbuka ikut tampil (dulu hilang dari meja); field
+    # nyata PR = reason/needed_by_date/created_by/preferred_supplier_name/total_est_amount (dulu dibaca nama lain → kosong).
     prs = await db.purchase_requisitions.find(
-        {**eq, "status": {"$in": ["draft", "pending_approval"]}}, {"_id": 0}).to_list(200)
+        {**eq, "$or": [{"status": {"$in": ["draft", "pending_approval"]}},
+                       {"status": "approved", "realization_status": {"$in": ["open", "partial"]}}]},
+        {"_id": 0}).to_list(200)
+    pr_badge = {"draft": "draf", "pending_approval": "menunggu persetujuan", "approved": "disetujui · belum direalisasi"}
     queues.append(_queue(
         "pr", "Permintaan pembelian bahan",
-        "PR draf perlu diajukan; PR menunggu persetujuan perlu dikejar.",
+        "PR draf perlu diajukan; PR menunggu persetujuan perlu dikejar; PR disetujui perlu direalisasi (PO / SPK makloon).",
         [_row(ref_type="purchase_requisition", ref_id=p["id"], number=p.get("number") or p.get("pr_number", ""),
-              title=p.get("purpose") or p.get("notes") or _pr_items_title(p),
-              subtitle=_pr_subtitle(p), value=float(p.get("total") or p.get("estimated_total") or _pr_total(p)),
+              title=p.get("reason") or p.get("purpose") or p.get("notes") or _pr_items_title(p),
+              subtitle=_pr_subtitle(p),
+              value=float(p.get("total_est_amount") or p.get("total") or p.get("estimated_total") or _pr_total(p)),
               age_days=_age_days(p.get("created_at")), at=p.get("created_at"),
-              badge="draf" if p.get("status") == "draft" else "menunggu persetujuan",
+              badge=pr_badge.get(p.get("status"), p.get("status", "")),
               action="Buka", action_kind="open") for p in prs],
         action_label="Buka", owner="md"))
+
+    # 3b — M5: SPK makloon berjalan (dikirim ke mitra, belum selesai diterima)
+    mkos = await db.makloon_orders.find({**eq, "status": {"$in": ["in_process", "partially_received"]}},
+                                        {"_id": 0}).sort("created_at", 1).to_list(200)
+    step_lbl = {"issued": "dikirim ke mitra", "pending": "menunggu", "in_process": "dikerjakan mitra",
+                "partially_received": "diterima sebagian", "received": "diterima"}
+
+    def _mko_now(m: Dict[str, Any]) -> str:
+        steps = m.get("steps") or []
+        cur = next((st for st in steps if st.get("status") not in ("received", "done", "completed")), steps[-1] if steps else {})
+        return " · ".join(x for x in (cur.get("makloon_name") or "", step_lbl.get(cur.get("status") or "", "")) if x)
+    queues.append(_queue(
+        "makloon_jalan", "SPK makloon berjalan",
+        "Pekerjaan di mitra makloon yang belum selesai diterima. Kejar mitra sesuai tahap berjalan.",
+        [_row(ref_type="makloon_order", ref_id=m["id"], number=m.get("mko_number") or m.get("number", ""),
+              title=m.get("final_output_name") or "SPK makloon", subtitle=_mko_now(m),
+              value=float(m.get("planned_service_cost") or 0),
+              age_days=_age_days(m.get("issued_at") or m.get("created_at")), at=m.get("issued_at") or m.get("created_at"),
+              badge="partially_received" if m.get("status") == "partially_received" else "in_process",
+              action="Buka", action_kind="open") for m in mkos],
+        action_label="Buka", owner="md", value_label="Biaya jasa rencana"))
+
+    # 3c — M5: jasa makloon sudah diterima, menunggu faktur mitra (GR/IR, K-63/K-82)
+    bills = await db.vendor_bills.find({**eq, "status": "awaiting_invoice", "makloon_order_id": {"$nin": [None, ""]}},
+                                       {"_id": 0}).sort("created_at", 1).to_list(200)
+    mko_no = {m["id"]: m.get("mko_number") or m.get("number", "") for m in await db.makloon_orders.find(
+        {"id": {"$in": list({b["makloon_order_id"] for b in bills})}}, {"_id": 0, "id": 1, "mko_number": 1, "number": 1})
+        .to_list(500)} if bills else {}
+    queues.append(_queue(
+        "makloon_faktur", "SPK makloon menunggu faktur mitra",
+        "Jasa sudah diterima; hutang lahir saat faktur mitra dicocokkan. Minta faktur ke mitra.",
+        [_row(ref_type="makloon_order", ref_id=b.get("makloon_order_id", ""),
+              number=mko_no.get(b.get("makloon_order_id"), "") or b.get("bill_number", ""),
+              title=b.get("supplier_name") or "Mitra makloon",
+              subtitle=" · ".join(x for x in (b.get("bill_number") or "",
+                                              f"langkah {b['step_seq']}" if b.get("step_seq") else "",
+                                              b.get("stage_code") or "") if x)[:110],
+              value=float(b.get("net_amount") or b.get("total_amount") or 0),
+              age_days=_age_days(b.get("created_at")), at=b.get("created_at"),
+              badge="menunggu faktur", action="Buka", action_kind="open") for b in bills],
+        action_label="Buka", owner="md", value_label="Nilai jasa"))
+
+    # 3d — M5: PO bahan dari PR yang belum selesai diterima
+    pos = await db.purchase_orders.find(
+        {**eq, "$or": [{"source": "pr"}, {"pr_id": {"$nin": [None, ""]}}, {"source_pr_number": {"$nin": [None, ""]}}],
+         "po_type": {"$ne": "blanket"}, "status": {"$in": ["waiting_approval", "pending", "receiving", "partial"]}},
+        {"_id": 0}).sort("created_at", 1).to_list(200)
+    queues.append(_queue(
+        "po_bahan", "PO bahan berjalan",
+        "PO dari permintaan pembelian bahan yang belum selesai diterima gudang.",
+        [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""),
+              title=o.get("supplier_name") or "—",
+              subtitle=" · ".join(x for x in (f"dari {o.get('source_pr_number') or o.get('pr_number')}"
+                                              if (o.get("source_pr_number") or o.get("pr_number")) else "",
+                                              f"tiba {str(o.get('expected_delivery_date'))[:10]}"
+                                              if o.get("expected_delivery_date") else "") if x),
+              value=float(o.get("grand_total") or o.get("total_amount") or 0),
+              age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status", ""),
+              action="Buka", action_kind="open") for o in pos],
+        action_label="Buka", owner="md", value_label=TOTAL_LABEL))
 
     # 4 — SPK inspeksi dengan tahanan warna/handfeel (butuh acuan MD)
     # 23 Okt — SPK QC retur pelanggan memeriksa barang KEMBALIAN terhadap klaim per roll, bukan terhadap sample
@@ -873,9 +939,10 @@ def _pr_subtitle(p: Dict[str, Any]) -> str:
     items = p.get("items") or []
     qty = sum(float(i.get("quantity") or 0) for i in items)
     unit = (items[0].get("unit") if items else "") or ""
-    parts = [f"{qty:g} {unit}".strip(), p.get("warehouse_name") or "", p.get("supplier_name") or "",
-             f"butuh {str(p.get('needed_by'))[:10]}" if p.get("needed_by") else "",
-             p.get("requested_by") or ""]
+    need = p.get("needed_by_date") or p.get("needed_by")
+    parts = [f"{qty:g} {unit}".strip() if qty else "", p.get("warehouse_name") or "",
+             p.get("preferred_supplier_name") or p.get("supplier_name") or "",
+             f"butuh {str(need)[:10]}" if need else "", p.get("created_by") or p.get("requested_by") or ""]
     return " · ".join(x for x in parts if x)
 
 

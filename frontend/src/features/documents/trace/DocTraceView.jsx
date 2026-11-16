@@ -163,13 +163,6 @@ export default function DocTraceView({
       <div className="grid gap-3 lg:grid-cols-[380px_1fr] lg:items-start">
         <div className="grid gap-3">
           <TraceSearch entityId={selectedEntity} onPick={pick} onError={setError} />
-          {/* UAT 24 Okt (audit UI tahap 2, G5-70) — alat admin dilipat (dulu kartu penuh di layar kerja harian). */}
-          {canBackfill && (
-            <details className="rounded-lg border border-[#EDEEF1] bg-white" data-testid="trace-admin-tools">
-              <summary className="cursor-pointer px-3 py-2 text-[11.5px] font-semibold text-[#6B6B73]">Alat admin · susun ulang relasi dokumen lama</summary>
-              <div className="p-2"><TraceBackfill onDone={() => cur && load(cur, depth)} /></div>
-            </details>
-          )}
         </div>
 
         <div className="grid gap-3">
@@ -289,7 +282,7 @@ export default function DocTraceView({
                     </p>
                     <p className="mx-auto mt-1 max-w-md text-[11.5px] text-[#6B6B73]">
                       Dokumen turunan akan menaut otomatis saat lahir. Untuk dokumen lama,
-                      admin dapat menjalankan <b>Susun Ulang Relasi</b> di panel kiri.
+                      admin dapat menjalankan <b>Susun Ulang Relasi</b> di kaki halaman.
                     </p>
                   </div>
                 </section>
@@ -302,6 +295,15 @@ export default function DocTraceView({
           )}
         </div>
       </div>
+
+      {/* M42 (pemilik 16 Nov) — alat admin tidak lagi di kolom kerja (sejenis M20): dipindah ke kaki halaman, terlipat,
+          hanya untuk pemegang izinnya. */}
+      {canBackfill && (
+        <details className="rounded-lg border border-kn-divider bg-white" data-testid="trace-admin-tools">
+          <summary className="cursor-pointer px-3 py-2 text-fs-12 font-semibold text-kn-text-2">Alat admin · susun ulang relasi dokumen lama</summary>
+          <div className="p-2"><TraceBackfill onDone={() => cur && load(cur, depth)} /></div>
+        </details>
+      )}
     </div>
   );
 }

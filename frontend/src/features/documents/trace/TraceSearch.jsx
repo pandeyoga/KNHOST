@@ -18,11 +18,13 @@ export default function TraceSearch({ entityId, onPick, onError }) {
   const [touched, setTouched] = useState(false);
   const timer = useRef(null);
 
+  // M42 (pemilik 16 Nov) — tanpa kata cari = daftar dokumen TERBARU (dulu kotak cari kosong saja).
   const run = useCallback(async (term) => {
-    if ((term || "").trim().length < 2) { setRows([]); return; }
+    const t = (term || "").trim();
+    if (t.length === 1) return;   // satu huruf: tunggu huruf berikutnya, daftar yang ada tetap tampil
     setLoading(true);
     try {
-      setRows(await searchDocs(term.trim(), entityId));
+      setRows(await searchDocs(t, entityId));
       if (onError) onError("");
     } catch (e) {
       if (onError) onError(errText(e, "Gagal mencari dokumen."));
@@ -52,13 +54,11 @@ export default function TraceSearch({ entityId, onPick, onError }) {
             onChange={(e) => { setQ(e.target.value); setTouched(true); }}
             className="field !pl-8"
             placeholder="Nomor surat / pelanggan / supplier"
-            title="Contoh nomor: SO-0001, PO-00003, SCT-, SMP-, SPEC-, FKT-, AR-, VB-" />
+            title="Mulai dari dokumen apa pun — SO, PO, Kwitansi, Tagihan Supplier, Kontrak, SMP, SPEC. Contoh: SO-0001, PO-00003" />
         </div>
-        <p className="text-[10.5px] text-[#8E8E93]">
-          Penelusuran bisa dimulai dari dokumen apa pun — termasuk dari tengah rantai
-          seperti Kwitansi atau Tagihan Supplier, maupun dari hulu seperti Kontrak
-          Supplier, Permintaan Sample (SMP), dan Spesifikasi Produk (SPEC).
-        </p>
+        {!q.trim() && rows.length > 0 && (
+          <p className="text-fs-12 font-semibold text-kn-text-2" data-testid="trace-recent-label">Dokumen terbaru</p>
+        )}
 
         {touched && !loading && q.trim().length >= 2 && rows.length === 0 && (
           <div data-testid="trace-search-empty" className="rounded-lg border border-dashed border-[#E5E5EA] bg-[#FAFBFC] p-4 text-center">

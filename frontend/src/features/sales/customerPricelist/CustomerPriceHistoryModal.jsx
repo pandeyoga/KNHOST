@@ -48,6 +48,16 @@ export default function CustomerPriceHistoryModal({
 
   useEffect(() => { load(); }, [load]);
 
+  // M21 (pemilik 16 Nov) — harga yang BENAR-BENAR dibeli pelanggan (pesanan, qty, harga, asal harga).
+  const [bought, setBought] = useState(null);
+  useEffect(() => {
+    let live = true;
+    axios.get(`${API}/customer-prices/purchase-history`, {
+      params: { customer_id: customer.id, product_id: row.product_id, entity_id: entityId },
+    }).then((r) => { if (live) setBought(r.data?.items || []); }).catch(() => { if (live) setBought([]); });
+    return () => { live = false; };
+  }, [customer.id, row.product_id, entityId]);
+
   const deactivate = async (id) => {
     try {
       await axios.delete(`${API}/customer-prices/${id}`);
@@ -73,6 +83,43 @@ export default function CustomerPriceHistoryModal({
             Pelanggan <b>{customer.name}</b> · {row.sku} · harga umum{" "}
             {formatCurrency(row.global_price)}/{row.base_unit}
           </p>
+          <section className="mb-3" data-testid="cpl-bought">
+            <p className="mb-1 text-fs-12 font-bold text-kn-text">Pernah dibeli</p>
+            {bought === null ? (
+              <div className="h-8 animate-pulse rounded bg-kn-neutral-soft" />
+            ) : bought.length === 0 ? (
+              <p className="text-fs-12 text-kn-text-2" data-testid="cpl-bought-empty">Belum pernah membeli barang ini.</p>
+            ) : (
+              <div className="overflow-auto rounded-md border border-kn-divider">
+                <table className="w-full text-fs-12">
+                  <thead>
+                    <tr className="border-b border-kn-divider bg-kn-neutral-soft text-left text-kn-text-2">
+                      <th className="px-3 py-1.5">Tanggal</th><th className="px-3 py-1.5">Pesanan</th>
+                      <th className="px-3 py-1.5 text-right">Qty</th><th className="px-3 py-1.5 text-right">Harga</th>
+                      <th className="px-3 py-1.5">Asal harga</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bought.map((b, i) => (
+                      <tr key={`${b.so_id}-${i}`} data-testid={`cpl-bought-row-${i}`} className="border-b border-kn-divider last:border-0">
+                        <td className="px-3 py-1.5 whitespace-nowrap">{fmtDate(b.date)}</td>
+                        <td className="px-3 py-1.5 font-mono">{b.so_number}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums">{b.qty} {b.unit}</td>
+                        <td className="px-3 py-1.5 text-right font-semibold tabular-nums">
+                          {formatCurrency(b.price)}
+                          {Number(b.normal_price || 0) > Number(b.price || 0) && (
+                            <span className="block text-kn-text-2 line-through">{formatCurrency(b.normal_price)}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5">{b.price_source_label}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          <p className="mb-1 text-fs-12 font-bold text-kn-text">Harga langganan yang diatur</p>
           {err && (
             <div className="mb-2 flex items-center gap-1 text-[12px] text-[#C0392B]">
               <AlertTriangle size={13} />{err}

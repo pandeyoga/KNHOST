@@ -159,6 +159,8 @@ async def document_trace_search(request: Request, q: str = Query("", min_length=
     out = []
     for eid in ids:
         out.extend(await refs_svc.search(q, limit=limit, entity_id=eid, viewer_perms=perms))
+    if len((q or "").strip()) < 2:   # M42 — daftar terbaru lintas PT diurut tanggal
+        out.sort(key=lambda n: str(n.get("date") or ""), reverse=True)
     return out[:limit]
 
 

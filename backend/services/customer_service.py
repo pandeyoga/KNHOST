@@ -228,6 +228,14 @@ async def enrich_customer(customer: Dict[str, Any], with_credit: bool = True) ->
     if c.get("assigned_sales_id") and not c.get("assigned_sales_name"):
         u = await db.users.find_one({"id": c["assigned_sales_id"]}, {"_id": 0, "name": 1})
         c["assigned_sales_name"] = (u or {}).get("name", "")
+    if not c.get("assigned_sales_name"):
+        # M19 (pemilik 16 Nov) — sales penanggung jawab tampil "—" walau pelanggan punya tim sales: jatuh ke PIC tim.
+        pic = pic_of(c.get("sales_team") or [])
+        if pic:
+            nm = pic.get("name") or pic.get("user_name") or ""
+            if not nm and pic.get("user_id"):
+                nm = ((await db.users.find_one({"id": pic["user_id"]}, {"_id": 0, "name": 1})) or {}).get("name", "")
+            c["assigned_sales_name"] = nm
     if with_credit:
         c["credit"] = await compute_customer_credit(c)
     return c

@@ -29,6 +29,7 @@ import LineFilter from "../../components/LineFilter";   // FASE L — chip penya
 import ProductLifecycleCell from "../rnd/ProductLifecycleCell";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
+import { useCreditStatus } from "../sales/mobile/MobileCustomerBar";   // M19 — status kredit pelanggan
 import { productMatches, supplierCodesLabel } from "../../utils/productSearch";   // MD-08
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { scopeSuffix } from "../../utils/entityLabel";
@@ -45,6 +46,22 @@ const TAB_SINGULAR = { products: "Produk", customers: "Pelanggan" };
 const tabLabel = Object.fromEntries(ALL_TABS);
 const statusLabel = (row) => ((row.status || (row.active === false ? "inactive" : "active")) === "inactive" ? "Nonaktif" : "Aktif");
 const isInactive = (row) => statusLabel(row) === "Nonaktif";
+
+/** M19 — plafon & pemakaian kredit pelanggan di laci rincian Master Data (dari mesin gerbang kredit yang sama). */
+function CustomerCreditFact({ row }) {
+  const credit = useCreditStatus(row.credit ? "" : row.id, 0);
+  const g = credit?.gate || {};
+  const c = row.credit || credit?.credit || {};
+  if (!row.credit && !credit) return <span className="text-kn-text-2">memuat…</span>;
+  const limit = Number(g.limit?.credit_limit ?? c.credit_limit ?? 0);
+  const used = Number(g.exposure?.total ?? c.ar_outstanding ?? 0);
+  return (
+    <span data-testid="customer-credit-fact">
+      {limit > 0 ? formatCurrency(limit) : "Tanpa batas"}
+      <span className="text-kn-text-2"> · terpakai {formatCurrency(used)}</span>
+    </span>
+  );
+}
 
 export default function AdminView({
   data,
@@ -172,10 +189,13 @@ export default function AdminView({
   const masterDetail = (row) => {
     const facts = tab === "customers" ? [
       { label: "PIC toko", value: row.pic_name || "—" }, { label: "HP/WhatsApp", value: row.phone || "—" },
-      { label: "Kota", value: row.city || "—" }, { label: "Sales penanggung jawab", value: row.assigned_sales_name || row.sales_pic || "—" },
+      { label: "Kota", value: row.city || "—" },
+      // M19 (pemilik 16 Nov) — dulu "—" walau pelanggan punya tim sales (data dasbor mentah); jatuh ke PIC tim sales.
+      { label: "Sales penanggung jawab", value: row.assigned_sales_name || row.sales_pic
+        || (row.sales_team || []).find((m) => m.role === "pic")?.name || (row.sales_team || [])[0]?.name || "—" },
       // CR-T1 — plafon yang BERLAKU (profil kredit PT pelanggan), bukan `customers.credit_limit` (usang).
-      { label: "Plafon kredit", value: !row.credit ? "Lihat tab Kredit di kartu pelanggan"
-        : Number(row.credit.credit_limit) > 0 ? formatCurrency(row.credit.credit_limit) : "Tanpa batas" },
+      // M19 — data dasbor tidak membawa kredit: diambil dari status kredit pelanggan (plafon · terpakai · sisa).
+      { label: "Plafon kredit", value: <CustomerCreditFact row={row} /> },
     ] : [];
     return { title: row.name || row.legal_name || row.code || row.email,
       body: `${TAB_SINGULAR[tab] || "Data"} — ${isInactive(row) ? "Aktifkan" : "Nonaktifkan"} ada di baris daftar.`,

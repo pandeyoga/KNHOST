@@ -82,3 +82,69 @@ async def test_M30_eskalasi_jadi_kartu_perlu_keputusan(klien, kepala_admin, sesi
     gudang = await sesi("warehouse@kainnusantara.id")
     r2 = await klien.get("/api/desks/me", headers=gudang)
     assert "eskalasi_keputusan" not in {q["id"] for q in r2.json()["queues"]}   # petugas tanpa izin putus
+
+
+async def test_M5_meja_md_lengkap(klien, kepala_admin, db):
+    """M5 — Meja MD memuat SPK makloon berjalan, menunggu faktur mitra, PO bahan, dan PR disetujui belum direalisasi."""
+    await db.makloon_orders.insert_one({"id": "mko_uji_m5", "mko_number": "KSC/MKO-UJI5", "status": "in_process",
+                                        "entity_id": "ent_ksc", "final_output_name": "Kain Uji M5",
+                                        "steps": [{"makloon_name": "Mitra Uji", "status": "issued"}],
+                                        "planned_service_cost": 750000, "created_at": "2026-11-12T00:00:00+00:00"})
+    await db.vendor_bills.insert_one({"id": "vb_uji_m5", "bill_number": "VBM-UJI5", "makloon_order_id": "mko_uji_m5",
+                                      "status": "awaiting_invoice", "entity_id": "ent_ksc", "supplier_name": "Mitra Uji",
+                                      "net_amount": 500000, "step_seq": 1, "created_at": "2026-11-13T00:00:00+00:00"})
+    await db.purchase_orders.insert_one({"id": "po_uji_m5", "po_number": "KSC/PO-UJI5", "status": "pending",
+                                         "source": "pr", "source_pr_number": "PR-UJI5", "entity_id": "ent_ksc",
+                                         "supplier_name": "Pemasok Uji", "grand_total": 1000000,
+                                         "created_at": "2026-11-14T00:00:00+00:00"})
+    await db.purchase_requisitions.insert_one({"id": "pr_uji_m5", "number": "PR-UJI5", "status": "approved",
+                                               "realization_status": "open", "entity_id": "ent_ksc",
+                                               "reason": "Restock uji", "created_by": "Uji MD",
+                                               "preferred_supplier_name": "Pemasok Uji", "total_est_amount": 900000,
+                                               "items": [], "created_at": "2026-11-11T00:00:00+00:00"})
+    r = await klien.get("/api/md/desk", headers=kepala_admin)
+    assert r.status_code == 200, r.text
+    qs = {q["id"]: q for q in r.json()["queues"]}
+    jalan = next(x for x in qs["makloon_jalan"]["rows"] if x["ref_id"] == "mko_uji_m5")
+    assert "Mitra Uji" in jalan["subtitle"]
+    faktur = next(x for x in qs["makloon_faktur"]["rows"] if x["ref_id"] == "mko_uji_m5")
+    assert faktur["number"] == "KSC/MKO-UJI5" and faktur["value"] == 500000
+    assert any(x["ref_id"] == "po_uji_m5" for x in qs["po_bahan"]["rows"])
+    pr = next(x for x in qs["pr"]["rows"] if x["ref_id"] == "pr_uji_m5")
+    assert pr["title"] == "Restock uji" and "Pemasok Uji" in pr["subtitle"] and "Uji MD" in pr["subtitle"]
+    assert pr["value"] == 900000
+
+
+async def test_M21_riwayat_harga_beli(klien, kepala_admin, db):
+    await db.sales_orders.insert_many([
+        {"id": "so_uji_m21a", "number": "SO-M21A", "customer_id": "cust_uji_m21", "status": "done",
+         "entity_id": "ent_ksc", "created_at": "2026-11-01T00:00:00+00:00",
+         "items": [{"product_id": "prod_uji_m21", "quantity": 10, "unit": "yard", "price": 90000,
+                    "normal_price": 100000, "price_source": "special_approval"}]},
+        {"id": "so_uji_m21b", "number": "SO-M21B", "customer_id": "cust_uji_m21", "status": "cancelled",
+         "entity_id": "ent_ksc", "created_at": "2026-11-02T00:00:00+00:00",
+         "items": [{"product_id": "prod_uji_m21", "quantity": 5, "unit": "yard", "price": 80000}]},
+    ])
+    r = await klien.get("/api/customer-prices/purchase-history", headers=kepala_admin,
+                        params={"customer_id": "cust_uji_m21", "product_id": "prod_uji_m21"})
+    assert r.status_code == 200, r.text
+    items = r.json()["items"]
+    assert [i["so_number"] for i in items] == ["SO-M21A"]   # pesanan batal tidak dihitung
+    assert items[0]["price"] == 90000 and items[0]["price_source_label"] == "Harga khusus"
+
+
+async def test_M42_jejak_dokumen_tanpa_kata_cari_berisi_daftar(klien, kepala_admin):
+    r = await klien.get("/api/documents/trace-search", headers=kepala_admin, params={"q": ""})
+    assert r.status_code == 200, r.text
+    rows = r.json()
+    assert rows, "tanpa kata cari harus menampilkan dokumen terbaru"
+    tanggal = [str(n.get("date") or "") for n in rows]
+    assert tanggal == sorted(tanggal, reverse=True)
+
+
+async def test_M19_sales_pj_jatuh_ke_pic_tim(db):
+    from services.customer_service import enrich_customer
+    c = await enrich_customer({"id": "cust_uji_m19", "name": "Toko M19",
+                               "sales_team": [{"user_id": "u1", "name": "Ayu PIC", "role": "pic", "split_pct": 100}]},
+                              with_credit=False)
+    assert c["assigned_sales_name"] == "Ayu PIC"

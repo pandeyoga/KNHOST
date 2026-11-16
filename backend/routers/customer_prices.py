@@ -67,6 +67,39 @@ async def customer_price_records(request: Request, customer_id: Optional[str] = 
                                   status=status)
 
 
+@router.get("/customer-prices/purchase-history")
+async def customer_purchase_history(request: Request, customer_id: str = Query(...), product_id: str = Query(...),
+                                    entity_id: Optional[str] = Query(None),
+                                    limit: int = Query(20, ge=1, le=100)) -> Dict[str, Any]:
+    """M21 (pemilik 16 Nov) — harga yang BENAR-BENAR dibeli pelanggan untuk satu barang: tanggal, pesanan, qty, harga,
+    dan asal harganya (harga khusus / harga pelanggan / harga PT / umum / pesanan khusus). Pesanan batal & sample
+    tidak dihitung. Lingkup PT sama dengan daftar harga pelanggan."""
+    await require_permission(request, "pricelist", "view")
+    ctx = await entity_ctx(request)
+    scope = resolve_list_scope("sales_orders", {}, ctx, entity_id)
+    from db import db
+    from services.incentive_achievement import PRICE_SOURCE_LABEL as _LBL
+    PRICE_SOURCE_LABEL = {**_LBL, "special_order_contract": "Kontrak pesanan khusus"}
+    q = {**scope, "customer_id": customer_id, "items.product_id": product_id,
+         "status": {"$nin": ["cancelled", "rejected", "expired", "draft"]}, "is_sample": {"$ne": True}}
+    rows: List[Dict[str, Any]] = []
+    async for so in db.sales_orders.find(q, {"_id": 0, "id": 1, "number": 1, "status": 1, "created_at": 1,
+                                            "order_date": 1, "items": 1}).sort("created_at", -1).limit(limit):
+        for it in so.get("items") or []:
+            if it.get("product_id") != product_id:
+                continue
+            src = str(it.get("price_source") or "")
+            rows.append({
+                "so_id": so["id"], "so_number": so.get("number", ""), "status": so.get("status", ""),
+                "date": so.get("order_date") or so.get("created_at", ""),
+                "qty": it.get("quantity"), "unit": it.get("unit", ""), "price": it.get("price"),
+                "normal_price": it.get("normal_price") or it.get("list_price"),
+                "price_source": src, "price_source_label": PRICE_SOURCE_LABEL.get(src, src or PRICE_SOURCE_LABEL[""]),
+                "price_approval_id": it.get("price_approval_id") or it.get("special_price_id") or "",
+            })
+    return {"items": rows[:limit]}
+
+
 @router.get("/customer-prices/quote")
 async def customer_price_quote(request: Request, customer_id: str = Query(...),
                                product_ids: str = Query(""),

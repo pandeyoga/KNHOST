@@ -109,6 +109,11 @@ export const QUEUE_META = {
   uang_masuk:          { icon: Wallet,         tone: "#1B7F4B", bg: "rgba(52,199,89,.16)" },
   selisih_bayar:       { icon: Scale,          tone: "#8A5300", bg: "rgba(255,149,0,.16)" },
   denda_draft:         { icon: AlertTriangle,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
+  // M5 / M30 (pemilik 16 Nov) — kartu baru Meja MD & keputusan eskalasi gudang.
+  makloon_jalan:       { icon: ArrowLeftRight, tone: "var(--kn-action)",       bg: "var(--kn-action-soft)" },
+  makloon_faktur:      { icon: FileSignature,  tone: "var(--kn-warning-text)", bg: "var(--kn-warning-soft)" },
+  po_bahan:            { icon: PackageSearch,  tone: "var(--kn-success-text)", bg: "var(--kn-success-soft)" },
+  eskalasi_keputusan:  { icon: AlertTriangle,  tone: "var(--kn-danger-text)",  bg: "var(--kn-danger-soft)" },
 };
 
 export const DEFAULT_QUEUE_META = {
@@ -160,6 +165,8 @@ const BADGE_LABEL = {
   warning: "Perlu perhatian", info: "Info", critical: "Mendesak", high: "Tinggi", medium: "Sedang", low: "Rendah",
   // Masukan 16 Nov — kode yang masih tampil mentah ("Revision") di meja desain/sample.
   revision: "Revisi", sent: "Terkirim ke pelanggan", assessed: "Perlu diputuskan", decided: "Diputuskan",
+  in_process: "Di mitra", partially_received: "Diterima sebagian", "menunggu faktur": "Menunggu faktur",
+  "disetujui · belum direalisasi": "Disetujui · belum direalisasi",
 };
 
 const BADGE_TONE = {
@@ -278,6 +285,8 @@ export const ROLE_DESK_TARGET = {
   inspection:         { view: "inspections",           nav_id: "quality-hub",    focus_type: "inspection" },
   shipment:           { view: "logistics",             nav_id: "logistics",      focus_type: "shipment" },
   wms_task:           { view: "wms-outbound",          nav_id: "wms-operations", focus_type: "wms_task" },
+  // M5 — kartu SPK makloon di Meja MD membuka daftar Order Makloon tersorot.
+  makloon_order:      { view: "makloon-orders",        nav_id: "purchase-orders", focus_type: "makloon_order" },
   // M30 — kartu "Perlu keputusan" membuka layar keputusan eskalasi (menu terpisahnya dihapus).
   wms_escalation:     { view: "escalations",           nav_id: "wms-operations", focus_type: "wms_task" },
   cycle_count:        { view: "operations",            nav_id: "wms-operations", focus_type: "cycle_count", tab: "cycle" },
