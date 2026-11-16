@@ -86,6 +86,9 @@ export const ROLE_REACH_ADDITIONS = {
   // MN-T1 (IA-06) — "Kasus Keuangan" mencantumkan sales (izin finance_case.view/create) tetapi grup induknya hanya admin &
   // manajer → sales tidak pernah melihatnya; kini grup Keuangan memuat sales. + Penagihan & Penerimaan dan Kinerja Sales
   // (dulu sub-tab CRM; Admin Sales mewarisi menu sales).
+  // MP-T4a (K-66, pemilik 16 Nov) — MD mencatat kain diteruskan langsung mitra → mitra (`makloon_order.forward`) dan
+  // MP-T5c (K-77) MD membeli bahan: tab Pembelian › Order Makloon untuk MD (layar sudah ada; izin baca sudah dipegang).
+  md: ["makloon-orders"],
   sales: ["finance-cases", "collection-worklist", "sales-performance"],
   sales_admin: ["finance-cases", "collection-worklist", "sales-performance", ...KMT3_LEMBAR],
   // MN-T1 — menu Finance mengikuti izin bawaannya (UX-17): Rekening & Saldo dan Rekonsiliasi (K-09: ya; izin `cash`),

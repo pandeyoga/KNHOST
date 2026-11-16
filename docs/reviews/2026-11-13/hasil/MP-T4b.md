@@ -175,3 +175,16 @@ Pemilik: "ini kenapa ada 2 kembali?" lalu "terus lalu lihat itu deskripsi cardny
   `grid-cols-1` di HP.
 - Cek halaman penuh 1366/1280/1024 (`bukti/MP-T4b/uji_jalan_spk_penuh_tumpuk.js`): satu teks "Kembali ke GR/IR", teks
   bertumpuk 0 (isi `<details>` tertutup dan bilah navigasi tidak dihitung); `1280-07-spk-satu-kembali-penuh.png`.
+
+### Jest seluruh suite (sekali, pohon akhir)
+183 suite: 144 lolos, 39 gagal → **1152 uji lolos, 2 gagal**. Rinciannya:
+- 36 suite gagal dimuat karena `Cannot find module '@radix-ui/primitive/is-development'` (dependensi `cmdk` di
+  `node_modules` lingkungan uji lokal) — lingkungan, bukan kode; tidak bisa dijalankan di sini.
+- `tanggalBawaanWib.test.js` gagal dimuat karena salinan lingkungan uji belum memuat `frontend/jest/` — sesudah disalin:
+  8 lolos.
+- Nyata, dari gelombang MP, sudah diperbaiki:
+  - `roleReach.test.js` (2 uji): MD kini menjangkau Pembelian › Order Makloon (MP-T4a K-66 / MP-T5c K-77) tanpa tercatat
+    di `ROLE_REACH_ADDITIONS` → dicatat dengan alasan; 28 lolos.
+  - `phase4R4.test.js`: dua grid `FamilyRoutesTab.jsx` (MP-T1) tanpa kolom dasar HP → `grid-cols-1`; 11 lolos.
+  - `phase4R3.test.js`: grid wizard "Isi dari rute produk" (MP-T2) → `grid-cols-1`; 17 lolos.
+Gate `--ci` tidak menjalankan jest ini, sehingga ketiganya baru terlihat di putaran suite penuh.

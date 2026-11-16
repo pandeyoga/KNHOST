@@ -52,7 +52,7 @@ function StepEditor({ step, index, prevTo, opts, onChange, onRemove }) {
       <strong className="text-sm">Langkah {index + 1}</strong>
       <button type="button" className="secondary-button" data-testid={`${tid}-remove`} onClick={onRemove}><Trash2 size={13} />Hapus langkah</button>
     </div>
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="text-xs font-semibold">Jenis langkah
         <select className="field mt-1" data-testid={`${tid}-kind`} value={step.kind} onChange={(e) => onChange(emptyStep(e.target.value))}>
           {index === 0 && <option value="purchase">{KIND_LABEL.purchase}</option>}
@@ -119,7 +119,7 @@ function RouteForm({ family, route, initial, opts, onClose, onSaved }) {
   };
   return <FormModal open onClose={onClose} title={route ? "Ubah rute" : "Buat rute"} subtitle={`${family.name} · tahap akhir ${stageText(labels, family.stage || "finished")}`}
     icon={GitBranch} size="lg" testId="route-form" onSubmit={submit} submitLabel={route ? "Simpan rute" : "Buat rute"} busy={busy} error={error}>
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="text-xs font-semibold">Nama rute
         <input className="field mt-1" data-testid="route-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="mis. Printing di mitra langganan" />
       </label>
