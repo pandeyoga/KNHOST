@@ -10,7 +10,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, Building2, CheckCircle2, Globe2, Search, ShieldCheck, X } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
-import { SCOPE_LABEL } from "./configApi";
+import { CARD_FILTERS, SCOPE_LABEL } from "./configApi";
 import { entityOptions } from "../../../utils/entityLabel";
 
 /** Pita notifikasi simpan/galat. */
@@ -56,7 +56,8 @@ export default function SettingsScopeBar({ s, entities = [], scopeName = "Semua 
         <label className="cfg-search-wrap">
           <Search size={15} />
           <input className="form-input" value={s.q} onChange={(e) => s.setQ(e.target.value)} data-testid="cfg-search"
-            placeholder={searchPlaceholder || "Cari pengaturan… coba “denda”, “toleransi”, “PPN”, “persetujuan”"} />
+            aria-label="Cari pengaturan"
+            placeholder={searchPlaceholder || "Cari pengaturan… mis. “denda”, “PPN”"} />
           {s.q ? (
             <button className="icon-button" onClick={() => s.setQ("")} aria-label="Kosongkan pencarian"
               data-testid="cfg-search-clear"><X size={13} /></button>
@@ -81,6 +82,12 @@ export default function SettingsScopeBar({ s, entities = [], scopeName = "Semua 
               className="field cfg-select-sm" data-testid="cfg-scope-entity" />
           ) : null}
         </div>
+        {/* Pola UI 16 Nov (M24/M43) — saringan tampilan = dropdown di bilah yang sama (dulu deret chip di bawahnya). */}
+        {s.setFilter ? (
+          <KNSelect value={s.filter || "all"} className="field cfg-select-sm" data-testid="cfg-filter"
+            aria-label="Tampilkan" onValueChange={(v) => s.setFilter(v || "all")}
+            options={CARD_FILTERS.map((f) => ({ value: f.key, label: f.key === "all" ? "Tampilkan: semua" : f.label }))} />
+        ) : null}
       </div>
 
       {/* FASE E-4 (E4.6) / KF-T4 — pita konteks: nilai SIAPA yang sedang diubah (satu peringatan saja). */}

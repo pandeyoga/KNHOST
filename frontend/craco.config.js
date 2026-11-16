@@ -28,7 +28,9 @@ let webpackConfig = {
   jest: {
     configure: (jestConfig) => ({
       ...jestConfig,
-      moduleNameMapper: { ...(jestConfig.moduleNameMapper || {}), "^@/(.*)$": "<rootDir>/src/$1" },
+      moduleNameMapper: { ...(jestConfig.moduleNameMapper || {}), "^@/(.*)$": "<rootDir>/src/$1",
+        // Peta `exports` bersyarat tidak dibaca Jest bawaan CRA — lihat jest/radixIsDevelopment.js.
+        "^@radix-ui/primitive/is-development$": "<rootDir>/jest/radixIsDevelopment.js" },
       transformIgnorePatterns: ["[/\\\\]node_modules[/\\\\](?!date-fns[/\\\\]).+\\.(js|jsx|mjs|cjs|ts|tsx)$",
         "^.+\\.module\\.(css|sass|scss)$"],
     }),

@@ -249,7 +249,7 @@ test("F5: Lembar Inspect menyimpan baris via bagian QC (interval, lebar inci→c
 });
 
 
-test("E7: antrean meja — chip filter status & urutan terbaru", async () => {
+test("E7: antrean meja — saring status (dropdown, pola UI 16 Nov) & urutan terbaru", async () => {
   const rows = [
     { ref_type: "sales_order", ref_id: "a", number: "SO-A", title: "Toko A", badge: "reserved", value: 10, age_days: 5 },
     { ref_type: "sales_order", ref_id: "b", number: "SO-B", title: "Toko B", badge: "waiting_stock", value: 30, age_days: 1 },
@@ -258,9 +258,14 @@ test("E7: antrean meja — chip filter status & urutan terbaru", async () => {
   const root = await mount(<DeskQueueCard queue={{ id: "perlu_verifikasi", label: "Uji", count: 3, rows }} testPrefix="t" defaultOpen />);
   const nums = () => [...document.body.querySelectorAll('[data-testid^="t-number-"]')].map((e) => e.textContent);
   expect(nums()).toEqual(["SO-A", "SO-B", "SO-C"]);
-  await act(async () => { q("t-q-perlu_verifikasi-status-waiting_stock").click(); });
+  const pilih = async (el, v) => act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await pilih(q("t-q-perlu_verifikasi-status"), "waiting_stock");
   expect(nums()).toEqual(["SO-B"]);
-  await act(async () => { q("t-q-perlu_verifikasi-status-all").click(); });
+  await pilih(q("t-q-perlu_verifikasi-status"), "");
+  expect(nums()).toEqual(["SO-A", "SO-B", "SO-C"]);
   const sel = q("t-q-perlu_verifikasi-sort");
   await act(async () => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, "newest"); sel.dispatchEvent(new Event("change", { bubbles: true })); });
   expect(nums()).toEqual(["SO-B", "SO-C", "SO-A"]);

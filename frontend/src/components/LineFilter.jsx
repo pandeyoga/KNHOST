@@ -1,5 +1,5 @@
 /**
- * LineFilter (FASE L) — CHIP PENYARING **LINI PRODUK** untuk 12 layar.
+ * LineFilter (FASE L) — PENYARING **LINI PRODUK** (dropdown sejak pola UI 16 Nov) untuk 12 layar.
  *
  * KENAPA SATU KOMPONEN
  * Lini (woven · knit · printing · lini baru berikutnya) muncul di Pesanan,
@@ -32,7 +32,7 @@
  *   …lalu kirim `line` sebagai parameter `?line=` ke endpoint daftarnya.
  */
 import { useCallback, useEffect, useMemo } from "react";
-import { Layers3 } from "lucide-react";
+import KNSelect from "./KNSelect";
 
 import useDomainEnums from "../hooks/useDomainEnums";
 
@@ -101,62 +101,31 @@ export default function LineFilter({
     onChange?.(next);
   }, [onChange, storageKey]);
 
-  const toggle = (code) => {
-    const next = selected.includes(code)
-      ? selected.filter((c) => c !== code)
-      : [...selected, code];
-    setValue(next.join(","));
-  };
-
-  // Satu lini (atau nol) → tidak ada yang bisa disaring; sembunyikan bilahnya
+  // Satu lini (atau nol) → tidak ada yang bisa disaring; sembunyikan kontrolnya
   // daripada memasang kontrol yang tidak mengubah apa pun.
   if (loading || lines.length < 2) return null;
 
-  const chip = (active) =>
-    `rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-      active
-        ? "bg-[#1C1C1E] text-white"
-        : "border border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#1C1C1E]/40"
-    }`;
-
+  // Pola UI (04_POLA_UI §1.2, pemilik 16 Nov — M24) — lini dipilih lewat DROPDOWN, sebaris dengan cari & saringan lain.
+  // Dulu deret chip "LINI Semua · Woven · Knit · Printing" yang memakan ruang dan beda dari saringan lain. Nilai lama
+  // berisi beberapa lini (koma) tetap dihormati sampai pengguna memilih ulang.
+  const multi = selected.length > 1;
   return (
-    <div
-      data-testid={testId}
-      className={`flex flex-wrap items-center gap-1.5 rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 ${className}`}
-    >
-      <Layers3 size={13} className="text-[#6B6B73]" />
-      <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
-        {label}
-      </span>
-      <button
-        type="button"
-        data-testid={`${testId}-all`}
-        onClick={() => setValue("")}
-        className={chip(selected.length === 0)}
-      >
-        Semua
-      </button>
-      {lines.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          data-testid={`${testId}-${o.value}`}
-          onClick={() => toggle(o.value)}
-          className={chip(selected.includes(o.value))}
-          title={o.label}
-        >
-          {o.label}
-        </button>
-      ))}
+    <span data-testid={testId} className={`inline-flex items-center gap-1.5 ${className}`}>
+      <KNSelect data-testid={`${testId}-select`} aria-label={label} value={multi ? "__multi" : (selected[0] || "")}
+        onValueChange={(v) => v !== "__multi" && setValue(v || "")}
+        className="!h-auto !w-auto min-w-[140px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+        options={[{ value: "", label: `Semua ${label.toLowerCase()}` },
+          ...(multi ? [{ value: "__multi", label: `${selected.length} ${label.toLowerCase()} dipilih` }] : []),
+          ...lines.map((o) => ({ value: o.value, label: `${label}: ${o.label}` }))]} />
       {allowedSet.size > 0 && (
         <span
           data-testid={`${testId}-restricted`}
-          className="ml-1 rounded bg-[#FFF4E5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#B45309]"
+          className="whitespace-nowrap text-fs-12 text-kn-warning-text"
           title="Akses akun Anda dibatasi pada lini ini oleh admin (Pengaturan › Pengguna & Hak Akses › Akun)."
         >
           akses lini terbatas
         </span>
       )}
-    </div>
+    </span>
   );
 }

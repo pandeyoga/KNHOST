@@ -142,7 +142,8 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
         return onOpenDocument?.(soTrackerLink(r));
       }} />
 
-      <div className="grid gap-3 xl:grid-cols-[2fr_1fr]">
+      {/* Pola UI (M4, pemilik 16 Nov) — Keep & Pending butuh ruang: satu baris penuh, tidak berdampingan. */}
+      <div className="grid gap-3">
         <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={onOpenDocument} />
         <CustomerGradeRulesCard selectedEntity={selectedEntity} />
       </div>

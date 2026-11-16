@@ -63,3 +63,7 @@ Bukan 42 perbaikan satu per satu, tetapi:
   khusus).
 - M38: maksud "cocokkan otomatis tanpa input file".
 - M27/M28: BOM per produk + versi (hapus nama bebas) dan HPP produk = hitungan stok — setuju?
+
+## Tindak lanjut
+- 16 Nov: pemilik meminta konsistensi tata letak ("ya mulai") → standar `../04_POLA_UI.md` + pilot tiga layar (Meja,
+  Retur Pelanggan, Pengaturan › Ketegasan) di `2026-11-16_PILOT_POLA.md`, menunggu validasi pemilik.

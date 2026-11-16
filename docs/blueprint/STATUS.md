@@ -290,4 +290,10 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   Buku Bahan dilipat; HPP berjenjang tidak terpotong; grid wizard HP — rincian di laporan MP-T4b.
 - Hambatan lingkungan: server dev frontend lama tidak mati oleh pola `pkill "craco start"` (proses bernama
   `craco/dist/scripts/start.js`) sehingga satu uji jalan sempat membaca bundel lama — dimatikan dengan PID.
+- Masukan UI pemilik M1–M43 ditampung (`masukan-pemilik/2026-11-16_UI_MEJA_DAN_MENU.md`), dianalisis jadi pola P1–P10
+  (`…_ANALISIS_POLA.md`). Pemilik: "yang saya butuhkan adalah konsistensi" → standar **`04_POLA_UI.md`** (usulan) +
+  pilot tiga layar (Meja — semua meja lewat `DeskQueueCard`; Retur Pelanggan; Pengaturan › Ketegasan — semua kelompok
+  lewat `SettingCard`): `masukan-pemilik/2026-11-16_PILOT_POLA.md`. Penjaga UI: 0 pelanggaran baru. Jest penuh: 9 uji
+  gagal di 5 suite yang **juga gagal di `HEAD`** (dulu tak bisa dimuat; pemetaan modul radix membuatnya terlihat).
+  **Menunggu validasi pemilik** sebelum audit semua layar (langkah 2).
 

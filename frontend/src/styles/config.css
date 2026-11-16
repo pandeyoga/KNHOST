@@ -591,3 +591,35 @@
 .cfg-tbl-row-ro { color: var(--kn-neutral); background: var(--kn-neutral-soft); }
 .cfg-notice-warn { background: var(--kn-warning-soft) !important; color: var(--kn-warning-text) !important; }
 .cfg-history-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+
+/* ── Pola UI 16 Nov (docs/blueprint/04_POLA_UI.md §2.D, pemilik M43 "bertele-tele") ────────────────────────────────
+   Daftar pengaturan = SATU kartu bergaris pemisah, satu baris per pengaturan (nama · ? · nilai · asal). Kartu yang
+   dibuka melebar di tempat, tanpa bayangan/kotak sendiri. Dulu: satu kartu besar per pengaturan, panah di baris
+   sendiri, nama dan nilai bertumpuk. */
+.cfg-cards {
+  gap: 0; background: #fff; border: 1px solid var(--kn-divider); border-radius: 12px; overflow: visible;
+}
+.cfg-cards > div + div { border-top: 1px solid var(--kn-divider); }
+.cfg-cards .cfg-card {
+  border: 0; border-left: 3px solid transparent; border-radius: 0; box-shadow: none; background: transparent;
+  padding: 8px 12px; gap: 6px;
+}
+.cfg-cards .cfg-card.dirty { border-left-color: var(--ios-orange); background: #fffdf7; }
+.cfg-cards .cfg-card:not(.cfg-card-compact) { background: var(--kn-neutral-soft); padding: 10px 12px 12px; }
+.cfg-cards .cfg-card-head { align-items: center; flex-wrap: nowrap; }
+.cfg-cards .cfg-card-title { flex-direction: row; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.cfg-cards .cfg-card-title h3 { font-size: 13px; font-weight: 600; font-family: inherit; }
+.cfg-cards .cfg-card-compact-val { margin-left: auto; padding-left: 12px; font-size: 13px; white-space: nowrap; }
+.cfg-cards .cfg-card-badges { flex: 0 0 auto; }
+.cfg-cards .cfg-value-row { padding: 6px 10px; }
+.cfg-cards .cfg-value { font-size: 15px; }
+
+/* Pola UI 16 Nov — bilah atas pengaturan = satu baris polos (cari · Berlaku untuk · Tampilkan), bukan kotak berbayang;
+   pita "nilai siapa yang diubah" menjadi satu baris kecil, bukan bilah penuh. */
+.cfg-toolbar { padding: 0; background: transparent; border: 0; box-shadow: none; margin-bottom: 6px; }
+.cfg-search-wrap { flex: 1 1 260px; max-width: 420px; background: #fff; }
+.cfg-scope-ribbon { margin: 0 0 8px; padding: 0; background: transparent !important; border: 0 !important; font-size: 12px; }
+.cfg-group-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 8px; font-size: 13px; }
+.cfg-toolbar .cfg-scope-box { flex-wrap: nowrap; }
+.cfg-toolbar .cfg-select-sm, .cfg-toolbar .field { width: auto !important; min-width: 170px; flex: 0 0 auto; }
+.cfg-scope-caption { text-transform: none; letter-spacing: 0; font-size: 12px; }

@@ -18,6 +18,12 @@
  * Dialog konfirmasi + alasan ada di `useSettingsBrowser` (SettingsHub). Simpan mati sampai alasan terisi bila wajib;
  * draf/alasan/jadwal dikosongkan saat cakupan berganti. `collapsible` = kartu ringkas satu baris yang terbuka saat
  * diklik (daftar di SettingsBrowser); tanpa itu kartu selalu terbuka.
+ *
+ * Pola UI (`docs/blueprint/04_POLA_UI.md` §2.D, pemilik 16 Nov — M43 "bertele-tele"): mode daftar = SATU BARIS per
+ * pengaturan (nama · ? · nilai · asal) dalam satu kartu bergaris pemisah; dibuka di tempat → nilai + isian + Simpan
+ * dulu. Penjelasan (Artinya · Kalau diubah · Contoh · Bisa dibedakan · detail teknis) tetap ada di registri, dibaca
+ * lewat ikon ? (Artinya) dan tombol "Penjelasan" — tidak lagi dipajang terbuka. Lencana "Aktif & tersambung" hanya
+ * tampil bila TIDAK tersambung.
  */
 import { useEffect, useState } from "react";
 import {
@@ -33,6 +39,7 @@ import { entityShortById } from "../../../utils/entityLabel";
 import { useAppNav } from "../../../context/AppNavContext";
 import { askConfirm } from "../../../services/confirmService";
 import { openConfig } from "./configDeepLink";
+import { HelpTip } from "../../../components/ListPageParts";
 import {
   cleanCfgText, formatValue, isDeprecatedSetting, LAYER_TONE, RISK_LABEL, SCOPE_CAN, WIRING_LABEL, WIRING_TONE,
 } from "./configApi";
@@ -147,6 +154,7 @@ export default function SettingCard({
         <h3 data-testid={`cfg-card-label-${item.key}`} title={item.key}
           onClick={collapsible ? () => onToggle && onToggle(item.key) : undefined}
           className={collapsible ? "cursor-pointer" : ""}>{cleanCfgText(item.label)}</h3>
+        <HelpTip text={cleanCfgText(item.help)} testId={`cfg-help-tip-${item.key}`} label="Artinya pengaturan ini" />
         {collapsible && !expanded ? (
           <span className="cfg-card-compact-val" data-testid={`cfg-compact-value-${item.key}`}>{valueText}</span>
         ) : null}
@@ -156,7 +164,7 @@ export default function SettingCard({
           title="Asal nilai yang berlaku sekarang" data-testid={`cfg-layer-badge-${item.key}`}>
           {origin}
         </span>
-        {expanded ? (
+        {expanded && wStatus !== "OK" ? (
           <span className={`badge-${WIRING_TONE[wStatus]}`} title="Tersambung ke sistem?"
             data-testid={`cfg-wiring-badge-${item.key}`}>
             {WIRING_LABEL[wStatus]}
@@ -231,16 +239,6 @@ export default function SettingCard({
         </p>
       ) : null}
 
-      <p className="cfg-help"><Info size={13} /> <span><b>Artinya:</b> {cleanCfgText(item.help)}</span></p>
-      <p className="cfg-impact"><Zap size={13} /> <span><b>Kalau diubah:</b> {cleanCfgText(item.impact)}</span></p>
-      {item.example ? (
-        <p className="cfg-example" data-testid={`cfg-example-${item.key}`}>
-          <Lightbulb size={13} /> <span><b>Contoh:</b> {cleanCfgText(item.example)}</span>
-        </p>
-      ) : null}
-      <p className="cfg-hint-sm" data-testid={`cfg-scope-can-${item.key}`}>
-        Bisa dibedakan untuk: {(item.scopes || []).map((sc) => SCOPE_CAN[sc] || sc).join(" · ")}
-      </p>
       {/* KF-T5 — kunci berlapis pelanggan/barang menyebut jumlah yang diatur khusus. */}
       <ScopedRulesSummary item={item} />
       {/* PY-T3 — catatan pengali tunggal saat mode bertingkat; "Lihat dampaknya" di bawah sumber lembur. */}
@@ -256,24 +254,7 @@ export default function SettingCard({
         </div>
       ) : null}
 
-      <button className="cfg-more-toggle" onClick={() => setShowMore((v) => !v)}
-        data-testid={`cfg-more-${item.key}`}>
-        {showMore ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        {showMore ? "Sembunyikan detail teknis" : "Detail teknis"}
-      </button>
-      {showMore ? (
-        <div className="cfg-more">
-          <p className="cfg-hint-sm">Kunci teknis: <code className="cfg-key">{item.key}</code></p>
-          {(item.consumers || []).length ? (
-            <p className="cfg-hint-sm">
-              Dipakai oleh: {item.consumers.map((c) => <code key={c}>{c}</code>)}
-            </p>
-          ) : null}
-          {(item.related || []).length ? (
-            <p className="cfg-hint-sm">Terkait: {item.related.join(" · ")}</p>
-          ) : null}
-        </div>
-      ) : null}
+
 
       {(item.scheduled || []).length > 0 ? (
         <div className="cfg-sched-list" data-testid={`cfg-scheduled-${item.key}`}>
@@ -390,6 +371,10 @@ export default function SettingCard({
       )}
 
       <footer className="cfg-card-foot">
+        <button className="cfg-link-btn" onClick={() => setShowMore((v) => !v)} aria-expanded={showMore}
+          data-testid={`cfg-more-${item.key}`}>
+          {showMore ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Penjelasan
+        </button>
         <button className="cfg-link-btn" onClick={() => onWhy(item)}
           data-testid={`cfg-why-${item.key}`}>
           <Layers size={13} /> Kenapa nilainya begini?
@@ -405,6 +390,29 @@ export default function SettingCard({
           <History size={13} /> Riwayat
         </button>
       </footer>
+      {showMore ? (
+        <div className="cfg-more" data-testid={`cfg-explain-${item.key}`}>
+          <p className="cfg-help"><Info size={13} /> <span><b>Artinya:</b> {cleanCfgText(item.help)}</span></p>
+          <p className="cfg-impact"><Zap size={13} /> <span><b>Kalau diubah:</b> {cleanCfgText(item.impact)}</span></p>
+          {item.example ? (
+            <p className="cfg-example" data-testid={`cfg-example-${item.key}`}>
+              <Lightbulb size={13} /> <span><b>Contoh:</b> {cleanCfgText(item.example)}</span>
+            </p>
+          ) : null}
+          <p className="cfg-hint-sm" data-testid={`cfg-scope-can-${item.key}`}>
+            Bisa dibedakan untuk: {(item.scopes || []).map((sc) => SCOPE_CAN[sc] || sc).join(" · ")}
+          </p>
+          <p className="cfg-hint-sm">Kunci teknis: <code className="cfg-key">{item.key}</code></p>
+          {(item.consumers || []).length ? (
+            <p className="cfg-hint-sm">
+              Dipakai oleh: {item.consumers.map((c) => <code key={c}>{c}</code>)}
+            </p>
+          ) : null}
+          {(item.related || []).length ? (
+            <p className="cfg-hint-sm">Terkait: {item.related.join(" · ")}</p>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

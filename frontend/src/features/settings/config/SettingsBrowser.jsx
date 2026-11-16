@@ -19,6 +19,7 @@ import SettingCard from "./SettingCard";
 import SettingsScopeBar from "./SettingsScopeBar";
 import { WhyThisValueDrawer, SimulatorPanel, ChangeHistoryDrawer } from "./ConfigDrawers";
 import { CARD_FILTERS, cardFilterOk, idNum, weightSetSummaries } from "./configApi";
+import { HelpTip } from "../../../components/ListPageParts";
 import { CONFIG_GROUPS } from "./configDeepLink";
 import { entityShortById } from "../../../utils/entityLabel";
 
@@ -121,10 +122,6 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
               <span>{s.denied}</span>
             </div>
           ) : <ErrorNotice message={s.error} onRetry={s.load} />}
-          {excludeLink && s.hiddenCount > 0 ? (
-            <LinkCard {...excludeLink} summary={`${s.hiddenCount} pengaturan`} />
-          ) : null}
-
           {term ? (
             <div className="cfg-result-head" data-testid="cfg-search-result-head">
               <h3>Hasil pencarian “{term}”</h3>
@@ -141,23 +138,22 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
               <p className="cfg-hint-sm">{shown.length} pengaturan</p>
             </div>
           ) : activeGroup ? (
-            <div className="cfg-result-head" data-testid="cfg-group-head">
-              <h3>{activeGroup.label}</h3>
-              <p className="cfg-question">Kelompok ini menjawab: <b>{activeGroup.question}</b></p>
-              <p className="cfg-hint-sm">
+            // Pola UI 16 Nov (M43) — kepala kelompok SATU baris: nama · ? (pertanyaan kelompok) · jumlah · riwayat.
+            <div className="cfg-group-line" data-testid="cfg-group-head">
+              <b>{activeGroup.label}</b>
+              <HelpTip text={activeGroup.question ? `Kelompok ini menjawab: ${activeGroup.question}` : ""}
+                testId="cfg-group-question" label="Isi kelompok ini" />
+              <span className="cfg-hint-sm">
                 {activeGroup.count} pengaturan{tidakDipakai.length ? ` · ${tidakDipakai.length} tidak dipakai` : ""}
-                {" · "}
-                <button type="button" className="cfg-link-btn" onClick={() => s.setHist({ group: activeGroup.id,
-                  label: activeGroup.label })} data-testid="cfg-group-history">
-                  <History size={12} /> Riwayat perubahan kelompok ini
-                </button>
-              </p>
+              </span>
+              <button type="button" className="cfg-link-btn" onClick={() => s.setHist({ group: activeGroup.id,
+                label: activeGroup.label })} data-testid="cfg-group-history">
+                <History size={12} /> Riwayat perubahan
+              </button>
             </div>
           ) : null}
 
-          <FilterChips testId="cfg-filter-chips" chipTestId={(k) => `cfg-filter-${k}`} ariaLabel="Saringan pengaturan"
-            value={s.filter} onChange={(k) => s.setFilter(k || "all")}
-            options={CARD_FILTERS.map((f) => ({ key: f.key, label: f.label }))} />
+          {/* Saringan tampilan (Semua · Sudah diubah · Risiko tinggi · tema) kini dropdown di bilah atas (SettingsScopeBar). */}
 
           {s.loading ? <p className="cfg-hint">Memuat pengaturan…</p> : null}
           {!s.loading && shown.length === 0 ? (
@@ -192,6 +188,10 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
           {!s.loading && tidakDipakai.length ? (
             <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false} peers={peers}
               sec={{ id: "tidak-dipakai", label: "Tidak dipakai sistem", advanced: false, items: tidakDipakai }} />
+          ) : null}
+          {/* Pengaturan yang diatur di layar lain — di bawah daftar, tidak menghalangi isi (pola UI 16 Nov). */}
+          {excludeLink && s.hiddenCount > 0 ? (
+            <LinkCard {...excludeLink} summary={`${s.hiddenCount} pengaturan`} />
           ) : null}
         </section>
       </div>

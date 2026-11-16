@@ -1,14 +1,59 @@
-/** Kerangka layar daftar seragam (gaya Pesanan Khusus): judul + aksi, KPI, cari, tab status. */
-import { Search, X } from "lucide-react";
+/** Kerangka layar daftar seragam (pola UI `docs/blueprint/04_POLA_UI.md` §2.A): judul satu baris (+ ?), kartu angka
+ *  yang bisa diklik, bilah daftar (cari · dropdown · jumlah · aksi), tab status lama. */
+import { useEffect, useRef, useState } from "react";
+import { HelpCircle, Search, X } from "lucide-react";
 
-export function PageHeader({ icon: Icon, title, subtitle, actions, testId }) {
+/** Ikon "?" — penjelasan dibuka saat diklik, bukan paragraf yang dipajang (pola UI §1.4). */
+export function HelpTip({ text, testId, label = "Penjelasan" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const off = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", off);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  if (!text) return null;
+  return (
+    <span className="relative inline-flex" ref={ref}>
+      <button type="button" aria-label={label} aria-expanded={open} data-testid={testId}
+        className="icon-button btn-sm text-kn-neutral hover:text-kn-action"
+        onClick={() => setOpen((v) => !v)}>
+        <HelpCircle size={15} />
+      </button>
+      {open && (
+        <span role="note" data-testid={testId ? `${testId}-text` : undefined}
+          className="absolute left-0 top-6 z-30 w-[300px] max-w-[80vw] rounded-lg border border-kn-divider bg-white p-2.5 text-left text-fs-12 font-normal normal-case leading-relaxed tracking-normal text-kn-text shadow-lg">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Kepala halaman SATU BARIS: judul (+ ? berisi keterangan) · aksi. `subtitle` lama tidak dipajang lagi — masuk ke ?. */
+export function PageHeader({ icon: Icon, title, subtitle, help, actions, testId }) {
   return (
     <div className="view-header" data-testid={testId}>
-      <div className="min-w-0">
+      <div className="flex min-w-0 items-center gap-2">
         <h1 className="view-title flex items-center gap-2">{Icon && <Icon size={20} />} {title}</h1>
-        {subtitle && <p className="view-subtitle">{subtitle}</p>}
+        <HelpTip text={help || subtitle} testId={testId ? `${testId}-help` : undefined} />
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
+  );
+}
+
+/** Bilah daftar SATU BARIS (pola UI §2.A): cari + dropdown saringan + jumlah di kiri, aksi (Unduh, + Buat …) di kanan —
+ *  tombol buat dekat dengan tabelnya. Di HP turun baris dengan urutan yang sama. */
+export function ListToolbar({ children, actions, count, testId }) {
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2" data-testid={testId}>
+      {children}
+      {count != null && <span className="whitespace-nowrap text-fs-12 text-kn-text-2" data-testid={testId ? `${testId}-count` : undefined}>{count}</span>}
+      {actions && <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
@@ -35,8 +80,13 @@ export function MetricRow({ items, testId }) {
     6: "sm:grid-cols-3 2xl:grid-cols-6" }[items.length] || "sm:grid-cols-4";   // PK-41 — enam kartu (umur hutang)
   return (
     <div data-testid={testId} className={`grid grid-cols-2 gap-2 ${cols}`}>
-      {items.map(({ label, value, icon: Icon, hint, tone, testId: tid }, i) => (
-        <div key={label} className="metric-card" data-testid={tid || (testId ? `${testId}-${i}` : undefined)}>
+      {items.map(({ label, value, icon: Icon, hint, tone, testId: tid, onClick, active }, i) => {
+        // Pola UI §1.5 — kartu angka harus berguna: `onClick` = saringan cepat (kartu aktif bergaris biru).
+        const Tag = onClick ? "button" : "div";
+        return (
+        <Tag key={label} type={onClick ? "button" : undefined} onClick={onClick} aria-pressed={onClick ? Boolean(active) : undefined}
+          className={`metric-card${onClick ? " text-left transition-colors hover:border-kn-action" : ""}${active ? " !border-kn-action ring-1 ring-kn-action" : ""}`}
+          data-testid={tid || (testId ? `${testId}-${i}` : undefined)}>
           {Icon && <div className="metric-icon"><Icon size={16} /></div>}
           <div className="metric-body">
             <div className="metric-label">{label}</div>
@@ -45,8 +95,9 @@ export function MetricRow({ items, testId }) {
               style={tone && !isZeroMetric(value) ? { color: tone } : undefined}>{metricText(value)}</div>
             {hint && <div className="metric-hint">{hint}</div>}
           </div>
-        </div>
-      ))}
+        </Tag>
+        );
+      })}
     </div>
   );
 }

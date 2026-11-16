@@ -58,7 +58,8 @@ async def list_returns(
     user, operator = await opv.reader(request)
     ctx = await entity_ctx(request)
     q: Dict = {}
-    if status:      q["status"]      = status
+    if status:      # pola UI 16 Nov — kartu angka = saringan cepat kelompok status ("a,b,c")
+        q["status"] = {"$in": [x for x in status.split(",") if x]} if "," in status else status
     if operator:    q["status"]      = opv.list_status(status or "")   # F-11-layar — tahap terima/QC saja
     if order_id:    q["order_id"]    = order_id
     if return_type: q["return_type"] = return_type

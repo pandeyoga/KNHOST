@@ -17,10 +17,10 @@ import { askConfirm } from "../../services/confirmService";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
-import { CheckCircle2, Loader2, Plus, RotateCcw, Search, X, AlertCircle, ArrowRight, Map } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, RotateCcw, X, AlertCircle } from "lucide-react";
+import { ListToolbar, MetricRow, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
 import { ReturnStatusPill, ReturnTypeBadge, fmtDate } from "./ReturnShared";
 import { formatCurrency } from "../../utils/formatters";
-import { resolveDeepLinkTarget } from "../../config/navigationConfig";
 import ReturnDetail from "./ReturnDetail";
 import CreateReturnForm from "./CreateReturnForm";
 import FormModal from "../../components/FormModal";
@@ -36,6 +36,9 @@ const STATUS_OPTIONS = [
   ["rejected", "Ditolak"], ["cancelled", "Dibatalkan"],
 ];
 const OPERATOR_STATUSES = ["all", "approved", "inspecting"];   // F-11-layar — tahap kerja Gudang/QC
+// Pola UI 16 Nov — kelompok status untuk kartu "Diproses"/"Selesai" (juga pilihan di dropdown status).
+const GROUP_PROCESS = "approved,inspecting,inspected";
+const GROUP_DONE = "refund_settled,credit_settled,nego_settled,settled";
 const TYPE_OPTIONS = [
   ["all", "Semua tipe"], ["retur", "Retur"], ["bs", "Barang Sisa (BS)"],
   ["penggantian", "Penggantian"], ["komplain", "Komplain"], ["garansi", "Garansi"],
@@ -119,22 +122,21 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
   // retur approved/inspecting tanpa field uang; layar ikut tanpa kolom & kartu uang.
   const operator = !can(currentUser?.permissions, "sales_return", "view");
   const cnt = (s) => Number(counts[s] || 0);
+  // Kelompok status = beberapa status sekaligus ("a,b"); server menyaring `$in` (pola UI 16 Nov — kartu = saringan cepat).
+  const statusCount = (v) => String(v).split(",").reduce((n, x) => n + cnt(x), 0);
   const rTotal = Number(counts.all || 0);
-  const scopeParts = [returnType !== "all" && `Tipe: ${TYPE_OPTIONS.find(([v]) => v === returnType)?.[1]}`,
-    lineFilter && `Lini: ${lineFilter}`, search && `Cari: "${search}"`].filter(Boolean);
-  const scopeLabel = scopeParts.length ? `Cakupan: ${scopeParts.join(" · ")}`
-    : operator ? "Cakupan: retur yang menunggu terima barang atau sedang QC" : "Cakupan: semua retur yang boleh Anda lihat";
-  const statusOptions = operator ? STATUS_OPTIONS.filter(([v]) => OPERATOR_STATUSES.includes(v)) : STATUS_OPTIONS;
+  const statusOptions = operator ? STATUS_OPTIONS.filter(([v]) => OPERATOR_STATUSES.includes(v))
+    : [STATUS_OPTIONS[0], [GROUP_PROCESS, "Diproses (semua)"], [GROUP_DONE, "Selesai (semua)"], ...STATUS_OPTIONS.slice(1)];
   const statCards = operator ? [
     // 23 Okt — petunjuk berbahasa kerja (dulu "status 3 + 4" — nomor urut internal yang tak dikenal pengguna).
-    { k: "total", label: "Retur untuk Gudang/QC", value: rTotal, icon: RotateCcw, hint: "disetujui + sedang QC" },
-    { k: "receive", label: "Menunggu Terima / QC", value: cnt("approved"), icon: AlertCircle, hint: "scan terima per roll, lalu QC di SPK" },
-    { k: "process", label: "Sedang QC", value: cnt("inspecting"), icon: CheckCircle2, hint: "QC per roll di SPK (menu Kualitas)" },
+    { k: "total", label: "Retur untuk Gudang/QC", value: rTotal, icon: RotateCcw, status: "all" },
+    { k: "receive", label: "Menunggu Terima / QC", value: cnt("approved"), icon: AlertCircle, status: "approved" },
+    { k: "process", label: "Sedang QC", value: cnt("inspecting"), icon: CheckCircle2, status: "inspecting" },
   ] : [
-    { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
-    { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "putuskan per roll lalu setujui" },
-    { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "pengembalian barang · QC · menunggu penyelesaian" },
-    { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled") + cnt("settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
+    { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, status: "all" },
+    { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, status: "pending_approval" },
+    { k: "process", label: "Diproses", value: statusCount(GROUP_PROCESS), icon: CheckCircle2, status: GROUP_PROCESS },
+    { k: "done", label: "Selesai", value: statusCount(GROUP_DONE), icon: CheckCircle2, status: GROUP_DONE },
   ];
 
   // ─── lifecycle actions (R1 state machine) ─────────────────────────────────
@@ -281,38 +283,21 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
           onCancel={() => setShowCreate(false)}
         />
       </FormModal>
-      {/* Header */}
-      <div className="view-header">
-        <div>
-          <h1 className="view-title flex items-center gap-2"><RotateCcw size={20} /> Retur & Barang Sisa</h1>
-          <p className="view-subtitle">{operator
-            ? "Retur pelanggan yang menunggu scan terima/kirim/tiba dan pemeriksaan QC"
-            : "Kelola retur, barang sisa (BS), penggantian, komplain & garansi (aftersales) + Nota Kredit"}</p>
-        </div>
-        {canCreate && (
-          <button
-            data-testid="create-return-btn"
-            className="primary-button"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} /> Buat Retur
-          </button>
-        )}
-      </div>
+      {/* Pola UI (04_POLA_UI §2.A, contoh 2 — pemilik 16 Nov M23/M24): kepala SATU baris (keterangan di ?), kartu angka =
+          saringan cepat, satu bilah daftar (cari · lini · status · tipe · jumlah · Unduh · + Buat Retur) tepat di atas
+          tabel. Dulu: subjudul, 4 kartu berketerangan panjang, bilah peta retur, chip lini, label "Cakupan", dua dropdown
+          berlabel di baris lain, dan tombol buat jauh di kepala halaman. Retur antar-PT & ke supplier ada di tab hub. */}
+      <PageHeader icon={RotateCcw} title="Retur & Barang Sisa" testId="return-header"
+        help={operator
+          ? "Retur pelanggan yang menunggu scan terima/kirim/tiba dan pemeriksaan QC."
+          : "Retur JUAL: barang kembali dari pelanggan — muaranya Nota Kredit. Termasuk barang sisa (BS), penggantian, komplain & garansi. Retur ke supplier dan retur antar-PT ada di tab di atas; kebijakan/jendela retur di Pengaturan › Penjualan."} />
 
-      {/* Ringkasan */}
-      <div data-testid="return-stats" className="grid grid-cols-2 gap-2 sm:grid-cols-4" style={{ marginBottom: 16 }}>
-        {statCards.map(({ k, label, value, icon: Icon, hint }) => (
-          <div key={label} className="metric-card" data-testid={`return-stat-${k}`}>
-            <div className="metric-icon"><Icon size={16} /></div>
-            <div className="metric-body">
-              <div className="metric-label">{label}</div>
-              <div className="metric-value tabular-nums">{value}</div>
-              {hint && <div className="metric-hint">{hint}</div>}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Kartu angka = saringan cepat (klik → daftar tersaring; klik lagi → semua). */}
+      <MetricRow testId="return-stats" items={statCards.map(({ k, label, value, icon, status }) => ({
+        label, value, icon, testId: `return-stat-${k}`,
+        active: status !== undefined && status !== "all" && filterStatus === status,
+        onClick: status === undefined ? undefined : () => setFilterStatus(filterStatus === status ? "all" : status),
+      }))} />
 
       {/* Notices */}
       {notice && (
@@ -328,47 +313,25 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
         <ErrorNotice message={paged.error} onRetry={paged.refresh} testId="return-list-error" />
       )}
 
-      {/* PETA RETUR (anti-dualisme, 2026-06) — di sistem ini ada TIGA jalur retur
-          yang berbeda dokumen & muaranya; layar ini KHUSUS retur jual. Disebut
-          eksplisit beserta jalannya supaya orang tidak mencatat retur beli di sini. */}
-      {!operator && <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[#E4E9F2] bg-[#F8FAFD] px-3 py-2 text-[11.5px] text-[#3A3A3C]"
-        data-testid="return-map-strip">
-        <Map size={13} className="shrink-0 text-[#0058CC]" />
-        <span><b>Layar ini = Retur JUAL</b> (barang kembali dari pelanggan → muaranya Nota Kredit).</span>
-        <MapLink view="purchase-returns" label="Retur ke Supplier" role={currentUser?.role} onNavigate={onNavigate} />
-        <MapLink view="interco-returns" label="Retur antar-PT" role={currentUser?.role} onNavigate={onNavigate} />
-        <MapLink view="return-policies" label="Kebijakan / jendela retur" role={currentUser?.role} onNavigate={onNavigate} />
-      </div>}
-
-      {/* Filters */}
-      <div className="filter-bar" style={{ marginBottom: 12 }}>
-        <div className="search-wrap">
-          <Search size={13} />
-          <input
-            data-testid="return-search"
-            placeholder="Cari nomor / pesanan / pelanggan…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="sales-returns"
-                    allowed={currentUser?.allowed_line_codes} testId="sret-line-filter" />
-      </div>
-      <p className="text-[11px] text-[#6B6B73]" style={{ margin: "-8px 0 12px" }} data-testid="return-stats-scope">{scopeLabel}</p>
-      <div className="mb-4 flex flex-wrap items-end gap-3" data-testid="return-filters">
-        <div style={{ minWidth: 230 }}>
-          <label className="form-label">Status</label>
-          <KNSelect data-testid="return-status-filter" className="form-select" value={filterStatus} onValueChange={setFilterStatus}
-            options={statusOptions.map(([v, l]) => ({ value: v, label: `${l} (${v === "all" ? rTotal : cnt(v)})` }))} />
-        </div>
-        <div style={{ minWidth: 200 }}>
-          <label className="form-label">Kategori / tipe</label>
-          <KNSelect data-testid="return-type-filter" className="form-select" value={returnType} onValueChange={setReturnType}
+      <div className="mt-3">
+        <ListToolbar testId="return-filters"
+          count={`${paged.total ?? 0} retur`}
+          actions={canCreate && (
+            <button data-testid="create-return-btn" className="primary-button" onClick={() => setShowCreate(true)}>
+              <Plus size={14} /> Buat Retur
+            </button>
+          )}>
+          <SearchInput testId="return-search" placeholder="Cari nomor / pesanan / pelanggan…" value={search}
+            onChange={setSearch} className="min-w-[220px] flex-1 sm:max-w-[320px]" />
+          <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="sales-returns"
+                      allowed={currentUser?.allowed_line_codes} testId="sret-line-filter" />
+          <KNSelect data-testid="return-status-filter" aria-label="Status" className="!h-auto !w-auto min-w-[190px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={filterStatus} onValueChange={(v) => setFilterStatus(v || "all")}
+            options={statusOptions.map(([v, l]) => ({ value: v, label: `${l} (${v === "all" ? rTotal : statusCount(v)})` }))} />
+          <KNSelect data-testid="return-type-filter" aria-label="Tipe" className="!h-auto !w-auto min-w-[150px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={returnType} onValueChange={(v) => setReturnType(v || "all")}
             options={TYPE_OPTIONS.map(([v, l]) => ({ value: v, label: l }))} />
-        </div>
-        <span className="text-[11px] text-[#6B6B73] self-center" data-testid="return-list-count">
-          Daftar: {paged.total ?? 0} retur{filterStatus !== "all" ? " (status terpilih)" : ""}
-        </span>
+        </ListToolbar>
       </div>
 
       {/* Table */}
@@ -456,27 +419,12 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
             exportConfig={{ columns: operator ? CSV_COLUMNS.filter((c) => c.key !== "credit_note_number") : CSV_COLUMNS, rows: filtered,
               fetchAll: paged.fetchAll, filename: "retur-jual" }}
             exportSpec={{ dataset: "sales_returns", label: "retur-jual", search,
-              filters: [filterStatus !== "all" && ["status", "eq", filterStatus], returnType !== "all" && ["return_type", "eq", returnType]],
+              filters: [filterStatus !== "all" && ["status", filterStatus.includes(",") ? "in" : "eq", filterStatus], returnType !== "all" && ["return_type", "eq", returnType]],
               sort: [{ key: "created_at", dir: "desc" }], unsupported: lineFilter ? "Saringan lini belum bisa diikuti berkas Excel retur jual — kosongkan lini atau pakai CSV." : "" }}
           />
         </div>
       )}
     </div>
-  );
-}
-
-/** Tautan peta retur — hanya hidup bila layar tujuannya memang wilayah peran ini. */
-function MapLink({ view, label, role, onNavigate }) {
-  const target = resolveDeepLinkTarget(view, role);
-  return (
-    <button type="button" data-testid={`return-map-${view}`}
-      disabled={!target}
-      title={target ? `Buka ${label}` : "Layar ini bukan wilayah peran Anda"}
-      onClick={() => target && onNavigate?.(target.navId, target.view, target.tab)}
-      className={`inline-flex items-center gap-1 font-bold ${
-        target ? "text-[#0058CC] hover:underline" : "cursor-not-allowed text-[#9A9BA3]"}`}>
-      {label} <ArrowRight size={11} />
-    </button>
   );
 }
 

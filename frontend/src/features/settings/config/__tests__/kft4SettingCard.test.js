@@ -50,7 +50,7 @@ function card(item, props = {}) {
   );
 }
 
-test("U14 — Satu PT, nilai warisan: tanpa Default/Ikuti nilai grup; keterangan Mengikuti nilai grup; contoh langsung tampil", async () => {
+test("U14 — Satu PT, nilai warisan: tanpa Default/Ikuti nilai grup; keterangan Mengikuti nilai grup; contoh di Penjelasan", async () => {
   const m = pasang();
   await m.render(card(kartu({ value: false, stored_value: false })));
   expect(m.host.textContent).not.toMatch(/Default/);
@@ -59,6 +59,10 @@ test("U14 — Satu PT, nilai warisan: tanpa Default/Ikuti nilai grup; keterangan
   expect(q(m.host, "cfg-layer-badge-tax.dpp_nilai_lain").textContent).toBe("Aturan grup");
   // nilai ≠ bawaan → tautan teks "Pakai nilai bawaan sistem untuk PT ini" → onReset(item, "entity")
   expect(q(m.host, "cfg-reset-tax.dpp_nilai_lain").textContent).toBe("Pakai nilai bawaan sistem untuk PT ini");
+  // Pola UI 16 Nov (pemilik M43) — penjelasan tidak dipajang terbuka: Artinya di ikon ?, sisanya di "Penjelasan".
+  expect(q(m.host, "cfg-example-tax.dpp_nilai_lain")).toBeNull();
+  expect(q(m.host, "cfg-help-tip-tax.dpp_nilai_lain")).not.toBeNull();
+  await act(async () => { q(m.host, "cfg-more-tax.dpp_nilai_lain").click(); });
   expect(q(m.host, "cfg-example-tax.dpp_nilai_lain").textContent).toContain("Contoh angka.");
   expect(q(m.host, "cfg-scope-can-tax.dpp_nilai_lain").textContent).toBe("Bisa dibedakan untuk: Semua PT · Satu PT");
   expect(m.host.textContent).not.toMatch(/entitas|wiring|setting/i);

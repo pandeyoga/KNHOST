@@ -242,7 +242,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           </div>
         )
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-3" data-testid="fin-desk-groups">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2" data-testid="fin-desk-groups">
           {groups.map((g) => (
             <DeskQueueCard key={g.id} queue={g} busyRef={busyRef} loading={loading}
               testPrefix="fin-desk" rowTestPrefix={`fin-desk-${g.id}`} onAction={handleAction} />

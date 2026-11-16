@@ -34,29 +34,26 @@ export function useTableFilter(rows, { text, status, statusLabel = (s) => s, sor
 }
 
 export default function TableFilterBar({ f, testId, placeholder = "Cari…", onChange, searchTestId = "" }) {
+  // Pola UI (04_POLA_UI §1.2, permintaan pemilik 16 Nov) — saringan status = DROPDOWN, sebaris dengan cari & urutan.
+  // Dulu deret chip "Semua · Status A · n …" yang memakan baris sendiri dan berbeda dari layar lain.
   const set = (fn) => (v) => { fn(v); onChange?.(); };
+  const total = f.statuses.reduce((n, s) => n + s.n, 0);
   return (
-    <div data-testid={`${testId}-filter`} className="flex flex-wrap items-center gap-1.5 px-3 py-1.5">
-      <label className="flex min-w-[160px] flex-1 items-center gap-1.5 rounded-lg border border-[#E5E5EA] bg-white px-2 py-1">
-        <Search size={12} className="shrink-0 text-[#8E8E93]" />
+    <div data-testid={`${testId}-filter`} className="flex flex-wrap items-center gap-2 px-3 py-2">
+      <label className="flex min-w-[160px] flex-1 items-center gap-1.5 rounded-lg border border-kn-field-border bg-white px-2 py-1">
+        <Search size={13} className="shrink-0 text-kn-neutral" />
         <input data-testid={searchTestId || `${testId}-search`} value={f.q} onChange={(e) => set(f.setQ)(e.target.value)}
-          placeholder={placeholder} className="w-full bg-transparent text-[11px] outline-none" />
+          placeholder={placeholder} aria-label={placeholder} className="w-full bg-transparent text-fs-12 outline-none" />
       </label>
       {f.statuses.length > 1 && (
-        <div className="flex flex-wrap gap-1">
-          <button type="button" data-testid={`${testId}-status-all`} onClick={() => set(f.setSt)("")}
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${!f.st ? "bg-[#0058CC] text-white" : "bg-[#F2F3F5] text-[#3C3C43]"}`}>Semua</button>
-          {f.statuses.map((s) => (
-            <button key={s.key} type="button" data-testid={`${testId}-status-${s.key}`} onClick={() => set(f.setSt)(s.key)}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${f.st === s.key ? "bg-[#0058CC] text-white" : "bg-[#F2F3F5] text-[#3C3C43]"}`}>
-              {s.label} · {s.n}
-            </button>
-          ))}
-        </div>
+        <KNSelect data-testid={`${testId}-status`} value={f.st} onValueChange={(v) => set(f.setSt)(v || "")} aria-label="Saring status"
+          className="!h-auto !w-auto rounded-lg border border-kn-field-border bg-white !px-2 !py-1 text-fs-12"
+          options={[{ value: "", label: `Semua status (${total})` },
+            ...f.statuses.map((s) => ({ value: s.key, label: `${s.label} (${s.n})` }))]} />
       )}
       {f.sorts && Object.keys(f.sorts).length > 1 && (
         <KNSelect data-testid={`${testId}-sort`} value={f.sort} onValueChange={(v) => set(f.setSort)(v)} aria-label="Urutan"
-          className="!h-auto !w-auto rounded-lg border border-[#E5E5EA] bg-white !px-1.5 !py-1 text-[10.5px]"
+          className="!h-auto !w-auto rounded-lg border border-kn-field-border bg-white !px-2 !py-1 text-fs-12"
           options={Object.entries(f.sorts).map(([k, v]) => ({ value: k, label: v.label }))} />
       )}
     </div>
