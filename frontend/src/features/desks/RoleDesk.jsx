@@ -19,7 +19,7 @@ import { openLogistics } from "../logistics/logisticsDeepLink";
 const DESKS = {
   md: {
     icon: Palette, kicker: "MD / Merchandiser", title: "Meja MD", load: mdDesk, testPrefix: "md-desk",
-    intro: <>Pengembangan produk dari satu meja: <b>permintaan desain</b> (setujui · tugaskan · putuskan), <b>sample &amp; labdip</b> per putaran, <b>PR bahan</b>, dan SPK inspeksi yang belum punya acuan sample.</>,
+    intro: <>Pengembangan produk dari satu meja: <b>permintaan desain</b> (setujui · tugaskan · putuskan), <b>sample &amp; labdip</b> per putaran, <b>PR &amp; PO bahan</b>, <b>SPK makloon</b> (berjalan &amp; menunggu faktur mitra), dan SPK inspeksi yang belum punya acuan sample.</>,
   },
   warehouse_admin: {
     icon: Warehouse, kicker: "Admin Gudang", title: "Meja Admin Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk",
