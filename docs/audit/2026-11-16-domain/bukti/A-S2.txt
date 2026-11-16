@@ -1,0 +1,10 @@
+# A-S2 — ubah stage produk ber-stok (token md)
+
+Produk uji: prod_batik_mega (BTK-MEGA-001), stage awal=finished, base_unit=yard, template=ptpl_9714f5bf332ebba38e99.
+
+PATCH {data:{stage:'grey'}} saat produk dipakai (template & katalog) → HTTP 200, stage berubah finished→grey TANPA penjaga transisi (resolve_transition tak dipanggil di update).
+Efek samping: template ptpl_9714 ikut berubah ke grey (cascade).
+Restore via API {stage:'finished'} → HTTP 400 'stage varian harus sama dengan induknya' (template masih grey) → kebuntuan.
+Pemulihan: set stage produk+template kembali ke 'finished' langsung di DB (mutasi uji saya dibatalkan, didokumentasikan).
+
+TEMUAN: MS-06 — update produk menulis stage langsung tanpa validasi transisi (STAGE_TRANSITIONS/resolve_transition) dan tanpa memeriksa stok/roll; cascade ke template bisa membuat kebuntuan.

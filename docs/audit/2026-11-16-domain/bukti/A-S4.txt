@@ -1,0 +1,4 @@
+# A-S4 — jual tiap stage di POS (katalog orderable)
+HTTP 200
+orderable total 278 stage {'byproduct': 1, 'finished': 273, 'pfd': 2, 'pfp': 1, 'remnant': 1}
+NON-finished orderable: 3 [('DMO-PFD-WVN-001', 'pfd'), ('DMO-PFD-KNT-001', 'pfd'), ('DMO-PFP-WVN-001', 'pfp')]

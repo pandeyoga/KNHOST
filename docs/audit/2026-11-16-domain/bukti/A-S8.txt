@@ -1,0 +1,20 @@
+# A-S8 — label/istilah stage tak konsisten (grep)
+## domain_registry dua label PFP/PFD:
+55:    {"value": "pfd",       "label": "PFD — Prepared for Dyeing",           "order": 3, "semi_finished": T
+57:    {"value": "pfp",       "label": "PFP — Prepared for Printing",         "order": 3, "semi_finished": T
+448:    {"value": "pfp", "label": "PFP — Pre-treatment untuk printing", "code": "pfp",
+449:     "name": "PFP — Pre-treatment untuk printing", "kind": "makloon", "seq": 40,
+455:    {"value": "pfd", "label": "PFD — Pre-treatment untuk celup", "code": "pfd",
+456:     "name": "PFD — Pre-treatment untuk celup", "kind": "makloon", "seq": 50,
+692:     "to_stage": "pfd", "label": "Pre-treatment (tujuan celup): grey → PFD",
+695:     "to_stage": "pfp", "label": "Pre-treatment (tujuan printing): grey → PFP",
+## grey vs greige di frontend:
+frontend/src/features/rnd/SpecFormModal.jsx
+frontend/src/features/wms/grn/GrnProfilesPanel.jsx
+frontend/src/features/inventory/lots/LotsView.jsx
+frontend/src/features/admin/domain/DomainRegistryParts.jsx
+frontend/src/features/admin/domain/DomainRegistryView.jsx
+## yarn vs benang label:
+frontend/src/features/rnd/SpecFormModal.jsx
+frontend/src/features/rnd/SampleFormModal.jsx
+frontend/src/features/rnd/ExistingSkuSection.jsx

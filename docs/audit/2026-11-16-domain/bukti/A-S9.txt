@@ -1,0 +1,6 @@
+# A-S9 — kueri data acuan (hanya-baca)
+products: 282
+needs_review: 41
+domain_gaps keras: 0
+stage: [{"_id":"remnant","n":1},{"_id":"pfd","n":2},{"_id":"yarn","n":2},{"_id":"finished","n":273},{"_id":"pfp","n":1},{"_id":"byproduct","n":1},{"_id":"grey","n":2}]
+rolls tanpa stage: 0

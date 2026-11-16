@@ -1,0 +1,20 @@
+# A-S1 bukti — Master Produk menolak kombinasi stage tak sah (API, token md)
+
+## finished tanpa gramasi/lebar → harus 400
+HTTP 400
+{"detail":"Jenis kain (woven/knit) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Gramasi/GSM (gram per m²) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Lebar kain (meter) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'.
+
+## stage tak dikenal → harus 400
+HTTP 400
+{"detail":"Tahap bahan (stage) 'ngaco' tidak dikenal. Pilihan sah: yarn, grey, pfd, pfp, finished, remnant, byproduct. Jenis kain (woven/knit) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'."}
+
+## benang (yarn) satuan meter → apakah ditolak?
+HTTP 400
+{"detail":"Jenis kain (woven/knit) wajib diisi untuk stage 'Benang (Yarn)'. Nomor benang (yarn count) wajib diisi untuk stage 'Benang (Yarn)'."}
+
+## produk finished valid → harus 200 (lalu dihapus)
+HTTP 200
+{"sku":"AUD-S1-OK","name":"S1 finished valid","category":"Tenun","variant":"Regular","color":"Natural","color_code":"","color_name":"","color_hex":"","motif":"P
+
+## cleanup
+deleted AUD-S1: 1
