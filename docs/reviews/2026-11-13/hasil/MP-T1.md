@@ -1,6 +1,6 @@
 # MP-T1 — Rute Produk: satu tempat untuk "barang ini dibeli atau dibuat lewat jalan apa"
 
-- Commit awal: `3865293` (spesifikasi `a98754f`)        - Commit akhir: lihat `docs/blueprint/STATUS.md` baris 104        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `3865293` (spesifikasi `a98754f`)        - Commit akhir: `1959504`       - Branch: `claude/nifty-carson-jjx3c8`
 - ID ditangani: telusur 16 Nov P2, P9, sebagian P10 (fitur; spesifikasi `docs/blueprint/unit/MP-T1.md`; keputusan K-57, K-65,
   K-70, K-71, K-73)
 - Risiko tinggi. Serah-terima (a) jalur baru dan (b) pengalihan pemanggil dikerjakan dalam satu putaran karena pemanggil
