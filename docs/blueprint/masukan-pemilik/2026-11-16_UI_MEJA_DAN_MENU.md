@@ -121,6 +121,20 @@ sama sudah tampil di antrean gudang Meja Saya dan di saringan "Dieskalasi" layar
 Usulan: hapus menu Eskalasi Gudang; jadikan kartu "Perlu keputusan" di Meja Gudang/Meja Saya untuk pemegang
 `wms.approve` (sejalan M1).
 
+### Kiriman 6 — baris daftar, kartu angka keuangan, entitas ↔ lokasi, nota denda, tombol buat, ruang
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M31 | Daftar baris di kartu meja (contoh: Faktur pajak perlu terbit) | Baris: info di kiri, nilai + tombol di kanan, **tengahnya kosong** → daftar jadi lebar. **Isi bagian tengah** (kolom: pelanggan, PPN, status, umur, dst.). | 26 |
+| M32 | Kartu angka (contoh: Beranda Keuangan — marjin, rasio, umur piutang/hutang, terbesar) | Kartu **hanya menampilkan angka** — tidak ada navigasi/fungsi. Kartu harus bisa diklik ke rincian/daftar tersaring (atau dihapus bila tidak berguna; sejalan M8). | 27 |
+| M33 | Pilihan PT ↔ pilihan lokasi (kepala aplikasi) | **Pilih entitas (PT) dulu, tetapi lokasi tidak tersaring** — gudang PT lain ikut muncul. Lokasi harus mengikuti PT terpilih (dan berupa area, M7). | 29 |
+| M34 | Piutang › popup pelanggan › "Buat Nota Denda" | **Diklik tidak terjadi apa-apa.** Diagnosa (Claude): permintaan berjalan, tetapi pesan hasil ("Tidak ada denda yang layak dibuatkan nota…") ditulis di halaman **di belakang popup** (`ARAgingView.jsx` `flash`), jadi tidak terlihat; tombol juga tampil walau tidak ada tagihan lewat jatuh tempo. Perbaikan: pesan di dalam popup; tombol nonaktif + alasan bila tidak ada yang layak. | 28 |
+| M35 | Umum (contoh: Antar-PT) | **Tombol "buat transaksi baru" ada di mana-mana** — satu aksi utama per layar, letak konsisten. | 29 |
+| M36 | Umum (contoh: Bagan Akun, Antar-PT) | **Sangat boros ruang**: kepala bertumpuk dua baris (cari + tipe + Tambah + muat ulang turun baris), bilah penjelasan panjang, kartu angka berketerangan panjang, dua deret tab, dropdown "Semua peran" selebar layar, baris cari terpisah. | 29, 30 |
+
+Catatan Claude (foto 28): ringkasan "Belum lunas Rp 6.743.694 (tercatat Rp 0 · belum dikirim Rp 6.743.694)" dan kolom
+"Tercatat · Belum dikirim" sulit dipahami orang awam — istilahnya perlu ditinjau bersama M19 (Pelanggan).
+
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
   Inggris) — seharusnya label Indonesia.
