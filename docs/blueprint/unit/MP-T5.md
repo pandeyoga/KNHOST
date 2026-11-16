@@ -16,9 +16,25 @@
 Setiap pengeluaran dari gudang greige/PFD/PFP mencatat peruntukan (pelanggan/toko atau stok) dan jumlah; semua barang
 keluar gudang memakai surat jalan yang memuat packing list; MD bisa membeli greige/PFP/PFD.
 
-## Keadaan sekarang
-Dicek ulang saat unit dimulai: pintu pengeluaran gudang (surat jalan penjualan, kirim bahan makloon, transfer, retur
-beli), mana yang sudah mencetak packing list, dan izin pembelian MD per tahap barang.
+## Keadaan sekarang (diperiksa 16 Nov, `d746702`)
+
+| Pintu barang keluar | Dokumen cetak | Daftar roll (packing list) |
+|---|---|---|
+| Kirim pesanan ke pelanggan | `delivery_note` "Surat Jalan Pengiriman" (`backend/services/pdf_resolvers.py:882`) + `packing_list` terpisah (`:845`) | **Sudah** — SJ memuat baris per roll (kode, roll, jumlah) |
+| Transfer antar-gudang | `transfer` "Surat Jalan Transfer" (`:660`) | Belum — hanya jumlah roll per barang |
+| Kirim bahan ke mitra makloon (issue langkah SPK) | **Tidak ada** — hanya SPK (`:602`) | Belum |
+| Retur beli ke pemasok | `purchase_return` "Nota Retur Beli" (`:533`) | Dicek saat unit dimulai |
+
+Peruntukan pengeluaran (pelanggan/toko/stok) belum dicatat di SPK makloon maupun transfer. MD bawaan tidak punya izin
+pembelian (`backend/permissions_config.py` peran `md`).
+
+## Pecahan yang disarankan (`00` §8)
+
+- **MP-T5a** — Surat jalan kirim bahan makloon (per pengiriman langkah, daftar roll) + daftar roll di SJ transfer & retur beli.
+- **MP-T5b** — Peruntukan wajib pada SPK makloon & transfer yang bahannya greige/PFD/PFP (Pelanggan · Toko · Stok), tampil di
+  SPK dan surat jalan.
+- **MP-T5c** — Izin baru `purchase_order.create_bahan` "Buat PO bahan (benang/greige/PFD/PFP)" bawaan MD (K-77): PO/PR
+  hanya untuk barang bertahap bahan; pemegang `purchase_order.create` tidak terpengaruh.
 
 ## Perubahan (garis besar)
 - Isian "Peruntukan" (pelanggan/toko · stok) wajib pada pengeluaran bahan tahap greige/PFD/PFP; tampil di surat jalan
