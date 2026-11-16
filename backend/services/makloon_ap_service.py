@@ -128,11 +128,11 @@ async def match_invoice(mko_id: str, seq: int, data: Dict[str, Any], *, actor_na
     entity_id = bill.get("entity_id") or order.get("entity_id") or ""
     await periksa_periode_dokumen_409(entity_id, data.get("invoice_date") or None, jenis="faktur jasa makloon")
     now = now_iso()
-    res = await db.vendor_bills.update_one(
-        {"id": bill["id"], "status": "awaiting_invoice"},
-        {"$set": {"status": "posted", "supplier_invoice_no": inv_no, "invoice_date": data.get("invoice_date") or "",
-                  "ppn_amount": ppn, "grand_total": round(expected + ppn, 2), "invoice_matched_at": now,
-                  "invoice_matched_by": actor_name, "updated_at": now}})
+    patch = {"status": "posted", "supplier_invoice_no": inv_no, "invoice_date": data.get("invoice_date") or "",
+             "ppn_amount": ppn, "grand_total": round(expected + ppn, 2), "invoice_matched_at": now,
+             "invoice_matched_by": actor_name, "updated_at": now}
+    # CAS: hanya pemenang yang memindah tagihan dari `awaiting_invoice`; SPK & jurnal sesudahnya idempoten.
+    res = await db.vendor_bills.update_one({"id": bill["id"], "status": "awaiting_invoice"}, {"$set": patch})
     if not res.modified_count:
         raise HTTPException(status_code=409, detail="Tagihan berubah — muat ulang.")
     await db.makloon_orders.update_one(
