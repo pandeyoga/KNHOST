@@ -1,4 +1,4 @@
-# Masukan pemilik 16 Nov 2026 — tampilan meja, menu samping, Tanya KN, POS, Pesanan Khusus
+# Masukan pemilik 16 Nov 2026 — tampilan meja, menu samping, Tanya KN, POS, Pesanan Khusus, Pesanan, Pelanggan, Produk
 
 Status: **DITAMPUNG** — pemilik: "tampung dulu masih banyak foto yang harus saya upload". Belum dikerjakan; dijadikan
 unit sesudah semua foto masuk. Foto: `2026-11-16_ui-meja/`.
@@ -46,6 +46,25 @@ Usulan (lini masa ke bawah, satu baris per tahap):
 - Tahap selesai bisa dilipat ("8 tahap selesai — lihat"); tahap yang tidak berlaku untuk tipe permintaan ini disembunyikan
   atau ditandai "tidak diperlukan".
 - HP: bentuk yang sama (memang vertikal) tanpa penyesuaian khusus.
+
+### Kiriman 3 — acuan lini masa, Pesanan, Pelanggan, Produk & Harga
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M15 | Lini masa (Pesanan Khusus dan sejenisnya) | Acuan: lini masa vertikal di sisi kanan (tiap tahap: nama, tanggal, catatan/keterangan tahap, mis. "Proses perbaikan: 29 hari dari tanggal pengajuan"). Pemilik: **"seperti ini, tapi saya ingin lebih bagus"**. Acuan hanya pola tata letak (produk lain), bukan untuk ditiru mereknya. | 11 |
+| M16 | Pesanan (daftar SO + panel rincian kanan) | **Cacat UI**: daftar menyisakan ruang kosong besar; panel kanan berupa tumpukan bagian panjang (Ditagih, Dibayar, Tagihan, Progres gudang, Surat jalan, Pelacakan, Faktur pajak, Uang masuk) yang sebagian besar "belum ada". | 12 |
+| M17 | Pesanan › tab status | Deretan tab status bernilai (Semua · Dipesan · Backorder · Diproses · Dikirim · Selesai · Dibatalkan) **tidak perlu** — cukup **saringan dropdown**. | 13 |
+| M18 | Umum (contoh: Pelanggan) | **Popup muncul sembarangan** — kartu "Rincian {pelanggan}" melayang menutupi tabel. | 14 |
+| M19 | Pelanggan | **UI perlu diperbaiki** (tabel tertutup kartu melayang; plafon kredit hanya "Lihat tab Kredit di kartu pelanggan"; sales penanggung jawab "—"). | 14 |
+| M20 | Produk & Harga | **"Sangat kacau sekali, hancur"**: alat tata kelola master untuk admin data (preview legacy, `line_code: ∅ → woven`, daftar kandidat duplikat SKU mentah, "Eksekusi 0 perubahan", lembar kerja perbaikan, sumber restock) tampil terbuka di atas katalog; delapan tab; banyak saringan. | 15 |
+
+Catatan Claude untuk M16 (perlu dicek): baris KSC/SO-00001 berstatus "Selesai · Lunas", sedangkan panel kanan menulis
+"Ditagih ✗" dan "Dibayar — Pesanan dibatalkan, tidak ada tagihan". Bila panel itu milik SO-00001, isinya bertentangan
+dengan status baris; bila milik pesanan lain, panel tidak menunjukkan pesanan mana yang sedang dibuka.
+
+Catatan Claude untuk M20: arah yang masuk akal — halaman Produk & Harga hanya katalog bersih (cari + saringan ringkas +
+daftar induk/varian); alat tata kelola data (preview legacy, duplikat, lembar kerja perbaikan, sumber restock) dipindah
+ke tempat admin data (mis. Pengaturan › Data master) dan tertutup untuk peran selain pemegang izinnya.
 
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
