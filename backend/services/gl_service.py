@@ -1979,7 +1979,7 @@ async def post_subcon_service(*, bill_id: str, mko_id: str, step_seq: int, entit
         return await _insert_entry(
             lines=lines, description=f"Jasa Makloon Diterima {label}".strip(), date=date or now_iso(),
             source_type="subcon_service", source_id=bill_id, entity_id=entity_id,
-            created_by="system", source_label=label)
+            created_by="system", source_label=label, ref={"grir_mko_id": mko_id, "vendor_bill_id": bill_id})
     if grand <= EPS or not bill_id or await _already_posted("subcon_service", bill_id):
         return None
     await seed_default_coa()
@@ -2006,9 +2006,9 @@ async def post_subcon_service(*, bill_id: str, mko_id: str, step_seq: int, entit
 
 async def post_subcon_service_invoice(*, bill_id: str, entity_id: str, net_amount: float, ppn: float = 0.0,
                                       makloon_name: str = "", label: str = "", invoice_no: str = "",
-                                      date: str = "") -> Optional[Dict[str, Any]]:
+                                      date: str = "", mko_id: str = "") -> Optional[Dict[str, Any]]:
     """MP-T4b (K-63, K-78) — faktur mitra makloon dicocokkan: Dr GR/IR 2-1150 (nilai jasa) + Dr PPN Masukan 1-1500 /
-    Cr Hutang Usaha 2-1100 (total faktur). Idempoten per tagihan."""
+    Cr Hutang Usaha 2-1100 (total faktur). Idempoten per tagihan. `ref.grir_mko_id` = SPK (GR/IR per SPK)."""
     net_amount = round(float(net_amount or 0), 2)
     ppn = round(float(ppn or 0), 2)
     grand = round(net_amount + ppn, 2)
@@ -2026,7 +2026,7 @@ async def post_subcon_service_invoice(*, bill_id: str, entity_id: str, net_amoun
     return await _insert_entry(
         lines=lines, description=f"Faktur Jasa Makloon {invoice_no} {label}".strip(), date=date or now_iso(),
         source_type="subcon_service_invoice", source_id=bill_id, entity_id=entity_id,
-        created_by="system", source_label=label)
+        created_by="system", source_label=label, ref={"grir_mko_id": mko_id, "vendor_bill_id": bill_id})
 
 
 async def post_subcon_receipt(*, mko_id: str, step_seq: int, entity_id: str,
@@ -2122,7 +2122,8 @@ async def post_makloon_claim(*, mko_id: str, step_seq: int, entity_id: str, acti
         return await _insert_entry(
             lines=lines, description=desc, date=date or now_iso(),
             source_type="makloon_claim", source_id=src, entity_id=entity_id,
-            created_by="system", source_label=label)
+            created_by="system", source_label=label,
+            ref={"grir_mko_id": mko_id} if debit_account == ACC_GRIR else None)
     lines = _balanced_pair(debit, credit, amount, desc)
     return await _insert_entry(
         lines=lines, description=desc, date=date or now_iso(),
@@ -2191,9 +2192,11 @@ async def post_production_output(*, wo_id: str, entity_id: str, overhead: float,
 
 async def post_makloon_material_loss(*, mko_id: str, step_seq: int, part: str, entity_id: str,
                                      expense: float, claim: float, label: str = "",
-                                     claim_account: str = "") -> Optional[Dict[str, Any]]:
+                                     claim_account: str = "", grir_mko_id: str = "") -> Optional[Dict[str, Any]]:
     """L01 — susut/hilang bahan di mitra (MKO batal): Dr 5-9500 (dalam toleransi) + Dr 1-1260
-    Piutang Klaim Mitra (di atas toleransi, sesudah disetujui) / Cr 1-1350 WIP. Idempotent per catatan."""
+    Piutang Klaim Mitra (di atas toleransi, sesudah disetujui) / Cr 1-1350 WIP. Idempotent per catatan.
+    Potong tagihan jasa: Dr Hutang 2-1100, atau (MP-T4b K-82) Dr GR/IR 2-1150 bila tagihan itu masih menunggu faktur
+    mitra — `grir_mko_id` = SPK pemilik tagihan (GR/IR per SPK)."""
     expense, claim = round(float(expense or 0), 2), round(float(claim or 0), 2)
     total = round(expense + claim, 2)
     src = f"{mko_id}:{step_seq}:{part}"
@@ -2205,15 +2208,16 @@ async def post_makloon_material_loss(*, mko_id: str, step_seq: int, part: str, e
         lines.append({"account_code": ACC_WRITEOFF, "debit": expense, "credit": 0.0,
                       "description": f"Susut wajar bahan di mitra {label}"})
     if claim > EPS:
-        deduct = claim_account == ACC_HUTANG
-        lines.append({"account_code": ACC_HUTANG if deduct else ACC_PIUTANG_KLAIM, "debit": claim, "credit": 0.0,
+        deduct = claim_account in (ACC_HUTANG, ACC_GRIR)
+        lines.append({"account_code": claim_account if deduct else ACC_PIUTANG_KLAIM, "debit": claim, "credit": 0.0,
                       "description": (f"Potong tagihan jasa mitra atas susut di atas toleransi {label}" if deduct
                                       else f"Klaim mitra atas susut di atas toleransi {label}")})
     lines.append({"account_code": ACC_WIP_SUBCON, "debit": 0.0, "credit": total,
                   "description": f"Bahan hilang/susut di mitra {label}"})
     return await _insert_entry(lines=lines, description=f"Susut bahan di mitra {label}".strip(), date=now_iso(),
                                source_type="makloon_material_loss", source_id=src, entity_id=entity_id,
-                               created_by="system", source_label=label)
+                               created_by="system", source_label=label,
+                               ref={"grir_mko_id": grir_mko_id} if claim_account == ACC_GRIR and grir_mko_id else None)
 
 
 async def reverse_subcon_issue(*, mko_id: str, step_seq: int, entity_id: str,

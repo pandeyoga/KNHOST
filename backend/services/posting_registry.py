@@ -175,7 +175,7 @@ async def post_makloon_step(order: Dict[str, Any], seq: int) -> None:
                 await gl.post_subcon_service_invoice(
                     bill_id=bill["id"], entity_id=eid, net_amount=float(bill.get("net_amount") or 0),
                     ppn=float(bill.get("ppn_amount") or 0), makloon_name=step.get("makloon_name") or "",
-                    label=label, invoice_no=bill.get("supplier_invoice_no") or "")
+                    label=label, invoice_no=bill.get("supplier_invoice_no") or "", mko_id=mko)
     if _moves(step) and step.get("status") == "received":
         await gl.post_subcon_receipt(mko_id=mko, step_seq=int(seq), entity_id=eid,
                                      amount=makloon_step_amount(step), label=label)

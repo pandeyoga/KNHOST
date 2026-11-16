@@ -107,8 +107,8 @@ test("kolom, status ikon+teks, kaki tabel, jurnal tak terhubung merah, tautan PO
   const open = jest.fn();
   const { host } = await mount(<GrIrView />, { open });
   const kepala = [...q(host, "grir-table").querySelectorAll("thead th")].map((th) => th.textContent);
-  expect(kepala).toEqual(["PO", "Pemasok", "Status PO", "Nilai diterima", "Sudah ditagih", "Diretur", "Dikliring",
-    "Sisa GR/IR", "Umur (hari)", "Aksi"]);
+  expect(kepala).toEqual(["PO / SPK", "Pemasok / mitra", "Status", "Nilai diterima", "Sudah ditagih", "Diretur / klaim",
+    "Dikliring", "Sisa GR/IR", "Umur (hari)", "Aksi"]);   // MP-T4b — baris SPK makloon ikut tampil
   expect(q(host, "grir-table").className).toContain("head-wrap");
   expect([...q(host, "grir-table").querySelectorAll("thead th")].pop().className).toContain("col-sticky-end");
   const pil = q(q(host, "grir-row-po_1"), "grir-po-status");
@@ -120,9 +120,36 @@ test("kolom, status ikon+teks, kaki tabel, jurnal tak terhubung merah, tautan PO
   expect(q(host, "grir-total").textContent).toMatch(/-Rp\s90\.000|−Rp\s90\.000|Rp\s-90\.000/);
   expect(q(host, "grir-ledger").textContent).toMatch(/95\.000/);
   expect(q(host, "grir-unlinked").className).toContain("text-kn-danger-text");
-  expect(q(host, "grir-unlinked").textContent).toMatch(/5\.000 berasal dari jurnal yang tidak terhubung ke PO\./);
+  expect(q(host, "grir-unlinked").textContent).toMatch(/5\.000 berasal dari jurnal yang tidak terhubung ke PO atau SPK makloon\./);
   await click(q(host, "grir-open-po_1"));
   expect(open).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "purchase_order", focus_id: "po_1", number: "PO/001" }));
+});
+
+// MP-T4b (K-82) — baris SPK makloon: nomor SPK bertaut ke Order Makloon, status "Makloon · …", tagihan yang menunggu
+// faktur di bawah sisa, kolom aksi memberi petunjuk "Cocokkan faktur di rincian SPK" (tanpa tombol Kliring) untuk semua.
+const BARIS_SPK = {
+  kind: "makloon", doc_id: "mko_1", doc_number: "KSC/MKO-00012", po_id: "", po_number: "", supplier_name: "Mitra Celup",
+  po_status: "in_process", po_status_label: "Makloon · diproses", received_value: 950000, billed_value: 0,
+  returned_value: 50000, cleared_value: 0, balance: 900000, age_days: 3, bucket: "0-30", unposted_variance: 0,
+  open_bill_number: "", awaiting_bills: ["VBM-00004"], can_clear: false, action_hint: "Cocokkan faktur di rincian SPK",
+  link: { view: "makloon-orders", tab: "", focus_type: "makloon_order", focus_id: "mko_1", number: "" },
+};
+
+test("baris SPK makloon: tautan SPK, menunggu faktur, petunjuk tanpa Kliring", async () => {
+  mockGet.mockResolvedValue({ data: { ...ISI, items: [BARIS_SPK], total: 1 } });
+  const open = jest.fn();
+  const { host } = await mount(<GrIrView />, { open });
+  const row = q(host, "grir-row-mko-mko_1");
+  expect(row.textContent).toContain("KSC/MKO-00012");
+  expect(q(host, "grir-mko-status-mko_1").textContent).toContain("Makloon · diproses");
+  expect(q(host, "grir-awaiting-mko_1").textContent).toBe("menunggu faktur: VBM-00004");
+  expect(q(host, "grir-why-mko-mko_1").textContent).toBe("Cocokkan faktur di rincian SPK");
+  expect(row.querySelector('[data-testid^="grir-clear-"]')).toBeNull();
+  expect(q(host, "grir-count").textContent).toBe("1 dokumen");
+  await click(q(host, "grir-open-mko-mko_1"));
+  expect(open).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "makloon_order", focus_id: "mko_1",
+    number: "KSC/MKO-00012" }));
+  expect(alasanTidakKliring(BARIS_SPK, true)).toBe("Cocokkan faktur di rincian SPK");
 });
 
 test("Kliring hanya untuk baris boleh + accounting.manage; baris lain menulis alasan", async () => {

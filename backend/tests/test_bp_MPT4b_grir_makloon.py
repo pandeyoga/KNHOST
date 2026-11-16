@@ -1,6 +1,6 @@
 """MP-T4b — di MongoDB ASLI (lingkungan A): jasa makloon menjadi hutang saat faktur mitra dicocokkan (K-78, K-80).
 
-PT KSC disetel `makloon.jasa_jadi_hutang = saat_faktur` selama uji (dikembalikan ke `saat_terima` = bawaan sesudahnya).
+K-82: semua PT memakai `saat_faktur` lewat bawaan registri — lapisan PT KSC dicabut sebelum uji (nilai diwarisi bawaan).
 1. SPK greige → PFP (kontrak Rp 5.000/yd hasil) → printing; bahan dikirim (4 roll × 50 yd); hasil langkah 1 190 yd
    diteruskan ke mitra printing (jalur terima hasil yang sama; PT KSC memakai mode Kedatangan sehingga terima langsung
    ditolak). Ongkos jasa 190 × 5.000 = Rp 950.000. Harapan: tagihan jasa `awaiting_invoice`, PPN 0; jurnal jasa Dr WIP 1-1350 950.000 / Cr GR/IR 2-1150 950.000.
@@ -22,19 +22,36 @@ BASE, DB = t.BASE, t.DB
 KUNCI = "makloon.jasa_jadi_hutang"
 
 
-def _setel(nilai):
-    subprocess.run([sys.executable, "-c", (
-        "import asyncio, sys; sys.path.insert(0, '.'); from services import config_resolver as cr\n"
-        f"asyncio.run(cr.set_value('{KUNCI}', '{nilai}', scope_type='entity', scope_id='{t.KSC}', "
-        "actor='uji MP-T4b', reason='uji lapis A MP-T4b'))")],
-        cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), check=True)
+def _jalankan(kode):
+    out = subprocess.run([sys.executable, "-c", "import asyncio, sys; sys.path.insert(0, '.')\n" + kode],
+                         cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), check=True,
+                         capture_output=True, text=True)
+    return out.stdout.strip()
 
 
 @pytest.fixture(scope="module")
 def mode_faktur():
-    _setel("saat_faktur")
+    """Cabut lapisan PT KSC (bila ada, mis. sisa uji lama) → nilai diwarisi bawaan registri `saat_faktur`."""
+    _jalankan("from services import config_resolver as cr\n"
+              "async def main():\n"
+              "    try:\n"
+              f"        await cr.clear_layer('{KUNCI}', scope_type='entity', scope_id='{t.KSC}', actor='uji MP-T4b', "
+              "reason='K-82: semua PT memakai bawaan saat faktur')\n"
+              "    except Exception:\n"
+              "        pass\n"
+              "asyncio.run(main())")
     yield
-    _setel("saat_terima")
+
+
+def test_MPT4b_U10_semua_pt_saat_faktur(mode_faktur):
+    """K-82 — setiap PT di data uji memakai `saat_faktur` tanpa lapisan PT."""
+    out = _jalankan("from db import db\nfrom services import makloon_ap_service as ap\n"
+                    "async def main():\n"
+                    "    ids = [e['id'] async for e in db.business_entities.find({}, {'_id': 0, 'id': 1})]\n"
+                    "    print(sorted({await ap.ap_mode(i) for i in ids}), len(ids))\n"
+                    "asyncio.run(main())")
+    modes, n = out.rsplit(" ", 1)
+    assert modes == "['saat_faktur']" and int(n) >= 2, out
 
 
 def _baris(source_type, source_id):
@@ -77,6 +94,10 @@ def test_MPT4b_U8_grir_lalu_faktur(mode_faktur):
     assert bill["status"] == "awaiting_invoice" and bill["ap_mode"] == "saat_faktur" and bill["ppn_amount"] == 0
     assert st["service_invoice_status"] == "menunggu_faktur"
     assert _baris("subcon_service", bill["id"]) == {"1-1350": (950_000.0, 0.0), "2-1150": (0.0, 950_000.0)}
+    num = DB.makloon_orders.find_one({"id": mko}, {"_id": 0, "mko_number": 1})["mko_number"]
+    g = requests.get(f"{BASE}/finance/gr-ir", headers=adm, timeout=60, params={"q": num}).json()
+    spk = [x for x in g["items"] if x.get("doc_id") == mko]
+    assert len(spk) == 1 and spk[0]["balance"] == 950_000.0 and spk[0]["awaiting_bills"] == [bill["bill_number"]]
     r = requests.post(f"{BASE}/makloon-orders/{mko}/steps/1/service-invoice", headers=adm, timeout=60,
                       json={"supplier_invoice_no": f"INV-M4B-{f['t']}", "net_amount": 950_000, "ppn_amount": 104_500})
     assert r.status_code == 200, r.text[:500]
@@ -88,6 +109,11 @@ def test_MPT4b_U8_grir_lalu_faktur(mode_faktur):
              for je in DB.journal_entries.find({"source_id": bill["id"], "status": {"$ne": "void"}}, {"_id": 0})
              for ln in je["lines"] if ln["account_code"] == "2-1150")
     assert abs(gl) < 0.01
+    g = requests.get(f"{BASE}/finance/gr-ir", headers=adm, timeout=60, params={"q": num, "status": "semua"}).json()
+    spk = [x for x in g["items"] if x.get("doc_id") == mko]
+    assert spk[0]["billed_value"] == 950_000.0 and spk[0]["balance"] == 0.0
+    g = requests.get(f"{BASE}/finance/gr-ir", headers=adm, timeout=60, params={"status": "semua"}).json()
+    assert round(g["total_balance"] + g["unlinked_balance"], 2) == g["ledger_balance"]
 
 
 def test_MPT4b_U9_borongan_mitra_ujung_ke_ujung():

@@ -270,7 +270,7 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
 JOURNAL_SOURCE_TYPE: Dict[str, str] = {
     "shipment_revenue": "shipment", "shipment_cogs": "shipment",
     "subcon_issue": "makloon_order", "subcon_receipt": "makloon_order",
-    "subcon_service": "vendor_bill", "goods_receipt": "grn",
+    "subcon_service": "vendor_bill", "subcon_service_invoice": "vendor_bill", "goods_receipt": "grn",   # MP-T4b
     "advance_reclass": "sales_order", "contra_bon_deduction": "contra_bon",
     # PK-44 (IA-10)
     "petty_cash_settlement": "cash_settlement",

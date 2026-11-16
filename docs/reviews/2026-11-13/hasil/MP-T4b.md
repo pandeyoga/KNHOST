@@ -109,8 +109,47 @@ baris.
 - ASUMSI: satu faktur mitra yang mencakup beberapa langkah/SPK dicocokkan per tagihan (nilai jasa per langkah); nomor
   faktur yang sama boleh dipakai di beberapa tagihan.
 - ASUMSI: di mode `saat_faktur` PPN saat terima diabaikan (PPN datang bersama faktur).
-- CATATAN: layar Hutang › GR/IR mengelompokkan sisa per PO; jurnal GR/IR jasa makloon tidak ber-PO sehingga masuk baris
-  "tidak terhubung ke PO". Daftar GR/IR per SPK makloon belum dibuat — usulan unit lanjutan bila sakelar dinyalakan.
+- ~~CATATAN: GR/IR jasa makloon masuk baris "tidak terhubung ke PO"~~ — ditutup di bagian K-82 di bawah.
 - CATATAN: klaim yang sudah disetujui tidak dihitung ulang. Mode klaim diambil dari tagihan jasa langkahnya (`ap_mode`);
   tagihan lama tanpa `ap_mode` atau langkah tanpa tagihan memakai sakelar PT saat klaim disetujui.
-- H5: sakelar untuk PT nyata dinyalakan pemilik sesudah saldo hutang jasa makloon dicocokkan manual.
+- ~~H5: sakelar untuk PT nyata dinyalakan pemilik~~ — dijawab K-82 (semua PT), lihat bagian di bawah.
+
+## K-82 — semua PT "saat faktur" + celah ditutup (pemilik 16 Nov: "ya nyalakan semua pt, sisakan celah bereskan")
+
+### Perubahan
+- **Semua PT:** bawaan registri `makloon.jasa_jadi_hutang` diubah `saat_terima` → **`saat_faktur`**, cadangan kode
+  `makloon_ap_service.ap_mode` ikut (INV-CFG-09). Tidak ada lapisan PT yang disetel, jadi PT yang ada dan PT baru semuanya
+  memakai "saat faktur" begitu kode ini dipasang; "saat terima" tetap bisa dipilih per PT dengan alasan. Tagihan jasa yang
+  sudah lahir tidak berubah (mode dipotret di tagihan; tagihan lama tanpa `ap_mode` diulang-posting dengan cara lama).
+  Pemasangan ke server produksi tetap langkah pemilik (H2).
+- **Celah GR/IR per SPK:** jurnal makloon yang menyentuh GR/IR membawa `ref.grir_mko_id` (jasa diterima, faktur dicocokkan,
+  klaim dengan debit GR/IR, potongan susut dengan debit GR/IR); `vendor_bill_service.grir_by_po` mengelompokkannya dengan
+  kunci `mko:<id>` (jurnal tanpa ref dicari lewat tagihan/sumbernya). Hutang › GR/IR menampilkan baris SPK: nomor SPK
+  bertaut ke rincian SPK, mitra, "Makloon · {status}", nilai diterima / sudah difakturkan / klaim, sisa, umur, tagihan
+  yang menunggu faktur, dan petunjuk "Cocokkan faktur di rincian SPK" (tanpa tombol Kliring — sisa jasa diselesaikan
+  dengan faktur atau klaim). Kaki tabel: Σ sisa per dokumen + tak terhubung = saldo buku besar.
+- **Celah susut di mitra (L01):** potong tagihan jasa atas susut di atas toleransi kini juga bisa memilih tagihan yang
+  menunggu faktur — jurnal Dr GR/IR 2-1150 (bukan Hutang) dengan rujukan SPK pemilik tagihan; tagihan yang sudah dicocokkan
+  tetap Dr Hutang 2-1100. Dulu daftar tagihan yang bisa dipotong hanya `posted`, sehingga dengan bawaan baru pilihannya
+  akan kosong.
+- Jejak dokumen: jurnal `subcon_service_invoice` bertaut ke tagihan jasanya.
+
+### Uji
+- `test_MPT4b_U11` (lapis B): tagihan menunggu faktur 950.000 → baris SPK sisa 950.000 + petunjuk; susut dipotong
+  50.000 dari tagihan itu → Dr 2-1150 / Cr 1-1350, sisa 900.000; faktur 900.000 → sisa 0; Σ sisa + tak terhubung = saldo
+  buku besar.
+- Lapis A (`test_bp_MPT4b_grir_makloon.py`): U8 kini juga memeriksa daftar GR/IR (baris SPK 950.000 → 0, Σ = saldo buku
+  besar); **U10** — setiap PT di data uji memakai `saat_faktur` tanpa lapisan PT (sisa lapisan KSC dari uji lama dicabut).
+- Uji lama disesuaikan: `test_PK18_U5b` (jurnal jasa gagal → diulang) kini memakai akun GR/IR 2-1150 karena bawaan baru.
+- Terdampak, lolos: tests_mem makloon/posting/pengaturan **617 lulus** (termasuk KFT8), PK-28 + MP-T4b **27 lulus**;
+  lapis A MP-T4b, PK-28 (kliring bersamaan), MP-T4a, MP-T5 **9 lulus**; jest `pk28GrIr` **11 lulus** (+1 baris SPK).
+  `test_l01_material_loss.py` (lapis A) tidak bisa dimuat di lingkungan ini: modul pembantunya
+  (`test_p05_acceptance_acc31_33_34.py`) mencari pemasok ber-`entity_id: "all"` yang tidak ada di data lokal — prasyarat
+  data, bukan kode unit ini; jalur potong susut diuji di U11.
+- Penjaga: config fallback/teks, atomic_claim, posting coverage hijau; `verify_ui_standard` untuk `GrIrView.jsx` menandai
+  `chip_custom`/`empty_false` yang sudah ada di `HEAD` sebelum perubahan (garis dasar), bukan dari unit ini.
+- Cek layar (`bukti/MP-T4b/uji_jalan_grir_per_spk.js`): baris "KSC/MKO-… · Makloon · diproses · Rp 950.000 · menunggu
+  faktur: VBM-… · Cocokkan faktur di rincian SPK", total sisa = saldo buku besar (`1280-05-grir-per-spk.png`); tautan
+  membuka rincian SPK dengan "Kembali ke GR/IR" (`1280-06-grir-buka-spk.png`). Putaran pertama kolom "Umur (hari)"
+  tertutup kolom Aksi lekat karena catatan tagihan tidak boleh turun baris — diperbaiki (catatan turun baris, nomor tagihan
+  utuh, label status dipendekkan).

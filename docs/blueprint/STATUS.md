@@ -113,7 +113,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 105 | MP-T2 | Satu wizard SPK makloon yang membaca rute; semua pilihan tersaring tahap | MP-T1 | selesai | `86cd757` | [MP-T2](../reviews/2026-11-13/hasil/MP-T2.md) | K-57, K-59, K-61 |
 | 106 | MP-T3 | R&D tersambung ke mitra makloon: putusan melahirkan rute dan kontrak yang benar | MP-T1 | selesai | `f6ebfb8` | [MP-T3](../reviews/2026-11-13/hasil/MP-T3.md) | K-65, K-68, K-70, K-72 |
 | 107 | MP-T4a | Mekanisme makloon tanpa jurnal baru: teruskan kain mitra→mitra (dicatat MD), lapor hasil akhir saja, klaim divalidasi saat diajukan, tolak klaim tidak menutup SPK, QC tolak membuka draf klaim, batal SPK saat bahan di mitra | MP-T2 | selesai | `0d02e82` | [MP-T4a](../reviews/2026-11-13/hasil/MP-T4a.md) | K-62, K-66, K-67, K-69; pecahan MP-T4 (`00` §8) |
-| 107b | MP-T4b | Jurnal makloon: hutang jasa saat faktur mitra dicocokkan (K-63), hasil klaim ke biaya roll / pendapatan (K-64), tarif borongan per SPK (K-68) | MP-T4a | selesai | `cc6f0d8` · `90f77a7` | [MP-T4b](../reviews/2026-11-13/hasil/MP-T4b.md) | K-78…K-81; sakelar `makloon.jasa_jadi_hutang` bawaan `saat_terima` (cara lama) — menyalakan `saat_faktur` untuk PT nyata = H5 (pemilik) |
+| 107b | MP-T4b | Jurnal makloon: hutang jasa saat faktur mitra dicocokkan (K-63), hasil klaim ke biaya roll / pendapatan (K-64), tarif borongan per SPK (K-68) | MP-T4a | selesai | `cc6f0d8` · `90f77a7` · K-82 (lihat laporan) | [MP-T4b](../reviews/2026-11-13/hasil/MP-T4b.md) | K-78…K-82; semua PT `saat_faktur` (bawaan registri, K-82); GR/IR per SPK makloon + potong susut dari tagihan menunggu faktur |
 | 108 | MP-T5 | Gudang greige/PFD/PFP: peruntukan pengeluaran, surat jalan wajib packing list, akses MD | — | selesai | `3ba2cad` · `01a6585` | [MP-T5](../reviews/2026-11-13/hasil/MP-T5.md) | K-74…K-77 (permintaan klien) |
 
 ## Menunggu pemilik
@@ -272,8 +272,9 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   makloon B-S1…B-S5), review cabang `review`, percakapan pemilik–klien. Keputusan K-52…K-77 (`01_KEPUTUSAN.md` bagian E);
   pemilik: "ya kerjakan", "tidak perlu test uji yang tidak perlu" (uji terarah, tanpa suite penuh berulang).
 - Selesai: MP-T1, MP-T2, MP-T3, MP-T4a, MP-T5 (5a/5b/5c), dan MP-T4b sesudah pemilik menjawab K-78…K-81 (GR/IR 2-1150,
-  klaim mengurangi persediaan, sakelar per PT bawaan cara lama, borongan sekali di langkah terakhir). Sakelar
-  `makloon.jasa_jadi_hutang` belum dinyalakan untuk PT mana pun (H5).
+  klaim mengurangi persediaan, sakelar per PT, borongan sekali di langkah terakhir). K-82 (pemilik: "ya nyalakan semua
+  pt, sisakan celah bereskan"): bawaan registri `makloon.jasa_jadi_hutang` = `saat_faktur` untuk semua PT; celah ditutup
+  (GR/IR per SPK makloon di Hutang › GR/IR; potong susut di mitra dari tagihan yang menunggu faktur).
 - Uji: per unit uji penerimaan (database tiruan + MongoDB asli untuk penerimaan/teruskan) dan uji lama yang terdampak;
   uji jalan peramban untuk tab Rute, wizard, isi mitra, teruskan, PO bahan MD, surat jalan.
 - Gate `--ci` akhir gelombang: putaran pertama menemukan 3 pelanggaran baru (dua cadangan pengaturan `[]` ≠ bawaan registri;

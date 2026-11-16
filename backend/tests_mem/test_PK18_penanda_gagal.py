@@ -200,7 +200,8 @@ async def test_PK18_U5_kirim_bahan_makloon_maju_walau_jurnal_gagal(klien, kepala
 
 async def test_PK18_U5b_catat_jasa_makloon_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
     """Tambahan (bukan baris spesifikasi): langkah jasa murni — tagihan jasa lahir, langkah `received` walau jurnal
-    jasa (Dr 1-1350 / Cr 2-1100) gagal; ulang menerbitkannya sekali dari nilai tagihan yang tersimpan."""
+    jasa gagal; ulang menerbitkannya sekali dari nilai tagihan yang tersimpan. K-82 (MP-T4b): bawaan semua PT "saat
+    faktur" → jurnal jasa Dr 1-1350 / Cr GR/IR 2-1150 (hutang 2-1100 baru lahir saat faktur mitra dicocokkan)."""
     pid, wid = await _produk_gudang(db, harga=50_000)
     mko = uid("mko")
     await db.makloon_orders.insert_one({
@@ -210,7 +211,7 @@ async def test_PK18_U5b_catat_jasa_makloon_gagal_lalu_diulang(klien, kepala_admi
             "input_name": "Kain", "input_qty": 10, "input_unit": "meter", "output_product_id": pid,
             "process_type": "screen", "stage_label": "Screen", "makloon_id": "mitra_pk18", "makloon_name": "Mitra Uji",
             "issue_ref": f"{mko}:1", "expected_output_qty": 10}]})
-    async with paksa_jurnal_gagal("akun", entity_id=KSC, kode_akun="2-1100"):
+    async with paksa_jurnal_gagal("akun", entity_id=KSC, kode_akun="2-1150"):
         r = await klien.post(f"/api/makloon-orders/{mko}/record-service", headers=kepala_admin,
                              json={"step_seq": 1, "tariff": 300_000})
     assert r.status_code == 200, r.text
@@ -220,7 +221,7 @@ async def test_PK18_U5b_catat_jasa_makloon_gagal_lalu_diulang(klien, kepala_admi
     r2 = await ulang(klien, kepala_admin, "makloon_step", f"{mko}:1")
     assert r2.status_code == 200 and r2.json()["gl_status"] == "posted", r2.text
     jes = await jurnal_aktif("subcon_service", st["service_bill_id"])
-    assert len(jes) == 1 and baris(jes[0]) == {"1-1350": (300_000.0, 0.0), "2-1100": (0.0, 300_000.0)}
+    assert len(jes) == 1 and baris(jes[0]) == {"1-1350": (300_000.0, 0.0), "2-1150": (0.0, 300_000.0)}
 
 
 # ── U6 — susut potong ────────────────────────────────────────────────────────────────────────────────────────────────

@@ -395,8 +395,9 @@ E("makloon.variance_tolerance_pct", group="pembelian", section="makloon", type="
   related=("makloon.auto_claim",), risk="high",
   permission=_MAKLOON_PERM)
 
-# MP-T4b (K-63, K-64, K-78…K-80) — kapan jasa makloon menjadi hutang; sakelar per PT, bawaan cara lama.
-E("makloon.jasa_jadi_hutang", group="pembelian", section="makloon", type="enum", default="saat_terima",
+# MP-T4b (K-63, K-64, K-78…K-80) — kapan jasa makloon menjadi hutang; sakelar per PT. K-82 (pemilik 16 Nov): semua PT
+# memakai "saat faktur" → bawaan registri `saat_faktur`; "saat terima" tetap bisa dipilih per PT (dengan alasan).
+E("makloon.jasa_jadi_hutang", group="pembelian", section="makloon", type="enum", default="saat_faktur",
   options=({"value": "saat_terima", "label": "Saat hasil diterima (cara lama)"},
            {"value": "saat_faktur", "label": "Saat faktur mitra dicocokkan"}),
   scopes=G, requires_reason=True,
@@ -404,8 +405,8 @@ E("makloon.jasa_jadi_hutang", group="pembelian", section="makloon", type="enum",
   help="Saat faktur mitra dicocokkan: nilai jasa yang hasilnya sudah diterima ditampung di GR/IR sampai faktur mitra "
        "dicocokkan, lalu baru menjadi hutang; klaim mengurangi biaya roll yang masih di stok. Cara lama: hutang langsung "
        "lahir saat hasil diterima dan klaim selalu menjadi pendapatan klaim.",
-  impact="Mengubah saldo hutang ke mitra makloon dan nilai persediaan hasil yang diklaim. Nyalakan per PT sesudah angkanya "
-         "dicocokkan manual dengan buku hutang.",
+  impact="Mengubah saldo hutang ke mitra makloon dan nilai persediaan hasil yang diklaim. Tagihan jasa yang sudah lahir "
+         "tidak berubah; yang baru mengikuti pilihan ini.",
   example="Saat faktur → hasil celup diterima Rp 950.000: GR/IR bertambah, hutang baru bertambah saat faktur mitra masuk",
   consumers=("services/makloon_ap_service.py:ap_mode",), risk="high",
   permission=_MAKLOON_PERM)

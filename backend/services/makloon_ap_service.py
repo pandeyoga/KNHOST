@@ -1,10 +1,10 @@
 """MP-T4b — hutang jasa makloon & hasil klaim (keputusan pemilik K-63, K-64, K-78…K-81, 16 Nov 2026).
 
-Sakelar per PT `makloon.jasa_jadi_hutang`:
-  * `saat_terima` (bawaan, cara lama): tagihan jasa langsung `posted` saat hasil diterima (Dr 1-1350 / Cr 2-1100),
+Sakelar per PT `makloon.jasa_jadi_hutang` (bawaan `saat_faktur` sejak K-82 — semua PT, pemilik 16 Nov 2026):
+  * `saat_terima` (cara lama): tagihan jasa langsung `posted` saat hasil diterima (Dr 1-1350 / Cr 2-1100),
     klaim potong bon/ganti rugi selalu ke Pendapatan Klaim 4-9200.
-  * `saat_faktur`: tagihan jasa `awaiting_invoice` saat hasil diterima — Dr 1-1350 / Cr GR/IR 2-1150 (tanpa PPN); hutang
-    lahir saat faktur mitra dicocokkan (Dr 2-1150 + Dr PPN 1-1500 / Cr 2-1100). Klaim dibagi menurut keadaan roll hasil
+  * `saat_faktur` (bawaan): tagihan jasa `awaiting_invoice` saat hasil diterima — Dr 1-1350 / Cr GR/IR 2-1150
+    (tanpa PPN); hutang lahir saat faktur mitra dicocokkan (Dr 2-1150 + Dr PPN 1-1500 / Cr 2-1100). Klaim dibagi menurut keadaan roll hasil
     langkahnya: masih di stok → Cr Persediaan 1-1300 (biaya roll turun), dikirim lagi ke mitra (WIP) → Cr 1-1350,
     sudah keluar/terjual/susut → Cr 4-9200.
 Mode dipotret di tagihan (`ap_mode`) saat lahir, sehingga jurnal ulang tidak berubah walau sakelar PT diubah kemudian.
@@ -22,7 +22,7 @@ _OUT_STATUSES = frozenset({"in_transit_sales", "delivered", "returned_supplier",
 async def ap_mode(entity_id: str) -> str:
     from services.config_resolver import value_of
     v = await value_of("makloon.jasa_jadi_hutang", {"entity_id": entity_id or ""})
-    return v if v in (MODE_LAMA, MODE_FAKTUR) else MODE_LAMA
+    return v if v in (MODE_LAMA, MODE_FAKTUR) else MODE_FAKTUR   # = bawaan registri (K-82)
 
 
 def _treatment(roll: Dict[str, Any]) -> str:

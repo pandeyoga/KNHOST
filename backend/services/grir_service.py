@@ -1,4 +1,5 @@
 """PK-28 (IV-03) — daftar sisa GR/IR per PO (Hutang › GR/IR) dan kliring sisa yang tidak akan tertagih.
+MP-T4b (K-82) — ditambah baris per SPK makloon: jasa diterima yang faktur mitranya belum dicocokkan.
 
 Sumber angka: jurnal buku besar akun GR/IR (`vendor_bill_service.grir_by_po`), bukan ringkasan PO. Kliring mengikuti
 kontrak posting `02_STANDAR.md` §1: PERIKSA (tanpa tulisan) → NIAT (`purchase_orders.grir_clearings[]` ber-`pending`,
@@ -80,10 +81,11 @@ async def list_grir(entity_id: str, *, status: str = "terbuka", bucket: str = ""
                     page_size: int = 50) -> Dict[str, Any]:
     from services.book_date import tanggal_buku
     from services.doc_refs_service import link_of
-    from services.vendor_bill_service import grir_by_po, grir_ledger_balance
+    from services.vendor_bill_service import MKO_KEY, grir_by_po, grir_ledger_balance
     today = tanggal_buku()
     by_po = await grir_by_po(entity_id)
     unlinked = float((by_po.pop("", None) or {}).get("balance") or 0)
+    by_mko = {k[len(MKO_KEY):]: by_po.pop(k) for k in [k for k in by_po if k.startswith(MKO_KEY)]}
     ids = sorted(by_po)
     pos: Dict[str, Dict[str, Any]] = {}
     async for po in db.purchase_orders.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "po_number": 1,
@@ -109,16 +111,20 @@ async def list_grir(entity_id: str, *, status: str = "terbuka", bucket: str = ""
             "unposted_variance": unposted.get(pid, 0.0), "open_bill_number": open_bills.get(pid, ""),
             "can_clear": bool(ready and abs(bal) > EPS and po.get("status") in CLEARABLE_PO_STATUSES
                               and pid not in open_bills),
-            "link": link_of("purchase_order", po),
+            "link": link_of("purchase_order", po), "kind": "po", "doc_id": pid,
+            "doc_number": po.get("po_number") or pid,
         })
+    mko_rows, mko_unlinked = await _makloon_rows(by_mko, today, link_of)
+    rows += mko_rows
+    unlinked += mko_unlinked
     total_balance = round(sum(r["balance"] for r in rows), 2)
     shown = [r for r in rows if status == "semua" or abs(r["balance"]) > EPS]
     if bucket:
         shown = [r for r in shown if r["bucket"] == bucket]
     needle = (q or "").strip().lower()
     if needle:
-        shown = [r for r in shown if needle in r["po_number"].lower() or needle in r["supplier_name"].lower()]
-    shown.sort(key=lambda r: (-r["age_days"], r["po_number"]))
+        shown = [r for r in shown if needle in r["doc_number"].lower() or needle in r["supplier_name"].lower()]
+    shown.sort(key=lambda r: (-r["age_days"], r["doc_number"]))
     start = (page - 1) * page_size
     return {
         "entity_id": entity_id, "items": shown[start:start + page_size], "total": len(shown), "page": page,
@@ -127,6 +133,47 @@ async def list_grir(entity_id: str, *, status: str = "terbuka", bucket: str = ""
         "ledger_balance": await grir_ledger_balance(entity_id), "unlinked_balance": round(unlinked, 2),
         "mapping_ready": ready, "as_of": today,
     }
+
+
+MKO_STATUS_LABEL = {"draft": "draf", "in_process": "diproses", "partially_received": "diterima sebagian",
+                    "completed": "selesai", "cancelled": "dibatalkan"}
+#: Petunjuk tindakan baris SPK makloon (sisa GR/IR jasa diselesaikan dengan mencocokkan faktur mitra, bukan kliring).
+MKO_HINT = "Cocokkan faktur di rincian SPK"
+
+
+async def _makloon_rows(by_mko: Dict[str, Dict[str, Any]], today: str, link_of) -> tuple:
+    """MP-T4b (K-82) — baris GR/IR jasa makloon per SPK: nilai jasa diterima, sudah difakturkan, dipotong klaim/susut,
+    sisa, umur sejak terima terakhir, tagihan yang masih menunggu faktur. SPK yang sudah tidak ada → tak terhubung."""
+    if not by_mko:
+        return [], 0.0
+    orders = {o["id"]: o async for o in db.makloon_orders.find(
+        {"id": {"$in": sorted(by_mko)}}, {"_id": 0, "id": 1, "mko_number": 1, "status": 1, "steps.makloon_name": 1})}
+    waiting: Dict[str, List[str]] = {}
+    async for b in db.vendor_bills.find({"makloon_order_id": {"$in": sorted(orders)}, "status": "awaiting_invoice"},
+                                        {"_id": 0, "makloon_order_id": 1, "bill_number": 1}).sort("bill_number", 1):
+        waiting.setdefault(b["makloon_order_id"], []).append(b.get("bill_number") or "")
+    rows: List[Dict[str, Any]] = []
+    unlinked = 0.0
+    for mid, g in by_mko.items():
+        o = orders.get(mid)
+        if not o:
+            unlinked += float(g["balance"] or 0)
+            continue
+        partners = list(dict.fromkeys(s.get("makloon_name") for s in o.get("steps") or [] if s.get("makloon_name")))
+        age = _age(g["last_receipt_at"] or g["last_activity_at"], today)
+        rows.append({
+            "kind": "makloon", "doc_id": mid, "doc_number": o.get("mko_number") or mid,
+            "po_id": "", "po_number": "", "supplier_name": ", ".join(partners),
+            "po_status": o.get("status") or "",
+            "po_status_label": "Makloon · " + MKO_STATUS_LABEL.get(o.get("status") or "", o.get("status") or "—"),
+            "received_value": g["received_value"], "billed_value": g["billed_value"],
+            "returned_value": g["returned_value"], "cleared_value": g["cleared_value"], "balance": g["balance"],
+            "last_receipt_at": g["last_receipt_at"], "age_days": age, "bucket": bucket_of(age),
+            "unposted_variance": 0.0, "open_bill_number": "", "awaiting_bills": waiting.get(mid, []),
+            "can_clear": False, "action_hint": MKO_HINT if waiting.get(mid) else "",
+            "link": link_of("makloon_order", o),
+        })
+    return rows, round(unlinked, 2)
 
 
 async def clear(po: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:

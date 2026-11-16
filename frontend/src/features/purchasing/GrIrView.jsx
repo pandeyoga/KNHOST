@@ -1,6 +1,8 @@
 /**
  * GrIrView — PK-28 (IV-03) · Keuangan › Hutang › GR/IR (Diterima Belum Ditagih).
  * Sisa akun GR/IR per PO (dari buku besar) beserta umurnya, dan kliring sisa yang tidak akan tertagih.
+ * MP-T4b (K-82) — juga baris per SPK makloon: jasa yang hasilnya sudah diterima tetapi faktur mitranya belum dicocokkan
+ * (penyelesaiannya "Cocokkan faktur" di rincian SPK, bukan kliring).
  * Sumber: GET /api/finance/gr-ir?status&bucket&q&page&page_size · POST /api/finance/gr-ir/{po_id}/clear
  *
  * Satu PT saja (mode "Semua PT" = petunjuk pilih PT). Tiga keadaan dibedakan: memuat · galat (kotak merah + Coba lagi)
@@ -26,14 +28,16 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { useAppNav } from "../../context/AppNavContext";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { canCurrent } from "../../config/roles";
+import StatusBadge from "../../components/StatusBadge";
 
 const PAGE_SIZE = 50;
 export const TEKS_MEMUAT = "Memuat GR/IR…";
 export const TEKS_KOSONG = "Tidak ada sisa GR/IR.";
 export const TEKS_GALAT = "Daftar GR/IR tidak bisa dimuat.";
 export const TEKS_SEMUA_PT = "Pilih satu PT untuk melihat GR/IR.";
-export const KETERANGAN = "Barang yang sudah diterima tetapi belum ditagih pemasok, per PO, dari saldo akun GR/IR di "
-  + "buku besar. Sisa yang tidak akan tertagih dikliring ke akun selisih harga pembelian.";
+export const KETERANGAN = "Barang yang sudah diterima tetapi belum ditagih pemasok (per PO) dan jasa makloon yang "
+  + "faktur mitranya belum dicocokkan (per SPK), dari saldo akun GR/IR di buku besar. Sisa PO yang tidak akan tertagih "
+  + "dikliring ke akun selisih harga pembelian.";
 const TANPA_IZIN = "Kliring butuh akses kelola Akuntansi.";
 const AKUN_BELUM = "Akun “Selisih harga pembelian” belum diatur untuk PT ini: selisih harga faktur tetap di GR/IR dan "
   + "kliring belum bisa dilakukan. Isi di Pengaturan › Keuangan & Pajak › Pemetaan Akun.";
@@ -60,6 +64,7 @@ function PoStatus({ status, label }) {
 /** Alasan baris tidak bisa dikliring (ditulis di kolom aksi, bukan tooltip — daftar periksa layar butir 4). */
 export function alasanTidakKliring(it, mappingReady) {
   if (Math.abs(Number(it.balance) || 0) <= 0.005) return "Sisa sudah nol";
+  if (it.kind === "makloon") return it.action_hint || "Selesaikan di rincian SPK";
   if (!BOLEH_KLIRING.includes(it.po_status)) return "PO masih berjalan";
   if (it.open_bill_number) return `Faktur ${it.open_bill_number} belum diposting`;
   if (!mappingReady) return "Akun selisih belum diatur";
@@ -150,7 +155,7 @@ export default function GrIrView() {
         </div>
         <div className="section-body space-y-2">
           <p className="text-[12px] text-kn-text-2" data-testid="grir-keterangan">{KETERANGAN}</p>
-          <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari nomor PO atau pemasok…" testId="grir-search">
+          <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari nomor PO/SPK, pemasok, atau mitra…" testId="grir-search">
             <FilterChips testId="grir-umur" value={bucket || "semua"} ariaLabel="Umur"
               onChange={(k) => { setBucket(k === "semua" ? "" : k || ""); setPage(1); }}
               options={UMUR.map((u) => ({ key: u.key || "semua", label: u.label }))} />
@@ -185,30 +190,40 @@ export default function GrIrView() {
           <div className="overflow-x-auto">
             <table className="data-table head-wrap w-full text-[12px]" data-testid="grir-table">
               <thead>
-                <tr><th>PO</th><th>Pemasok</th><th>Status PO</th><th className="text-right">Nilai diterima</th>
-                  <th className="text-right">Sudah ditagih</th><th className="text-right">Diretur</th>
+                <tr><th>PO / SPK</th><th>Pemasok / mitra</th><th>Status</th><th className="text-right">Nilai diterima</th>
+                  <th className="text-right">Sudah ditagih</th><th className="text-right">Diretur / klaim</th>
                   <th className="text-right">Dikliring</th><th className="text-right">Sisa GR/IR</th>
                   <th className="text-right">Umur (hari)</th><th className="col-sticky-end text-right">Aksi</th></tr>
               </thead>
               <tbody>
                 {rows.map((it) => {
                   const alasan = alasanTidakKliring(it, data.mapping_ready);
+                  const spk = it.kind === "makloon";
+                  const key = spk ? `mko-${it.doc_id}` : it.po_id;   // MP-T4b — baris SPK makloon
+                  const nomor = it.doc_number || it.po_number;
                   return (
-                    <tr key={it.po_id} data-testid={`grir-row-${it.po_id}`}>
+                    <tr key={key} data-testid={`grir-row-${key}`}>
                       <td className="font-mono whitespace-nowrap">
                         {it.link?.view ? (
-                          <button type="button" className="link-button" data-testid={`grir-open-${it.po_id}`}
-                            onClick={() => openDocument({ ...it.link, number: it.po_number })}>{it.po_number}</button>
-                        ) : it.po_number}
+                          <button type="button" className="link-button" data-testid={`grir-open-${key}`}
+                            onClick={() => openDocument({ ...it.link, number: nomor })}>{nomor}</button>
+                        ) : nomor}
                       </td>
                       <td className="max-w-[180px] break-words">{it.supplier_name || "—"}</td>
-                      <td><PoStatus status={it.po_status} label={it.po_status_label} /></td>
+                      <td>{spk ? <StatusBadge tone="info" label={it.po_status_label} testId={`grir-mko-status-${it.doc_id}`} />
+                        : <PoStatus status={it.po_status} label={it.po_status_label} />}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">{formatCurrency(it.received_value)}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">{formatCurrency(it.billed_value)}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">{formatCurrency(it.returned_value)}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">{formatCurrency(it.cleared_value)}</td>
-                      <td className="whitespace-nowrap text-right tabular-nums font-semibold" data-testid={`grir-balance-${it.po_id}`}>
+                      <td className="whitespace-nowrap text-right tabular-nums font-semibold" data-testid={`grir-balance-${key}`}>
                         {formatCurrency(it.balance)}
+                        {spk && (it.awaiting_bills || []).length > 0 && (
+                          <p className="ml-auto max-w-[150px] whitespace-normal text-[12px] font-normal text-kn-text-2"
+                            data-testid={`grir-awaiting-${it.doc_id}`}>
+                            menunggu faktur: {it.awaiting_bills.map((n, i) => (
+                              <span key={n} className="whitespace-nowrap">{i ? ", " : ""}{n}</span>))}</p>
+                        )}
                         {Number(it.unposted_variance) !== 0 && (
                           <p className="text-[12px] font-normal text-kn-text-2" data-testid={`grir-variance-${it.po_id}`}>
                             termasuk selisih harga {formatCurrency(it.unposted_variance)}</p>
@@ -222,10 +237,10 @@ export default function GrIrView() {
                             {busy === it.po_id ? "Memproses…" : "Kliring"}</button>
                         ) : (
                           // Cek layar 14 Nov — alasan boleh turun baris: kolom aksi lekat tetap ramping di 1024 px
-                          // (dulu satu baris lebar menutupi kolom Sisa GR/IR).
+                          // (dulu satu baris lebar menutupi kolom Sisa GR/IR). Baris SPK: petunjuk untuk semua pembaca.
                           <span className="inline-block max-w-[110px] whitespace-normal text-left text-fs-12 leading-tight text-kn-text-2"
-                            data-testid={`grir-why-${it.po_id}`}>
-                            {canClear ? (alasan || "—") : "—"}</span>
+                            data-testid={`grir-why-${key}`}>
+                            {canClear || spk ? (alasan || "—") : "—"}</span>
                         )}
                       </td>
                     </tr>
@@ -242,10 +257,10 @@ export default function GrIrView() {
             </div>
             {Math.abs(unlinked) > 0.005 && (
               <p className="text-kn-danger-text" data-testid="grir-unlinked">
-                {formatCurrency(unlinked)} berasal dari jurnal yang tidak terhubung ke PO.</p>
+                {formatCurrency(unlinked)} berasal dari jurnal yang tidak terhubung ke PO atau SPK makloon.</p>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 text-kn-text-2">
-              <span data-testid="grir-count">{data.total || 0} PO</span>
+              <span data-testid="grir-count">{data.total || 0} dokumen</span>
               <KNPager page={page} pageSize={PAGE_SIZE} total={data.total || 0} onChange={setPage} testId="grir-pager" />
             </div>
           </div>

@@ -1,0 +1,24 @@
+const { chromium } = require("playwright");
+const OUT = "/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/ui_m4b";
+(async () => {
+  const b = await chromium.launch({ args: ["--no-proxy-server"] });
+  const page = await (await b.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 })).newPage();
+  await page.goto("http://localhost:3000/");
+  await page.getByTestId("login-email-input").fill("admin@kainnusantara.id");
+  await page.getByTestId("login-password-input").fill("demo12345");
+  await page.getByTestId("login-submit-button").click();
+  await page.waitForTimeout(3500);
+  await page.goto("http://localhost:3000/?view=gr-ir");
+  await page.waitForTimeout(4000);
+  await page.locator('input[data-testid="grir-search"], [data-testid="grir-search"] input').first().fill(process.argv[2]);
+  await page.waitForTimeout(2500);
+  const row = page.locator('[data-testid^="grir-row-mko-"]').first();
+  console.log("baris SPK:", (await row.innerText()).replace(/\s+/g, " "));
+  console.log("kaki:", (await page.getByTestId("grir-footer").innerText()).replace(/\s+/g, " "));
+  await page.screenshot({ path: `${OUT}/1280-05-grir-per-spk.png` });
+  await row.locator('[data-testid^="grir-open-mko-"]').click();
+  await page.waitForTimeout(3500);
+  console.log("buka SPK →", page.url().replace("http://localhost:3000", ""));
+  await page.screenshot({ path: `${OUT}/1280-06-grir-buka-spk.png` });
+  await b.close();
+})();

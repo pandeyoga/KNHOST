@@ -430,6 +430,11 @@ GRIR_SOURCES: Dict[str, tuple] = {
     "grir_clearing": ("", "cleared"),
 }
 _REV = "_reversal"
+#: MP-T4b (K-82) — jurnal makloon yang menyentuh GR/IR (jasa diterima belum difakturkan), dikelompokkan per SPK
+#: dengan kunci `mko:<id>` (dari `ref.grir_mko_id`; jurnal tanpa ref dicari lewat tagihan/sumbernya).
+MAKLOON_GRIR_SOURCES: Dict[str, str] = {"subcon_service": "received", "subcon_service_invoice": "billed",
+                                        "makloon_claim": "returned", "makloon_material_loss": "returned"}
+MKO_KEY = "mko:"
 
 
 def grir_base_source(source_type: str) -> str:
@@ -451,11 +456,31 @@ async def _grir_groups(entity_id: str, codes: List[str], po_id: str = "") -> Lis
         {"$match": match},
         {"$unwind": "$lines"},
         {"$match": {"lines.account_code": {"$in": codes}}},
-        {"$group": {"_id": {"st": "$source_type", "sid": "$source_id", "po": "$ref.po_id"},
+        {"$group": {"_id": {"st": "$source_type", "sid": "$source_id", "po": "$ref.po_id", "mko": "$ref.grir_mko_id"},
                     "debit": {"$sum": "$lines.debit"}, "credit": {"$sum": "$lines.credit"},
                     "last_date": {"$max": "$date"}}},
     ]
     return [g async for g in db.journal_entries.aggregate(pipeline)]
+
+
+async def _makloon_links(groups: List[Dict[str, Any]]) -> Dict[tuple, str]:
+    """(source_type dasar, source_id) → SPK untuk jurnal makloon GR/IR tanpa `ref.grir_mko_id`."""
+    out: Dict[tuple, str] = {}
+    bills: set = set()
+    for g in groups:
+        k = g["_id"] or {}
+        base, sid = grir_base_source(k.get("st") or ""), k.get("sid") or ""
+        if base not in MAKLOON_GRIR_SOURCES or k.get("mko") or not sid:
+            continue
+        if base in ("subcon_service", "subcon_service_invoice"):
+            bills.add(sid)
+        else:   # makloon_claim "<mko>:<seq>" · makloon_material_loss "<mko>:<seq>:<catatan>"
+            out[(base, sid)] = sid.split(":", 1)[0]
+    if bills:
+        async for d in db.vendor_bills.find({"id": {"$in": sorted(bills)}}, {"_id": 0, "id": 1, "makloon_order_id": 1}):
+            for base in ("subcon_service", "subcon_service_invoice"):
+                out[(base, d["id"])] = d.get("makloon_order_id") or ""
+    return out
 
 
 async def _legacy_po_links(groups: List[Dict[str, Any]]) -> Dict[tuple, str]:
@@ -484,29 +509,35 @@ async def grir_by_po(entity_id: str, po_id: str = "") -> Dict[str, dict]:
     → `{po_id: {received_value, billed_value, returned_value, cleared_value, other_value, balance, last_receipt_at,
     last_activity_at}}`; `balance` = kredit − debit (positif = barang diterima belum ditagih). Kunci `""` = baris yang
     tidak bisa dihubungkan ke PO (jurnal manual, potongan kontrabon, jurnal lama yang dokumen sumbernya hilang).
+    Kunci `mko:<id>` (MP-T4b) = jasa makloon diterima belum difakturkan per SPK (`returned_value` = potongan klaim/susut).
     `po_id` diisi → hanya PO itu (dipakai rekonsiliasi tutup-kurang)."""
     from services.gl_mapping_service import known_codes
     codes = [c for c in await known_codes("pembelian.gr_ir") if c]
     groups = await _grir_groups(entity_id, codes, po_id)
     legacy = await _legacy_po_links(groups)
+    mko_links = await _makloon_links(groups)
     out: Dict[str, dict] = {}
     for g in groups:
         k = g["_id"] or {}
         st, sid = k.get("st") or "", k.get("sid") or ""
         base = grir_base_source(st)
-        pid = k.get("po") or legacy.get((base, sid)) or ""
-        if not pid and base == "grir_clearing" and ":" in sid:
-            pid = sid.rsplit(":", 1)[0]
+        if base in MAKLOON_GRIR_SOURCES:   # MP-T4b — GR/IR jasa makloon per SPK
+            mko = k.get("mko") or mko_links.get((base, sid)) or ""
+            pid, cat = (f"{MKO_KEY}{mko}" if mko else ""), MAKLOON_GRIR_SOURCES[base]
+        else:
+            pid = k.get("po") or legacy.get((base, sid)) or ""
+            if not pid and base == "grir_clearing" and ":" in sid:
+                pid = sid.rsplit(":", 1)[0]
+            cat = (GRIR_SOURCES.get(base) or ("", "other"))[1]
         if po_id and pid != po_id:
             continue
         row = out.setdefault(pid, {"received_value": 0.0, "billed_value": 0.0, "returned_value": 0.0,
                                    "cleared_value": 0.0, "other_value": 0.0, "balance": 0.0,
                                    "last_receipt_at": "", "last_activity_at": ""})
         d, c = float(g.get("debit") or 0), float(g.get("credit") or 0)
-        cat = (GRIR_SOURCES.get(base) or ("", "other"))[1]
         if cat == "received":
             row["received_value"] += c - d
-            if st == "goods_receipt":
+            if st in ("goods_receipt", "subcon_service"):
                 row["last_receipt_at"] = max(row["last_receipt_at"], str(g.get("last_date") or ""))
         else:
             row[f"{cat}_value"] += d - c if cat != "other" else c - d

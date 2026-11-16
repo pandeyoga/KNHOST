@@ -62,7 +62,7 @@ async def deductible_bills(mko_id: str, seq: int) -> List[Dict[str, Any]]:
     step = _find_step(order, seq)
     rows = await db.vendor_bills.find(
         {"makloon_id": step.get("makloon_id") or "__none__", "entity_id": order.get("entity_id"),
-         "status": {"$in": ["posted", "approved"]}},
+         "status": {"$in": ["posted", "approved", "awaiting_invoice"]}},   # MP-T4b (K-82) — + menunggu faktur
         {"_id": 0, "id": 1, "bill_number": 1, "grand_total": 1, "amount_paid": 1, "status": 1, "mko_id": 1}
     ).sort("created_at", -1).to_list(100)
     out = []
@@ -73,9 +73,12 @@ async def deductible_bills(mko_id: str, seq: int) -> List[Dict[str, Any]]:
     return out
 
 
-async def _deduct(bill_id: str, amount: float, actor: str, reason: str, mko_id: str, seq: int, loss_id: str) -> None:
+async def _deduct(bill_id: str, amount: float, actor: str, reason: str, mko_id: str, seq: int,
+                  loss_id: str) -> Dict[str, Any]:
+    """Potong tagihan jasa (bersyarat sisa cukup). → tagihan SEBELUM dipotong (status menentukan akun debit jurnal:
+    `awaiting_invoice` = GR/IR, selain itu hutang — MP-T4b K-82)."""
     ok = await db.vendor_bills.find_one_and_update(
-        {"id": bill_id, "status": {"$in": ["posted", "approved"]},
+        {"id": bill_id, "status": {"$in": ["posted", "approved", "awaiting_invoice"]},
          "$expr": {"$lte": [{"$add": [{"$ifNull": ["$amount_paid", 0]}, amount]},
                             {"$add": [{"$ifNull": ["$grand_total", 0]}, 0.01]}]}},
         {"$inc": {"net_amount": -amount, "grand_total": -amount, "claim_deduction": amount},
@@ -87,6 +90,7 @@ async def _deduct(bill_id: str, amount: float, actor: str, reason: str, mko_id: 
     if not ok:
         raise HTTPException(status_code=409, detail="Sisa tagihan jasa tidak cukup untuk dipotong (atau baru "
                                                     "berubah). Pilih tagihan lain atau tagih ganti rugi.")
+    return ok
 
 
 async def _undeduct(bill_id: str, amount: float, loss_id: str) -> None:
@@ -107,8 +111,10 @@ async def _execute(order: Dict[str, Any], step: Dict[str, Any], loss: Dict[str, 
     est_value = remaining_value if loss["qty"] >= remaining_qty - EPS else (
         round(remaining_value * float(loss["qty"]) / remaining_qty, 2) if remaining_qty else 0.0)
     est_claim = round(est_value * float(loss["over_qty"]) / float(loss["qty"]), 2) if loss["qty"] else 0.0
+    bill_before: Dict[str, Any] = {}
     if settle == "potong_bon":   # potong DULU (batas atas), dikoreksi sesudah qty aktual diketahui
-        await _deduct(bill_id, est_claim, actor, loss.get("reason", ""), order["id"], int(step["seq"]), loss["id"])
+        bill_before = await _deduct(bill_id, est_claim, actor, loss.get("reason", ""), order["id"], int(step["seq"]),
+                                    loss["id"])
     moved = await sb.consume_subcon_by_ref(step["issue_ref"], "subcon_loss", roll_ids=loss["roll_ids"])
     qty = float(moved.get("consumed_qty") or 0)
     if qty <= EPS:
@@ -128,7 +134,9 @@ async def _execute(order: Dict[str, Any], step: Dict[str, Any], loss: Dict[str, 
     je = await gl.post_makloon_material_loss(
         mko_id=order["id"], step_seq=int(step["seq"]), part=loss["id"], entity_id=order["entity_id"],
         expense=within_value, claim=claim_value, label=f"{order.get('mko_number')} step{step['seq']}",
-        claim_account=gl.ACC_HUTANG if settle == "potong_bon" else "")
+        claim_account=("" if settle != "potong_bon" else
+                       gl.ACC_GRIR if bill_before.get("status") == "awaiting_invoice" else gl.ACC_HUTANG),
+        grir_mko_id=bill_before.get("makloon_order_id") or "")
     loss.update({"settle": settle if claim_value > EPS else "", "bill_id": bill_id if settle == "potong_bon" else ""})
     step["material_value_open"] = round(remaining_value - value, 2)
     loss.update({"status": "posted", "qty": round(qty, 2), "within_qty": round(within_qty, 2),

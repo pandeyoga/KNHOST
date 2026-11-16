@@ -1,11 +1,10 @@
-"""Siapkan satu SPK uji (lingkungan A) dengan tagihan jasa menunggu faktur — untuk tangkapan layar MP-T4b."""
+"""Siapkan satu SPK uji (lingkungan A) dengan tagihan jasa menunggu faktur — untuk tangkapan layar MP-T4b.
+K-82: bawaan semua PT = saat faktur, jadi sakelar PT tidak disetel."""
 import os, sys
 sys.path.insert(0, "/home/user/KNHOST/backend/tests")
 import requests
 import test_bp_MPT4a_teruskan as t
-import test_bp_MPT4b_grir_makloon as g
-g._setel("saat_faktur")
-try:
+if True:
     f = t._fixture()
     adm, md = t._login("admin@kainnusantara.id"), t._login("md@kainnusantara.id")
     k = f"sct_mpt4b_{f['t']}"
@@ -24,5 +23,3 @@ try:
     requests.post(f"{t.BASE}/makloon-orders/{o['id']}/steps/1/forward", headers=md, timeout=90,
                   json={"actual_output_qty": 190, "rolls": [{"length": 95, "lot": "A"}, {"length": 95, "lot": "B"}]}).raise_for_status()
     print(o["mko_number"], o["id"])
-finally:
-    g._setel("saat_terima")

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 168914a pada 2026-11-16 -->
+<!-- Dihasilkan dari commit: 428b603 pada 2026-11-16 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -463,13 +463,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 204 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4715 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4719 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 598 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 609 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1133 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
 | `grade_master_service.py` | 171 | L01 LN-012 — MASTER GRADE (`md_grades`): tambah, ubah, aktif/nonaktif tanpa ubah kode. |
 | `grade_service.py` | 161 | Grade governance service — Fase A · PS-09 · D-01/D-19/D-23. |
-| `grir_service.py` | 195 | PK-28 (IV-03) — daftar sisa GR/IR per PO (Hutang › GR/IR) dan kliring sisa yang tidak akan tertagih. |
+| `grir_service.py` | 242 | PK-28 (IV-03) — daftar sisa GR/IR per PO (Hutang › GR/IR) dan kliring sisa yang tidak akan tertagih. |
 | `grn_state.py` | 61 | FIX-6 — TABEL TRANSISI status Kedatangan Barang / GRN (`goods_receipts`). |
 | `group_partner_service.py` | 305 | FASE E-7 (E7.2 + E7.7) — **PAGAR "LAWAN TRANSAKSI TERNYATA PT SENDIRI"**. |
 | `handheld_core.py` | 280 | PREP-G — inti API handheld Chainway C72: identitas perangkat + sesi operator + cakupan lokasi + profil. |
@@ -544,7 +544,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `makloon_calc_service.py` | 215 | FASE D — ESTIMASI OUTPUT MAKLOON BERBASIS GSM (PS-03) + EVALUASI SELISIH (PS-11). |
 | `makloon_claim_service.py` | 440 | FASE D — SELISIH & KLAIM MAKLOON (PS-11 · keputusan **D-09**). |
 | `makloon_issue_rolls.py` | 223 | Issue bahan makloon PER ROLL — kasus klien "20 roll Esmica Blue dikirim untuk dicelup hitam". |
-| `makloon_loss_service.py` | 268 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
+| `makloon_loss_service.py` | 276 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
 | `makloon_material_ledger.py` | 114 | L04 LN-043 — buku bahan makloon per MKO: forecast · dicadangkan · dikirim/di mitra · terpakai · kembali · susu |
 | `makloon_order_service.py` | 2272 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
@@ -751,7 +751,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `uom_service.py` | 503 | Sub-fase 1.13 — UOM Conversion Engine (Multi-UOM). |
 | `user_admin_service.py` | 407 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
 | `variant_axes.py` | 56 | Sumbu varian yang dapat dikonfigurasi pemilik (rnd.variant_axes_default / _optional). |
-| `vendor_bill_service.py` | 533 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
+| `vendor_bill_service.py` | 564 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
 | `wa_alert_service.py` | 297 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
 | `wa_connection.py` | 276 | KP-T8 (KP-16) — satu koneksi WhatsApp untuk dua pemakai: Pengingat (`alerts`) dan Kirim Dokumen (`documents`). |
 | `warehouse_profile_service.py` | 364 | FASE R0 — Profil gudang: site (lokasi), peran gedung, rules penyimpanan, gate config. |
@@ -771,7 +771,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 161 | 27072 |
+| `__tests__` | 161 | 27099 |
 | `admin` | 36 | 7008 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 25 | 1666 |
@@ -801,7 +801,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 26 | 2913 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 88 | 18780 |
+| `purchasing` | 88 | 18795 |
 | `rfid` | 21 | 3697 |
 | `rnd` | 66 | 7932 |
 | `sales` | 98 | 16020 |

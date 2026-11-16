@@ -782,4 +782,5 @@ Istilah tab Rute di Master Produk (`docs/blueprint/unit/MP-T1.md`, keputusan K-5
 | **Peruntukan** | Wizard: "Peruntukan bahan" — "Untuk pelanggan" · "Untuk toko" · "Stok" | Untuk siapa bahan greige/PFD/PFP dikeluarkan (K-74, MP-T5b) |
 | **Menunggu faktur** | Rincian SPK › Tagihan jasa: lencana "Menunggu faktur" · tombol "Cocokkan faktur" · pop-up "No. faktur mitra", "Nilai jasa di faktur (tanpa PPN)", "PPN di faktur", "Total hutang" | Jasa makloon sudah diterima tetapi belum menjadi hutang sampai faktur mitra dicocokkan (PT bersakelar "Jasa makloon menjadi hutang" = saat faktur; K-78, MP-T4b). Pakai "faktur mitra", bukan "invoice" |
 | **Borongan (SPK)** | Langkah SPK: catatan "Borongan {no. kontrak}: ditagih sekali di langkah {n}." | Satu kontrak borongan yang dipakai beberapa langkah ditagih satu kali di langkah terakhirnya (K-81, MP-T4b) |
+| **GR/IR jasa makloon** | Hutang › GR/IR: kolom "PO / SPK", "Pemasok / mitra", "Diretur / klaim"; status "Makloon · {status}"; "menunggu faktur: VBM-…"; aksi "Cocokkan faktur di rincian SPK" | Jasa makloon yang hasilnya sudah diterima tetapi faktur mitranya belum dicocokkan, per SPK (K-82, MP-T4b) |
 

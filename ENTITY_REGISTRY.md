@@ -379,8 +379,9 @@ GL:          Dr 1-1350 WIP/Cr 1-1300 (issue) · Dr 1-1350+PPN/Cr 2-1100 (service
              KLAIM (D-09): potong_bon Dr 2-1100/Cr 4-9200 (+vendor_bill dipotong) ·
              tagih_ganti Dr 1-1260/Cr 4-9200 · terima_catatan TANPA jurnal (kerugian sudah
              terserap ke HPP output saat receive).
-             MP-T4b (K-78…K-81, 16 Nov 2026) — sakelar per PT `makloon.jasa_jadi_hutang`
-             (bawaan `saat_terima` = baris di atas). `saat_faktur`: terima → Dr 1-1350/Cr GR/IR 2-1150
+             MP-T4b (K-78…K-82, 16 Nov 2026) — sakelar per PT `makloon.jasa_jadi_hutang`
+             (bawaan `saat_faktur` sejak K-82, semua PT; `saat_terima` = baris di atas). `saat_faktur`: terima →
+             Dr 1-1350/Cr GR/IR 2-1150
              (tagihan `awaiting_invoice`, `ap_mode` dipotret di tagihan, PPN 0); faktur mitra dicocokkan
              (POST /makloon-orders/{id}/steps/{seq}/service-invoice, izin vendor_bill.create, nilai jasa = nilai
              tagihan) → Dr 2-1150 + Dr 1-1500 / Cr 2-1100 (source `subcon_service_invoice`), tagihan `posted`.
@@ -389,6 +390,9 @@ GL:          Dr 1-1350 WIP/Cr 1-1300 (issue) · Dr 1-1350+PPN/Cr 2-1100 (service
              belum dicocokkan. Borongan (K-81): kontrak basis `lot` yang sama di beberapa langkah →
              langkah sebelumnya tarif 0 (`borongan_contract_id`, `borongan_billed_at_seq`, `tariff_note`),
              ditagih sekali di langkah terakhir. Langkah: `service_invoice_status` (menunggu_faktur|cocok).
+             Jurnal yang menyentuh GR/IR membawa `ref.grir_mko_id` → Hutang › GR/IR berbaris per SPK (kunci
+             `mko:<id>` di `vendor_bill_service.grir_by_po`). Susut di mitra (L01) potong bon dari tagihan
+             `awaiting_invoice` → Dr 2-1150 (bukan 2-1100).
 Stock:       roll status 'subcon' (WIP-at-vendor, owned non-ATP) → 'consumed' saat receive;
              output+barang sisa (is_remnant) jadi roll 'available' dgn LOT manual per roll.
 Endpoints:   GET/POST /makloon-orders · GET /makloon-orders/{id} ·

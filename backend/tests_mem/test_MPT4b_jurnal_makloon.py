@@ -171,3 +171,54 @@ async def test_MPT4b_U7_faktur_mitra_dicocokkan_lewat_api(klien, kepala_admin, d
     assert st["service_invoice_status"] == "cocok"
     r = await klien.post(url, headers=kepala_admin, json={"supplier_invoice_no": "INV-9", "net_amount": 2_000_000})
     assert r.status_code == 409, r.text
+
+
+async def test_MPT4b_U11_grir_per_spk_makloon(klien, kepala_admin, db):
+    """K-82 + celah GR/IR: SPK dengan tagihan jasa 950.000 menunggu faktur → Hutang › GR/IR punya baris SPK (diterima
+    950.000, sisa 950.000, petunjuk "Cocokkan faktur …"). Susut di mitra dipotong dari tagihan itu 50.000 (Dr 2-1150) →
+    sisa 900.000. Faktur 900.000 dicocokkan → sisa 0. Σ sisa per dokumen + tak terhubung = saldo buku besar."""
+    from services import gl_service as gl
+    from services import makloon_loss_service as mls
+    mko, bill, t = uid("mko"), uid("vb"), uuid.uuid4().hex[:6]
+    await db.makloon_orders.insert_one({"id": mko, "mko_number": f"KSC/MKO-G{t}", "entity_id": KSC,
+                                        "status": "in_process", "timeline": [],
+                                        "steps": [{"seq": 1, "status": "received", "makloon_id": "mk_g",
+                                                   "makloon_name": "Pencelup GRIR", "service_bill_id": bill}]})
+    await db.vendor_bills.insert_one({"id": bill, "bill_number": f"VBM-G{t}", "bill_type": "makloon_service",
+                                      "entity_id": KSC, "status": "awaiting_invoice", "ap_mode": "saat_faktur",
+                                      "makloon_id": "mk_g", "makloon_order_id": mko, "step_seq": 1,
+                                      "net_amount": 950_000.0, "grand_total": 950_000.0, "ppn_amount": 0.0,
+                                      "amount_paid": 0.0, "created_at": now_iso()})
+    await gl.post_subcon_service(bill_id=bill, mko_id=mko, step_seq=1, entity_id=KSC, net_amount=950_000,
+                                 ap_mode="saat_faktur", label="uji")
+
+    async def baris_spk(status="terbuka"):
+        r = await klien.get("/api/finance/gr-ir", headers=kepala_admin, params={"status": status, "q": f"G{t}"})
+        assert r.status_code == 200, r.text
+        return r.json(), [x for x in r.json()["items"] if x["doc_id"] == mko]
+
+    j, rows = await baris_spk()
+    assert len(rows) == 1 and rows[0]["kind"] == "makloon" and rows[0]["supplier_name"] == "Pencelup GRIR"
+    assert rows[0]["received_value"] == 950_000.0 and rows[0]["balance"] == 950_000.0
+    assert rows[0]["awaiting_bills"] == [f"VBM-G{t}"] and rows[0]["action_hint"].startswith("Cocokkan faktur")
+    assert rows[0]["can_clear"] is False and rows[0]["link"]["view"] == "makloon-orders"
+    # Susut di mitra SPK lain dipotong dari tagihan ini (menunggu faktur) → Dr GR/IR, ref SPK pemilik tagihan.
+    assert bill in {b["id"] for b in await mls.deductible_bills(mko, 1)}
+    before = await mls._deduct(bill, 50_000, "Uji", "susut", "mko_lain", 1, "loss_g")
+    assert before["status"] == "awaiting_invoice"
+    je = await gl.post_makloon_material_loss(mko_id="mko_lain", step_seq=1, part="loss_g", entity_id=KSC, expense=0,
+                                             claim=50_000, label="uji", claim_account=gl.ACC_GRIR,
+                                             grir_mko_id=mko)
+    assert baris(je) == {"2-1150": (50_000.0, 0.0), "1-1350": (0.0, 50_000.0)} and je["ref"]["grir_mko_id"] == mko
+    _, rows = await baris_spk()
+    assert rows[0]["returned_value"] == 50_000.0 and rows[0]["balance"] == 900_000.0
+    r = await klien.post(f"/api/makloon-orders/{mko}/steps/1/service-invoice", headers=kepala_admin,
+                         json={"supplier_invoice_no": f"INV-G{t}", "net_amount": 900_000})
+    assert r.status_code == 200, r.text
+    j, rows = await baris_spk()
+    assert rows == []
+    j, rows = await baris_spk("semua")
+    assert rows[0]["billed_value"] == 900_000.0 and rows[0]["balance"] == 0.0
+    r = await klien.get("/api/finance/gr-ir", headers=kepala_admin, params={"status": "semua"})
+    j = r.json()
+    assert round(j["total_balance"] + j["unlinked_balance"], 2) == j["ledger_balance"]
