@@ -284,6 +284,10 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
 - Gate `--ci` sesudah MP-T4b: putaran pertama menemukan 1 pelanggaran baru (INV-ATOMIC-01: endpoint "Cocokkan faktur" menulis
   tagihan + SPK tanpa tercatat CAS) → diperbaiki (`90f77a7`); putaran konfirmasi: **tidak ada pelanggaran baru**, 38 FAIL =
   garis dasar. Log: `garis-dasar-gate/2026-11-16_MPT4b_gate_ci.log`.
+- K-82 (semua PT "saat faktur", GR/IR per SPK, potong susut dari tagihan menunggu faktur): gate `--ci` **tidak ada
+  pelanggaran baru**, 38 FAIL = garis dasar (`garis-dasar-gate/2026-11-16_MPT4b_K82_gate_ci.log`).
+- Cek layar pemilik (rincian SPK dari GR/IR): dua "Kembali" digabung jadi satu baris di semua rincian dokumen; deskripsi
+  Buku Bahan dilipat; HPP berjenjang tidak terpotong; grid wizard HP — rincian di laporan MP-T4b.
 - Hambatan lingkungan: server dev frontend lama tidak mati oleh pola `pkill "craco start"` (proses bernama
   `craco/dist/scripts/start.js`) sehingga satu uji jalan sempat membaca bundel lama — dimatikan dengan PID.
 

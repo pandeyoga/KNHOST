@@ -224,25 +224,25 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
           {/* FASE D (PS-04) — HPP BERJENJANG per langkah */}
           {(c.steps || []).length > 0 && (
             <Panel icon={Factory} title="HPP berjenjang">
-              <div>
-                <table className="w-full text-[11px]" data-testid="mko-tiered-costing">
-                  <thead>
-                    <tr className="text-left text-[9.5px] uppercase text-[#6B6B73]">
-                      <th className="py-1">Lgk</th><th>Proses</th><th className="text-right">Hasil</th><th className="text-right">HPP/unit</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#EFF0F2]">
-                    {(c.steps || []).map((cs) => (
-                      <tr key={cs.seq} data-testid={`mko-costing-step-${cs.seq}`}>
-                        <td className="py-1.5">{cs.seq}</td>
-                        <td className="truncate">{cs.process_type}<br /><span className="text-[9.5px] text-[#9A9BA3]">{cs.makloon_name}</span></td>
-                        <td className="text-right tabular-nums">{formatQty(cs.actual_output_qty || cs.expected_output_qty || 0)} {cs.output_unit}</td>
-                        <td className="text-right tabular-nums font-semibold">{formatCurrency(cs.hpp_per_unit || 0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* Cek layar 16 Nov — kolom kiri sempit: tabel empat kolom memotong "HPP/unit" dan proses tampil sebagai kode
+                  mentah. Kini daftar dua baris per langkah: label tahap + HPP per satuan, lalu mitra + hasil. */}
+              <ul className="divide-y divide-kn-divider" data-testid="mko-tiered-costing">
+                {(c.steps || []).map((cs) => {
+                  const st = (data.steps || []).find((x) => x.seq === cs.seq) || {};
+                  const unit = cs.output_unit || st.output_unit || "";
+                  return (
+                    <li key={cs.seq} className="py-1.5" data-testid={`mko-costing-step-${cs.seq}`}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="min-w-0 text-fs-12 font-semibold">Langkah {cs.seq} · {st.stage_label || processLabel(cs.process_type) || cs.process_type}</p>
+                        <p className="shrink-0 text-fs-12 font-semibold tabular-nums" data-testid={`mko-costing-hpp-${cs.seq}`}>
+                          {Number(cs.hpp_per_unit) > 0 ? `${formatCurrency(cs.hpp_per_unit)}/${unit}` : "—"}</p>
+                      </div>
+                      <p className="text-fs-12 text-kn-text-2">{cs.makloon_name || "—"} · hasil {formatQty(cs.actual_output_qty || cs.expected_output_qty || 0)} {unit}
+                        {cs.actual_output_qty ? "" : " (estimasi)"}</p>
+                    </li>
+                  );
+                })}
+              </ul>
             </Panel>
           )}
           <Panel icon={Clock} title={`Riwayat · ${(data.timeline || []).length}`}>

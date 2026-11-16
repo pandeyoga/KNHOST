@@ -153,3 +153,25 @@ baris.
   membuka rincian SPK dengan "Kembali ke GR/IR" (`1280-06-grir-buka-spk.png`). Putaran pertama kolom "Umur (hari)"
   tertutup kolom Aksi lekat karena catatan tagihan tidak boleh turun baris — diperbaiki (catatan turun baris, nomor tagihan
   utuh, label status dipendekkan).
+
+## Perbaikan layar dari cek pemilik 16 Nov (rincian SPK dibuka dari GR/IR)
+
+Pemilik: "ini kenapa ada 2 kembali?" lalu "terus lalu lihat itu deskripsi cardnya bertumpuk".
+
+- **Dua "Kembali" bertumpuk** — bilah layar asal (PK-44 `BackToOriginBar`) dan tombol kembali rincian tampil berdua. Kini
+  satu komponen `DetailBack` (`components/DetailParts.jsx`): bila ada layar asal → satu baris "← Kembali ke {asal}"
+  (utama, `back-to-origin`) · tautan kecil "{Daftar …}"; bilah asal tidak dirender selama rincian tampil
+  (`AppNavContext.registerDetailBack`). Tanpa layar asal tetap seperti dulu. Dipakai `DetailHeader` (Order Makloon,
+  Kedatangan, Perbaikan, Retur) dan rincian Pesanan Khusus, 360 Pelanggan/Pemasok/Mitra Makloon/Karyawan. Uji jest
+  `detailBackSatuBaris.test.js` (3) + `pk44JejakDokumen` lolos. Commit `f204b80`.
+- **Deskripsi kartu Buku Bahan menumpuk** — enam baris keterangan di bawah tujuh kotak angka, sebagian mengulang angka
+  kotaknya. Kini yang perlu tindakan (kunci roll, belum terkunci, kekurangan, selisih belum dijelaskan) tetap tampil;
+  stok gudang, butir penjelasan, dan hasil aktual vs estimasi dilipat di "Lihat penjelasan angka"
+  (`1280-08-buku-bahan-penjelasan-dibuka.png`).
+- **HPP berjenjang terpotong** (ditemukan saat memeriksa halaman penuh) — tabel empat kolom di kolom kiri sempit memotong
+  "HPP/unit" dan menulis kode proses mentah (`pre_treatment`). Kini daftar dua baris per langkah: "Langkah n · {label
+  tahap}" + "Rp …/yard", lalu mitra + hasil ("(estimasi)" bila belum diterima).
+- **Grid wizard tanpa kolom dasar HP** (ditemukan jest `phase4R3`, dari MP-T2) — blok "Isi dari rute produk" kini
+  `grid-cols-1` di HP.
+- Cek halaman penuh 1366/1280/1024 (`bukti/MP-T4b/uji_jalan_spk_penuh_tumpuk.js`): satu teks "Kembali ke GR/IR", teks
+  bertumpuk 0 (isi `<details>` tertutup dan bilah navigasi tidak dihitung); `1280-07-spk-satu-kembali-penuh.png`.

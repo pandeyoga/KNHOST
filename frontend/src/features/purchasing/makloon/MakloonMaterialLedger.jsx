@@ -1,4 +1,8 @@
-/** L04 LN-043 — buku bahan makloon: cadangan vs fisik vs di mitra vs terpakai/kembali/susut, plus penjelasan. */
+/** L04 LN-043 — buku bahan makloon: cadangan vs fisik vs di mitra vs terpakai/kembali/susut, plus penjelasan.
+ * Cek layar pemilik 16 Nov ("deskripsi kartunya bertumpuk"): enam baris keterangan di bawah kotak angka sebagian besar
+ * mengulang angka kotak itu sendiri. Kini yang perlu tindakan (kunci roll, belum terkunci, kekurangan, selisih belum
+ * dijelaskan) tetap tampil; penjelasan angka (stok gudang, butir penjelasan, hasil aktual vs estimasi) dilipat di
+ * "Lihat penjelasan angka". */
 import { useEffect, useState } from "react";
 import { Scale } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
@@ -35,15 +39,21 @@ export default function MakloonMaterialLedger({ mkoId, version }) {
       )}
       {d.reservation.unlocked > 0 && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="mko-ledger-unlocked">Belum terkunci {formatQty(d.reservation.unlocked)} {d.unit} — stok roll bebas di gudang sumber tidak cukup; tetap dikurangkan dari Tersedia.</p>}
       {d.reservation.shortage > 0 && <p className="mt-1.5 text-[11px] text-[#B26A00]" data-testid="mko-ledger-shortage">Kekurangan cadangan {formatQty(d.reservation.shortage)} {d.unit} — stok bebas tidak cukup saat komitmen dibuat.</p>}
-      {d.stock_now && <p className="mt-1.5 text-[11px] text-[#6B6B73]" data-testid="mko-ledger-stock">Stok gudang sekarang: fisik {formatQty(d.stock_now.available_physical)} · dicadangkan semua order {formatQty(d.stock_now.reserved_all_orders)} · bebas untuk komitmen baru {formatQty(d.stock_now.free_for_new_commitment)} {d.unit}</p>}
-      <ul className="mt-1.5 space-y-0.5 text-[11px] text-[#3C3C43]" data-testid="mko-ledger-explain">
-        {d.explain.map((x, i) => <li key={`ex${i}`}>• {x}</li>)}
-      </ul>
-      {d.steps.filter((s) => s.actual_output != null).map((s) => (
-        <p key={s.seq} className="mt-1 text-[11px] text-[#6B6B73]" data-testid={`mko-ledger-output-${s.seq}`}>
-          Langkah {s.seq}: hasil aktual {formatQty(s.actual_output)} {s.output_unit} vs estimasi {formatQty(s.forecast_output)} ({s.output_variance >= 0 ? "+" : ""}{formatQty(s.output_variance)}) — stok & nilai memakai hasil aktual.
-        </p>
-      ))}
+      <details className="mt-1.5" data-testid="mko-ledger-details">
+        <summary className="cursor-pointer text-fs-12 font-semibold text-kn-action" data-testid="mko-ledger-details-toggle">
+          Lihat penjelasan angka</summary>
+        <div className="mt-1 space-y-1 text-fs-12 text-kn-text-2">
+          {d.stock_now && <p data-testid="mko-ledger-stock">Stok gudang sekarang: fisik {formatQty(d.stock_now.available_physical)} · dicadangkan semua order {formatQty(d.stock_now.reserved_all_orders)} · bebas untuk komitmen baru {formatQty(d.stock_now.free_for_new_commitment)} {d.unit}</p>}
+          <ul className="space-y-0.5 text-kn-text" data-testid="mko-ledger-explain">
+            {d.explain.map((x, i) => <li key={`ex${i}`}>• {x}</li>)}
+          </ul>
+          {d.steps.filter((s) => s.actual_output != null).map((s) => (
+            <p key={s.seq} data-testid={`mko-ledger-output-${s.seq}`}>
+              Langkah {s.seq}: hasil aktual {formatQty(s.actual_output)} {s.output_unit} vs estimasi {formatQty(s.forecast_output)} ({s.output_variance >= 0 ? "+" : ""}{formatQty(s.output_variance)}) — stok & nilai memakai hasil aktual.
+            </p>
+          ))}
+        </div>
+      </details>
       {d.steps.filter((s) => !s.reconciled).map((s) => (
         <p key={`u${s.seq}`} className="mt-1 text-[11px] font-semibold text-[#B4231F]" data-testid={`mko-ledger-gap-${s.seq}`}>Langkah {s.seq}: {formatQty(s.unexplained)} {s.input_unit} belum dijelaskan.</p>
       ))}

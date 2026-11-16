@@ -398,7 +398,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
         {stage === 1 && !prContext?.pr_id && (
           <div className="rounded-lg border border-kn-divider bg-kn-action-soft p-3" data-testid="wizard-route-fill">
             <p className="mb-2 text-fs-12 font-semibold text-kn-action">Isi dari rute produk (disarankan)</p>
-            <div className="grid gap-2 md:grid-cols-[1fr_140px_auto] md:items-end">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_140px_auto] md:items-end">
               <Field label="Barang yang dibuat (hasil akhir)">
                 <ProductSelect value={routeTarget.product_id} valueName={routeTarget.name} triggerTestId="wizard-route-product"
                   label="Pilih barang hasil…" onSelect={(p) => setRouteTarget((t) => ({ ...t, product_id: p.id, name: `${p.sku} · ${p.name}` }))} />
