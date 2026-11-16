@@ -1,10 +1,10 @@
-# Analisis pola — 42 masukan pemilik 16 Nov 2026 (M1–M42)
+# Analisis pola — 43 masukan pemilik 16 Nov 2026 (M1–M43)
 
-Sumber: `2026-11-16_UI_MEJA_DAN_MENU.md` (masukan + 35 foto). Permintaan pemilik: "coba dari semua ini analisis dulu,
+Sumber: `2026-11-16_UI_MEJA_DAN_MENU.md` (masukan + 40 foto). Permintaan pemilik: "coba dari semua ini analisis dulu,
 saya rasa ada pattern yang jelas". Angka di bawah dihitung dari kode `frontend/src` di `HEAD` (16 Nov).
 
 ## Kesimpulan
-42 masukan itu bukan 42 masalah; sebagian besar adalah **9 pola** yang berulang di banyak layar. Akar bersamanya:
+43 masukan itu bukan 43 masalah; sebagian besar adalah **10 pola** yang berulang di banyak layar. Akar bersamanya:
 **tiap layar merakit tata letaknya sendiri, dan tiap unit kerja menambah lapisan (kartu, bilah penjelasan, tab, chip,
 alat admin) tanpa ada yang mengurangi.** Standar UI yang ada (`02_STANDAR.md`, penjaga `verify_ui_standard`) memeriksa
 butir kecil — warna hex, ukuran huruf, jenis lencana — dan sifatnya "jangan bertambah", bukan "pakai templat ini".
@@ -36,6 +36,7 @@ kartu pihak satu `PartyCardHost`.
 | P6 | **Konteks PT & lokasi tidak menyaring turunannya** | M7, M25, M33, M37 | Pemilih lokasi menampilkan area **dan** tiap gudang tanpa saring PT; Bagan Akun punya pemilih PT sendiri (berwarna lain) | PT dipilih **sekali** di bilah atas; lokasi = **area** (gudang di bawahnya); semua pilihan turunan (gudang, lingkup, stok POS) mengikuti PT + area. |
 | P7 | **Isian tidak tersaring konteks, dobel, atau seharusnya dihitung sistem** | M10, M11, M12, M13, M27, M28 | Induk produk tidak disaring tahap; spesifikasi mengulang induk & warna; Nama BOM bebas; "HPP" di katalog = `harga_pokok` manual | Pilihan **disaring menurut konteks** (tahap, satuan induk); **satu fakta satu isian**; yang bisa diturunkan sistem tidak ditanya (nama BOM, HPP hitungan); opsional tanpa nilai bawaan. |
 | P8 | **Alur & status tidak terbaca** | M14, M15, M16 (panel), teks Riwayat "Step 1: issue…", "Shipped" | Lini masa = deret lencana; rantai dokumen terpisah; teks riwayat dari server bercampur Inggris | **Satu komponen lini masa vertikal**: tahap · waktu · pelaku · dokumen · aksi di tahap berjalan; dipakai Pesanan Khusus, SO, PO, SPK makloon, Retur. Teks riwayat Bahasa Indonesia. |
+| P10 | **Pengaturan bertele-tele** — satu kartu besar per pengaturan, paragraf wajib, jendela bergulir mendatar | M43 (semua menu Pengaturan), M37 | `SettingCard.jsx` mewajibkan "Artinya / Kalau diubah / Contoh / Bisa dibedakan / Detail teknis" per kunci; penjaga `verify_config_text` mewajibkan teks itu ada; hak akses di jendela lebar | **Pengaturan berbentuk daftar padat**: satu baris per pengaturan (nama · nilai berlaku · asal: bawaan/PT · ubah langsung di baris); penjelasan di ikon "?" (teksnya tetap disimpan registri, tidak dipajang); satu Simpan per bagian. Hak akses = **halaman matriks** modul × tingkat tanpa gulir mendatar. Penjaga teks tetap memeriksa isi registri, bukan memaksa tampil. |
 | P9 | **Data keputusan tidak ada di tempat kerja** | M5, M6, M19, M21, M31, M42 | Meja MD tanpa SPK makloon/PO bahan; POS tanpa limit kredit; daftar tanpa kolom tengah; Jejak Dokumen tanpa daftar | Tiap layar menampilkan data yang dibutuhkan **untuk keputusan perannya** (limit & terpakai di POS, riwayat harga pelanggan, isi meja lengkap per peran, daftar dokumen terbaru). |
 
 **Di luar pola (bug/izin, diperbaiki tersendiri):** M34 nota denda (pesan di belakang popup), M41 Admin tanpa akses Pusat
@@ -51,8 +52,8 @@ Bukan 42 perbaikan satu per satu, tetapi:
 3. **Migrasi per gelombang layar**, yang paling sering dipakai dulu: (a) semua meja (satu komponen) + menu samping;
    (b) Produk & Harga + rincian produk; (c) Pesanan + Pesanan Khusus (lini masa); (d) POS + Pelanggan + Harga per
    Pelanggan; (e) Operasi Gudang (Masuk/Keluar/Cutting satu pola) + Lokasi Rak + Eskalasi → kartu meja; (f) Retur,
-   Kualitas; (g) Keuangan (Beranda, Piutang, Antar-PT, Bagan Akun, Penggajian, Insentif); (h) Tanya KN, Jejak Dokumen,
-   Pusat Export.
+   Kualitas; (g) Keuangan (Beranda, Piutang, Antar-PT, Bagan Akun, Penggajian, Insentif); (h) **Pengaturan** (semua
+   menu: satu pola daftar padat + matriks hak akses — P10); (i) Tanya KN, Jejak Dokumen, Pusat Export.
 4. Tiap gelombang: tangkapan layar sebelum/sesudah di 1366/1024/HP dan dicek pemilik sebelum gelombang berikutnya.
 
 ## Perlu keputusan pemilik sebelum mulai

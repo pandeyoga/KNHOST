@@ -146,6 +146,22 @@ Catatan Claude (foto 28): ringkasan "Belum lunas Rp 6.743.694 (tercatat Rp 0 · 
 | M41 | Pusat Export | **"Saya admin tapi tidak punya akses."** Kode memberi peran `admin` izin `data_export` view/export (`backend/permissions_config.py`); dugaan: izin peran yang tersimpan di database (atau akun berperan kustom berlabel Admin) belum memuat "Pusat Export Data" — perlu dicek di data. | 34 |
 | M42 | Pusat Dokumen › Jejak Dokumen | **Cari dokumen harus menampilkan daftar** (dokumen terbaru/tersaring), bukan hanya kotak cari. Juga: panel "Alat admin · susun ulang relasi dokumen lama" tampil di layar utama (sejenis M20). | 35 |
 
+### Kiriman 8 — semua menu Pengaturan
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M43 | **Semua menu Pengaturan** (contoh: Peran & Hak Akses, Hak akses per peran, Aturan Persetujuan, Ketegasan/Pengingat & Dokumen, Kontrol dua orang) | **"Masih berantakan, boros, tidak konsisten, UI/UX buruk, bertele-tele — UI/UX sangat buruk sekali."** | 36–40 |
+
+Catatan Claude (dari foto + kode):
+- Hak akses per peran: jendela lebar dengan **gulir mendatar**, ringkasan teks panjang di kanan, peringatan panjang.
+- Peran & Hak Akses: dua bilah penjelasan panjang, tombol muat ulang sendirian di satu baris.
+- Aturan Persetujuan: tiap aturan satu kartu + lencana "Aturan bawaan (belum disimpan)" + "Buat aturan khusus PT ini" +
+  isian "Coba nilai" sendiri-sendiri.
+- Ketegasan/Pengingat: **satu kartu besar per pengaturan**; dibuka berisi "Artinya", "Kalau diubah", "Contoh", "Bisa
+  dibedakan untuk", "Detail teknis", lalu isian + Simpan. Ini bentuk wajib dari komponen `SettingCard.jsx` dan
+  dijaga penjaga `verify_config_text` (wajib arti, dampak, contoh) — standar kita sendiri yang membuatnya bertele-tele.
+- Kontrol dua orang: tiap baris dropdown + isian Rp dengan gema "Rp 0" di bawahnya + kolom Sumber.
+
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
   Inggris) — seharusnya label Indonesia.
