@@ -177,5 +177,5 @@ Asal: telusur ujung-ke-ujung 16 Nov (makloon B-S1…B-S5, R&D proofing/labdip di
 | 105 | MP-T2 | Satu wizard SPK makloon membaca rute | MP | MP-T1 | P10 | tinggi | — | Telusur 16 Nov |
 | 106 | MP-T3 | R&D tersambung ke mitra makloon | MP | MP-T1 | P1, P3–P5, P7, P8 | tinggi | — | Telusur 16 Nov |
 | 107 | MP-T4a | Mekanisme makloon tanpa jurnal baru | MP | MP-T2 | audit makloon 16 Nov | tinggi | — | Telusur 16 Nov |
-| 107b | MP-T4b | Jurnal makloon (hutang jasa, klaim, borongan) | MP | MP-T4a | audit makloon 16 Nov | tinggi | H4, H5 | Telusur 16 Nov |
+| 107b | MP-T4b | Jurnal makloon (hutang jasa, klaim, borongan) | MP | MP-T4a | audit makloon 16 Nov | tinggi | H5 (menyalakan sakelar untuk PT nyata; H4 dijawab K-78…K-81) | Telusur 16 Nov |
 | 108 | MP-T5 | Gudang greige/PFD/PFP | MP | — | permintaan klien | sedang | — | Percakapan klien 16 Nov |
