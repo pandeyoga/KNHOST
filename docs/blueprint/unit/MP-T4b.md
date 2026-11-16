@@ -1,4 +1,8 @@
-# MP-T4 — Mekanisme makloon: paket kerja, mitra ke mitra, hasil akhir, tarif borongan/per proses
+# MP-T4b — Jurnal makloon: hutang jasa saat faktur dicocokkan, hasil klaim, tarif borongan per SPK
+
+> Pecahan MP-T4 berstatus `tahan` (H4: akun & arah jurnal belum disebut unit; H5: sakelar per PT). Pertanyaan dan usulan
+> di `STATUS.md` "Menunggu pemilik". Isi di bawah adalah spesifikasi MP-T4 asal; yang dikerjakan di sini hanya butir
+> K-63, K-64, K-68 (borongan per SPK).
 
 | | |
 |---|---|
