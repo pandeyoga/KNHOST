@@ -1,0 +1,23 @@
+# B-S1/S2/S3/S8 — telaah 3 SPK makloon seed (chain stage, tarif, HPP)
+{
+  material_product_id: 'prod_2ddf057216c9',
+  status: 'in_process'
+}
+{
+  material_product_id: 'prod_10d1c08811df',
+  status: 'in_process'
+}
+{
+  material_product_id: 'prod_e9fe90e5eff8',
+  status: 'draft'
+}
+=== langkah tiap SPK (from_stage/to_stage tersimpan?) ===
+SPK  status in_process
+  seq 1 proc tenun from  to  stage_label Tenun (Weaving) mitra - tarif 0 basis lumpsum
+SPK  status in_process
+  seq 1 proc rajut from  to  stage_label Rajut (Knitting) mitra - tarif 0 basis lumpsum
+SPK  status draft
+  seq 1 proc celup from  to  stage_label Celup (Dyeing) mitra - tarif 0 basis lumpsum
+=== HPP hasil / material_ledger ===
+makloon_material_ledger: 0
+journal untuk makloon: 0

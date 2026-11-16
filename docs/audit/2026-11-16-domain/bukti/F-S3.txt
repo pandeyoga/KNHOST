@@ -1,0 +1,6 @@
+# F-S3 — rencana pemenuhan via 4 modul (SO-00006)
+decision (SSOT stock_figures): own available 0.0
+plan (inventory_balances mentah): Cipta Sandang 700.35 + Sukacita 593.58
+wizard (inventory_balances mentah): Cipta Sandang 700.35 + Sukacita 593.58
+=> plan==wizard pada SO sampel (cadangan makloon terkunci penuh di seed); divergensi KODE nyata tetapi tak termaterialisasi. Lihat F-PESANAN + SO-01.
+Sumber beda: fulfillment_service.py:59/decision:62 pakai stock_figures; plan:25 & wizard:20 baca inventory_balances mentah.

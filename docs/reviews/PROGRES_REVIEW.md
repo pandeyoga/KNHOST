@@ -1,6 +1,6 @@
 # Kemajuan review & audit domain (dihasilkan `scripts/review/periksa_selesai.py progres`)
 
-Dihasilkan 2026-11-16 06:02 UTC pada commit `3859ba36`. Angka dihitung dari berkas validasi/audit dan tracker — bukan klaim. Jangan disunting tangan.
+Dihasilkan 2026-11-16 06:14 UTC pada commit `7006aa24`. Angka dihitung dari berkas validasi/audit dan tracker — bukan klaim. Jangan disunting tangan.
 
 ## Batch review
 
@@ -18,14 +18,14 @@ Dihasilkan 2026-11-16 06:02 UTC pada commit `3859ba36`. Angka dihitung dari berk
 
 ## Audit domain
 
-### `docs/audit/2026-11-16-domain` — belum selesai
+### `docs/audit/2026-11-16-domain` — SELESAI
 
 | Domain | Skenario dijalankan | Gagal | Terhambat | Form diinventaris | Baris dropdown | Temuan | Baris dibaca |
 |---|---|---|---|---|---|---|---|
 | A A-MASTER-STAGE.md | 9/9 | 0 | 4 | 8/8 | 30 | {'Tinggi': 4, 'Sedang': 2} | 0 |
-| B B-MAKLOON.md | 0/10 | 0 | 0 | 0/6 | -1 | — | 9 |
-| C C-RND.md | 0/6 | 0 | 0 | 0/5 | -1 | — | 2 |
-| D D-RETUR.md | 0/8 | 0 | 0 | 0/4 | -1 | — | 0 |
-| E E-QC-MDQ.md | 0/6 | 0 | 0 | 0/3 | -1 | — | 23 |
-| F F-PESANAN-SESUDAH-POS.md | 0/8 | 0 | 0 | 0/4 | -1 | — | 0 |
+| B B-MAKLOON.md | 10/10 | 0 | 9 | 6/6 | 26 | {'Sedang': 3, 'Tinggi': 1} | 0 |
+| C C-RND.md | 6/6 | 0 | 6 | 5/5 | 17 | {'Tinggi': 1} | 0 |
+| D D-RETUR.md | 8/8 | 0 | 8 | 4/4 | 12 | {'Rendah': 2} | 0 |
+| E E-QC-MDQ.md | 6/6 | 0 | 6 | 3/3 | 8 | — | 0 |
+| F F-PESANAN-SESUDAH-POS.md | 8/8 | 0 | 7 | 4/4 | 7 | {'Tinggi': 1} | 0 |
 

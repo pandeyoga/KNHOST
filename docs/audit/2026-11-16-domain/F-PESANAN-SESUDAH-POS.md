@@ -1,55 +1,56 @@
-# F — Pesanan pelanggan sesudah POS (alokasi, tagihan, keep/pending, buka lagi)
+# F — Pesanan sesudah POS — audit §8
 
-HEAD: `91a3ec0`.
+HEAD: `91a3ec0`. Backend hidup + 8 SO seed. F-S3 diuji runtime (4 modul pemenuhan).
 
+## Peta sumber kebenaran: ketersediaan untuk pemenuhan SO
 
-> **Status domain: BELUM DIKERJAKAN.** Skenario wajib §8 dan inventaris form domain ini belum dijalankan. Semua isi di bawah berlabel **dugaan (baca kode)** sampai diuji lewat layar/API pada sesi domainnya.
----
-
-## SO-01 — Dua pintu fulfillment menghitung ketersediaan dari koleksi MENTAH (lewati SSOT)
-
-- **Keparahan:** Tinggi (semula Kritis — diturunkan: divergensi NYATA di kode, tetapi TIDAK termaterialisasi di data seed; risiko laten) · **Jenis akar:** duplikasi / cacat logika
-- **Tingkat bukti:** dugaan (baca kode)
-
-### Verifikasi runtime (backend hidup, data acuan) — JUJUR: divergensi tak tereproduksi pada SO sampel
-
-Diuji di SO `KANDA/SO-00006` (produk RIVERA RIB BW A), ketiga pintu dipanggil:
 ```
-GET /sales-admin/orders/{id}/fulfillment       (decision, SSOT) → own available 0.0
-GET /sales-admin/orders/{id}/fulfillment-plan  (plan, MENTAH)   → own 0.0 · lain: Cipta Sandang 700.35, Sukacita 593.58
-GET /fulfillment/wizard/{id}                    (wizard, MENTAH) → own 0   · lain: Cipta Sandang 700.35, Sukacita 593.58
+grep -n 'stock_figures' backend/services/fulfillment_service.py backend/services/fulfillment_decision_service.py
+grep -nE 'inventory_balances|inventory_rolls' backend/services/fulfillment_plan_service.py backend/services/fulfillment_wizard_service.py
 ```
-→ **plan == wizard** (angka sama). Sebab: (a) 1 cadangan makloon aktif di seed sudah **terkunci penuh** (`qty=300, locked=300, left=0`) sehingga `stock_figures` tak mengurangi apa pun ekstra; (b) gudang dengan saldo pada SO itu termasuk dihitung. Jadi kondisi pemicu divergensi tidak hadir di data seed.
+Sumber: `backend/services/fulfillment_service.py:59` & `backend/services/fulfillment_decision_service.py:62` (SSOT `stock_figures`) vs `backend/services/fulfillment_plan_service.py:25` & `backend/services/fulfillment_wizard_service.py:20` (koleksi mentah).
 
-**Kesimpulan jujur:** divergensi KODE terkonfirmasi (lihat di bawah), tetapi pada data acuan saat ini ketiga pintu **setuju**. Divergensi akan muncul hanya bila: saldo ada di gudang **tak-dihitung** (`counted` false / nonaktif), atau cadangan makloon **sebagian** (`qty>locked`). Perlu data uji khusus untuk mereproduksi (dicatat sebagai langkah berikut).
+## Pintu ganda
 
-### Bukti kode (tetap berlaku)
-- **Fakta terverifikasi:**
-  - **Selaras SSOT** (`stock_figures`, FIX-2 — hanya gudang DIHITUNG & cadangan makloon dialokasikan):
-    - `fulfillment_service.build_supply_index` (`:39,56-60`) → `stock_figures.segments`.
-    - `fulfillment_decision_service._usable_stock_by_entity` (`:54,62-64`) → `stock_figures.available_by_owner`.
-  - **MELEWATI SSOT** (baca koleksi mentah):
-    - `fulfillment_plan_service._own_by_warehouse` (`:25`) → `db.inventory_balances.find(...)`; `_rolls_for` (`:39`) → `db.inventory_rolls.find({status:"available"})`.
-    - `fulfillment_wizard_service._available_by_owner` (`:20`) → `db.inventory_balances.find({available_qty:{$gt:0}})`.
-  - Konsumen: `fulfillment_service` → `routers/inventory.py` + `routers/sales_orders_extra.py`; `decision_service` → `routers/work_desks.py` + `services/sales_p04_service.py` (keep/pending); `plan_service` → `routers/work_desks.py`; `wizard_service` → `routers/fulfillment.py`.
-- **Akibat:** rencana per-baris (`plan_service`) & wizard interco/PR (`wizard_service`) bisa menampilkan stok **lebih banyak** daripada papan ATP & meja keputusan karena memasukkan gudang yatim/tak-dihitung dan roll yang sudah dicadangkan makloon. → **angka ketersediaan berbeda untuk SO yang sama antar layar** — akar keluhan: alokasi berubah → tagihan berubah, keep/pending lalu dibuka lagi terasa tak konsisten.
-- **Langkah reproduksi (data acuan):** ambil SO kurang stok pada produk yang punya roll di gudang tak-dihitung atau roll cadangan makloon; bandingkan "tersedia/kurang" di papan ATP (`inventory`/`sales_orders_extra`), meja keputusan (`work_desks`), rencana per baris (`work_desks` plan), dan wizard (`/fulfillment/wizard/{so_id}`). Selisih = bukti.
-- **Arah perbaikan:** arahkan `plan_service` & `wizard_service` ke `stock_figures` (sumber yang sama dengan ATP/decision); matikan pembacaan mentah.
-- **Keputusan pemilik:** Pertanyaan #5.
+| Pekerjaan | Pintu | Seharusnya |
+|---|---|---|
+| Angka ketersediaan SO | fulfillment_service+decision (stock_figures) vs plan+wizard (mentah) | satu sumber stock_figures |
+| Katalog jual stage | `is_orderable` lifecycle saja | aturan stage |
 
----
+## Matriks skenario
 
-## Pertanyaan pemilik sebelum perbaikan F
+| Skenario | Status | Bukti/alasan |
+|---|---|---|
+| F-S1 | terhambat | POS→SO→alokasi→faktur E2E, panjang roll≠pesanan: butuh checkout berjalan |
+| F-S2 | terhambat | realokasi sesudah DP: butuh pembayaran DP |
+| F-S3 | lulus | bukti/F-S3.txt — 4 modul pemenuhan; plan==wizard di SO-00006 (divergensi kode nyata, laten) |
+| F-S4 | terhambat | keep→pending→buka lagi: butuh jalankan siklus umur |
+| F-S5 | terhambat | batal baris sesudah alokasi/bayar: butuh SO beralokasi+bayar |
+| F-S6 | terhambat | harga khusus lalu alokasi berubah: butuh approval harga |
+| F-S7 | terhambat | SO→PR/PO→datang→alokasi: butuh backorder+PO datang |
+| F-S8 | terhambat | angka pesanan sama antar layar: butuh banding UI 4 layar |
 
-1. Bila alokasi berubah **sesudah** DP/pembayaran: tagihan ikut alokasi terakhir, atau nilai bayar mengunci tagihan? (reallocate → `ar_allocation_service` → faktur)
-2. Saat keep/pending **dibuka lagi**: reservasi/backorder lama dilepas otomatis atau dipertahankan? (hindari reservasi/backorder basi)
+## Inventaris form & dropdown
 
----
+| Form | Field | Sumber pilihan | Saringan | Ditegakkan server? | Masalah |
+|---|---|---|---|---|---|
+| CheckoutDrawer.jsx | customer (318) | pelanggan | — | ya | — |
+| CheckoutDrawer.jsx | address (331) | alamat pelanggan | per pelanggan | ya | — |
+| CheckoutDrawer.jsx | payment-term (455) | `termOptions` | — | ya | — |
+| CheckoutStep3.jsx | (ikuti anak) | ringkasan/alokasi | — | ya | tak ada dropdown sendiri |
+| ReallocateRollsModal.jsx | (ikuti anak) | pilih roll realokasi | per produk | ya | tak ada dropdown; pencari roll |
+| PriceApprovals.jsx | customer (328) | `customers` | — | ya | — |
+| PriceApprovals.jsx | product (335) | `products` | — | ya | — |
 
-## Tindak lanjut (butuh data acuan)
+## Temuan
 
-Alur penuh checkout POS → SO → reservasi (`sales_order_helpers.reserve_roll_mode_item`, `material_reservation_service`) →
-realokasi (`ReallocateRollsModal`, `sales_orders_extra` reallocate/release-rolls) → backorder → keep/pending
-(`sales_p04_service`, DEC-01) → buka lagi → batal baris (`so_line_cancel_service`) → perubahan tagihan (PK-30/PK-32,
-`so_special_price_service`, `ar_allocation_service`) — efek uang (DP vs alokasi berubah) perlu dataset acuan. Temuan
-struktural duplikasi (SO-01) sudah tegak di kode.
+### SO-01 — plan/wizard hitung ketersediaan dari koleksi mentah (lewati SSOT)
+- Keparahan: Tinggi
+- Jenis akar: duplikasi / cacat logika (risiko laten)
+- Tingkat bukti: dugaan (baca kode) — runtime: 3 pintu SETUJU di SO-00006 (tak tereproduksi di seed)
+- Bukti: `backend/services/fulfillment_plan_service.py:25` & `backend/services/fulfillment_wizard_service.py:20` (mentah) vs `backend/services/fulfillment_service.py:59` (stock_figures); `bukti/F-S3.txt`.
+- Reproduksi: SO kurang stok dgn roll di gudang tak-dihitung / cadangan makloon sebagian; bandingkan ATP/decision/plan/wizard. `bukti/F-S3.txt`.
+- Dampak: layar berbeda bisa menampilkan ketersediaan berbeda untuk SO sama.
+- Arah perbaikan: arahkan plan & wizard ke `stock_figures`.
+- Keputusan pemilik: tagihan ikut alokasi terakhir atau terkunci nilai bayar?
+- Sudah ada: MS-05.

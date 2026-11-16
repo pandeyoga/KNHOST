@@ -1,0 +1,11 @@
+# B-S7 — dua pintu pembuatan SPK makloon (kode + keduanya aktif)
+
+Pintu 1 Wizard: frontend/src/features/purchasing/makloon/MakloonWizard.jsx:305 (realize-makloon) + :307 (POST /makloon-orders); dirender di MakloonOrdersView.jsx & PrSourcingPanel.jsx
+Pintu 2 Modal: frontend/src/features/purchasing/MakloonOrderCreateModal.jsx:192 (POST /makloon-orders); dirender di admin/PurchaseOrderManagement.jsx
+Keduanya POST ke endpoint sama /makloon-orders tetapi UX+pengisian beda.
+
+Sumber STAGE berbeda antar pintu:
+- MakloonOrderCreateModal: options={stageOpts} (dari master process_stages)
+- RecipeFormModal: options={STAGE_OPTS} (konstanta hardcode frontend) \u2014 recipe-input-stage/recipe-output-stage
+- MakloonStepEditor: options={stageOpts} hardcode (MS-04)
+12:const STAGE_OPTS = Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }));
