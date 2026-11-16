@@ -17,8 +17,16 @@ import SpecialOrderItemsEditor, { blankItem, itemProblems } from "./SpecialOrder
 const ARTWORK_OK = ["approved", "final_submitted", "active"];
 
 export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
-  const { unitOptions: _uomOpts } = useUomConversions();   // INV-UOM-02
-  const uomAllOptions = _uomOpts();
+  const { unitOptions: _uomOpts, dimensionOf } = useUomConversions();   // INV-UOM-02
+  // M11 (pemilik 16 Nov) — satuan hanya yang relevan: mengikuti satuan dasar induk (dimensi sama); tanpa induk = satuan
+  // panjang kain + kg. Dulu semua satuan (pcs, lusin, …) ditawarkan.
+  const unitOptionsFor = (it) => {
+    const tpl = it.source_type === "parent_product" ? templates.find((t) => t.id === it.source_template_id) : null;
+    const dim = tpl?.base_unit ? dimensionOf(tpl.base_unit) : "";
+    if (dim) return _uomOpts(dim);
+    const len = _uomOpts("length");
+    return [...len, ..._uomOpts("weight").filter((u) => u.value === "kg")];
+  };
   const [customers, setCustomers] = useState([]);
   const [colors, setColors] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -31,8 +39,8 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
   const addRefs = (list) => setRefFiles((cur) => [...cur, ...Array.from(list || [])].slice(0, 10));
   const [f, setF] = useState({
     customer_id: "", title: "", request_types: [], detail_level: "reference", reference_notes: "",
-    template_id: "", fabric_type: "woven", gramasi: "", lebar: "", color_id: "", color_new_note: "", sku_hint: "", spec_notes: "",
-    quantity: "", unit: "meter", target_price: "", expected_delivery: "", notes: "", submit: true,
+    fabric_type: "woven", gramasi: "", lebar: "", color_new_note: "", sku_hint: "", spec_notes: "",
+    expected_delivery: "", notes: "", submit: true,
     pattern_category_code: "", design_category_code: "",
   });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -42,7 +50,10 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
     const H = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     axios.get(`${API}/customers`, { params: { limit: 500, for_order: true, with_credit: false }, ...H }).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => {});
     listColors().then((c) => setColors(Array.isArray(c) ? c : c?.items || [])).catch(() => {});
-    axios.get(`${API}/product-templates`, H).then((r) => setTemplates(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => {});
+    // M10 (pemilik 16 Nov) — induk untuk pesanan khusus hanya tahap KAIN JADI (greige & benang tidak ditawarkan);
+    // induk lama tanpa tahap dianggap kain jadi (bawaan server).
+    axios.get(`${API}/product-templates`, H).then((r) => setTemplates((Array.isArray(r.data) ? r.data : r.data?.items || [])
+      .filter((t) => !t.stage || t.stage === "finished"))).catch(() => {});
     axios.get(`${API}/design-requests/meta`, H).then((r) => setCats({ pattern: r.data?.categories?.pattern || [], design: r.data?.categories?.design || [] })).catch(() => {});
     axios.get(`${API}/design-gallery`, { params: { on_hold: "no" }, ...H }).then((r) => setArtworks((Array.isArray(r.data) ? r.data : []).filter((d) => ARTWORK_OK.includes(d.status) && !d.on_hold))).catch(() => {});
   }, [token]);
@@ -59,9 +70,10 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
     try {
       const payload = {
         customer_id: f.customer_id, title: f.title, detail_level: f.detail_level, reference_notes: f.reference_notes,
-        spec: full ? { template_id: f.template_id, fabric_type: f.fabric_type, gramasi: f.gramasi === "" ? null : Number(f.gramasi), lebar: f.lebar === "" ? null : Number(f.lebar),
-          color_id: f.color_id, color_new_note: f.color_new_note, sku_hint: f.sku_hint, notes: f.spec_notes }
-          : { color_id: f.color_id, color_new_note: f.color_new_note },
+        // M13 (pemilik 16 Nov) — induk & warna diisi SEKALI di item (langkah 2); langkah 4 tidak mengulanginya.
+        spec: full ? { fabric_type: f.fabric_type, gramasi: f.gramasi === "" ? null : Number(f.gramasi), lebar: f.lebar === "" ? null : Number(f.lebar),
+          color_new_note: f.color_new_note, sku_hint: f.sku_hint, notes: f.spec_notes }
+          : { color_new_note: f.color_new_note },
         items: items.map(({ key, ...it }) => ({ ...it, quantity: Number(it.quantity), target_price: Number(it.target_price || 0) })),
         expected_delivery: f.expected_delivery, notes: f.notes, submit_for_approval: f.submit,
         pattern_category_code: f.pattern_category_code, design_category_code: f.design_category_code,
@@ -108,7 +120,7 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
         </Step>
 
         <Step n={2} title="Item & sumber desain">
-          <SpecialOrderItemsEditor items={items} onChange={setItems} templates={templates} colors={colors} unitOptions={uomAllOptions}
+          <SpecialOrderItemsEditor items={items} onChange={setItems} templates={templates} colors={colors} unitOptionsFor={unitOptionsFor}
             artworks={artworks.filter((d) => d.ownership !== "customer" || d.owner_customer_id === f.customer_id)} />
           <Hint>Printing → Desainer (atau langsung proofing bila artwork ACC dipilih) · Labdip/Handfeel → R&amp;D. Setiap dokumen turunan tertaut ke item-nya.</Hint>
         </Step>
@@ -130,21 +142,13 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
           <div className={`grid gap-2.5 sm:grid-cols-2 ${full ? "lg:grid-cols-3" : ""}`}>
             {full && (
               <>
-                <Field label="Induk produk basis (opsional)">
-                  <KNSelect data-testid="od-template" className="field" value={f.template_id} searchable
-                    options={[{ value: "", label: "— produk benar-benar baru —" }, ...templates.map((t) => ({ value: t.id, label: t.name }))]} onValueChange={(v) => set("template_id", v)} />
-                </Field>
                 <Field label="Jenis kain"><KNSelect data-testid="od-fabric" className="field" value={f.fabric_type} options={[{ value: "woven", label: "Woven (tenun)" }, { value: "knit", label: "Knit (rajut)" }]} onValueChange={(v) => set("fabric_type", v)} /></Field>
                 <Field label="Gramasi (gsm)"><input className="field" type="number" data-testid="od-gramasi" value={f.gramasi} onChange={(e) => set("gramasi", e.target.value)} /></Field>
                 <Field label="Lebar (cm)"><input className="field" type="number" data-testid="od-lebar" value={f.lebar} onChange={(e) => set("lebar", e.target.value)} /></Field>
                 <Field label="SKU usulan"><input className="field" data-testid="od-sku" value={f.sku_hint} onChange={(e) => set("sku_hint", e.target.value.toUpperCase())} /></Field>
               </>
             )}
-            <Field label="Warna target dari Pustaka Warna">
-              <KNSelect data-testid="od-color" className="field" value={f.color_id} searchable
-                options={[{ value: "", label: "— belum ada / warna baru —" }, ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }))]} onValueChange={(v) => set("color_id", v)} />
-            </Field>
-            <Field label="Bila warna baru: catatan dari swatch pelanggan">
+            <Field label="Bila warna baru (tidak ada di Pustaka Warna item): catatan dari swatch pelanggan">
               <input className="field" data-testid="od-color-new" value={f.color_new_note} onChange={(e) => set("color_new_note", e.target.value)} placeholder="mis. navy kebiruan, lebih gelap dari KN-BLU-01" />
             </Field>
             {full && <Field label="Catatan spesifikasi"><input className="field" data-testid="od-spec-notes" value={f.spec_notes} onChange={(e) => set("spec_notes", e.target.value)} /></Field>}

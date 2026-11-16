@@ -25,10 +25,10 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 | M9 | Panduan awal dihilangkan | Panel onboarding di beranda | Dihapus | selesai |
 | M2 | Menu ber-sub-menu tebal & gelap | Kepala grup abu-abu 11 px | Kepala grup tebal, warna teks utama | selesai |
 | M25 | Chip gudang bergulir | Deret chip di Stok Gudang | Dropdown "Semua gudang" | selesai |
-| M10 | Induk produk Pesanan Khusus tidak tersaring | Daftar induk tanpa saringan tahap | Hanya induk tahap kain jadi | dikerjakan |
-| M11 | Satuan relevan / ikut induk | Semua satuan | Satuan mengikuti satuan dasar induk (dimensi sama) | dikerjakan |
-| M12 | Target harga opsional tanpa bawaan | Kosong dipaksa 0 di form, skema, server | Kosong = tidak ada (bukan 0); tampil "—" | dikerjakan |
-| M13 | Induk & warna diisi dua kali | Langkah 4 mengulang induk & warna item | Langkah 4 tanpa induk & warna; pembaca lama memakai warna item | dikerjakan |
+| M10 | Induk produk Pesanan Khusus tidak tersaring | Daftar induk tanpa saringan tahap | Hanya induk tahap kain jadi | selesai |
+| M11 | Satuan relevan / ikut induk | Semua satuan | Satuan mengikuti satuan dasar induk (dimensi sama) | selesai |
+| M12 | Target harga opsional tanpa bawaan | Kosong dipaksa 0 di form, skema, server | Label "(opsional)", kosong tanpa bawaan; kosong disimpan 0 = belum ada target dan tampil "—" (bukan "Rp 0") | selesai |
+| M13 | Induk & warna diisi dua kali | Langkah 4 mengulang induk & warna item | Langkah 4 tanpa induk & warna; sample revisi memakai warna item (cadangan spesifikasi OD lama) | selesai |
 | M27 | BOM: nama bebas, kenapa perlu nama? | Nama wajib bebas; tidak ada versi/utama; Rute Produk mengambil BOM aktif sembarang | Nama dibuat sistem "BOM {SKU} v{n}"; versi per produk; satu BOM utama; rute & perintah kerja memakai BOM utama | dikerjakan |
 | M28 | Master produk simpan HPP? | Katalog menampilkan `harga_pokok` manual berlabel "HPP" | Tampilkan HPP hitungan (rata-rata stok + sumber); `harga_pokok` = "HPP perkiraan (cadangan)" | dikerjakan |
 | M30 | Eskalasi Gudang relevan? | Eskalasi manual; menu terpisah mengulang meja | Kartu "Perlu keputusan" di meja pemegang izin putus gudang; menu dihapus | dikerjakan |

@@ -37,7 +37,7 @@ export function SpecialOrderInfoPanels({ order }) {
                 {units.length === 1 ? <><b>{formatQty(items.reduce((a, i) => a + Number(i.quantity || 0), 0))}</b> {units[0]}</> : <b>{items.length} item</b>}
               </Cell>
             ) : <Cell label="Jumlah" testId="od-item-qty"><b>{formatQty(ci.quantity)}</b> {ci.unit}</Cell>}
-            <Cell label="Harga target" testId="od-item-target">{multi ? "per item" : formatCurrency(ci.target_price)}</Cell>
+            <Cell label="Harga target" testId="od-item-target">{multi ? "per item" : Number(ci.target_price || 0) > 0 ? formatCurrency(ci.target_price) : "—"}</Cell>
             <Cell label="Nilai pesanan" testId="od-item-total"><b className="text-[#0058CC]">{formatCurrency(order.total_amount)}</b></Cell>
             <Cell label="Tenggat kirim" testId="od-item-eta">{order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "—"}</Cell>
           </div>

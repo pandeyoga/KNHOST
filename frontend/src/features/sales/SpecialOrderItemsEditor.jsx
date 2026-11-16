@@ -24,7 +24,8 @@ export function itemProblems(it, i) {
   return p;
 }
 
-export default function SpecialOrderItemsEditor({ items, onChange, templates, artworks, colors, unitOptions }) {
+export default function SpecialOrderItemsEditor({ items, onChange, templates, artworks, colors, unitOptions = [],
+  unitOptionsFor }) {
   const upd = (idx, k, v) => onChange(items.map((it, i) => (i === idx ? { ...it, [k]: v } : it)));
   const toggle = (idx, t) => {
     const cur = items[idx].request_types;
@@ -34,7 +35,12 @@ export default function SpecialOrderItemsEditor({ items, onChange, templates, ar
     <div className="grid gap-2" data-testid="od-items">
       {items.map((it, idx) => (
         <ItemRow key={it.key} it={it} idx={idx} upd={upd} toggle={toggle} templates={templates} artworks={artworks}
-          colors={colors} unitOptions={unitOptions} canRemove={items.length > 1}
+          colors={colors} unitOptions={unitOptionsFor ? unitOptionsFor(it) : unitOptions} canRemove={items.length > 1}
+          onTemplate={(v) => onChange(items.map((x, i) => {
+            if (i !== idx) return x;
+            const tpl = templates.find((t) => t.id === v);
+            return { ...x, source_template_id: v, unit: tpl?.base_unit || x.unit };   // M11 — satuan ikut induk
+          }))}
           onRemove={() => onChange(items.filter((_, i) => i !== idx))} />
       ))}
       <button type="button" className="secondary-button w-fit text-[11.5px]" data-testid="od-item-add"
@@ -43,7 +49,7 @@ export default function SpecialOrderItemsEditor({ items, onChange, templates, ar
   );
 }
 
-function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOptions, canRemove, onRemove }) {
+function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOptions, canRemove, onRemove, onTemplate }) {
   const n = idx + 1;
   return (
     <div className="rounded-lg border border-[#E5E5EA] bg-white p-2.5" data-testid={`od-item-${n}`}>
@@ -60,7 +66,7 @@ function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOption
           <Field label="Induk produk *">
             <KNSelect data-testid={`od-item-template-${n}`} className="field" value={it.source_template_id} searchable
               options={[{ value: "", label: "— pilih induk —" }, ...templates.map((t) => ({ value: t.id, label: t.name }))]}
-              onValueChange={(v) => upd(idx, "source_template_id", v)} />
+              onValueChange={(v) => (onTemplate ? onTemplate(v) : upd(idx, "source_template_id", v))} />
           </Field>
         )}
         {it.source_type === "approved_artwork" && (
@@ -84,7 +90,8 @@ function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOption
         </Field>
         <Field label="Jumlah *"><input className="field" type="number" min="0" data-testid={`od-item-qty-${n}`} value={it.quantity} onChange={(e) => upd(idx, "quantity", e.target.value)} /></Field>
         <Field label="Satuan"><KNSelect data-testid={`od-item-unit-${n}`} className="field" value={it.unit} options={unitOptions} onValueChange={(v) => upd(idx, "unit", v)} /></Field>
-        <Field label="Target harga / satuan (Rp)"><input className="field" type="number" min="0" data-testid={`od-item-price-${n}`} value={it.target_price} onChange={(e) => upd(idx, "target_price", e.target.value)} /></Field>
+        {/* M12 (pemilik 16 Nov) — target harga OPSIONAL, tanpa nilai bawaan; kosong = belum ada target (tampil "—"). */}
+        <Field label="Target harga / satuan (opsional)"><input className="field" type="number" min="0" data-testid={`od-item-price-${n}`} value={it.target_price} placeholder="Kosongkan bila belum ada" onChange={(e) => upd(idx, "target_price", e.target.value)} /></Field>
       </div>
       {/* 23 Okt — chip jenis uji diberi label (dulu tiga chip tanpa keterangan apa yang dipilih). */}
       <p className="field-label mt-2">Jenis uji / pekerjaan * <span className="font-normal normal-case text-[#9A9BA3]">(boleh lebih dari satu)</span></p>

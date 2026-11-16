@@ -245,7 +245,9 @@ async def _spawn_revision_sample(od: Dict[str, Any], actor: Dict[str, Any], enti
         spec_doc = await spec_svc.create_spec(routing._spec_from_od(od, types), entity_id=entity_id, actor=actor.get("name", ""))  # noqa: SLF001
         spec_id = spec_doc["id"]
         await db.special_orders.update_one({"id": od["id"]}, {"$set": {"spec_id": spec_id}})
-    item = od.get("custom_item") or {}
+    # M13 — item OD yang sedang direvisi (multi-item), cadangan `custom_item` (item pertama / OD lama).
+    item = next((i for i in (od.get("items") or []) if row.get("special_order_item_id")
+                 and i.get("id") == row.get("special_order_item_id")), None) or od.get("custom_item") or {}
     rev_no = len([d for d in (od.get("customer_decisions") or []) if d.get("decision") == "revisi"]) + 1
     design = ready.get("design") or {}
     # Reproofing memakai artwork sama dengan ronde sebelumnya; ganti motif = permintaan baru.
@@ -260,7 +262,8 @@ async def _spawn_revision_sample(od: Dict[str, Any], actor: Dict[str, Any], enti
         "spec_id": spec_id, "sample_types": types,
         "title": f"{od.get('title') or item.get('description') or 'Sample'} — {label}",
         "brief": f"{label.upper()} atas {prev.get('number') or 'sample'}: {note}. {_label(od)}",
-        "color_target": {"color_id": (od.get("spec") or {}).get("color_id")} if (od.get("spec") or {}).get("color_id") else {},
+        # M13 (pemilik 16 Nov) — warna diisi sekali di ITEM; `spec.color_id` hanya cadangan OD lama.
+        "color_target": ({"color_id": _clr} if (_clr := (item.get("color_id") or (od.get("spec") or {}).get("color_id"))) else {}),
         "customer_id": od.get("customer_id", ""), "target_date": od.get("expected_delivery", ""),
         "qty_requested": 3, "unit": item.get("unit") or "meter",
         **({"design_id": art_id, "design_version": art_ver} if (proofing and art_id) else {}),
