@@ -164,9 +164,18 @@ async def post_makloon_step(order: Dict[str, Any], seq: int) -> None:
         if bill:
             await gl.post_subcon_service(
                 bill_id=bill["id"], mko_id=mko, step_seq=int(seq), entity_id=eid,
-                net_amount=float(bill.get("net_amount") or 0), ppn=float(bill.get("ppn_amount") or 0),
+                net_amount=float(bill.get("net_amount") or 0) + (float(bill.get("claim_deduction") or 0)
+                                                                 if bill.get("ap_mode") == "saat_faktur" else 0),
+                ppn=float(bill.get("ppn_amount") or 0),
                 grand_total=float(bill.get("grand_total") or 0), makloon_name=step.get("makloon_name") or "",
-                label=label)
+                label=label, ap_mode=bill.get("ap_mode") or "")
+            # MP-T4b (K-78) — faktur mitra sudah dicocokkan → GR/IR ke hutang (nilai tagihan sesudah potongan klaim).
+            if bill.get("ap_mode") == "saat_faktur" and bill.get("status") in ("posted", "paid", "partially_paid") \
+                    and bill.get("invoice_matched_at"):
+                await gl.post_subcon_service_invoice(
+                    bill_id=bill["id"], entity_id=eid, net_amount=float(bill.get("net_amount") or 0),
+                    ppn=float(bill.get("ppn_amount") or 0), makloon_name=step.get("makloon_name") or "",
+                    label=label, invoice_no=bill.get("supplier_invoice_no") or "")
     if _moves(step) and step.get("status") == "received":
         await gl.post_subcon_receipt(mko_id=mko, step_seq=int(seq), entity_id=eid,
                                      amount=makloon_step_amount(step), label=label)
@@ -645,7 +654,8 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "entity_field": "entity_id", "number_field": "mko_number", "amount_field": "steps",
         "status_field": "steps.$.gl_status", "error_field": "gl_error", "failed_at_field": "updated_at",
         "doc_type": "makloon_order", "per_step": True,
-        "posters": ("post_subcon_issue", "post_subcon_service", "post_subcon_receipt", "reverse_subcon_issue"),
+        "posters": ("post_subcon_issue", "post_subcon_service", "post_subcon_receipt", "reverse_subcon_issue",
+                    "post_subcon_service_invoice"),   # MP-T4b (K-78) — faktur mitra dicocokkan: GR/IR → hutang
         "retry": _retry_makloon_step},
     "cut_waste": {
         "label": "Susut Potong", "collection": "inventory_movements",

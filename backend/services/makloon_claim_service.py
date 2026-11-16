@@ -188,6 +188,16 @@ async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
     effect: Dict[str, Any] = {"action": action, "amount": amount, "journal_id": "",
                               "bill_id": "", "accounting_effect": "none"}
 
+    # MP-T4b (K-64, K-79, K-80) — mode tagihan jasa (dipotret di tagihan; tanpa tagihan → sakelar PT).
+    from services import makloon_ap_service as _ap
+    _bill = await db.vendor_bills.find_one({"id": step.get("service_bill_id") or ""}, {"_id": 0}) or {}
+    mode = _bill.get("ap_mode") or await _ap.ap_mode(order.get("entity_id") or "")
+    split = await _ap.claim_split(step, amount) if mode == _ap.MODE_FAKTUR and action in ("potong_bon", "tagih_ganti") \
+        else None
+    ref = f"{mko_id}:{seq}"
+    if split:
+        effect["claim_split"] = {k: split[k] for k in ("rate", "inventory_amount", "wip_amount", "income_amount")}
+
     if action == "potong_bon":
         bill_id = step.get("service_bill_id") or ""
         if not bill_id:
@@ -204,7 +214,7 @@ async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
         # W2-005 — potongan diklaim ATOMIK pada saldo bill TERKINI (amount_paid + potongan ≤ grand)
         # sebelum jurnal; pembayaran bersamaan tidak bisa lolos melebihi grand baru.
         claimed = await db.vendor_bills.find_one_and_update(
-            {"id": bill_id, "status": {"$in": ["posted", "approved", "draft", "pending_approval"]},
+            {"id": bill_id, "status": {"$in": ["posted", "approved", "draft", "pending_approval", "awaiting_invoice"]},
              "$expr": {"$lte": [{"$add": [{"$ifNull": ["$amount_paid", 0]}, amount]},
                                 {"$add": [{"$ifNull": ["$grand_total", 0]}, 0.01]}]}},
             {"$inc": {"net_amount": -amount, "grand_total": -amount, "claim_deduction": amount},
@@ -216,23 +226,36 @@ async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
         if not claimed:
             raise ClaimError("Tagihan jasa baru saja berubah (pembayaran/potongan lain) — sisa tagihan tidak cukup. Muat ulang.")
         try:
+            if split:
+                await _ap.apply_claim_to_rolls(ref, split["per_roll"], actor=actor)
             je = await gl.post_makloon_claim(mko_id=mko_id, step_seq=seq,
                                              entity_id=order.get("entity_id", ""), action=action,
                                              amount=amount,
-                                             label=f"{order.get('mko_number')} step{seq}")
+                                             label=f"{order.get('mko_number')} step{seq}", split=split,
+                                             debit_account=("2-1150" if split and bill.get("status") == "awaiting_invoice"
+                                                            else ""))
         except Exception:
             await db.vendor_bills.update_one({"id": bill_id}, {
                 "$inc": {"net_amount": amount, "grand_total": amount, "claim_deduction": -amount},
                 "$pull": {"deductions": {"mko_id": mko_id, "step_seq": seq, "amount": amount}}})
+            if split:
+                await _ap.apply_claim_to_rolls(ref, split["per_roll"], actor=actor, undo=True)
             raise
         effect.update({"journal_id": (je or {}).get("id", ""), "bill_id": bill_id,
                        "accounting_effect": "ap_reduced",
                        "bill_new_total": round(float(claimed.get("grand_total") or 0), 2)})
     elif action == "tagih_ganti":
-        je = await gl.post_makloon_claim(mko_id=mko_id, step_seq=seq,
-                                         entity_id=order.get("entity_id", ""), action=action,
-                                         amount=amount,
-                                         label=f"{order.get('mko_number')} step{seq}")
+        if split:
+            await _ap.apply_claim_to_rolls(ref, split["per_roll"], actor=actor)
+        try:
+            je = await gl.post_makloon_claim(mko_id=mko_id, step_seq=seq,
+                                             entity_id=order.get("entity_id", ""), action=action,
+                                             amount=amount,
+                                             label=f"{order.get('mko_number')} step{seq}", split=split)
+        except Exception:
+            if split:
+                await _ap.apply_claim_to_rolls(ref, split["per_roll"], actor=actor, undo=True)
+            raise
         effect.update({"journal_id": (je or {}).get("id", ""),
                        "accounting_effect": "claim_receivable"})
     else:  # terima_catatan

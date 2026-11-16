@@ -169,6 +169,8 @@ MPT1_KUNCI = 1
 MPT5_KUNCI = 1
 # MP-T5b (K-74) — `makloon.peruntukan_wajib_tahap`, berizin modul makloon (bukan `settings.manage`).
 MPT5B_KUNCI = 1
+# MP-T4b (K-80) — `makloon.jasa_jadi_hutang` (sakelar per PT: jasa makloon jadi hutang saat terima/saat faktur).
+MPT4B_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -245,7 +247,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
         + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI + KMT1_KUNCI + PMT3_KUNCI \
         + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI + PYT5_KUNCI + KMT3_KUNCI_KONTROL \
-        + R0_FIX7_KUNCI + MPT1_KUNCI + MPT5_KUNCI + MPT5B_KUNCI
+        + R0_FIX7_KUNCI + MPT1_KUNCI + MPT5_KUNCI + MPT5B_KUNCI + MPT4B_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

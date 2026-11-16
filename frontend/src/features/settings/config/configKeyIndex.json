@@ -1106,6 +1106,10 @@
    "pembelian",
    "makloon"
   ],
+  "makloon.jasa_jadi_hutang": [
+   "pembelian",
+   "makloon"
+  ],
   "makloon.peruntukan_wajib_tahap": [
    "pembelian",
    "makloon"

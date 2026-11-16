@@ -182,6 +182,34 @@ async def _next_mko_number(entity_id: str = "") -> str:
     return await next_doc_number("makloon_orders", "mko_number", "MKO-", width=5, scheme="shared")
 
 
+async def _apply_borongan(steps: List[Dict[str, Any]]) -> None:
+    """MP-T4b (K-81) — kontrak makloon bertarif borongan (`lot`) yang dipakai beberapa langkah SPK ditagih SEKALI, di
+    langkah terakhir yang memakainya; langkah sebelumnya bertarif 0 dengan catatan. Dulu tiap langkah menagih penuh."""
+    by_contract: Dict[str, List[Dict[str, Any]]] = {}
+    for st in steps:
+        if st.get("contract_id"):
+            by_contract.setdefault(st["contract_id"], []).append(st)
+    for cid, sts in by_contract.items():
+        if len(sts) < 2:
+            continue
+        k = await cs.get_contract(cid)
+        if str((k or {}).get("tariff_basis") or "").lower() != "lot":
+            continue
+        last = max(int(x["seq"]) for x in sts)
+        for st in sts:
+            st["borongan_contract_id"] = cid
+            st["borongan_billed_at_seq"] = last
+            if int(st["seq"]) == last:
+                continue
+            st["tariff"] = 0.0
+            if isinstance(st.get("tariff_plan"), dict):
+                st["tariff_plan"] = {**st["tariff_plan"], "amount": 0.0, "service_amount": 0.0}
+            if isinstance(st.get("tariff_base_equivalent"), dict):
+                st["tariff_base_equivalent"] = {**st["tariff_base_equivalent"], "amount": 0.0}
+            st["tariff_note"] = " ".join(f"Borongan {(k or {}).get('contract_number') or ''}: ditagih sekali di "
+                                         f"langkah {last}.".split())
+
+
 PURPOSE_KINDS = {"pelanggan": "Untuk pelanggan", "toko": "Untuk toko", "stok": "Stok"}
 
 
@@ -605,6 +633,7 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
         raise HTTPException(status_code=422, detail=(
             "Resep/yield belum dipilih — isi alasan qty bahan manual (mis. 'resep artikel belum ada, "
             "qty dari pengalaman mitra')."))
+    await _apply_borongan(steps)   # MP-T4b (K-81) — kontrak borongan yang sama ditagih sekali, di langkah terakhirnya
     purpose = await _resolve_purpose(payload, mat_snap_stage=(await db.products.find_one(
         {"id": material_pid}, {"_id": 0, "stage": 1}) or {}).get("stage"), entity_id=entity_id)
     restock_route = None
@@ -1036,7 +1065,13 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     # ── Tarif: manual menang; kalau tidak, dihitung dari kontrak/basis langkah ──
     tariff_trace: Dict[str, Any] = {}
     manual_tariff = data.get("tariff") is not None and parse_decimal(data.get("tariff"), 2) > 0
-    if manual_tariff:
+    borongan_later = bool(step.get("borongan_billed_at_seq")) and int(step["borongan_billed_at_seq"]) != int(seq)
+    if borongan_later and not manual_tariff:   # MP-T4b (K-81) — jasa borongan ditagih di langkah terakhirnya
+        tariff = 0.0
+        tariff_trace = {"source": "borongan", "amount": 0.0, "basis": "lot",
+                        "explain": [step.get("tariff_note") or
+                                    f"Borongan: ditagih sekali di langkah {step['borongan_billed_at_seq']}."]}
+    elif manual_tariff:
         tariff = round(parse_decimal(data.get("tariff"), 2), 2)
         tariff_trace = {"source": "manual_input", "amount": tariff,
                         "basis": step.get("tariff_basis", "lumpsum"),
@@ -1075,6 +1110,10 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     from services import atomic_claim as _saga
     await _saga.claim("makloon_orders", mko_id, "makloon_record_service", actor=actor_name)
     bill_no = await _next_service_bill_no(entity_id)   # KP-T5 — PT order makloon (N1)
+    from services import makloon_ap_service as _ap      # MP-T4b — mode tagihan jasa (sakelar PT, dipotret di tagihan)
+    _mode = await _ap.ap_mode(entity_id)
+    if _mode == _ap.MODE_FAKTUR:
+        ppn = 0.0
     await db.vendor_bills.insert_one({
         "id": service_bill_id, "bill_number": bill_no, "bill_type": "makloon_service",
         "makloon_id": step.get("makloon_id"), "makloon_order_id": mko_id, "step_seq": seq,
@@ -1086,7 +1125,8 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "tariff": tariff, "aux_cost": aux,
         # FASE T — penanda supaya laporan bisa memisahkan jasa TANPA kain.
         "service_only": True, "stage_code": step.get("stage_code") or "",
-        "status": "posted", "entity_id": entity_id,
+        "ap_mode": _mode,
+        "status": "awaiting_invoice" if _mode == _ap.MODE_FAKTUR else "posted", "entity_id": entity_id,
         "bill_date": now_iso(), "posted_at": now_iso(),
         "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
     })
@@ -1103,6 +1143,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "actual_output_qty": input_qty, "actual_byproduct_qty": 0.0,
         "tariff": tariff, "aux_cost": aux, "service_value": net_service,
         "service_bill_id": service_bill_id, "tariff_actual": tariff_trace,
+        "service_invoice_status": "menunggu_faktur" if _mode == _ap.MODE_FAKTUR else "",   # MP-T4b
         # Tidak ada kain yang bergerak → tidak ada nilai bahan & tidak ada HPP output.
         "material_value": 0.0, "output_value": 0.0, "output_unit_cost": 0.0,
         "byproduct_value": 0.0, "lots": [],
@@ -1257,7 +1298,13 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     #    qty AKTUAL bila user tidak menimpa manual; jejak perhitungan disimpan.
     tariff_trace: Dict[str, Any] = {}
     manual_tariff = data.get("tariff") is not None and parse_decimal(data.get("tariff"), 2) > 0
-    if manual_tariff:
+    borongan_later = bool(step.get("borongan_billed_at_seq")) and int(step["borongan_billed_at_seq"]) != int(seq)
+    if borongan_later and not manual_tariff:   # MP-T4b (K-81) — jasa borongan ditagih di langkah terakhirnya
+        tariff = 0.0
+        tariff_trace = {"source": "borongan", "amount": 0.0, "basis": "lot",
+                        "explain": [step.get("tariff_note") or
+                                    f"Borongan: ditagih sekali di langkah {step['borongan_billed_at_seq']}."]}
+    elif manual_tariff:
         tariff = round(parse_decimal(data.get("tariff"), 2), 2)
         tariff_trace = {"source": "manual_input", "amount": tariff,
                         "basis": step.get("tariff_basis", "lumpsum"),
@@ -1293,6 +1340,10 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             {"makloon_order_id": mko_id, "step_seq": seq, "bill_type": "makloon_service",
              "receive_op_id": prog["op_id"]}, {"_id": 0, "id": 1})
         service_bill_id = (_old or {}).get("id", "")
+    from services import makloon_ap_service as _ap      # MP-T4b — mode tagihan jasa (sakelar PT, dipotret di tagihan)
+    _mode = await _ap.ap_mode(entity_id)
+    if _mode == _ap.MODE_FAKTUR:
+        ppn = 0.0   # PPN datang bersama faktur mitra saat dicocokkan
     if net_service > 0 and not service_bill_id:
         service_bill_id = new_id("vb")
         bill_no = await _next_service_bill_no(entity_id)   # KP-T5 — PT order makloon (N1)
@@ -1304,8 +1355,8 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             "supplier_name": step.get("makloon_name") or "Makloon",
             "supplier_invoice_no": data.get("supplier_invoice_no") or "",
             "net_amount": net_service, "ppn_amount": ppn, "grand_total": round(net_service + ppn, 2),
-            "tariff": tariff, "aux_cost": aux,
-            "status": "posted", "entity_id": entity_id,
+            "tariff": tariff, "aux_cost": aux, "ap_mode": _mode,
+            "status": "awaiting_invoice" if _mode == _ap.MODE_FAKTUR else "posted", "entity_id": entity_id,
             "bill_date": now_iso(), "posted_at": now_iso(),
             "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
         })
@@ -1441,6 +1492,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         # (dihitung dari roll yang dibuat, bukan diketik) di samping ukurannya.
         "qty_rolls_out": (len(created_lots) if created_lots else None),
         "tariff": tariff, "aux_cost": aux, "service_value": net_service, "service_bill_id": service_bill_id,
+        "service_invoice_status": "menunggu_faktur" if (_mode == _ap.MODE_FAKTUR and service_bill_id) else "",   # MP-T4b
         "tariff_actual": tariff_trace,
         "receive_uom_trail": receive_trail,
         "output_value": output_value, "output_unit_cost": out_uc,
@@ -1836,6 +1888,32 @@ async def forward_step(mko_id: str, seq: int, data: Dict[str, Any], *, actor_nam
     return await _get_order(mko_id)
 
 
+def _borongan_leave(order: Dict[str, Any], step: Dict[str, Any]) -> None:
+    """MP-T4b (K-81) — langkah keluar dari kelompok borongan (kontraknya diganti). Bila langkah ini yang menagih, tagihan
+    borongan pindah ke langkah terakhir yang tersisa (harus masih menunggu); kelompok tinggal satu → bukan borongan lagi."""
+    cid, seq = step.get("borongan_contract_id"), int(step["seq"])
+    rest = [st for st in order.get("steps") or [] if st.get("borongan_contract_id") == cid and int(st["seq"]) != seq]
+    if int(step.get("borongan_billed_at_seq") or 0) == seq and rest:
+        new_last = max(rest, key=lambda x: int(x["seq"]))
+        if new_last.get("status") != "pending":
+            raise HTTPException(status_code=409, detail=(
+                f"Borongan kontrak {step.get('contract_number') or ''} ditagih di langkah {seq}, sedangkan langkah "
+                f"{new_last['seq']} sudah berjalan — kontrak langkah ini tidak bisa diganti."))
+        for k in ("tariff", "tariff_plan", "tariff_base_equivalent"):
+            new_last[k] = step.get(k)
+        new_last.pop("tariff_note", None)
+        step["tariff"] = 0.0
+    last = max((int(x["seq"]) for x in rest), default=0)
+    for st in rest:
+        if len(rest) == 1:
+            for k in ("borongan_contract_id", "borongan_billed_at_seq", "tariff_note"):
+                st.pop(k, None)
+        else:
+            st["borongan_billed_at_seq"] = last
+    for k in ("borongan_contract_id", "borongan_billed_at_seq", "tariff_note"):
+        step.pop(k, None)
+
+
 async def set_step_partner(mko_id: str, seq: int, *, makloon_id: str, contract_id: str = "",
                            actor_name: str = "system") -> Dict[str, Any]:
     """MP-T2 (K-61) — isi/ganti mitra langkah yang bahannya belum dikirim. Kontrak dicari ulang (atau yang dipilih);
@@ -1868,7 +1946,10 @@ async def set_step_partner(mko_id: str, seq: int, *, makloon_id: str, contract_i
     patch: Dict[str, Any] = {"makloon_id": makloon_id, "makloon_name": mk.get("name", ""),
                              "contract_id": (contract or {}).get("id", ""),
                              "contract_number": (contract or {}).get("contract_number", "")}
-    if contract and not parse_decimal(step.get("tariff"), 2):
+    keep_borongan = bool(step.get("borongan_contract_id")) and step.get("borongan_contract_id") == (contract or {}).get("id")
+    if step.get("borongan_contract_id") and not keep_borongan:
+        _borongan_leave(order, step)
+    if contract and not keep_borongan and not parse_decimal(step.get("tariff"), 2):
         engine = await uomr.load_engine(entity_id)
         qty_source = contract.get("tariff_qty_source") or "output"
         pid = step.get("output_product_id") if qty_source == "output" else step.get("input_product_id")
@@ -1886,6 +1967,10 @@ async def set_step_partner(mko_id: str, seq: int, *, makloon_id: str, contract_i
                                                  "amount": plan["amount"]},
                       "tariff": plan["amount"]})
     step.update(patch)
+    if contract and not keep_borongan and str(contract.get("tariff_basis") or "").lower() == "lot":
+        grp = [st for st in order["steps"] if st.get("contract_id") == contract["id"]]
+        if len(grp) > 1 and all(st.get("status") == "pending" for st in grp):
+            await _apply_borongan(grp)   # MP-T4b (K-81) — kelompok borongan dibentuk ulang
     order["planned_service_cost"] = round(sum(parse_decimal(st.get("tariff"), 2) for st in order["steps"]), 2)
     _recompute_status_and_costing(order)
     old_status = order.get("status")

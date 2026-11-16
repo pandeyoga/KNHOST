@@ -183,6 +183,28 @@ async def set_partner(mko_id: str, seq: int, payload: StepPartnerIn, request: Re
     return order
 
 
+class ServiceInvoiceIn(BaseModel):
+    supplier_invoice_no: str = Field(..., min_length=1, max_length=80)
+    invoice_date: str = ""
+    net_amount: float = Field(..., ge=0)
+    ppn_amount: float = Field(0, ge=0)
+
+
+@router.post("/makloon-orders/{mko_id}/steps/{seq}/service-invoice")
+async def match_service_invoice(mko_id: str, seq: int, payload: ServiceInvoiceIn, request: Request) -> Dict[str, Any]:
+    """MP-T4b (K-78) — cocokkan faktur mitra ke tagihan jasa yang menunggu faktur (sakelar PT `saat_faktur`):
+    GR/IR 2-1150 → Hutang 2-1100 (+ PPN Masukan). Pemegang `vendor_bill.create` (sama dengan nilai tagihan jasa)."""
+    actor = await require_permission(request, "vendor_bill", "create")
+    ctx = await entity_ctx(request)
+    await _assert_access(mko_id, ctx)
+    from services import makloon_ap_service as _ap
+    out = await _ap.match_invoice(mko_id, seq, payload.model_dump(), actor_name=actor.get("name", ""))
+    await audit(actor.get("name", ""), "makloon_service_invoice_matched", "makloon_order", mko_id,
+                {"step_seq": seq, "supplier_invoice_no": payload.supplier_invoice_no.strip(),
+                 "net_amount": payload.net_amount, "ppn_amount": payload.ppn_amount, "bill_id": out["bill_id"]})
+    return out
+
+
 @router.get("/makloon-orders/{mko_id}")
 async def get_order(mko_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "makloon_order", "view")

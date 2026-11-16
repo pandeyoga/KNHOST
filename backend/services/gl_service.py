@@ -1960,12 +1960,26 @@ async def post_subcon_issue(*, mko_id: str, step_seq: int, entity_id: str,
 
 async def post_subcon_service(*, bill_id: str, mko_id: str, step_seq: int, entity_id: str,
                               net_amount: float, ppn: float = 0.0, grand_total: float = 0.0,
-                              makloon_name: str = "", label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
+                              makloon_name: str = "", label: str = "", date: str = "",
+                              ap_mode: str = "") -> Optional[Dict[str, Any]]:
     """M2 — Tagihan JASA makloon (posted): Dr WIP (net) + Dr PPN Masukan / Cr Hutang Usaha.
-    Ongkos jasa+bahan pembantu ditambahkan ke WIP (biaya konversi). Idempotent per bill."""
+    Ongkos jasa+bahan pembantu ditambahkan ke WIP (biaya konversi). Idempotent per bill.
+
+    MP-T4b (K-78) — `ap_mode="saat_faktur"`: jasa diterima belum ditagih → Dr WIP / Cr GR/IR 2-1150 sebesar nilai jasa
+    (tanpa PPN); hutang lahir di `post_subcon_service_invoice` saat faktur mitra dicocokkan."""
     net_amount = round(float(net_amount or 0), 2)
     ppn = round(float(ppn or 0), 2)
     grand = round(float(grand_total or (net_amount + ppn)), 2)
+    if ap_mode == "saat_faktur":
+        if net_amount <= EPS or not bill_id or await _already_posted("subcon_service", bill_id):
+            return None
+        await seed_default_coa()
+        lines = _balanced_pair(ACC_WIP_SUBCON, ACC_GRIR, net_amount,
+                               f"Jasa makloon diterima, faktur belum dicocokkan {label}".strip())
+        return await _insert_entry(
+            lines=lines, description=f"Jasa Makloon Diterima {label}".strip(), date=date or now_iso(),
+            source_type="subcon_service", source_id=bill_id, entity_id=entity_id,
+            created_by="system", source_label=label)
     if grand <= EPS or not bill_id or await _already_posted("subcon_service", bill_id):
         return None
     await seed_default_coa()
@@ -1987,6 +2001,31 @@ async def post_subcon_service(*, bill_id: str, mko_id: str, step_seq: int, entit
     return await _insert_entry(
         lines=lines, description=f"Tagihan Jasa Makloon {label}".strip(), date=date or now_iso(),
         source_type="subcon_service", source_id=bill_id, entity_id=entity_id,
+        created_by="system", source_label=label)
+
+
+async def post_subcon_service_invoice(*, bill_id: str, entity_id: str, net_amount: float, ppn: float = 0.0,
+                                      makloon_name: str = "", label: str = "", invoice_no: str = "",
+                                      date: str = "") -> Optional[Dict[str, Any]]:
+    """MP-T4b (K-63, K-78) — faktur mitra makloon dicocokkan: Dr GR/IR 2-1150 (nilai jasa) + Dr PPN Masukan 1-1500 /
+    Cr Hutang Usaha 2-1100 (total faktur). Idempoten per tagihan."""
+    net_amount = round(float(net_amount or 0), 2)
+    ppn = round(float(ppn or 0), 2)
+    grand = round(net_amount + ppn, 2)
+    if grand <= EPS or not bill_id or await _already_posted("subcon_service_invoice", bill_id):
+        return None
+    await seed_default_coa()
+    lines: List[Dict[str, Any]] = [
+        {"account_code": ACC_GRIR, "debit": net_amount, "credit": 0.0,
+         "description": f"Kliring jasa makloon {label}".strip()}]
+    if ppn > EPS:
+        lines.append({"account_code": ACC_PPN_IN, "debit": ppn, "credit": 0.0,
+                      "description": f"PPN Masukan jasa makloon {invoice_no}".strip()})
+    lines.append({"account_code": ACC_HUTANG, "debit": 0.0, "credit": grand,
+                  "description": f"Hutang jasa makloon — {makloon_name} {invoice_no}".strip()})
+    return await _insert_entry(
+        lines=lines, description=f"Faktur Jasa Makloon {invoice_no} {label}".strip(), date=date or now_iso(),
+        source_type="subcon_service_invoice", source_id=bill_id, entity_id=entity_id,
         created_by="system", source_label=label)
 
 
@@ -2038,8 +2077,10 @@ async def post_subcon_service_unabsorbed(*, mko_id: str, entity_id: str, amount:
         entity_id=entity_id, created_by="system", source_label=label)
 
 
-async def post_makloon_claim(*, mko_id: str, step_seq: int, entity_id: str, action: str,                             amount: float, label: str = "",
-                             date: str = "") -> Optional[Dict[str, Any]]:
+async def post_makloon_claim(*, mko_id: str, step_seq: int, entity_id: str, action: str,
+                             amount: float, label: str = "", date: str = "",
+                             split: Optional[Dict[str, Any]] = None,
+                             debit_account: str = "") -> Optional[Dict[str, Any]]:
     """FASE D (PS-11 · D-09) — jurnal konsekuensi selisih makloon. Idempotent per (mko,step).
 
     * `potong_bon`  → Dr Hutang Usaha (2-1100) / Cr Pendapatan Klaim Makloon (4-9200):
@@ -2064,6 +2105,24 @@ async def post_makloon_claim(*, mko_id: str, step_seq: int, entity_id: str, acti
     else:
         return None
     await seed_default_coa()
+    if split is not None:
+        # MP-T4b (K-64, K-79) — hasil klaim per keadaan roll hasil: stok → Cr Persediaan, WIP mitra → Cr WIP,
+        # sudah keluar → Cr Pendapatan Klaim. Debit potong bon = 2-1150 bila faktur belum dicocokkan (`debit_account`).
+        lines = [{"account_code": debit_account or debit, "debit": amount, "credit": 0.0, "description": desc}]
+        for acc, key, ket in ((ACC_PERSEDIAAN, "inventory_amount", "pengurang biaya roll di stok"),
+                              (ACC_WIP_SUBCON, "wip_amount", "pengurang biaya roll di mitra"),
+                              (ACC_KLAIM_MAKLOON, "income_amount", "bagian hasil yang sudah keluar")):
+            v = round(float(split.get(key) or 0), 2)
+            if v > EPS:
+                lines.append({"account_code": acc, "debit": 0.0, "credit": v, "description": f"{desc} — {ket}"})
+        selisih = round(amount - sum(ln["credit"] for ln in lines), 2)
+        if abs(selisih) > EPS:   # sisa sen pembulatan ke pendapatan klaim
+            lines.append({"account_code": ACC_KLAIM_MAKLOON, "debit": 0.0 if selisih > 0 else -selisih,
+                          "credit": selisih if selisih > 0 else 0.0, "description": "Selisih pembulatan klaim"})
+        return await _insert_entry(
+            lines=lines, description=desc, date=date or now_iso(),
+            source_type="makloon_claim", source_id=src, entity_id=entity_id,
+            created_by="system", source_label=label)
     lines = _balanced_pair(debit, credit, amount, desc)
     return await _insert_entry(
         lines=lines, description=desc, date=date or now_iso(),

@@ -62,6 +62,7 @@ export const DOC_STATUS_LABEL = {
   paid: "Lunas",
   unpaid: "Belum lunas",
   partially_paid: "Sebagian dibayar",
+  awaiting_invoice: "Menunggu faktur",   // MP-T4b (K-78) — jasa makloon di GR/IR, belum hutang
   overdue: "Lewat jatuh tempo",
   void: "Dianulir",
   voided: "Dianulir",

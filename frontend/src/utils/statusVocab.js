@@ -117,7 +117,7 @@ export const STATUS_TONE = {
     "qc_check", "review", "reconcile", "partially_received", "partially_shipped", "partial", "partially_picked",
     "partially_paid", "quarantine", "karantina", "hold", "on_hold", "blocked", "hold_shade", "escalated",
     "returning", "needs_review", "approved_with_exceptions", "completed_with_exception", "unknown",
-    "received_hold", "low", "stale", "yellow", "warning"]),
+    "received_hold", "low", "stale", "yellow", "warning", "awaiting_invoice"]),
   ...T("danger", ["rejected", "failed", "damaged", "qc_rejected", "exception", "verified_with_issues", "lost",
     "missing", "error", "overdue", "received_damaged", "red", "rework", "empty", "alarm"]),
   ...T("special", ["reserved", "committed", "subcon", "sample", "in_process", "earmarked", "makloon_reserved"]),

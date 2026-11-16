@@ -23,6 +23,8 @@ import MakloonMaterialLedger from "./makloon/MakloonMaterialLedger";
 import { can } from "../../config/roles";
 import MakloonSelect from "../../components/MakloonSelect";   // MP-T2 — isi mitra langkah draf
 import ForwardModal from "./makloon/MkoForwardModal";   // MP-T4a — teruskan kain mitra → mitra
+import InvoiceMatchModal from "./makloon/MkoInvoiceMatchModal";   // MP-T4b (K-78) — faktur mitra → hutang
+import StatusBadge from "../../components/StatusBadge";
 import { recordService } from "./makloon/makloonApi";
 import { IssueModal, ReceiveModal, RecordServiceModal } from "./makloon/MkoStepModals";   // Fase 4 · R3 (L-03)
 import { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18 — jurnal langkah
@@ -69,7 +71,9 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   const orderLive = data?.status !== "cancelled";
   const canSetPartner = can(currentUser?.permissions, "makloon_order", "create") && orderLive;   // MP-T2 (K-61)
   const canForward = can(currentUser?.permissions, "makloon_order", "forward") && orderLive;   // MP-T4a (K-66)
+  const canMatchInvoice = can(currentUser?.permissions, "vendor_bill", "create");   // MP-T4b (K-78)
   const [fwdStep, setFwdStep] = useState(null);
+  const [invoiceBill, setInvoiceBill] = useState(null);   // MP-T4b (K-78)
   const [shipments, setShipments] = useState([]);   // MP-T5a — surat jalan kirim bahan per langkah
   useEffect(() => {
     if (!mkoId) return;
@@ -248,9 +252,20 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
             <Panel icon={Receipt} title="Tagihan jasa">
               <div className="divide-y divide-[#EFF0F2]" data-testid="mko-service-bills">
                 {data.service_bills.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between py-1.5 text-[11.5px]">
-                    <div><p className="font-semibold">{b.bill_number}</p><p className="text-[10px] text-[#6B6B73]">{b.supplier_name} · step {b.step_seq}</p></div>
-                    <span className="tabular-nums font-semibold">{formatCurrency(b.grand_total || 0)}</span>
+                  <div key={b.id} className="py-1.5 text-[11.5px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold">{b.bill_number}</p>
+                      <span className="tabular-nums font-semibold">{formatCurrency((b.status === "awaiting_invoice" ? b.net_amount : b.grand_total) || 0)}</span>
+                    </div>
+                    <p className="text-[10px] text-kn-text-2">{b.supplier_name} · step {b.step_seq}</p>
+                    {b.status === "awaiting_invoice" && (
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <StatusBadge status="awaiting_invoice" testId={`mko-bill-awaiting-${b.id}`} />
+                        {canMatchInvoice && (
+                          <button type="button" className="secondary-button btn-sm" data-testid={`mko-bill-match-${b.id}`} onClick={() => setInvoiceBill(b)}>Cocokkan faktur</button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -436,6 +451,8 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
         </Panel>
       </div>
 
+      {invoiceBill && <InvoiceMatchModal mkoId={mkoId} bill={invoiceBill} onClose={() => setInvoiceBill(null)}
+        onDone={() => { setInvoiceBill(null); load(); }} />}
       {fwdStep && <ForwardModal mkoId={mkoId} step={fwdStep.step} next={fwdStep.next} onClose={() => setFwdStep(null)}
         onDone={async () => { setFwdStep(null); await load(); }} />}
       {issueStep && <IssueModal step={issueStep} warehouses={warehouses} defaultWh={data.from_warehouse_id} busy={busy} mkoId={mkoId}
