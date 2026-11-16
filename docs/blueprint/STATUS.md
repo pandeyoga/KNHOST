@@ -113,7 +113,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 105 | MP-T2 | Satu wizard SPK makloon yang membaca rute; semua pilihan tersaring tahap | MP-T1 | selesai | `86cd757` | [MP-T2](../reviews/2026-11-13/hasil/MP-T2.md) | K-57, K-59, K-61 |
 | 106 | MP-T3 | R&D tersambung ke mitra makloon: putusan melahirkan rute dan kontrak yang benar | MP-T1 | selesai | `f6ebfb8` | [MP-T3](../reviews/2026-11-13/hasil/MP-T3.md) | K-65, K-68, K-70, K-72 |
 | 107 | MP-T4a | Mekanisme makloon tanpa jurnal baru: teruskan kain mitra→mitra (dicatat MD), lapor hasil akhir saja, klaim divalidasi saat diajukan, tolak klaim tidak menutup SPK, QC tolak membuka draf klaim, batal SPK saat bahan di mitra | MP-T2 | selesai | `0d02e82` | [MP-T4a](../reviews/2026-11-13/hasil/MP-T4a.md) | K-62, K-66, K-67, K-69; pecahan MP-T4 (`00` §8) |
-| 107b | MP-T4b | Jurnal makloon: hutang jasa saat faktur mitra dicocokkan (K-63), hasil klaim ke biaya roll / pendapatan (K-64), tarif borongan per SPK (K-68) | MP-T4a | selesai | `cc6f0d8` | [MP-T4b](../reviews/2026-11-13/hasil/MP-T4b.md) | K-78…K-81; sakelar `makloon.jasa_jadi_hutang` bawaan `saat_terima` (cara lama) — menyalakan `saat_faktur` untuk PT nyata = H5 (pemilik) |
+| 107b | MP-T4b | Jurnal makloon: hutang jasa saat faktur mitra dicocokkan (K-63), hasil klaim ke biaya roll / pendapatan (K-64), tarif borongan per SPK (K-68) | MP-T4a | selesai | `cc6f0d8` · `90f77a7` | [MP-T4b](../reviews/2026-11-13/hasil/MP-T4b.md) | K-78…K-81; sakelar `makloon.jasa_jadi_hutang` bawaan `saat_terima` (cara lama) — menyalakan `saat_faktur` untuk PT nyata = H5 (pemilik) |
 | 108 | MP-T5 | Gudang greige/PFD/PFP: peruntukan pengeluaran, surat jalan wajib packing list, akses MD | — | selesai | `3ba2cad` · `01a6585` | [MP-T5](../reviews/2026-11-13/hasil/MP-T5.md) | K-74…K-77 (permintaan klien) |
 
 ## Menunggu pemilik
@@ -280,6 +280,9 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   layar Order Makloon memanggil `/customers` untuk peran gudang) → diperbaiki (`[MP-T5] Pelanggaran baru …`); putaran
   konfirmasi: **tidak ada pelanggaran baru** terhadap garis dasar R0 (`scripts/blueprint/bandingkan_pelanggaran_gate.py`),
   gate tetap merah seperti garis dasar (38 pemeriksaan FAIL; garis dasar R0 38). Log: `garis-dasar-gate/2026-11-16_MP_gate_ci.log`.
+- Gate `--ci` sesudah MP-T4b: putaran pertama menemukan 1 pelanggaran baru (INV-ATOMIC-01: endpoint "Cocokkan faktur" menulis
+  tagihan + SPK tanpa tercatat CAS) → diperbaiki (`90f77a7`); putaran konfirmasi: **tidak ada pelanggaran baru**, 38 FAIL =
+  garis dasar. Log: `garis-dasar-gate/2026-11-16_MPT4b_gate_ci.log`.
 - Hambatan lingkungan: server dev frontend lama tidak mati oleh pola `pkill "craco start"` (proses bernama
   `craco/dist/scripts/start.js`) sehingga satu uji jalan sempat membaca bundel lama — dimatikan dengan PID.
 

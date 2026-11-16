@@ -1,6 +1,6 @@
 # MP-T4b — Jurnal makloon: hutang jasa saat faktur mitra dicocokkan, hasil klaim per keadaan roll, borongan per SPK
 
-- Commit awal: `168914a`        - Commit akhir: lihat `STATUS.md` baris 107b        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `168914a`        - Commit akhir: `cc6f0d8` · `90f77a7` (perbaikan gate)        - Branch: `claude/nifty-carson-jjx3c8`
 - Spesifikasi `docs/blueprint/unit/MP-T4b.md`; keputusan K-63, K-64, K-68 dengan jawaban pemilik 16 Nov **K-78…K-81**
   (GR/IR 2-1150 · klaim mengurangi persediaan · sakelar per PT bawaan cara lama · borongan sekali di langkah terakhir).
 - Butir MP-T4 lain (teruskan mitra→mitra, hasil akhir saja, validasi klaim saat diajukan, tolak klaim tidak menutup SPK,
@@ -90,6 +90,13 @@ KFT1 (`MPT4B_KUNCI = 1` di U04) + KFT8 — **524 lulus, 2 xfail**; lapis A MPT4a
 `verify_codebase_map` hijau (peta dihasilkan ulang); `verify_ui_standard` tidak ada pelanggaran di berkas unit ini (100
 pelanggaran yang tampil = garis dasar). Jest kosakata status: 4 suite / 22 uji lulus; `fix8StandarUi2.test.js` gagal
 dimuat karena modul `@radix-ui/primitive/is-development` tidak ada di node_modules lingkungan uji (bukan kode unit ini).
+
+## Gate
+`gate.sh --ci` sekali sesudah unit: putaran pertama 1 pelanggaran baru terhadap garis dasar R0 — INV-ATOMIC-01, endpoint
+`POST /makloon-orders/{id}/steps/{seq}/service-invoice` menulis `vendor_bills` + `makloon_orders` tanpa tercatat di
+REVIEWED. Tulisan induk memang sudah CAS (tagihan `awaiting_invoice` → `posted`, `modified_count` 0 → 409); bentuknya
+dirapikan supaya dikenali penjaga dan dicatat `service_cas` (`90f77a7`). Putaran konfirmasi: **tidak ada pelanggaran
+baru**; gate tetap merah seperti garis dasar (38 pemeriksaan FAIL). Log `docs/blueprint/garis-dasar-gate/2026-11-16_MPT4b_gate_ci.log`.
 
 ## Cek layar (`bukti/MP-T4b/uji_jalan_cocokkan_faktur.js`, data dari `siapkan_spk_menunggu_faktur.py`)
 Admin, 1280 px: tagihan "VBM-… Rp 950.000 · Menunggu faktur · Cocokkan faktur" (`1280-01-menunggu-faktur.png`);
