@@ -1,6 +1,6 @@
 # MP-T4a — Mekanisme makloon tanpa jurnal baru (pecahan MP-T4)
 
-- Commit awal: `d746702`        - Commit akhir: lihat `docs/blueprint/STATUS.md` baris 107        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `d746702`        - Commit akhir: `0d02e82`        - Branch: `claude/nifty-carson-jjx3c8`
 - Spesifikasi `docs/blueprint/unit/MP-T4a.md`; keputusan K-62, K-66, K-67, K-69. Bagian berjurnal baru (K-63, K-64,
   borongan per SPK) = **MP-T4b `tahan`** (H4/H5, pertanyaan di `STATUS.md` "Menunggu pemilik").
 - Peta kode: penjelajahan terarah 16 Nov (klaim, QC, batal, terima sebagian, rantai langkah, nilai WIP & jurnal).
