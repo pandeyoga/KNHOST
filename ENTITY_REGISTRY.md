@@ -307,6 +307,12 @@ Skrip data:  backend/scripts/mpt1_rute_awal.py (rute awal dari resep/BOM/sumber 
 ⚠️ JANGAN BUAT: product_route_steps, routings, bom_routes — langkah tinggal di `steps[]`.
 ```
 
+> MP-T2 (16 Nov 2026): SPK baru menolak langkah yang bahan masuk/hasilnya tidak bertahap sesuai Master Tahapan Proses
+> (`makloon_order_service._assert_stage_chain`); `GET /makloon-orders/plan-from-route` mengisi langkah dari rute utama
+> (`product_route_service.plan_makloon`, juga dipakai prefill PR); `POST /makloon-orders/{id}/steps/{seq}/partner` mengisi
+> mitra langkah draf; kirim bahan ditolak bila mitra kosong (K-61). Modal lama `MakloonOrderCreateModal` dihapus — kedua
+> pintu memakai `MakloonWizard`.
+
 ### makloon_orders  [M3 IMPLEMENTED — Transaksi Makloon/Subkontrak (Procure→Process→Pay)]
 ```
 Collection:  makloon_orders             Prefix: mko_   (number: MKO-#####)

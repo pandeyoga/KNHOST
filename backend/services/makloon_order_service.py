@@ -182,6 +182,24 @@ async def _next_mko_number(entity_id: str = "") -> str:
     return await next_doc_number("makloon_orders", "mko_number", "MKO-", width=5, scheme="shared")
 
 
+async def _assert_stage_chain(seq: int, stage: Dict[str, Any], input_pid: str, out_pid: str) -> None:
+    """MP-T2 — tolak langkah yang bahan masuk/hasilnya tidak bertahap sesuai tahap master (pesan sama dengan Rute Produk).
+    Produk lama tanpa tahap tercatat tidak ditolak (tidak ada yang bisa dibandingkan)."""
+    import domain_registry as dr
+    from services.product_route_service import stage_short
+    rows = {p["id"]: p async for p in db.products.find({"id": {"$in": [input_pid, out_pid]}},
+                                                         {"_id": 0, "id": 1, "sku": 1, "name": 1, "stage": 1})}
+    label = stage.get("label") or stage.get("code") or "-"
+    for pid, want, what in ((input_pid, stage.get("from_stage"), "bahan masuk"), (out_pid, stage.get("to_stage"), "hasil")):
+        want = dr.normalize_stage(want)
+        have = dr.normalize_stage((rows.get(pid) or {}).get("stage"))
+        if want and have and have != want:
+            prod = rows.get(pid) or {}
+            raise HTTPException(status_code=400, detail=(
+                f"Langkah {seq} ({label}): {what} harus bertahap {stage_short(want)}; "
+                f"{prod.get('sku') or prod.get('name') or pid} bertahap {stage_short(have)}."))
+
+
 async def _prod_snap(pid: str) -> Dict[str, str]:
     if not pid:
         return {"sku": "", "name": "", "base_unit": "", "line_code": ""}
@@ -317,6 +335,9 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
                        f"'{in_snap['name'] or input_pid}' tidak sama dengan hasil langkah "
                        f"{i - 1} '{prev_name}'. Output langkah N harus menjadi input langkah N+1.")
         out_snap = await _prod_snap(out_pid)
+        # MP-T2 (K-57) — tahap bahan masuk & hasil mengikuti Master Tahapan Proses (SPK baru; SPK lama tidak dihitung ulang).
+        if stage["found"] and changes_stage:
+            await _assert_stage_chain(i, stage, input_pid, out_pid)
         by_pid = s.get("byproduct_product_id") or rcp.get("byproduct_product_id") or ""
         input_qty = round(parse_decimal(s.get("input_qty")) or 0, 3) if i == 1 and parse_decimal(s.get("input_qty")) > 0 \
             else (material_qty if i == 1 else prev_output_qty)
@@ -690,6 +711,8 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum bahan keluar gudang (jurnal persediaan → WIP makloon).
     from services.book_date import periksa_periode_dokumen_409
     await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="dokumen makloon")
+    if not step.get("makloon_id"):   # MP-T2 (K-61) — SPK draf boleh tanpa mitra, kirim bahan tidak
+        raise HTTPException(status_code=400, detail=f"Isi mitra langkah {seq} sebelum mengirim bahan.")
     input_pid = step["input_product_id"]
     input_qty = round(float(step["input_qty"] or 0), 2)
     # FIX-9 — cadangan makloon MKO ini (langkah 1) DIKUNCI di roll: roll itu boleh dikirim & kuncinya dilepas.
@@ -1653,6 +1676,73 @@ async def set_step_tolerance(mko_id: str, seq: int, *, pct: float, reason: str, 
                                 "note": f"Step {seq}: toleransi {old}% → {pct}% oleh {actor} — {reason.strip()}"}}})
     if not res.modified_count:
         raise HTTPException(status_code=409, detail="Order berubah — muat ulang.")
+    return await _get_order(mko_id)
+
+
+async def set_step_partner(mko_id: str, seq: int, *, makloon_id: str, contract_id: str = "",
+                           actor_name: str = "system") -> Dict[str, Any]:
+    """MP-T2 (K-61) — isi/ganti mitra langkah yang bahannya belum dikirim. Kontrak dicari ulang (atau yang dipilih);
+    tarif dihitung ulang dari kontrak hanya bila langkah belum punya tarif (lahir tanpa mitra/kontrak)."""
+    order = await _get_order(mko_id)
+    if order.get("status") == CANCELLED:
+        raise HTTPException(status_code=409, detail="Order sudah dibatalkan")
+    step = _find_step(order, seq)
+    if step.get("status") != "pending":
+        raise HTTPException(status_code=409, detail=f"Langkah {seq} sudah berjalan — mitra tidak bisa diganti.")
+    entity_id = order.get("entity_id") or ""
+    mk = await db.makloons.find_one({"id": makloon_id, "entity_id": {"$in": [entity_id, "all", "", None]}},
+                                    {"_id": 0, "id": 1, "name": 1, "process_types": 1, "status": 1, "is_active": 1})
+    if not mk or mk.get("is_active") is False or mk.get("status") in ("inactive", "archived"):
+        raise HTTPException(status_code=400, detail="Mitra makloon tidak ditemukan atau tidak aktif di PT ini.")
+    pt = step.get("process_type") or ""
+    if pt and pt not in (mk.get("process_types") or []):
+        import domain_registry as dr
+        raise HTTPException(status_code=400, detail=f"{mk.get('name')} tidak mengerjakan "
+                                                    f"{dr.label_of('process_type', pt) or pt}.")
+    if contract_id:
+        contract = await cs.get_contract(contract_id)
+        if not contract or contract.get("status") != "active" or contract.get("partner_id") != makloon_id \
+                or contract.get("contract_type") != "makloon":
+            raise HTTPException(status_code=400, detail="Kontrak bukan kontrak makloon aktif milik mitra ini.")
+    else:
+        contract = await cs.resolve_active(partner_id=makloon_id, process_type=pt,
+                                           product_id=step.get("output_product_id") or "",
+                                           input_product_id=step.get("input_product_id") or "", entity_id=entity_id)
+    patch: Dict[str, Any] = {"makloon_id": makloon_id, "makloon_name": mk.get("name", ""),
+                             "contract_id": (contract or {}).get("id", ""),
+                             "contract_number": (contract or {}).get("contract_number", "")}
+    if contract and not parse_decimal(step.get("tariff"), 2):
+        engine = await uomr.load_engine(entity_id)
+        qty_source = contract.get("tariff_qty_source") or "output"
+        pid = step.get("output_product_id") if qty_source == "output" else step.get("input_product_id")
+        prod = await db.products.find_one({"id": pid}, {"_id": 0}) or {}
+        qty = step.get("expected_output_qty") if qty_source == "output" else step.get("input_qty")
+        try:
+            plan = await cs.compute_tariff(product=prod, qty_base=parse_decimal(qty), contract=contract, override={},
+                                           roll_count=int(step.get("qty_rolls") or 0), engine=engine, label=f"step{seq}")
+        except (cs.ContractError, uomr.UomRuleError) as exc:
+            raise HTTPException(status_code=400, detail=f"Langkah {seq}: {exc}") from exc
+        patch.update({"tariff_basis": plan["basis"], "tariff_rate": plan["rate"], "tariff_plan": plan,
+                      "tariff_original": {"basis": plan["basis"], "rate": plan["rate"], "qty": plan["basis_qty"],
+                                          "uom": plan["basis_uom"]},
+                      "tariff_base_equivalent": {"qty": plan["qty_base"], "uom": plan["base_uom"],
+                                                 "amount": plan["amount"]},
+                      "tariff": plan["amount"]})
+    step.update(patch)
+    order["planned_service_cost"] = round(sum(parse_decimal(st.get("tariff"), 2) for st in order["steps"]), 2)
+    _recompute_status_and_costing(order)
+    old_status = order.get("status")
+    note = f"Langkah {seq}: mitra {mk.get('name')}" + (f" · kontrak {patch['contract_number']}"
+                                                         if patch["contract_number"] else "") + f" oleh {actor_name}"
+    res = await db.makloon_orders.update_one(
+        {"id": mko_id, "saga_lock": {"$exists": False}, "steps": {"$elemMatch": {"seq": int(seq), "status": "pending"}}},
+        {"$set": {"steps": order["steps"], "costing": order.get("costing"), "status": old_status,
+                  "planned_service_cost": order["planned_service_cost"], "updated_at": now_iso()},
+         "$push": {"timeline": {"at": now_iso(), "event": "partner_set", "note": note}}})
+    if not res.modified_count:
+        raise HTTPException(status_code=409, detail="Order berubah — muat ulang.")
+    if contract:
+        await cs.mark_used(contract["id"])
     return await _get_order(mko_id)
 
 

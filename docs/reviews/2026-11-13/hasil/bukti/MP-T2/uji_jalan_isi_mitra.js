@@ -1,0 +1,30 @@
+// MP-T2 U3 (layar) — SPK draf tanpa mitra: tombol Issue tidak tampil; "Pilih mitra…" mengisi mitra; Issue muncul.
+const { chromium } = require("playwright");
+const OUT = "/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/ui_wizard";
+const BASE = "http://localhost:3000";
+const NO = process.argv[2];
+(async () => {
+  const browser = await chromium.launch({ args: ["--no-proxy-server"] });
+  const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  await page.goto(BASE + "/");
+  await page.getByTestId("login-email-input").fill("admin@kainnusantara.id");
+  await page.getByTestId("login-password-input").fill("demo12345");
+  await page.getByTestId("login-submit-button").click();
+  await page.waitForTimeout(3500);
+  await page.goto(BASE + "/?view=makloon-orders");
+  await page.waitForTimeout(3500);
+  await page.getByText(NO).first().click();
+  await page.waitForTimeout(3000);
+  console.log("kotak mitra kosong:", await page.getByTestId("step-partner-missing-1").innerText().catch(() => "(tidak ada)"));
+  console.log("tombol issue sebelum:", await page.getByTestId("issue-step-1").count());
+  await page.screenshot({ path: `${OUT}/1280-03-mitra-kosong.png` });
+  await page.getByTestId("step-partner-pick-1").click();
+  await page.waitForTimeout(1200);
+  const items = page.locator('[data-testid^="makloon-select-item-"]');
+  console.log("pilihan mitra:", (await items.allInnerTexts()).map((t) => t.replace(/\s+/g, " ").slice(0, 40)).join(" | "));
+  await items.first().click();
+  await page.waitForTimeout(2500);
+  console.log("tombol issue sesudah:", await page.getByTestId("issue-step-1").count());
+  await page.screenshot({ path: `${OUT}/1280-04-mitra-terisi.png` });
+  await browser.close();
+})();

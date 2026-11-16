@@ -435,3 +435,85 @@ async def ensure_rnd_purchase_route(product_id: str, supplier_id: str, contract_
         return await create(prod["template_id"], body, {"name": actor_name}, entity_id, origin="rnd",
                             origin_ref={"kind": "sample", "id": sample.get("id", ""),
                                         "number": sample.get("number", "")})
+
+
+# ── MP-T2 — rencana SPK makloon dari rute utama ────────────────────────────────
+
+async def _step_factor(step: Dict[str, Any], explain: List[str]) -> float:
+    """Faktor hasil per bahan satu langkah: resep (yield × (1 − susut)) > susut kontrak > 1 (dicatat di `explain`)."""
+    if step.get("recipe_id"):
+        rc = await db.process_recipes.find_one({"id": step["recipe_id"]}, {"_id": 0}) or {}
+        y = float(rc.get("yield_factor") or 1.0) or 1.0
+        w = float(rc.get("waste_pct") or 0.0)
+        f = y * (1 - w / 100.0)
+        explain.append(f"Langkah {step['seq']}: resep '{rc.get('name', '')}' yield {y:g} × susut {w:g}% → {f:.4f}")
+        return f if f > 0 else 1.0
+    if step.get("contract_id"):
+        k = await db.supplier_contracts.find_one({"id": step["contract_id"]}, {"_id": 0, "shrinkage_pct": 1,
+                                                                               "contract_number": 1}) or {}
+        w = float(k.get("shrinkage_pct") or 0.0)
+        if w > 0:
+            explain.append(f"Langkah {step['seq']}: susut kontrak {k.get('contract_number', '')} {w:g}%")
+            return 1 - w / 100.0
+    explain.append(f"Langkah {step['seq']}: tanpa resep/susut kontrak → bahan = hasil (faktor 1)")
+    return 1.0
+
+
+async def plan_makloon(product_id: str, qty: float, entity_id: str) -> Dict[str, Any]:
+    """Payload SPK makloon (bentuk `POST /makloon-orders`) dari rute utama varian; qty bahan dihitung mundur dari hasil."""
+    import math
+    prod = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
+    base = {"ready": False, "source": "rute", "output_product_id": product_id, "target_output_qty": qty,
+            "explain": []}
+    if not prod:
+        return {**base, "reason": "Produk tidak ditemukan."}
+    route = await effective_for_product(prod, entity_id)
+    if not route:
+        return {**base, "reason": f"{prod.get('sku') or prod.get('name')} belum punya rute utama di PT ini. "
+                                  "Atur di Master Produk › Rute."}
+    base["route"] = {"id": route["id"], "name": route["name"]}
+    mode = route_mode(route)
+    if mode != "makloon":
+        why = "beli dari pemasok — buat PO" if mode == "purchase" else "produksi sendiri — buat perintah kerja"
+        return {**base, "reason": f"Rute utama {prod.get('sku')} adalah {why}, bukan SPK makloon."}
+    steps = [dict(s) for s in route.get("steps") or []]
+    buy = steps[0] if steps and steps[0].get("kind") == "purchase" else None
+    mk_steps = [s for s in steps if s.get("kind") == "makloon"]
+    material_pid = (buy or {}).get("output_product_id") or (mk_steps[0].get("input_product_id") if mk_steps else "")
+    if not material_pid:
+        return {**base, "reason": "Rute belum menyebut bahan masuk langkah pertama. Lengkapi di Master Produk › Rute."}
+    explain: List[str] = [f"Rute utama '{route['name']}' ({len(mk_steps)} langkah makloon)"]
+    out_steps: List[Dict[str, Any]] = []
+    prev_out = material_pid
+    for n, s in enumerate(mk_steps, start=1):
+        last = n == len(mk_steps)
+        passthru = s.get("from_stage") == s.get("to_stage")
+        out_pid = product_id if last else (s.get("output_product_id") or (prev_out if passthru else ""))
+        if not out_pid:
+            return {**base, "explain": explain,
+                    "reason": f"Rute belum menyebut hasil langkah {s['seq']} ({s.get('stage_label') or s.get('stage_code')})."
+                              " Lengkapi di Master Produk › Rute."}
+        out_snap = await _product(out_pid) or {}
+        out_steps.append({"stage_code": s.get("stage_code", ""), "process_type": s.get("process_type", ""),
+                          "makloon_id": s.get("partner_id", ""), "makloon_name": s.get("partner_name", ""),
+                          "contract_id": s.get("contract_id", ""), "recipe_id": s.get("recipe_id", ""),
+                          "input_product_id": prev_out, "output_product_id": out_pid,
+                          "output_name": out_snap.get("name", ""),
+                          "output_unit": (await db.products.find_one({"id": out_pid}, {"_id": 0, "base_unit": 1})
+                                          or {}).get("base_unit", ""),
+                          "seq": s["seq"]})
+        prev_out = out_pid
+    need = float(qty or 0)
+    for st in reversed(out_steps):
+        need = need / await _step_factor(st, explain)
+    material_qty = round(math.ceil(round(need * 100, 6)) / 100, 2)
+    explain.append(f"Bahan dibutuhkan ≈ {material_qty:g} untuk hasil {float(qty or 0):g}")
+    mat = await db.products.find_one({"id": material_pid}, {"_id": 0, "sku": 1, "name": 1, "base_unit": 1,
+                                                             "stage": 1}) or {}
+    for st in out_steps:
+        st.pop("seq", None)
+    payload = {"mode": "buy_process" if buy else "process_only", "material_product_id": material_pid,
+               "material_sku": mat.get("sku", ""), "material_name": mat.get("name", ""),
+               "material_unit": mat.get("base_unit", ""), "material_stage": _stage_of(mat), "material_qty": material_qty,
+               "supplier_id": (buy or {}).get("partner_id", ""), "route_id": route["id"], "steps": out_steps}
+    return {**base, "ready": True, "explain": explain, "payload": payload}

@@ -12,7 +12,7 @@ import POListTable from "./po/POListTable";
 import POCreateMenu from "./po/POCreateMenu";
 import DetailModal from "../../components/DetailModal";
 import POAmendModal from "./po/POAmendModal";
-import MakloonOrderCreateModal from "../purchasing/MakloonOrderCreateModal";
+import MakloonWizard from "../purchasing/makloon/MakloonWizard";   // MP-T2 (K-59) — satu wizard untuk dua pintu
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -444,10 +444,9 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       )}
 
       {makloonMode && (
-        <MakloonOrderCreateModal
+        <MakloonWizard
           selectedEntity={selectedEntity}
-          initialMode={makloonMode}
-          lockMode
+          prefill={{ payload: { mode: makloonMode } }}
           onClose={() => setMakloonMode(null)}
           onSaved={() => { setMakloonMode(null); setNotice("Order makloon berhasil dibuat — lihat tab 'Order Makloon'."); }}
           onError={setError}

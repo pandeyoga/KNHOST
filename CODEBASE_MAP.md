@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: a98754f pada 2026-11-16 -->
+<!-- Dihasilkan dari commit: ce9c3a5 pada 2026-11-16 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 177 |
-| Endpoint (`@router.<method>`) | 1913 |
+| Endpoint (`@router.<method>`) | 1915 |
 | Service (`backend/services/*.py`) | 456 |
 | Koleksi MongoDB disentuh kode produksi | 219 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -219,7 +219,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `landed_cost.py` | 10 | 430 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
 | `logistics.py` | 27 | 368 | `/dashboard`, `/deliveries`, `/deliveries/{delivery_id}`, `/deliveries/{delivery_id}/manifest`, `/deliveries/{delivery_id}/photos`, `/deliveries/{delivery_id}/photos/{photo_id}` … |
 | `lots.py` | 18 | 372 | `/lots`, `/lots/identity-trace`, `/lots/merge`, `/lots/settings`, `/lots/stats`, `/lots/unassigned-rolls` … |
-| `makloon_orders.py` | 24 | 440 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/{mko_id}`, `/makloon-orders/{mko_id}/cancel` … |
+| `makloon_orders.py` | 26 | 468 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/plan-from-route`, `/makloon-orders/{mko_id}` … |
 | `makloons.py` | 6 | 142 | `/makloons`, `/makloons/{makloon_id}`, `/makloons/{makloon_id}/scorecard` |
 | `marketing.py` | 35 | 563 | `/marketing/accounts`, `/marketing/accounts/{aid}`, `/marketing/analytics`, `/marketing/assets`, `/marketing/calendar.pdf`, `/marketing/campaigns` … |
 | `master_governance.py` | 14 | 151 | `/master-governance/batches`, `/master-governance/batches/{batch_id}/rollback`, `/master-governance/cleanup/apply`, `/master-governance/cleanup/batches`, `/master-governance/cleanup/batches/{batch_id}`, `/master-governance/cleanup/batches/{batch_id}/rollback` … |
@@ -545,7 +545,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `makloon_issue_rolls.py` | 223 | Issue bahan makloon PER ROLL — kasus klien "20 roll Esmica Blue dikirim untuk dicelup hitam". |
 | `makloon_loss_service.py` | 268 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
 | `makloon_material_ledger.py` | 114 | L04 LN-043 — buku bahan makloon per MKO: forecast · dicadangkan · dikirim/di mitra · terpakai · kembali · susu |
-| `makloon_order_service.py` | 1940 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
+| `makloon_order_service.py` | 2030 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
 | `makloon_receipt_qc.py` | 199 | Hasil langkah TERAKHIR Order Makloon = barang masuk gudang, diperlakukan seperti barang PO. |
 | `makloon_roll_lock.py` | 539 | FIX-9 (audit 9 Nov 2026 — B3a SSOT-4, FIX-2 §5 butir 1 & 5) — cadangan bahan makloon DIKUNCI PER ROLL. |
@@ -596,7 +596,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
 | `pos_recommendation_service.py` | 213 | F-4b — POS advanced recommendations, dihitung dari histori `sales_orders` (TANPA AI, TANPA koleksi baru). |
 | `posting_registry.py` | 869 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
-| `pr_sourcing_service.py` | 1030 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
+| `pr_sourcing_service.py` | 1040 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |
 | `pricelist_service.py` | 418 | F1a — Pricelist per-entitas (harga jual per-PT) dengan histori & tanggal efektif. |
@@ -604,7 +604,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `process_recipe_service.py` | 114 | M1 — Process Recipe service: CRUD helper + forecast konversi (aman). |
 | `product_exclusivity.py` | 150 | PS-20 — Produk eksklusif per sales ("PO sendiri"). |
 | `product_media_service.py` | 111 | Media per SKU, lokal, ber-versi CAS. Foto nyata/mockup ditinjau sebelum sales melihat. |
-| `product_route_service.py` | 437 | MP-T1 — Rute Produk: urutan langkah dari bahan sampai barang, per artikel per PT. |
+| `product_route_service.py` | 519 | MP-T1 — Rute Produk: urutan langkah dari bahan sampai barang, per artikel per PT. |
 | `product_supersede.py` | 109 | PREP-A (K-OPN-06) — produk "digantikan oleh" (`superseded_by`). |
 | `product_template_service.py` | 398 | F1b — Product Templates & Variants (pendekatan ADDITIVE/non-destruktif). |
 | `product_variant_service.py` | 253 | Satu induk, SKU tetap: jalur bersama untuk seluruh penulis produk. |
@@ -771,9 +771,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
 | `__tests__` | 161 | 27072 |
-| `admin` | 36 | 7001 |
+| `admin` | 36 | 7000 |
 | `approvals` | 9 | 1724 |
-| `catalog` | 25 | 1665 |
+| `catalog` | 25 | 1666 |
 | `costing` | 1 | 150 |
 | `crm` | 27 | 4711 |
 | `design` | 8 | 1585 |
@@ -800,7 +800,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 26 | 2913 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 87 | 18840 |
+| `purchasing` | 86 | 18563 |
 | `rfid` | 21 | 3697 |
 | `rnd` | 66 | 7910 |
 | `sales` | 98 | 16020 |
@@ -838,10 +838,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/wms/InventoryStockView.jsx` | 624 | 500 |
 | `frontend/src/features/incentive/IncentiveSheetDetail.jsx` | 596 | 500 |
 | `frontend/src/features/finance/TaxInvoices.jsx` | 595 | 500 |
+| `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 593 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 573 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
-| `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 521 | 500 |
 | `frontend/src/features/finance/interco/IntercoView.jsx` | 519 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |

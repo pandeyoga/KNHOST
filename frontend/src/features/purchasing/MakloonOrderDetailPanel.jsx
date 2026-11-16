@@ -21,6 +21,7 @@ import MakloonReturnMaterial, { MakloonReturnHistory } from "./makloon/MakloonRe
 import MakloonLossList from "./makloon/MakloonLossList";
 import MakloonMaterialLedger from "./makloon/MakloonMaterialLedger";
 import { can } from "../../config/roles";
+import MakloonSelect from "../../components/MakloonSelect";   // MP-T2 — isi mitra langkah draf
 import { recordService } from "./makloon/makloonApi";
 import { IssueModal, ReceiveModal, RecordServiceModal } from "./makloon/MkoStepModals";   // Fase 4 · R3 (L-03)
 import { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18 — jurnal langkah
@@ -65,6 +66,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   // batal = makloon_order.cancel (sama dengan endpoint).
   // UAT 24 Okt (audit UI tahap 2) — G4-15: order DIBATALKAN tidak lagi menawarkan Issue/Terima/Catat Jasa.
   const orderLive = data?.status !== "cancelled";
+  const canSetPartner = can(currentUser?.permissions, "makloon_order", "create") && orderLive;   // MP-T2 (K-61)
   const canIssue = can(currentUser?.permissions, "makloon_order", "issue") && orderLive;
   const canReceive = can(currentUser?.permissions, "makloon_order", "receive") && orderLive;
   const canManage = can(currentUser?.permissions, "makloon_order", "cancel");
@@ -79,6 +81,15 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   }, [mkoId]); // eslint-disable-line
   useEffect(() => { load(); }, [load]);
   useEffect(() => { axios.get(`${API}/warehouses`).then((r) => setWarehouses(Array.isArray(r.data) ? r.data : [])).catch(() => {}); }, []);
+
+  async function setPartner(step, m) {
+    setBusy(true);
+    try {
+      await axios.post(`${API}/makloon-orders/${mkoId}/steps/${step.seq}/partner`, { makloon_id: m.id });
+      await load();
+    } catch (e) { onError?.(e.response?.data?.detail || "Mitra gagal disimpan."); }
+    finally { setBusy(false); }
+  }
 
   async function doIssue(step, whId, docUom, docQty, rollIds) {
     setBusy(true);
@@ -338,7 +349,15 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                     <MakloonClaimPanel mkoId={mkoId} step={s} currentUser={currentUser}
                       onDone={load} onError={onError} />
                   )}
-                  {canIssue && s.status === "pending" && prevReceived && !serviceOnly && (
+                  {/* MP-T2 (K-61) — SPK draf boleh tanpa mitra; bahan baru bisa dikirim sesudah mitra diisi. */}
+                  {s.status === "pending" && !s.makloon_id && (
+                    <div className="mt-2 rounded-md bg-kn-warning-soft p-2 text-fs-12 text-kn-warning-text" data-testid={`step-partner-missing-${s.seq}`}>
+                      <p className="mb-1 font-semibold">Mitra langkah ini belum diisi — bahan belum bisa dikirim.</p>
+                      {canSetPartner && <MakloonSelect processType={s.process_type} triggerTestId={`step-partner-pick-${s.seq}`}
+                        label="Pilih mitra…" allowCreate={false} onSelect={(m) => setPartner(s, m)} />}
+                    </div>
+                  )}
+                  {canIssue && s.status === "pending" && prevReceived && !serviceOnly && !!s.makloon_id && (
                     <button data-testid={`issue-step-${s.seq}`} onClick={() => setIssueStep(s)} className="primary-button mt-2 !py-1.5 text-[11.5px]"><Send size={12} /> Issue ke Makloon</button>
                   )}
                   {/* FASE T — langkah jasa murni: kain TIDAK boleh bergerak, jadi tombolnya

@@ -43,7 +43,7 @@ export function effectiveFlow(stage, step) {
 }
 
 export default function MakloonStepEditor({
-  index, step, inputProduct, stageOptions = [], basisOptions, entityId,
+  index, step, inputProduct, inputStage = "", stageOptions = [], basisOptions, entityId,
   onChange, onRemove, canRemove,
 }) {
   const [preview, setPreview] = useState(null);
@@ -64,8 +64,13 @@ export default function MakloonStepEditor({
   const flowAllowed = srv ? (srv.material_flow_allowed || "") : String(stage?.material_flow || "");
   const serviceOnly = flow === "service_only";
   const needsVendor = srv ? srv.needs_vendor : Boolean(stage?.needs_vendor);
-  const stageOpts = useMemo(
-    () => stageOptions.map((o) => ({ value: o.value, label: o.label || o.value })), [stageOptions]);
+  // MP-T2 (K-57) — hanya tahap yang menerima tahap bahan masuk langkah ini (Master Tahapan Proses); pilihan lama yang
+  // tidak cocok tetap terlihat bertanda supaya SPK hasil isian lama tidak diam-diam berubah.
+  const stageOpts = useMemo(() => stageOptions
+    .filter((o) => !inputStage || !o.from_stage || o.from_stage === inputStage || o.value === step.stage_code)
+    .map((o) => ({ value: o.value,
+      label: `${o.label || o.value}${inputStage && o.from_stage && o.from_stage !== inputStage ? " (tidak cocok tahap bahan)" : ""}` })),
+  [stageOptions, inputStage, step.stage_code]);
 
   /** Ganti tahap = ganti ARTI langkah, jadi field turunannya ikut disesuaikan. */
   const pickStage = (code) => {
@@ -197,7 +202,7 @@ export default function MakloonStepEditor({
             </Field>
           ) : (
             <Field label="Produk Hasil (output)">
-              <ProductSelect value={step.output_product_id} valueName={step.output_name}
+              <ProductSelect value={step.output_product_id} valueName={step.output_name} stage={stage?.to_stage || ""}
                 triggerTestId={`wizard-output-${index + 1}`}
                 onSelect={(p) => set({ output_product_id: p.id, output_name: p.name, output_unit: p.base_unit })} />
             </Field>

@@ -26,7 +26,8 @@ const emptyStep = () => ({
   // FASE T — `stage_code` adalah pilihan utama petugas (dari master Tahapan Proses);
   // `process_type` mengikutinya dan tetap dikirim untuk mesin tarif/estimasi.
   stage_code: "", material_flow: "",
-  process_type: "tenun", makloon_id: "", makloon_name: "", output_product_id: "",
+  // MP-T2 — tanpa tahap bawaan (dulu "tenun"): tahap dipilih dari yang menerima tahap bahan masuk.
+  process_type: "", makloon_id: "", makloon_name: "", output_product_id: "",
   output_name: "", output_unit: "", byproduct_product_id: "", byproduct_name: "",
   input_qty: "", waste_pct: "", tolerance_pct: "", byproduct_pct: "",
   tariff_basis: "", tariff_rate: "", tariff_formula: "", ppi: "", colors: "", repeats: "",
@@ -80,8 +81,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
 
   // FASE E — prefill dari baris PR (1 klik): bahan/mitra/kontrak/qty diturunkan
   // dari Resep Proses oleh backend, lalu user masih bisa mengubah di wizard.
-  useEffect(() => {
-    const p = prefill?.payload;
+  const applyPayload = (p) => {
     if (!p) return;
     setHead((prev) => ({
       ...prev,
@@ -93,17 +93,20 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
       from_warehouse_id: p.from_warehouse_id || prev.from_warehouse_id,
       target_warehouse_id: p.target_warehouse_id || p.from_warehouse_id || prev.target_warehouse_id,
       notes: p.notes || prev.notes,
+      supplier_id: p.supplier_id || prev.supplier_id,
+      supplier_name: p.supplier_id ? (suppliers.find((x) => x.id === p.supplier_id)?.name || prev.supplier_name) : prev.supplier_name,
     }));
     if (p.material_product_id) {
       setMaterialProduct({
         id: p.material_product_id, sku: p.material_sku || "",
-        name: p.material_name || "", base_unit: p.material_unit || "",
+        name: p.material_name || "", base_unit: p.material_unit || "", stage: p.material_stage || "",
       });
     }
     if ((p.steps || []).length) {
       setSteps(p.steps.map((s) => ({
         ...emptyStep(),
-        process_type: s.process_type || "tenun",
+        stage_code: s.stage_code || "",
+        process_type: s.process_type || "",
         makloon_id: s.makloon_id || "",
         makloon_name: s.makloon_name || "",
         recipe_id: s.recipe_id || "",
@@ -117,7 +120,24 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
         byproduct_name: s.byproduct_name || "",
       })));
     }
-  }, [prefill]); // eslint-disable-line
+  };
+  // Kunci isi (bukan identitas objek): pintu Pesanan Pembelian mengirim `{payload: {mode}}` baru tiap render.
+  const prefillKey = JSON.stringify(prefill?.payload || null);
+  useEffect(() => { applyPayload(prefill?.payload); }, [prefillKey]); // eslint-disable-line
+
+  // MP-T2 — isi langkah dari rute utama barang hasil (tahap, mitra, kontrak, resep, bahan, qty bahan).
+  const [routeTarget, setRouteTarget] = useState({ product_id: "", name: "", qty: "" });
+  const [routeNote, setRouteNote] = useState("");
+  const fillFromRoute = async () => {
+    setErr(""); setRouteNote("");
+    if (!routeTarget.product_id || !(parseFloat(routeTarget.qty) > 0)) { setErr("Pilih barang hasil dan isi jumlahnya dulu."); return; }
+    try {
+      const r = await axios.get(`${API}/makloon-orders/plan-from-route`, { params: { product_id: routeTarget.product_id, qty: parseFloat(routeTarget.qty) } });
+      if (!r.data.ready) { setErr(r.data.reason || "Rute belum bisa dipakai."); return; }
+      applyPayload(r.data.payload);
+      setRouteNote(`Diisi dari rute “${r.data.route?.name || ""}”. ${(r.data.explain || []).slice(-1)[0] || ""}`);
+    } catch (e) { setErr(e.response?.data?.detail || "Gagal membaca rute."); }
+  };
 
   // Rantai: input langkah N+1 = output langkah N (dipaksa sistem)
   useEffect(() => {
@@ -135,10 +155,12 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
     if (!stageOptions.length) return;
     setSteps((prev) => {
       let touched = false;
-      const next = prev.map((s) => {
+      const next = prev.map((s, i) => {
         if (s.stage_code) return s;
-        const hit = stageOptions.find((o) => o.process_type && o.process_type === s.process_type)
-          || stageOptions[0];
+        // MP-T2 — hanya tahap yang menerima tahap bahan masuk; tanpa calon tunggal → dibiarkan kosong (dipilih petugas).
+        const cands = stagesAccepting(inputStageAt(i, prev));
+        const hit = (s.process_type && (cands.find((o) => o.process_type === s.process_type)
+          || stageOptions.find((o) => o.process_type === s.process_type))) || (cands.length === 1 ? cands[0] : null);
         if (!hit) return s;
         touched = true;
         return {
@@ -150,7 +172,19 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
       });
       return touched ? next : prev;
     });
-  }, [stageOptions, steps.length]); // eslint-disable-line
+  }, [stageOptions, steps.length, materialProduct?.stage]); // eslint-disable-line
+
+  /** MP-T2 — tahap bahan masuk langkah i: bahan awal untuk langkah 1; hasil tahap sebelumnya untuk langkah berikut. */
+  function inputStageAt(i, list = steps) {
+    if (i === 0) return materialProduct?.stage || "";
+    const prevStg = stageOptions.find((o) => o.value === list[i - 1]?.stage_code);
+    if (!prevStg) return "";
+    if (prevStg.changes_stage === false) return inputStageAt(i - 1, list);
+    return prevStg.to_stage || "";
+  }
+  function stagesAccepting(inStage) {
+    return stageOptions.filter((o) => !inStage || !o.from_stage || o.from_stage === inStage);
+  }
 
   const inputProductFor = (i) => {
     if (i === 0) return materialProduct;
@@ -318,10 +352,10 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
     // tidak membuang isian, galat di kaki pop-up). Isi & langkah wizard tidak berubah. Testid `makloon-wizard`,
     // `wizard-stages`, `wizard-back/-next/-save` tetap.
     <FormModal open onClose={onClose} size="xl" icon={Boxes} testId="makloon-wizard" busy={saving} error={err}
-      title="Wizard Order Makloon"
+      title="Buat Order Makloon"
       subtitle={prContext?.pr_number
-        ? `Realisasi ${prContext.pr_number} baris ${prContext.line_no} · bahan & mitra ter-prefill dari Resep Proses`
-        : "Rantai proses multi-tahap & multi-mitra · estimasi berbasis GSM · tarif dari kontrak"}
+        ? `Realisasi ${prContext.pr_number} baris ${prContext.line_no} · bahan & mitra terisi dari rute produk / resep proses`
+        : "Bahan → rantai proses → simpan · tahap mengikuti Master Tahapan Proses · tarif dari kontrak"}
       footer={(
         /* G4-28 — kaki standar: semua tombol rata kanan (Batal/Kembali lalu aksi utama). */
         <div className="flex items-center justify-end gap-2">
@@ -348,6 +382,23 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
           ))}
         </div>
 
+        {stage === 1 && !prContext?.pr_id && (
+          <div className="rounded-lg border border-kn-divider bg-kn-action-soft p-3" data-testid="wizard-route-fill">
+            <p className="mb-2 text-fs-12 font-semibold text-kn-action">Isi dari rute produk (disarankan)</p>
+            <div className="grid gap-2 md:grid-cols-[1fr_140px_auto] md:items-end">
+              <Field label="Barang yang dibuat (hasil akhir)">
+                <ProductSelect value={routeTarget.product_id} valueName={routeTarget.name} triggerTestId="wizard-route-product"
+                  label="Pilih barang hasil…" onSelect={(p) => setRouteTarget((t) => ({ ...t, product_id: p.id, name: `${p.sku} · ${p.name}` }))} />
+              </Field>
+              <Field label="Jumlah hasil">
+                <input data-testid="wizard-route-qty" className="field" value={routeTarget.qty} inputMode="decimal"
+                  onChange={(e) => setRouteTarget((t) => ({ ...t, qty: e.target.value }))} placeholder="mis. 500" />
+              </Field>
+              <button type="button" className="primary-button" data-testid="wizard-route-apply" onClick={fillFromRoute}>Isi dari rute utama</button>
+            </div>
+            {routeNote && <p className="mt-2 text-fs-12 text-kn-success-text" data-testid="wizard-route-note">{routeNote}</p>}
+          </div>
+        )}
         {stage === 1 && (
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Mode Pesanan">
@@ -406,7 +457,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
               </div>
             )}
             <div className="md:col-span-2">
-              <Field label="Alasan jalur restock (wajib bila artikel bisa keduanya atau default-nya supplier)">
+              <Field label="Alasan bila menyimpang dari rute utama (isi bila diminta)">
                 <input data-testid="wizard-route-reason" className="field" value={head.route_reason}
                   onChange={(e) => setHead((p) => ({ ...p, route_reason: e.target.value }))}
                   placeholder="mis. supplier kosong, produksi sendiri lebih murah" />
@@ -418,7 +469,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
         {stage === 2 && (
           <div className="space-y-3">
             {steps.map((s, i) => (
-              <MakloonStepEditor key={i} index={i} step={s} inputProduct={inputProductFor(i)}
+              <MakloonStepEditor key={i} index={i} step={s} inputProduct={inputProductFor(i)} inputStage={inputStageAt(i)}
                 stageOptions={stageOptions} basisOptions={basisOptions} entityId={selectedEntity}
                 canRemove={steps.length > 1}
                 onChange={(ns) => setSteps((p) => p.map((x, idx) => (idx === i ? ns : x)))}

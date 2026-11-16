@@ -134,6 +134,34 @@ async def claim_stats(request: Request, entity_id: Optional[str] = None) -> Dict
     return await mclaim.claim_stats(flt)
 
 
+@router.get("/makloon-orders/plan-from-route")
+async def plan_from_route(request: Request, product_id: str, qty: float = 0) -> Dict[str, Any]:
+    """MP-T2 — langkah SPK terisi dari rute utama barang hasil (tahap, mitra, kontrak, resep, bahan, qty bahan)."""
+    await require_permission(request, "makloon_order", "create")
+    ctx = await entity_ctx(request)
+    from services import product_route_service as _routes
+    return await _routes.plan_makloon(product_id, qty, ctx.active_entity_id)
+
+
+class StepPartnerIn(BaseModel):
+    makloon_id: str
+    contract_id: str = ""
+
+
+@router.post("/makloon-orders/{mko_id}/steps/{seq}/partner")
+async def set_partner(mko_id: str, seq: int, payload: StepPartnerIn, request: Request) -> Dict[str, Any]:
+    """MP-T2 (K-61) — isi/ganti mitra langkah yang bahannya belum dikirim."""
+    actor = await require_permission(request, "makloon_order", "create")
+    ctx = await entity_ctx(request)
+    await _assert_access(mko_id, ctx)
+    from services.makloon_order_service import set_step_partner
+    order = await set_step_partner(mko_id, seq, makloon_id=payload.makloon_id, contract_id=payload.contract_id,
+                                   actor_name=actor.get("name", ""))
+    await audit(actor.get("name", ""), "makloon_partner_set", "makloon_order", mko_id,
+                {"step_seq": seq, "makloon_id": payload.makloon_id, "contract_id": payload.contract_id})
+    return order
+
+
 @router.get("/makloon-orders/{mko_id}")
 async def get_order(mko_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "makloon_order", "view")

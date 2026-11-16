@@ -4,7 +4,8 @@
 // mengerjakan prosesnya, kontrak hanya milik mitra itu, bahan/hasil hanya produk bertahap sesuai. Aturan yang sama
 // diperiksa server (`services/product_route_service.validate`); pesan server ditampilkan apa adanya.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, GitBranch, Plus, Sparkles, Star, Trash2 } from "lucide-react";
+import { ArrowRight, GitBranch, Plus, Sparkles, Trash2 } from "lucide-react";
+import StatusBadge from "../../components/StatusBadge";
 import FormModal from "../../components/FormModal";
 import ProductSelect from "../../components/ProductSelect";
 import { askConfirm } from "../../services/confirmService";
@@ -22,16 +23,16 @@ function RouteChain({ route, labels }) {
   const steps = route.steps || [];
   const start = steps[0]?.kind === "purchase" ? null : steps[0]?.from_stage;
   return <div className="flex flex-wrap items-center gap-1.5 text-xs" data-testid={`route-chain-${route.id}`}>
-    {start && <span className="rounded bg-[#F2F2F7] px-2 py-0.5 font-semibold">{stageText(labels, start)}</span>}
+    {start && <span className="rounded bg-kn-neutral-soft px-2 py-0.5 font-semibold">{stageText(labels, start)}</span>}
     {steps.map((s) => <span key={s.seq} className="contents">
-      {start || s.seq > 1 ? <ArrowRight size={12} className="text-[#9A9BA3]" /> : null}
-      <span className="rounded border border-[#D6D7DD] px-2 py-0.5">
+      {start || s.seq > 1 ? <ArrowRight size={12} className="text-kn-text-2" /> : null}
+      <span className="rounded border border-kn-divider px-2 py-0.5">
         {s.kind === "makloon" ? s.stage_label || s.stage_code : KIND_LABEL[s.kind]}
-        {s.kind !== "inhouse" && <> @ {s.partner_name || <em className="text-[#B54708]">{s.kind === "purchase" ? "pemasok" : "mitra"} belum diisi</em>}</>}
-        {s.contract_number ? <span className="text-[#6B6C75]"> · {s.contract_number}</span> : null}
+        {s.kind !== "inhouse" && <> @ {s.partner_name || <em className="text-kn-warning-text">{s.kind === "purchase" ? "pemasok" : "mitra"} belum diisi</em>}</>}
+        {s.contract_number ? <span className="text-kn-text-2"> · {s.contract_number}</span> : null}
       </span>
-      <ArrowRight size={12} className="text-[#9A9BA3]" />
-      <span className="rounded bg-[#F2F2F7] px-2 py-0.5 font-semibold">{stageText(labels, s.to_stage)}</span>
+      <ArrowRight size={12} className="text-kn-text-2" />
+      <span className="rounded bg-kn-neutral-soft px-2 py-0.5 font-semibold">{stageText(labels, s.to_stage)}</span>
     </span>)}
   </div>;
 }
@@ -46,7 +47,7 @@ function StepEditor({ step, index, prevTo, opts, onChange, onRemove }) {
     && (step.kind !== "makloon" || !k.process_type || k.process_type === stage?.process_type));
   const set = (patch) => onChange({ ...step, ...patch });
   const tid = `route-step-${index + 1}`;
-  return <div className="rounded-lg border border-[#E5E5EA] p-3" data-testid={tid}>
+  return <div className="rounded-lg border border-kn-divider p-3" data-testid={tid}>
     <div className="mb-2 flex items-center justify-between gap-2">
       <strong className="text-sm">Langkah {index + 1}</strong>
       <button type="button" className="secondary-button" data-testid={`${tid}-remove`} onClick={onRemove}><Trash2 size={13} />Hapus langkah</button>
@@ -64,12 +65,12 @@ function StepEditor({ step, index, prevTo, opts, onChange, onRemove }) {
           <option value="">Pilih tahap…</option>
           {stages.map((o) => <option key={o.stage_code} value={o.stage_code}>{o.label} ({stageText(labels, o.from_stage)} → {stageText(labels, o.to_stage)})</option>)}
         </select>
-        {prevTo && !stages.length && <span className="mt-1 block font-normal text-[#B54708]">Tidak ada tahap makloon yang menerima bahan {stageText(labels, prevTo)}.</span>}
+        {prevTo && !stages.length && <span className="mt-1 block font-normal text-kn-warning-text">Tidak ada tahap makloon yang menerima bahan {stageText(labels, prevTo)}.</span>}
       </label>}
       {step.kind === "inhouse" && <label className="text-xs font-semibold">BOM produksi
         <select className="field mt-1" data-testid={`${tid}-bom`} value={step.bom_id} onChange={(e) => set({ bom_id: e.target.value })}>
           <option value="">Pilih BOM…</option>
-          {(opts?.boms || []).map((b) => <option key={b.id} value={b.id}>{b.code || b.name || b.id}</option>)}
+          {(opts?.boms || []).map((b) => <option key={b.id} value={b.id}>{b.code || b.name || "BOM tanpa nama"}</option>)}
         </select>
       </label>}
       {step.kind !== "inhouse" && <label className="text-xs font-semibold">{step.kind === "purchase" ? "Pemasok" : "Mitra makloon"} (boleh menyusul)
@@ -149,7 +150,7 @@ export default function FamilyRoutesTab({ family, currentUser, selectedEntity })
   }, [family.id]);
   useEffect(() => { load(); }, [load, selectedEntity]);
   const labels = opts?.stage_labels || {};
-  const variantSku = (pid) => (family.variants || []).find((v) => v.id === pid)?.sku || pid;
+  const variantSku = (pid) => (family.variants || []).find((v) => v.id === pid)?.sku || "(varian tidak ditemukan)";
   const suggest = async () => {
     setError(""); setNotice("");
     try {
@@ -164,23 +165,23 @@ export default function FamilyRoutesTab({ family, currentUser, selectedEntity })
   return <section className="mt-3" data-testid="catalog-routes">
     <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
       <div><h2 className="text-base font-semibold">Rute di PT ini</h2>
-        <p className="text-xs text-[#6B6C75]">Jalan beli atau buat barang ini. Rute utama dipakai pembelian dan SPK makloon; produk hasil R&D baru bisa dirilis bila punya rute utama.</p></div>
+        <p className="text-xs text-kn-text-2">Jalan beli atau buat barang ini. Rute utama dipakai pembelian dan SPK makloon; produk hasil R&D baru bisa dirilis bila punya rute utama.</p></div>
       {canEdit && <div className="flex flex-wrap gap-2">
         <button className="secondary-button" data-testid="route-suggest" disabled={allPt} onClick={suggest}><Sparkles size={14} />Usulkan dari data lama</button>
         <button className="primary-button" data-testid="route-create" disabled={allPt} onClick={() => setForm({})}><Plus size={14} />Buat rute</button>
       </div>}
     </div>
-    {allPt && canEdit && <p className="mb-2 text-xs text-[#B54708]">Pilih satu PT untuk membuat atau mengubah rute.</p>}
-    {error && <p className="mb-2 rounded bg-[#FDECEC] px-3 py-2 text-sm text-[#B42318]" data-testid="route-error">{error}</p>}
-    {notice && <p className="mb-2 rounded bg-[#EEF4FF] px-3 py-2 text-sm text-[#0058CC]" data-testid="route-notice">{notice}</p>}
-    {!data ? <p className="text-sm text-[#6B6C75]" data-testid="route-loading">Memuat rute…</p>
-      : !items.length ? <div className="rounded-lg border border-dashed border-[#D6D7DD] p-4 text-sm text-[#6B6C75]" data-testid="route-empty">Artikel ini belum punya rute di PT ini.</div>
-        : <div className="grid gap-2">{items.map((r) => <div key={r.id} className="rounded-lg border border-[#E5E5EA] p-3" data-testid={`route-card-${r.id}`}>
+    {allPt && canEdit && <p className="mb-2 text-xs text-kn-warning-text">Pilih satu PT untuk membuat atau mengubah rute.</p>}
+    {error && <p className="mb-2 rounded bg-kn-danger-soft px-3 py-2 text-sm text-kn-danger-text" data-testid="route-error">{error}</p>}
+    {notice && <p className="mb-2 rounded bg-kn-action-soft px-3 py-2 text-sm text-kn-action" data-testid="route-notice">{notice}</p>}
+    {!data ? <p className="text-sm text-kn-text-2" data-testid="route-loading">Memuat rute…</p>
+      : !items.length ? <div className="rounded-lg border border-dashed border-kn-divider p-4 text-sm text-kn-text-2" data-testid="route-empty">Artikel ini belum punya rute di PT ini.</div>
+        : <div className="grid gap-2">{items.map((r) => <div key={r.id} className="rounded-lg border border-kn-divider p-3" data-testid={`route-card-${r.id}`}>
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <strong className="text-sm">{r.name}</strong>
-            {r.is_primary && <span className="rounded bg-[#E8F5E9] px-2 py-0.5 text-xs font-semibold text-[#1B5E20]" data-testid={`route-primary-${r.id}`}><Star size={11} className="inline" /> Utama</span>}
-            {r.product_id && <span className="rounded bg-[#FFF4E5] px-2 py-0.5 text-xs">Khusus varian {variantSku(r.product_id)}</span>}
-            {ORIGIN_LABEL[r.origin] && <span className="text-xs text-[#6B6C75]">{ORIGIN_LABEL[r.origin]}</span>}
+            {r.is_primary && <StatusBadge tone="success" label="Utama" testId={`route-primary-${r.id}`} />}
+            {r.product_id && <StatusBadge tone="warning" label={`Khusus varian ${variantSku(r.product_id)}`} />}
+            {ORIGIN_LABEL[r.origin] && <span className="text-xs text-kn-text-2">{ORIGIN_LABEL[r.origin]}</span>}
           </div>
           <RouteChain route={r} labels={labels} />
           {canEdit && !allPt && <div className="mt-2 flex flex-wrap gap-2">

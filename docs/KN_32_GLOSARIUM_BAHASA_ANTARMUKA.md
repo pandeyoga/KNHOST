@@ -771,4 +771,5 @@ Istilah tab Rute di Master Produk (`docs/blueprint/unit/MP-T1.md`, keputusan K-5
 | **Langkah** | "Langkah 1", "Jenis langkah": "Beli dari pemasok" · "Makloon" · "Produksi sendiri" · "Tahap" · "Mitra makloon (boleh menyusul)" · "Kontrak (boleh menyusul)" · "Bahan masuk" | Satu proses dalam rute; tahap asal → hasil dibaca dari Master Tahapan Proses, sehingga pilihan tahap hanya yang menerima hasil langkah sebelumnya |
 | **Khusus varian** | Lencana "Khusus varian {SKU}" · pilihan "Berlaku untuk": "Semua varian artikel ini" / "Khusus {SKU}" | Rute pengecualian untuk satu varian; mengalahkan rute artikel untuk varian itu |
 | **Rute awal (data lama)** | Keterangan kartu "Rute awal (data lama)" · "Dari R&D" | Asal rute: dibuat dari resep proses/BOM/sumber restock lama, atau lahir dari putusan sample R&D |
-
+| **Isi dari rute utama** | Kotak "Isi dari rute produk (disarankan)" di pop-up "Buat Order Makloon" · "Barang yang dibuat (hasil akhir)" · "Jumlah hasil" · tombol "Isi dari rute utama" | Mengisi bahan, jumlah bahan, langkah, mitra, kontrak, resep dari rute utama barang hasil (MP-T2) |
+| **Mitra belum diisi** | Rincian SPK: "Mitra langkah ini belum diisi — bahan belum bisa dikirim." · "Pilih mitra…" | SPK draf boleh tanpa mitra (K-61); kirim bahan baru bisa sesudah mitra dipilih (MP-T2) |

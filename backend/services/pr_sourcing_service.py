@@ -852,6 +852,15 @@ async def makloon_prefill(pr_id: str, line_no: int) -> Dict[str, Any]:
         raise SourcingError(f"Baris {line_no} sudah terealisasi penuh.")
 
     entity_id = pr.get("entity_id") or DEFAULT_ENTITY_ID
+    # MP-T2 — rute utama barang (beberapa langkah, mitra/kontrak/resep per langkah) lebih dulu; resep tunggal = cadangan.
+    from services import product_route_service as _routes
+    plan = await _routes.plan_makloon(line["product_id"], remaining, entity_id)
+    if plan.get("ready"):
+        plan["payload"]["from_warehouse_id"] = pr.get("warehouse_id") or ""
+        plan["payload"]["target_warehouse_id"] = pr.get("warehouse_id") or ""
+        plan["payload"]["notes"] = f"Dari {pr['number']} baris {line_no}"
+        return {"pr_id": pr_id, "pr_number": pr["number"], "line_no": line_no, **plan,
+                "contract": {"id": "", "number": ""}}
     out_prod = await db.products.find_one({"id": line["product_id"]}, {"_id": 0}) or {}
     explain: List[str] = [f"Kebutuhan {pr['number']} baris {line_no}: "
                           f"{remaining:g} {line.get('unit') or out_prod.get('base_unit')} "
@@ -927,6 +936,7 @@ async def makloon_prefill(pr_id: str, line_no: int) -> Dict[str, Any]:
             "material_name": in_prod.get("name", ""),
             "material_qty": material_qty,
             "material_unit": in_prod.get("base_unit", ""),
+            "material_stage": in_prod.get("stage", ""),   # MP-T2 — wizard menyaring tahap langkah 1
             "from_warehouse_id": pr.get("warehouse_id") or "",
             "target_warehouse_id": pr.get("warehouse_id") or "",
             "entity_id": entity_id,

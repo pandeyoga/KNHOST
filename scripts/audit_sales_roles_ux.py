@@ -185,19 +185,19 @@ TERGATED_DI_KODE = {
         "features/admin/PurchaseOrderManagement.jsx — menu Buat (POCreateForm → POBudgetPanel) "
         "disembunyikan bila user.role === 'finance'",
     ("purchasing", "/makloon-orders/claims"):
-        "features/admin/PurchaseOrderManagement.jsx — MakloonOrderCreateModal (pengimpor "
+        "features/admin/PurchaseOrderManagement.jsx — MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2) (pengimpor "
         "makloonApi di layar ini; hanya memakai fetchStages) lahir dari menu Buat yang "
         "disembunyikan untuk finance",
     ("purchasing", "/makloon-orders/claims/stats"):
-        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonOrderCreateModal)",
+        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2))",
     ("purchasing", "/makloon-partners/scorecard"):
-        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonOrderCreateModal)",
+        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2))",
     ("purchasing", "/warehouses"):
         "features/admin/PurchaseOrderManagement.jsx — fetchMasterData() hanya bila canCreate "
-        "(role ≠ finance); MakloonOrderCreateModal lahir dari menu Buat yang sama",
+        "(role ≠ finance); MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2) lahir dari menu Buat yang sama",
     ("purchasing", "/supplier-contracts"):
         "features/admin/PurchaseOrderManagement.jsx — makloonApi (kontrak supplier) hanya "
-        "diimpor MakloonOrderCreateModal (menu Buat, disembunyikan untuk finance)",
+        "diimpor MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2) (menu Buat, disembunyikan untuk finance)",
     ("purchasing", "/supplier-contracts/policy"):
         "features/admin/PurchaseOrderManagement.jsx — idem (makloonApi)",
     ("purchasing", "/supplier-contracts/stats"):
@@ -207,11 +207,11 @@ TERGATED_DI_KODE = {
         "can(perms,'wms','view') (cetak label roll = urusan gudang)",
     ("purchasing", "/makloons"):
         "features/admin/PurchaseOrderManagement.jsx — components/MakloonSelect hanya hidup di "
-        "MakloonOrderCreateModal (menu Buat disembunyikan untuk finance)",
+        "MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2) (menu Buat disembunyikan untuk finance)",
     ("purchasing", "/process-recipes"):
-        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonOrderCreateModal)",
+        "features/admin/PurchaseOrderManagement.jsx — idem (MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2))",
     ("purchasing", "/process-stages"):
-        "features/admin/PurchaseOrderManagement.jsx — idem (makloonApi.fetchStages dari MakloonOrderCreateModal)",
+        "features/admin/PurchaseOrderManagement.jsx — idem (makloonApi.fetchStages dari MakloonWizard (dulu MakloonOrderCreateModal, dihapus MP-T2))",
     ("*", "/md/desk"):
         "features/sales_admin/workDeskApi.js — modul API bersama; mdDesk hanya dipanggil "
         "features/desks/RoleDesk.jsx desk='md' (layar md-desk, menu peran md)",
