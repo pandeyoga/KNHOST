@@ -85,6 +85,16 @@ Catatan Claude (dari foto, perlu dicek saat dijadikan unit):
 - M23: satu layar memuat 3 tab + 4 kartu angka berketerangan panjang + bilah penjelasan bertautan + cari + chip lini +
   2 dropdown + tabel — terlalu banyak lapisan sebelum isi.
 
+### Kiriman 5 — Operasi Gudang, BOM, Lokasi Rak, Eskalasi
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M26 | Operasi Gudang › Barang Masuk / Barang Keluar / Cutting | UI/UX **tidak konsisten** antar tab — padahal bisa satu pola (Barang Masuk: cari + chip status + kosong di tengah; Barang Keluar: chip status + cari + chip jenis + dropdown gudang + daftar kiri/panel kanan). | 21, 22 |
+| M27 | BOM Produksi In-House › BOM Baru | **"Nama BOM" diisi bebas — kenapa perlu nama BOM?** (pertanyaan pemilik; jawaban di bawah) | 23 |
+| M28 | Master produk | **Apakah master produk menyimpan HPP?** (pertanyaan pemilik; jawaban di bawah) | — |
+| M29 | Lokasi Rak | **UI masih sangat buruk.** | 24 |
+| M30 | Eskalasi Gudang | **Menu ini untuk apa, relevan?** (pertanyaan pemilik; jawaban di bawah) | 25 |
+
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
   Inggris) — seharusnya label Indonesia.
