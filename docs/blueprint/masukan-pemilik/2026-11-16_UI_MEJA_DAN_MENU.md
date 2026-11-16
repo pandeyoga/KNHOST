@@ -1,4 +1,4 @@
-# Masukan pemilik 16 Nov 2026 — tampilan meja, menu samping, Tanya KN, POS, Pesanan Khusus, Pesanan, Pelanggan, Produk
+# Masukan pemilik 16 Nov 2026 — tampilan meja, menu samping, Tanya KN, POS, Pesanan Khusus, Pesanan, Pelanggan, Produk, Retur, Kualitas, Gudang
 
 Status: **DITAMPUNG** — pemilik: "tampung dulu masih banyak foto yang harus saya upload". Belum dikerjakan; dijadikan
 unit sesudah semua foto masuk. Foto: `2026-11-16_ui-meja/`.
@@ -65,6 +65,25 @@ dengan status baris; bila milik pesanan lain, panel tidak menunjukkan pesanan ma
 Catatan Claude untuk M20: arah yang masuk akal — halaman Produk & Harga hanya katalog bersih (cari + saringan ringkas +
 daftar induk/varian); alat tata kelola data (preview legacy, duplikat, lembar kerja perbaikan, sumber restock) dipindah
 ke tempat admin data (mis. Pengaturan › Data master) dan tertutup untuk peran selain pemegang izinnya.
+
+### Kiriman 4 — Harga per Pelanggan, rincian produk, Retur, filter, Gudang
+
+| # | Layar | Masukan | Foto |
+|---|---|---|---|
+| M21 | Produk & Harga › Harga per Pelanggan | Tambahkan **riwayat harga beli pelanggan** per barang (pernah membeli berapa, kapan, dari pesanan mana), termasuk asalnya — mis. **lahir dari harga khusus (special price)**. | 16 |
+| M22 | Rincian produk | **UI rincian per produk masih sangat kacau.** | 17 |
+| M23 | Retur | **Menu retur kacau.** | 18 |
+| M24 | Umum — saringan berbentuk deretan tombol | **Tombol-tombol saringan diganti dropdown** (contoh: Lini Semua/Woven/Knit/Printing di Retur & SPK Inspeksi; 9 chip jenis + 7 chip status di SPK Inspeksi). Sejalan dengan M17 (tab status Pesanan). | 18, 19 |
+| M25 | Gudang (saringan gudang) | Deretan chip gudang bergulir mendatar **sangat buruk** — ganti dropdown; sejalan dengan M7 (lokasi = area, gudang di bawahnya). | 20 |
+
+Catatan Claude (dari foto, perlu dicek saat dijadikan unit):
+- M21: daftar menampilkan semua barang dengan "belum diatur" dan kolom "Harga PT" kosong — barang yang relevan untuk
+  pelanggan itu (pernah dibeli / punya harga khusus) sebaiknya di atas atau jadi saringan bawaan.
+- M22: kepala rincian berisi kartu angka yang kosong (Gramasi —, Lebar —, Tersedia 0, Foto 0), label tahap teknis
+  ("Finished (Jadi — Dyed/Printed) · Woven (Tenun)"), pesan teknis ("kode desain & kategorinya kosong di POS/export"),
+  dan tombol merah "Hapus permanen" beserta teks izin yang panjang di tengah halaman.
+- M23: satu layar memuat 3 tab + 4 kartu angka berketerangan panjang + bilah penjelasan bertautan + cari + chip lini +
+  2 dropdown + tabel — terlalu banyak lapisan sebelum isi.
 
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
