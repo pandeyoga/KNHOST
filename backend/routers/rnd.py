@@ -586,6 +586,16 @@ async def patch_sample(sample_id: str, payload: SamplePatch, request: Request) -
     return doc
 
 
+@router.get("/rnd/samples/{sample_id}/partner-options")
+async def sample_partner_options(sample_id: str, request: Request) -> Dict[str, Any]:
+    """MP-T3 — tujuan kirim sample: pemasok + mitra makloon yang mengerjakan proses jenis sample-nya."""
+    await require_permission(request, "rnd", "submit")
+    doc = await _sample_guard(sample_id, await entity_ctx(request))
+    from services import rnd_sample_service as _smp
+    items = await _smp.partner_options(doc)
+    return {"count": len(items), "items": items}
+
+
 @router.post("/rnd/samples/{sample_id}/send")
 async def send_sample(sample_id: str, payload: SampleSendBody, request: Request) -> Dict[str, Any]:
     """Kirim permintaan ke ≥1 supplier × ≥1 JENIS sekaligus (hasilnya dibandingkan)."""

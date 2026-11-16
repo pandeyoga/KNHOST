@@ -58,6 +58,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   // Keputusan pemilik K-16 (26 Okt) — labdip produk baru TANPA handfeel ACC boleh, dengan peringatan + alasan wajib.
   const [skipParent, setSkipParent] = useState(false);
   const [skipReason, setSkipReason] = useState("");
+  const [baseFabricWhy, setBaseFabricWhy] = useState("");   // MP-T3 (K-72)
   const [colorTargets, setColorTargets] = useState(prefill?.color_id ? [{ ...emptyColor(), color_id: prefill.color_id }] : [emptyColor()]);
   const [passed, setPassed] = useState(null);
   const [policy, setPolicy] = useState({});
@@ -148,6 +149,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
         ...base, color_target: targets[0] || (f.color_id ? { color_id: f.color_id } : {}), color_targets: targets,
         design_id: needDesign ? f.design_id : "", line_code: f.line_code, parent_sample_id: needParent || parentId ? parentId : "",
         chain_override_reason: needParent && !parentId && skipParent ? skipReason.trim() : "",
+        base_fabric_override_reason: needDesign ? baseFabricWhy.trim() : "",
         special_order_id: prefill?.special_order_id || "",
         spec: buildSpecPayload({ sp, catalog, f, sampleTypes: f.sample_types, colorTargets: isLabdip ? colorTargets : null }),
       });
@@ -279,6 +281,14 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
                 sampleTypes={f.sample_types} types={types} colors={colors} designs={designs}
                 colorTargets={colorTargets} setColorTargets={(v) => { setTouched(true); setColorTargets(v); }} maxColors={Number(policy.labdip_max_colors) || 10}
                 passedFabrics={policy.require_stage_chain === false ? null : passed} />
+              {needDesign && (
+                <label className="mt-2 block" data-testid="sample-base-fabric-override">
+                  <span className="mb-1 block text-fs-12 font-semibold text-kn-text-2">Alasan bila kain dasar menyimpang (tahap bukan PFP atau jenis kain beda dari target)</span>
+                  <input className="field" data-testid="sample-base-fabric-override-reason" value={baseFabricWhy}
+                    onChange={(e) => { setTouched(true); setBaseFabricWhy(e.target.value); }}
+                    placeholder="Kosongkan bila kain dasar sudah PFP dan jenisnya sama" />
+                </label>
+              )}
             </>
           )}
           {/* Audit UI 24 Okt (039) — dulu merah "Belum lengkap" sejak form dibuka. Kini panduan netral; merah hanya

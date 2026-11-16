@@ -139,6 +139,7 @@ class SampleInput(BaseModel):
     parent_sample_id: str = ""
     # Keputusan pemilik K-16 (26 Okt) — labdip produk baru TANPA handfeel ACC: boleh dengan alasan (≥ 5 huruf, tercatat).
     chain_override_reason: str = ""
+    base_fabric_override_reason: str = ""   # MP-T3 (K-72) — kain dasar proofing menyimpang (tahap/jenis kain)
     # UAT 24 Okt (P4.3) — labdip MULTI-WARNA: ≥2 warna → satu sampel per warna dalam satu kelompok.
     color_targets: List[ColorTarget] = Field(default_factory=list)
     special_order_id: str = ""          # diisi jalur pesanan khusus (bebas aturan rantai produk baru)
@@ -224,6 +225,7 @@ class SampleDecideBody(BaseModel):
     product_sku: str = ""
     product_name: str = ""
     override_reason: str = ""   # W2-REQ-03
+    tariff_mode: str = ""   # MP-T3 (K-68) — pemenang mitra makloon: "per_proses" (bawaan) atau "borongan" (per lot)
 
 
 class IssueMaterialBody(BaseModel):

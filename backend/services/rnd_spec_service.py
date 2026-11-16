@@ -127,6 +127,7 @@ def _product_draft(spec: Dict[str, Any], sku: str, name: str, price: float) -> D
         "yarn_dye_status": t.get("yarn_dye_status") or "",
         "grade": t.get("grade") or "",
         "construction": {k: t.get(k) for k in ("epi", "ppi", "warp_count", "weft_count", "reed_width")},
+        "color_id": color.get("color_id", "") or "",   # MP-T3 — tertaut pustaka warna, bukan hanya teks
         "color_code": color.get("code", ""), "color_name": color.get("name", ""),
         "color_hex": color.get("hex", ""), "color": color.get("name", ""),
         # FASE F — jejak asal produk (dua arah dengan md_specs).

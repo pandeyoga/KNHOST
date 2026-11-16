@@ -107,6 +107,26 @@ async def assert_stage_chain(payload: Dict[str, Any], stypes: List[str], spec: O
         if not await base_fabric_passed(tpl_id):
             raise FlowError("Kain dasar yang dipilih belum lolos — pilih induk woven/knit yang sudah punya SKU produksi "
                             "atau sampel handfeel/labdip yang sudah ACC.")
+        # MP-T3 (K-72) — kain dasar proofing wajib bertahap PFP dan jenis kainnya sama dengan target; menyimpang boleh
+        # dengan alasan yang tercatat.
+        import domain_registry as dr
+        tpl = await db.product_templates.find_one({"id": tpl_id}, {"_id": 0, "name": 1, "stage": 1, "fabric_type": 1}) or {}
+        target = (spec or {}).get("target") or {}
+        gaps = []
+        st = dr.normalize_stage(tpl.get("stage"))
+        if st and st != "pfp":
+            gaps.append(f"kain dasar harus bertahap PFP; {tpl.get('name') or tpl_id} bertahap "
+                        f"{dr.label_of('stage', st) or st}")
+        want_ft, have_ft = (target.get("fabric_type") or "").strip(), (tpl.get("fabric_type") or "").strip()
+        if want_ft and have_ft and want_ft != have_ft:
+            gaps.append(f"jenis kain dasar ({dr.label_of('fabric_type', have_ft) or have_ft}) berbeda dengan target "
+                        f"({dr.label_of('fabric_type', want_ft) or want_ft})")
+        if gaps:
+            why = str(payload.get("base_fabric_override_reason") or "").strip()
+            if len(why) < CHAIN_OVERRIDE_MIN_REASON:
+                raise FlowError("Proofing: " + "; ".join(gaps) + ". Pilih kain dasar yang sesuai, atau tulis alasan "
+                                f"menyimpang (minimal {CHAIN_OVERRIDE_MIN_REASON} huruf).")
+            out["base_fabric_override"] = {"missing": gaps, "reason": why, "at": now_iso()}
     return out
 
 
@@ -145,7 +165,12 @@ async def assert_design_usable(design_id: str, *, for_send: bool) -> None:
     if for_send:
         from services import design_studio_service as studio
         req = studio.final_requirement(d)
-        if (d.get("status") == "approved") or not req.get("complete"):
+        if d.get("status") == "approved":
+            # MP-T3 — dulu pesan yang sama dengan "berkas belum lengkap" walau berkasnya sudah lengkap.
+            raise FlowError(
+                f"Desain {d.get('code') or ''} sudah disetujui tetapi berkas final belum diajukan. Unggah mockup, file "
+                "asli, dan gambar cetak (bila belum), lalu tekan \"Ajukan final\" di Studio Desain.")
+        if not req.get("complete"):
             raise FlowError(
                 f"Desain {d.get('code') or ''} belum menyerahkan berkas final lengkap (mockup, file asli, dan PNG cetak). "
                 "Surat perintah proofing ke supplier wajib membawa gambar pattern yang dicetak.")

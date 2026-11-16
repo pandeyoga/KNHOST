@@ -32,6 +32,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
   const [moq, setMoq] = useState("");
   const [lead, setLead] = useState("");
   const [note, setNote] = useState("");
+  const [tariffMode, setTariffMode] = useState("per_proses");   // MP-T3 (K-68) — pemenang mitra makloon
   const [colorName, setColorName] = useState("");
   const [supplierItemName, setSupplierItemName] = useState("");
   const [colorCode, setColorCode] = useState("");
@@ -51,6 +52,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
   const overrideOk = !missingTests.length || override.trim().length >= 5;
 
   const supplier = candidates.find((p) => p.supplier_id === supplierId);
+  const isMakloon = supplier?.partner_kind === "makloon";   // MP-T3 — kontrak makloon + rute makloon, tanpa barang supplier
   const colorOk = !hasColor || !isLabdip || colorName.trim() || colorCode.trim();
 
   const missing = [!supplierId && "supplier pemenang", !reasonCode && "alasan keputusan", !price && "harga kesepakatan",
@@ -62,6 +64,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
     supplier_color_name: colorName, supplier_color_code: colorCode,
     approve_spec: !!(spec && specOpen && approveSpec), product_sku: productSku, product_name: productName,
     override_reason: missingTests.length ? override : "",
+    tariff_mode: isMakloon ? tariffMode : "",
   };
   return (
     <FormModal open onClose={onClose} size="lg" testId="decide-modal" icon={Trophy} error={error}
@@ -104,7 +107,15 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
 
                 <Block step={2} title="Data supplier (diisi saat ACC — bukan di awal)">
                   <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    <Field label="Harga kesepakatan per satuan (Rp) *">
+                    {isMakloon && (
+                      <Field label="Cara tarif mitra makloon">
+                        <select className="field" data-testid="decide-tariff-mode" value={tariffMode} onChange={(e) => setTariffMode(e.target.value)}>
+                          <option value="per_proses">Per proses (harga per satuan kain)</option>
+                          <option value="borongan">Borongan (satu harga per lot)</option>
+                        </select>
+                      </Field>
+                    )}
+                    <Field label={isMakloon && tariffMode === "borongan" ? "Harga borongan per lot (Rp) *" : "Harga kesepakatan per satuan (Rp) *"}>
                       <MoneyInput className="field" testId="decide-price" value={price} onChange={(v) => setPrice(v)} placeholder="42500" />
                     </Field>
                     <Field label="Kode barang versi supplier">

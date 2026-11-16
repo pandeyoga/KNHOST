@@ -227,11 +227,71 @@ def _is_overdue(due_date: str, done_at: str = "") -> bool:
     return ref > due
 
 
-async def _supplier_snapshot(supplier_id: str) -> Dict[str, str]:
+async def partner_options(sample: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """MP-T3 — calon tujuan kirim sample: pemasok aktif + mitra makloon yang mengerjakan proses jenis sample-nya."""
+    ent = sample.get("entity_id", "")
+    vis = {"entity_id": {"$in": [ent, "all", "", None]}}
+    out: List[Dict[str, Any]] = []
+    async for r in db.suppliers.find(vis, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "status": 1,
+                                           "is_active": 1, "partner_kind": 1, "group_entity_id": 1,
+                                           "is_group_entity": 1, "group_entity_short_name": 1}).sort("name", 1):
+        if r.get("is_active") is False or r.get("status") in ("inactive", "archived"):
+            continue
+        out.append({**r, "kind": "supplier", "kind_label": "Pemasok"})
+    want = set()
+    for k in types_of(sample):
+        want |= set(await partner_processes(k, ent))
+    async for m in db.makloons.find(vis, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "status": 1,
+                                          "is_active": 1, "process_types": 1}).sort("name", 1):
+        if m.get("is_active") is False or m.get("status") in ("inactive", "archived"):
+            continue
+        if want and not (want & set(m.get("process_types") or [])):
+            continue
+        out.append({**m, "kind": "makloon", "kind_label": "Mitra makloon"})
+    return out
+
+
+async def _winner_process(sample: Dict[str, Any], partner_id: str) -> str:
+    """MP-T3 — proses kontrak makloon pemenang: proses jenis sample yang ACC yang memang dikerjakan mitra itu."""
+    mk = await db.makloons.find_one({"id": partner_id}, {"_id": 0, "process_types": 1}) or {}
+    have = list(mk.get("process_types") or [])
+    acc_types = [r.get("type_code") or "" for r in sample.get("rounds") or []
+                 if r.get("supplier_id") == partner_id and r.get("result") == "acc"] or types_of(sample)
+    for t in acc_types:
+        for pt in await partner_processes(t, sample.get("entity_id", "")):
+            if pt in have:
+                return pt
+    return have[0] if have else ""
+
+
+async def partner_processes(type_code: str, entity_id: str = "") -> List[str]:
+    """MP-T3 — proses mitra makloon yang boleh mengerjakan jenis sample (master Jenis Sampling; benih bila kosong)."""
+    from services import master_registry as mreg
+    code = str(type_code or "").strip().lower()
+    row = next((r for r in await mreg.rows("sample-types", entity_id) if r.get("value") == code), None) or {}
+    val = row.get("partner_process_types")
+    if val is None:
+        val = next((r.get("partner_process_types") for r in dr.SAMPLE_TYPES if r.get("value") == code), []) or []
+    return [str(x).strip().lower() for x in val if str(x).strip()]
+
+
+async def _supplier_snapshot(supplier_id: str, kinds: Optional[List[str]] = None,
+                             entity_id: str = "") -> Dict[str, str]:
+    """Peserta sample: pemasok, atau (MP-T3) mitra makloon yang mengerjakan proses jenis sample-nya."""
     row = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "name": 1})
-    if not row:
-        raise RndError(f"Supplier '{supplier_id}' tidak ditemukan.")
-    return {"supplier_id": supplier_id, "supplier_name": row.get("name", "")}
+    if row:
+        return {"supplier_id": supplier_id, "supplier_name": row.get("name", ""), "partner_kind": "supplier"}
+    mk = await db.makloons.find_one({"id": supplier_id}, {"_id": 0, "name": 1, "process_types": 1})
+    if not mk:
+        raise RndError(f"Pemasok atau mitra makloon '{supplier_id}' tidak ditemukan.")
+    have = set(mk.get("process_types") or [])
+    for k in kinds or []:
+        want = await partner_processes(k, entity_id)
+        if want and not (have & set(want)):
+            labels = " / ".join(dr.label_of("process_type", w) or w for w in want)
+            raise RndError(f"{mk.get('name')} tidak mengerjakan {labels} — jenis {_jenis_label(k)} dikerjakan mitra "
+                           "dengan proses itu atau oleh pemasok.")
+    return {"supplier_id": supplier_id, "supplier_name": mk.get("name", ""), "partner_kind": "makloon"}
 
 
 async def _recalc(sample_id: str) -> Dict[str, Any]:
@@ -856,7 +916,7 @@ async def send_sample(sample_id: str, supplier_ids: List[str], *, due_date: str 
     have = {(r.get("supplier_id"), _type_of_round(r, cur)) for r in (cur.get("rounds") or [])}
     new_parts, new_rounds = [], []
     for sid in ids:
-        snap = await _supplier_snapshot(sid)
+        snap = await _supplier_snapshot(sid, kinds, cur.get("entity_id", ""))
         if sid not in existing_parts:
             new_parts.append({**snap, "status": "invited", "rounds": 0, "best_score": None,
                               "types": {}, "invited_at": now_iso()})
@@ -932,7 +992,7 @@ async def open_round(sample_id: str, supplier_id: str, *, type_code: str = "",
                 "pemegang akses 'Buka ronde di atas batas' (bawaan manajer/admin) DENGAN alasan tertulis "
                 "(ubah batas di Pusat Pengaturan → R&D & Desain).")
     sla = int(pol.get("round_sla_days") or 7)
-    snap = await _supplier_snapshot(supplier_id)
+    snap = await _supplier_snapshot(supplier_id, [tcode], cur.get("entity_id", ""))
     row = _new_round(next_no, snap, tcode,
                      (due_date or "")[:10] or _plus_days("", sla),
                      opened_by=(actor or {}).get("name", ""),
@@ -1195,7 +1255,8 @@ async def _bind_product(cur: Dict[str, Any], decision: Dict[str, Any], pid: str,
         await db.supplier_contracts.update_one({"id": decision["contract_id"], "product_id": {"$in": ["", None]}},
                                                {"$set": {"product_id": pid, "updated_at": now_iso()}})
     # Produk lahir SESUDAH keputusan → daftarkan nama/warna versi supplier pemenang sekarang.
-    if not decision.get("supplier_item_id"):
+    is_makloon = decision.get("partner_kind") == "makloon"
+    if not decision.get("supplier_item_id") and not is_makloon:
         try:
             it = await supplier_item_service.create_item({
                 "supplier_id": decision["supplier_id"], "product_id": pid,
@@ -1220,14 +1281,20 @@ async def _bind_product(cur: Dict[str, Any], decision: Dict[str, Any], pid: str,
         if tpl is not None and not (tpl.get("restock_source") or {}).get("mode"):
             from services import restock_source_service as _restock
             await _restock.save(prod["template_id"], {
-                "mode": "supplier", "note": f"Otomatis: pemenang sample {cur.get('number', '')} — {decision.get('supplier_name', '')}"},
+                "mode": "makloon" if is_makloon else "supplier",
+                "note": f"Otomatis: pemenang sample {cur.get('number', '')} — {decision.get('supplier_name', '')}"},
                 {"name": name})
-    # MP-T1 (K-65, K-70) — pemenang pemasok → rute "Beli dari <pemasok>" (kontrak hasil putusan) bila artikel belum
-    # punya rute di PT ini. Pemenang mitra makloon menyusul di MP-T3.
+    # MP-T1/MP-T3 (K-65, K-70) — pemenang melahirkan rute utama bila artikel belum punya rute di PT ini:
+    # pemasok → "Beli dari <pemasok>"; mitra makloon → kain dasar → tahap proses @ mitra → produk (kontrak hasil putusan).
     if decision.get("supplier_id"):
         from services import product_route_service as _routes
-        await _routes.ensure_rnd_purchase_route(pid, decision["supplier_id"], decision.get("contract_id", ""),
-                                                cur.get("entity_id", ""), name, cur)
+        if is_makloon:
+            await _routes.ensure_rnd_makloon_route(pid, decision["supplier_id"], decision.get("contract_id", ""),
+                                                   decision.get("process_type", ""), cur.get("entity_id", ""), name,
+                                                   cur)
+        else:
+            await _routes.ensure_rnd_purchase_route(pid, decision["supplier_id"], decision.get("contract_id", ""),
+                                                    cur.get("entity_id", ""), name, cur)
 
 
 async def bind_decided_samples(spec_id: str, product_id: str, product_sku: str, actor_name: str) -> int:
@@ -1284,6 +1351,7 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
         lock_target = ((await db.md_specs.find_one({"id": cur["spec_id"]}, {"_id": 0, "exclusive_customer_id": 1})) or {}).get("exclusive_customer_id") or ""
     await specs._assert_color_lock(cur.get("color_target") or {}, lock_target, f"sample {cur.get('number', '')}")  # noqa: SLF001
     snap = await _supplier_snapshot(supplier_id)
+    is_makloon = snap.get("partner_kind") == "makloon"
     name = (actor or {}).get("name", "")
     entity_id = cur.get("entity_id", "")
     pol = await rnd_gate.policy(entity_id)
@@ -1298,13 +1366,17 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
     await _saga.claim(COLL, sample_id, "sample_decide",
                       precondition={"status": {"$in": ["in_progress", "assessed"]}},
                       actor=actor.get("name", ""))
+    mk_process = await _winner_process(cur, supplier_id) if is_makloon else ""
     if bool(pol.get("auto_contract_on_decide", True)):
         prod = await db.products.find_one({"id": product_id}, {"_id": 0}) if product_id else None
         basis = (prod or {}).get("base_unit") or cur.get("unit") or "meter"
         if basis not in set(dr.values_of("tariff_basis")):
             basis = "lumpsum"
+        if is_makloon and (payload.get("tariff_mode") or "").strip().lower() == "borongan":
+            basis = "lot"   # K-68 — tarif borongan: satu harga per lot/SPK
         contract = await contract_service.create_contract({
-            "contract_type": "purchase", "partner_id": supplier_id,
+            "contract_type": "makloon" if is_makloon else "purchase", "partner_id": supplier_id,
+            **({"process_type": mk_process} if is_makloon else {}),
             "title": f"Hasil {' + '.join(types_of(cur)) or 'sample'} "
                      f"{cur.get('number')} — {cur.get('title')}",
             "product_id": product_id,
@@ -1315,7 +1387,7 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
             "sample_ref": cur.get("number", ""),
             "notes": payload.get("note") or "",
         }, entity_id=entity_id, actor=name)
-        if product_id:
+        if product_id and not is_makloon:   # barang supplier hanya untuk pemasok (MP-T3)
             sku_sup = (payload.get("supplier_sku") or "").strip() or \
                 f"{(prod or {}).get('sku', 'ITEM')}-{supplier_id[-4:].upper()}"
             try:
@@ -1334,6 +1406,7 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
                 item = {"skipped": str(exc)}
     decision = {
         "supplier_id": supplier_id, "supplier_name": snap["supplier_name"],
+        "partner_kind": snap.get("partner_kind", "supplier"), "process_type": mk_process,
         "reason_code": reason_code,
         "reason_label": next((r["label"] for r in DECISION_REASONS if r["value"] == reason_code), ""),
         "note": payload.get("note") or "", "price": price,

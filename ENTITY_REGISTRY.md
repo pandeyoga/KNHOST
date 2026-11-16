@@ -283,6 +283,13 @@ Endpoints:   GET/POST /process-recipes · PATCH/DELETE /process-recipes/{id} · 
 ⚠️ JANGAN BUAT: recipes, konversi, bom_makloon, process_bom
 ```
 
+> MP-T3 (16 Nov 2026): peserta & round `md_samples` boleh mitra makloon — `participants[]/rounds[]` membawa
+> `partner_kind` (`supplier`|`makloon`; `supplier_id` tetap nama kolomnya); keputusan membawa `partner_kind`, `process_type`.
+> Master jenis sampling (`sample_types`) mendapat `partner_process_types` (labdip → celup, proofing → printing, handfeel →
+> tenun/rajut/pre_treatment). Pemenang mitra makloon → kontrak `makloon` (per proses / borongan `lot`) + rute utama
+> `origin=rnd`. Produk dari spesifikasi membawa `color_id`. Sample membawa `base_fabric_override` bila kain dasar proofing
+> menyimpang (K-72).
+
 ### product_routes  [MP-T1 IMPLEMENTED — Rute Produk, 16 Nov 2026]
 ```
 Collection:  product_routes              Prefix: rte_

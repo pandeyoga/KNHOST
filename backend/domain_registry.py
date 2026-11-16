@@ -226,6 +226,8 @@ CLAIM_STATUSES: List[Dict[str, Any]] = [
 #     requires_design      → jenis ini menuntut kode desain (dulu `if == proofing`)
 #     measurement_fields   → hasil ukur yang WAJIB diisi saat menutup round
 #     applies_to_lines     → [] berarti SEMUA lini (aturan yang sama dengan FASE L)
+#     partner_process_types → MP-T3: proses mitra MAKLOON yang boleh mengerjakan jenis ini
+#                             (labdip → celup, proofing → printing); [] = mitra makloon tidak dibatasi
 #
 # NILAI DI SINI = BENIH. Nilai HIDUP ada di koleksi `sample_types` (bisa ditambah
 # pemilik tanpa programmer) dan dibaca lewat `services/master_registry.py`.
@@ -236,20 +238,20 @@ CLAIM_STATUSES: List[Dict[str, Any]] = [
 SAMPLE_TYPES: List[Dict[str, Any]] = [
     {"value": "labdip", "label": "Labdip (kain polos)", "code": "labdip",
      "name": "Labdip (kain polos)", "seq": 10, "active": True,
-     "requires_design": False, "applies_to_lines": [],
+     "partner_process_types": ["celup"], "requires_design": False, "applies_to_lines": [],
      "measurement_fields": ["delta_e", "colorfastness_wash", "colorfastness_rub"],
      "notes": "Cocokkan WARNA pada kain polos. Yang diukur: selisih warna ΔE dan "
               "ketahanan warna (cuci & gosok)."},
     {"value": "handfeel", "label": "Handfeel (rasa & konstruksi)", "code": "handfeel",
      "name": "Handfeel (rasa & konstruksi)", "seq": 20, "active": True,
-     "requires_design": False, "applies_to_lines": [],
+     "partner_process_types": ["tenun", "rajut", "pre_treatment"], "requires_design": False, "applies_to_lines": [],
      "measurement_fields": ["gsm_actual", "lebar", "shrinkage_pct", "handfeel_score"],
      "notes": "Menilai RASA kain & konstruksinya — gramasi, lebar, susut, dan skor "
               "handfeel 1–5. Sengaja dipisah dari labdip: skor 90 pada labdip berarti "
               "warnanya tepat, pada handfeel berarti rasanya tepat."},
     {"value": "proofing", "label": "Proofing (sample printing)", "code": "proofing",
      "name": "Proofing (sample printing)", "seq": 30, "active": True,
-     "requires_design": True, "applies_to_lines": ["printing"],
+     "partner_process_types": ["printing"], "requires_design": True, "applies_to_lines": ["printing"],
      # MD-05 (catatan demo 2026-09): proofing cukup FOTO + CATATAN — kolom ukur
      # (ΔE/repeat/register) dihapus dari bawaan; bukti lampiran tetap wajib.
      "measurement_fields": [],
@@ -258,7 +260,7 @@ SAMPLE_TYPES: List[Dict[str, Any]] = [
               "MD-05). Pemilik boleh menambah kolom ukur lagi lewat master ini."},
     {"value": "bulk_sample", "label": "Bulk sample", "code": "bulk_sample",
      "name": "Bulk sample", "seq": 90, "active": False,
-     "requires_design": False, "applies_to_lines": [],
+     "partner_process_types": [], "requires_design": False, "applies_to_lines": [],
      "measurement_fields": [],
      "notes": "DINONAKTIFKAN (keputusan pemilik #4, 2026-08-19): nol dokumen "
               "memakainya. Tidak dihapus dari enum supaya dokumen lama tetap terbaca."},

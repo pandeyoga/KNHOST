@@ -1,0 +1,54 @@
+=== Telusur R&D jenis proofing (tag 81D49) ===
+0a) Desain: buat → unggah PNG cetak → ajukan → ACC
+  POST /design-gallery → 200
+  POST files → 200 
+  POST /design-gallery/dsgn_93bab6b93819/submit → 200
+  POST /design-gallery/dsgn_93bab6b93819/approve → 200
+  POST files-kind/mockup → 200 
+  POST files-kind/source → 200 
+  POST files-kind/print_png → 200 
+  POST /design-gallery/dsgn_93bab6b93819/lifecycle/submit-final → 200
+   desain: {'code': 'RNA-GEN-009', 'status': 'final_submitted', 'version': 1, 'approved_at': '2026-11-16T11:18:36.065207+00:00'} berkas: 4
+0b) Kain dasar yang lolos (induk woven/knit dengan SKU disetujui/produksi atau handfeel/labdip ACC):
+   kain dasar: {'id': 'ptpl_40980a6bf46151477d8b', 'fabric_type': 'woven', 'name': 'Kain PFP Katun (siap print, per Yard)', 'stage': 'pfp'}
+1) Buat permintaan sample + spesifikasi (MD):
+  POST /rnd/samples → 200
+   sample: {'number': 'KSC/SMP-00013', 'status': 'draft', 'sample_types': ['proofing'], 'spec_id': 'spec_7d3ddbeafb66', 'line_code': 'printing'}
+2) Siapa yang bisa mengerjakan:
+  GET /rnd/samples/smp_74cc8770b51d/performers → 200
+   performers: {"count": 8, "items": [{"id": "user_admin_01", "name": "Budi Santoso", "role": "admin"}, {"id": "user_manager_01", "name": "Dewi Rahayu", "role": "manager"}, {"id": "user_wh_01", "name": "Eko Prasetyo", "role": "warehouse"}, {"id": "user_manager_03", "name": "Fajar Nugroho", "role": "manager"}, {"id": "user_wh_02", "name": "Fitri Handayani", "role": "warehouse"}, {"id": "user_whadmin_01", "name": "Hendra Kepala Gudang", "role": "warehouse_admin"}, {"id": "user_md_01", "name": "Rina Merchandiser", "role": "md"}, {"id": "user_manager_02", "name": "Rudi Hartono", "role": "manager"}]}
+  GET /rnd/samples/smp_74cc8770b51d/partner-options → 200
+   tujuan kirim: [('Mitra Audit Prn 32F8B', 'Mitra makloon'), ('Mitra Audit Prn 755F5', 'Mitra makloon'), ('Mitra Audit Prn BB2E5', 'Mitra makloon'), ('PT Rotary Print Indah', 'Mitra makloon')] + 6 pemasok
+3) Kirim ke supplier/mitra:
+  POST /rnd/samples/smp_74cc8770b51d/send → 200
+4) Putaran: buka → kirim hasil → nilai ACC:
+  POST /rnd/samples/smp_74cc8770b51d/rounds → 400  {"detail":"Round 1 (proofing) belum dinilai. Selesaikan penilaiannya sebelum membuka round berikutnya."}
+   rounds: [{'id': 'rnd_003d4c58f752', 'supplier_id': 'mak_seed_printing', 'status': 'open'}]
+  POST round attachments → 200 
+  POST /rnd/samples/smp_74cc8770b51d/rounds/rnd_003d4c58f752/submit → 200
+  POST /rnd/samples/smp_74cc8770b51d/rounds/rnd_003d4c58f752/assess → 200
+5) Opsi kontrak sebelum putus:
+  GET /rnd/samples/smp_74cc8770b51d/contract-options → 200
+    {"items": []}
+6) Putus pemenang + ACC spesifikasi (produk lahir):
+  POST /rnd/samples/smp_74cc8770b51d/decide → 200
+   keputusan: {'supplier_name': 'PT Rotary Print Indah', 'price': 6500.0, 'contract_number': 'KSC/SCT-00017', 'supplier_item_id': ''}
+   spesifikasi: {'number': 'KSC/SPEC-00020', 'status': 'approved', 'lifecycle': 'disetujui', 'product_id': 'prod_bf55d2cc9e8c', 'product_sku': 'AUD-RND-81D49'}
+   produk lahir: {'sku': 'AUD-RND-81D49', 'name': 'Kain Audit proofing 81D49', 'stage': 'finished', 'lifecycle': 'disetujui', 'template_id': 'ptpl_06eea4fea032da505f78', 'base_unit': 'yard', 'fabric_type': 'woven', 'status': 'active'}
+   induk: {'name': 'Kain Audit proofing 81D49', 'stage': 'finished', 'restock_source': {'mode': 'makloon', 'note': 'Otomatis: pemenang sample KSC/SMP-00013 — PT Rotary Print Indah', 'lead_time_days': None, 'updated_by': 'Budi Santoso', 'updated_at': '2026-11-16T11:18:37.069151+00:00'}, 'status': 'active'}
+   kontrak otomatis: {'contract_number': 'KSC/SCT-00017', 'contract_type': 'makloon', 'partner_kind': 'makloon', 'partner_id': 'mak_seed_printing', 'process_type': 'printing', 'product_id': 'prod_bf55d2cc9e8c', 'tariff_basis': 'yard', 'tariff_rate': 6500.0, 'status': 'active'}
+   rute lahir: ('Printing di PT Rotary Print Indah', 'rnd', True, [('printing', 'PT Rotary Print Indah', 'KSC/SCT-00017', 'PFP-KTN-001 · Kain PFP Katun (siap print, per Yard)')])
+   produk color_id/design/kain dasar: {'color_id': '', 'design_id': 'dsgn_93bab6b93819', 'base_fabric_template_id': 'ptpl_40980a6bf46151477d8b'}
+   resep proses untuk produk ini: 0
+7) Rilis ke produksi:
+  POST /rnd/specs/spec_7d3ddbeafb66/release-product → 400  {"detail":"Rilis produk ke produksi pada jenjang 1 diputus oleh Admin atau Manajer. Peran Anda belum tercantum di Aturan Persetujuan."}
+  POST /rnd/specs/spec_7d3ddbeafb66/release-product → 200
+   produk sesudah rilis: {'sku': 'AUD-RND-81D49', 'lifecycle': 'produksi', 'stage': 'finished'}
+8) Rencana SPK dari rute:
+  GET /makloon-orders/plan-from-route → 200
+    True None Kain PFP Katun (siap print, per Yard) 100.0 [('printing', 'PT Rotary Print Indah', True)]
+9) Pengadaan produk baru (lama):
+  POST /purchase-orders → 404  {"detail":"Supplier tidak ditemukan"}
+  POST /makloon-orders → 200
+   peringatan SPK: []
+TAG 81D49 sample smp_74cc8770b51d

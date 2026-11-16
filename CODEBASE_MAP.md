@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: ce9c3a5 pada 2026-11-16 -->
+<!-- Dihasilkan dari commit: 77c4f64 pada 2026-11-16 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 177 |
-| Endpoint (`@router.<method>`) | 1915 |
+| Endpoint (`@router.<method>`) | 1916 |
 | Service (`backend/services/*.py`) | 456 |
 | Koleksi MongoDB disentuh kode produksi | 219 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -264,7 +264,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid_v2_ops.py` | 10 | 166 | `/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge`, `/rfid/v2/ops/devices/{device_id}/gate-parameters`, `/rfid/v2/ops/devices/{device_id}/health`, `/rfid/v2/ops/devices/{device_id}/protocol`, `/rfid/v2/ops/devices/{device_id}/sessions`, `/rfid/v2/ops/devices/{device_id}/simulate` … |
 | `rfid_v2_review.py` | 13 | 220 | `/rfid/v2/ops/crossings`, `/rfid/v2/ops/crossings/move`, `/rfid/v2/ops/crossings/release`, `/rfid/v2/ops/devices/{device_id}/kiosk`, `/rfid/v2/ops/reviews`, `/rfid/v2/ops/reviews/summary` … |
 | `rfq.py` | 8 | 222 | `/rfqs`, `/rfqs/{rfq_id}`, `/rfqs/{rfq_id}/award`, `/rfqs/{rfq_id}/cancel`, `/rfqs/{rfq_id}/compare`, `/rfqs/{rfq_id}/quote` … |
-| `rnd.py` ⚠️>800 | 46 | 1060 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
+| `rnd.py` ⚠️>800 | 47 | 1070 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
 | `rnd_org.py` | 3 | 70 | `/rnd/divisions`, `/rnd/divisions/members` |
 | `saga_locks.py` | 3 | 123 | `/saga-locks`, `/saga-locks/{collection}/{doc_id}/inspect`, `/saga-locks/{collection}/{doc_id}/release` |
 | `sales_orders.py` ⚠️>800 | 4 | 914 | `/sales-orders`, `/sales-orders/{order_id}`, `/sales-orders/{order_id}/credit-recheck` |
@@ -604,7 +604,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `process_recipe_service.py` | 114 | M1 — Process Recipe service: CRUD helper + forecast konversi (aman). |
 | `product_exclusivity.py` | 150 | PS-20 — Produk eksklusif per sales ("PO sendiri"). |
 | `product_media_service.py` | 111 | Media per SKU, lokal, ber-versi CAS. Foto nyata/mockup ditinjau sebelum sales melihat. |
-| `product_route_service.py` | 519 | MP-T1 — Rute Produk: urutan langkah dari bahan sampai barang, per artikel per PT. |
+| `product_route_service.py` | 557 | MP-T1 — Rute Produk: urutan langkah dari bahan sampai barang, per artikel per PT. |
 | `product_supersede.py` | 109 | PREP-A (K-OPN-06) — produk "digantikan oleh" (`superseded_by`). |
 | `product_template_service.py` | 398 | F1b — Product Templates & Variants (pendekatan ADDITIVE/non-destruktif). |
 | `product_variant_service.py` | 253 | Satu induk, SKU tetap: jalur bersama untuk seluruh penulis produk. |
@@ -673,16 +673,16 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid_v2_sources.py` | 218 | PREP-D1 — sumber dokumen gate V2: manifest dari dokumen bisnis (bukan dari klien) + auto-cocok (AUD-MW-15). |
 | `rfq_service.py` | 388 | RFQ / Quotation service — Fase 6.1 (P1 Sourcing). |
 | `rnd_catalog_validation.py` | 65 | Validate source relations before saving any R&D specification. |
-| `rnd_flow_service.py` | 236 | UAT 24 Okt (P3/P4) — aturan alur R&D produk baru yang dipakai `rnd_sample_service` & router. |
+| `rnd_flow_service.py` | 261 | UAT 24 Okt (P3/P4) — aturan alur R&D produk baru yang dipakai `rnd_sample_service` & router. |
 | `rnd_gate.py` | 133 | FASE F (PS-12) — **Penjaga lifecycle produk** + resolver kebijakan R&D. |
 | `rnd_kpi_export.py` | 553 | PS-18 — **EKSPOR LAPORAN KPI DESAINER** (CSV · Excel · PDF). |
 | `rnd_kpi_service.py` | 774 | PS-18 — Layanan **KPI DESAINER** (kinerja pelaksana R&D yang terhitung sendiri). |
 | `rnd_org_service.py` | 95 | PS-17 — Layanan Organisasi R&D (divisi + anggota). |
 | `rnd_required_tests.py` | 91 | W2-REQ-03 — uji wajib SKU hasil MD (keputusan pemilik 2026-10-04: PERINGATAN, bukan blokir). |
 | `rnd_revalidation_service.py` | 341 | L03 LN-034 — uji ulang SKU existing per supplier: siklus terpisah, hasil teknis tanpa kontrak, keputusan PIC. |
-| `rnd_sample_service.py` | 1666 | FASE F · PS-12/13/14/18/19 — Layanan **PERMINTAAN SAMPLE** (`md_samples`), |
+| `rnd_sample_service.py` | 1739 | FASE F · PS-12/13/14/18/19 — Layanan **PERMINTAAN SAMPLE** (`md_samples`), |
 | `rnd_sla_service.py` | 176 | PS-18 — **ESKALASI SLA SAMPLE R&D** (dari papan pasif menjadi pengingat aktif). |
-| `rnd_spec_service.py` | 525 | FASE F · PS-12 — Layanan **SPESIFIKASI PRODUK versi R&D** (`md_specs`). |
+| `rnd_spec_service.py` | 526 | FASE F · PS-12 — Layanan **SPESIFIKASI PRODUK versi R&D** (`md_specs`). |
 | `role_desk_service.py` | 284 | U-2 (2026-09) — Meja kerja untuk 6 peran tersisa: admin, manager, sales, warehouse, designer, driver. |
 | `role_insight_service.py` | 234 | PR-T6 — RINGKASAN, POTRET, dan RIWAYAT peran untuk layar "Peran & Hak Akses" dan "Akun & Akses". |
 | `role_reality_service.py` | 691 | **CEK KENYATAAN PERAN** — utang migrasi (ii) FASE E-8/E-6. |
@@ -802,7 +802,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `production` | 3 | 753 |
 | `purchasing` | 86 | 18563 |
 | `rfid` | 21 | 3697 |
-| `rnd` | 66 | 7910 |
+| `rnd` | 66 | 7932 |
 | `sales` | 98 | 16020 |
 | `sales_admin` | 12 | 1917 |
 | `samples` | 8 | 807 |
@@ -825,7 +825,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|---:|
 | `backend/routers/special_orders.py` | 1523 | 800 |
 | `backend/routers/sales_returns.py` | 1320 | 800 |
-| `backend/routers/rnd.py` | 1060 | 800 |
+| `backend/routers/rnd.py` | 1070 | 800 |
 | `backend/routers/purchase_orders.py` | 1051 | 800 |
 | `backend/routers/sales_orders_extra.py` | 1020 | 800 |
 | `backend/routers/sales_orders.py` | 914 | 800 |

@@ -517,3 +517,41 @@ async def plan_makloon(product_id: str, qty: float, entity_id: str) -> Dict[str,
                "material_unit": mat.get("base_unit", ""), "material_stage": _stage_of(mat), "material_qty": material_qty,
                "supplier_id": (buy or {}).get("partner_id", ""), "route_id": route["id"], "steps": out_steps}
     return {**base, "ready": True, "explain": explain, "payload": payload}
+
+
+async def ensure_rnd_makloon_route(product_id: str, partner_id: str, contract_id: str, process_type: str,
+                                   entity_id: str, actor_name: str, sample: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """MP-T3 — putusan R&D (pemenang mitra makloon) → rute "<tahap> di <mitra>" bila artikel belum punya rute di PT itu.
+    Bahan masuk = varian kain dasar spesifikasi yang bertahap asal tahap itu (bila ada). Aturan rute tetap berlaku: bila
+    kontrak/bahan tidak lolos, rute dibuat tanpa bagian itu; bila tahapnya tidak berakhir di tahap produk, tidak dibuat."""
+    prod = await db.products.find_one({"id": product_id}, {"_id": 0, "id": 1, "template_id": 1, "stage": 1,
+                                                           "base_fabric_template_id": 1})
+    if not prod or not prod.get("template_id") or not entity_id or not process_type:
+        return None
+    if await db[COLL].find_one({"entity_id": entity_id, "template_id": prod["template_id"], "status": "active"},
+                               {"_id": 1}):
+        return None
+    goal = _stage_of(prod, "finished")
+    tu = "print" if goal == "pfp" else ("dye" if goal == "pfd" else "")
+    meta = await mreg.stage_by_process_type(process_type, entity_id, tu)
+    if not meta or meta.get("kind") != "makloon":
+        return None
+    src = dr.normalize_stage(meta.get("from_stage")) or ""
+    input_pid = ""
+    if prod.get("base_fabric_template_id") and src:
+        base = await db.products.find_one({"template_id": prod["base_fabric_template_id"], "stage": src,
+                                           "status": {"$ne": "archived"}}, {"_id": 0, "id": 1})
+        input_pid = (base or {}).get("id", "")
+    mk = await db.makloons.find_one({"id": partner_id}, {"_id": 0, "name": 1}) or {}
+    step = {"kind": "makloon", "stage_code": meta["value"], "partner_id": partner_id, "contract_id": contract_id,
+            "input_product_id": input_pid}
+    ref = {"kind": "sample", "id": sample.get("id", ""), "number": sample.get("number", "")}
+    name = f"{meta.get('label') or meta['value']} di {mk.get('name') or 'mitra pemenang'}"
+    for drop in ((), ("contract_id",), ("contract_id", "input_product_id")):
+        body = {"name": name, "steps": [{k: v for k, v in step.items() if k not in drop}]}
+        try:
+            return await create(prod["template_id"], body, {"name": actor_name}, entity_id, origin="rnd",
+                                origin_ref=ref)
+        except RouteError:
+            continue
+    return None

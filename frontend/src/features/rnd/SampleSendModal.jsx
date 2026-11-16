@@ -13,8 +13,9 @@ import { Field, Footer, Hint } from "./RndField";
 import { roundTypeOf, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
 import GroupEntityBadge, { isGroupEntityPartner } from "../../components/GroupEntityBadge";
 
-// Daftar supplier hidup DI SINI (bukan rndApi.js) — modul bersama itu dipakai layar desainer tanpa izin supplier.view.
-const listSuppliers = (params) => axios.get(`${API}/suppliers`, { params }).then((r) => r.data);
+// MP-T3 — tujuan kirim = pemasok + mitra makloon yang mengerjakan proses jenis sample (labdip → celup, proofing →
+// printing). Dibaca dari R&D (izin rnd.submit), bukan /suppliers, sehingga tidak butuh izin supplier.view.
+const listPartners = (sampleId) => axios.get(`${API}/rnd/samples/${sampleId}/partner-options`).then((r) => r.data);
 
 export default function SampleSendModal({ mode = "send", sample, participant, typeCode, types, policy, onClose, onConfirm, busy, error = "" }) {
   const [suppliers, setSuppliers] = useState([]);
@@ -30,9 +31,9 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
   useEffect(() => { setPickedTypes(kinds); }, [kinds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isSend) return;
-    listSuppliers({ limit: 500 }).then((r) => setSuppliers(Array.isArray(r) ? r : r?.items || []))
-      .catch((e) => setErr(errMsg(e, "Gagal memuat daftar supplier.")));
-  }, [isSend]);
+    listPartners(sample?.id).then((r) => setSuppliers(Array.isArray(r) ? r : r?.items || []))
+      .catch((e) => setErr(errMsg(e, "Gagal memuat daftar pemasok & mitra.")));
+  }, [isSend, sample?.id]);
 
   const covered = useMemo(() => {
     const set = new Set();
@@ -85,10 +86,10 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
               <p className="mb-1 text-[10.5px] font-semibold text-[#6B6B73]">Supplier tujuan *</p>
               <div className="relative">
                 <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
-                <input className="field !pl-8" data-testid="sample-send-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari supplier…" />
+                <input className="field !pl-8" data-testid="sample-send-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari pemasok atau mitra makloon…" />
               </div>
               <div className="mt-1.5 max-h-[240px] divide-y divide-[#F4F5F7] overflow-y-auto rounded-lg border border-[#EFF0F2]" data-testid="sample-send-supplier-list">
-                {filtered.length === 0 && <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]">Tidak ada supplier yang cocok.</p>}
+                {filtered.length === 0 && <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]">Tidak ada pemasok atau mitra yang cocok.</p>}
                 {filtered.map((s) => {
                   // UAT 24 Okt (audit UI tahap 2) — G5-47: badan usaha grup tidak dipilih sebagai supplier sample
                   // (dulu "PT Uji Provisioning …" tampil seperti supplier biasa; di Buat RFQ dikunci berlencana).
@@ -101,7 +102,7 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
                       className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${done ? "cursor-not-allowed bg-[#FAFBFC] opacity-60" : on ? "bg-[#EFF4FF]" : "hover:bg-[#FAFBFC]"}`}>
                       <span className="min-w-0">
                         <span className="flex min-w-0 items-center gap-1"><span className="truncate text-[12px] font-semibold">{s.name}</span><GroupEntityBadge partner={s} /></span>
-                        <span className="block truncate text-[10.5px] text-[#6B6B73]">{s.code || "—"}{s.city ? ` · ${s.city}` : ""}{!done && partial > 0 ? ` · ${partial} jenis sudah berjalan` : ""}</span>
+                        <span className="block truncate text-[10.5px] text-[#6B6B73]">{s.kind_label ? `${s.kind_label} · ` : ""}{s.code || "—"}{s.city ? ` · ${s.city}` : ""}{!done && partial > 0 ? ` · ${partial} jenis sudah berjalan` : ""}</span>
                       </span>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${done ? "border-[#E5E5EA] text-[#8E8E93]" : on ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] text-[#6B6B73]"}`}>
                         {group ? "tidak bisa dipilih" : done ? "sudah semua jenis" : on ? "dipilih" : "pilih"}
