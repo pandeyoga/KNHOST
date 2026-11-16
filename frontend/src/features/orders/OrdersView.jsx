@@ -122,10 +122,10 @@ export default function OrdersView({
     }
   }, [focusDoc]); // eslint-disable-line
 
-  // Pesanan terpilih dicari di halaman aktif dulu, lalu di daftar dasbor (prop) sebagai cadangan.
-  const sel = selectedOrder
-    ? (paged.items.find((o) => o.id === selectedOrder) || orders.find((o) => o.id === selectedOrder) || null)
-    : null;
+  // M16 (pemilik 16 Nov) — panel kanan HANYA untuk pesanan yang tampil (dan tersorot) di daftar. Dulu jatuh ke daftar
+  // dasbor sebagai cadangan: sesudah ganti tab/cari/halaman panel masih menceritakan pesanan lain (mis. pesanan batal
+  // di samping baris "Selesai · Lunas"), tanpa tanda pesanan mana yang dibuka.
+  const sel = selectedOrder ? (paged.items.find((o) => o.id === selectedOrder) || null) : null;
   const filteredOrders = paged.items;   // penyaringan status & pencarian dilakukan SERVER
 
   const byStatus = summary?.by_status || {};
@@ -233,7 +233,12 @@ export default function OrdersView({
             </section>
 
             {sel ? (
-              <div className="grid gap-2 content-start min-w-0">
+              <div className="grid gap-2 content-start min-w-0 lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto"
+                data-testid="order-side-pane">
+                <div className="flex min-w-0 items-baseline gap-2 px-1" data-testid="order-pane-identity">
+                  <span className="font-mono text-fs-13 font-bold text-kn-text">{sel.number}</span>
+                  <span className="min-w-0 truncate text-fs-12 text-kn-text-2">{sel.customer_name || ""}</span>
+                </div>
                 <PageTabs testId="order-pane-switch" value={detailPane} onChange={setDetailPane} ariaLabel="Panel pesanan"
                   tabs={[
                     { key: "detail", label: "Detail & Aksi", icon: FileText, testId: "order-pane-detail" },

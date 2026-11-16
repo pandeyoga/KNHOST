@@ -95,29 +95,41 @@ export function SlipRow({ s, open, onToggle }) {
         </td>
         <td className="text-right text-kn-action">{rp(s.gross)}</td>
         <td className="text-right text-kn-danger-text">{rp(slipDeductions(s))}</td>
-        <td className="text-right text-kn-danger-text" title={s.ter_category ? `Tarif efektif PPh 21 kategori ${s.ter_category}` : undefined}>{rp(s.pph21)}{s.pph21_method !== "annual_pasal17" && <span className="text-fs-12 text-kn-text-2"> {pct(s.pph21_rate)}</span>}</td>
+        {/* M39 (pemilik 16 Nov) — dulu "Rp 0 0,00%" (tarif tanpa label, tampil walau tidak ada pajak). Kini: tanpa pajak
+            → "—"; ada pajak → nominal + baris kedua "TER {kategori} {tarif}". */}
+        <td className="text-right text-kn-danger-text" data-testid={`payslip-pph-${s.id}`}
+          title={s.ter_category ? `Tarif efektif PPh 21 kategori ${s.ter_category}` : undefined}>
+          {Number(s.pph21 || 0) > 0 ? (
+            <>
+              {rp(s.pph21)}
+              {s.pph21_method !== "annual_pasal17" && Number(s.pph21_rate || 0) > 0 && (
+                <span className="block text-fs-12 text-kn-text-2">TER{s.ter_category ? ` ${s.ter_category}` : ""} {pct(s.pph21_rate)}</span>
+              )}
+            </>
+          ) : <span className="text-kn-text-2">—</span>}
+        </td>
         <td className="text-right font-bold text-kn-success-text">{rp(s.net)}</td>
       </tr>
       {open && (
-        <tr data-testid={`payslip-detail-${s.id}`}>
-          <td colSpan={5} className="bg-kn-neutral-soft">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 text-fs-12">
-              {groups.map((g) => (
-                <div key={g.key} data-testid={`payslip-group-${s.id}-${g.key}`}>
-                  <p className="font-bold text-kn-text-2 mb-1">{g.label}</p>
-                  {g.rows.length === 0 ? <p className="text-kn-text-2">—</p> : g.rows.map((c, i) => (
-                    <div key={`${c.code}-${i}`} className="flex items-start justify-between gap-2 py-0.5">
-                      <span className="text-kn-text min-w-0 break-words">{c.label}</span>
-                      <span className="tabular-nums whitespace-nowrap">{rp(c.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-            {s.pph21_month_detail?.prior_pph21 > 0 && (
-              <p className="mt-2 text-fs-12 text-kn-text-2" data-testid={`payslip-pph-month-${s.id}`}>PPh 21 bulan ini {rp(s.pph21_month)} atas bruto sebulan {rp(s.pph21_month_detail.tax_gross_month)}, dikurangi {rp(s.pph21_month_detail.prior_pph21)} yang sudah dipotong di proses sebelumnya.</p>
-            )}
-          </td>
+        <tr data-testid={`payslip-detail-${s.id}`} className="bg-kn-neutral-soft align-top">
+          {/* M39 — rincian sejajar kolom tabel: Pendapatan di bawah Nama+Bruto, Potongan di bawah Potongan+PPh 21,
+              Tanggungan perusahaan di bawah Neto (dulu satu sel 5 kolom dibagi tiga sama lebar → tidak sejajar). */}
+          {groups.map((g, gi) => (
+            <td key={g.key} colSpan={gi === 2 ? 1 : 2} className="text-fs-12">
+              <div data-testid={`payslip-group-${s.id}-${g.key}`}>
+                <p className="font-bold text-kn-text-2 mb-1">{g.label}</p>
+                {g.rows.length === 0 ? <p className="text-kn-text-2">—</p> : g.rows.map((c, i) => (
+                  <div key={`${c.code}-${i}`} className="flex items-start justify-between gap-2 py-0.5">
+                    <span className="text-kn-text min-w-0 break-words">{c.label}</span>
+                    <span className="tabular-nums whitespace-nowrap">{rp(c.amount)}</span>
+                  </div>
+                ))}
+              </div>
+              {gi === 1 && s.pph21_month_detail?.prior_pph21 > 0 && (
+                <p className="mt-2 text-fs-12 text-kn-text-2" data-testid={`payslip-pph-month-${s.id}`}>PPh 21 bulan ini {rp(s.pph21_month)} atas bruto sebulan {rp(s.pph21_month_detail.tax_gross_month)}, dikurangi {rp(s.pph21_month_detail.prior_pph21)} yang sudah dipotong di proses sebelumnya.</p>
+              )}
+            </td>
+          ))}
         </tr>
       )}
     </>

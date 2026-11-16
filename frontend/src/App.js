@@ -10,7 +10,6 @@ import useAppNavigation from "./hooks/useAppNavigation";
 import useSessionSync from "./hooks/useSessionSync";
 import DetailDrawer from "./components/DetailDrawer";
 import TourMenu from "./components/TourMenu";
-import OnboardingPanel from "./components/OnboardingPanel";
 import EntitySwitcher from "./components/EntitySwitcher";
 import LocationScopeBar, { useLocationChoice, showsLocationScope } from "./components/LocationScopeBar";   // FIX-1 (K-B1-01)
 import NotificationCenter from "./components/NotificationCenter";
@@ -59,8 +58,6 @@ function App() {
   const [users, setUsers] = useState([]);
   const [uoms, setUoms] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [onboarding, setOnboarding] = useState(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [permissions, setPermissions] = useState({ matrix: {}, actions: [] });
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditFilters, setAuditFilters] = useState({ actor: "", module: "", action: "", date_from: "", date_to: "" });
@@ -184,7 +181,7 @@ function App() {
     // values
     user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity, entities,
     // setters
-    setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
+    setUser, setToken, setActiveView, setNotice,
     setData, setTemplates, setUoms, setMovements, setTasks, setUsers, setPermissions, setAuditLogs,
     setSelectedCustomer, setSelectedAddress, setSelectedProduct, setBreakdown,
     setCart, setLastDocument, setLastLabel, setPreviewHtml,
@@ -327,7 +324,7 @@ function App() {
           notice={notice}
           // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
           infoCta={{ label: "Tutup", onClick: () => setNotice("") }}
-          entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} />}</>}
+          entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} entityKey={selectedEntity} />}</>}
           helpMenu={isMobile ? null : helpMenu("topbar")}
           notificationCenter={
             <NotificationCenter
@@ -376,14 +373,6 @@ function App() {
 
           <DetailDrawer detail={activeDetail} onClose={() => setActiveDetail(null)} onNavigate={(target) => { navigateTo(target); setActiveDetail(null); }} />
 
-          {/* Onboarding Checklist Panel — hanya di home view (BUG #2 fix) */}
-          {showOnboarding && showHomeWidgets && (
-            <OnboardingPanel
-              onboarding={onboarding}
-              onDismiss={() => setShowOnboarding(false)}
-              onUpdate={setOnboarding}
-            />
-          )}
 
           <PeriodUnlockBanner currentUser={user} onNavigate={(target) => navigateTo(target)} />
 

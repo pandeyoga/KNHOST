@@ -158,6 +158,8 @@ const BADGE_LABEL = {
   completed: "Selesai", qc_check: "Pemeriksaan QC", put_away: "Penyimpanan",
   // UAT 24 Okt (audit UI tahap 2) — G2-13: tingkat keparahan baris Meja Saya dulu tampil mentah ("warning · 84").
   warning: "Perlu perhatian", info: "Info", critical: "Mendesak", high: "Tinggi", medium: "Sedang", low: "Rendah",
+  // Masukan 16 Nov — kode yang masih tampil mentah ("Revision") di meja desain/sample.
+  revision: "Revisi", sent: "Terkirim ke pelanggan", assessed: "Perlu diputuskan", decided: "Diputuskan",
 };
 
 const BADGE_TONE = {

@@ -42,7 +42,7 @@ export function useAppActions(state) {
   const billApproveIntent = useIntentKey("vbapn");
   const {
     user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity, entities,
-    setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
+    setUser, setToken, setActiveView, setNotice,
     setData, setTemplates, setUoms, setMovements, setTasks, setUsers, setPermissions, setAuditLogs,
     setSelectedCustomer, setSelectedAddress, setSelectedProduct, setBreakdown,
     setCart, setLastDocument, setLastLabel, setPreviewHtml,
@@ -121,11 +121,7 @@ export function useAppActions(state) {
       setActiveView(defaultViewForRole(response.data.user.role));
       if (setActiveNavId) setActiveNavId(defaultNavIdForRole(response.data.user.role));
       setNotice(`Login berhasil sebagai ${authedUser.role_label || authedUser.role}.`);
-      try {
-        const onbRes = await axios.get(`${API}/onboarding`, { headers: { Authorization: `Bearer ${response.data.token}` } });
-        setOnboarding(onbRes.data);
-        if (onbRes.data.progress_pct < 100) setShowOnboarding(true);
-      } catch (_) {}
+      // M9 (pemilik 16 Nov) — panel "panduan awal" (Buat UOM pertama, Buat pengguna baru, …) dihapus dari layar kerja.
     } catch (error) {
       setNotice(error.response?.data?.detail || "Login gagal.");
     }

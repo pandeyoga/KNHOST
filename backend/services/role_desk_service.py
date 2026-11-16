@@ -42,17 +42,36 @@ async def _turn_queue(actor: Dict[str, Any]) -> Dict[str, Any]:
     notes = await db.notifications.find(
         {"recipient_user": actor["id"], "type": "turn", "read": {"$ne": True}}, {"_id": 0}
     ).sort("created_at", -1).limit(100).to_list(100)
+    # Masukan 16 Nov — baris giliran yang dokumennya SUDAH pindah tahap tidak ditampilkan (dulu tampil 40 hari berlencana
+    # "Info"); lencana = tahap dokumen saat giliran dibuat, bukan tingkat notifikasi.
+    from services.turn_notification_service import stage_text
+    want: Dict[str, Dict[str, str]] = {}
+    for n in notes:
+        parts = str(n.get("ref") or "").split("#", 1)[0].split(":")
+        if len(parts) == 4 and parts[0] == "turn":
+            want.setdefault(parts[1], {})[parts[2]] = parts[3]
+    now_status: Dict[str, Dict[str, str]] = {}
+    for coll_name, ids in want.items():
+        try:
+            now_status[coll_name] = {d["id"]: str(d.get("status") or "") async for d in db[coll_name].find(
+                {"id": {"$in": list(ids)}}, {"_id": 0, "id": 1, "status": 1})}
+        except Exception:  # noqa: BLE001 — koleksi tak dikenal: biarkan baris tampil apa adanya
+            continue
     rows, seen = [], set()
     for n in notes:
         key = n.get("action_id") or n.get("id")
         if key in seen:   # L10 LN-102-T02 — satu dokumen = satu baris walau notifikasinya berulang
             continue
+        parts = str(n.get("ref") or "").split("#", 1)[0].split(":")
+        st = parts[3] if len(parts) == 4 and parts[0] == "turn" else ""
+        if st and parts[1] in now_status and now_status[parts[1]].get(parts[2], st) != st:
+            continue
         seen.add(key)
         coll, doc_id = (str(n.get("action_id") or ":").split(":", 1) + [""])[:2]
         rows.append(_row(ref_type=coll.rstrip("s") if coll.endswith("s") else coll, ref_id=doc_id,
                          number=str(n.get("title", "")).split(":")[-1].strip(), title=n.get("title", ""),
-                         subtitle=n.get("body", ""), age_days=_age_days(n.get("created_at")),
-                         badge=n.get("severity", "info"), action="Buka", action_kind="open",
+                         subtitle=n.get("body", ""), age_days=_age_days(n.get("created_at")), at=n.get("created_at"),
+                         badge=stage_text(st) if st else n.get("severity", "info"), action="Buka", action_kind="open",
                          extra={"link": n.get("link", ""), "notification_id": n.get("id")}))
     return _queue("giliran_saya", "Giliran saya", "Dokumen yang berpindah tahap dan kini menunggu tindakan Anda.",
                   rows, action_label="Buka", owner="me", value_kind="count", value_label="Item")
@@ -61,7 +80,7 @@ async def _turn_queue(actor: Dict[str, Any]) -> Dict[str, Any]:
 def _so_rows(docs: List[Dict[str, Any]], action: str) -> List[Dict[str, Any]]:
     return [_row(ref_type="sales_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
                  subtitle=f"{o.get('status')} · {o.get('sales_name') or o.get('created_by') or '—'}",
-                 value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("updated_at") or o.get("created_at")),
+                 value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("updated_at") or o.get("created_at")), at=o.get("updated_at") or o.get("created_at"),
                  badge=o.get("status", ""), action=action) for o in docs]
 
 
@@ -86,13 +105,13 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
                value_label=TOTAL_LABEL),
         _queue("po_acc", "Pesanan pembelian menunggu ACC", "PO di atas ambang persetujuan.",
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),
-                     value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("created_at")), badge=o.get("status", ""), action="Putuskan") for o in po],
+                     value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status", ""), action="Putuskan") for o in po],
                action_label="Putuskan", owner="manager", value_label=TOTAL_LABEL),
         _queue("retur_acc", "Retur menunggu ACC", "Retur penjualan & pembelian yang perlu keputusan.",
                [_row(ref_type="sales_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"), value=sr_value.get(o["id"], 0.0),
-                     age_days=_age_days(o.get("created_at")), badge="retur penjualan", action="Putuskan") for o in sr]
+                     age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="retur penjualan", action="Putuskan") for o in sr]
                + [_row(ref_type="purchase_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("supplier_name", "—"), value=o.get("total_amount") or 0,
-                       age_days=_age_days(o.get("created_at")), badge="retur pembelian", action="Putuskan") for o in pr],
+                       age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="retur pembelian", action="Putuskan") for o in pr],
                action_label="Putuskan", owner="manager"),
         _queue("harga_khusus", "Permintaan harga khusus", "Harga di bawah pricelist yang diajukan sales.",
                # Cek UI UAT v3 (S4) — dulu nomor = id mentah (pra_…) tanpa produk/SO/harga normal: manajer tak tahu apa yang diputus.
@@ -102,7 +121,7 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
                      subtitle=(f"{rupiah(o.get('normal_price') or 0)} → {rupiah(o.get('requested_price') or 0)}/{o.get('unit') or 'unit'}"
                                + (f" (−{(o.get('guard') or {}).get('gap_pct'):g}%)" if (o.get('guard') or {}).get('gap_pct') else "")
                                + f" · {o.get('requested_by_name') or '—'}" + (f" · “{o['reason']}”" if o.get("reason") else "")),
-                     value=o.get("requested_price") or 0, age_days=_age_days(o.get("created_at")),
+                     value=o.get("requested_price") or 0, age_days=_age_days(o.get("created_at")), at=o.get("created_at"),
                      badge="per pesanan" if o.get("so_id") else "langganan", action="Putuskan") for o in pa],
                action_label="Putuskan", owner="manager"),
     ]
@@ -151,7 +170,7 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
                      subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), _task_qty(t),
                                                      t.get("warehouse_name") or "",
                                                      _gate.desk_note(holds.get(t.get("order_id")))) if x),
-                     age_days=_age_days(t.get("created_at")),
+                     age_days=_age_days(t.get("created_at")), at=t.get("created_at"),
                      badge="tertahan bayar" if _gate.desk_note(holds.get(t.get("order_id"))) else t.get("status", ""),
                      action="Kerjakan",
                      extra={"flow_type": t.get("flow_type") or "", "po_id": t.get("po_id") or "",
@@ -159,11 +178,11 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
                action_label="Kerjakan", owner="warehouse", value_kind="count", value_label="Tugas"),
         _queue("po_terima", "PO menunggu penerimaan", "Barang pemasok yang akan/sedang diterima.",
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),
-                     value=o.get("grand_total") or 0, age_days=_age_days(o.get("updated_at")), badge=o.get("status", ""), action="Terima") for o in po],
+                     value=o.get("grand_total") or 0, age_days=_age_days(o.get("updated_at")), at=o.get("updated_at"), badge=o.get("status", ""), action="Terima") for o in po],
                action_label="Terima", owner="warehouse", value_label=TOTAL_LABEL),
         _queue("sampel_potong", "Sample untuk dipotong", "Permintaan potong sample dari pesanan sales — pindai roll, potong, catat panjang.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("order_number", ""), title=t.get("customer_name", "—"), subtitle=t.get("product_name", ""),
-                     age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Potong") for t in samples],
+                     age_days=_age_days(t.get("created_at")), at=t.get("created_at"), badge=t.get("status", ""), action="Potong") for t in samples],
                action_label="Potong", owner="warehouse", value_kind="count", value_label="Item"),
         await return_receipt_qc_queue(scope),
     ]
@@ -195,7 +214,7 @@ async def return_receipt_qc_queue(scope, owner: str = "warehouse") -> Dict[str, 
         step, act = _return_step(r)
         rows.append(_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number") or r.get("return_number") or r["id"],
                          title=r.get("customer_name") or "—", subtitle=step, value=0,
-                         age_days=_age_days(r.get("approved_at") or r.get("updated_at") or r.get("created_at")),
+                         age_days=_age_days(r.get("approved_at") or r.get("updated_at") or r.get("created_at")), at=r.get("approved_at") or r.get("updated_at") or r.get("created_at"),
                          badge=r.get("status", ""), action=act))
     rows.sort(key=lambda x: -x["age_days"])
     return _queue("retur_terima_qc", "Retur menunggu terima / QC",
@@ -210,7 +229,7 @@ async def designer_queues(actor, scope, ids) -> List[Dict[str, Any]]:
     mine = await _find("design_requests", {**sq, "assigned_to": actor["id"], "status": {"$in": ["assigned", "in_progress", "revision"]}})
     unassigned = await _find("design_requests", {**sq, "status": {"$in": ["submitted", "assigned"]}, "$or": [{"assigned_to": ""}, {"assigned_to": None}]})
     rows = lambda docs, act: [_row(ref_type="design_request", ref_id=d["id"], number=d.get("number", ""), title=d.get("customer_name") or d.get("brief", "")[:60],  # noqa: E731
-                                   subtitle=d.get("target_type", ""), age_days=_age_days(d.get("requested_at") or d.get("created_at")), badge=d.get("status", ""), action=act) for d in docs]
+                                   subtitle=d.get("target_type", ""), age_days=_age_days(d.get("requested_at") or d.get("created_at")), at=d.get("requested_at") or d.get("created_at"), badge=d.get("status", ""), action=act) for d in docs]
     return [
         _queue("desain_saya", "Desain yang saya kerjakan", "Selesaikan & serahkan ke MD.", rows(mine, "Kerjakan"), action_label="Kerjakan", owner="designer", value_kind="count", value_label="Item"),
         _queue("desain_bebas", "Belum ditugaskan", "Permintaan desain yang disetujui tapi belum ada desainernya.", rows(unassigned, "Ambil"), action_label="Ambil", owner="designer", value_kind="count", value_label="Item"),
@@ -235,7 +254,7 @@ async def driver_queues(actor, scope, ids) -> List[Dict[str, Any]]:
     return [
         _queue("kiriman", "Kiriman hari ini", "Antar & tandai terkirim (foto bukti bila ada).",
                [_row(ref_type="shipment", ref_id=s["id"], number=s.get("number", ""), title=s.get("customer_name") or s.get("destination", "—"),
-                     subtitle=s.get("address") or s.get("city", ""), age_days=_age_days(s.get("dispatched_at") or s.get("created_at")), badge=s.get("status", ""), action="Antar") for s in mine],
+                     subtitle=s.get("address") or s.get("city", ""), age_days=_age_days(s.get("dispatched_at") or s.get("created_at")), at=s.get("dispatched_at") or s.get("created_at"), badge=s.get("status", ""), action="Antar") for s in mine],
                action_label="Antar", owner="driver", value_kind="count", value_label="Kiriman"),
     ]
 

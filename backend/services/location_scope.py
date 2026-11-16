@@ -119,7 +119,8 @@ async def assert_warehouse(user: Dict[str, Any], warehouse_id: str, action: str 
         "Minta supervisor gudang mengambil alih atau admin menambah penugasan lokasi Anda."))
 
 
-async def summary(user: Dict[str, Any], choice: str = "") -> Dict[str, Any]:
+async def summary(user: Dict[str, Any], choice: str = "", entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """`entity_id` (M33) — PT aktif di bilah atas; pilihan lokasi hanya gudang yang boleh dipakai PT itu."""
     ids = await warehouse_ids_for(user)
     on = await enforced()
     sites = [s.get("name") async for s in db.warehouse_sites.find(
@@ -135,7 +136,7 @@ async def summary(user: Dict[str, Any], choice: str = "") -> Dict[str, Any]:
             "home_set": home is not None, "home_warehouse_ids": home or [],
             "home_label": await _label_for(user.get("location_site_ids") or [], home),
             "view": view, "can_pick_all": ids is None,
-            "options": await view_options(user, ids)}
+            "options": await view_options(user, ids, entity_id)}
 
 
 # ─── FIX-1 — saringan TAMPILAN lokasi kerja (semua peran) ─────────────────────
@@ -272,11 +273,21 @@ def warehouse_filter(view: Dict[str, Any], requested: Optional[str]) -> Any:
     return {"$nin": test_ids} if test_ids else None
 
 
-async def view_options(user: Dict[str, Any], hard: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-    """Pilihan bilah cakupan: lokasi kerja · semua lokasi (bila boleh) · tiap site · tiap gedung (tanpa data uji)."""
+async def view_options(user: Dict[str, Any], hard: Optional[List[str]] = None,
+                       entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Pilihan bilah cakupan: lokasi kerja · semua lokasi (bila boleh) · tiap AREA (site) — tanpa data uji.
+
+    M33 (pemilik 16 Nov) — hanya gudang yang boleh dipakai PT aktif (`warehouse_scope_service.usable_query`: gudang
+    bersama + gudang khusus PT itu); daftar area dan jumlah gedungnya diturunkan dari gudang yang lolos.
+    M7 — lokasi = AREA ("Rancamalang (5 gedung)"), bukan tiap gudang. Pilihan per gedung hanya untuk petugas
+    berpagar (`hard`) yang perlu mempersempit di dalam lokasinya. Nilai `wh:<id>` lama tetap diterima `parse_choice`."""
+    from services.warehouse_scope_service import usable_query
     q: Dict[str, Any] = {"active": {"$ne": False}, TEST_FLAG: {"$ne": True}}
     if hard is not None:
         q["id"] = {"$in": list(hard)}
+    pt = usable_query(entity_id)
+    if pt:
+        q = {"$and": [q, pt]}
     whs = [w async for w in db.warehouses.find(q, {"_id": 0, "id": 1, "code": 1, "name": 1, "site_id": 1})]
     site_ids = sorted({w.get("site_id") for w in whs if w.get("site_id")})
     sites = {s["id"]: s async for s in db.warehouse_sites.find(
@@ -288,6 +299,9 @@ async def view_options(user: Dict[str, Any], hard: Optional[List[str]] = None) -
         n = sum(1 for w in whs if w.get("site_id") == sid)
         out.append({"value": f"site:{sid}", "label": f"{sites[sid].get('name')} ({n} gedung)", "kind": "site"})
     for w in sorted(whs, key=lambda x: str(x.get("code") or x.get("name") or "")):
+        # Gudang tanpa area (data lama) tetap bisa dipilih sendiri; gudang ber-area hanya untuk petugas berpagar.
+        if hard is None and w.get("site_id") in sites:
+            continue
         out.append({"value": f"wh:{w['id']}", "label": f"{w.get('code') or ''} · {w.get('name') or ''}".strip(" ·"),
                     "kind": "wh"})
     return out

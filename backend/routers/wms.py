@@ -174,7 +174,9 @@ async def my_location_scope(request: Request) -> Dict[str, Any]:
     """IMP-20 — indikator cakupan lokasi aktif untuk pengguna yang sedang masuk."""
     actor = await require_permission(request, "wms", "view")
     from services import location_scope
-    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "")
+    ctx = await entity_ctx(request)
+    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "",
+                                        None if ctx.view_all else ctx.active_entity_id)   # M33
 
 
 @router.get("/location-scope")
@@ -184,7 +186,9 @@ async def location_scope_summary(request: Request) -> Dict[str, Any]:
     from dependencies import current_user
     from services import location_scope
     actor = await current_user(request)
-    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "")
+    ctx = await entity_ctx(request)   # M33 — pilihan lokasi mengikuti PT aktif di bilah atas
+    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "",
+                                        None if ctx.view_all else ctx.active_entity_id)
 
 
 @router.post("/wms/tasks/{task_id}/takeover")

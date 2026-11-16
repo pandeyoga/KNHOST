@@ -142,14 +142,21 @@ async def notify_turn(coll: str, doc: Dict[str, Any], *, stale_days: int = 0) ->
     from services.notification_service import create_addressed, resolve_action
     status = str(doc.get("status") or "")
     rule = TURN_MAP.get(coll, {}).get(status)
-    if not rule or not doc.get("id"):
+    if not doc.get("id"):
+        return 0
+    if not rule:
+        # Masukan 16 Nov (Meja Saya: giliran 40 hari) — status TANPA giliran (selesai, kedaluwarsa, menunggu pihak luar)
+        # juga menutup giliran tahap sebelumnya; dulu giliran lama tetap terbuka selamanya.
+        if coll in TURN_MAP and await _mark(coll, doc["id"], status):
+            await resolve_action("turn", f"{coll}:{doc['id']}", outcome=f"tahap → {status}", actor="sistem")
         return 0
     if not await _mark(coll, doc["id"], status):
         return 0
+    # Tutup pemberitahuan giliran tahap sebelumnya untuk dokumen ini — SEBELUM lompatan dokumen lama (dulu sesudahnya,
+    # sehingga dokumen lama yang berpindah tahap meninggalkan giliran lama terbuka).
+    await resolve_action("turn", f"{coll}:{doc['id']}", outcome=f"tahap → {status}", actor="sistem")
     if stale_days and _is_stale(doc, stale_days):
         return 0   # dokumen lama saat sapuan pertama: ditandai diam-diam, tidak membanjiri lonceng
-    # Tutup pemberitahuan giliran tahap sebelumnya untuk dokumen ini.
-    await resolve_action("turn", f"{coll}:{doc['id']}", outcome=f"tahap → {status}", actor="sistem")
     owner = await _owner_user_id(doc) if rule.get("owner") else ""
     total = doc.get("grand_total") or doc.get("total_amount")
     body = " · ".join(x for x in [_party(doc), rupiah(float(total)) if total else "", f"tahap: {stage_text(status)}"] if x)

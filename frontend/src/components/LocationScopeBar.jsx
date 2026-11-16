@@ -40,18 +40,19 @@ export function useLocationChoice() {
  *     tidak diam-diam "semua".
  * Nilai: "" = lokasi kerja · "all" · "site:<id>" · "wh:<id>" (dikirim server lewat header X-Location-Scope).
  */
-export function useLocationScopeSummary(choice) {
+export function useLocationScopeSummary(choice, entityKey = "") {
   const [summary, setSummary] = useState(null);
   useEffect(() => {
     let alive = true;
     axios.get(`${API}/location-scope`).then((r) => { if (alive) setSummary(r.data); }).catch(() => { if (alive) setSummary({}); });
     return () => { alive = false; };
-  }, [choice]);
+  }, [choice, entityKey]);   // M33 — ganti PT di bilah atas → pilihan lokasi dimuat ulang (hanya gudang PT itu)
   return summary;
 }
 
-export default function LocationScopeBar({ value = "", onChange, compact = false, testId = "location-scope-bar" }) {
-  const summary = useLocationScopeSummary(value);
+export default function LocationScopeBar({ value = "", onChange, compact = false, testId = "location-scope-bar",
+  entityKey = "" }) {
+  const summary = useLocationScopeSummary(value, entityKey);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {

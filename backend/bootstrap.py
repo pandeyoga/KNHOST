@@ -379,8 +379,13 @@ async def sync_permission_modules() -> None:
     # sumber daya baru L01 (visibilitas atribut) yang memang harus ditambahkan sekali.
     applied = record.get("defaults_applied")
     if applied is None:
-        new_res = {"field_visibility", "sales_pov"}
-        applied = {r: {m: list(a) for m, a in mods.items() if m not in new_res}
+        # M41 (pemilik 16 Nov: "saya admin tapi tidak punya akses" Pusat Export) — garis dasar pertama = pasangan bawaan
+        # yang SUDAH ADA di matriks tersimpan. Dulu garis dasar = seluruh bawaan kode saat itu, sehingga modul yang
+        # datang bersamaan dengan garis dasar (mis. `data_export`) ditandai "sudah diterapkan" tanpa pernah masuk
+        # matriks → hilang permanen untuk semua peran. Sebelum garis dasar, sinkron lama menambah ulang semua bawaan
+        # tiap start, jadi pasangan yang tidak ada di matriks memang belum pernah diterapkan (bukan dicabut Admin).
+        applied = {r: {m: [a for a in acts if a in ((matrix.get(r) or {}).get(m) or [])]
+                       for m, acts in mods.items()}
                    for r, mods in DEFAULT_PERMISSIONS.items()}
     changed = False
     before: Dict[str, Dict[str, List[str]]] = {}      # izin peran bawaan SEBELUM penambahan jalan ini
@@ -524,6 +529,49 @@ def _legacy_grants() -> Dict[str, Dict[str, List[str]]]:
 
 
 _LEGACY_GRANTS: Dict[str, Dict[str, List[str]]] = _legacy_grants()
+
+
+async def ensure_locked_role_defaults() -> Dict[str, Dict[str, List[str]]]:
+    """M41 — peran terkunci (Admin, `custom_role_service.LOCKED_ROLES`) SELALU memegang seluruh izin bawaannya.
+
+    Hak akses Admin tidak bisa diubah dari layar, jadi pasangan bawaan yang tidak ada di matriks tersimpan pasti
+    akibat cacat migrasi (garis dasar lama `defaults_applied`), bukan keputusan Admin. Dijalankan tiap start sesudah
+    `sync_permission_revocations`; hanya MENAMBAH, menulis hanya bila ada yang hilang, dan dicatat di jejak audit."""
+    from services.custom_role_service import LOCKED_ROLES
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "matrix": 1, "defaults_applied": 1})
+    if not record or not record.get("matrix"):
+        return {}
+    matrix = record["matrix"]
+    applied = record.get("defaults_applied")
+    added: Dict[str, Dict[str, List[str]]] = {}
+    for role in sorted(LOCKED_ROLES):
+        mods = DEFAULT_PERMISSIONS.get(role) or {}
+        cur_role = matrix.setdefault(role, {})
+        for res, acts in mods.items():
+            cur = cur_role.get(res)
+            cur = list(cur) if isinstance(cur, list) else []
+            miss = [a for a in acts if a not in cur and "*" not in cur]
+            if not miss:
+                continue
+            cur_role[res] = cur + miss
+            added.setdefault(role, {})[res] = miss
+            if applied is not None:
+                done = applied.setdefault(role, {})
+                done[res] = list(done.get(res) or []) + [a for a in miss if a not in (done.get(res) or [])]
+    if not added:
+        return {}
+    patch: Dict[str, Any] = {"matrix": matrix, "updated_at": now_iso()}
+    if applied is not None:
+        patch["defaults_applied"] = applied
+    await db.permission_settings.update_one({"id": "default"}, {"$set": patch})
+    try:
+        from dependencies import audit
+        await audit("Sistem (perbaikan M41)", "locked_role_defaults_restored", "permission_settings", "default", added,
+                    reason="Izin bawaan peran terkunci (Admin) yang hilang dari matriks tersimpan dipulihkan")
+    except Exception:  # noqa: BLE001 — jejak audit tidak boleh menggagalkan start
+        import logging
+        logging.getLogger("bootstrap").warning("[M41] audit pemulihan izin Admin gagal dicatat")
+    return added
 
 
 async def ensure_permission_ledger() -> None:
@@ -1937,6 +1985,7 @@ async def run_bootstrap() -> None:
     await _pk22_izin()
     await sync_permission_modules()
     await sync_permission_revocations()
+    await ensure_locked_role_defaults()   # M41 — Admin (terkunci) selalu memegang seluruh izin bawaannya
     await migrate_kft1_settings_permissions()
     from services.dual_control import migrasi_sakelar_lama as _kft6_migrasi   # KF-T6 — sakelar SoD lama → kontrol.*
     await _kft6_migrasi()

@@ -9,7 +9,7 @@
  */
 import FilterChips from "../../components/FilterChips";   // saklar tampilan roll baku
 import { useEffect, useState, useMemo } from "react";
-import { BarChart2, Plus, History, RefreshCw, MapPin, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
+import { BarChart2, Plus, History, RefreshCw, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
 import { parseDecimal } from "../../utils/decimalInput";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
@@ -357,18 +357,12 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
 
       {/* Warehouse filter + tabs + actions */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto" data-testid="inventory-warehouse-filters">
-          <button onClick={() => setWarehouseFilter("all")}
-            className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all ${warehouseFilter === "all" ? "bg-[#007AFF] text-white" : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#007AFF]"}`}>
-            Semua Gudang
-          </button>
-          {warehouses.map(wh => (
-            <button key={wh.id} onClick={() => setWarehouseFilter(wh.id)}
-              className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all ${warehouseFilter === wh.id ? "bg-[#007AFF] text-white" : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#007AFF]"}`}>
-              {/* Audit UI 051 — beberapa gudang satu kota ("Bandung" ×7) → tampilkan nama gudang. */}
-              <MapPin size={9} className="inline mr-1" />{wh.name || wh.city}
-            </button>
-          ))}
+        {/* M25 (pemilik 16 Nov) — deret chip gudang bergulir mendatar → dropdown (pola UI: "dropdown untuk memilih"). */}
+        <div className="w-full sm:w-64" data-testid="inventory-warehouse-filters">
+          <KNSelect data-testid="inventory-warehouse-select" value={warehouseFilter} onValueChange={setWarehouseFilter}
+            aria-label="Saring gudang" searchable={warehouses.length > 8}
+            options={[{ value: "all", label: `Semua gudang (${warehouses.length})` },
+              ...warehouses.map((wh) => ({ value: wh.id, label: wh.name || wh.city || wh.code || "Gudang tanpa nama" }))]} />
         </div>
         {/* View tab toggle */}
         <div className="ml-auto flex items-center gap-1 rounded-lg border border-[#E5E5EA] p-0.5 bg-white">

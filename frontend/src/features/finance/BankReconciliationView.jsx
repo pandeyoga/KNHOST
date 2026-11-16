@@ -286,11 +286,20 @@ export default function BankReconciliationView({ user = null }) {
                   onClick={() => setShowImport(true)}>
                   <Upload size={14} /> Impor mutasi bank
                 </button>
+                {/* M38 (pemilik 16 Nov) — dulu aktif walau belum ada mutasi diimpor: mencocokkan 0 baris lalu memberi pesan
+                    sukses. Pencocokan butuh mutasi bank (impor berkas/tempel); tanpa itu tombol nonaktif + alasan. */}
                 <button type="button" data-testid="recon-auto-match" className="primary-button"
-                  disabled={busy === "auto" || !acctId} onClick={doAutoMatch}>
+                  disabled={busy === "auto" || !acctId || noStatement} onClick={doAutoMatch}
+                  title={noStatement ? "Impor mutasi bank dulu — pencocokan membandingkan mutasi bank dengan catatan kas." : undefined}
+                  aria-describedby={noStatement ? "recon-auto-match-reason" : undefined}>
                   {busy === "auto" ? <RefreshCw size={14} className="spin" /> : <Wand2 size={14} />}
                   Cocokkan otomatis
                 </button>
+                {noStatement && (
+                  <span id="recon-auto-match-reason" className="text-fs-12 text-kn-text-2" data-testid="recon-auto-match-reason">
+                    Impor mutasi bank dulu.
+                  </span>
+                )}
                 <span className="text-[11px] text-[#8E8E93]">
                   Ambang & bobot skor diatur di Pengaturan → Rekonsiliasi Bank (tanpa perlu rilis baru).
                 </span>

@@ -16,10 +16,19 @@ import CheckoutDrawer from "../pos/CheckoutDrawer";
 import CreateCustomerModal from "../pos/CreateCustomerModal";
 import PosStartGate, { loadPosCtx, savePosCtx } from "../pos/PosStartGate";
 import { useSites } from "../../components/SiteSelect";
+import { LOCATION_SCOPE_KEY } from "../../components/LocationScopeBar";
 import ProductQuickView from "../../components/ProductQuickView";
 import { SupersedeHintList, localSupersedeHints } from "../../components/SupersedeHint";   // PREP-A
 import { useEffectivePrices, pickPrice } from "../../hooks/useEffectivePrices";
 import { roleIs } from "../../config/roles";
+
+/** Area yang dipilih di bilah "Lokasi" atas (`site:<id>`), "" bila lokasi kerja / semua / gudang. */
+function headerSiteId() {
+  try {
+    const v = localStorage.getItem(LOCATION_SCOPE_KEY) || "";
+    return v.startsWith("site:") ? v.slice(5) : "";
+  } catch { return ""; }
+}
 
 export function SalesPortal({
   data, onAdd, cart, setCart,
@@ -30,7 +39,9 @@ export function SalesPortal({
   const [facets, setFacets] = useState(DEFAULT_FACETS);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   // UAT 24 Okt (P8, keputusan pemilik) — "Mulai jualan": LOKASI gudang + PELANGGAN wajib dipilih sebelum katalog.
-  const [siteId, setSiteId] = useState(() => loadPosCtx().site_id || "");
+  // M7 (pemilik 16 Nov) — bila bilah atas memilih AREA ("Lokasi: Rancamalang"), POS ikut area itu (stok "Hanya yang ada
+  // di {lokasi}" dihitung per area). Bilah atas mengganti kunci layar, jadi nilai awal ini cukup.
+  const [siteId, setSiteId] = useState(() => headerSiteId() || loadPosCtx().site_id || "");
   const [gateForce, setGateForce] = useState(false);
   const [newCustOpen, setNewCustOpen] = useState(false);
   const [siteStock, setSiteStock] = useState(null);

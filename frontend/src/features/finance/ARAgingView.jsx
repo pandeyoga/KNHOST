@@ -57,6 +57,9 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const [detailError, setDetailError] = useState("");   // CR-T2 — galat muat rincian dibedakan dari "kosong"
   const [accruing, setAccruing] = useState("");
   const [flash, setFlash] = useState("");
+  // M34 (pemilik 16 Nov) — hasil "Buat Nota Denda" tampil di DALAM pop-up rincian (dulu ditulis ke halaman di
+  // belakang pop-up sehingga klik terasa "tidak terjadi apa-apa").
+  const [accrueMsg, setAccrueMsg] = useState(null);   // { tone: "success"|"info"|"danger", text }
   const [payFor, setPayFor] = useState(null);   // PK-43 — { orderId } form kwitansi yang sedang dibuka
   const [rowPay, setRowPay] = useState(null);   // MN-T3 — { id, name } dari tombol baris
   const [paidMsg, setPaidMsg] = useState("");    // PK-43 — pemberitahuan sukses dari form kwitansi (di rincian)
@@ -106,19 +109,21 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const accrue = useCallback(async (cid) => {
     setAccruing(cid);
     setFlash("");
+    setAccrueMsg(null);
+    setSelected(cid);   // rincian (pop-up) selalu terbuka → pesan hasil terlihat di sana
     try {
       const res = await axios.post(`${API}/ar/aging/${cid}/accrue-penalties`);
       const n = res.data?.count || 0;
       setDetail(res.data?.detail || null);
-      setSelected(cid);
-      setFlash(n > 0
-        ? `${n} nota denda siap: ${(res.data.penalties || []).map((p) => p.number).join(", ")}. Nota masih USULAN — belum menyentuh buku besar.`
-        : "Tidak ada denda yang layak dibuatkan nota (masih dalam tenggang, di bawah minimum, atau kebijakan denda dimatikan).");
+      setAccrueMsg(n > 0
+        ? { tone: "success", text: `${n} nota denda siap: ${(res.data.penalties || []).map((p) => p.number).join(", ")}. Nota masih USULAN — belum menyentuh buku besar.` }
+        : { tone: "info", text: "Tidak ada denda yang layak dibuatkan nota (masih dalam tenggang, di bawah minimum, atau kebijakan denda dimatikan)." });
       await load();
     } catch (e) {
-      setError(apiErrorText(e, "Gagal membuat nota denda."));
+      setAccrueMsg({ tone: "danger", text: apiErrorText(e, "Gagal membuat nota denda.") });
+      if (!detail) openDetail(cid);
     } finally { setAccruing(""); }
-  }, [load]);
+  }, [load, detail, openDetail]);
 
   const totals = data?.totals || {};
   const cols = useMemo(() => bucketColumns(data?.bucket_labels), [data]);
@@ -368,7 +373,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
           tabel: setelah mengklik baris tidak ada perubahan yang terlihat karena panelnya
           berada di bawah tabel ringkasan + catatan kaki (di luar pandangan). */}
       {selected && (
-        <DetailModal onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); }}
+        <DetailModal onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); setAccrueMsg(null); }}
           label="Rincian piutang pelanggan" testId="ar-aging-detail-modal">
           <ARAgingDetail
             detail={detail}
@@ -379,7 +384,8 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             accruing={accruing === selected}
             onAccrue={() => accrue(selected)}
             onRefresh={() => openDetail(selected)}
-            onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); }}
+            onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); setAccrueMsg(null); }}
+            accrueNotice={accrueMsg}
             selectedEntity={selectedEntity}
             onPay={(orderId = "") => setPayFor({ orderId })}
             notice={paidMsg}

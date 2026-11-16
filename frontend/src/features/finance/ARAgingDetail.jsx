@@ -35,13 +35,16 @@ const fmtDate = (iso) => formatDate(iso);
 const PAY_WHAT = "mencatat pembayaran";
 
 export default function ARAgingDetail({ detail, customerId, loading, currentUser, accruing, onAccrue, onRefresh, onClose,
-  selectedEntity, onPay, notice = "", error = "" }) {
+  selectedEntity, onPay, notice = "", error = "", accrueNotice = null }) {
   // INV-ROLE-01 — sama seperti di layar induk: izin, bukan nama peran.
   const canAccrue = can(currentUser?.permissions || {}, "penalty", "issue");
   const canPay = Boolean(onPay) && can(currentUser?.permissions || {}, "ar_receipt", "create");   // PK-43
   const [open, setOpen] = useState({});   // PK-41 — pesanan yang rincian surat jalannya dibuka
   const toggle = (oid) => setOpen((o) => ({ ...o, [oid]: !o[oid] }));
   const t = detail?.totals || {};
+  // M34 — tombol nota denda nonaktif + alasan bila tidak ada estimasi denda yang belum jadi nota.
+  const accrueReason = !detail ? "" : (t.denda_undocumented || 0) > 0.01 ? ""
+    : "Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang.";
   return (
     <div className="section-card mt-3" data-testid="ar-aging-detail">
       <div className="section-head flex-wrap items-start gap-x-2 gap-y-1.5">
@@ -66,7 +69,8 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                 buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
               {canAccrue && (
                 <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="ar-aging-accrue"
-                  disabled={accruing} onClick={onAccrue}>
+                  disabled={accruing || Boolean(accrueReason)} title={accrueReason || undefined}
+                  aria-describedby={accrueReason ? "ar-aging-accrue-reason" : undefined} onClick={onAccrue}>
                   {accruing ? <Loader2 size={13} className="animate-spin" /> : <Receipt size={13} />}
                   Buat Nota Denda
                 </button>
@@ -87,6 +91,15 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
         {/* PK-43 — alasan tombol bayar yang mati di "Semua PT" di bilah sendiri (kepala panel sudah berisi aksi). */}
         {canPay && <EntityGateNote selectedEntity={selectedEntity} what={PAY_WHAT} testId="ar-aging-pay-scope-note" className="!mb-0" />}
         {notice && <div className="notice-bar success" role="status" data-testid="ar-aging-detail-notice">{notice}</div>}
+        {accrueNotice?.text && (
+          <div className={`notice-bar ${accrueNotice.tone}`} role={accrueNotice.tone === "danger" ? "alert" : "status"}
+            data-testid="ar-aging-accrue-notice">{accrueNotice.text}</div>
+        )}
+        {canAccrue && accrueReason && (
+          <p id="ar-aging-accrue-reason" className="text-fs-12 text-kn-neutral" data-testid="ar-aging-accrue-reason">
+            {accrueReason}
+          </p>
+        )}
         {loading ? (
           <div className="grid gap-2" data-testid="ar-aging-detail-loading">{[0, 1, 2].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
         ) : error ? (
