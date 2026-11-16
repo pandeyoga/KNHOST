@@ -1,6 +1,6 @@
 # MP-T3 — R&D tersambung ke mitra makloon: putusan melahirkan rute dan kontrak yang benar
 
-- Commit awal: `86cd75…` (MP-T2 status)        - Commit akhir: lihat `docs/blueprint/STATUS.md` baris 106        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `86cd75…` (MP-T2 status)        - Commit akhir: `f6ebfb8`        - Branch: `claude/nifty-carson-jjx3c8`
 - ID ditangani: telusur 16 Nov P1, P3, P4, P5, P7, P8 — spesifikasi `docs/blueprint/unit/MP-T3.md`; keputusan K-65, K-68,
   K-70, K-72
 - Risiko tinggi; (a)+(b) satu putaran: jalur pemasok tidak berubah (cabang baru hanya untuk peserta mitra makloon).
