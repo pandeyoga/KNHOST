@@ -144,7 +144,11 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
 
   // Master data (produk/gudang/supplier) hanya untuk form Buat PO/makloon — peran finance
   // tidak punya menu Buat, jadi tidak perlu memanggil endpoint yang memang 403 baginya.
-  const canCreate = can(user?.permissions, "purchase_order", "create");   // Sisir gerbang peran (2026-10-20) — POST /purchase-orders
+  const canCreateFull = can(user?.permissions, "purchase_order", "create");   // Sisir gerbang peran (2026-10-20) — POST /purchase-orders
+  // MP-T5c (K-77) — izin terbatas "Buat PO bahan" (bawaan MD): hanya PO barang bertahap bahan; server menegakkan tahap
+  // dari pengaturan `purchasing.material_purchase_stages`, layar hanya menawarkan barang bahan.
+  const canCreateBahan = !canCreateFull && can(user?.permissions, "purchase_order", "create_bahan");
+  const canCreate = canCreateFull || canCreateBahan;
   useEffect(() => { if (canCreate) fetchMasterData(); }, [canCreate]); // eslint-disable-line
 
   const fetchMasterData = async () => {
@@ -332,7 +336,10 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
 
       <PageHeader icon={ShoppingBag} title={<span data-testid="panel-title">Pesanan Pembelian (PO)</span>}
         subtitle="Pesanan ke supplier — dari persetujuan, kedatangan barang, sampai penagihan (3-way matching)."
-        actions={canCreate ? (
+        actions={canCreateBahan ? (
+          <button type="button" data-testid="create-po-bahan-button" className="primary-button"
+            onClick={() => { setMakloonMode(null); setShowCreateForm(true); }}><Plus size={15} />Buat PO bahan</button>
+        ) : canCreate ? (
           <POCreateMenu onPick={(mode) => {
             if (mode === "finished") { setMakloonMode(null); setShowCreateForm(true); }
             else { setShowCreateForm(false); setMakloonMode(mode); }
@@ -377,7 +384,8 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
           variant="modal"
           formData={formData} setFormData={setFormData}
           newItem={newItem} setNewItem={setNewItem}
-          products={products} warehouses={warehouses} suppliers={suppliers}
+          products={canCreateBahan ? products.filter((p) => ["yarn", "grey", "pfd", "pfp"].includes(p.stage)) : products}
+          warehouses={warehouses} suppliers={suppliers}
           submitting={creating} error={showCreateForm ? error : ""}
           onSubmit={handleCreatePO} onCancel={handleCloseForm}
           onAddItem={handleAddItem} onRemoveItem={handleRemoveItem}

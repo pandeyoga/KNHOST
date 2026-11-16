@@ -654,6 +654,10 @@
    "pembelian",
    "memesan"
   ],
+  "purchasing.material_purchase_stages": [
+   "pembelian",
+   "memesan"
+  ],
   "purchasing.require_supplier_master": [
    "pembelian",
    "memesan"

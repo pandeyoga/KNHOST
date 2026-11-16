@@ -615,7 +615,7 @@ ACTION_LABEL = {
     "view": "Lihat", "create": "Buat", "update": "Ubah", "delete": "Hapus", "approve": "Setujui", "reject": "Tolak",
     "lock": "Kunci harga final", "set_price": "Isi harga (PIC Special Order)",
     "view_cost": "Lihat biaya kontrak, margin & supplier",
-    "confirm": "Konfirmasi", "cancel": "Batalkan", "print": "Cetak", "export": "Ekspor", "import": "Impor",
+    "create_bahan": "Buat PO bahan (greige/PFD/PFP)", "confirm": "Konfirmasi", "cancel": "Batalkan", "print": "Cetak", "export": "Ekspor", "import": "Impor",
     "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_value": "Setujui nilai & jurnal pendaftaran awal", "approve_payment": "Setujui bayar", "cutting_config": "Atur kemampuan cutting lokasi", "cutting_receive": "Terima hasil potong (Admin Cutting)",
     "assess": "Nilai", "assign": "Tugaskan", "award": "Tetapkan pemenang", "backdate": "Tanggal mundur", "claim": "Klaim",
     "claim_approve": "Setujui klaim", "complete": "Selesaikan", "configure": "Konfigurasi", "convert": "Konversi",

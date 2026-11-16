@@ -457,7 +457,8 @@
     "create",
     "update",
     "approve",
-    "reject"
+    "reject",
+    "create_bahan"
    ],
    "purchase_requisition": [
     "view",
@@ -1583,7 +1584,8 @@
     "update"
    ],
    "purchase_order": [
-    "view"
+    "view",
+    "create_bahan"
    ],
    "purchase_requisition": [
     "view",

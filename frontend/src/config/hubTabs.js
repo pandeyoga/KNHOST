@@ -55,7 +55,8 @@ export const HUB_TABS = {
     { view: "rfq",                   label: "RFQ / Penawaran",   roles: ["admin", "manager", "warehouse"] },
   ],
   "purchase-orders": [
-    { view: "purchasing",        label: "Pesanan Pembelian (PO)", roles: ["admin", "manager", "finance"] },
+    // MP-T5c (K-77) — MD membeli bahan greige/PFD/PFP (izin `purchase_order.create_bahan`; server membatasi tahap).
+    { view: "purchasing",        label: "Pesanan Pembelian (PO)", roles: ["admin", "manager", "finance", "md"] },
     // FASE P — papan PO per lini (kertas kerja MD): progres tahap · Nama Sales
     // dirunut dari pesanan · tanggal masuk & qty terima dihitung sendiri.
     { view: "po-board",          label: "Papan PO per Lini",     roles: ["admin", "manager"] },

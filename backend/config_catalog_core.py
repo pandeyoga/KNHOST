@@ -597,6 +597,17 @@ E("purchasing.restock_source_unknown", group="pembelian", section="memesan", typ
   impact="Berlaku saat membuat permintaan pembelian, PO manual, dan order makloon barang jadi.",
   example="Tolak → permintaan pembelian produk KNT-0067 ditolak sampai MD memilih pemasok/makloon",
   consumers=("services/restock_source_service.py:unknown_policy",), risk="medium")
+# MP-T5c (K-77, permintaan klien 16 Nov) — tahap barang yang boleh dibeli pemegang izin "Buat PO bahan" (bawaan MD).
+E("purchasing.material_purchase_stages", group="pembelian", section="memesan", type="list", items="options",
+  options=({"value": "yarn", "label": "Benang"}, {"value": "grey", "label": "Greige"},
+           {"value": "pfd", "label": "PFD"}, {"value": "pfp", "label": "PFP"}, {"value": "finished", "label": "Bahan jadi"}),
+  default=["grey", "pfd", "pfp"], scopes=("global", "entity"),
+  label="Tahap barang untuk izin Buat PO bahan",
+  help="Peran yang hanya memegang izin \"Buat PO bahan\" (bawaan MD) hanya boleh membuat PO untuk barang bertahap ini. "
+       "Pemegang izin membuat PO biasa tidak terpengaruh.",
+  impact="PO dari pemegang izin terbatas yang memuat barang di luar tahap ini ditolak.",
+  example="Greige, PFD, PFP → MD boleh membeli greige, tidak boleh membeli kain jadi",
+  consumers=("routers/purchase_orders.py:_assert_material_only",), risk="medium")
 E("purchasing.require_supplier_master", group="pembelian", section="memesan", type="bool", default=False,
   scopes=("global", "entity"), simulate="po_supplier",
   label="PO wajib pilih pemasok terdaftar",

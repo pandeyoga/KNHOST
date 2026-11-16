@@ -82,7 +82,7 @@ DEFAULT_PERMISSIONS = {
         "cash": ["view", "create", "delete", "configure"],
         "fixed_asset": ["view", "create", "update", "run", "dispose"],
         "budget": ["view", "create", "update", "delete", "configure"],
-        "purchase_order": ["view", "create", "update", "approve", "reject"],
+        "purchase_order": ["view", "create", "update", "approve", "reject", "create_bahan"],   # MP-T5c (K-77)
         "purchase_return": ["view", "create", "update", "approve", "reject"],
         "purchase_requisition": ["view", "create", "update", "approve", "reject"],
         "vendor_bill": ["view", "create", "update", "approve", "reject", "pay"],
@@ -523,7 +523,7 @@ DEFAULT_PERMISSIONS = {
         "color": ["view", "create", "update"],
         "supplier": ["view"], "supplier_item": ["view"], "supplier_contract": ["view"],
         "purchase_requisition": ["view", "create", "update"],
-        "purchase_order": ["view"],
+        "purchase_order": ["view", "create_bahan"],   # MP-T5c (K-77) — MD membeli bahan greige/PFD/PFP
         "rfq": ["view", "create", "update"],
         "makloon": ["view"], "process_recipe": ["view", "create", "update"],
         "inspection": ["view"],

@@ -1,0 +1,24 @@
+const { chromium } = require("playwright");
+const OUT = "/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/ui_wizard";
+(async () => {
+  const b = await chromium.launch({ args: ["--no-proxy-server"] });
+  const page = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  const errors = [];
+  page.on("response", (r) => { if (r.status() >= 400 && r.url().includes("/api/")) errors.push(`${r.status()} ${r.url().replace(/.*\/api/, "/api").slice(0, 80)}`); });
+  await page.goto("http://localhost:3000/");
+  await page.getByTestId("login-email-input").fill("md@kainnusantara.id");
+  await page.getByTestId("login-password-input").fill("demo12345");
+  await page.getByTestId("login-submit-button").click();
+  await page.waitForTimeout(3500);
+  await page.goto("http://localhost:3000/?view=purchasing");
+  await page.waitForTimeout(5000);
+  await page.screenshot({ path: `${OUT}/md-po-halaman.png` }); console.log("judul:", (await page.locator("body").innerText()).replace(/\s+/g," ").slice(0,300));
+  console.log("tombol PO bahan:", await page.getByTestId("create-po-bahan-button").count(), "menu lengkap:", await page.getByTestId("create-po-button").count());
+  await page.getByTestId("create-po-bahan-button").click();
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: `${OUT}/md-po-bahan.png` });
+  const sel = page.locator('[data-testid="po-create-modal"] select, [data-testid="po-create-modal"] [role="combobox"]');
+  console.log("isian di form:", await sel.count());
+  console.log("galat API:", [...new Set(errors)].join(" ; ") || "-");
+  await b.close();
+})();

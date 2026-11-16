@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
-from dependencies import require_any_permission, require_permission, audit, current_user
+from dependencies import has_permission, require_any_permission, require_permission, audit, current_user
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
@@ -302,9 +302,27 @@ async def list_purchase_orders(request: Request, entity_id: str = None,
 @router.post("/purchase-orders")
 async def create_purchase_order(payload: PurchaseOrderCreate, request: Request) -> Dict[str, Any]:
     """Create a new purchase order (auto-create inbound task bila tak butuh approval)."""
-    actor = await require_permission(request, "purchase_order", "create")
+    actor = await require_any_permission(request, [("purchase_order", "create"), ("purchase_order", "create_bahan")])
     ctx = await entity_ctx(request)
+    if not await has_permission(actor, "purchase_order", "create"):
+        await _assert_material_only(payload, ctx.active_entity_id)
     return await _create_po_core(payload, actor, active_entity_id=ctx.active_entity_id)
+
+
+async def _assert_material_only(payload: PurchaseOrderCreate, entity_id: str) -> None:
+    """MP-T5c (K-77) — pemegang izin "Buat PO bahan" saja: semua baris barang katalog bertahap bahan (pengaturan)."""
+    import domain_registry as dr
+    from services import config_resolver
+    allowed = [str(x) for x in (await config_resolver.value_of("purchasing.material_purchase_stages",
+                                                               {"entity_id": entity_id}) or [])]
+    names = ", ".join(dr.label_of("stage", a) or a for a in allowed) or "-"
+    for it in payload.items:
+        prod = await db.products.find_one({"id": getattr(it, "product_id", "") or ""}, {"_id": 0, "sku": 1, "stage": 1})
+        st = dr.normalize_stage((prod or {}).get("stage"))
+        if not prod or st not in allowed:
+            raise HTTPException(status_code=403, detail=(
+                f"Akses Anda hanya untuk pembelian bahan ({names}). "
+                f"{(prod or {}).get('sku') or 'Barang non-katalog'} bertahap {dr.label_of('stage', st) or st or 'tidak tercatat'}."))
 
 
 @router.get("/purchase-orders/resolve-sourcing")

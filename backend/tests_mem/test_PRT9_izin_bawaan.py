@@ -145,6 +145,9 @@ async def _nyalakan_ulang() -> None:
 # MP-T1 (K-73) — izin baru "Kelola Rute Produk" untuk Admin, MD, Manajer.
 for _r in ("admin", "md", "manager"):
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("product_route", set()).add("update")
+# MP-T5c (K-77) — izin "Buat PO bahan" untuk MD (dan Admin, pemegang semua aksi).
+for _r in ("admin", "md"):
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("purchase_order", set()).add("create_bahan")
 
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)
