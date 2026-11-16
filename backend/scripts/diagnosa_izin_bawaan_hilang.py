@@ -9,8 +9,8 @@ kemungkinan pasangan itu hilang karena cacat garis dasar migrasi izin (diperbaik
 TIDAK mengubah data. Admin (peran terkunci) dipulihkan otomatis saat server menyala; peran lain dipulihkan dari layar
 Pengaturan › Peran & Hak Akses (ubah peran / "Kembalikan ke bawaan") setelah pemilik memutuskan.
 
-Pakai (di dalam container backend):
-    python /app/scripts/diagnosa_izin_bawaan_hilang.py [--json]
+Pakai (di dalam container backend; ikut terpasang di image produksi karena berada di `backend/`):
+    python scripts/diagnosa_izin_bawaan_hilang.py [--json]
 """
 import json
 import os
@@ -20,9 +20,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / "backend" / ".env")
-sys.path.insert(0, str(ROOT / "backend"))
+BACKEND = Path(__file__).resolve().parents[1]
+load_dotenv(BACKEND / ".env")
+sys.path.insert(0, str(BACKEND))
 from permissions_config import DEFAULT_PERMISSIONS  # noqa: E402
 
 AKSI_UBAH_PERAN = ("role_access_updated", "role_access_reset", "role_updated", "custom_role_updated",
