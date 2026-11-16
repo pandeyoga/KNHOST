@@ -124,6 +124,8 @@ TERGATED_DI_KODE = {
         "features/hr/VisitsView.jsx — hanya cabang Log Kunjungan (manajer/admin)",
     ("hr-visits", "/hr/employees"):
         "features/hr/VisitsView.jsx — hanya cabang Log Kunjungan (manajer/admin)",
+    ("makloon-orders", "/customers"):
+        "features/purchasing/makloon/MakloonWizard.jsx — dipagari canCurrent('customer','view') (MP-T5b peruntukan)",
     ("orders", "/shipments"):
         "features/orders/OrderDetailPanel.jsx — dipagari can(perms,'wms','view')",
     ("orders", "/tax-invoices"):

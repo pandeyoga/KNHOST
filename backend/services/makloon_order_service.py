@@ -195,8 +195,8 @@ async def _resolve_purpose(payload: Dict[str, Any], *, mat_snap_stage: Any, enti
     if not kind:
         if payload.get("pr_id"):
             return {"kind": "pr", "label": "Mengikuti permintaan pembelian", "pr_id": payload.get("pr_id")}
-        wajib = [str(x) for x in (await config_resolver.value_of("makloon.peruntukan_wajib_tahap",
-                                                                 {"entity_id": entity_id}) or [])]
+        wajib = [str(x) for x in await config_resolver.value_of("makloon.peruntukan_wajib_tahap",
+                                                                {"entity_id": entity_id})]
         st = dr.normalize_stage(mat_snap_stage)
         if st and st in wajib:
             raise HTTPException(status_code=400, detail=(

@@ -313,8 +313,9 @@ async def _assert_material_only(payload: PurchaseOrderCreate, entity_id: str) ->
     """MP-T5c (K-77) — pemegang izin "Buat PO bahan" saja: semua baris barang katalog bertahap bahan (pengaturan)."""
     import domain_registry as dr
     from services import config_resolver
-    allowed = [str(x) for x in (await config_resolver.value_of("purchasing.material_purchase_stages",
-                                                               {"entity_id": entity_id}) or [])]
+    # Tanpa cadangan sendiri: nilai bawaan registri (greige/PFD/PFP) yang berlaku bila PT belum mengatur.
+    allowed = [str(x) for x in await config_resolver.value_of("purchasing.material_purchase_stages",
+                                                              {"entity_id": entity_id})]
     names = ", ".join(dr.label_of("stage", a) or a for a in allowed) or "-"
     for it in payload.items:
         prod = await db.products.find_one({"id": getattr(it, "product_id", "") or ""}, {"_id": 0, "sku": 1, "stage": 1})

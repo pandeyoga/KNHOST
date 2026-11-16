@@ -16,6 +16,7 @@ import MakloonStepEditor, { effectiveFlow } from "./MakloonStepEditor";
 import { fetchEnum, fetchStages, FALLBACK_BASIS_LABELS } from "./makloonApi";
 import { MATERIAL_FLOW_BADGE, NEXT_ACTION_LABELS } from "../../../constants/makloonVocab";
 import FormModal from "../../../components/FormModal";
+import { canCurrent } from "../../../config/roles";
 
 const MODE_OPTS = [
   { value: "process_only", label: "Proses Saja (bahan dari stok)" },
@@ -53,8 +54,10 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
     purpose_kind: "", purpose_customer_id: "", purpose_store: "",
   });
   const [customers, setCustomers] = useState([]);
+  // Daftar pelanggan hanya untuk pemegang izin lihat pelanggan (peran gudang tidak) — pilihan "Untuk pelanggan" disembunyikan.
+  const canPickCustomer = canCurrent("customer", "view");
   useEffect(() => {
-    if (head.purpose_kind !== "pelanggan" || customers.length) return;
+    if (!canPickCustomer || head.purpose_kind !== "pelanggan" || customers.length) return;
     axios.get(`${API}/customers`, { params: { limit: 500 } })
       .then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data?.items || []))
       .catch((e) => setErr(e.response?.data?.detail || "Daftar pelanggan gagal dimuat — pilih peruntukan lain atau coba lagi."));
@@ -453,7 +456,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                 <select data-testid="wizard-purpose" className="field" value={head.purpose_kind}
                   onChange={(e) => setHead((p) => ({ ...p, purpose_kind: e.target.value }))}>
                   <option value="">Pilih peruntukan…</option>
-                  <option value="pelanggan">Untuk pelanggan</option>
+                  {canPickCustomer && <option value="pelanggan">Untuk pelanggan</option>}
                   <option value="toko">Untuk toko</option>
                   <option value="stok">Stok</option>
                 </select>
