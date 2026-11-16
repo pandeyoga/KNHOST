@@ -47,7 +47,8 @@ JENIS_KP35 = {"vbm", "emp", "sord"}
 # PM-T4 — deret baru `TTP-` (titipan tunai sales) dan `STT-` (setoran titipan tunai sales), per PT: alasan sama.
 # KM-T3 — deret baru `LIN-` (lembar insentif, per PT; bukan `INS-` yang sudah dipakai Inspeksi mutu): alasan sama.
 # KM-T4 — deret baru `ICC-` (tagihan insentif antar-PT, per PT penagih): alasan sama.
-AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-", "LIN-", "ICC-"}
+# MP-T5a — deret baru `SJM-` (surat jalan kirim bahan makloon, per PT): alasan sama.
+AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-", "LIN-", "ICC-", "SJM-"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────

@@ -200,6 +200,16 @@ async def get_order(mko_id: str, request: Request) -> Dict[str, Any]:
     return data
 
 
+@router.get("/makloon-orders/{mko_id}/shipments")
+async def list_shipments(mko_id: str, request: Request) -> Dict[str, Any]:
+    """MP-T5a (K-75) — surat jalan kirim bahan per pengiriman langkah (daftar roll)."""
+    await require_permission(request, "makloon_order", "view")
+    ctx = await entity_ctx(request)
+    await _assert_access(mko_id, ctx)
+    rows = await db.makloon_shipments.find({"mko_id": mko_id}, {"_id": 0}).sort("step_seq", 1).to_list(100)
+    return {"items": rows}
+
+
 @router.get("/makloon-orders/{mko_id}/material-ledger")
 async def get_material_ledger(mko_id: str, request: Request) -> Dict[str, Any]:
     """L04 LN-043 — forecast · cadangan · dikirim/di mitra · terpakai · kembali · susut per MKO (hanya-baca)."""

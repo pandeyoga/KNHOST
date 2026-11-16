@@ -54,7 +54,8 @@ async def dunia(db, klien, kepala_admin):
 
 def spk(d, steps, **extra):
     return {"mode": "process_only", "material_product_id": d["g"], "material_qty": 100, "material_unit": "yard",
-            "from_warehouse_id": d["wh"], "manual_material_reason": "uji MP-T2", "steps": steps, **extra}
+            "from_warehouse_id": d["wh"], "manual_material_reason": "uji MP-T2", "steps": steps,
+            "purpose": {"kind": "stok"}, **extra}
 
 
 async def test_MPT2_U1_rencana_dari_rute(klien, kepala_admin, dunia):

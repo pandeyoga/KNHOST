@@ -76,6 +76,11 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("partner_id", A), ("process_type", A), ("product_id", A)],
         [("status", A), ("valid_to", A)],
     ],
+    # ── MP-T5a — Surat jalan kirim bahan makloon (satu per pengiriman langkah) ─
+    "makloon_shipments": [
+        [("mko_id", A), ("step_seq", A)],
+        [("entity_id", A), ("created_at", D)],
+    ],
     # ── MP-T1 — Rute Produk (per artikel per PT; satu rute utama per artikel/varian) ─
     "product_routes": [
         [("entity_id", A), ("template_id", A), ("product_id", A), ("status", A)],
@@ -603,6 +608,7 @@ ID_INDEX_COLLECTIONS_MORE: List[str] = [
     "product_templates", "design_gallery", "design_requests", "md_samples", "md_specs", "color_library",
     "supplier_items", "supplier_contracts", "makloons", "mfg_work_orders", "process_recipes", "rfqs",
     "product_routes",   # MP-T1
+    "makloon_shipments",   # MP-T5a
     "po_variance_tasks", "uoms", "ocr_samples", "ocr_sample_runs", "master_governance_batches",
     # SDM, pemasaran, CRM
     "hr_employees", "hr_attendance", "hr_org_units", "hr_payroll_runs", "hr_leave_requests", "hr_overtime",

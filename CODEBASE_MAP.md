@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 3ba2cad pada 2026-11-16 -->
+<!-- Dihasilkan dari commit: 6f20d55 pada 2026-11-16 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,9 +13,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 177 |
-| Endpoint (`@router.<method>`) | 1917 |
+| Endpoint (`@router.<method>`) | 1918 |
 | Service (`backend/services/*.py`) | 456 |
-| Koleksi MongoDB disentuh kode produksi | 219 |
+| Koleksi MongoDB disentuh kode produksi | 220 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
 ## Backend — berkas inti
@@ -29,9 +29,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas_purchasing.py` | 635 |
 | `dependencies.py` | 287 |
 | `permissions_config.py` | 1088 |
-| `entity_scope.py` | 765 |
+| `entity_scope.py` | 766 |
 | `pagination.py` | 151 |
-| `indexes.py` | 1217 |
+| `indexes.py` | 1223 |
 | `bootstrap.py` | 2171 |
 | `login_only_endpoints.py` | 104 |
 
@@ -219,7 +219,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `landed_cost.py` | 10 | 430 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
 | `logistics.py` | 27 | 368 | `/dashboard`, `/deliveries`, `/deliveries/{delivery_id}`, `/deliveries/{delivery_id}/manifest`, `/deliveries/{delivery_id}/photos`, `/deliveries/{delivery_id}/photos/{photo_id}` … |
 | `lots.py` | 18 | 372 | `/lots`, `/lots/identity-trace`, `/lots/merge`, `/lots/settings`, `/lots/stats`, `/lots/unassigned-rolls` … |
-| `makloon_orders.py` | 27 | 489 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/plan-from-route`, `/makloon-orders/{mko_id}` … |
+| `makloon_orders.py` | 28 | 499 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/plan-from-route`, `/makloon-orders/{mko_id}` … |
 | `makloons.py` | 6 | 142 | `/makloons`, `/makloons/{makloon_id}`, `/makloons/{makloon_id}/scorecard` |
 | `marketing.py` | 35 | 563 | `/marketing/accounts`, `/marketing/accounts/{aid}`, `/marketing/analytics`, `/marketing/assets`, `/marketing/calendar.pdf`, `/marketing/campaigns` … |
 | `master_governance.py` | 14 | 151 | `/master-governance/batches`, `/master-governance/batches/{batch_id}/rollback`, `/master-governance/cleanup/apply`, `/master-governance/cleanup/batches`, `/master-governance/cleanup/batches/{batch_id}`, `/master-governance/cleanup/batches/{batch_id}/rollback` … |
@@ -545,7 +545,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `makloon_issue_rolls.py` | 223 | Issue bahan makloon PER ROLL — kasus klien "20 roll Esmica Blue dikirim untuk dicelup hitam". |
 | `makloon_loss_service.py` | 268 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
 | `makloon_material_ledger.py` | 114 | L04 LN-043 — buku bahan makloon per MKO: forecast · dicadangkan · dikirim/di mitra · terpakai · kembali · susu |
-| `makloon_order_service.py` | 2090 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
+| `makloon_order_service.py` | 2187 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
 | `makloon_receipt_qc.py` | 199 | Hasil langkah TERAKHIR Order Makloon = barang masuk gudang, diperlakukan seperti barang PO. |
 | `makloon_roll_lock.py` | 539 | FIX-9 (audit 9 Nov 2026 — B3a SSOT-4, FIX-2 §5 butir 1 & 5) — cadangan bahan makloon DIKUNCI PER ROLL. |
@@ -582,7 +582,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `payment_plan_service.py` | 781 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
 | `payment_variance_service.py` | 1513 | FASE G-3 — **SELISIH PEMBAYARAN: LEBIH & KURANG BAYAR** (`payment_variance_decisions`). |
 | `pdf_engine.py` | 390 | pdf_engine.py — Mesin render PDF asli (server-side) untuk semua dokumen bisnis. |
-| `pdf_resolvers.py` | 1366 | pdf_resolvers.py — Ubah dokumen sumber (per doc_type) menjadi CONTEXT ternormalisasi |
+| `pdf_resolvers.py` | 1413 | pdf_resolvers.py — Ubah dokumen sumber (per doc_type) menjadi CONTEXT ternormalisasi |
 | `pdf_service.py` | 732 | pdf_service.py — Orkestrasi render dokumen: template config + branding entitas + |
 | `penalty_service.py` | 849 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
 | `period_unlock_service.py` | 293 | FASE G-5 — UNLOCK PERIODE BEROTORITAS ("wajib dua orang & menutup sendiri"). |
@@ -764,7 +764,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Koleksi MongoDB (dari pola `db.<nama>.<op>` di kode produksi)
 
-`ai_action_proposals`, `ai_chat_sessions`, `ai_fact_state`, `ai_feedback`, `ai_finance_packs`, `ai_insights`, `ai_result_cache`, `ai_results`, `ai_schedule_runs`, `ai_schedules`, `ai_usage_log`, `ai_user_templates`, `amendment_reasons`, `ap_payment_intents`, `approval_policies`, `approval_rules`, `ar_receipt_failures`, `ar_receipts`, `audit_logs`, `bank_accounts`, `bank_match_rules`, `bank_statement_formats`, `bank_statement_lines`, `bin_locks`, `budgets`, `business_entities`, `cash_advance_settlements`, `cash_deposits`, `cash_holdings`, `cash_transactions`, `client_dataset_imports`, `collection_followups`, `color_library`, `complaint_reasons`, `contra_bons`, `credit_gate_rejections`, `credit_notes`, `credit_overrides`, `crm_interactions`, `crm_leads`, `custom_roles`, `customer_credit_profiles`, `customer_grade_rules`, `customer_prices`, `customers`, `cycle_count_sessions`, `data_hygiene_log`, `data_hygiene_runs`, `design_categories`, `design_gallery`, `design_requests`, `design_tags`, `doc_amendments`, `document_branding`, `document_deliveries`, `document_signatures`, `document_templates`, `entities`, `entity_prices`, `esign_requests`, `expense_categories`, `export_jobs`, `export_templates`, `fact_ar_daily`, `fact_collections`, `fact_sales_lines`, `fact_shipment_sales`, `fact_stock_daily`, `fin_budget_rules`, `fin_depreciation_entries`, `fin_fixed_assets`, `finance_cases`, `fleet_vehicles`, `generated_documents`, `gl_accounts`, `goods_receipts`, `handheld_requests`, `handheld_tag_writes`, `hr_attendance`, `hr_devices`, `hr_employee_assignments`, `hr_employees`, `hr_field_tracks`, `hr_geofences`, `hr_holidays`, `hr_kpi`, `hr_leave_balances`, `hr_leave_requests`, `hr_org_units`, `hr_overtime`, `hr_pay_components`, `hr_pay_inputs`, `hr_payroll_runs`, `hr_payslips`, `hr_shifts`, `hr_statutory_remittances`, `hr_visits`, `idempotency_keys`, `incentive_components`, `incentive_rates`, `incentive_sheets`, `initial_registration_lines`, `inspections`, `integration_settings`, `interco_accounts`, `interco_loans`, `interco_returns`, `interco_settlements`, `interco_transactions`, `intercompany_eliminations`, `internal_requests`, `inventory_balances`, `inventory_lots`, `inventory_movements`, `inventory_rolls`, `invoices`, `journal_entries`, `landed_cost_vouchers`, `location_corrections`, `location_migrations`, `login_attempts`, `logistics_deliveries`, `makloon_orders`, `makloons`, `master_governance_batches`, `material_reservation_locks`, `material_reservations`, `md_samples`, `md_specs`, `mdq_cuts`, `mfg_boms`, `mfg_work_orders`, `migrations`, `mkt_accounts`, `mkt_campaign_costs`, `mkt_campaigns`, `mkt_posts`, `mkt_templates`, `notifications`, `number_sequences`, `ocr_sample_runs`, `ocr_samples`, `payment_codes`, `payment_plans`, `payment_terms`, `payment_variance_decisions`, `pdf_templates`, `penalties`, `period_close_locks`, `period_closings`, `period_unlock_requests`, `permission_settings`, `po_variance_tasks`, `price_approvals`, `process_recipes`, `process_stages`, `product_categories`, `product_lines`, `product_routes`, `product_templates`, `products`, `purchase_orders`, `purchase_requisitions`, `purchase_returns`, `push_subscriptions`, `putaway_orders`, `registration_area_status`, `repair_orders`, `return_create_locks`, `rfid_cycle_counts`, `rfid_devices`, `rfid_incidents`, `rfid_observations`, `rfid_passages`, `rfid_print_jobs`, `rfid_reads`, `rfid_tag_events`, `rfid_tags`, `rfid_v2_crossings`, `rfid_verify_sessions`, `rfqs`, `rnd_person_divisions`, `roll_label_prints`, `roll_scans`, `sales_incentives`, `sales_orders`, `sales_return_policies`, `sales_returns`, `sales_targets`, `sample_price_master`, `sample_types`, `sessions`, `shipments`, `special_order_reconciliation`, `special_orders`, `store_credit_ledger`, `store_credit_redemptions`, `supplier_contracts`, `supplier_dn_profiles`, `supplier_items`, `supplier_price_lists`, `supplier_roll_claims`, `suppliers`, `sys_digest_claims`, `sys_scheduler_runs`, `sys_wa_outbox`, `system_settings`, `tax_invoices`, `tax_invoices_in`, `tax_pph_records`, `turn_marks`, `uoms`, `user_onboarding`, `users`, `vendor_bills`, `warehouse_sites`, `warehouse_transfers`, `warehouses`, `wms_tasks`
+`ai_action_proposals`, `ai_chat_sessions`, `ai_fact_state`, `ai_feedback`, `ai_finance_packs`, `ai_insights`, `ai_result_cache`, `ai_results`, `ai_schedule_runs`, `ai_schedules`, `ai_usage_log`, `ai_user_templates`, `amendment_reasons`, `ap_payment_intents`, `approval_policies`, `approval_rules`, `ar_receipt_failures`, `ar_receipts`, `audit_logs`, `bank_accounts`, `bank_match_rules`, `bank_statement_formats`, `bank_statement_lines`, `bin_locks`, `budgets`, `business_entities`, `cash_advance_settlements`, `cash_deposits`, `cash_holdings`, `cash_transactions`, `client_dataset_imports`, `collection_followups`, `color_library`, `complaint_reasons`, `contra_bons`, `credit_gate_rejections`, `credit_notes`, `credit_overrides`, `crm_interactions`, `crm_leads`, `custom_roles`, `customer_credit_profiles`, `customer_grade_rules`, `customer_prices`, `customers`, `cycle_count_sessions`, `data_hygiene_log`, `data_hygiene_runs`, `design_categories`, `design_gallery`, `design_requests`, `design_tags`, `doc_amendments`, `document_branding`, `document_deliveries`, `document_signatures`, `document_templates`, `entities`, `entity_prices`, `esign_requests`, `expense_categories`, `export_jobs`, `export_templates`, `fact_ar_daily`, `fact_collections`, `fact_sales_lines`, `fact_shipment_sales`, `fact_stock_daily`, `fin_budget_rules`, `fin_depreciation_entries`, `fin_fixed_assets`, `finance_cases`, `fleet_vehicles`, `generated_documents`, `gl_accounts`, `goods_receipts`, `handheld_requests`, `handheld_tag_writes`, `hr_attendance`, `hr_devices`, `hr_employee_assignments`, `hr_employees`, `hr_field_tracks`, `hr_geofences`, `hr_holidays`, `hr_kpi`, `hr_leave_balances`, `hr_leave_requests`, `hr_org_units`, `hr_overtime`, `hr_pay_components`, `hr_pay_inputs`, `hr_payroll_runs`, `hr_payslips`, `hr_shifts`, `hr_statutory_remittances`, `hr_visits`, `idempotency_keys`, `incentive_components`, `incentive_rates`, `incentive_sheets`, `initial_registration_lines`, `inspections`, `integration_settings`, `interco_accounts`, `interco_loans`, `interco_returns`, `interco_settlements`, `interco_transactions`, `intercompany_eliminations`, `internal_requests`, `inventory_balances`, `inventory_lots`, `inventory_movements`, `inventory_rolls`, `invoices`, `journal_entries`, `landed_cost_vouchers`, `location_corrections`, `location_migrations`, `login_attempts`, `logistics_deliveries`, `makloon_orders`, `makloon_shipments`, `makloons`, `master_governance_batches`, `material_reservation_locks`, `material_reservations`, `md_samples`, `md_specs`, `mdq_cuts`, `mfg_boms`, `mfg_work_orders`, `migrations`, `mkt_accounts`, `mkt_campaign_costs`, `mkt_campaigns`, `mkt_posts`, `mkt_templates`, `notifications`, `number_sequences`, `ocr_sample_runs`, `ocr_samples`, `payment_codes`, `payment_plans`, `payment_terms`, `payment_variance_decisions`, `pdf_templates`, `penalties`, `period_close_locks`, `period_closings`, `period_unlock_requests`, `permission_settings`, `po_variance_tasks`, `price_approvals`, `process_recipes`, `process_stages`, `product_categories`, `product_lines`, `product_routes`, `product_templates`, `products`, `purchase_orders`, `purchase_requisitions`, `purchase_returns`, `push_subscriptions`, `putaway_orders`, `registration_area_status`, `repair_orders`, `return_create_locks`, `rfid_cycle_counts`, `rfid_devices`, `rfid_incidents`, `rfid_observations`, `rfid_passages`, `rfid_print_jobs`, `rfid_reads`, `rfid_tag_events`, `rfid_tags`, `rfid_v2_crossings`, `rfid_verify_sessions`, `rfqs`, `rnd_person_divisions`, `roll_label_prints`, `roll_scans`, `sales_incentives`, `sales_orders`, `sales_return_policies`, `sales_returns`, `sales_targets`, `sample_price_master`, `sample_types`, `sessions`, `shipments`, `special_order_reconciliation`, `special_orders`, `store_credit_ledger`, `store_credit_redemptions`, `supplier_contracts`, `supplier_dn_profiles`, `supplier_items`, `supplier_price_lists`, `supplier_roll_claims`, `suppliers`, `sys_digest_claims`, `sys_scheduler_runs`, `sys_wa_outbox`, `system_settings`, `tax_invoices`, `tax_invoices_in`, `tax_pph_records`, `turn_marks`, `uoms`, `user_onboarding`, `users`, `vendor_bills`, `warehouse_sites`, `warehouse_transfers`, `warehouses`, `wms_tasks`
 
 ## Frontend
 
@@ -800,7 +800,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 26 | 2913 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 87 | 18654 |
+| `purchasing` | 87 | 18703 |
 | `rfid` | 21 | 3697 |
 | `rnd` | 66 | 7932 |
 | `sales` | 98 | 16020 |
@@ -835,10 +835,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/incentive/IncentiveSetupView.jsx` | 695 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 662 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
+| `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 629 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 624 | 500 |
 | `frontend/src/features/incentive/IncentiveSheetDetail.jsx` | 596 | 500 |
 | `frontend/src/features/finance/TaxInvoices.jsx` | 595 | 500 |
-| `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 593 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 573 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |

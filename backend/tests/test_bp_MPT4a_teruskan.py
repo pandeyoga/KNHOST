@@ -72,7 +72,7 @@ def _fixture():
 def _spk(h, f, *, mitra2=True):
     body = {"mode": "process_only", "material_product_id": f["p"]["grey"], "material_qty": 200, "material_unit": "yard",
             "from_warehouse_id": f["wh"], "target_warehouse_id": f["wh"], "entity_id": KSC,
-            "manual_material_reason": "uji MP-T4a", "route_reason": "uji MP-T4a",
+            "manual_material_reason": "uji MP-T4a", "route_reason": "uji MP-T4a", "purpose": {"kind": "stok"},
             "steps": [{"stage_code": "pfp", "process_type": "pre_treatment", "makloon_id": f["m"]["pre"],
                        "output_product_id": f["p"]["pfp"], "input_qty": 200},
                       {"stage_code": "printing", "process_type": "printing",

@@ -290,6 +290,18 @@ Endpoints:   GET/POST /process-recipes · PATCH/DELETE /process-recipes/{id} · 
 > `origin=rnd`. Produk dari spesifikasi membawa `color_id`. Sample membawa `base_fabric_override` bila kain dasar proofing
 > menyimpang (K-72).
 
+### makloon_shipments  [MP-T5a IMPLEMENTED — Surat jalan kirim bahan makloon, 16 Nov 2026]
+```
+Collection:  makloon_shipments           Prefix: msj_    Nomor: SJM- (jenis penomoran `msj`, per PT)
+Scope:       SCOPED (entity_id)
+Writer:      services/makloon_order_service._record_shipment (dipanggil issue_step; idempoten per mko_id × step_seq)
+Router:      GET /makloon-orders/{id}/shipments · cetak `makloon_sj` (services/pdf_resolvers.resolve_makloon_sj)
+Key Fields:  id, entity_id, number, kind (kirim|teruskan), mko_id, mko_number, step_seq, stage_label,
+             from{kind gudang|mitra, id, name}, to{makloon_id, name, address, phone}, product{id, sku, name, color},
+             rolls[{roll_id, roll_no, lot, length, unit, grade}], total_rolls, total_qty, unit, purpose, created_*
+```
+> MP-T5b: `makloon_orders.purpose {kind pelanggan|toko|stok|pr, label, customer_id?, customer_name?, store_name?, note}`.
+
 ### product_routes  [MP-T1 IMPLEMENTED — Rute Produk, 16 Nov 2026]
 ```
 Collection:  product_routes              Prefix: rte_

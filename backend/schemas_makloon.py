@@ -140,6 +140,8 @@ class MakloonOrderCreate(BaseModel):
     entity_id: str = ""
     created_by: str = ""
     route_reason: str = ""                # P05 DEC-07 — alasan jalur artikel 'supplier atau makloon'
+    # MP-T5b (K-74) — peruntukan pengeluaran bahan: {kind: pelanggan|toko|stok, customer_id?, store_name?, note?}
+    purpose: Dict[str, Any] = Field(default_factory=dict)
     manual_material_reason: str = ""      # P05 DEC-07 — wajib bila tidak ada resep/yield
 
 

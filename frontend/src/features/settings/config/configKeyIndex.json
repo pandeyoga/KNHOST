@@ -1106,6 +1106,10 @@
    "pembelian",
    "makloon"
   ],
+  "makloon.peruntukan_wajib_tahap": [
+   "pembelian",
+   "makloon"
+  ],
   "makloon.auto_claim": [
    "pembelian",
    "makloon"

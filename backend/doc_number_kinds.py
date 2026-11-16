@@ -73,6 +73,7 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("sct", "Kontrak pemasok", "Pembelian", "supplier_contracts", "contract_number", "SCT-"),
     _k("mko", "SPK makloon", "Pembelian", "makloon_orders", "mko_number", "MKO-",
        note="Tanpa PT (data lama/uji) memakai deret bersama."),
+    _k("msj", "Surat jalan kirim bahan makloon", "Pembelian", "makloon_shipments", "number", "SJM-"),   # MP-T5a
     _k("wo", "Perintah kerja produksi", "Pembelian", "mfg_work_orders", "wo_number", "WO-", scope=_B),
     # ── Keuangan ───────────────────────────────────────────────────────────────────────────────────────────────────
     _k("fkt", "Faktur pajak keluaran", "Keuangan", "tax_invoices", "number", "FKT-"),

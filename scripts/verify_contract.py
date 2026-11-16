@@ -119,6 +119,7 @@ CANONICAL_COLLECTIONS = {
     "makloons", "process_recipes",
     # ── MP-T1 (Rute Produk — SCOPED) ──
     "product_routes",
+    "makloon_shipments",   # MP-T5a
     # ── M3 (Transaksi Makloon / Subkontrak — SCOPED) ──
     "makloon_orders",
     # ── FASE D/E (Kontrak Mitra Makloon & Supplier — SCOPED) ──

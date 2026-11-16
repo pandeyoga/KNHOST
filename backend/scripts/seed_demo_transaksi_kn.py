@@ -367,7 +367,7 @@ async def sc_makloon(c: Ctx) -> str:
         "supplier_invoice_no": f"INV-RJT-{m2['id'][-4:]}", "rolls": rolls}, entity=c.cst)
     out.append(f"{m2.get('mko_number')} rajut: diterima 245 kg grey")
     # M3 — grey knit → pre-treatment (PFD) → celup → kain jadi: langkah 1 dikirim
-    m3 = await mgr.post("/makloon-orders", {"mode": "process_only", "material_product_id": gk["id"], "material_qty": 200, "material_unit": "kg",
+    m3 = await mgr.post("/makloon-orders", {"mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": gk["id"], "material_qty": 200, "material_unit": "kg",
                                             "from_warehouse_id": w_knt, "target_warehouse_id": w_knt, "entity_id": c.cst,
                                             "steps": [{"process_type": "pre_treatment", "stage_code": "pfd", "target_use": "dye", "makloon_id": celup["id"],
                                                        "input_product_id": gk["id"], "output_product_id": pfd_k["id"], "input_qty": 200},
@@ -379,7 +379,7 @@ async def sc_makloon(c: Ctx) -> str:
     # M4 — PFP → printing → kain print: SPK dibuat (bahan TERCADANG makloon, belum dikirim)
     if fin_p:
         owner = KSC if KSC in (fin_p.get("entity_ids") or []) else c.cst
-        m4 = await mgr.post("/makloon-orders", {"mode": "process_only", "material_product_id": pfp_w["id"], "material_qty": 500, "material_unit": "yard",
+        m4 = await mgr.post("/makloon-orders", {"mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": pfp_w["id"], "material_qty": 500, "material_unit": "yard",
                                                 "from_warehouse_id": w_prn if owner == c.cst else await c.wh("WH-JKT"),
                                                 "target_warehouse_id": w_prn if owner == c.cst else await c.wh("WH-JKT"), "entity_id": owner,
                                                 "steps": [{"process_type": "printing", "stage_code": "printing", "makloon_id": prn["id"],

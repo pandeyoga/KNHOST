@@ -182,6 +182,94 @@ async def _next_mko_number(entity_id: str = "") -> str:
     return await next_doc_number("makloon_orders", "mko_number", "MKO-", width=5, scheme="shared")
 
 
+PURPOSE_KINDS = {"pelanggan": "Untuk pelanggan", "toko": "Untuk toko", "stok": "Stok"}
+
+
+async def _resolve_purpose(payload: Dict[str, Any], *, mat_snap_stage: Any, entity_id: str) -> Dict[str, Any]:
+    """MP-T5b (K-74) — peruntukan pengeluaran bahan. Wajib bila tahap bahan ada di pengaturan
+    `makloon.peruntukan_wajib_tahap` (bawaan greige/PFD/PFP), kecuali SPK lahir dari PR (peruntukan mengikuti PR)."""
+    import domain_registry as dr
+    from services import config_resolver
+    raw = payload.get("purpose") or {}
+    kind = str(raw.get("kind") or "").strip().lower()
+    if not kind:
+        if payload.get("pr_id"):
+            return {"kind": "pr", "label": "Mengikuti permintaan pembelian", "pr_id": payload.get("pr_id")}
+        wajib = [str(x) for x in (await config_resolver.value_of("makloon.peruntukan_wajib_tahap",
+                                                                 {"entity_id": entity_id}) or [])]
+        st = dr.normalize_stage(mat_snap_stage)
+        if st and st in wajib:
+            raise HTTPException(status_code=400, detail=(
+                f"Peruntukan wajib diisi untuk bahan {dr.label_of('stage', st) or st}: pilih untuk pelanggan, untuk "
+                "toko, atau stok."))
+        return {}
+    if kind not in PURPOSE_KINDS:
+        raise HTTPException(status_code=400, detail="Peruntukan harus: untuk pelanggan, untuk toko, atau stok.")
+    out: Dict[str, Any] = {"kind": kind, "label": PURPOSE_KINDS[kind], "note": str(raw.get("note") or "")[:200]}
+    if kind == "pelanggan":
+        cust = await db.customers.find_one({"id": raw.get("customer_id") or ""}, {"_id": 0, "id": 1, "name": 1})
+        if not cust:
+            raise HTTPException(status_code=400, detail="Pilih pelanggan peruntukan bahan ini.")
+        out.update({"customer_id": cust["id"], "customer_name": cust.get("name", "")})
+    elif kind == "toko":
+        name = str(raw.get("store_name") or "").strip()[:120]
+        if not name:
+            raise HTTPException(status_code=400, detail="Isi nama toko peruntukan bahan ini.")
+        out["store_name"] = name
+    return out
+
+
+def purpose_text(p: Dict[str, Any]) -> str:
+    if not p:
+        return "-"
+    if p.get("kind") == "pelanggan":
+        return f"Untuk pelanggan {p.get('customer_name') or '-'}"
+    if p.get("kind") == "toko":
+        return f"Untuk toko {p.get('store_name') or '-'}"
+    if p.get("kind") == "pr":
+        return "Mengikuti permintaan pembelian"
+    return "Stok"
+
+
+async def _record_shipment(order: Dict[str, Any], step: Dict[str, Any], *, actor_name: str,
+                           sent_from: Optional[Dict[str, Any]] = None) -> None:
+    """MP-T5a (K-75) — satu surat jalan kirim bahan per pengiriman langkah, memuat daftar roll (packing list).
+    Idempoten per (SPK, langkah)."""
+    from core_utils import next_doc_number
+    if await db.makloon_shipments.find_one({"mko_id": order["id"], "step_seq": int(step["seq"])}, {"_id": 1}):
+        return
+    ids = [x for x in step.get("issued_roll_ids") or [] if x]
+    rows = await db.inventory_rolls.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "roll_no": 1, "lot": 1,
+                                                               "length_remaining": 1, "unit": 1, "grade": 1,
+                                                               "product_id": 1}).to_list(2000)
+    by_id = {r["id"]: r for r in rows}
+    prod = await db.products.find_one({"id": step.get("input_product_id") or ""},
+                                      {"_id": 0, "sku": 1, "name": 1, "color": 1}) or {}
+    rolls = [{"roll_id": i, "roll_no": (by_id.get(i) or {}).get("roll_no") or i, "lot": (by_id.get(i) or {}).get("lot", ""),
+              "length": round(float((by_id.get(i) or {}).get("length_remaining") or 0), 2),
+              "unit": (by_id.get(i) or {}).get("unit") or step.get("input_unit") or "",
+              "grade": (by_id.get(i) or {}).get("grade", "")} for i in ids]
+    wh = await db.warehouses.find_one({"id": order.get("from_warehouse_id") or ""}, {"_id": 0, "name": 1}) or {}
+    src = sent_from or {"kind": "gudang", "id": order.get("from_warehouse_id") or "", "name": wh.get("name", "")}
+    mk = await db.makloons.find_one({"id": step.get("makloon_id") or ""}, {"_id": 0, "name": 1, "address": 1,
+                                                                           "phone": 1}) or {}
+    ent = order.get("entity_id") or ""
+    doc = {"id": new_id("msj"), "entity_id": ent,
+           "number": await next_doc_number("makloon_shipments", "number", "SJM-", entity_id=ent or None, kind="msj"),
+           "kind": "teruskan" if src.get("kind") == "mitra" else "kirim",
+           "mko_id": order["id"], "mko_number": order.get("mko_number", ""), "step_seq": int(step["seq"]),
+           "stage_label": step.get("stage_label") or step.get("process_type") or "",
+           "from": src, "to": {"makloon_id": step.get("makloon_id") or "", "name": step.get("makloon_name") or mk.get("name", ""),
+                               "address": mk.get("address", ""), "phone": mk.get("phone", "")},
+           "product": {"id": step.get("input_product_id") or "", "sku": prod.get("sku", ""),
+                       "name": prod.get("name", "") or step.get("input_name", ""), "color": prod.get("color", "")},
+           "rolls": rolls, "total_rolls": len(rolls),
+           "total_qty": round(sum(r["length"] for r in rolls) or float(step.get("input_qty") or 0), 2),
+           "unit": step.get("input_unit") or (rolls[0]["unit"] if rolls else ""),
+           "purpose": order.get("purpose") or {}, "created_by": actor_name, "created_at": now_iso()}
+    await db.makloon_shipments.insert_one(dict(doc))
+
+
 async def _assert_stage_chain(seq: int, stage: Dict[str, Any], input_pid: str, out_pid: str) -> None:
     """MP-T2 — tolak langkah yang bahan masuk/hasilnya tidak bertahap sesuai tahap master (pesan sama dengan Rute Produk).
     Produk lama tanpa tahap tercatat tidak ditolak (tidak ada yang bisa dibandingkan)."""
@@ -517,6 +605,8 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
         raise HTTPException(status_code=422, detail=(
             "Resep/yield belum dipilih — isi alasan qty bahan manual (mis. 'resep artikel belum ada, "
             "qty dari pengalaman mitra')."))
+    purpose = await _resolve_purpose(payload, mat_snap_stage=(await db.products.find_one(
+        {"id": material_pid}, {"_id": 0, "stage": 1}) or {}).get("stage"), entity_id=entity_id)
     restock_route = None
     if not payload.get("pr_id"):
         from services import restock_source_service as _rss
@@ -572,6 +662,7 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
         "warnings": order_warnings,
         "material_basis": "recipe" if has_recipe else "manual",
         "manual_material_reason": "" if has_recipe else manual_reason,
+        "purpose": purpose,   # MP-T5b (K-74)
         "restock_route": restock_route,
         "status": DRAFT, "notes": payload.get("notes") or "",
         "timeline": [], "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
@@ -681,7 +772,7 @@ async def _assert_source_stock(product_id: str, wh: str, entity_id: str, qty: fl
 async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
                      doc_uom: str = "", doc_qty: Any = 0,
                      roll_ids: Optional[List[str]] = None, roll_codes: Optional[List[str]] = None,
-                     actor_name: str = "system") -> Dict[str, Any]:
+                     actor_name: str = "system", sent_from: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Keluarkan bahan langkah `seq` ke mitra. `roll_ids`/`roll_codes` (nomor roll/EPC) diisi → roll TERTENTU yang
     keluar dan qty = Σ panjangnya (`makloon_issue_rolls`); kosong → jalur lama berdasarkan jumlah (FEFO)."""
     order = await _get_order(mko_id)
@@ -804,6 +895,10 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     if seq == 1:
         await _mres.consume_for_issue(mko_id, input_pid, input_qty, actor_name)   # FIX-9
     await _post_step_gl(order, step)   # PK-18
+    try:   # MP-T5a — surat jalan kirim bahan (dokumen; kegagalan tidak membatalkan pengiriman yang sudah tercatat)
+        await _record_shipment(order, step, actor_name=actor_name, sent_from=sent_from)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[issue_step] surat jalan kirim bahan gagal dicatat: %s", exc)
     return safe_doc(order)
 
 
@@ -1721,7 +1816,9 @@ async def forward_step(mko_id: str, seq: int, data: Dict[str, Any], *, actor_nam
     rec.update({"rolls": rolls, "output_warehouse_id": wh, "forwarded_to_seq": int(seq) + 1})
     order = await receive_step(mko_id, seq, rec, actor_name=actor_name, can_set_service_value=can_set_service_value)
     roll_ids = [x["roll_id"] for x in (_find_step(order, seq).get("lots") or []) if x.get("roll_id")]
-    order = await issue_step(mko_id, seq + 1, from_warehouse_id=wh, roll_ids=roll_ids, actor_name=actor_name)
+    order = await issue_step(mko_id, seq + 1, from_warehouse_id=wh, roll_ids=roll_ids, actor_name=actor_name,
+                             sent_from={"kind": "mitra", "id": step.get("makloon_id") or "",
+                                        "name": step.get("makloon_name") or ""})
     now = now_iso()
     nxt_name = nxt.get("makloon_name") or ""
     from_name = step.get("makloon_name") or ""

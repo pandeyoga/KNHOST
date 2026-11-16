@@ -174,6 +174,7 @@ SCOPED_COLLECTIONS = {
     "makloons", "process_recipes",   # M1 — master mitra makloon + resep proses (SCOPED)
     "product_routes",                 # MP-T1 — rute produk per artikel per PT (mitra/kontrak milik PT)
     "makloon_orders",                 # M3 — transaksi makloon/subkontrak (SCOPED)
+    "makloon_shipments",              # MP-T5a — surat jalan kirim bahan makloon (per pengiriman)
     "supplier_contracts",             # Fase D/E — kontrak mitra & supplier (SCOPED)
     "doc_amendments",                 # FASE G-1 — amandemen dokumen finansial (SCOPED)
     "supplier_items",                 # Fase E — katalog barang versi supplier (SCOPED)

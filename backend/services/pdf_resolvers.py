@@ -662,6 +662,13 @@ async def resolve_transfer(doc, db):
               "rolls": _rolls_cell(it.get("qty_rolls")),
               "qty": f"{fmt_num(it.get('quantity', it.get('qty', 0)))} {it.get('unit', '')}"}
              for i, it in enumerate(doc.get("items", []), 1)]
+    # MP-T5a (K-75) — surat jalan memuat daftar roll (packing list) bila transfer menyimpan rollnya.
+    roll_rows = []
+    for it in doc.get("items", []):
+        for r in it.get("rolls") or []:
+            roll_rows.append({"no": len(roll_rows) + 1, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
+                              "roll": r.get("roll_no") or r.get("roll_id") or "-", "lot": r.get("lot") or "-",
+                              "qty": f"{fmt_num(r.get('length', 0))} {it.get('unit', '')}".strip()})
     is_ic = doc.get("transfer_kind") == "inter_entity"
     from_name = doc.get("from_warehouse_name") or doc.get("source_warehouse_name")
     to_name = doc.get("to_warehouse_name") or doc.get("dest_warehouse_name")
@@ -701,11 +708,14 @@ async def resolve_transfer(doc, db):
         "number": doc.get("number") or doc.get("transfer_number") or doc.get("code"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
         "meta": meta,
-        "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"),
-                    _col_rolls(), _col("qty", "Jumlah", "num")],
-        "items": items,
+        "columns": ([_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"), _col("roll", "Roll", "ctr"),
+                     _col("lot", "Lot"), _col("qty", "Jumlah", "num")] if roll_rows else
+                    [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"),
+                     _col_rolls(), _col("qty", "Jumlah", "num")]),
+        "items": roll_rows or items,
         "totals": [{"label": "Total Roll",
-                    "value": _sum_rolls([it.get("qty_rolls") for it in doc.get("items", [])])},
+                    "value": str(len(roll_rows)) if roll_rows else
+                    _sum_rolls([it.get("qty_rolls") for it in doc.get("items", [])])},
                    {"label": "Total Kuantitas",
                     "value": _sum_by_unit([(it.get("quantity", it.get("qty", 0)), it.get("unit", ""))
                                            for it in doc.get("items", [])]), "strong": True}],
@@ -910,6 +920,42 @@ async def resolve_delivery_note(doc, db):
         "signatures": [{"label": "Penerima", "role": "Customer / Kurir", "name": ""},
                        {"label": "Mengetahui", "role": "Supervisor", "name": ""},
                        {"label": "Dibuat Oleh", "role": "Gudang", "name": doc.get("created_by", "")}],
+        "_amount": 0,
+    }
+
+
+# ── MP-T5a (K-75) — Surat Jalan Kirim Bahan Makloon: satu per pengiriman langkah, memuat daftar roll ─────────
+async def resolve_makloon_sj(doc, db):
+    from services.makloon_order_service import purpose_text
+    prod = doc.get("product") or {}
+    items = [{"no": i, "nama": prod.get("name") or "-", "warna": prod.get("color") or "-", "kode": prod.get("sku") or "-",
+              "roll": r.get("roll_no") or r.get("roll_id") or "-", "lot": r.get("lot") or "-",
+              "jumlah": f"{fmt_num(r.get('length'))} {r.get('unit') or doc.get('unit') or ''}".strip()}
+             for i, r in enumerate(doc.get("rolls") or [], 1)]
+    src = doc.get("from") or {}
+    dari = (f"{src.get('name') or '-'} (mitra, diteruskan langsung)" if src.get("kind") == "mitra"
+            else f"{src.get('name') or '-'} (gudang)")
+    to = doc.get("to") or {}
+    return {
+        "title": "Surat Jalan Kirim Bahan Makloon", "number": doc.get("number") or "-",
+        "date": fmt_date(doc.get("created_at")), "status": doc.get("kind"),
+        "party_to": {"title": "Kepada Yth (mitra makloon)", "name": to.get("name") or "-",
+                     "address": fmt_address(to.get("address")), "phone": to.get("phone", "")},
+        "meta": [{"label": "No. SPK Makloon", "value": doc.get("mko_number") or "-"},
+                 {"label": "Langkah", "value": f"{doc.get('step_seq')} · {doc.get('stage_label') or '-'}"},
+                 {"label": "Dikirim dari", "value": dari},
+                 {"label": "Peruntukan", "value": purpose_text(doc.get("purpose") or {})},
+                 {"label": "Dicetak", "value": fmt_now(seconds=True)}],
+        "columns": [_col("no", "No", "num"), _col("nama", "Nama Kain"), _col("warna", "Warna"), _col("kode", "Kode Brg"),
+                    _col("roll", "Roll", "ctr"), _col("lot", "Lot"), _col("jumlah", "Jumlah", "num")],
+        "items": items,
+        "totals": [{"label": "Total Roll", "value": str(len(items))},
+                   {"label": "Total Kuantitas", "value": f"{fmt_num(doc.get('total_qty'))} {doc.get('unit') or ''}".strip(),
+                    "strong": True}],
+        "notes": "Barang dikirim untuk diproses mitra sesuai SPK. Mohon periksa jumlah roll & panjang saat menerima.",
+        "signatures": [{"label": "Penerima", "role": "Mitra makloon / kurir", "name": ""},
+                       {"label": "Pengirim", "role": "Gudang" if src.get("kind") != "mitra" else "Mitra pengirim", "name": ""},
+                       {"label": "Dibuat Oleh", "role": "MD / Gudang", "name": doc.get("created_by", "")}],
         "_amount": 0,
     }
 
@@ -1342,6 +1388,7 @@ DOC_REGISTRY = {
     "purchase_return": {"label": "Nota Retur Beli",    "collection": "purchase_returns","module": "purchase_return","esignable": True,  "resolver": resolve_purchase_return},
     "interco_return":  {"label": "Nota Retur / Kredit Antar-PT", "collection": "interco_returns", "module": "interco", "esignable": True,  "resolver": resolve_interco_return},
     "makloon_spk":     {"label": "SPK Makloon",        "collection": "makloon_orders",  "module": "makloon_order",  "esignable": True,  "resolver": resolve_makloon_spk},
+    "makloon_sj":      {"label": "Surat Jalan Kirim Bahan Makloon", "collection": "makloon_shipments", "module": "makloon_order", "esignable": True, "resolver": resolve_makloon_sj},   # MP-T5a
     "special_order":   {"label": "Pesanan Khusus",      "collection": "special_orders",  "module": "order",          "esignable": True,  "resolver": resolve_special_order},
     "transfer":        {"label": "Surat Jalan Transfer","collection": "warehouse_transfers","module": "transfer",   "esignable": False, "resolver": resolve_transfer},
     "cycle_count":     {"label": "Stock Opname",       "collection": "cycle_count_sessions","module": "inventory",  "esignable": False, "resolver": resolve_cycle_count},

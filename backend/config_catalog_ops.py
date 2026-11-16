@@ -395,6 +395,19 @@ E("makloon.variance_tolerance_pct", group="pembelian", section="makloon", type="
   related=("makloon.auto_claim",), risk="high",
   permission=_MAKLOON_PERM)
 
+# MP-T5b (K-74, permintaan klien 16 Nov) — pengeluaran bahan dari gudang greige/PFD/PFP wajib menyebut peruntukannya.
+E("makloon.peruntukan_wajib_tahap", group="pembelian", section="makloon", type="list", items="options",
+  options=({"value": "yarn", "label": "Benang"}, {"value": "grey", "label": "Greige"},
+           {"value": "pfd", "label": "PFD"}, {"value": "pfp", "label": "PFP"}, {"value": "finished", "label": "Bahan jadi"}),
+  default=["grey", "pfd", "pfp"], scopes=G,
+  label="SPK wajib peruntukan untuk bahan bertahap",
+  help="Order makloon yang bahannya bertahap ini wajib menyebut peruntukannya: untuk pelanggan, untuk toko, atau stok. "
+       "Order dari permintaan pembelian (PR) mengikuti PR-nya.",
+  impact="Order makloon tanpa peruntukan untuk bahan di tahap ini ditolak; peruntukan tercetak di surat jalan kirim bahan.",
+  example="Greige, PFD, PFP → kirim greige ke pencelup harus menyebut 'untuk toko AB' atau 'stok'",
+  consumers=("services/makloon_order_service.py:_resolve_purpose",), risk="medium",
+  permission=_MAKLOON_PERM)
+
 E("makloon.auto_claim", group="pembelian", section="makloon", type="bool", default=True, scopes=G,
   label="Buka klaim otomatis saat selisih besar",
   help="Sistem langsung membuat dokumen klaim ketika selisih melewati toleransi.",

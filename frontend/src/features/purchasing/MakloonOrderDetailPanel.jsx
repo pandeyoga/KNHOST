@@ -70,6 +70,12 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   const canSetPartner = can(currentUser?.permissions, "makloon_order", "create") && orderLive;   // MP-T2 (K-61)
   const canForward = can(currentUser?.permissions, "makloon_order", "forward") && orderLive;   // MP-T4a (K-66)
   const [fwdStep, setFwdStep] = useState(null);
+  const [shipments, setShipments] = useState([]);   // MP-T5a — surat jalan kirim bahan per langkah
+  useEffect(() => {
+    if (!mkoId) return;
+    axios.get(`${API}/makloon-orders/${mkoId}/shipments`).then((r) => setShipments(r.data?.items || []))
+      .catch((e) => onError?.(e.response?.data?.detail || "Surat jalan kirim bahan gagal dimuat."));
+  }, [mkoId, data?.updated_at]); // eslint-disable-line
   const canIssue = can(currentUser?.permissions, "makloon_order", "issue") && orderLive;
   const canReceive = can(currentUser?.permissions, "makloon_order", "receive") && orderLive;
   const canManage = can(currentUser?.permissions, "makloon_order", "cancel");
@@ -367,6 +373,13 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                     return <button data-testid={`forward-step-${s.seq}`} onClick={() => setFwdStep({ step: s, next: nx })}
                       className="secondary-button btn-sm mt-2"><Send size={12} /> Teruskan ke {nx.makloon_name || `mitra langkah ${nx.seq}`}</button>;
                   })()}
+                  {shipments.filter((x) => x.step_seq === s.seq).map((sj) => (
+                    <div key={sj.id} className="mt-2" data-testid={`step-sj-${s.seq}`}>
+                      <p className="text-fs-12 text-kn-text-2">Surat jalan {sj.number} · {sj.total_rolls} roll · {formatQty(sj.total_qty)} {sj.unit}{sj.kind === "teruskan" ? ` · dari ${sj.from?.name || "mitra"}` : ""}</p>
+                      <DocumentActionsBar docType="makloon_sj" sourceId={sj.id} entityId={sj.entity_id} number={sj.number}
+                        label="Surat Jalan" currentUser={currentUser} compact />
+                    </div>
+                  ))}
                   {s.forwarded_to && (
                     <p className="mt-1 text-fs-12 text-kn-text-2" data-testid={`forwarded-note-${s.seq}`}>
                       Diteruskan langsung ke {s.forwarded_to.partner || `langkah ${s.forwarded_to.seq}`} · {formatQty(s.forwarded_to.qty)} oleh {s.forwarded_to.by}

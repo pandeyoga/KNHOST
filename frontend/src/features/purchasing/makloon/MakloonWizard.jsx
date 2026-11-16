@@ -49,7 +49,16 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
     material_qty: "", from_warehouse_id: "", target_warehouse_id: "",
     supplier_id: "", supplier_name: "", material_price: "", notes: "",
     route_reason: "", manual_material_reason: "",
+    // MP-T5b (K-74) — peruntukan bahan (wajib untuk greige/PFD/PFP; server menegakkan dari pengaturan)
+    purpose_kind: "", purpose_customer_id: "", purpose_store: "",
   });
+  const [customers, setCustomers] = useState([]);
+  useEffect(() => {
+    if (head.purpose_kind !== "pelanggan" || customers.length) return;
+    axios.get(`${API}/customers`, { params: { limit: 500 } })
+      .then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data?.items || []))
+      .catch((e) => setErr(e.response?.data?.detail || "Daftar pelanggan gagal dimuat — pilih peruntukan lain atau coba lagi."));
+  }, [head.purpose_kind]); // eslint-disable-line
   const [steps, setSteps] = useState([emptyStep()]);
   const [materialProduct, setMaterialProduct] = useState(null);
 
@@ -284,6 +293,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
       notes: head.notes,
       route_reason: head.route_reason,
       manual_material_reason: head.manual_material_reason,
+      ...(head.purpose_kind ? { purpose: { kind: head.purpose_kind, customer_id: head.purpose_customer_id, store_name: head.purpose_store } } : {}),
       entity_id: selectedEntity && selectedEntity !== "all" ? selectedEntity : "",
       steps: steps.map((s, i) => {
         const stg = stageOf(s);
@@ -437,6 +447,32 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                     onChange={(v) => setHead((p) => ({ ...p, material_price: v }))} />
                 </Field>
               </>
+            )}
+            {!prContext?.pr_id && (
+              <Field label={`Peruntukan bahan${["grey", "pfd", "pfp"].includes(materialProduct?.stage) ? " *" : ""}`}>
+                <select data-testid="wizard-purpose" className="field" value={head.purpose_kind}
+                  onChange={(e) => setHead((p) => ({ ...p, purpose_kind: e.target.value }))}>
+                  <option value="">Pilih peruntukan…</option>
+                  <option value="pelanggan">Untuk pelanggan</option>
+                  <option value="toko">Untuk toko</option>
+                  <option value="stok">Stok</option>
+                </select>
+              </Field>
+            )}
+            {head.purpose_kind === "pelanggan" && (
+              <Field label="Pelanggan *">
+                <select data-testid="wizard-purpose-customer" className="field" value={head.purpose_customer_id}
+                  onChange={(e) => setHead((p) => ({ ...p, purpose_customer_id: e.target.value }))}>
+                  <option value="">Pilih pelanggan…</option>
+                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </Field>
+            )}
+            {head.purpose_kind === "toko" && (
+              <Field label="Nama toko *">
+                <input data-testid="wizard-purpose-store" className="field" value={head.purpose_store}
+                  onChange={(e) => setHead((p) => ({ ...p, purpose_store: e.target.value }))} placeholder="mis. Toko AB" />
+              </Field>
             )}
             <div className="md:col-span-2">
               <Field label="Catatan">
