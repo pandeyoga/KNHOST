@@ -108,6 +108,10 @@ async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = Non
     claim = step.get("claim") or blank_claim()
     if claim.get("status") == "approved":
         raise ClaimError("Klaim langkah ini sudah disetujui & dieksekusi.")
+    # MP-T4a — klaim menyangkut HASIL langkah; bahan yang hilang di mitra memakai "Catat susut/hilang".
+    if step.get("status") != "received":
+        raise ClaimError(f"Klaim hanya untuk langkah yang hasilnya sudah diterima (langkah {seq} masih "
+                         f"'{step.get('status') or '-'}'). Bahan yang hilang di mitra dicatat lewat susut/hilang bahan.")
     if not reason.strip():
         raise ClaimError("Alasan klaim wajib diisi (jejak audit D-09).")
     amt = parse_decimal(amount if amount is not None else claim.get("amount_suggested") or 0, 2)
@@ -115,6 +119,15 @@ async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = Non
         raise ClaimError("Nilai klaim harus lebih besar dari 0 untuk potong bon / ganti rugi.")
     if action == "terima_catatan":
         amt = 0.0
+    if action == "potong_bon":   # MP-T4a — dulu baru diperiksa saat persetujuan
+        bill = await db.vendor_bills.find_one({"id": step.get("service_bill_id") or ""},
+                                              {"_id": 0, "grand_total": 1, "amount_paid": 1, "status": 1})
+        if not bill or bill.get("status") in ("void", "cancelled"):
+            raise ClaimError("Tagihan jasa langkah ini belum ada — pilih ganti rugi (tagih) atau terima dengan catatan.")
+        sisa = round(parse_decimal(bill.get("grand_total"), 2) - parse_decimal(bill.get("amount_paid"), 2), 2)
+        if amt - sisa > 0.005:
+            raise ClaimError(f"Potong bon {rupiah(amt)} melebihi sisa tagihan jasa {rupiah(sisa)}. "
+                             "Kurangi nilainya atau pakai ganti rugi (tagih) untuk selisihnya.")
     claim.update({"status": "pending_approval", "action": action, "amount": amt,
                   "reason": reason.strip(), "proposed_by": actor, "proposed_at": now_iso(),
                   "proposed_by_id": actor_id})   # KF-T6 — pengusul andal untuk kontrol dua orang
@@ -248,14 +261,37 @@ async def reject_claim(mko_id: str, seq: int, *, reason: str, actor: str = "syst
     await _assert_policy(order, claim, actor_role, "reject")   # KP-T4
     if claim.get("status") != "pending_approval":
         raise ClaimError("Tidak ada pengajuan klaim yang menunggu persetujuan pada langkah ini.")
-    claim.update({"status": "rejected", "rejected_by": actor, "rejected_at": now_iso(),
-                  "rejected_reason": reason.strip()})
+    # MP-T4a — menolak PENGAJUAN tidak menyelesaikan selisihnya: klaim kembali "perlu tindakan" (SPK tetap Sebagian)
+    # sampai ada keputusan yang disetujui (potong bon, ganti rugi, atau terima dengan catatan). Dulu `rejected`
+    # dianggap beres sehingga SPK langsung Selesai.
+    claim.update({"status": "open", "rejected_by": actor, "rejected_at": now_iso(),
+                  "rejected_reason": reason.strip(), "rejected_action": claim.get("action", ""),
+                  "rejected_amount": claim.get("amount", 0.0)})
     claim.setdefault("history", []).append(
         {"at": now_iso(), "event": "rejected", "actor": actor, "note": reason.strip()})
     step["claim"] = claim
     await _save(order)
     await _close_claim_notices(mko_id, "ditolak", actor)
     return safe_doc(order)
+
+
+async def open_from_qc(mko_id: str, seq: int, *, rejected_qty: float, unit: str, reason: str, task_id: str = "",
+                       actor: str = "system") -> None:
+    """MP-T4a — tolak QC hasil makloon membuka (atau menambah) klaim langkah itu ke mitra. Klaim yang sedang menunggu
+    persetujuan atau sudah disetujui tidak ditimpa — penolakan QC hanya dicatat supaya pemutus melihatnya."""
+    order = await _get_order(mko_id)
+    step = _find_step(order, seq)
+    claim = step.get("claim") or blank_claim()
+    entry = {"at": now_iso(), "qty": round(float(rejected_qty or 0), 3), "unit": unit or "", "reason": reason or "",
+             "task_id": task_id, "actor": actor}
+    claim.setdefault("qc_rejects", []).append(entry)
+    if claim.get("status") in ("none", "", None, "open"):
+        claim.update({"status": "open", "required": True})
+    claim.setdefault("history", []).append(
+        {"at": now_iso(), "event": "qc_reject", "actor": actor,
+         "note": f"Tolak QC {entry['qty']:g} {entry['unit']}: {entry['reason']}".strip()})
+    step["claim"] = claim
+    await _save(order)
 
 
 async def _close_claim_notices(mko_id: str, outcome: str, actor: str) -> None:

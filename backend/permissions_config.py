@@ -7,7 +7,7 @@ DEFAULT_PERMISSIONS = {
         "product_route": ["update"],   # MP-T1 (K-73) — Kelola Rute Produk
         "color": ["view", "create", "update", "delete", "approve"],
         "makloon": ["view", "create", "update", "delete", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
-        "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve"],
+        "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve", "forward"],
         "supplier_contract": ["view", "create", "update", "delete"],
         "supplier_item": ["view", "create", "update", "delete", "import"],
         "process_recipe": ["view", "create", "update", "delete"],
@@ -167,7 +167,7 @@ DEFAULT_PERMISSIONS = {
         "rnd": ["view", "create", "submit", "assess", "decide", "manage", "hold"],
         "color": ["view", "create", "update", "delete", "approve"],
         "makloon": ["view", "create", "update", "delete", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
-        "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve"],
+        "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve", "forward"],
         "supplier_contract": ["view", "create", "update", "delete"],
         "supplier_item": ["view", "create", "update", "delete", "import"],
         "process_recipe": ["view", "create", "update", "delete"],
@@ -524,6 +524,7 @@ DEFAULT_PERMISSIONS = {
         "supplier": ["view"], "supplier_item": ["view"], "supplier_contract": ["view"],
         "purchase_requisition": ["view", "create", "update"],
         "purchase_order": ["view", "create_bahan"],   # MP-T5c (K-77) — MD membeli bahan greige/PFD/PFP
+        "makloon_order": ["view", "forward"],   # MP-T4a (K-66) — MD mencatat kain diteruskan antar-mitra
         "rfq": ["view", "create", "update"],
         "makloon": ["view"], "process_recipe": ["view", "create", "update"],
         "inspection": ["view"],

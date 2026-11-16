@@ -330,6 +330,7 @@
     "cancel",
     "claim",
     "claim_approve",
+    "forward",
     "record_loss",
     "approve_loss"
    ],
@@ -1193,6 +1194,7 @@
     "cancel",
     "claim",
     "claim_approve",
+    "forward",
     "record_loss",
     "approve_loss"
    ],
@@ -1540,6 +1542,7 @@
    ],
    "makloon_order": [
     "view",
+    "forward",
     "record_loss"
    ],
    "md_quality": [

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 77c4f64 pada 2026-11-16 -->
+<!-- Dihasilkan dari commit: 3ba2cad pada 2026-11-16 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 177 |
-| Endpoint (`@router.<method>`) | 1916 |
+| Endpoint (`@router.<method>`) | 1917 |
 | Service (`backend/services/*.py`) | 456 |
 | Koleksi MongoDB disentuh kode produksi | 219 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -28,7 +28,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1152 |
 | `schemas_purchasing.py` | 635 |
 | `dependencies.py` | 287 |
-| `permissions_config.py` | 1087 |
+| `permissions_config.py` | 1088 |
 | `entity_scope.py` | 765 |
 | `pagination.py` | 151 |
 | `indexes.py` | 1217 |
@@ -219,7 +219,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `landed_cost.py` | 10 | 430 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
 | `logistics.py` | 27 | 368 | `/dashboard`, `/deliveries`, `/deliveries/{delivery_id}`, `/deliveries/{delivery_id}/manifest`, `/deliveries/{delivery_id}/photos`, `/deliveries/{delivery_id}/photos/{photo_id}` … |
 | `lots.py` | 18 | 372 | `/lots`, `/lots/identity-trace`, `/lots/merge`, `/lots/settings`, `/lots/stats`, `/lots/unassigned-rolls` … |
-| `makloon_orders.py` | 26 | 468 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/plan-from-route`, `/makloon-orders/{mko_id}` … |
+| `makloon_orders.py` | 27 | 489 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/plan-from-route`, `/makloon-orders/{mko_id}` … |
 | `makloons.py` | 6 | 142 | `/makloons`, `/makloons/{makloon_id}`, `/makloons/{makloon_id}/scorecard` |
 | `marketing.py` | 35 | 563 | `/marketing/accounts`, `/marketing/accounts/{aid}`, `/marketing/analytics`, `/marketing/assets`, `/marketing/calendar.pdf`, `/marketing/campaigns` … |
 | `master_governance.py` | 14 | 151 | `/master-governance/batches`, `/master-governance/batches/{batch_id}/rollback`, `/master-governance/cleanup/apply`, `/master-governance/cleanup/batches`, `/master-governance/cleanup/batches/{batch_id}`, `/master-governance/cleanup/batches/{batch_id}/rollback` … |
@@ -246,7 +246,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `product_traceability.py` | 1 | 238 | `/products/{product_id}/purchase-history` |
 | `production.py` | 12 | 228 | `/production/boms`, `/production/boms/{bom_id}`, `/production/summary`, `/production/work-orders`, `/production/work-orders/{wo_id}`, `/production/work-orders/{wo_id}/cancel` … |
 | `products.py` | 7 | 442 | `/products`, `/products/sales-owners`, `/products/{product_id}`, `/products/{product_id}/stock-breakdown` |
-| `purchase_orders.py` ⚠️>800 | 8 | 1051 | `/purchase-orders`, `/purchase-orders/resolve-sourcing`, `/purchase-orders/status-counts`, `/purchase-orders/{po_id}`, `/purchase-orders/{po_id}/amend`, `/purchase-orders/{po_id}/approve` … |
+| `purchase_orders.py` ⚠️>800 | 8 | 1069 | `/purchase-orders`, `/purchase-orders/resolve-sourcing`, `/purchase-orders/status-counts`, `/purchase-orders/{po_id}`, `/purchase-orders/{po_id}/amend`, `/purchase-orders/{po_id}/approve` … |
 | `purchase_orders_extra.py` | 11 | 311 | `/po-variance-tasks`, `/po-variance-tasks/{task_id}/decide`, `/purchase-orders/blanket`, `/purchase-orders/payables/summary`, `/purchase-orders/{blanket_id}/call-off`, `/purchase-orders/{blanket_id}/close-contract` … |
 | `purchase_requisitions.py` | 18 | 338 | `/material-reservations`, `/purchase-requisitions`, `/purchase-requisitions/eligible-suppliers`, `/purchase-requisitions/merge-suggestions`, `/purchase-requisitions/realize-many`, `/purchase-requisitions/reorder-suggestions` … |
 | `purchase_returns.py` | 18 | 336 | `/purchase-returns`, `/purchase-returns/source-rolls`, `/purchase-returns/status-counts`, `/purchase-returns/{return_id}`, `/purchase-returns/{return_id}/approve`, `/purchase-returns/{return_id}/attachments` … |
@@ -541,11 +541,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `lot_service.py` | 643 | FASE C — LOT KELAS SATU (`inventory_lots`) · SSOT identitas batch & genealogi. |
 | `lot_trace_service.py` | 318 | FASE C — Silsilah (genealogi), Recall, dan Label lot. |
 | `makloon_calc_service.py` | 215 | FASE D — ESTIMASI OUTPUT MAKLOON BERBASIS GSM (PS-03) + EVALUASI SELISIH (PS-11). |
-| `makloon_claim_service.py` | 381 | FASE D — SELISIH & KLAIM MAKLOON (PS-11 · keputusan **D-09**). |
+| `makloon_claim_service.py` | 417 | FASE D — SELISIH & KLAIM MAKLOON (PS-11 · keputusan **D-09**). |
 | `makloon_issue_rolls.py` | 223 | Issue bahan makloon PER ROLL — kasus klien "20 roll Esmica Blue dikirim untuk dicelup hitam". |
 | `makloon_loss_service.py` | 268 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
 | `makloon_material_ledger.py` | 114 | L04 LN-043 — buku bahan makloon per MKO: forecast · dicadangkan · dikirim/di mitra · terpakai · kembali · susu |
-| `makloon_order_service.py` | 2030 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
+| `makloon_order_service.py` | 2090 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
 | `makloon_receipt_qc.py` | 199 | Hasil langkah TERAKHIR Order Makloon = barang masuk gudang, diperlakukan seperti barang PO. |
 | `makloon_roll_lock.py` | 539 | FIX-9 (audit 9 Nov 2026 — B3a SSOT-4, FIX-2 §5 butir 1 & 5) — cadangan bahan makloon DIKUNCI PER ROLL. |
@@ -620,7 +620,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `putaway_order_service.py` | 679 | FASE R2 — PUTAWAY ORDER (PA): dokumen pemindahan roll dari gedung transit ke |
 | `putaway_state.py` | 98 | FIX-10 — TABEL TRANSISI status Putaway Order (`putaway_orders`, termasuk DRAF PA PREP-C/FIX-3a). |
 | `qc_inspection_service.py` | 409 | QC 4-Point Inspection service — Fase 6.2 (P1). |
-| `qc_service.py` | 579 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
+| `qc_service.py` | 592 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
 | `receiving_mode_service.py` | 84 | GRN Fase 7 — beralih penuh: mode penerimaan per badan usaha (`receiving.mode` = legacy | grn). |
 | `receiving_roll_service.py` | 426 | Kelahiran roll `receiving` saat penerimaan (GRN Fase 1: dipindah dari `routers/inbound_scan_label.py`). |
 | `receiving_uom_service.py` | 525 | FASE F-1 — PENERIMAAN BERBASIS **SATUAN SUPPLIER** (lanjutan Fase B & Fase E). |
@@ -771,7 +771,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
 | `__tests__` | 161 | 27072 |
-| `admin` | 36 | 7000 |
+| `admin` | 36 | 7008 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 25 | 1666 |
 | `costing` | 1 | 150 |
@@ -800,7 +800,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 26 | 2913 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 86 | 18563 |
+| `purchasing` | 87 | 18654 |
 | `rfid` | 21 | 3697 |
 | `rnd` | 66 | 7932 |
 | `sales` | 98 | 16020 |
@@ -826,7 +826,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/special_orders.py` | 1523 | 800 |
 | `backend/routers/sales_returns.py` | 1320 | 800 |
 | `backend/routers/rnd.py` | 1070 | 800 |
-| `backend/routers/purchase_orders.py` | 1051 | 800 |
+| `backend/routers/purchase_orders.py` | 1069 | 800 |
 | `backend/routers/sales_orders_extra.py` | 1020 | 800 |
 | `backend/routers/sales_orders.py` | 914 | 800 |
 | `backend/routers/inventory.py` | 889 | 800 |

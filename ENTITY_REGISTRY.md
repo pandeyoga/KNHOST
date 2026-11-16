@@ -320,6 +320,11 @@ Skrip data:  backend/scripts/mpt1_rute_awal.py (rute awal dari resep/BOM/sumber 
 > mitra langkah draf; kirim bahan ditolak bila mitra kosong (K-61). Modal lama `MakloonOrderCreateModal` dihapus — kedua
 > pintu memakai `MakloonWizard`.
 
+> MP-T4a (16 Nov 2026): `steps[].forwarded_to {seq, partner, at, by, qty, roll_ids}` / `steps[].forwarded_from` — kain
+> diteruskan langsung mitra → mitra (`POST /makloon-orders/{id}/steps/{seq}/forward`, izin `makloon_order.forward`, bawaan
+> Admin/Manajer/MD); jurnal yang sudah ada (terima langkah N + kirim langkah N+1). `steps[].claim.qc_rejects[]` (tolak QC
+> hasil makloon membuka klaim); klaim yang ditolak kembali `open` dengan `rejected_*` (SPK tetap Sebagian).
+
 ### makloon_orders  [M3 IMPLEMENTED — Transaksi Makloon/Subkontrak (Procure→Process→Pay)]
 ```
 Collection:  makloon_orders             Prefix: mko_   (number: MKO-#####)

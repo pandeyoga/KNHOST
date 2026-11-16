@@ -1679,6 +1679,66 @@ async def set_step_tolerance(mko_id: str, seq: int, *, pct: float, reason: str, 
     return await _get_order(mko_id)
 
 
+async def forward_step(mko_id: str, seq: int, data: Dict[str, Any], *, actor_name: str = "system",
+                       can_set_service_value: bool = False) -> Dict[str, Any]:
+    """MP-T4a (K-62, K-66, K-67, K-69) — kain hasil langkah `seq` dikirim LANGSUNG dari mitra itu ke mitra langkah
+    berikutnya (dicatat MD), tanpa singgah di gudang.
+
+    Dipakai dua pintu yang sudah ada, berurutan: terima hasil langkah `seq` (roll lahir, WIP langkah itu ditutup — jurnal
+    terima yang sama) lalu kirim roll yang SAMA ke mitra langkah berikut (jurnal kirim yang sama). Nilai WIP berpindah
+    dari langkah ke langkah; tidak ada akun atau arah jurnal baru. Mitra yang melapor hasil akhir saja (K-67) boleh tanpa
+    rincian roll: satu roll gabungan dicatat untuk jumlah hasil antara.
+    """
+    order = await _get_order(mko_id)
+    if order.get("status") == CANCELLED:
+        raise HTTPException(status_code=409, detail="Order sudah dibatalkan")
+    step = _find_step(order, seq)
+    nxt = next((x for x in order.get("steps") or [] if int(x.get("seq") or 0) == int(seq) + 1), None)
+    if not nxt:
+        raise HTTPException(status_code=400, detail=f"Langkah {seq} adalah langkah terakhir — terima hasilnya ke gudang, "
+                                                    "bukan diteruskan.")
+    if step.get("status") != "issued":
+        raise HTTPException(status_code=409, detail=f"Langkah {seq} belum dikirim ke mitra atau sudah selesai.")
+    if nxt.get("status") != "pending":
+        raise HTTPException(status_code=409, detail=f"Langkah {seq + 1} sudah berjalan.")
+    if str(nxt.get("material_flow") or FLOW_MOVES) == FLOW_SERVICE:
+        raise HTTPException(status_code=400, detail=f"Langkah {seq + 1} adalah jasa murni — kain tidak dikirim ke mitranya. "
+                                                    "Terima hasil langkah ini lalu catat jasanya.")
+    if not nxt.get("makloon_id"):
+        raise HTTPException(status_code=400, detail=f"Isi mitra langkah {seq + 1} sebelum meneruskan kain.")
+    actual_out = round(float(data.get("actual_output_qty") or 0), 2)
+    if actual_out <= 0:
+        raise HTTPException(status_code=400, detail="Isi jumlah kain yang diteruskan.")
+    wh = data.get("output_warehouse_id") or order.get("target_warehouse_id") or order.get("from_warehouse_id") or ""
+    rolls = [dict(r) for r in data.get("rolls") or [] if float(r.get("length") or 0) > 0]
+    if not rolls:   # K-67 — hasil antara cukup jumlahnya
+        rolls = [{"length": actual_out, "lot": f"TERUS-{order.get('mko_number') or mko_id}-{seq}"}]
+    for i, r in enumerate(rolls, start=1):
+        r["warehouse_id"] = wh
+        if not str(r.get("lot") or "").strip():   # surat jalan mitra sering tanpa lot — kain masih di mitra
+            r["lot"] = f"TERUS-{order.get('mko_number') or mko_id}-{seq}-{i}"
+    rec = {k: v for k, v in data.items() if k not in ("rolls", "output_warehouse_id")}
+    rec.update({"rolls": rolls, "output_warehouse_id": wh, "forwarded_to_seq": int(seq) + 1})
+    order = await receive_step(mko_id, seq, rec, actor_name=actor_name, can_set_service_value=can_set_service_value)
+    roll_ids = [x["roll_id"] for x in (_find_step(order, seq).get("lots") or []) if x.get("roll_id")]
+    order = await issue_step(mko_id, seq + 1, from_warehouse_id=wh, roll_ids=roll_ids, actor_name=actor_name)
+    now = now_iso()
+    nxt_name = nxt.get("makloon_name") or ""
+    from_name = step.get("makloon_name") or ""
+    await db.makloon_orders.update_one(
+        {"id": mko_id},
+        {"$set": {"steps.$[a].forwarded_to": {"seq": int(seq) + 1, "partner": nxt_name, "at": now, "by": actor_name,
+                                              "qty": actual_out, "roll_ids": roll_ids},
+                  "steps.$[b].forwarded_from": {"seq": int(seq), "partner": from_name, "at": now, "by": actor_name,
+                                                "qty": actual_out},
+                  "updated_at": now},
+         "$push": {"timeline": {"at": now, "event": "forwarded",
+                                "note": f"Langkah {seq} → {seq + 1}: {actual_out:g} {step.get('output_unit') or ''} "
+                                        f"diteruskan langsung {from_name} → {nxt_name} oleh {actor_name}"}}},
+        array_filters=[{"a.seq": int(seq)}, {"b.seq": int(seq) + 1}])
+    return await _get_order(mko_id)
+
+
 async def set_step_partner(mko_id: str, seq: int, *, makloon_id: str, contract_id: str = "",
                            actor_name: str = "system") -> Dict[str, Any]:
     """MP-T2 (K-61) — isi/ganti mitra langkah yang bahannya belum dikirim. Kontrak dicari ulang (atau yang dipilih);

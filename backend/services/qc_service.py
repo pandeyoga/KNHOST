@@ -12,11 +12,14 @@ SSOT-safe (KN_15 §3.4): semua transisi di LEVEL ROLL (split bila parsial); bala
 di-rebuild dari rolls sehingga invarian `on_hand == Σ bucket` & `balance == Σ rolls`
 tetap utuh. TIDAK pernah $inc balance langsung.
 """
+import logging
 from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
 from services.roll_service import rebuild_balance, insert_child_roll
 from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
+
+logger = logging.getLogger(__name__)
 
 RETURNED_STATUS = "returned_supplier"  # terminal — tidak masuk bucket fisik manapun
 
@@ -445,6 +448,16 @@ async def process_qc_decision(
     if set_fields.get("status") != "qc_pending":
         _fin["$push"]["status_history"] = _its.history_entry(set_fields["status"], actor.get("name", ""), "qc_decision")
     await db.wms_tasks.update_one({"id": task_id}, _fin)
+    # MP-T4a — hasil makloon ditolak QC → klaim langkah itu terbuka ke mitra (dulu tidak tersambung sama sekali).
+    if task.get("source_type") == "makloon_order" and task.get("mko_id") and float(result.get("rejected_qty") or 0) > 0.01:
+        try:
+            from services import makloon_claim_service as _mclaim
+            await _mclaim.open_from_qc(task["mko_id"], int(task.get("step_seq") or 1),
+                                       rejected_qty=float(result.get("rejected_qty") or 0),
+                                       unit=task.get("unit") or task.get("base_unit") or "", reason=reason or "",
+                                       task_id=task_id, actor=actor.get("name", ""))
+        except Exception as exc:  # noqa: BLE001 — keputusan QC sudah tersimpan; klaim bisa dibuka manual
+            logger.warning("[process_qc_decision] klaim makloon dari tolak QC gagal dibuka: %s", exc)
     # PREP-C (K-GDG-10) — QC lulus → DRAF Putaway Order per gedung tujuan (best-effort, idempoten per keputusan).
     if result.get("accepted_qty", 0) > 0.01:
         from services import inbound_qc_common as _iqc

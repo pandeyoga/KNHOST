@@ -22,6 +22,7 @@ import MakloonLossList from "./makloon/MakloonLossList";
 import MakloonMaterialLedger from "./makloon/MakloonMaterialLedger";
 import { can } from "../../config/roles";
 import MakloonSelect from "../../components/MakloonSelect";   // MP-T2 — isi mitra langkah draf
+import ForwardModal from "./makloon/MkoForwardModal";   // MP-T4a — teruskan kain mitra → mitra
 import { recordService } from "./makloon/makloonApi";
 import { IssueModal, ReceiveModal, RecordServiceModal } from "./makloon/MkoStepModals";   // Fase 4 · R3 (L-03)
 import { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18 — jurnal langkah
@@ -67,6 +68,8 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   // UAT 24 Okt (audit UI tahap 2) — G4-15: order DIBATALKAN tidak lagi menawarkan Issue/Terima/Catat Jasa.
   const orderLive = data?.status !== "cancelled";
   const canSetPartner = can(currentUser?.permissions, "makloon_order", "create") && orderLive;   // MP-T2 (K-61)
+  const canForward = can(currentUser?.permissions, "makloon_order", "forward") && orderLive;   // MP-T4a (K-66)
+  const [fwdStep, setFwdStep] = useState(null);
   const canIssue = can(currentUser?.permissions, "makloon_order", "issue") && orderLive;
   const canReceive = can(currentUser?.permissions, "makloon_order", "receive") && orderLive;
   const canManage = can(currentUser?.permissions, "makloon_order", "cancel");
@@ -357,6 +360,18 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                         label="Pilih mitra…" allowCreate={false} onSelect={(m) => setPartner(s, m)} />}
                     </div>
                   )}
+                  {/* MP-T4a (K-62/K-66) — kain langsung dari mitra ini ke mitra langkah berikut, tanpa singgah di gudang. */}
+                  {canForward && s.status === "issued" && (() => {
+                    const nx = (data.steps || []).find((x) => x.seq === s.seq + 1);
+                    if (!nx || nx.status !== "pending" || nx.material_flow === "service_only") return null;
+                    return <button data-testid={`forward-step-${s.seq}`} onClick={() => setFwdStep({ step: s, next: nx })}
+                      className="secondary-button btn-sm mt-2"><Send size={12} /> Teruskan ke {nx.makloon_name || `mitra langkah ${nx.seq}`}</button>;
+                  })()}
+                  {s.forwarded_to && (
+                    <p className="mt-1 text-fs-12 text-kn-text-2" data-testid={`forwarded-note-${s.seq}`}>
+                      Diteruskan langsung ke {s.forwarded_to.partner || `langkah ${s.forwarded_to.seq}`} · {formatQty(s.forwarded_to.qty)} oleh {s.forwarded_to.by}
+                    </p>
+                  )}
                   {canIssue && s.status === "pending" && prevReceived && !serviceOnly && !!s.makloon_id && (
                     <button data-testid={`issue-step-${s.seq}`} onClick={() => setIssueStep(s)} className="primary-button mt-2 !py-1.5 text-[11.5px]"><Send size={12} /> Issue ke Makloon</button>
                   )}
@@ -408,6 +423,8 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
         </Panel>
       </div>
 
+      {fwdStep && <ForwardModal mkoId={mkoId} step={fwdStep.step} next={fwdStep.next} onClose={() => setFwdStep(null)}
+        onDone={async () => { setFwdStep(null); await load(); }} />}
       {issueStep && <IssueModal step={issueStep} warehouses={warehouses} defaultWh={data.from_warehouse_id} busy={busy} mkoId={mkoId}
         onClose={() => setIssueStep(null)} onConfirm={(wh, docUom, docQty, rollIds) => doIssue(issueStep, wh, docUom, docQty, rollIds)} />}
       {receiveStep && <ReceiveModal step={receiveStep} warehouses={warehouses} defaultWh={data.target_warehouse_id || data.from_warehouse_id}

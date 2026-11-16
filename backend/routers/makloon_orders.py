@@ -143,6 +143,27 @@ async def plan_from_route(request: Request, product_id: str, qty: float = 0) -> 
     return await _routes.plan_makloon(product_id, qty, ctx.active_entity_id)
 
 
+class StepForwardIn(BaseModel):
+    actual_output_qty: float = Field(..., gt=0)
+    rolls: List[Dict[str, Any]] = Field(default_factory=list)   # kosong = hasil antara cukup jumlahnya (K-67)
+    supplier_invoice_no: str = ""
+    note: str = ""
+
+
+@router.post("/makloon-orders/{mko_id}/steps/{seq}/forward")
+async def forward_to_next(mko_id: str, seq: int, payload: StepForwardIn, request: Request) -> Dict[str, Any]:
+    """MP-T4a (K-62, K-66) — kain langkah `seq` diteruskan langsung dari mitranya ke mitra langkah berikut (dicatat MD)."""
+    actor = await require_permission(request, "makloon_order", "forward")
+    ctx = await entity_ctx(request)
+    await _assert_access(mko_id, ctx)
+    from services.makloon_order_service import forward_step
+    order = await forward_step(mko_id, seq, payload.model_dump(), actor_name=actor.get("name", ""),
+                               can_set_service_value=False)
+    await audit(actor.get("name", ""), "makloon_forwarded", "makloon_order", mko_id,
+                {"step_seq": seq, "qty": payload.actual_output_qty, "rolls": len(payload.rolls)})
+    return order
+
+
 class StepPartnerIn(BaseModel):
     makloon_id: str
     contract_id: str = ""

@@ -61,7 +61,8 @@ export const HUB_TABS = {
     // dirunut dari pesanan · tanggal masuk & qty terima dihitung sendiri.
     { view: "po-board",          label: "Papan PO per Lini",     roles: ["admin", "manager"] },
     { view: "blanket-po",        label: "Blanket / Kontrak",     roles: ["admin", "manager"] },
-    { view: "makloon-orders",    label: "Order Makloon",         roles: ["admin", "manager", "warehouse", "sales"] },
+    // MP-T4a (K-66) — MD mencatat kain diteruskan antar-mitra (izin `makloon_order.forward`).
+    { view: "makloon-orders",    label: "Order Makloon",         roles: ["admin", "manager", "warehouse", "sales", "md"] },
     // Fase 3 · P8 (D-22) — satu layar Kinerja Mitra Makloon (rekap susut & klaim + skor mitra). + warehouse: gudang dulu
     // melihat skor mitra di Klaim Selisih Makloon; tanpa izin rekap layar menampilkan skor saja (403 ditangani layar).
     { view: "makloon-claim-recap", label: "Kinerja Mitra Makloon", roles: ["admin", "manager", "finance", "md", "warehouse"] },

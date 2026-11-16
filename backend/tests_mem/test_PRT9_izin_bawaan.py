@@ -148,6 +148,9 @@ for _r in ("admin", "md", "manager"):
 # MP-T5c (K-77) — izin "Buat PO bahan" untuk MD (dan Admin, pemegang semua aksi).
 for _r in ("admin", "md"):
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("purchase_order", set()).add("create_bahan")
+# MP-T4a (K-66) — "Teruskan kain ke mitra berikut" (Admin, Manajer, MD). MD sudah melihat Order Makloon sebelumnya.
+for _r in ("admin", "manager", "md"):
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("makloon_order", set()).add("forward")
 
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)

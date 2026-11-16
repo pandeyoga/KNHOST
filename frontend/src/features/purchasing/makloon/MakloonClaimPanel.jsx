@@ -84,6 +84,17 @@ export default function MakloonClaimPanel({ mkoId, step, currentUser, onDone, on
         </div>
       )}
 
+      {/* MP-T4a — pengajuan yang ditolak mengembalikan klaim ke "perlu tindakan"; alasan penolakan tetap terlihat. */}
+      {claim.status === "open" && claim.rejected_reason && (
+        <p className="mt-2 text-fs-12 text-kn-danger-text" data-testid={`claim-last-rejected-${step.seq}`}>
+          <XCircle size={12} className="mr-1 inline" /> Pengajuan terakhir ditolak oleh {claim.rejected_by}: {claim.rejected_reason}. Ajukan keputusan baru.
+        </p>
+      )}
+      {(claim.qc_rejects || []).length > 0 && (
+        <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid={`claim-qc-rejects-${step.seq}`}>
+          Ditolak QC: {claim.qc_rejects.map((q) => `${q.qty} ${q.unit}${q.reason ? ` (${q.reason})` : ""}`).join(" · ")}
+        </p>
+      )}
       {claim.status === "rejected" && (
         <p className="mt-2 text-[11px] text-[#C0392B]" data-testid={`claim-rejected-${step.seq}`}>
           <XCircle size={11} className="mr-1 inline" /> Ditolak oleh {claim.rejected_by}: {claim.rejected_reason}
