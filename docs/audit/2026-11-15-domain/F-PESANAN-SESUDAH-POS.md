@@ -2,11 +2,14 @@
 
 HEAD: `91a3ec0`.
 
+
+> **Status domain: BELUM DIKERJAKAN.** Skenario wajib §8 dan inventaris form domain ini belum dijalankan. Semua isi di bawah berlabel **dugaan (baca kode)** sampai diuji lewat layar/API pada sesi domainnya.
 ---
 
 ## SO-01 — Dua pintu fulfillment menghitung ketersediaan dari koleksi MENTAH (lewati SSOT)
 
 - **Keparahan:** Tinggi (semula Kritis — diturunkan: divergensi NYATA di kode, tetapi TIDAK termaterialisasi di data seed; risiko laten) · **Jenis akar:** duplikasi / cacat logika
+- **Tingkat bukti:** dugaan (baca kode)
 
 ### Verifikasi runtime (backend hidup, data acuan) — JUJUR: divergensi tak tereproduksi pada SO sampel
 

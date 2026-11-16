@@ -2,11 +2,14 @@
 
 HEAD: `91a3ec0`.
 
+
+> **Status domain: BELUM DIKERJAKAN.** Skenario wajib §8 dan inventaris form domain ini belum dijalankan. Semua isi di bawah berlabel **dugaan (baca kode)** sampai diuji lewat layar/API pada sesi domainnya.
 ---
 
 ## RD-01 — 4–5 pintu pembuatan SKU; penegakan domain tidak seragam
 
 - **Keparahan:** Tinggi · **Jenis akar:** pintu ganda + aturan tidak ditegakkan (akar sama MS-01)
+- **Tingkat bukti:** dugaan (baca kode)
 - **Bukti terverifikasi:**
   - Master: `routers/products.py:114` → `_apply_domain` strict (400).
   - Template: `routers/product_templates.py:116` → `product_template_service.py:340-341` `dr.validate_product` (strict).

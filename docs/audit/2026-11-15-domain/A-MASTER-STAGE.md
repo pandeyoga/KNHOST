@@ -18,6 +18,7 @@ HEAD: `91a3ec0`. Lingkungan audit: **backend hidup** (sandbox, `test_database`, 
 ## MS-01 — Pintu non-form menyimpan produk cacat-domain; pintu form menolaknya (RUNTIME-VERIFIED)
 
 - **Keparahan:** Tinggi · **Jenis akar:** aturan tidak ditegakkan seragam (pintu ganda)
+- **Tingkat bukti:** terbukti runtime
 - **Temuan asli (kode, HEAD):**
   - Pintu form menolak: `backend/routers/products.py:100-102` — `_apply_domain` → `dr.validate_product`; error → **HTTP 400**.
   - `backend/services/product_variant_service.py:166-172` — validasi domain di `save_product` hanya bila `strict=True`.
@@ -47,6 +48,7 @@ HEAD: `91a3ec0`. Lingkungan audit: **backend hidup** (sandbox, `test_database`, 
 ## MS-05 — Katalog POS/orderable menyertakan barang non-finished (RUNTIME-VERIFIED)
 
 - **Keparahan:** Tinggi · **Jenis akar:** aturan tidak ditegakkan / pilihan salah — **menjawab keluhan "bisakah greige dijual di POS"**
+- **Tingkat bukti:** terbukti runtime
 - **Temuan (kode):** `backend/routers/products.py:44-45` — katalog jual/beli (POS/Sales Portal) menyaring dengan `rnd_gate.is_orderable(p)`. `backend/services/rnd_gate.py:is_orderable` = `status=='active' AND lifecycle in ORDERABLE` — **tidak memeriksa `stage`**.
 - **Uji yang DIJALANKAN (token sales):**
   ```
@@ -65,6 +67,7 @@ HEAD: `91a3ec0`. Lingkungan audit: **backend hidup** (sandbox, `test_database`, 
 ## MS-02 — Dua sumber transisi stage paralel; validator tak dipakai jalur produksi
 
 - **Keparahan:** Tinggi · **Jenis akar:** duplikasi + aturan tidak ditegakkan
+- **Tingkat bukti:** dugaan (baca kode)
 - **Bukti:** Sumber (1) `domain_registry.py:682` `STAGE_TRANSITIONS` + `resolve_transition`(`:949`)/`check_transition`(`:1024`) — pemanggil nyata HANYA `routers/enums.py:98` & `lot_service.py:497` (rework, hanya bila `to_stage` diisi; lalu tulis `$set stage` langsung `:515/520`). Sumber (2) master `process_stages` (`master_registry.py:173/183/199`) — dipakai makloon (`makloon_order_service._resolve_stage:56-101`). `line_scope.py:27` menyebut `STAGE_TRANSITIONS` hanya di komentar. Makloon `receive_step:1019` tak mengadu stage roll input vs `from_stage`/output vs `to_stage`.
 - **Dampak:** dua daftar transisi bisa menyimpang; transisi pada jalur produksi utama praktis nominal.
 - **Arah perbaikan:** satu sumber transisi + satu validator dipanggil tiap penulis stage. **Keputusan pemilik #2.**
@@ -74,6 +77,7 @@ HEAD: `91a3ec0`. Lingkungan audit: **backend hidup** (sandbox, `test_database`, 
 ## MS-03 — Dua sistem label stage + salinan hardcode
 
 - **Keparahan:** Sedang · **Jenis akar:** duplikasi
+- **Tingkat bukti:** dugaan (baca kode)
 - **Bukti:** `domain_registry.py:55/57` ("Prepared for …") vs `:448-461` ("Pre-treatment …"); salinan daftar stage hardcode di ±14 `.jsx`.
 - **Catatan (jujur):** `ProductMasterForm.jsx` SENDIRI justru BAIK — membaca stage/fabric/grade dari registry server (`useDomainEnums`, `options("stage")` dst), bukan hardcode. Masalah hardcode ada di layar lain (LotParts, DomainRegistryParts, MakloonWizard, MakloonStepEditor).
 
@@ -82,6 +86,7 @@ HEAD: `91a3ec0`. Lingkungan audit: **backend hidup** (sandbox, `test_database`, 
 ## MS-04 — Dropdown `base_unit` (Satuan Dasar) tidak disaring menurut stage
 
 - **Keparahan:** Tinggi · **Jenis akar:** pilihan dropdown salah
+- **Tingkat bukti:** dugaan (baca kode)
 - **Bukti (form inventaris + konfirmasi UI):** `ProductMasterForm.jsx:52-55` — `baseUnitOptions = uomSelectOptions({dimensions:["length","weight","count"], extra:[...]})` — **statis**, tidak bergantung `stage`. Variabel `stage` (`:66`) hanya mengatur field wajib & panel yarn, TIDAK menyaring satuan. → benang bisa dipilih "meter"; kain bisa "kg".
 - **Data acuan (jujur):** `yarn products: 2 | satuan bukan berat/count: 0` dan `fabric: 278 | satuan bukan length/weight: 0`. Jadi **belum ada data cacat**; ini celah form (bukan data rusak).
 - **Catatan desain:** komentar `:46-50` menyatakan menampilkan semua satuan master itu disengaja (ekstensibilitas). Saring sebaiknya berdasar **dimensi per stage**, bukan daftar hardcode.

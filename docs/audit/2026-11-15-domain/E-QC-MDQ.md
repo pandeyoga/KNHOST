@@ -2,16 +2,20 @@
 
 HEAD: `91a3ec0`.
 
+
+> **Status domain: BELUM DIKERJAKAN.** Skenario wajib §8 dan inventaris form domain ini belum dijalankan. Semua isi di bawah berlabel **dugaan (baca kode)** sampai diuji lewat layar/API pada sesi domainnya.
 ---
 
-## QM-01 — DITARIK (false positive): grade roll sudah satu penulis
+## QM-01 — Lebih dari satu pintu menetapkan grade/keputusan satu roll (dugaan; pembacaan kode menunjuk satu penulis)
 
-- **Status:** ditarik setelah verifikasi. Bukan temuan.
-- **Bukti kebersihan:**
+- **Status:** open · **Keparahan:** belum ditetapkan (menunggu uji runtime)
+- **Tingkat bukti:** dugaan (baca kode)
+- **Uji runtime yang dibutuhkan untuk membuktikan/menggugurkan (E-S2, E-S3, E-S6):** (1) grade satu roll lewat QC 4-point, lalu ubah lewat `grade-override` sebagai qc@, mdquality@, warehouse@, manager@ — catat siapa ditolak/diterima; (2) periksa `grade_history` roll itu memuat SEMUA perubahan dengan sumbernya; (3) cari jalur lain yang mengubah `grade` tanpa `grade_history` (inspeksi SPK, mdq-cut, retur, makloon receipt) dengan menjalankannya lalu mengkueri roll; (4) cek harga/stok mengikuti grade terakhir.
+- **Hasil baca kode sejauh ini (belum cukup untuk putusan):**
   - **Satu penulis** grade: `backend/services/grade_service.py:64` `set_roll_grade(...)` — satu-satunya yang menulis `{"$set": {"grade": …, "grade_source": …}}` + `{"$push": {"grade_history": entry}}` (`:95-97`).
   - Pemanggil: inspeksi 4-point `qc_inspection_service.py:341`, koreksi `routers/qc_inspection.py:183`; `inspection_service.py:14` (docstring) juga mengarah ke `set_roll_grade(source="qc_inspection")`.
   - `grade-override` (`routers/qc_inspection.py:169-191`) adalah jalur koreksi **terkendali**: izin `require_permission("wms","approve")` (admin/manager), `reason` wajib (D-23), menulis `grade_history` + audit, `source="manager_override"`. Jadi **bukan** pintu liar; justru teladan SSOT + jejak.
-- **Catatan:** klaim pass awal ("dua pintu keputusan grade / aturan tak ditegakkan") salah dan dikoreksi di sini demi jejak audit jujur.
+- **Catatan:** pembacaan kode menunjuk satu penulis grade; ini belum diuji runtime, jadi temuan TIDAK ditarik.
 
 ---
 

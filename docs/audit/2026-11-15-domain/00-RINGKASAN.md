@@ -13,17 +13,23 @@ Tiap klaim ditelusuri ke kode sampai terbukti/gugur. **Dua klaim pass awal dikor
 1. **Dulu diklaim** "SKU Pesanan Khusus lahir dengan stage kosong" → **salah**: `stamp_domain_defaults` mengisi stage default `finished`. Temuan yang benar (MS-01): produk cacat-domain (kekurangan field WAJIB per stage) tetap **disimpan** sebagai `domain_gaps`/`needs_review` karena `strict=False`, sedangkan pintu form menolak 400.
 2. **Dulu diklaim** "dua pintu keputusan grade / aturan grade tak ditegakkan" (QM-01) → **salah / ditarik**: grade roll punya **satu penulis** `grade_service.set_roll_grade()` dengan `grade_history`; `grade-override` adalah jalur koreksi terkendali (izin `wms:approve` + alasan wajib). Lihat `E-QC-MDQ.md`.
 
-## Status verifikasi per domain (sesi backend hidup + data acuan)
+## Status per domain dan tingkat bukti (label ditetapkan pemilik, 16 Nov)
 
-| Domain | Metode | Status | Catatan |
-|---|---|---|---|
-| A master & stage | runtime + kode | **MS-01 & MS-05 runtime-verified** | bukti diproduksi (form 400 vs impor 200; orderable memuat pfd/pfp) |
-| B makloon | runtime + kode | MK-02 dikuatkan runtime; MK-01/03 kode | 3 makloon_orders; steps tak simpan from_stage/to_stage |
-| C R&D | kode | TERHAMBAT-DATA (0 special_orders) | RD-01 akar sama MS-01 (sudah runtime-verified) |
-| D retur | kode | TERHAMBAT-DATA (0 retur) | RT-01 sah (kode); RT-02 pertanyaan-perlu-data |
-| E QC & MDQ | kode | QM-01 ditarik (kode decisive); runtime TERHAMBAT-DATA (0 grade_history) | grade satu penulis |
-| F pesanan sesudah POS | runtime + kode | **SO-01 divergensi KODE terkonfirmasi, TAK tereproduksi di seed** (3 pintu setuju) → Tinggi | pemicu (gudang tak-dihitung / makloon sebagian) tak hadir di seed |
+| Domain | Status |
+|---|---|
+| A master & stage | dikerjakan sebagian — akan DIULANG PENUH sesuai katalog §8 (skenario lewat layar 1280/390 + 8 form) |
+| B makloon | belum dikerjakan |
+| C R&D | belum dikerjakan |
+| D retur | belum dikerjakan |
+| E QC & MD Quality | belum dikerjakan |
+| F pesanan sesudah POS | belum dikerjakan |
 
+| ID | Tingkat bukti |
+|---|---|
+| MS-01, MS-05 | terbukti runtime |
+| MS-02, MS-03, MS-04, MK-01, MK-02, MK-03, RD-01, RT-01, RT-02, QM-01, SO-01 | dugaan (baca kode) |
+
+Tidak ada status "withdrawn". QM-01 tetap open sebagai dugaan beserta uji runtime yang dibutuhkan (lihat `E-QC-MDQ.md`).
 
 ## Peta duplikasi — "pekerjaan → pintu yang ada → yang seharusnya satu"
 
@@ -51,7 +57,7 @@ Tiap klaim ditelusuri ke kode sampai terbukti/gugur. **Dua klaim pass awal dikor
 8. **MK-03 (Sedang, status/keputusan pemilik):** langkah mitra bisa disimpan tanpa mitra (3b).
 9. **RT-02 (Rendah/perlu data):** banyak sub-service penyelesaian retur — risiko uang/stok ganda belum terbukti; settlement tampak lewat satu state machine. Perlu reproduksi data acuan.
 10. **RT-01 (info):** pembagian state retur terverifikasi SAH (bukan duplikat).
-11. **QM-01 (DITARIK):** grade bersih (satu penulis). Bukan temuan.
+11. **QM-01 (open, dugaan):** pintu keputusan grade — baca kode menunjuk satu penulis; belum diuji runtime.
 
 ## Duplikasi yang harus disatukan lebih dulu
 
