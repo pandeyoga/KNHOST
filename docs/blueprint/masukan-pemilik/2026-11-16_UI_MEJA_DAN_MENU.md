@@ -95,6 +95,32 @@ Catatan Claude (dari foto, perlu dicek saat dijadikan unit):
 | M29 | Lokasi Rak | **UI masih sangat buruk.** | 24 |
 | M30 | Eskalasi Gudang | **Menu ini untuk apa, relevan?** (pertanyaan pemilik; jawaban di bawah) | 25 |
 
+#### Jawaban pertanyaan pemilik (dari kode di `HEAD`, 16 Nov)
+
+**M27 — Nama BOM.** Nama hanya label bebas: wajib tidak kosong, tanpa aturan unik, tanpa nama bawaan
+(`backend/services/production_service.py` `create_bom`). Kuncinya `id`; perintah kerja menaut ke `bom_id` dan menyalin
+`bom_name` hanya untuk tampilan. Satu produk boleh punya banyak BOM aktif tanpa versi/utama, dan Rute Produk mengambil
+BOM aktif **sembarang** untuk produk itu (`product_route_service.py` — `find_one` tanpa urutan). Jadi nama BOM memang
+tidak diperlukan sebagai isian; yang diperlukan adalah **BOM per produk hasil + versi**.
+Usulan: hapus isian nama; identitas = produk hasil + nomor versi ("BOM {SKU} v2", dibuat sistem); satu BOM **utama**
+per produk (versi lama arsip); Rute Produk dan perintah kerja memakai BOM utama.
+
+**M28 — HPP di master produk.** Master produk hanya menyimpan `harga_pokok` — angka manual/peninggalan yang dipakai
+sebagai cadangan bila roll lahir tanpa biaya. HPP sebenarnya ada **per roll** (`inventory_rolls.unit_cost`, termasuk
+biaya tambahan) dan dihitung saat dibaca sebagai rata-rata tertimbang stok hidup (`costing_service.py`), dikirim API
+produk sebagai `hpp` + sumbernya. Masalah: tab Informasi produk di katalog menampilkan `harga_pokok` berlabel "HPP"
+(`frontend/src/features/catalog/FamilyInfoTab.jsx`) — **angka berbeda** dari HPP hitungan.
+Usulan: layar produk menampilkan HPP hitungan (rata-rata stok + sumber: "dari 23 roll" / "perkiraan"); `harga_pokok`
+diganti nama "HPP perkiraan (dipakai bila roll tanpa biaya)" atau dihapus bila semua jalur penerimaan sudah membawa biaya.
+
+**M30 — Eskalasi Gudang.** Eskalasi selalu **manual**: petugas menekan "Eskalasi" di layar scan Barang Masuk/Keluar
+dengan alasan (izin `wms.update`) bila tugas tidak bisa diselesaikan apa adanya (mis. qty tidak sesuai); tidak ada
+eskalasi otomatis karena umur. Pemegang `wms.approve` memutus: kembalikan ke status sebelumnya atau ubah qty (keluar:
+lepas cadangan roll, ubah baris SO, hitung ulang harga). Fungsinya relevan, tetapi **menu terpisahnya tidak**: tugas yang
+sama sudah tampil di antrean gudang Meja Saya dan di saringan "Dieskalasi" layar scan.
+Usulan: hapus menu Eskalasi Gudang; jadikan kartu "Perlu keputusan" di Meja Gudang/Meja Saya untuk pemegang
+`wms.approve` (sejalan M1).
+
 ## Catatan pengamatan (Claude, dari foto yang sama — belum dikonfirmasi pemilik)
 - Meja Admin Sales › Siap cetak SJ/Invoice: status di bawah nama pelanggan tertulis "Shipped" (kode mentah berbahasa
   Inggris) — seharusnya label Indonesia.
