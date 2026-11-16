@@ -760,3 +760,15 @@ K-22, K-46). Sales hanya melihat angkanya sendiri; nominal tampil setelah lembar
 | **komisi otomatis (cara lama)** | Bagian Target & Aturan "Komisi otomatis (cara lama)" · keterangan "Bagian ini hilang setelah PT beralih ke Lembar Insentif." · "Akrual komisi bulanan" + tombol "Bukukan akrual komisi {bulan}" / "Bukukan koreksi akrual komisi {bulan}" (konfirmasi "Beban komisi Rp … dibukukan ke buku {PT} …") · "Bawaan komisi" · "Tarif komisi per PT × kategori" · "Jenjang komisi per sales" | Sisa layar komisi mesin (dulu tab "Komisi Otomatis" dan "Skema (Arsip)", serta kartu akrual di "Kinerja Sales") untuk PT yang sakelar insentifnya belum Lembar Insentif |
 | **Insentif Sales** (beranda admin) | Kartu "Insentif Sales" · sub-teks "Belum dibayar" · "Estimasi bulan ini" | PT Lembar Insentif: jumlah baris lembar disahkan yang belum dibayar lewat gaji; PT komisi otomatis: estimasi komisi bulan berjalan |
 
+### 9.35 Rute Produk (MP-T1)
+
+Istilah tab Rute di Master Produk (`docs/blueprint/unit/MP-T1.md`, keputusan K-57, K-65, K-70, K-71, K-73).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **Rute** | Tab "Rute" · judul "Rute di PT ini" · tombol "Buat rute", "Usulkan dari data lama" | Urutan langkah dari bahan sampai barang di PT aktif: beli dari pemasok, makloon per tahap, atau produksi sendiri |
+| **Rute utama** | Lencana "Utama" · tombol "Jadikan utama" | Rute yang dipakai pembelian dan SPK makloon; satu per artikel (atau per varian bila ada pengecualian). Produk hasil R&D baru bisa dirilis bila punya rute utama |
+| **Langkah** | "Langkah 1", "Jenis langkah": "Beli dari pemasok" · "Makloon" · "Produksi sendiri" · "Tahap" · "Mitra makloon (boleh menyusul)" · "Kontrak (boleh menyusul)" · "Bahan masuk" | Satu proses dalam rute; tahap asal → hasil dibaca dari Master Tahapan Proses, sehingga pilihan tahap hanya yang menerima hasil langkah sebelumnya |
+| **Khusus varian** | Lencana "Khusus varian {SKU}" · pilihan "Berlaku untuk": "Semua varian artikel ini" / "Khusus {SKU}" | Rute pengecualian untuk satu varian; mengalahkan rute artikel untuk varian itu |
+| **Rute awal (data lama)** | Keterangan kartu "Rute awal (data lama)" · "Dari R&D" | Asal rute: dibuat dari resep proses/BOM/sumber restock lama, atau lahir dari putusan sample R&D |
+

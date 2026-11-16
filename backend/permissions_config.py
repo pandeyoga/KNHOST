@@ -4,6 +4,7 @@ DEFAULT_PERMISSIONS = {
         "goods_receipt": ["view", "create", "count", "review", "close", "approve", "configure"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
         "marketing": ["view", "create", "update", "approve", "delete"],
         "product": ["view", "create", "update", "delete", "import", "export"],
+        "product_route": ["update"],   # MP-T1 (K-73) — Kelola Rute Produk
         "color": ["view", "create", "update", "delete", "approve"],
         "makloon": ["view", "create", "update", "delete", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
         "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve"],
@@ -161,6 +162,7 @@ DEFAULT_PERMISSIONS = {
         "logistics": ["view"],   # Integrasi FIX-1 (B1b UI-47) — manajer memantau pengiriman (baca saja), menu Pengiriman berfungsi
         "marketing": ["view", "create", "update", "approve", "delete"],
         "product": ["view", "export"],
+        "product_route": ["update"],   # MP-T1 (K-73) — Kelola Rute Produk
         # FASE F — manager: menilai spesifikasi, memutus pemenang sample, mengubah kebijakan R&D, hold desain ACC
         "rnd": ["view", "create", "submit", "assess", "decide", "manage", "hold"],
         "color": ["view", "create", "update", "delete", "approve"],
@@ -510,6 +512,7 @@ DEFAULT_PERMISSIONS = {
         # FIX-6 (keputusan pemilik 10 Nov 2026) — MD boleh MENGUNDUH lembar perbaikan master / ekspor produk
         # (`product.export`; PREP-A K-OPN-06). `sync_permission_modules` menambahkannya ke matriks tersimpan saat start.
         "product": ["view", "create", "update", "export"],
+        "product_route": ["update"],   # MP-T1 (K-73) — Kelola Rute Produk
         "pricelist": ["view", "manage"],
         "price_approval": ["view", "create", "update"],
         "uom": ["view"], "template": ["view"],

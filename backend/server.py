@@ -223,6 +223,8 @@ from routers import sales_p04 as _sales_p04  # noqa: E402 — P04 Keep/Pending, 
 app.include_router(_sales_p04.router)
 from routers import restock_sources as _restock_sources  # noqa: E402 — P05 sumber restock artikel
 app.include_router(_restock_sources.router)
+from routers import product_routes as _product_routes  # noqa: E402 — MP-T1 rute produk
+app.include_router(_product_routes.router)
 from routers import stock_figures as _stock_figures  # noqa: E402 — FIX-2 dua angka stok (lokal + global) + rincian
 app.include_router(_stock_figures.router)
 app.include_router(_so_override.router)

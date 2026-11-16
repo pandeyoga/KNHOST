@@ -217,7 +217,7 @@ async def request_repeat_restock(order_id: str, items: List[Any], actor: Dict[st
             est_price=round(est or float(prod.get("harga_pokok") or prod.get("price") or 0), 2),
             description=prod.get("name", ""),
             note=note or f"Repeat/restock dari {order.get('number', '')}",
-            fulfillment_mode=await _rss.auto_route(prod),
+            fulfillment_mode=await _rss.auto_route(prod, order.get("entity_id") or ""),
         ))
 
     wh = warehouse_id or await _default_warehouse(order)

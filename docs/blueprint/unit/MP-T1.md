@@ -147,6 +147,7 @@ Master Produk › rincian induk › tab baru **"Rute"** (di samping "Varian & ga
 | U10 | B | sample diputus ke pemasok S | putus | artikel punya rute utama "Beli dari S" berkontrak hasil putusan |
 | U11 | B | artikel `restock_source=supplier`, rute utama makloon | `check_lines([(produk,"makloon")])` | tanpa galat & tanpa peringatan menyimpang |
 | U12 | B | resep G→P (A) dan P→jadi (B) | pembuat rute awal `--dry-run` lalu `--apply` | dry-run tidak menulis; apply membuat 1 rute 2 langkah `origin=rute_awal`; dijalankan ulang tidak menggandakan |
+| U14 | B | sama | `GET /product-routes/step-options?from_stage=grey` | hanya tahap ber-asal Greige (`pfp`, `pfd`); mitra `pfp` hanya yang mengerjakan pre-treatment |
 | U13 | layar (uji jalan) | data acuan | buka Master Produk › induk › Rute, buat rute 2 langkah | pilihan tahap/mitra/bahan tersaring; potret 1280 & 390 |
 
 ## Langkah kerja

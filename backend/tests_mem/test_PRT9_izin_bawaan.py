@@ -142,6 +142,10 @@ async def _nyalakan_ulang() -> None:
     await bootstrap.run_bootstrap()
 
 
+# MP-T1 (K-73) — izin baru "Kelola Rute Produk" untuk Admin, MD, Manajer.
+for _r in ("admin", "md", "manager"):
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("product_route", set()).add("update")
+
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)
     roles = {x["id"]: x for x in r.json()["roles"]}

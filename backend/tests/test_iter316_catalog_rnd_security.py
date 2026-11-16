@@ -281,8 +281,12 @@ def test_rnd_target_product_id_rejects_released_sku(api: requests.Session, auth:
     )
     assert ap.status_code == 200
     product_id = ap.json()["product"]["id"]
-    rel = api.post(f"{base}/api/rnd/specs/{sid}/release-product", json={"reason": "oke"}, headers=h(auth["manager"]), timeout=40)
-    assert rel.status_code == 200
+    # MP-T1 (K-70) — rilis wajib punya rute utama: beri artikel rute "beli dari pemasok" (pemasok boleh menyusul).
+    rt = api.post(f"{base}/api/product-templates/{t['id']}/routes", json={"name": "Beli jadi", "steps": [{"kind": "purchase"}]},
+                  headers=h(auth["manager"]), timeout=30)
+    assert rt.status_code == 200, rt.text
+    rel = api.post(f"{base}/api/rnd/specs/{sid}/release-product", json={"reason": "oke rilis"}, headers=h(auth["manager"]), timeout=40)
+    assert rel.status_code == 200, rel.text
 
     # reusing released SKU as target product must fail
     sp2 = {

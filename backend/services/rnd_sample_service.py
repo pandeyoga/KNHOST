@@ -1222,6 +1222,12 @@ async def _bind_product(cur: Dict[str, Any], decision: Dict[str, Any], pid: str,
             await _restock.save(prod["template_id"], {
                 "mode": "supplier", "note": f"Otomatis: pemenang sample {cur.get('number', '')} — {decision.get('supplier_name', '')}"},
                 {"name": name})
+    # MP-T1 (K-65, K-70) — pemenang pemasok → rute "Beli dari <pemasok>" (kontrak hasil putusan) bila artikel belum
+    # punya rute di PT ini. Pemenang mitra makloon menyusul di MP-T3.
+    if decision.get("supplier_id"):
+        from services import product_route_service as _routes
+        await _routes.ensure_rnd_purchase_route(pid, decision["supplier_id"], decision.get("contract_id", ""),
+                                                cur.get("entity_id", ""), name, cur)
 
 
 async def bind_decided_samples(spec_id: str, product_id: str, product_sku: str, actor_name: str) -> int:

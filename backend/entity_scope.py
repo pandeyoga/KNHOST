@@ -172,6 +172,7 @@ SCOPED_COLLECTIONS = {
     "tax_period_locks",               # PK-40 — kunci masa pajak per PT (dilaporkan / dibuka lagi)
     "mkt_campaign_costs",             # COMM-04 — realisasi biaya kampanye (uang satu PT)
     "makloons", "process_recipes",   # M1 — master mitra makloon + resep proses (SCOPED)
+    "product_routes",                 # MP-T1 — rute produk per artikel per PT (mitra/kontrak milik PT)
     "makloon_orders",                 # M3 — transaksi makloon/subkontrak (SCOPED)
     "supplier_contracts",             # Fase D/E — kontrak mitra & supplier (SCOPED)
     "doc_amendments",                 # FASE G-1 — amandemen dokumen finansial (SCOPED)

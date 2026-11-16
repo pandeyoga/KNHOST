@@ -50,6 +50,17 @@ E("rnd.new_product_default_lifecycle", group="rnd", section="boleh-dijual", type
   consumers=("services/rnd_gate.py:default_new_lifecycle", "routers/products.py"),
   risk="medium", permission=_RND_PERM)
 
+# MP-T1 (K-70, keputusan pemilik 16 Nov 2026) — produk hasil R&D baru boleh dirilis bila jalur beli/buatnya jelas.
+E("rnd.release_requires_route", group="rnd", section="boleh-dijual", type="bool", default=True, scopes=G,
+  label="Rilis produk wajib punya rute utama",
+  help="Produk hasil R&D hanya bisa dirilis ke produksi bila artikelnya sudah punya rute utama di PT ini "
+       "(beli dari pemasok, makloon per tahap, atau produksi sendiri).",
+  impact="Bila dimatikan, produk bisa dirilis tanpa rute; pengadaan lalu tidak punya jalur bawaan dan SPK/PO diisi "
+         "manual.",
+  example="Kain printing baru belum diberi rute → tombol rilis ditolak sampai MD mengisi rute di Master Produk",
+  consumers=("services/rnd_spec_service.py:release_product",),
+  risk="medium", permission=_RND_PERM)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # SUMBU VARIAN MASTER PRODUK (Warna × Grade × Asal — bisa diubah pemilik)
 # ═══════════════════════════════════════════════════════════════════════════

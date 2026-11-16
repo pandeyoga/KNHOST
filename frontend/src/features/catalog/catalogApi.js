@@ -14,6 +14,13 @@ export const catalogApi = {
   mediaDelete: (id, mid) => axios.delete(`${API}/products/${id}/media/${mid}`).then(r => r.data),
   mockup: (id, data) => axios.post(`${API}/products/${id}/media/generate-mockup`, data, { timeout: 90000 }).then(r => r.data),
   designMedia: (id, data) => axios.post(`${API}/products/${id}/media/from-design`, data).then(r => r.data),
+  // MP-T1 — Rute Produk (per artikel per PT)
+  routes: id => axios.get(`${API}/product-templates/${id}/routes`).then(r => r.data),
+  routeSuggest: id => axios.get(`${API}/product-templates/${id}/routes/suggest`).then(r => r.data),
+  routeCreate: (id, data) => axios.post(`${API}/product-templates/${id}/routes`, data).then(r => r.data),
+  routeUpdate: (rid, data) => axios.patch(`${API}/product-routes/${rid}`, data).then(r => r.data),
+  routePrimary: rid => axios.post(`${API}/product-routes/${rid}/primary`).then(r => r.data),
+  routeOptions: (fromStage = "") => axios.get(`${API}/product-routes/step-options`, { params: { from_stage: fromStage } }).then(r => r.data),
 };
 export function catalogError(e) {
   const detail = e?.response?.data?.detail;

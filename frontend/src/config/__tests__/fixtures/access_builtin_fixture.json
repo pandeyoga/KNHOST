@@ -441,6 +441,9 @@
     "export",
     "retire"
    ],
+   "product_route": [
+    "update"
+   ],
    "production": [
     "view",
     "manage_bom",
@@ -1287,6 +1290,9 @@
     "view",
     "export"
    ],
+   "product_route": [
+    "update"
+   ],
    "production": [
     "view",
     "manage_bom",
@@ -1572,6 +1578,9 @@
     "update",
     "export",
     "retire"
+   ],
+   "product_route": [
+    "update"
    ],
    "purchase_order": [
     "view"
@@ -3391,6 +3400,7 @@
   "client-dataset-import": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -3411,6 +3421,7 @@
   "color-library": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -3884,6 +3895,7 @@
   "md-categories": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -3894,12 +3906,14 @@
   "md-products": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
   "md-uoms": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -4002,6 +4016,7 @@
    "price_approval",
    "pricelist",
    "product",
+   "product_route",
    "sales_return",
    "sample_order",
    "template",
@@ -4046,6 +4061,7 @@
   "price-corrections": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -4064,6 +4080,7 @@
   "product-templates": [
    "color",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -4080,6 +4097,7 @@
    "price_approval",
    "pricelist",
    "product",
+   "product_route",
    "template",
    "uom"
   ],
@@ -4464,6 +4482,7 @@
    "pricelist",
    "process_recipe",
    "product",
+   "product_route",
    "production",
    "purchase_order",
    "purchase_requisition",
@@ -4524,6 +4543,7 @@
    "integration",
    "label",
    "product",
+   "product_route",
    "production",
    "repair_order",
    "rfid_device",

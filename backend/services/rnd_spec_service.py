@@ -479,6 +479,12 @@ async def release_product(spec_id: str, actor: Dict[str, Any], note: str = "",
     product = await product_for(actor, cur['product_id'])
     if product.get('spec_id') != spec_id or not product.get('template_id'):
         raise RndError('Relasi induk/SKU/spesifikasi tidak lengkap. Periksa master sebelum rilis.')
+    # MP-T1 (K-70) — rilis wajib punya rute utama (jalur beli/buat yang jelas), kecuali pengaturannya dimatikan.
+    from services import config_resolver as _cfg, product_route_service as _routes
+    if bool(await _cfg.value_of("rnd.release_requires_route", {"entity_id": cur.get("entity_id", "")})) and \
+            not await _routes.effective_for_product(product, cur.get("entity_id", "")):
+        raise RndError(f"Produk {product.get('sku') or cur['product_id']} belum punya rute utama. Atur di Master "
+                       "Produk › Rute sebelum dirilis.")
     await saga.claim(COLL, spec_id, 'rnd_catalog_release', precondition={'status': 'approved'}, actor=name)
     await db.products.update_one({"id": cur["product_id"]},
                                  {"$set": {"lifecycle": "produksi", "updated_at": now_iso()}})

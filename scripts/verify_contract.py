@@ -117,6 +117,8 @@ CANONICAL_COLLECTIONS = {
     "color_library",
     # ── M1 (Master Mitra Makloon + Resep Proses — SCOPED) ──
     "makloons", "process_recipes",
+    # ── MP-T1 (Rute Produk — SCOPED) ──
+    "product_routes",
     # ── M3 (Transaksi Makloon / Subkontrak — SCOPED) ──
     "makloon_orders",
     # ── FASE D/E (Kontrak Mitra Makloon & Supplier — SCOPED) ──

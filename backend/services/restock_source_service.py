@@ -43,18 +43,49 @@ async def _templates(ids: Iterable[str]) -> Dict[str, Dict[str, Any]]:
 async def check_lines(lines: List[Tuple[Dict[str, Any], str]], *, reason: str, entity_id: str,
                       where: str) -> Dict[str, Any]:
     """lines = [(product, route)] route ∈ purchase|makloon. Raise RestockRouteError bila jalur tidak sah."""
-    lines = [(p, r) for p, r in lines if p and applies(p)]
-    tpls = await _templates(p.get("template_id") for p, _ in lines)
-    policy = await unknown_policy(entity_id)
+    from services import product_route_service as _routes
     reason = (reason or "").strip()
     out: List[Dict[str, Any]] = []
     warnings: List[str] = []
+    # MP-T1 (b) — rute utama artikel di PT ini lebih dulu (berlaku untuk semua tahap); `restock_source` hanya cadangan
+    # untuk artikel yang belum punya rute.
+    legacy: List[Tuple[Dict[str, Any], str]] = []
+    for p, route in lines:
+        if not p:
+            continue
+        primary, modes = await _routes.modes_for_product(p, entity_id) if entity_id else ("", [])
+        if not primary:
+            if applies(p):
+                legacy.append((p, route))
+            continue
+        art = p.get("sku") or p.get("name") or p.get("id")
+        row = {"product_id": p.get("id"), "template_id": p.get("template_id", ""), "article": art,
+               "mode": primary, "route": route, "reason": "", "source": "rute"}
+        if route != primary:
+            lbl = ROUTE_LABEL.get(primary, "produksi sendiri")
+            if not reason:
+                if route in modes:
+                    raise RestockRouteError(f"{where}: {art} punya rute {lbl} (utama) dan "
+                                            f"{ROUTE_LABEL.get(route, route)} — tulis alasan memilih jalur "
+                                            f"{ROUTE_LABEL.get(route, route)}.")
+                raise RestockRouteError(f"{where}: rute utama {art} adalah {lbl} — tulis alasan memilih jalur "
+                                        f"{ROUTE_LABEL.get(route, route)}.")
+            row["reason"] = reason
+            row["deviation"] = route not in modes
+            if row["deviation"]:
+                row["default_route"] = lbl   # sama dengan jalur lama: penyimpangan beralasan tercatat di dokumen
+                warnings.append(f"{where}: {art} memakai jalur {ROUTE_LABEL.get(route, route)} (menyimpang dari "
+                                f"rute utama {lbl}) — alasan: {reason}")
+        out.append(row)
+    lines = legacy
+    tpls = await _templates(p.get("template_id") for p, _ in lines)
+    policy = await unknown_policy(entity_id)
     for p, route in lines:
         tpl = tpls.get(p.get("template_id") or "") or {}
         art = tpl.get("name") or p.get("sku") or p.get("name") or p.get("id")
         mode = (tpl.get("restock_source") or {}).get("mode") or ""
         row = {"product_id": p.get("id"), "template_id": tpl.get("id", ""), "article": art,
-               "mode": mode or "unmapped", "route": route, "reason": ""}
+               "mode": mode or "unmapped", "route": route, "reason": "", "source": "sumber_restock"}
         if not mode and not p.get("template_id"):
             # Cek UI UAT v3 (S16) — produk lama tanpa template artikel tidak bisa dipetakan di layar mana pun
             # (Sumber Restock diatur per template) → dulu PR diblok selamanya. Cukup diberi peringatan.
@@ -86,8 +117,15 @@ async def check_lines(lines: List[Tuple[Dict[str, Any], str]], *, reason: str, e
     return {"routes": out, "warnings": warnings, "policy": policy, "checked_at": now_iso()}
 
 
-async def auto_route(product: Dict[str, Any]) -> str:
-    """Jalur otomatis untuk reorder dari SO: makloon-only → makloon; selain itu purchase."""
+async def auto_route(product: Dict[str, Any], entity_id: str = "") -> str:
+    """Jalur otomatis untuk reorder dari SO: makloon-only → makloon; selain itu purchase.
+
+    MP-T1 (b) — bila artikel punya rute utama di PT ini, jalurnya mengikuti rute (makloon → makloon, lainnya → beli)."""
+    if entity_id:
+        from services import product_route_service as _routes
+        primary, _modes = await _routes.modes_for_product(product, entity_id)
+        if primary:
+            return "makloon" if primary == "makloon" else "purchase"
     if not applies(product):
         return "purchase"
     tpl = (await _templates([product.get("template_id") or ""])).get(product.get("template_id") or "") or {}

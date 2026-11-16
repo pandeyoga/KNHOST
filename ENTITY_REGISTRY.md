@@ -39,6 +39,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Purchase Order | `purchase_orders` | `routers/purchase_orders.py` | `PurchaseOrderCreate` | `PurchaseOrderManagement` |
 | Makloon (Subkontraktor) | `makloons` | `routers/makloons.py` | `MakloonCreate` | `MakloonsView`, `Makloon360Panel` (Pembelian → Master Pembelian) |
 | Resep Proses (Konversi) | `process_recipes` | `routers/process_recipes.py` | `ProcessRecipeCreate` | `ProcessRecipesView` (Pembelian → Master Pembelian) |
+| Rute Produk (MP-T1) | `product_routes` | `routers/product_routes.py` | — (dict, divalidasi `product_route_service.validate`) | `FamilyRoutesTab` (Master Produk › induk › Rute) |
 | Order Makloon (Subkontrak) | `makloon_orders` | `routers/makloon_orders.py`, `services/makloon_order_service.py` | — | `MakloonOrdersView`, `MakloonOrderCreateModal` (Pembelian → PO → tab Order Makloon) |
 | Document Template | `document_templates` | `routers/documents.py` | `TemplatePayload` | `DocumentsView`, `AdminView` (tab Templates) |
 | Generated Document | `generated_documents` | `routers/documents.py` | `DocumentGenerate` | `DocumentsView` |
@@ -280,6 +281,30 @@ Key Fields:
   entity_id, status, created_*
 Endpoints:   GET/POST /process-recipes · PATCH/DELETE /process-recipes/{id} · POST /process-recipes/forecast
 ⚠️ JANGAN BUAT: recipes, konversi, bom_makloon, process_bom
+```
+
+### product_routes  [MP-T1 IMPLEMENTED — Rute Produk, 16 Nov 2026]
+```
+Collection:  product_routes              Prefix: rte_
+Scope:       SCOPED (entity_id) — rute per artikel per PT (mitra, kontrak, resep, BOM milik PT)
+Router:      routers/product_routes.py
+Service:     services/product_route_service.py (validate R1–R9, effective_for_product, suggest, step_options)
+Component:   frontend/src/features/catalog/FamilyRoutesTab.jsx
+Key Fields:
+  id, entity_id, template_id, product_id ("" = semua varian; diisi = pengecualian varian), name, is_primary,
+  status (active|inactive), origin (manual|rute_awal|rnd), origin_ref{kind,id,number},
+  steps[{seq, kind (purchase|makloon|inhouse), stage_code, stage_label, process_type, from_stage, to_stage,
+         input_product_id, output_product_id, partner_kind, partner_id, partner_name, contract_id, contract_number,
+         recipe_id, bom_id, note}], created_*, updated_*, history[]
+Aturan:      tahap asal/hasil langkah makloon dari master `process_stages` (K-57), rantai bersambung, berakhir di
+             tahap artikel/varian; satu rute utama per (PT, artikel, varian).
+Pembaca:     restock_source_service.check_lines/auto_route (jalur PR/PO/SPK), rnd_spec_service.release_product
+             (rilis wajib rute utama, `rnd.release_requires_route`).
+Endpoints:   GET/POST /product-templates/{id}/routes · GET /product-templates/{id}/routes/suggest ·
+             PATCH /product-routes/{id} · POST /product-routes/{id}/primary · GET /products/{id}/route ·
+             GET /product-routes/step-options
+Skrip data:  backend/scripts/mpt1_rute_awal.py (rute awal dari resep/BOM/sumber restock; data nyata = H3)
+⚠️ JANGAN BUAT: product_route_steps, routings, bom_routes — langkah tinggal di `steps[]`.
 ```
 
 ### makloon_orders  [M3 IMPLEMENTED — Transaksi Makloon/Subkontrak (Procure→Process→Pay)]

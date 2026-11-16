@@ -1910,6 +1910,10 @@
    "rnd",
    "boleh-dijual"
   ],
+  "rnd.release_requires_route": [
+   "rnd",
+   "boleh-dijual"
+  ],
   "rnd.variant_axes_default": [
    "rnd",
    "boleh-dijual"
