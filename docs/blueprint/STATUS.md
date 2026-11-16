@@ -265,3 +265,17 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   temuan asli, ≥30 baris kode dibaca, pencarian pintu lain, uji + hasil, ≥2 upaya membantah, putusan cocok tracker; audit
   domain wajib 47 skenario dan 30 form (inventaris ≥ jumlah komponen pilihan). Kemajuan dihitung ke
   `docs/reviews/PROGRES_REVIEW.md`, log sesi di `docs/reviews/LOG_REVIEW.md`, reviewer push ke `review/<tanggal>`.
+
+**Sesi 16 Nov 2026 — gelombang Master Produk & Makloon**
+
+- Asal: telusur ujung-ke-ujung R&D → master produk → kontrak → pengadaan/makloon di MongoDB asli lokal (proofing & labdip,
+  makloon B-S1…B-S5), review cabang `review`, percakapan pemilik–klien. Keputusan K-52…K-77 (`01_KEPUTUSAN.md` bagian E);
+  pemilik: "ya kerjakan", "tidak perlu test uji yang tidak perlu" (uji terarah, tanpa suite penuh berulang).
+- Selesai: MP-T1, MP-T2, MP-T3, MP-T4a, MP-T5 (5a/5b/5c). MP-T4 dipecah (`00` §8): MP-T4b `tahan` (H4 akun/arah jurnal
+  hutang jasa & hasil klaim, H5 sakelar per PT) — pertanyaan dan usulan di "Menunggu pemilik".
+- Uji: per unit uji penerimaan (database tiruan + MongoDB asli untuk penerimaan/teruskan) dan uji lama yang terdampak;
+  uji jalan peramban untuk tab Rute, wizard, isi mitra, teruskan, PO bahan MD, surat jalan. Gate `--ci` sekali di akhir
+  gelombang (hasil di bawah bila sudah selesai).
+- Hambatan lingkungan: server dev frontend lama tidak mati oleh pola `pkill "craco start"` (proses bernama
+  `craco/dist/scripts/start.js`) sehingga satu uji jalan sempat membaca bundel lama — dimatikan dengan PID.
+

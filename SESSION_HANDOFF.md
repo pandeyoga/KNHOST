@@ -1,5 +1,13 @@
 # SESSION HANDOFF — Kain Nusantara (WMS/ERP)
 
+> **16 Nov 2026 — gelombang Master Produk & Makloon (MP-T1…MP-T5) dikerjakan** di cabang `claude/nifty-carson-jjx3c8`
+> (`main` belum dimajukan). Keputusan pemilik K-52…K-77 di `docs/blueprint/01_KEPUTUSAN.md` bagian E. Selesai: MP-T1 Rute
+> Produk (tab Rute di Master Produk, tahap dari Master Tahapan Proses, rilis R&D wajib rute), MP-T2 satu wizard Order
+> Makloon + isi dari rute + SPK draf tanpa mitra, MP-T3 R&D ke mitra makloon (kontrak & rute makloon lahir saat putus,
+> gerbang kain dasar PFP), MP-T4a teruskan kain mitra→mitra oleh MD + perbaikan klaim/QC, MP-T5 surat jalan kirim bahan
+> makloon (daftar roll) + peruntukan + izin "Buat PO bahan" MD. **Tahan:** MP-T4b (jurnal hutang jasa saat faktur
+> dicocokkan, hasil klaim, borongan) — pertanyaan H4/H5 di STATUS "Menunggu pemilik". **H3:** `backend/scripts/mpt1_rute_awal.py
+> --apply` di data nyata. Laporan per unit: `docs/reviews/2026-11-13/hasil/MP-T*.md`.
 > Diperbarui: **2026-11-15 — akhir eksekusi blueprint (cabang `claude/nifty-carson-jjx3c8`)**. Sesi berikutnya:
 > **review oleh pemilik**. Mulai dari `docs/blueprint/STATUS.md` (bagian "Menunggu pemilik", "Jawaban pemilik 15 Nov
 > 2026", "Rencana berikutnya" R1–R9) dan `docs/blueprint/EVALUASI_EKSEKUSI_2026-11-15.md` (perubahan, waktu & biaya,
