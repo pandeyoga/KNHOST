@@ -110,9 +110,9 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | selesai | b7837de | [MN-T2](../reviews/2026-11-13/hasil/MN-T2.md) | Keputusan menu: Finance tidak lagi melihat rekonsiliasi persediaan & akun sementara (kini di Tutup Buku) |
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | PK-05, PK-19, PK-43, PM-T3, CR-T5 | selesai | 5737da3 | [MN-T3](../reviews/2026-11-13/hasil/MN-T3.md) | Gate 5737da3 quick 12 / ci 39 (= garis dasar); uji jalan integrator: 3 cacat layar diperbaiki (Saldo & Umur 1024, label PT kartu pemasok, kartu metrik 390) |
 | 104 | MP-T1 | Rute Produk: satu tempat untuk jalan beli/buat barang; tahap ditegakkan dari Master Tahapan Proses | — | selesai | `1959504` | [MP-T1](../reviews/2026-11-13/hasil/MP-T1.md) | K-57, K-65, K-70, K-71, K-73; pembuat rute awal di data nyata = H3 |
-| 105 | MP-T2 | Satu wizard SPK makloon yang membaca rute; semua pilihan tersaring tahap | MP-T1 | siap |  |  | K-57, K-59, K-61 |
+| 105 | MP-T2 | Satu wizard SPK makloon yang membaca rute; semua pilihan tersaring tahap | MP-T1 | selesai | `86cd757` | [MP-T2](../reviews/2026-11-13/hasil/MP-T2.md) | K-57, K-59, K-61 |
 | 106 | MP-T3 | R&D tersambung ke mitra makloon: putusan melahirkan rute dan kontrak yang benar | MP-T1 | siap |  |  | K-65, K-68, K-70, K-72 |
-| 107 | MP-T4 | Mekanisme makloon: paket kerja, mitra ke mitra, hasil akhir, tarif borongan/per proses | MP-T2 | menunggu |  |  | K-62…K-69; akun jurnal baru = H4, sakelar per PT = H5 |
+| 107 | MP-T4 | Mekanisme makloon: paket kerja, mitra ke mitra, hasil akhir, tarif borongan/per proses | MP-T2 | siap |  |  | K-62…K-69; akun jurnal baru = H4, sakelar per PT = H5 |
 | 108 | MP-T5 | Gudang greige/PFD/PFP: peruntukan pengeluaran, surat jalan wajib packing list, akses MD | — | siap |  |  | K-74…K-77 (permintaan klien) |
 
 ## Menunggu pemilik

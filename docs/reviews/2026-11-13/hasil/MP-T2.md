@@ -1,6 +1,6 @@
 # MP-T2 — Satu wizard SPK makloon yang membaca rute; semua pilihan tersaring tahap
 
-- Commit awal: `ce9c3a5`        - Commit akhir: lihat `docs/blueprint/STATUS.md` baris 105        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `ce9c3a5`        - Commit akhir: `86cd757`        - Branch: `claude/nifty-carson-jjx3c8`
 - ID ditangani: telusur 16 Nov P10; audit makloon 16 Nov (dua pintu, dropdown asal, tahap bawaan "Tenun", judul "Buat PO")
   — spesifikasi `docs/blueprint/unit/MP-T2.md`; keputusan K-57, K-59, K-61
 - Risiko tinggi. (a) dan (b) satu putaran: pintu lama (`MakloonOrderCreateModal`) dialihkan ke wizard dan dihapus di commit
