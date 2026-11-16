@@ -166,3 +166,15 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | M | PK-05, PK-19, PK-43, PM-T3, CR-T5 | — | tinggi | — | R/01 |
 
 Jumlah: 104 unit.
+
+## Master produk & makloon (jawaban pemilik 16 Nov 2026, K-52 … K-77)
+
+Asal: telusur ujung-ke-ujung 16 Nov (makloon B-S1…B-S5, R&D proofing/labdip di MongoDB asli lokal) — `01_KEPUTUSAN.md` bagian E.
+
+| # | ID | Judul | Jalur | Prasyarat | Menutup | Risiko | Henti | Asal |
+|---|---|---|---|---|---|---|---|---|
+| 104 | MP-T1 | Rute Produk | MP | — | P2, P9 | tinggi | H3 (rute awal di data nyata) | Telusur 16 Nov |
+| 105 | MP-T2 | Satu wizard SPK makloon membaca rute | MP | MP-T1 | P10 | tinggi | — | Telusur 16 Nov |
+| 106 | MP-T3 | R&D tersambung ke mitra makloon | MP | MP-T1 | P1, P3–P5, P7, P8 | tinggi | — | Telusur 16 Nov |
+| 107 | MP-T4 | Mekanisme makloon | MP | MP-T2 | audit makloon 16 Nov | tinggi | H4, H5 | Telusur 16 Nov |
+| 108 | MP-T5 | Gudang greige/PFD/PFP | MP | — | permintaan klien | sedang | — | Percakapan klien 16 Nov |

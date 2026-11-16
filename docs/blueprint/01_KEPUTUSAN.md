@@ -107,3 +107,39 @@ Tidak ada yang menahan; semuanya mengikuti permintaan pemilik agar pengaturan da
 | K-49 | Membaca Pusat Pengaturan butuh izin lihat pengaturan | Ya | Yang ditutup adalah akses langsung ke API oleh peran yang tidak berkepentingan. Peran kustom yang memegang modul sebuah bidang tetap melihat tab pengaturan bidang itu (mis. modul piutang → tab "Keuangan & Pajak"; terlihat di uji layar) dan hanya membaca kunci bidangnya — rinciannya di `unit/KF-T1.md`. Nilai yang dibutuhkan semua layar tetap tersedia lewat daftar putih |
 | K-50 | Tidak bisa memberi atau mengubah akun/peran yang izinnya melebihi milik sendiri | Ya | Bawaan hanya Admin yang mengelola akun dan peran — tidak ada perubahan bagi Admin |
 | K-51 | Persetujuan mengikuti izin setujui + batas nominal per peran | Ya | Saat dipasang, batas tiap peran diisi setara peringkatnya hari ini |
+
+## E. Jawaban pemilik 16 Nov 2026 — master produk, makloon, R&D, retur, alokasi
+
+Asal: telusur ujung-ke-ujung di sesi 16 Nov (makloon B-S1…B-S5 dan R&D proofing/labdip dijalankan di MongoDB asli lokal,
+hasil review cabang `review`, dan percakapan pemilik dengan klien). Pemilik menjawab "ya semua saran", "sesuai
+rekomendasi", lalu menyetujui urutan pengerjaan MP-T1…MP-T5 ("ya kerjakan"). Nomor dipakai unit `MP-T*` dan perbaikan
+temuan review berikutnya.
+
+| No | Hal | Dipakai | Catatan |
+|---|---|---|---|
+| K-52 | Retur "potong tagihan" pada PO yang sebagian sudah ditagih | Potong dulu dari bagian yang **belum** ditagih; Nota Debit hanya untuk kelebihannya | Temuan review retur beli |
+| K-53 | Bayar hutang pemasok | Wajib kunci anti-ganda di semua pintu bayar | Temuan review |
+| K-54 | Skrip pembersih izin gudang (`apply_pk17_role_cleanup.py --apply`) | Dijalankan saat pemasangan sesudah cadangan, dicoba di staging dulu (H3). Finance boleh melihat margin antar-PT | — |
+| K-55 | Hapus piutang tanpa kas | Batasnya kumulatif per pesanan; nilai batas dari pengaturan | — |
+| K-56 | Produk dari Pesanan Khusus/impor yang datanya belum lengkap | Ditandai "perlu dilengkapi"; tidak bisa dijual atau dipakai sampai dilengkapi | — |
+| K-57 | Sumber transisi tahap barang | **Master Tahapan Proses** satu-satunya sumber (asal → hasil per tahap); form dan server membaca dari sana | Dipakai MP-T1, MP-T2 |
+| K-58 | Tahap yang boleh dijual di POS | Pengaturan per tahap; bawaan hanya bahan jadi | — |
+| K-59 | Pintu membuat SPK makloon | Satu wizard dengan dua mode (proses saja · beli + proses) | MP-T2 |
+| K-60 | Alokasi pesanan berubah sesudah DP | Tagihan mengikuti alokasi terakhir; DP tetap uang muka; perlu persetujuan bila selisih melebihi batas (pengaturan) | — |
+| K-61 | SPK makloon draf tanpa mitra | Boleh; kirim bahan diblokir sampai mitra diisi | MP-T2 |
+| K-62 | Kain antar-mitra (A) | Kain boleh langsung dari mitra ke mitra berikutnya; ada pilihan "kembali ke gudang dulu" | MP-T4 |
+| K-63 | Tagihan jasa makloon (B) | Menjadi hutang saat faktur mitra dicocokkan, bukan saat barang diterima | MP-T4 |
+| K-64 | Hasil klaim makloon (C) | Pengurang biaya roll bila roll masih di stok; pendapatan bila roll sudah terjual | MP-T4 |
+| K-65 | Rute Produk | Per artikel, pengecualian per varian; boleh lebih dari satu rute, satu utama; BOM produksi in-house disatukan ke rute; langkah rute memakai Resep Proses yang ada | MP-T1 |
+| K-66 | Siapa mencatat perpindahan kain antar-mitra | MD; izin baru, bawaan MD | MP-T4 |
+| K-67 | Mitra end-to-end | Cukup melapor hasil akhir; jumlah antara opsional | MP-T4 |
+| K-68 | Tarif makloon | Keduanya: borongan atau per proses | MP-T3, MP-T4 |
+| K-69 | Mitra yang mengerjakan langkah langsung mitra→mitra | Ya (sama dengan K-62) | MP-T4 |
+| K-70 | Rilis produk ke produksi | **Wajib punya rute utama**. Kontrak tiap langkah boleh menyusul: SPK tetap jalan dengan peringatan dan alasan | Pengaturan `rnd.release_requires_route`, bawaan menyala (keputusan ini) — MP-T1 |
+| K-71 | Produk lama tanpa rute | Tetap berjalan dengan tanda "rute belum diatur"; rute awal dibuat otomatis dari sumber restock, resep proses, dan BOM yang sudah ada; MD melengkapi bertahap. Tidak diblok | Menjalankan pembuat rute awal di data nyata = H3 — MP-T1 |
+| K-72 | Gerbang kain dasar proofing | Kain dasar wajib bertahap PFP/PFD dan jenis kainnya sama dengan target; menyimpang boleh dengan alasan | MP-T3 |
+| K-73 | Siapa boleh mengubah rute | Izin baru "Kelola Rute Produk", bawaan MD dan Manajer; rilis tetap mengikuti Aturan Persetujuan | MP-T1 |
+| K-74 | Pengeluaran dari gudang greige/PFD/PFP | Mencatat peruntukan (pelanggan/toko atau stok) dan jumlah | Permintaan klien — MP-T5 |
+| K-75 | Barang keluar gudang | Semua wajib surat jalan yang memuat packing list | Permintaan klien — MP-T5 |
+| K-76 | Gudang greige, PFD, PFP | Satu gudang, satu admin gudang | Permintaan klien — MP-T5 (pengaturan gudang, bukan kode) |
+| K-77 | Akses pembelian greige/PFP/PFD | Dibuka untuk semua MD dulu | Permintaan klien — MP-T5 |
