@@ -249,5 +249,25 @@ async def family_summary(template_id, actor, ctx, manage=False):
         v['on_hand'] = round(t["on_hand_qty"], 2)
         v['stock_figures'] = figs.get(v["id"])
         rows.append(v)
+    # M28 (pemilik 16 Nov: "apakah master produk menyimpan HPP?") — HPP yang ditampilkan = HITUNGAN stok (rata-rata
+    # tertimbang biaya roll hidup, `costing_service`), bukan `harga_pokok` manual. Per varian + induk (tertimbang qty
+    # berbiaya). Field biaya dibuang router untuk peran tanpa izin HPP (`strip_cost_fields`).
+    hpp_val = hpp_qty = 0.0
+    try:
+        from services.costing_service import wac_for_products
+        wac = await wac_for_products(rows)
+    except Exception:  # noqa: BLE001 — ringkasan stok tetap tampil walau HPP gagal dihitung
+        wac = {}
+    for v in rows:
+        w = wac.get(v["id"]) or {}
+        v["hpp"] = w.get("wac")
+        v["hpp_source"] = w.get("source", "")
+        v["hpp_qty_costed"] = w.get("qty_costed", 0)
+        if w.get("source") in ("roll", "roll_partial") and float(w.get("qty_costed") or 0) > 0:
+            hpp_val += float(w["wac"] or 0) * float(w["qty_costed"])
+            hpp_qty += float(w["qty_costed"])
+    family_hpp = round(hpp_val / hpp_qty, 2) if hpp_qty > 0 else None
     # Quantity totals must never add kg and meter. Family base_unit is enforced.
-    return {"template": tpl, "variants": rows, "totals": {"variants": len(rows), "available": round(sum(v['available'] for v in rows), 2), "reserved": round(sum(v['reserved'] for v in rows), 2), "rolls": sum(v['rolls'] for v in rows)}}
+    return {"template": tpl, "variants": rows, "totals": {"variants": len(rows), "available": round(sum(v['available'] for v in rows), 2), "reserved": round(sum(v['reserved'] for v in rows), 2), "rolls": sum(v['rolls'] for v in rows),
+                                                         "hpp": family_hpp, "hpp_source": "roll" if family_hpp is not None else "none",
+                                                         "hpp_qty_costed": round(hpp_qty, 2)}}

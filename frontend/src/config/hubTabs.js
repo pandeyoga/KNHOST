@@ -150,6 +150,9 @@ export const HUB_TABS = {
     { view: "repair-orders",     label: "Perbaikan",             roles: ["admin", "warehouse", "manager", "warehouse_admin", "md"] },
     // 2026-10 (T5.2) — Transfer Antar-PT kini sub-tab di "Stok, Transfer & Opname" › Transfer.
     { view: "interco-transfers", label: "Transfer Antar-PT", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "operations" },
+    // M30 (pemilik 16 Nov) — menu "Eskalasi Gudang" dihapus; layar keputusannya dibuka dari kartu "Perlu keputusan"
+    // di Meja Saya (tab tersembunyi supaya tautan kartu tetap terbuka bagi peran yang berhak).
+    { view: "escalations",       label: "Keputusan Eskalasi",    roles: ["admin", "warehouse", "manager"], hidden: true },
   ],
   // 23 Okt (IA, keputusan pemilik) — KUALITAS menu tersendiri (pola SAP QM / Odoo Quality): satu rumah untuk antrean
   // QC kedatangan & SPK inspeksi SEMUA sumber (penerimaan PO, makloon, retur pelanggan/supplier, random check).

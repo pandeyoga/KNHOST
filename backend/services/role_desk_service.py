@@ -25,6 +25,9 @@ QUEUE_PERMISSIONS = {
     "sampel_potong": (("wms", "view"),), "retur_terima_qc": (("sales_return", "view"), ("inspection", "view")),
     "desain_saya": (("design_request", "view"),), "desain_bebas": (("design_request", "view"),),
     "kiriman": (("logistics", "view"),),
+    # M30 (pemilik 16 Nov) — tugas gudang yang dieskalasi = kartu "Perlu keputusan" bagi pemegang izin putus gudang
+    # (menu "Eskalasi Gudang" terpisah dihapus).
+    "eskalasi_keputusan": (("wms", "approve"),),
 }
 # Keputusan pemilik K-03 (26 Okt) — kolom nilai SO/PO di Meja Saya = grand total → diberi label tegas (sama dengan
 # Pusat Dokumen, Persetujuan Pembelian & PDF: "Total" = termasuk PPN, DPP = rincian).
@@ -153,8 +156,9 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
     sq = _scope_q(scope, ids)
     # KN-D07 — status yang NYATA ditulis mesin tugas gudang (created/scheduled/picking/packing/
     # staging/escalated/qc_check/put_away/receiving/partially_shipped); 'pending' tidak pernah ada.
+    # M30 — `escalated` keluar dari antrean kerja (petugas tidak bisa memutusnya) → kartu "Perlu keputusan".
     tasks = await _find("wms_tasks", {**sq, "status": {"$in": ["created", "scheduled", "picking", "packing", "staging",
-                                                              "escalated", "qc_check", "put_away", "receiving",
+                                                              "qc_check", "put_away", "receiving",
                                                               "partially_shipped"]},
                                       "task_subtype": {"$ne": "sample_cut"}})
     po = await _find("purchase_orders", {**sq, "status": {"$in": ["pending", "receiving"]}})
@@ -280,6 +284,27 @@ def _queue_allowed(q: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
     return any(act in (perms.get(res) or []) or "*" in (perms.get(res) or []) for res, act in need)
 
 
+async def escalation_queue(scope, ids) -> Dict[str, Any]:
+    """M30 — tugas gudang yang dieskalasi petugas (qty tidak sesuai dll.), menunggu keputusan pemegang `wms.approve`."""
+    sq = _scope_q(scope, ids)
+    tasks = await _find("wms_tasks", {**sq, "status": "escalated"})
+    flow = {"inbound": "Barang masuk", "outbound": "Barang keluar"}
+    return _queue(
+        "eskalasi_keputusan", "Perlu keputusan — eskalasi gudang",
+        "Petugas gudang tidak bisa menyelesaikan tugas apa adanya. Kembalikan ke status sebelumnya atau ubah qty.",
+        [_row(ref_type="wms_escalation", ref_id=t["id"],
+              number=t.get("number") or t.get("order_number") or t.get("po_number") or t.get("ref_number") or t["id"],
+              title=t.get("customer_name") or t.get("supplier_name") or t.get("product_name") or "Tugas gudang",
+              subtitle=" · ".join(x for x in (flow.get(t.get("flow_type") or "", ""),
+                                              str((t.get("escalation") or {}).get("reason") or "")[:80],
+                                              t.get("warehouse_name") or "") if x),
+              age_days=_age_days((t.get("escalation") or {}).get("escalated_at") or t.get("updated_at") or t.get("created_at")),
+              at=(t.get("escalation") or {}).get("escalated_at") or t.get("updated_at") or t.get("created_at"),
+              badge="escalated", action="Putuskan", action_kind="open",
+              extra={"flow_type": t.get("flow_type", "")}) for t in tasks],
+        action_label="Putuskan", owner="warehouse", value_kind="count", value_label="Tugas")
+
+
 async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids: List[str],
                     perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
     """`role` = jenis meja (`desk_of`). `perms` (izin pelaku) — PR-T4: antrean yang izinnya tidak dipegang dilewati."""
@@ -297,6 +322,8 @@ async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids
     elif role == "admin":
         queues += await manager_queues(scope, ids)
         queues += await warehouse_queues(scope, ids)
+    if role in ("manager", "warehouse", "admin"):
+        queues.insert(1, await escalation_queue(scope, ids))   # M30 — tepat sesudah "Giliran saya"
     if perms is not None:
         queues = [q for q in queues if _queue_allowed(q, perms)]
     return {"role": role, "title": LABEL.get(role, "Meja Saya"), "queues": queues,

@@ -37,16 +37,18 @@ class BOMComponentIn(BaseModel):
 
 class BOMCreate(BaseModel):
     entity_id: Optional[str] = None
-    name: str
+    name: Optional[str] = None   # M27 — diabaikan; nama/kode BOM dibuat sistem ("BOM {SKU} v{n}")
     output_product_id: str
+    is_primary: bool = False
     components: List[BOMComponentIn]
     overhead_per_unit: float = 0
     notes: Optional[str] = ""
 
 
 class BOMUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = None   # M27 — diabaikan
     status: Optional[str] = None
+    is_primary: Optional[bool] = None
     overhead_per_unit: Optional[float] = None
     notes: Optional[str] = None
     components: Optional[List[BOMComponentIn]] = None

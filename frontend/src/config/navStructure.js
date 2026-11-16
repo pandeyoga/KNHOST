@@ -1,7 +1,6 @@
 // ─── NAV STRUCTURE DATA (hub-and-tab IA) + HUB TABS ──────────────────────────
 // Dipisah dari navigationConfig.js agar file config di bawah batas guardrail.
 import {
-  AlertTriangle,
   Megaphone,
   Sparkles,
   Scissors,
@@ -279,8 +278,8 @@ export const NAV_STRUCTURE = [
       { id: "vehicle-logs",       label: "Kendaraan",  icon: Car,   roles: ["admin", "manager", "warehouse", "sales"], view: "vehicle-logs" },
       // IA 2026-10 (D1) — RFID adalah teknologi gudang, bukan domain: 4 menu jadi satu hub di sini.
       { id: "rfid-hub",           label: "RFID",       icon: Cpu,   roles: ["admin", "warehouse", "manager"], hub: "rfid-hub" },   // FIX-1 K-B1-07
-      // IA 2026-10 (C8) — eskalasi tugas inbound/outbound = pekerjaan gudang.
-      { id: "escalations",        label: "Eskalasi Gudang", icon: AlertTriangle, roles: ["admin", "warehouse", "manager"], view: "escalations" },
+      // M30 (pemilik 16 Nov) — menu "Eskalasi Gudang" dihapus: eskalasi kini kartu "Perlu keputusan" di Meja Saya
+      // (Manajer/Gudang/Admin, izin putus gudang). Layar keputusannya tetap dibuka dari kartu itu (view `escalations`).
     ],
   },
 

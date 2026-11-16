@@ -93,9 +93,17 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
     flash(id ? "BOM diperbarui." : "BOM baru dibuat.");
     load();
   };
+  // M27 — satu BOM utama per produk hasil (dipakai Rute Produk & perintah kerja).
+  const primaryBom = async (bom) => {
+    try {
+      await axios.patch(`${API}/production/boms/${bom.id}`, { is_primary: true });
+      flash(`${bom.code || bom.name} kini BOM utama ${bom.output_name || "produk ini"}.`);
+      load();
+    } catch (e) { flash(e.response?.data?.detail || "Gagal menetapkan BOM utama.", "err"); }
+  };
   const deleteBom = async (bom) => {
     const ok = await askConfirm({
-      title: `Hapus BOM "${bom.name}"?`,
+      title: `Hapus BOM "${bom.code || bom.name}"?`,
       message: "Resep ini tidak bisa dipakai lagi untuk pesanan produksi baru. Pesanan "
         + "produksi yang sudah berjalan tetap memakai resep yang tersimpan padanya.",
       confirmLabel: "Hapus BOM",
@@ -227,7 +235,7 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
         boms.length === 0 && !loading ? (
           <EmptyState icon={Layers3} title="Belum ada BOM" hint="Tambahkan resep produksi (output + komponen bahan) untuk mulai." testId="bom-empty" />
         ) : (
-          <BOMTable boms={shownBoms} perms={perms} onEdit={(b) => setBomModal({ mode: "edit", bom: b })} onDelete={deleteBom} />
+          <BOMTable boms={shownBoms} perms={perms} onEdit={(b) => setBomModal({ mode: "edit", bom: b })} onDelete={deleteBom} onPrimary={primaryBom} />
         )
       )}
 

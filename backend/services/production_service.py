@@ -82,14 +82,74 @@ async def _validate_components(comps_in: List[Dict[str, Any]], output_pid: str) 
 
 
 # ═══ BOM CRUD ════════════════════════════════════════════════════════════════
+def bom_code(sku: str, version: int) -> str:
+    """M27 (pemilik 16 Nov: "kenapa perlu nama BOM?") — identitas BOM = produk hasil + versi, dibuat sistem."""
+    return f"BOM {sku or 'produk'} v{int(version or 1)}"
+
+
+async def _next_bom_version(entity_id: str, out_pid: str) -> int:
+    last = await db.mfg_boms.find({"entity_id": entity_id, "output_product_id": out_pid}, {"_id": 0, "version": 1}) \
+        .sort("version", -1).limit(1).to_list(1)
+    return int((last[0].get("version") if last else 0) or 0) + 1
+
+
+async def set_primary_bom(bom_id: str, scope: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """M27 — satu BOM UTAMA per produk hasil (per PT); Rute Produk & perintah kerja memakai BOM utama."""
+    cur = await get_bom(bom_id, scope)
+    if not cur:
+        return None
+    if str(cur.get("status") or BOM_ACTIVE) != BOM_ACTIVE:
+        raise ValueError("Hanya BOM aktif yang bisa dijadikan utama.")
+    await db.mfg_boms.update_many({"entity_id": cur.get("entity_id"), "output_product_id": cur.get("output_product_id"),
+                                   "id": {"$ne": bom_id}}, {"$set": {"is_primary": False}})
+    await db.mfg_boms.update_one({"id": bom_id}, {"$set": {"is_primary": True, "updated_at": now_iso()}})
+    return await get_bom(bom_id, scope)
+
+
+async def _ensure_primary(entity_id: str, out_pid: str) -> None:
+    """Bila produk tidak punya BOM utama aktif, versi aktif terbaru menjadi utama."""
+    if await db.mfg_boms.count_documents({"entity_id": entity_id, "output_product_id": out_pid,
+                                         "status": BOM_ACTIVE, "is_primary": True}):
+        return
+    top = await db.mfg_boms.find({"entity_id": entity_id, "output_product_id": out_pid, "status": BOM_ACTIVE},
+                                 {"_id": 0, "id": 1}).sort([("version", -1), ("created_at", -1)]).limit(1).to_list(1)
+    if top:
+        await db.mfg_boms.update_one({"id": top[0]["id"]}, {"$set": {"is_primary": True}})
+
+
+async def primary_bom_for(entity_id: str, product_ids: List[str]) -> Optional[Dict[str, Any]]:
+    """BOM aktif untuk produk hasil: utama dulu, lalu versi terbaru (dulu `find_one` sembarang)."""
+    rows = await db.mfg_boms.find({"entity_id": entity_id, "status": BOM_ACTIVE, "output_product_id": {"$in": product_ids}},
+                                  {"_id": 0}).sort([("is_primary", -1), ("version", -1), ("created_at", -1)]) \
+        .limit(1).to_list(1)
+    return rows[0] if rows else None
+
+
+async def backfill_bom_versions() -> int:
+    """M27 — BOM lama: beri versi per produk (urut dibuat) + kode sistem, dan tetapkan BOM utama. Idempoten."""
+    todo = await db.mfg_boms.find({"version": {"$exists": False}}, {"_id": 0}).sort("created_at", 1).to_list(5000)
+    seen: Dict[Any, int] = {}
+    for b in todo:
+        key = (b.get("entity_id"), b.get("output_product_id"))
+        if key not in seen:
+            seen[key] = await _next_bom_version(*key) - 1
+        seen[key] += 1
+        await db.mfg_boms.update_one({"id": b["id"]}, {"$set": {
+            "version": seen[key], "code": bom_code(b.get("output_sku", ""), seen[key])}})
+    for ent, pid in seen:
+        await _ensure_primary(ent, pid)
+    return len(todo)
+
+
 async def create_bom(payload: Dict[str, Any], entity_id: str, actor_name: str = "") -> Dict[str, Any]:
-    name = (payload.get("name") or "").strip()
-    if not name:
-        raise ValueError("Nama BOM wajib diisi.")
     out_pid = (payload.get("output_product_id") or "").strip()
     op = await _product(out_pid)
     if not op:
         raise ValueError("Produk output tidak ditemukan.")
+    version = await _next_bom_version(entity_id, out_pid)
+    code = bom_code(op.get("sku", ""), version)
+    # M27 — nama tidak lagi diisi bebas: nama = kode sistem (field `name` dipertahankan untuk pembaca lama).
+    name = code
     components = await _validate_components(payload.get("components") or [], out_pid)
     overhead = _r(payload.get("overhead_per_unit"))
     if overhead < 0:
@@ -98,6 +158,9 @@ async def create_bom(payload: Dict[str, Any], entity_id: str, actor_name: str = 
         "id": new_id("bom"),
         "entity_id": entity_id,
         "name": name,
+        "code": code,
+        "version": version,
+        "is_primary": False,
         "output_product_id": out_pid,
         "output_sku": op.get("sku", ""),
         "output_name": op.get("name", ""),
@@ -111,7 +174,11 @@ async def create_bom(payload: Dict[str, Any], entity_id: str, actor_name: str = 
         "updated_at": now_iso(),
     }
     await db.mfg_boms.insert_one(dict(doc))
-    return safe_doc(doc)
+    if payload.get("is_primary"):
+        await set_primary_bom(doc["id"])
+    else:
+        await _ensure_primary(entity_id, out_pid)   # BOM pertama produk ini otomatis utama
+    return safe_doc(await get_bom(doc["id"]) or doc)
 
 
 async def list_boms(scope: Optional[Dict[str, Any]], status: Optional[str] = None,
@@ -121,7 +188,8 @@ async def list_boms(scope: Optional[Dict[str, Any]], status: Optional[str] = Non
         q["status"] = status
     if output_product_id:
         q["output_product_id"] = output_product_id
-    return await db.mfg_boms.find(q, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    return await db.mfg_boms.find(q, {"_id": 0}).sort([("output_sku", 1), ("is_primary", -1), ("version", -1),
+                                                       ("created_at", -1)]).to_list(2000)
 
 
 async def get_bom(bom_id: str, scope: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
@@ -134,10 +202,7 @@ async def update_bom(bom_id: str, patch: Dict[str, Any],
     if not cur:
         return None
     upd: Dict[str, Any] = {"updated_at": now_iso()}
-    if patch.get("name") is not None:
-        if not str(patch["name"]).strip():
-            raise ValueError("Nama BOM tidak boleh kosong.")
-        upd["name"] = str(patch["name"]).strip()
+    # M27 — nama/kode BOM dibuat sistem; `name` di patch diabaikan (tidak bisa diisi bebas lagi).
     if patch.get("notes") is not None:
         upd["notes"] = str(patch["notes"]).strip()
     if patch.get("status") is not None:
@@ -151,10 +216,17 @@ async def update_bom(bom_id: str, patch: Dict[str, Any],
         upd["overhead_per_unit"] = ov
     if patch.get("components") is not None:
         upd["components"] = await _validate_components(patch["components"], cur["output_product_id"])
+    if upd.get("status") == "inactive":
+        upd["is_primary"] = False
     res = await db.mfg_boms.find_one_and_update(
         {"id": bom_id, **(scope or {})}, {"$set": upd}, return_document=True)
     if res:
         res.pop("_id", None)
+        if patch.get("is_primary") and str(res.get("status") or BOM_ACTIVE) == BOM_ACTIVE:
+            res = await set_primary_bom(bom_id, scope) or res
+        else:
+            await _ensure_primary(res.get("entity_id"), res.get("output_product_id"))
+            res = await get_bom(bom_id, scope) or res
     return res
 
 
@@ -238,7 +310,7 @@ async def create_work_order(payload: Dict[str, Any], entity_id: str,
         "wo_number": await _next_wo_number(entity_id),   # KP-T5 — PT dokumen (N1)
         "entity_id": entity_id,
         "bom_id": bom["id"],
-        "bom_name": bom.get("name", ""),
+        "bom_name": bom.get("code") or bom.get("name", ""),
         "output_product_id": bom["output_product_id"],
         "output_sku": bom.get("output_sku", ""),
         "output_name": bom.get("output_name", ""),

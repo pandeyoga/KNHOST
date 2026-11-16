@@ -87,7 +87,9 @@ export function WOTable({ wos, perms, busyId, onDetail, onAction }) {
 
 // ── WO create modal (dengan rencana bahan live) ──────────────────────────────
 export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }) {
-  const bomOptions = useMemo(() => boms.map((b) => ({ value: b.id, label: `${b.name} → ${b.output_name || b.output_product_id}` })), [boms]);
+  // M27 — BOM utama dulu & ditandai; label = kode sistem (produk + versi).
+  const bomOptions = useMemo(() => [...boms].sort((a, b) => Number(!!b.is_primary) - Number(!!a.is_primary))
+    .map((b) => ({ value: b.id, label: `${b.code || b.name}${b.is_primary ? " (utama)" : ""} → ${b.output_name || b.output_product_id}` })), [boms]);
   const whOptions = useMemo(() => (warehouses || []).map((w) => ({ value: w.id, label: w.name || w.id })), [warehouses]);
   const [bomId, setBomId] = useState(boms[0]?.id || "");
   const [qty, setQty] = useState(1);

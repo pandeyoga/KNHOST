@@ -1992,6 +1992,12 @@ async def run_bootstrap() -> None:
     from services.special_order_phase2 import migrasi_margin_lama as _kft7_margin   # KF-T7 — margin pesanan khusus lama
     await _kft7_margin()
     await sync_uom_factors()
+    try:   # M27 — BOM lama: versi + kode sistem + BOM utama per produk (idempoten)
+        from services.production_service import backfill_bom_versions as _m27_bom
+        await _m27_bom()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
+        import logging
+        logging.getLogger("bootstrap").warning("[M27] versi BOM lama dilewati: %s", exc)
     await sync_product_uom_examples()
     await backfill_inventory_owner()
     await ensure_inventory_rolls()

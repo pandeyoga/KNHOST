@@ -347,7 +347,9 @@ async def step_options(entity_id: str, from_stage: str = "") -> Dict[str, Any]:
                                             {"_id": 0, "id": 1, "contract_number": 1, "contract_type": 1,
                                              "partner_id": 1, "process_type": 1, "title": 1}).to_list(1000)
     boms = await db.mfg_boms.find({"entity_id": entity_id, "status": "active"},
-                                  {"_id": 0, "id": 1, "code": 1, "name": 1, "output_product_id": 1}).to_list(500)
+                                  {"_id": 0, "id": 1, "code": 1, "name": 1, "output_product_id": 1, "output_sku": 1,
+                                   "version": 1, "is_primary": 1}) \
+        .sort([("output_sku", 1), ("is_primary", -1), ("version", -1)]).to_list(500)   # M27 — utama dulu
     return {"from_stage": fs, "stages": out,
             "stage_labels": {k: v for k, v in STAGE_SHORT.items()},
             "suppliers": [{"id": s["id"], "name": s.get("name", "")} for s in sups if _active(s)],
@@ -397,8 +399,8 @@ async def suggest(template_id: str, entity_id: str) -> List[Dict[str, Any]]:
             out.append({"name": f"Makloon ({' → '.join(s['stage_code'] for s in steps)})", "steps": steps,
                         "origin_ref": {"kind": "resep", "id": chain[-1]["id"], "number": chain[-1].get("name", "")}})
             break
-    bom = await db.mfg_boms.find_one({"entity_id": entity_id, "status": "active", "output_product_id": {"$in": vids}},
-                                     {"_id": 0}) if vids else None
+    from services.production_service import primary_bom_for   # M27 — BOM UTAMA (dulu BOM aktif sembarang)
+    bom = await primary_bom_for(entity_id, vids) if vids else None
     if bom:
         out.append({"name": "Produksi sendiri", "steps": [{"kind": "inhouse", "bom_id": bom["id"]}],
                     "origin_ref": {"kind": "bom", "id": bom["id"], "number": bom.get("code") or bom.get("name", "")}})

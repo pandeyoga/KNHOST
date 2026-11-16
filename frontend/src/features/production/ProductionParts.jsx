@@ -50,13 +50,13 @@ const inputCls = "field";
 const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── BOM table ──────────────────────────────────────────────────────────────
-export function BOMTable({ boms, perms, onEdit, onDelete }) {
+export function BOMTable({ boms, perms, onEdit, onDelete, onPrimary }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white" data-testid="bom-table">
       <table className="w-full min-w-[720px] text-[12px]">
         <thead>
           <tr className="whitespace-nowrap bg-[#FAFAFC] text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
-            <th className="px-3 py-2.5 font-bold">Nama BOM</th>
+            <th className="px-3 py-2.5 font-bold">BOM</th>
             <th className="px-3 py-2.5 font-bold">Barang Jadi (Output)</th>
             <th className="px-3 py-2.5 font-bold text-center">Komponen</th>
             <th className="px-3 py-2.5 font-bold text-right">Overhead/unit</th>
@@ -67,7 +67,14 @@ export function BOMTable({ boms, perms, onEdit, onDelete }) {
         <tbody className="divide-y divide-[#F2F2F5]">
           {boms.map((b) => (
             <tr key={b.id} data-testid={`bom-row-${b.id}`} className="hover:bg-[#FCFAFE]">
-              <td className="px-3 py-2.5 font-semibold text-[#1C1C1E]">{b.name}</td>
+              {/* M27 (pemilik 16 Nov) — identitas BOM = produk hasil + versi (dibuat sistem), bukan nama bebas. */}
+              <td className="px-3 py-2.5 font-semibold text-[#1C1C1E]" data-testid={`bom-code-${b.id}`}>
+                {b.code || b.name}
+                {b.is_primary && <span className="ml-1.5"><Badge tone="ok">Utama</Badge></span>}
+                {b.code && b.name && b.name !== b.code && (
+                  <span className="block text-fs-12 font-normal text-kn-text-2">{b.name}</span>
+                )}
+              </td>
               <td className="px-3 py-2.5">
                 <span className="font-medium text-[#3A3A3C]">{b.output_name || b.output_product_id}</span>
                 <span className="ml-1 text-[11px] text-[#8E8E93]">{b.output_sku}</span>
@@ -81,6 +88,12 @@ export function BOMTable({ boms, perms, onEdit, onDelete }) {
                 <div className="flex items-center justify-end gap-1.5">
                   {perms.manageBom && (
                     <>
+                      {onPrimary && b.status === "active" && !b.is_primary && (
+                        <button type="button" data-testid={`bom-primary-${b.id}`} onClick={() => onPrimary(b)}
+                          className="btn-secondary btn-xs" title="Jadikan BOM utama produk ini (dipakai Rute Produk & perintah kerja)">
+                          Jadikan utama
+                        </button>
+                      )}
                       <button data-testid={`bom-edit-${b.id}`} onClick={() => onEdit(b)}
                               className="rounded-md border border-[#E2E2E7] p-1.5 text-[#3A3A3C] hover:bg-[#F2F2F5]" title="Ubah"><Pencil size={13} /></button>
                       <button data-testid={`bom-delete-${b.id}`} onClick={() => onDelete(b)}
@@ -104,7 +117,6 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
     () => (products || []).map((p) => ({ value: p.id, label: `${p.name}${p.sku ? ` · ${p.sku}` : ""}` })),
     [products]
   );
-  const [name, setName] = useState(bom?.name || "");
   const [outputId, setOutputId] = useState(bom?.output_product_id || "");
   const [overhead, setOverhead] = useState(bom?.overhead_per_unit ?? 0);
   const [status, setStatus] = useState(bom?.status || "active");
@@ -121,7 +133,6 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
 
   const submit = async () => {
     setErr("");
-    if (!name.trim()) return setErr("Nama BOM wajib diisi.");
     if (!outputId) return setErr("Pilih produk output.");
     const comps = rows.filter((r) => r.material_product_id);
     if (comps.length === 0) return setErr("Tambahkan minimal satu komponen bahan.");
@@ -130,7 +141,7 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
     const ids = comps.map((r) => r.material_product_id);
     if (new Set(ids).size !== ids.length) return setErr("Komponen bahan duplikat.");
     const payload = {
-      name: name.trim(), output_product_id: outputId, overhead_per_unit: Number(overhead) || 0,
+      output_product_id: outputId, overhead_per_unit: Number(overhead) || 0,
       notes, components: comps.map((r) => ({ material_product_id: r.material_product_id, qty_per_unit: Number(r.qty_per_unit) })),
     };
     if (bom?.id) payload.status = status;
@@ -147,9 +158,10 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
     <div className="space-y-3" data-testid="bom-form">
       {err && <div data-testid="bom-form-error" className="rounded-lg border border-[#F3D6D6] bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C0392B]">{err}</div>}
       <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <label className={labelCls}>Nama BOM *</label>
-          <input data-testid="bom-name-input" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Batik Cap Mega Mendung" />
+        {/* M27 — tidak ada isian nama: sistem memberi kode "BOM {SKU} v{n}" (versi baru per produk hasil). */}
+        <div className="col-span-2 text-fs-12 text-kn-text-2" data-testid="bom-code-info">
+          {bom?.id ? <>Kode: <b className="text-kn-text">{bom.code || bom.name}</b>{bom.is_primary ? " · BOM utama" : ""}</>
+            : "Kode BOM dibuat sistem dari produk hasil + nomor versi (mis. BOM KN-RYN-01 v2). BOM pertama sebuah produk otomatis menjadi BOM utama."}
         </div>
         <div className="col-span-2">
           <label className={labelCls}>Produk Output (Barang Jadi) *</label>

@@ -64,3 +64,21 @@ async def test_giliran_lama_disembunyikan_lencana_tahap(klien, sesi, db):
     assert "ntf_uji_lama" not in ids   # dokumen sudah tidak di tahap itu
     row = next(r for r in q["rows"] if r.get("notification_id") == "ntf_uji_kini")
     assert row["badge"] != "info" and row["at"].startswith("2026-11-15")
+
+
+async def test_M30_eskalasi_jadi_kartu_perlu_keputusan(klien, kepala_admin, sesi, db):
+    """M30 — tugas gudang dieskalasi tampil di kartu "Perlu keputusan" (pemegang wms.approve), tidak di antrean kerja."""
+    await db.wms_tasks.insert_one({"id": "wt_uji_esk", "number": "WT-ESK-1", "status": "escalated", "flow_type": "inbound",
+                                   "entity_id": "ent_ksc", "supplier_name": "Pemasok Uji",
+                                   "escalation": {"reason": "Qty kurang 3 roll", "escalated_at": "2026-11-10T00:00:00+00:00"},
+                                   "created_at": "2026-11-09T00:00:00+00:00"})
+    r = await klien.get("/api/desks/me", headers=kepala_admin)
+    assert r.status_code == 200, r.text
+    qs = {q["id"]: q for q in r.json()["queues"]}
+    assert "eskalasi_keputusan" in qs
+    row = next(x for x in qs["eskalasi_keputusan"]["rows"] if x["ref_id"] == "wt_uji_esk")
+    assert row["ref_type"] == "wms_escalation" and "Qty kurang" in row["subtitle"] and row["at"].startswith("2026-11-10")
+    assert all(x["ref_id"] != "wt_uji_esk" for x in qs.get("tugas_wms", {}).get("rows", []))
+    gudang = await sesi("warehouse@kainnusantara.id")
+    r2 = await klien.get("/api/desks/me", headers=gudang)
+    assert "eskalasi_keputusan" not in {q["id"] for q in r2.json()["queues"]}   # petugas tanpa izin putus

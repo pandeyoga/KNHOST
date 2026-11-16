@@ -6,7 +6,7 @@ const Row = ({ label, value, testId }) => <div className="spec-row" data-testid=
 
 /** Tab "Informasi produk": spesifikasi tersusun 2 kolom, atribut varian sebagai chip. */
 // UAT 24 Okt (audit UI tahap 2) — G4-19: jenis kain, tahap export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div className="catalog-information" data-testid="catalog-info-tab"> nama sumbu dari registri (bukan kode mentah).
-export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => {
+export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive, summary = null }) => {
   const { stageLabel, fabricLabel } = useCatalogLabels();
   return <div className="catalog-information" data-testid="catalog-info-tab">
   <div className="info-grid">
@@ -26,7 +26,19 @@ export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => {
         <Row label="Lebar" value={family.lebar ? `${family.lebar} m` : null} />
         <Row label="Benang" value={family.yarn_count ? `${family.yarn_count} ${family.yarn_count_system || ""}` : null} />
         <Row label="Harga dasar" value={formatCurrency(family.base_price || 0)} />
-        <Row label="HPP" value={family.harga_pokok ? formatCurrency(family.harga_pokok) : null} />
+        {/* M28 (pemilik 16 Nov) — HPP = HITUNGAN dari biaya roll di stok (rata-rata tertimbang), bukan angka manual.
+            `harga_pokok` hanya cadangan untuk roll yang lahir tanpa biaya. Baris tidak tampil bagi peran tanpa izin HPP
+            (server membuang field biaya). */}
+        {summary?.totals && "hpp" in summary.totals && (
+          <Row label="HPP (rata-rata stok)" testId="family-hpp"
+            value={summary.totals.hpp != null
+              ? `${formatCurrency(summary.totals.hpp)} / ${family.base_unit || "unit"} · dari ${Number(summary.totals.hpp_qty_costed || 0).toLocaleString("id-ID")} ${family.base_unit || ""} berbiaya`
+              : "Belum ada stok berbiaya"} />
+        )}
+        {"harga_pokok" in family && (
+          <Row label="HPP perkiraan (cadangan)" testId="family-hpp-fallback"
+            value={family.harga_pokok ? formatCurrency(family.harga_pokok) : null} />
+        )}
         <Row label="Supplier" value={family.supplier} />
         <Row label="Lini produk" value={family.line_code} />
         <Row label="Eksklusivitas" value={family.exclusivity} />

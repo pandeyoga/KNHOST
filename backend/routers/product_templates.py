@@ -39,7 +39,8 @@ async def template_summary(template_id: str, request: Request) -> Dict[str, Any]
     out = await pvs.family_summary(template_id, actor, await entity_ctx(request), manage=manage)
     if not out:
         raise HTTPException(status_code=404, detail="Template tidak ditemukan")
-    return out
+    from core_utils import strip_cost_fields   # M28 — HPP hanya untuk pemegang izin HPP & margin
+    return strip_cost_fields(out, actor.get("role"))
 
 
 @router.post("/product-templates/resolve-orphans")

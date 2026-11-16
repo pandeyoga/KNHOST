@@ -278,6 +278,8 @@ export const ROLE_DESK_TARGET = {
   inspection:         { view: "inspections",           nav_id: "quality-hub",    focus_type: "inspection" },
   shipment:           { view: "logistics",             nav_id: "logistics",      focus_type: "shipment" },
   wms_task:           { view: "wms-outbound",          nav_id: "wms-operations", focus_type: "wms_task" },
+  // M30 — kartu "Perlu keputusan" membuka layar keputusan eskalasi (menu terpisahnya dihapus).
+  wms_escalation:     { view: "escalations",           nav_id: "wms-operations", focus_type: "wms_task" },
   cycle_count:        { view: "operations",            nav_id: "wms-operations", focus_type: "cycle_count", tab: "cycle" },
   warehouse_transfer: { view: "operations",            nav_id: "wms-operations", focus_type: "warehouse_transfer", tab: "transfer" },
   logistics_delivery: { view: "logistics",             nav_id: "logistics",      focus_type: "logistics_delivery" },
