@@ -1,6 +1,6 @@
 # MP-T5 — Gudang greige/PFD/PFP: peruntukan, surat jalan wajib packing list, akses MD
 
-- Commit awal: `d746702`        - Branch: `claude/nifty-carson-jjx3c8`
+- Commit awal: `d746702`        - Commit akhir: `3ba2cad` (5c) · `01a6585` (5a/5b)        - Branch: `claude/nifty-carson-jjx3c8`
 - Spesifikasi `docs/blueprint/unit/MP-T5.md` (pecahan 5a/5b/5c); keputusan K-74, K-75, K-76, K-77
 - MP-T5a, MP-T5b, MP-T5c selesai. K-76 (greige/PFD/PFP satu gudang, satu admin) = pengaturan data gudang & penugasan
   admin, bukan kode — dilakukan pemilik/admin di data nyata.

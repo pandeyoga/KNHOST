@@ -114,7 +114,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 106 | MP-T3 | R&D tersambung ke mitra makloon: putusan melahirkan rute dan kontrak yang benar | MP-T1 | selesai | `f6ebfb8` | [MP-T3](../reviews/2026-11-13/hasil/MP-T3.md) | K-65, K-68, K-70, K-72 |
 | 107 | MP-T4a | Mekanisme makloon tanpa jurnal baru: teruskan kain mitra→mitra (dicatat MD), lapor hasil akhir saja, klaim divalidasi saat diajukan, tolak klaim tidak menutup SPK, QC tolak membuka draf klaim, batal SPK saat bahan di mitra | MP-T2 | selesai | `0d02e82` | [MP-T4a](../reviews/2026-11-13/hasil/MP-T4a.md) | K-62, K-66, K-67, K-69; pecahan MP-T4 (`00` §8) |
 | 107b | MP-T4b | Jurnal makloon: hutang jasa saat faktur mitra dicocokkan (K-63), hasil klaim ke biaya roll / pendapatan (K-64), tarif borongan per SPK (K-68) | MP-T4a | tahan |  |  | H4 akun & arah jurnal belum disebut unit; H5 sakelar per PT — lihat Menunggu pemilik |
-| 108 | MP-T5 | Gudang greige/PFD/PFP: peruntukan pengeluaran, surat jalan wajib packing list, akses MD | — | dikerjakan |  | [MP-T5](../reviews/2026-11-13/hasil/MP-T5.md) | K-74…K-77 (permintaan klien) |
+| 108 | MP-T5 | Gudang greige/PFD/PFP: peruntukan pengeluaran, surat jalan wajib packing list, akses MD | — | selesai | `3ba2cad` · `01a6585` | [MP-T5](../reviews/2026-11-13/hasil/MP-T5.md) | K-74…K-77 (permintaan klien) |
 
 ## Menunggu pemilik
 
