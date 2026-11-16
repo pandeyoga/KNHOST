@@ -134,7 +134,7 @@ export default function AppViewRouter(props) {
   const focusDocProps = { focusDoc, onClearFocus: () => setFocusDoc(null) };
 
   return (
-    <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={openDocument}>
+    <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={openDocument} origin={backTo} onGoBack={onBack}>
     <ViewPresetProvider preset={viewPreset}>
     <div className="mt-4 md:mt-5">
       {hubInfo && (

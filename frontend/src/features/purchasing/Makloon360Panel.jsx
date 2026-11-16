@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, Factory, MapPin, PhoneCall, Gauge, Wallet, FileText,
+import { Edit3, Factory, MapPin, PhoneCall, Gauge, Wallet, FileText,
   ClipboardList, Receipt, BookOpen, BarChart3 } from "lucide-react";
+import { DetailBack } from "../../components/DetailParts";   // satu tombol kembali (gabung dengan layar asal)
 import { formatCurrency, formatPct, formatQty } from "../../utils/formatters";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import RecordDetailModal from "../documents/RecordDetailModal";
@@ -103,7 +104,7 @@ export default function Makloon360Panel({ makloonId, reloadKey = 0, currentUser,
 
   return (
     <div data-testid="makloon-360-panel">
-      <button data-testid="makloon-360-back" onClick={onBack} className="secondary-button mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>
+      <DetailBack onBack={onBack} label="Kembali ke daftar" testId="makloon-360-back" className="secondary-button mb-3" iconSize={13} />
 
       <div className="section-card mb-3">
         <div className="section-head">

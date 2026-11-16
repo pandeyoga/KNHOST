@@ -1,7 +1,46 @@
 /** Kerangka halaman rincian seragam (gaya rincian Pesanan Khusus): kepala, kartu panel, sel angka, riwayat. */
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import { useAppNav } from "../context/AppNavContext";
 
 export const K = ({ children }) => <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{children}</p>;
+
+/** "Kembali ke Daftar Order Makloon" → "Daftar Order Makloon"; "Kembali ke daftar" → "Daftar". */
+export const listLabelOf = (label) => {
+  const t = String(label || "").replace(/^Kembali(\s+ke)?\s*/i, "").trim() || "daftar";
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/**
+ * DetailBack — SATU tombol kembali rincian dokumen. Tanpa layar asal: "← {label}" ke daftar (seperti dulu, kelas
+ * `className`). Sesudah melompat dari layar lain (PK-44, `useAppNav().origin`): satu baris "← Kembali ke {asal}"
+ * (utama, `back-to-origin`) + tautan kecil "{Daftar …}" (`testId`), dan bilah asal di atas layar tidak dirender
+ * (cek layar 16 Nov: dua "Kembali" bertumpuk).
+ */
+export function DetailBack({ onBack, label = "Kembali", testId, className = "back-button", iconSize = 14 }) {
+  const { origin, goBack, registerDetailBack } = useAppNav();
+  const active = Boolean(onBack && origin);
+  useEffect(() => (active ? registerDetailBack() : undefined), [active, registerDetailBack]);
+  if (!onBack) return null;
+  if (!origin) {
+    return (
+      <button type="button" className={className} onClick={onBack} data-testid={testId}>
+        <ArrowLeft size={iconSize} /> {label}
+      </button>
+    );
+  }
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="detail-back-row">
+      <button type="button" className="link-button" data-testid="back-to-origin" onClick={goBack}>
+        <ArrowLeft size={14} aria-hidden="true" /> Kembali ke {origin.label || "layar sebelumnya"}
+      </button>
+      <span className="text-kn-text-2" aria-hidden="true">·</span>
+      <button type="button" className="link-button text-fs-12 text-kn-text-2" data-testid={testId} onClick={onBack}>
+        {listLabelOf(label)}
+      </button>
+    </div>
+  );
+}
 
 /**
  * DetailHeader — kepala halaman DETAIL SEBARIS baku (object page): bilah "← Kembali ke daftar …" + judul + lencana +
@@ -13,11 +52,7 @@ export function DetailHeader({ onBack, backLabel = "Kembali", backTestId, icon: 
   title, titleTestId, badges, subtitle, actions, dangerActions }) {
   return (
     <>
-      {onBack && (
-        <button className="back-button" onClick={onBack} data-testid={backTestId}>
-          <ArrowLeft size={14} /> {backLabel}
-        </button>
-      )}
+      <DetailBack onBack={onBack} label={backLabel} testId={backTestId} />
       <div className="detail-header">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">

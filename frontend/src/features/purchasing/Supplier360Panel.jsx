@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, Truck, Building2, Clock, MapPin, PhoneCall, Wallet, AlertTriangle, PiggyBank,
+import { Edit3, Truck, Building2, Clock, MapPin, PhoneCall, Wallet, AlertTriangle, PiggyBank,
   ClipboardList, Receipt, Undo2, FileText } from "lucide-react";
+import { DetailBack } from "../../components/DetailParts";   // satu tombol kembali (gabung dengan layar asal)
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
 import SupplierPriceList from "./SupplierPriceList";
@@ -344,7 +345,7 @@ export default function Supplier360Panel({ supplierId, currentUser, selectedEnti
 
   return (
     <div data-testid={isCard ? "supplier-card-panel" : "supplier-360-panel"}>
-      {!isCard && <button data-testid="supplier-360-back" onClick={onBack} className="secondary-button btn-sm mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>}
+      {!isCard && <DetailBack onBack={onBack} label="Kembali ke daftar" testId="supplier-360-back" className="secondary-button btn-sm mb-3" iconSize={13} />}
       {notice && (
         <div className="notice-bar success mb-3" data-testid="supplier-360-notice">
           <span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Tutup">×</button>

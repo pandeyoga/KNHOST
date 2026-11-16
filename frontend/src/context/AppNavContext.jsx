@@ -23,7 +23,7 @@
  * `PartyCardHost` (`features/finance/cards/partyCards.jsx`, dipasang di AppViewRouter) merendernya di atas layar mana
  * pun; `closeCard()` menutupnya. Di luar provider `cardsEnabled` = false (nama tampil sebagai teks biasa).
  */
-import { createContext, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { resolveDeepLinkTarget } from "../config/navigationConfig";
 
 const NOOP_NAV = {
@@ -36,15 +36,31 @@ const NOOP_NAV = {
   openCustomerCard: () => {},
   openSupplierCard: () => {},
   closeCard: () => {},
+  origin: null,
+  goBack: () => {},
+  detailBackCount: 0,
+  registerDetailBack: () => () => {},
 };
 
 const AppNavContext = createContext(NOOP_NAV);
 
-export function AppNavProvider({ role, onNavigateTo, onOpenDocument, children }) {
+export function AppNavProvider({ role, onNavigateTo, onOpenDocument, origin = null, onGoBack, children }) {
   const [card, setCard] = useState(null);
   const seq = useRef(0);
+  // Rincian dokumen yang sedang menampilkan tombol kembali sendiri (`DetailBack`). Selama ada, bilah layar asal
+  // (`BackToOriginBar`) tidak dirender sendiri — rincian menggabungkan keduanya jadi SATU baris (cek layar 16 Nov:
+  // dua "Kembali" bertumpuk membingungkan).
+  const [detailBackCount, setDetailBackCount] = useState(0);
+  const registerDetailBack = useCallback(() => {
+    setDetailBackCount((n) => n + 1);
+    return () => setDetailBackCount((n) => Math.max(n - 1, 0));
+  }, []);
   const value = useMemo(() => ({
     role: role || "",
+    origin: origin?.view ? origin : null,
+    goBack: () => onGoBack?.(origin),
+    detailBackCount,
+    registerDetailBack,
     card,
     cardsEnabled: true,
     openCustomerCard: (id) => { if (id) { seq.current += 1; setCard({ type: "customer", id, nonce: seq.current }); } },
@@ -65,7 +81,7 @@ export function AppNavProvider({ role, onNavigateTo, onOpenDocument, children })
       }
       onNavigateTo?.(view, { preset: opts.preset, tab: opts.tab, navId: opts.navId });
     },
-  }), [role, onNavigateTo, onOpenDocument, card]);
+  }), [role, onNavigateTo, onOpenDocument, card, origin, onGoBack, detailBackCount, registerDetailBack]);
   return <AppNavContext.Provider value={value}>{children}</AppNavContext.Provider>;
 }
 

@@ -2,7 +2,8 @@ import { AskKnButton } from "../../components/AskKnButton";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, X, Wallet, Plus } from "lucide-react";
+import { Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, X, Wallet, Plus } from "lucide-react";
+import { DetailBack } from "../../components/DetailParts";   // satu tombol kembali (gabung dengan layar asal)
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import FilterChips from "../../components/FilterChips";
@@ -160,7 +161,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
 
   return (
     <div data-testid={isCard ? "customer-card-panel" : "customer-360-panel"}>
-      {!isCard && <button data-testid="customer-360-back" onClick={onBack} className="secondary-button btn-sm mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>}
+      {!isCard && <DetailBack onBack={onBack} label="Kembali ke daftar" testId="customer-360-back" className="secondary-button btn-sm mb-3" iconSize={13} />}
       {notice && (
         <div className="notice-bar success mb-3" data-testid="customer-360-notice">
           <span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Tutup">×</button>

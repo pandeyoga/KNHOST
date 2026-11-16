@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
+import { Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
   CalendarCheck, CalendarDays, Wallet, ReceiptText, Target, Download, Loader2 } from "lucide-react";
+import { DetailBack } from "../../components/DetailParts";   // satu tombol kembali (gabung dengan layar asal)
 import { formatCurrency } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
 import EmployeeCompensationSection from "./EmployeeCompensationSection";
@@ -93,7 +94,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
 
   return (
     <div data-testid="employee-360-panel">
-      <button data-testid="employee-360-back" onClick={onBack} className="secondary-button mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>
+      <DetailBack onBack={onBack} label="Kembali ke daftar" testId="employee-360-back" className="secondary-button mb-3" iconSize={13} />
 
       {/* Header */}
       <div className="section-card mb-3">

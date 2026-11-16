@@ -12,9 +12,10 @@ import SpecialOrderShippingPanel from "./SpecialOrderShippingPanel";
 import SpecialOrderFulfillmentPanel from "./SpecialOrderFulfillmentPanel";
 import SpecialOrderItemsPanel from "./SpecialOrderItemsPanel";
 import {
-  AlertCircle, ArrowLeft, Check, CheckCircle2, ClipboardList, Clock, Loader2,
+  AlertCircle, Check, CheckCircle2, ClipboardList, Clock, Loader2,
   ShoppingCart, Sparkles, Tag, X, XCircle
 } from "lucide-react";
+import { DetailBack } from "../../components/DetailParts";   // satu tombol kembali (gabung dengan layar asal)
 import { StatusPill, STATUS_STYLE, fmtDate, docStatus, odPhaseOf } from "./SpecialOrderShared";
 import { SpecialOrderInfoPanels } from "./SpecialOrderInfoPanels";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -208,9 +209,7 @@ export default function SpecialOrderDetail({
   return (
     <div data-testid="special-order-detail-view" className="view-container">
       {/* Back */}
-      <button className="back-button" onClick={onBack}>
-        <ArrowLeft size={14} /> Kembali ke Daftar Pesanan Khusus
-      </button>
+      <DetailBack onBack={onBack} label="Kembali ke Daftar Pesanan Khusus" />
 
       {/* Notice */}
       {notice && (
