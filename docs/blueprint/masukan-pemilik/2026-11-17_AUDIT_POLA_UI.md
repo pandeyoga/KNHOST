@@ -32,6 +32,13 @@ Kandidat tersisa = sebagian besar PENGECUALIAN SAH (lihat "Cara membaca kolom"):
 laporan (arus kas, perubahan ekuitas, wizard kontrabon), kartu ringkasan anggaran. Sisa nyata dicatat untuk gelombang
 berikut bila pemilik meminta.
 
+**Bukti uji pohon akhir (`b700c06`)** — jest penuh 190 suite: 1500 lulus, 9 gagal = himpunan lama yang sama persis
+(phase3P3 D-05/D-07×2, roleGateSweep2 kasbon, phase4R1 Kwitansi×3, fe07ReturnErrors, phase3P8Activation D-01) ·
+`verify_ui_standard.py` tanpa pelanggaran baru · `verify_escape_layers.py` LULUS · gate `--ci` keluar 1 (merah lama:
+pagar gudang E4.1, 8 endpoint) tetapi `bandingkan_pelanggaran_gate.py` terhadap
+`garis-dasar-gate/2026-11-16_MPT4b_K82_gate_ci.log` = **tidak ada pelanggaran baru**. Log:
+`garis-dasar-gate/2026-11-17_pola_ui_gate_ci.log`.
+
 57 berkas · chip/tab saringan 22 · bilah penjelasan 7 · kartu angka tanpa klik 60 · tombol buat di kepala 2
 
 | Berkas | Chip/tab saringan | Bilah penjelasan | Kartu angka tanpa klik | Buat di kepala |
