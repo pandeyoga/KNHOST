@@ -1,12 +1,18 @@
 {
  "kode": "F15",
- "judul": "Bayar gaji & setor PPh 21 (SDM › Penggajian › Setoran & Pajak)",
+ "modul": "3.4",
+ "judul": "Bayar gaji & setor PPh 21",
  "bagian": "A",
- "tujuan": "Peserta bisa membayar penggajian yang sudah disahkan & diposting (satu kas keluar dari rekening berperuntukan Gaji, daftar transfer per karyawan), lalu mencatat setoran PPh 21 masa itu dengan nomor bukti, dan membuktikan jurnal Hutang Gaji / Hutang PPh 21 vs Kas-Bank.",
- "kapan": "Tanggal gajian (setelah HR/Manajer mengesahkan & memposting proses gaji) dan saat menyetor BPJS (paling lambat tgl 10) & PPh 21 (paling lambat tgl 15) bulan berikutnya.",
+ "tujuan": "Peserta bisa membayar proses gaji yang sudah diposting dan mencatat setoran PPh 21 untuk masa itu.",
+ "kapan": "Pada tanggal gajian, setelah HR atau Manajer mengesahkan dan memposting proses gaji. Setoran BPJS paling lambat tanggal 10 dan PPh 21 paling lambat tanggal 15 bulan berikutnya.",
+ "konsep": [
+  "Saat proses gaji diposting, sistem mencatat beban gaji dan kewajibannya: Hutang Gaji (gaji bersih), Hutang BPJS, dan Hutang PPh 21.",
+  "Bayar gaji = satu kas keluar sebesar total gaji bersih dari rekening berperuntukan Gaji. Daftar transfer merinci per karyawan.",
+  "Setoran PPh 21 atau BPJS mengurangi hutang pajaknya dan saldo bank. Setoran boleh sebagian; sisanya tetap kewajiban."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 25,
- "data_awal": "Kartu Peserta baris *d_hutang:gaji_susulan*: proses gaji SUSULAN milik Anda, masa Oktober 2026, satu karyawan (insentif tertinggal), sudah disahkan & diposting Manajer (contoh peserta 04: KSC/PAY-00011, Budi Santoso, gaji bersih Rp 708.760, PPh 21 Rp 45.240). Proses REGULER PT Sukacita Oktober 2026 (KSC/PAY-00001, 6 karyawan, Rp 42.256.444) juga sudah diposting — milik pelatih.",
+ "data_awal": "Kartu Peserta › Gaji susulan: proses gaji susulan milik Anda, masa Oktober 2026, satu karyawan, sudah disahkan dan diposting Manajer (contoh: KSC/PAY-00004, total bersih Rp 721.920). Kartu itu juga mencantumkan PPh 21 proses Anda. Proses reguler Oktober 2026 (KSC/PAY-00001, 6 karyawan) milik pelatih.",
  "alur": [
   {
    "peran": "HR",
@@ -18,7 +24,7 @@
   },
   {
    "peran": "Manajer",
-   "label": "Diposting: hutang gaji/PPh/BPJS"
+   "label": "Diposting: hutang gaji, PPh, BPJS"
   },
   {
    "peran": "Finance",
@@ -46,70 +52,69 @@
    "no": 1,
    "peran": "Finance",
    "menu": "SDM › Penggajian",
-   "aksi": "Buka grup SDM › [[Penggajian]] (tab satu-satunya: Setoran & Pajak)",
+   "aksi": "Buka SDM › [[Penggajian]].",
    "isi": "",
-   "hasil": "Bagian 'Gaji siap dibayar': penggajian berstatus diposting yang menunggu dibayar — termasuk proses Anda: KSC/PAY-… · Oktober 2026 · Susulan · 1 karyawan · total bersih, tombol [[Daftar transfer]] dan [[Bayar]].",
+   "hasil": "Bagian 'Gaji siap dibayar' memuat penggajian yang sudah diposting, termasuk proses Anda: nomor, Oktober 2026, Susulan, 1 karyawan, total bersih, serta tombol [[Daftar transfer]] dan [[Bayar]].",
    "gambar": "uji/hasil/F15/01-gaji-siap-dibayar.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Gaji siap dibayar",
-   "aksi": "Klik [[Daftar transfer]] pada proses Anda, baca, lalu tutup (×)",
+   "aksi": "Klik [[Daftar transfer]] pada proses Anda. Baca, lalu tutup (×).",
    "isi": "",
-   "hasil": "Daftar transfer 'Belum dibayar': No, Nama penerima, Bank, Nomor rekening, Nominal = total bersih, Slip; tombol [[Unduh Excel]] untuk berkas transfer bank.",
+   "hasil": "Daftar transfer bertuliskan 'Belum dibayar' dengan kolom No · Nama penerima · Bank · Nomor rekening · Nominal · Slip, dan tombol [[Unduh Excel]] untuk berkas transfer bank.",
    "gambar": "uji/hasil/F15/02-daftar-transfer.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Gaji siap dibayar",
-   "aksi": "Klik [[Bayar]] pada proses Anda → periksa isian → [[Bayar gaji]]",
-   "isi": "*Rekening pembayaran*: BCA Operasional KSC (satu-satunya rekening berperuntukan Gaji — terpilih otomatis) · *Tanggal bayar*: hari ini",
-   "hasil": "Form 'Bayar gaji' merangkum 'Total bersih Rp … untuk 1 karyawan'. Konfirmasi 'Bayar gaji KSC/PAY-… — Oktober 2026?' menyebut nominal, rekening & PT.",
+   "aksi": "Klik [[Bayar]] pada proses Anda. Periksa isian, lalu klik [[Bayar gaji]].",
+   "isi": "*Rekening pembayaran*: BCA Operasional KSC (terpilih otomatis) · *Tanggal bayar*: hari ini",
+   "hasil": "Jendela konfirmasi 'Bayar gaji KSC/PAY-… — Oktober 2026?' menyebut nominal, rekening, PT, dan jumlah karyawan.",
    "gambar": "uji/hasil/F15/05-konfirmasi-bayar-gaji.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Gaji siap dibayar",
-   "aksi": "Klik [[Bayar gaji]] pada konfirmasi",
+   "aksi": "Klik [[Bayar gaji]] di jendela konfirmasi.",
    "isi": "",
-   "hasil": "Pesan 'Gaji KSC/PAY-… dibayar Rp … dari BCA Operasional KSC (kas KSC/CASH-…)'; Daftar transfer terbuka dengan keterangan 'Dibayar <tanggal> dari BCA Operasional KSC'; proses hilang dari 'Gaji siap dibayar'.",
+   "hasil": "Pesan 'Gaji KSC/PAY-… dibayar Rp … dari BCA Operasional KSC (kas KSC/CASH-…)'. Daftar transfer terbuka dengan keterangan 'Dibayar <tanggal> dari BCA Operasional KSC', dan proses Anda hilang dari 'Gaji siap dibayar'.",
    "gambar": "uji/hasil/F15/06-gaji-dibayar.png"
   },
   {
    "no": 5,
    "peran": "Finance",
-   "menu": "Setoran BPJS dan PPh 21",
-   "aksi": "Tutup daftar transfer, pada *Masa gaji* pilih Oktober 2026",
+   "menu": "SDM › Penggajian › Setoran BPJS dan PPh 21",
+   "aksi": "Tutup daftar transfer. Pada *Masa gaji*, pilih Oktober 2026.",
    "isi": "*Masa gaji*: Oktober 2026",
-   "hasil": "Kartu BPJS dan PPh 21 masing-masing: Kewajiban · Sudah disetor · Sisa (oranye 'Masih ada sisa kewajiban'). PPh 21 = PPh proses reguler + semua proses susulan peserta.",
+   "hasil": "Kartu BPJS dan PPh 21 masing-masing menunjukkan Kewajiban, Sudah disetor, dan Sisa, dengan label 'Masih Ada Sisa'.",
    "gambar": "uji/hasil/F15/07-kewajiban-oktober.png"
   },
   {
    "no": 6,
    "peran": "Finance",
-   "menu": "Setoran BPJS dan PPh 21",
-   "aksi": "Klik [[Catat Setoran]], isi form, klik [[Catat Setoran]] lalu [[Catat setoran]] pada konfirmasi",
-   "isi": "*Jenis*: PPh 21 · *Masa*: Oktober 2026 · *Nominal (Rp)*: PPh 21 proses Anda (Kartu Peserta, mis. 45240; bila bersen ketik koma, mis. 40864,5) · *Tanggal setor*: hari ini · *Rekening*: BCA Operasional KSC · *Nomor bukti setor*: NTPN-LATIH-NN",
-   "hasil": "Konfirmasi 'Setoran PPh 21 masa Oktober 2026 sebesar Rp … untuk Sukacita Textile. Kas keluar dan jurnal … dibuat.'; pesan 'Setoran KSC/STR-… tercatat: PPh 21 Rp …'; 'Sudah disetor' PPh 21 naik dan 'Sisa' turun sebesar nominal; baris baru di 'Riwayat setoran Oktober 2026'.",
+   "menu": "SDM › Penggajian › Setoran BPJS dan PPh 21",
+   "aksi": "Klik [[Catat Setoran]] dan isi form. Klik [[Catat Setoran]], lalu [[Catat setoran]] di jendela konfirmasi.",
+   "isi": "*Jenis*: PPh 21 · *Masa*: Oktober 2026 · *Nominal (Rp)*: PPh 21 proses Anda dari Kartu Peserta (contoh: 30080; bila ada sen, pakai koma, misalnya 40864,5) · *Tanggal setor*: hari ini · *Rekening*: BCA Operasional KSC · *Nomor bukti setor*: NTPN-LATIH-NN",
+   "hasil": "Pesan 'Setoran KSC/STR-… tercatat: PPh 21 Rp …'. Di kartu PPh 21, Sudah disetor naik dan Sisa turun sebesar setoran; baris baru muncul di 'Riwayat setoran Oktober 2026'.",
    "gambar": "uji/hasil/F15/10-setoran-tercatat.png"
   }
  ],
  "cek_buku": [
-  "Jurnal bayar gaji: 2-1600 Hutang Gaji (D) = 1-1100 Kas Besar / Bank (K) = total bersih proses — seimbang; satu kas keluar dari BCA Operasional KSC.",
-  "Jurnal setoran PPh 21: 2-1800 Hutang PPh 21 (D) = 1-1100 Kas Besar / Bank (K) = nominal setoran — seimbang; kas dari BCA Operasional KSC.",
-  "Kewajiban masa = PPh 21/BPJS dari gaji yang sudah DIPOSTING; Sisa = Kewajiban − setoran (setoran batal tidak dihitung)."
+  "Bayar gaji (contoh): 2-1600 Hutang Gaji (D) Rp 721.920 · 1-1100 Kas Besar / Bank (K) Rp 721.920 — seimbang; satu kas keluar dari BCA Operasional KSC",
+  "Setoran PPh 21 (contoh): 2-1800 Hutang PPh 21 (D) Rp 30.080 · 1-1100 Kas Besar / Bank (K) Rp 30.080 — seimbang",
+  "Kewajiban masa = PPh 21/BPJS dari gaji yang sudah diposting; Sisa = Kewajiban − setoran"
  ],
  "kesalahan_umum": [
-  "Membayar proses REGULER KSC/PAY-00001 (6 karyawan) — itu peragaan pelatih; bayar hanya proses susulan Anda.",
-  "Masa gaji masih bulan berjalan (November) → kartu Rp 0 dan 'Belum ada gaji November 2026 yang diposting'; pilih Oktober 2026.",
-  "Tidak membaca pratinjau di bawah kotak nominal — '45.240', '45240' dan 'Rp 45.240' semuanya terbaca Rp 45.240; pastikan pratinjau sama dengan nominal setoran sebelum menyimpan.",
-  "Menyetor melebihi sisa → ditolak 'Nominal melebihi sisa kewajiban'.",
-  "Bingung 'Tanpa Rekening — Bayar Tunai' di Daftar transfer: data karyawan demo belum berisi nomor rekening; uangnya tetap keluar dari rekening yang dipilih saat Bayar."
+  "Membayar proses reguler KSC/PAY-00001 (6 karyawan). Itu peragaan pelatih; bayar hanya proses susulan Anda.",
+  "Membiarkan *Masa gaji* di bulan berjalan (November). Kartu menunjukkan Rp 0; pilih Oktober 2026.",
+  "Tidak membaca pratinjau di bawah kotak nominal. Pastikan pratinjau sama dengan nominal setoran sebelum menyimpan; setoran yang melebihi sisa ditolak.",
+  "Bingung melihat 'Tanpa Rekening — Bayar Tunai' di daftar transfer. Data karyawan demo belum berisi nomor rekening; uangnya tetap keluar dari rekening yang dipilih saat [[Bayar]]."
  ],
- "catatan_pelatih": "Keputusan penyelenggaraan: proses gaji per PT & masa itu satu dan bersama, jadi tiap peserta diberi proses SUSULAN sendiri (masukan 'Insentif tertinggal' satu karyawan yang ikut proses reguler & kena PPh 21; dibuat-disahkan-diposting Manajer oleh skrip data latihan) untuk dibayar sendiri, lalu menyetor PPh 21 sebesar PPh proses susulannya — setoran sebagian dari kewajiban masa yang sama, jumlah semua peserta tidak melebihi sisa. PERAGAAN PELATIH di akhir sesi (sekali, akun Finance pelatih): (1) [[Bayar]] proses reguler KSC/PAY-00001 Oktober 2026 (Rp 42.256.444, 6 karyawan); (2) [[Catat Setoran]] BPJS Oktober 2026 sebesar sisa penuh; (3) setoran PPh 21 sisa. Efek bersama: proses reguler Oktober 2026 PT Sukacita sudah DIPOSTING oleh skrip (jurnal gaji Oktober terbit) dan muncul 7+ proses di 'Gaji siap dibayar'. Membatalkan setoran butuh izin payroll.void (Manajer). Perbaikan 17 Nov: isian Nominal setoran kini isian rupiah baku (koma desimal + pratinjau); dulu '40.864,5' tersimpan 40,8645. Untuk pemilik: PPh 21 proses susulan bisa bersen (mis. Rp 40.864,50) — perlu pembulatan ke rupiah penuh?; karyawan tanpa nomor rekening tetap ikut satu kas keluar bank tetapi daftar transfer menyebut 'dibayar tunai'.",
+ "catatan_pelatih": "Proses gaji per PT dan masa hanya satu dan dipakai bersama, jadi tiap peserta diberi proses susulan sendiri (masukan 'Insentif tertinggal' untuk satu karyawan; dibuat, disahkan, dan diposting Manajer oleh skrip data latihan). Peserta menyetor PPh 21 sebesar PPh proses susulannya; jumlah semua peserta tidak melebihi sisa kewajiban. Peragaan pelatih di akhir sesi (sekali, dengan akun Finance pelatih): (1) [[Bayar]] proses reguler KSC/PAY-00001 Oktober 2026; (2) [[Catat Setoran]] BPJS Oktober 2026 sebesar sisa penuh; (3) setoran sisa PPh 21. Efek bersama: proses reguler Oktober 2026 sudah diposting oleh skrip, sehingga jurnal gaji Oktober terbit dan 'Gaji siap dibayar' berisi 7 proses atau lebih. Membatalkan setoran butuh izin Manajer. Perbaikan 17 Nov: isian nominal setoran kini memakai format rupiah baku (koma desimal dan pratinjau). Untuk pemilik: PPh 21 proses susulan bisa bersen (misalnya Rp 40.864,50) — perlu dibulatkan ke rupiah penuh?; karyawan tanpa nomor rekening tetap ikut satu kas keluar bank, tetapi daftar transfer menulis 'dibayar tunai'.",
  "uji": {
   "berkas": "uji/F15_setoran_gaji.js",
   "peserta_uji": "04"

@@ -95,7 +95,7 @@ def main() -> None:
     sc = B.load()
     os.makedirs(os.path.join(HERE, "alur"), exist_ok=True)
     idx = B._nav_index()
-    out = {"tanggal": B.DATE, "doc_id": B.DOC_ID, "menu": B.MENU, "istilah": B.ISTILAH, "kartu": B.KARTU,
+    out = {"tanggal": B.DATE, "doc_id": B.DOC_ID, "menu": B.MENU, "istilah": B.ISTILAH, "kartu": B.kartu_bernomor(sc),
            "jadwal": [], "skenario": []}
     # jadwal per bagian, dibagi ke hari berikutnya bila lewat 17.00 — sama dengan manual
     h, m = B.START

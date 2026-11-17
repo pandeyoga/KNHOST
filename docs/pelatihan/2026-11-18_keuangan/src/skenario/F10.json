@@ -1,12 +1,19 @@
 {
  "kode": "F10",
- "judul": "Rekonsiliasi Bank — impor mutasi, cocokkan otomatis & manual, bukukan biaya bank",
+ "modul": "3.3",
+ "judul": "Rekonsiliasi bank — impor mutasi, cocokkan, bukukan biaya bank",
  "bagian": "A",
- "tujuan": "Peserta memasukkan mutasi rekening koran BCA (tempel teks), membaca pratinjau, mencocokkan otomatis penerimaan pelanggan (kode bayar), mencocokkan manual satu baris, membukukan biaya administrasi bank yang belum ada di buku, lalu membaca ringkasan per periode dan memastikan transaksi buku berstatus Terekonsiliasi.",
- "kapan": "Harian atau mingguan sesudah mengunduh mutasi dari KlikBCA/myBCA; wajib tuntas sebelum tutup buku bulanan (selisih rekening vs buku = 0).",
+ "tujuan": "Peserta bisa mengimpor mutasi rekening koran, mencocokkannya dengan buku, dan membukukan biaya bank yang belum tercatat.",
+ "kapan": "Harian atau mingguan sesudah mengunduh mutasi dari KlikBCA atau myBCA. Wajib tuntas sebelum tutup buku bulanan.",
+ "konsep": [
+  "Rekonsiliasi bank adalah mencocokkan mutasi rekening koran dengan transaksi yang tercatat di buku. Tujuannya memastikan saldo bank di buku sama dengan saldo di bank.",
+  "Mencocokkan tidak membuat jurnal baru. Sistem hanya menautkan mutasi ke transaksi buku yang sudah ada.",
+  "Mutasi yang belum ada di buku (misalnya biaya administrasi atau bunga) dibukukan dari layar ini, dan di situlah jurnalnya terbit.",
+  "Sistem memberi skor kecocokan dari kode bayar, nominal, tanggal, dan nama. Skor 80 ke atas tertaut otomatis; skor 60 ke atas menjadi usulan."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 25,
- "data_awal": "Kartu Peserta baris *c_kas:kwitansi_transfer*: kwitansi transfer KSC/AR-… dari 'Latihan NN · Toko Kain Peserta NN' ke BCA Operasional KSC (kas KSC/CASH-…), *nominal* dan *kode_bayar* (KN-…) pesanan. Ditambah transaksi Anda di F09 (biaya ekspedisi keluar dari BCA, Rp 300.000 + NN × 10.000). Kode bayar & nominal kwitansi juga terlihat di Transaksi Kas (cari 'Latihan NN': 'Penerimaan KSC/AR-… · Kode KN-…').",
+ "data_awal": "Kartu Peserta › Kwitansi transfer: kwitansi transfer dari 'Latihan NN · Toko Kain Peserta NN' ke BCA Operasional KSC, beserta nominal dan kode bayarnya (KN-…). Ditambah transaksi Anda di F09 (biaya ekspedisi dari BCA). Kode bayar dan nominal kwitansi juga terlihat di Transaksi Kas bila Anda mencari 'Latihan NN'.",
  "alur": [
   {
    "peran": "Finance",
@@ -23,12 +30,12 @@
   {
    "peran": "Finance",
    "label": "Cocokkan manual baris sisa",
-   "cabang": "tak ada pasangan → titipkan / abaikan"
+   "cabang": "Tak ada pasangan → titipkan / abaikan"
   },
   {
    "peran": "Finance",
    "label": "Bukukan biaya admin bank",
-   "cabang": "selisih → biaya admin bank"
+   "cabang": "Mutasi tanpa catatan buku → biaya bank"
   },
   {
    "peran": "Buku",
@@ -55,106 +62,104 @@
  "teks_rekening_koran": {
   "format": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\nDD/MM/YYYY,TRSF E-BANKING CR <KODE BAYAR> LATIHAN NN TOKO KAIN PESERTA NN,0000,\"<NOMINAL KWITANSI>\",CR,0\nDD/MM/YYYY,TRSF E-BANKING DB EKSPEDISI LATIHAN NN,0000,\"<NOMINAL F09>\",DB,0\nDD/MM/YYYY,BIAYA ADM LATIHAN NN,0000,\"15.000,00\",DB,0",
   "contoh_peserta_03": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n18/11/2026,TRSF E-BANKING CR KN-L9SKY LATIHAN 03 TOKO KAIN PESERTA 03,0000,\"3.240.090,00\",CR,0\n18/11/2026,TRSF E-BANKING DB EKSPEDISI LATIHAN 03,0000,\"330.000,00\",DB,0\n18/11/2026,BIAYA ADM LATIHAN 03,0000,\"15.000,00\",DB,0",
-  "aturan": "Satu baris kepala + tiga baris mutasi, dipisah koma. Tanggal = hari ini (DD/MM/YYYY). Nominal dalam tanda kutip dengan titik ribuan dan koma desimal: 3240090 → \"3.240.090,00\"; 3402982.5 → \"3.402.982,50\". <KODE BAYAR> & <NOMINAL KWITANSI> dari Kartu Peserta (c_kas:kwitansi_transfer); <NOMINAL F09> = nominal transaksi kas Anda di F09. NN = nomor peserta dua digit. Keterangan WAJIB memuat 'LATIHAN NN' (baris kembar dengan peserta lain akan dilewati sebagai duplikat)."
+  "aturan": "Satu baris kepala dan tiga baris mutasi, dipisah koma. Tanggal = hari ini (DD/MM/YYYY). Nominal ditulis dalam tanda kutip, dengan titik ribuan dan koma desimal: 3240090 → \"3.240.090,00\"; 3402982,5 → \"3.402.982,50\". Kode bayar dan nominal kwitansi diambil dari Kartu Peserta › Kwitansi transfer; nominal F09 = nominal transaksi kas Anda di F09. NN = nomor peserta (dua angka). Keterangan harus memuat 'LATIHAN NN'; baris yang sama persis dengan milik peserta lain dilewati sebagai duplikat."
  },
  "langkah": [
   {
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
-   "aksi": "Masuk dengan akun peserta → buka tab Rekonsiliasi → pilih rekening di kanan atas",
+   "aksi": "Masuk dengan akun peserta dan buka tab Rekonsiliasi. Pilih rekening di kanan atas.",
    "isi": "*Rekening*: BCA Operasional KSC · 7415595554",
-   "hasil": "Enam kartu: Rekening (bersih), Buku (bersih) + 'N transaksi belum tertaut', Tercocok, Perlu keputusan, Dana titipan, Selisih rekening vs buku. Tab 'Mutasi & Pencocokan' berisi tombol [[Impor mutasi bank]] dan [[Cocokkan otomatis]].",
+   "hasil": "Enam kartu: REKENING (BERSIH), BUKU (BERSIH), TERCOCOK, PERLU KEPUTUSAN, DANA TITIPAN, dan SELISIH REKENING VS BUKU. Di tab 'Mutasi & Pencocokan' ada tombol [[Impor mutasi bank]] dan [[Cocokkan otomatis]].",
    "gambar": "uji/hasil/F10/01-rekonsiliasi-awal.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Rekonsiliasi › Impor mutasi bank",
-   "aksi": "Klik [[Impor mutasi bank]] → pilih template → tempel teks rekening koran (lihat kotak 'Teks rekening koran') ke kotak 'Atau tempel isi rekening koran di sini' → [[Pratinjau]]",
-   "isi": "*Template bank*: BCA — Rekening Koran (CSV) · CSV (boleh juga 'Kenali otomatis dari isi berkas')\n*Teks*:\nTanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\nDD/MM/YYYY,TRSF E-BANKING CR <KODE BAYAR> LATIHAN NN TOKO KAIN PESERTA NN,0000,\"<NOMINAL KWITANSI>\",CR,0\nDD/MM/YYYY,TRSF E-BANKING DB EKSPEDISI LATIHAN NN,0000,\"<NOMINAL F09>\",DB,0\nDD/MM/YYYY,BIAYA ADM LATIHAN NN,0000,\"15.000,00\",DB,0",
-   "hasil": "'Terbaca 3 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp <nominal kwitansi> · keluar Rp <nominal F09 + 15.000>'. Tabel pratinjau 3 baris: Tanggal, Keterangan, Nominal, Arah (Masuk hijau / Keluar merah). Bila ada baris tak terbaca muncul peringatan kuning 'N baris tidak terbaca dan TIDAK akan diimpor'.",
+   "aksi": "Klik [[Impor mutasi bank]]. Tempel teks rekening koran ke kotak 'Atau tempel isi rekening koran di sini', lalu klik [[Pratinjau]].",
+   "isi": "*Template bank*: BCA — Rekening Koran (CSV) · CSV\n*Teks* (ganti DD/MM/YYYY dengan tanggal hari ini, NN dengan nomor peserta, kode bayar dan nominal kwitansi dari Kartu Peserta, nominal F09 dari transaksi Anda; tulis nominal dalam tanda kutip, contoh \"3.240.090,00\"):\nTanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\nDD/MM/YYYY,TRSF E-BANKING CR <KODE BAYAR> LATIHAN NN TOKO KAIN PESERTA NN,0000,\"<NOMINAL KWITANSI>\",CR,0\nDD/MM/YYYY,TRSF E-BANKING DB EKSPEDISI LATIHAN NN,0000,\"<NOMINAL F09>\",DB,0\nDD/MM/YYYY,BIAYA ADM LATIHAN NN,0000,\"15.000,00\",DB,0",
+   "hasil": "Tertulis 'Terbaca 3 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp … · keluar Rp …'. Tabel pratinjau berisi tiga baris dengan arah Masuk (hijau) atau Keluar (merah).",
    "gambar": "uji/hasil/F10/02-pratinjau-impor.png"
   },
   {
    "no": 3,
    "peran": "Finance",
-   "menu": "Rekonsiliasi › Impor mutasi bank",
-   "aksi": "Klik [[Impor]] → ketik *LATIHAN NN* di kotak 'Cari keterangan / nominal / status…' di atas tabel mutasi",
-   "isi": "*Cari*: LATIHAN NN",
-   "hasil": "Bilah hijau 'Impor BCA — Rekening Koran (CSV): 3 baris baru, 0 dilewati (sudah pernah masuk).'; kartu Rekening (bersih) menulis 'Impor terakhir: tempel baris oleh <nama Anda>'. Tiga baris Anda berstatus 'Perlu keputusan'. Baris transfer masuk berlencana ungu 'Kode Bayar KN-…'.",
+   "menu": "Rekonsiliasi › Mutasi & Pencocokan",
+   "aksi": "Klik [[Impor]]. Ketik 'LATIHAN NN' di kotak cari di atas tabel mutasi.",
+   "isi": "*Cari keterangan / nominal / status…*: LATIHAN NN",
+   "hasil": "Bilah hijau 'Impor BCA — Rekening Koran (CSV): 3 baris baru, 0 dilewati (sudah pernah masuk).' Tiga baris Anda berstatus 'Perlu keputusan'; baris transfer masuk berlencana ungu 'Kode Bayar KN-…'.",
    "gambar": "uji/hasil/F10/03-mutasi-terimpor.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Rekonsiliasi › Mutasi & Pencocokan",
-   "aksi": "Klik [[Cocokkan otomatis]] → klik angka di kolom Skor pada baris TRSF E-BANKING CR",
+   "aksi": "Klik [[Cocokkan otomatis]]. Klik angka di kolom Skor pada baris transfer masuk.",
    "isi": "",
-   "hasil": "Bilah hijau 'Pencocokan otomatis: … tertaut (skor ≥ 80), … usulan (skor ≥ 60), … baris tersisa.' Baris transfer masuk: status 'Tercocok', 'satu-satu · otomatis', Transaksi buku = kas kwitansi KSC/CASH-… dengan nominal sama. Alasan skor: 'Kode bayar KN-… cocok dengan pesanan KSC/SO-…', Nominal sama +40, Tanggal sama +20, nama mirip. Baris ekspedisi tetap 'Perlu keputusan' dengan tombol 'Terima usulan: KSC/CASH-… (skor 60)'.",
+   "hasil": "Bilah hijau 'Pencocokan otomatis: … tertaut (skor ≥ 80), … usulan (skor ≥ 60), … baris tersisa.' Baris transfer masuk berstatus 'Tercocok' dengan alasan skor (kode bayar cocok, nominal sama, tanggal sama, nama mirip); baris ekspedisi masih 'Perlu keputusan' dengan usulan 'Terima usulan: KSC/CASH-… (skor 60)'.",
    "gambar": "uji/hasil/F10/05-cocok-otomatis.png"
   },
   {
    "no": 5,
    "peran": "Finance",
    "menu": "Rekonsiliasi › Cocokkan mutasi bank",
-   "aksi": "Pada baris TRSF E-BANKING DB EKSPEDISI klik [[Cocokkan]] → pada kandidat dengan nomor KSC/CASH-… dari F09 (nominal sama, skor tertinggi) klik [[Tautkan]]",
+   "aksi": "Pada baris EKSPEDISI, klik [[Cocokkan]]. Pada kandidat bernomor KSC/CASH-… dari F09, klik [[Tautkan]].",
    "isi": "",
-   "hasil": "Pop-up 'Cocokkan mutasi bank' (Keluar · nominal · keterangan) berisi kandidat berperingkat: nomor, tanggal, keterangan 'Ongkos ekspedisi … — Latihan NN', 'Nominal … · sisa …', lencana 'skor 60' dan alasan 'Nominal sama (+40) · Tanggal sama (+20)'. Sesudah [[Tautkan]]: bilah 'Mutasi ditautkan (skor 60).' dan baris berstatus 'Tercocok'. (Tombol 'Terima usulan' di baris memberi hasil yang sama.)",
+   "hasil": "Jendela 'Cocokkan mutasi bank' menampilkan kandidat dengan 'skor 60' dan alasan 'Nominal sama (+40) · Tanggal sama (+20)'. Sesudah [[Tautkan]], muncul 'Mutasi ditautkan (skor 60).' dan baris berstatus 'Tercocok'.",
    "gambar": "uji/hasil/F10/06-cocok-manual.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Rekonsiliasi › Mutasi & Pencocokan",
-   "aksi": "Pada baris BIAYA ADM LATIHAN NN (Rp 15.000, keluar) klik [[Catat biaya bank]] → di dialog klik [[Catat biaya bank]]",
+   "aksi": "Pada baris BIAYA ADM LATIHAN NN, klik [[Catat biaya bank]]. Di jendela konfirmasi, klik [[Catat biaya bank]] lagi.",
    "isi": "",
-   "hasil": "Dialog 'Catat biaya bank?' menyebut mutasi, jurnal 'Dr Beban Adm Bank / Cr Bank', Nominal Rp 15.000 · Sukacita Textile. Sesudah konfirmasi: bilah 'Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).'; baris 'Tercocok' dengan keterangan 'Biaya bank · akun 6-8000' dan Transaksi buku KSC/CASH-… baru Rp 15.000.",
+   "hasil": "Jendela 'Catat biaya bank?' menyebut jurnal 'Dr Beban Adm Bank / Cr Bank' dan nominal Rp 15.000. Sesudahnya baris berstatus 'Tercocok' dengan keterangan 'Biaya bank · akun 6-8000' dan transaksi buku KSC/CASH-… yang baru.",
    "gambar": "uji/hasil/F10/08-konfirmasi-biaya-bank.png"
   },
   {
    "no": 7,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik *BIAYA ADM LATIHAN NN* di kotak cari → klik baris bersumber [[Kas]]",
+   "aksi": "Di Buku Besar, cari 'BIAYA ADM LATIHAN NN'. Klik baris bersumber 'Kas'.",
    "isi": "*Cari*: BIAYA ADM LATIHAN NN",
-   "hasil": "Jurnal 'Kas keluar · Biaya bank — BIAYA ADM LATIHAN NN': 6-8000 Beban Administrasi Bank — Debit Rp 15.000; 1-1100 Kas Besar / Bank — Kredit Rp 15.000. Baris yang hanya dicocokkan (transfer masuk & ekspedisi) TIDAK menerbitkan jurnal baru.",
+   "hasil": "Jurnal 'Kas keluar · Biaya bank — BIAYA ADM LATIHAN NN': 6-8000 Beban Administrasi Bank (D) Rp 15.000 dan 1-1100 Kas Besar / Bank (K) Rp 15.000.",
    "gambar": "uji/hasil/F10/10-jurnal-biaya-bank.png"
   },
   {
    "no": 8,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
-   "aksi": "Kembali ke Rekonsiliasi → isi *Mutasi dari tanggal* dan *sampai tanggal* = hari ini → klik kartu [[Tercocok]] → cari LATIHAN NN",
-   "isi": "*Mutasi dari tanggal*: hari ini · *sampai tanggal*: hari ini",
-   "hasil": "Tulisan 'kartu ringkasan mengikuti periode yang dipilih'; daftar hanya baris Tercocok — ketiga baris Anda ada. Kartu Rekening (bersih) dan Buku (bersih) sekarang hanya untuk hari ini. 'Selisih rekening vs buku' TIDAK nol di kelas karena transaksi buku peserta lain hari ini belum ada mutasinya — di kantor sungguhan, dengan rekening koran lengkap, selisih 0 + 'Terekonsiliasi penuh ✓' = beres.",
+   "aksi": "Kembali ke Rekonsiliasi. Isi tanggal mutasi dari dan sampai dengan hari ini, lalu klik kartu [[Tercocok]].",
+   "isi": "*Mutasi dari tanggal*: hari ini · *sampai tanggal*: hari ini · *Cari*: LATIHAN NN",
+   "hasil": "Tertulis 'kartu ringkasan mengikuti periode yang dipilih'. Daftar hanya berisi baris Tercocok, termasuk tiga baris Anda; kartu REKENING (BERSIH) dan BUKU (BERSIH) kini hanya untuk hari ini.",
    "gambar": "uji/hasil/F10/11-ringkasan-periode.png"
   },
   {
    "no": 9,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
-   "aksi": "Klik kartu [[BCA Operasional KSC]] → Mutasi → cari tiga baris Anda",
+   "aksi": "Di Rekening & Saldo, klik kartu [[BCA Operasional KSC]]. Cari tiga baris Anda di daftar mutasi.",
    "isi": "",
-   "hasil": "Kas kwitansi transfer, kas ekspedisi F09, dan kas biaya bank berlencana hijau 'Terekonsiliasi'; angka 'Terekonsiliasi Rp …' di kepala naik.",
+   "hasil": "Kas kwitansi transfer, kas ekspedisi F09, dan kas biaya bank berlencana hijau 'Terekonsiliasi'. Angka 'Terekonsiliasi Rp …' di kepala naik.",
    "gambar": "uji/hasil/F10/12-mutasi-terekonsiliasi.png"
   }
  ],
  "cek_buku": [
-  "Cocokkan (otomatis/manual) hanya menautkan mutasi ke kas yang sudah ada: tidak ada jurnal baru; kas kwitansi & kas F09 menjadi 'Terekonsiliasi' (reconciled_amount = nominal)",
-  "Catat biaya bank: kas keluar Rp 15.000 dari BCA + jurnal 6-8000 Beban Administrasi Bank (D) Rp 15.000 · 1-1100 Kas Besar / Bank (K) Rp 15.000 — seimbang",
-  "Catat bunga bank (mutasi masuk): Dr 1-1100 / Cr Pendapatan Bunga · Titipkan (pengirim tak dikenal): Dr 1-1100 / Cr 2-1950 Titipan Dana Belum Teridentifikasi",
-  "Ringkasan per periode: Selisih = mutasi bersih periode − buku bersih periode (rekening yang sama)"
+  "Mencocokkan (otomatis atau manual) tidak membuat jurnal; kas kwitansi dan kas F09 hanya berubah status menjadi 'Terekonsiliasi'",
+  "Catat biaya bank: 6-8000 Beban Administrasi Bank (D) Rp 15.000 · 1-1100 Kas Besar / Bank (K) Rp 15.000 — seimbang",
+  "Catat bunga bank (mutasi masuk): 1-1100 Kas Besar / Bank (D) · Pendapatan Bunga (K). Titipkan (pengirim tak dikenal): 1-1100 Kas Besar / Bank (D) · 2-1950 Titipan Dana Belum Teridentifikasi (K)",
+  "Selisih per periode = mutasi bersih rekening − buku bersih (rekening yang sama); selisih Rp 0 berarti beres"
  ],
  "kesalahan_umum": [
-  "Nominal tanpa tanda kutip dengan koma desimal (3.240.090,00 → kolom bergeser) → baris ditolak 'Arah dana … bungkus nominal dengan tanda kutip'. Bentuk lain (3240090 · 3.240.090 · 3,240,090.00 · 3240090.00), pemisah TAB/titik koma (salin dari Excel) dibaca benar; baris yang dilewati disebut nomor & alasannya — tetap periksa [[Pratinjau]] sebelum [[Impor]].",
-  "Keterangan tanpa 'LATIHAN NN' / sama dengan peserta lain → baris dilewati sebagai duplikat ('0 baris baru, 1 dilewati').",
-  "Klik 'Catat sebagai kwitansi' pada baris transfer masuk yang kwitansinya SUDAH dicatat → kwitansi ganda; pakai [[Cocokkan otomatis]] / [[Cocokkan]].",
-  "Menautkan kandidat milik peserta lain dengan nominal mirip (skor lebih rendah) → kas Anda tetap 'Belum'. Pilih nomor KSC/CASH dari F09 dengan nominal persis sama.",
-  "Mengabaikan baris biaya admin ([[Abaikan]]) → beban bank hilang dari laba rugi dan selisih tidak pernah nol; pakai [[Catat biaya bank]].",
-  "Salah pencocokan bisa dibatalkan dengan [[Lepas]]; biaya bank yang terlanjur dicatat dibatalkan juga dengan [[Lepas]] (kas di-void, jurnal dibalik)."
+  "Menulis nominal berkoma desimal tanpa tanda kutip (3.240.090,00). Kolom bergeser dan baris ditolak; bungkus nominal dengan tanda kutip dan periksa [[Pratinjau]] sebelum [[Impor]].",
+  "Keterangan tanpa 'LATIHAN NN' atau sama dengan milik peserta lain. Baris dilewati sebagai duplikat ('0 baris baru, 1 dilewati').",
+  "Menautkan kandidat milik peserta lain yang nominalnya mirip. Kas Anda tetap 'Belum'; pilih nomor KSC/CASH dari F09 dengan nominal persis sama.",
+  "Mengklik [[Abaikan]] pada baris biaya admin. Beban bank hilang dan selisih tidak pernah nol; pakai [[Catat biaya bank]]. Salah pencocokan dibatalkan dengan [[Lepas]]."
  ],
- "catatan_pelatih": "Rekening BCA dipakai bersama: [[Cocokkan otomatis]] oleh satu peserta ikut mencocokkan baris peserta lain (hanya yang kode bayarnya cocok) — wajar bila baris transfer seseorang sudah 'Tercocok' sebelum ia menekan tombol. Baris ekspedisi (skor 60) dan biaya admin tidak pernah tertaut otomatis. Setelah beberapa peserta mencocokkan manual, muncul '1 usulan menunggu' aturan pembelajaran (Pengaturan › Keuangan & Pajak › Bank) — JANGAN diaktifkan selama latihan (baris ekspedisi peserta berikutnya akan tertaut otomatis). Bila kwitansi disiapkan sehari sebelumnya, tanggal mutasi tetap hari ini (kode bayar tetap mencocokkan). Perbaikan 17 Nov: impor tempel kini tercatat 'tempel baris' (dulu 'berkas'), ringkasan sisi buku ikut periode, dan tiga tombol yang menerbitkan jurnal (biaya bank, bunga, titipkan) meminta konfirmasi bernominal.",
+ "catatan_pelatih": "Rekening BCA dipakai bersama: [[Cocokkan otomatis]] oleh satu peserta ikut mencocokkan baris transfer peserta lain yang kode bayarnya cocok, jadi wajar bila baris seseorang sudah 'Tercocok' sebelum ia menekan tombol. Baris ekspedisi (skor 60) dan biaya admin tidak pernah tertaut otomatis. Kartu 'Selisih rekening vs buku' tidak nol di kelas karena transaksi buku peserta lain hari ini belum punya mutasi; di kantor, dengan rekening koran lengkap, selisih Rp 0 dan tulisan 'Terekonsiliasi penuh ✓' berarti beres. Setelah beberapa peserta mencocokkan manual, muncul '1 usulan menunggu' aturan pembelajaran (Pengaturan › Keuangan & Pajak › Bank) — jangan diaktifkan selama latihan. Bila kwitansi disiapkan sehari sebelumnya, tanggal mutasi tetap hari ini. Aturan teks rekening koran: satu baris kepala dan tiga baris mutasi; nominal dalam tanda kutip dengan titik ribuan dan koma desimal (3240090 → \"3.240.090,00\"); bentuk lain (3240090 · 3.240.090 · 3240090.00) dan pemisah TAB atau titik koma (salinan dari Excel) juga terbaca. Perbaikan 17 Nov: impor tempel tercatat 'tempel baris', ringkasan sisi buku ikut periode, dan tiga tombol yang menerbitkan jurnal (biaya bank, bunga, titipkan) meminta konfirmasi bernominal.",
  "uji": {
   "berkas": "uji/F10_rekonsiliasi_bank.js",
   "peserta_uji": "35"

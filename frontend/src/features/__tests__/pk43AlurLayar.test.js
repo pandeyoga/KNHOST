@@ -14,7 +14,7 @@ import ARAgingDetail from "../finance/ARAgingDetail";
 import { SectionBlock, BsLine } from "../finance/FinancialStatementsParts";
 import GeneralLedger from "../finance/GeneralLedger";
 import JournalDetailModal from "../finance/JournalDetailModal";
-import ClosingChecklistPanel, { checklistSummary, checklistWarnings, intercoValueText } from "../finance/ClosingChecklistPanel";
+import ClosingChecklistPanel, { checkValueText, checklistSummary, checklistWarnings, intercoValueText } from "../finance/ClosingChecklistPanel";
 import FinancialStatementsView from "../finance/FinancialStatementsView";
 import ClosingView from "../finance/ClosingView";
 import useAppNavigation from "../../hooks/useAppNavigation";
@@ -348,8 +348,10 @@ test("Daftar periksa — ringkasan, status ikon + teks, nilai antar-PT, Buka mem
   expect(navTo).toHaveBeenCalledWith("general-ledger",
     expect.objectContaining({ preset: { tab: "suspense", from: { view: "closing" } } }));
   expect(checklistSummary([])).toBe("0 beres · 0 perlu dilihat · 0 harus diselesaikan");
-  expect(checklistWarnings(CEKLIS)).toEqual(["Tidak ada jurnal yang gagal diposting: 1 dokumen jurnalnya gagal.",
-    "Saldo antar-PT di buku besar sama dengan dokumennya: x"]);
+  expect(checklistWarnings(CEKLIS)).toEqual(["1 dokumen jurnalnya gagal.", "x"]);
+  // tanpa rincian → nama butir + nilai (rincian server sudah berupa kalimat masalah; digabung terbaca bertentangan)
+  expect(checklistWarnings({ items: [{ ...CEKLIS.items[2], detail: "" }] })).toEqual([
+    `Tidak ada jurnal yang gagal diposting: ${checkValueText(CEKLIS.items[2])}`]);
 });
 
 test("Daftar periksa — memuat, galat + Coba lagi, kosong dibedakan; belum dimuat = tidak tampil", async () => {
@@ -454,6 +456,6 @@ test("Tutup Buku — Pratinjau memuat daftar periksa; konfirmasi menyebut butir 
   const host = document.createElement("div");
   const root = createRoot(host);
   await act(async () => { root.render(msg); });
-  expect(host.textContent).toContain("Tidak ada jurnal yang gagal diposting: 1 dokumen jurnalnya gagal.");
+  expect(host.textContent).toContain("⚠ 1 dokumen jurnalnya gagal.");
   expect(mockPost).not.toHaveBeenCalled();
 });

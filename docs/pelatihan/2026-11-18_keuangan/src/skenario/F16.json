@@ -1,109 +1,115 @@
 {
  "kode": "F16",
+ "modul": "3.5",
  "judul": "Buku Besar & Jejak Dokumen — menelusuri jurnal dari transaksi",
  "bagian": "A",
- "tujuan": "Peserta bisa menemukan jurnal yang lahir dari pekerjaannya (kwitansi, surat jalan), membaca debit/kredit, memastikan jurnal seimbang, membaca buku besar satu akun, mengenali akun di Bagan Akun, dan menelusuri satu pesanan dari SO sampai jurnal di Jejak Dokumen dengan angka yang sama.",
- "kapan": "Saat mencocokkan atau ditanya 'uang ini dicatat ke mana?', saat cek setelah mencatat kwitansi/pembayaran, dan sebelum tutup buku.",
+ "tujuan": "Peserta bisa menemukan dan membaca jurnal dari pekerjaannya, membaca buku besar satu akun, dan menelusuri satu SO sampai jurnalnya di Jejak Dokumen.",
+ "kapan": "Saat ditanya 'uang ini dicatat ke mana?', saat memeriksa hasil kwitansi atau pembayaran, dan sebelum tutup buku.",
+ "konsep": [
+  "Jurnal adalah catatan debit dan kredit dari satu transaksi. Setiap jurnal harus seimbang: total debit = total kredit.",
+  "Buku besar mengumpulkan semua jurnal per akun dan menghitung saldo berjalan. Neraca Saldo menampilkan saldo akhir semua akun.",
+  "Satu SO melahirkan beberapa jurnal: pendapatan dan HPP saat dikirim, lalu jurnal penerimaan saat dibayar.",
+  "Jejak Dokumen menampilkan rantai dokumen dari SO sampai jurnal, lengkap dengan nilainya."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta baris *e_buku:so_jejak*: satu SO latihan yang sudah terkirim DAN sudah dilunasi oleh akun Finance Anda sendiri — nomor SO (*so*), surat jalan (*surat_jalan*), kwitansi (*kwitansi*), transaksi kas (*kas*), jurnal pendapatan & HPP (*jurnal_kirim*) dan jurnal penerimaan (*jurnal_terima*). Contoh peserta 05: KSC/SO-00022 Rp 3.273.390 · KSC/SJ-00023 · KSC/AR-00003 · KSC/CASH-00010 · KSC/JE-00094/95/96. Skenario ini hanya MEMBACA.",
+ "data_awal": "Kartu Peserta › SO lunas untuk penelusuran: satu SO latihan yang sudah dikirim dan dilunasi oleh akun Finance Anda. Kartu memuat nomor SO, surat jalan, kwitansi, transaksi kas, jurnal pengiriman, dan jurnal penerimaan (contoh: KSC/SO-00015 Rp 3.287.820 · KSC/SJ-00016 · KSC/AR-00008 · KSC/CASH-00013 · KSC/JE-00062/63/64). Skenario ini hanya membaca.",
  "langkah": [
   {
    "no": 1,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Buka menu Akuntansi & Pajak › Buku Besar (tab Jurnal); baca empat kartu atas",
+   "aksi": "Buka Akuntansi & Pajak › Buku Besar (tab Jurnal). Baca empat kartu atas.",
    "isi": "",
-   "hasil": "TOTAL JURNAL · TOTAL DEBIT · TOTAL KREDIT · STATUS BUKU 'Seimbang' (hijau). Total Debit = Total Kredit = total kolom Neraca Saldo. Tidak ada tombol [[Jurnal Baru]] atau [[Sinkronkan]] — Finance hanya melihat buku besar.",
+   "hasil": "Kartu TOTAL JURNAL, TOTAL DEBIT, TOTAL KREDIT, dan STATUS BUKU 'Seimbang' (hijau). Tidak ada tombol [[Jurnal Baru]] atau [[Sinkronkan]] untuk Finance.",
    "gambar": "uji/hasil/F16/01-buku-besar-jurnal.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik nomor kwitansi dari Kartu Peserta di kotak *Cari nomor jurnal / keterangan…*",
-   "isi": "*Cari*: KSC/AR-000xx (kolom *kwitansi* di Kartu Peserta)",
-   "hasil": "Tinggal '1 jurnal': nomor = *jurnal_terima*, sumber 'Kas' KSC/CASH-…, keterangan 'Kas masuk · Penerimaan KSC/AR-… — Latihan NN …', nilai = total SO, status 'Terposting'.",
+   "aksi": "Ketik nomor kwitansi dari Kartu Peserta di kotak cari.",
+   "isi": "*Cari nomor jurnal / keterangan…*: nomor kwitansi (KSC/AR-…)",
+   "hasil": "Tinggal 1 jurnal bersumber 'Kas' KSC/CASH-…, berketerangan 'Kas masuk · Penerimaan KSC/AR-… — Latihan NN …', nilai = total SO, status 'Terposting'.",
    "gambar": "uji/hasil/F16/02-cari-kwitansi.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Klik baris jurnal itu → pop-up rincian jurnal",
+   "aksi": "Klik baris jurnal itu. Baca, lalu klik [[Tutup]].",
    "isi": "",
-   "hasil": "Dua baris: 1-1100 Kas Besar / Bank di kolom DEBIT dan 1-1200 Piutang Usaha di kolom KREDIT, nilainya sama (total SO). Baris Total: debit = kredit. 'Dokumen sumber Transaksi Kas / Bank KSC/CASH-…'. Tidak ada tombol [[Balik Jurnal]] / [[Anulir Jurnal]] untuk Finance. Tutup dengan [[Tutup]].",
+   "hasil": "Rincian jurnal: 1-1100 Kas Besar / Bank di kolom DEBIT dan 1-1200 Piutang Usaha di kolom KREDIT dengan nilai sama, serta dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'. Tidak ada tombol [[Balik Jurnal]] atau [[Anulir Jurnal]] untuk Finance.",
    "gambar": "uji/hasil/F16/03-rincian-jurnal-penerimaan.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ganti isi *Cari* dengan nomor SO dari Kartu Peserta → klik jurnal 'Pendapatan Kirim'",
-   "isi": "*Cari*: KSC/SO-000xx (kolom *so*)",
-   "hasil": "'2 jurnal' dari surat jalan: 'Pengakuan penjualan …' (Pendapatan Kirim) dan 'HPP penjualan …' (HPP Kirim). Rincian Pendapatan Kirim: Debit 1-1200 Piutang Usaha = total SO; Kredit 4-1000 Pendapatan Penjualan (DPP) + Kredit 2-1200 PPN Keluaran (PPN). Jurnal HPP: Debit 5-1000 HPP = Kredit 1-1300 Persediaan.",
+   "aksi": "Ganti isi kotak cari dengan nomor SO. Klik jurnal bersumber 'Pendapatan Kirim'.",
+   "isi": "*Cari*: nomor SO (KSC/SO-…)",
+   "hasil": "Ada 2 jurnal dari surat jalan: 'Pengakuan penjualan …' (Pendapatan Kirim) dan 'HPP penjualan …' (HPP Kirim). Rincian Pendapatan Kirim: 1-1200 Piutang Usaha di Debit, 4-1000 Pendapatan Penjualan dan 2-1200 PPN Keluaran di Kredit.",
    "gambar": "uji/hasil/F16/05-rincian-jurnal-pendapatan.png"
   },
   {
    "no": 5,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Buku Besar",
-   "aksi": "Kosongkan *Cari*, klik tab [[Buku Besar]] → *Akun*: ketik '1-1200' dan pilih '1-1200 — Piutang Usaha'",
-   "isi": "*Akun*: 1-1200 — Piutang Usaha",
-   "hasil": "Daftar mutasi Piutang Usaha dengan saldo berjalan; jurnal Pendapatan Kirim Anda di kolom Debit dan jurnal penerimaan Anda di kolom Kredit dengan nilai sama (piutang SO ini sudah nol). Di kanan atas 'Saldo akhir Rp …' = saldo akun 1-1200. Klik nomor jurnal membuka rinciannya.",
+   "aksi": "Kosongkan kotak cari dan klik tab [[Buku Besar]]. Pilih akun 1-1200 — Piutang Usaha.",
+   "isi": "*Akun*: ketik 1-1200, lalu pilih '1-1200 — Piutang Usaha'",
+   "hasil": "Daftar mutasi Piutang Usaha dengan saldo berjalan. Jurnal pendapatan Anda ada di kolom Debit dan jurnal penerimaan di kolom Kredit dengan nilai sama; 'Saldo akhir Rp …' tertulis di kanan atas.",
    "gambar": "uji/hasil/F16/06-buku-besar-piutang.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Neraca Saldo",
-   "aksi": "Klik tab [[Neraca Saldo]]",
+   "aksi": "Klik tab [[Neraca Saldo]].",
    "isi": "",
-   "hasil": "Satu baris per akun bersaldo (saldo di kolom Debit atau Kredit); baris Total: Debit = Kredit, sama dengan TOTAL DEBIT/KREDIT di kartu atas. Klik baris akun membuka buku besarnya.",
+   "hasil": "Satu baris per akun bersaldo, di kolom Debit atau Kredit. Baris Total: debit = kredit, sama dengan TOTAL DEBIT dan TOTAL KREDIT di kartu atas.",
    "gambar": "uji/hasil/F16/07-neraca-saldo.png"
   },
   {
    "no": 7,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun",
-   "aksi": "Klik tab [[Bagan Akun]] → ketik 'piutang' di *Cari kode / nama akun…*",
-   "isi": "*Cari*: piutang",
-   "hasil": "Akun 1-1200 Piutang Usaha · 'global' · 'Akun kontrol' (saldonya hanya berubah lewat dokumen, bukan jurnal manual) · 'Dipakai Sukacita' · 'Detail · Debit'. Finance hanya melihat: tidak ada [[Tambah Akun]] maupun ikon ubah/hapus; ikon jam membuka riwayat akun.",
+   "aksi": "Klik tab [[Bagan Akun]]. Ketik 'piutang' di kotak cari.",
+   "isi": "*Cari kode / nama akun…*: piutang",
+   "hasil": "Akun 1-1200 Piutang Usaha berlabel 'global', 'Akun kontrol', 'Dipakai Sukacita', dan 'Detail · Debit'. Tidak ada tombol [[Tambah Akun]] maupun ikon ubah dan hapus; ikon jam membuka riwayat akun.",
    "gambar": "uji/hasil/F16/08-bagan-akun-piutang.png"
   },
   {
    "no": 8,
    "peran": "Finance",
    "menu": "Pusat Dokumen › Jejak Dokumen",
-   "aksi": "Menu Pusat Dokumen → tab [[Jejak Dokumen]] → ketik nomor SO di *Cari dokumen* → klik hasilnya; geser 'Rantai dokumen' ke kanan",
-   "isi": "*Cari dokumen*: KSC/SO-000xx",
-   "hasil": "Kartu atas: DOKUMEN TERKAIT 8 · RELASI 8 · NILAI DOKUMEN = total SO. Rantai: SO (titik mulai) → tugas ambil PICK-… → surat jalan KSC/SJ-… → jurnal Pendapatan Kirim & HPP Kirim; SO 'Dilunasi oleh' kwitansi KSC/AR-… → transaksi kas KSC/CASH-… → jurnal penerimaan. Nilai SO = kwitansi = kas = jurnal penerimaan. 'Daftar relasi' di bawah menulis semua tautan.",
+   "aksi": "Di Pusat Dokumen › [[Jejak Dokumen]], cari nomor SO dan klik hasilnya. Geser 'Rantai dokumen' ke kanan.",
+   "isi": "*Cari dokumen*: nomor SO",
+   "hasil": "Kartu atas: DOKUMEN TERKAIT 8, RELASI 8, NILAI DOKUMEN = total SO. Rantai: SO → tugas ambil → surat jalan → jurnal pendapatan dan HPP, serta SO → kwitansi → transaksi kas → jurnal penerimaan, dengan nilai yang sama.",
    "gambar": "uji/hasil/F16/10-jejak-dokumen-geser-kanan.png"
   },
   {
    "no": 9,
    "peran": "Finance",
    "menu": "Pusat Dokumen › Jejak Dokumen",
-   "aksi": "Pada kotak jurnal penerimaan klik ikon buka (↗) di pojok kanan atas kotak",
+   "aksi": "Pada kotak jurnal penerimaan, klik ikon ↗ di pojok kanan atas kotak.",
    "isi": "",
-   "hasil": "Layar pindah ke Buku Besar dan pop-up rincian jurnal itu langsung terbuka; tombol [[Kembali ke Jejak KSC/SO-…]] di kiri bawah membawa kembali ke rantai tadi.",
+   "hasil": "Layar pindah ke Buku Besar dan rincian jurnal itu langsung terbuka. Tombol [[Kembali ke Jejak KSC/SO-…]] di kiri bawah membawa Anda kembali ke rantai.",
    "gambar": "uji/hasil/F16/11-jurnal-dari-jejak.png"
   }
  ],
  "cek_buku": [
-  "Jurnal penerimaan: Dr 1-1100 = Cr 1-1200 = total SO = nilai kwitansi = nilai transaksi kas (uji: sama sampai rupiah).",
-  "Jurnal Pendapatan Kirim: Dr 1-1200 = Cr 4-1000 (DPP SO) + Cr 2-1200 (PPN SO); jurnal HPP: Dr 5-1000 = Cr 1-1300.",
-  "Setiap jurnal seimbang (total debit = total kredit); kartu 'Status Buku' Seimbang; Neraca Saldo total debit = total kredit.",
-  "Saldo akhir buku besar 1-1200 = saldo akun Piutang Usaha di Neraca Saldo = 'piutang tercatat' di Beranda Keuangan › Posisi.",
-  "Jejak Dokumen memuat SO, surat jalan, kwitansi, kas dan ketiga jurnal; tidak ada mata rantai yang hilang."
+  "Jurnal penerimaan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.287.820 · 1-1200 Piutang Usaha (K) Rp 3.287.820 = nilai kwitansi = nilai transaksi kas",
+  "Jurnal pendapatan (contoh): 1-1200 Piutang Usaha (D) Rp 3.287.820 · 4-1000 Pendapatan Penjualan (K) Rp 2.962.000 · 2-1200 PPN Keluaran (K) Rp 325.820",
+  "Jurnal HPP (contoh): 5-1000 HPP (D) Rp 2.132.640 · 1-1300 Persediaan (K) Rp 2.132.640",
+  "Saldo akhir buku besar 1-1200 = saldo Piutang Usaha di Neraca Saldo = 'piutang tercatat' di Beranda Keuangan › Posisi"
  ],
  "kesalahan_umum": [
-  "Mencari jurnal penerimaan dengan nomor SO — keterangan jurnal kas memuat nomor KWITANSI, bukan nomor SO (pakai nomor kwitansi atau Jejak Dokumen).",
-  "Membaca TOTAL DEBIT di kartu atas sebagai jumlah semua baris jurnal — itu total kolom Neraca Saldo (saldo per akun).",
-  "Tidak menggeser 'Rantai dokumen' ke kanan sehingga kwitansi/kas/jurnal dikira tidak ada (lihat juga 'Daftar relasi' di bawahnya).",
-  "Lupa mengosongkan *Cari* sebelum pindah tab — daftar jurnal tetap tersaring."
+  "Mencari jurnal penerimaan dengan nomor SO. Keterangan jurnal kas memuat nomor kwitansi, bukan nomor SO.",
+  "Membaca TOTAL DEBIT di kartu atas sebagai jumlah semua baris jurnal. Angka itu adalah total kolom Neraca Saldo.",
+  "Tidak menggeser 'Rantai dokumen' ke kanan, sehingga kwitansi, kas, dan jurnal dikira tidak ada. Lihat juga 'Daftar relasi' di bawahnya.",
+  "Lupa mengosongkan kotak cari sebelum pindah tab. Daftar tetap tersaring."
  ],
- "catatan_pelatih": "Data skenario dibuat oleh `seed_pelatihan_keuangan_kn.py` modul `e_buku` (SO tersendiri yang dilunasi akun Finance peserta lewat endpoint kwitansi resmi) supaya F16 tidak bergantung pada urutan F02. Finance hanya punya izin LIHAT akuntansi: tombol tulis (Jurnal Baru, Sinkronkan, Balik/Anulir, Tambah/Ubah/Hapus akun) kini disembunyikan — dulu tampil lalu ditolak server (temuan diperbaiki). Simpul jurnal di Jejak Dokumen kini menampilkan nilai jurnal (dulu kosong).",
+ "catatan_pelatih": "Data skenario dibuat skrip data latihan: SO tersendiri yang dilunasi akun Finance peserta, sehingga F16 tidak bergantung pada urutan F02. Finance hanya punya izin lihat akuntansi: tombol tulis (Jurnal Baru, Sinkronkan, Balik/Anulir, Tambah/Ubah/Hapus akun) disembunyikan. 'Akun kontrol' berarti saldonya hanya berubah lewat dokumen, bukan lewat jurnal manual. Simpul jurnal di Jejak Dokumen kini menampilkan nilai jurnal (dulu kosong). Jurnal kas yang dibuat sebelum 17 Nov masih berketerangan 'Kas in · …' (seperti di tangkapan layar); data yang disiapkan ulang memakai 'Kas masuk · …'.",
  "uji": {
   "berkas": "uji/F16_buku_besar_jejak.js",
   "peserta_uji": "05"

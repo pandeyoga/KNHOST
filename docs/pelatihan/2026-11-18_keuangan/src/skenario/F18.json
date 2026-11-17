@@ -1,119 +1,124 @@
 {
  "kode": "F18",
- "judul": "Tutup Buku — daftar periksa, pratinjau, tutup, buka periode, posting gagal",
+ "modul": "4",
+ "judul": "Tutup buku — daftar periksa, pratinjau, tutup, buka periode, posting gagal",
  "bagian": "B",
- "tujuan": "Manajer memahami alur tutup buku bulanan: membaca Daftar Periksa dan Pratinjau jurnal penutup, menutup periode, mengajukan Buka Periode dengan alasan (kontrol dua orang), membaca Posting Gagal, dan tahu bedanya Buka Periode (jendela sementara) dengan Buka Kembali (membatalkan penutupan, khusus Admin).",
+ "tujuan": "Manajer memahami alur tutup buku bulanan: membaca daftar periksa, menutup periode, mengajukan buka periode, dan membaca posting gagal.",
  "kapan": "Awal bulan untuk menutup bulan lalu, dan bila ada koreksi yang harus diposting ke bulan yang sudah ditutup.",
+ "konsep": [
+  "Tutup buku mengunci periode: jurnal bertanggal di periode itu ditolak. Laba atau rugi periode dipindahkan ke Laba Ditahan lewat jurnal penutup.",
+  "Daftar periksa memastikan buku siap ditutup, misalnya saldo Suspense nol dan tidak ada jurnal yang gagal diposting.",
+  "Buka Periode adalah jendela sementara untuk koreksi dan perlu dua orang (pengusul dan penyetuju berbeda). Buka Kembali membatalkan penutupan dan khusus Admin.",
+  "Posting Gagal berisi dokumen yang jurnalnya gagal tercatat. Semuanya harus diselesaikan sebelum tutup buku."
+ ],
  "peran": "Manajer (manager@kainnusantara.id); Admin sebagai orang kedua (pelatih)",
  "menit": 25,
- "data_awal": "Tidak perlu data khusus. Oktober 2026 berisi jurnal gaji latihan (bertanggal 31 Okt) → hanya DIBACA. Yang ditutup dalam latihan adalah September 2026 (bulan kosong) lalu dibuka kembali — supaya tidak mengunci koreksi gaji Oktober peserta lain.",
+ "data_awal": "Tidak perlu data khusus. Oktober 2026 berisi jurnal gaji latihan (bertanggal 31 Okt), jadi hanya dibaca. Yang ditutup dalam latihan adalah September 2026, lalu segera dibuka kembali, supaya koreksi gaji Oktober peserta lain tidak terkunci.",
  "langkah": [
   {
    "no": 1,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "Pastikan PT 'Sukacita' di bilah atas → menu Akuntansi & Pajak › Tutup Buku",
+   "aksi": "Pastikan PT 'Sukacita' di bilah atas. Buka Akuntansi & Pajak › Tutup Buku.",
    "isi": "",
-   "hasil": "Tiga tab: Daftar Periksa & Tutup · Buka Periode · Posting Gagal; kartu PERIODE TERTUTUP & TOTAL RIWAYAT; label PT 'Sukacita' dan tombol 'Tanya soal layar ini'. Seksi 'Persediaan vs buku besar' dan 'Akun sementara' di bawah.",
+   "hasil": "Tiga tab (Daftar Periksa & Tutup · Buka Periode · Posting Gagal) dan kartu PERIODE TERTUTUP serta TOTAL RIWAYAT. Di bawahnya ada bagian 'Persediaan vs buku besar', 'Akun sementara', dan 'Riwayat Tutup Buku'.",
    "gambar": "uji/hasil/F18/01-tutup-buku-awal.png"
   },
   {
    "no": 2,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "*Jenis Periode* Bulanan · *Bulan* Oktober · *Tahun* 2026 → [[Pratinjau]] → baca 'Daftar Periksa Sebelum Tutup Buku'",
-   "isi": "*Jenis Periode*: Bulanan · *Bulan*: Oktober · *Tahun*: 2026",
-   "hasil": "Daftar periksa muncul bersama pratinjau: ringkasan 'N beres · N perlu dilihat · N harus diselesaikan' dan butir seperti Periode sudah berakhir, Tidak bentrok dengan penutupan lain, Saldo akun penampung nol, Tidak ada jurnal yang gagal diposting, Neraca saldo seimbang, Nilai stok sama dengan akun persediaan … — tiap butir berstatus Beres / Perlu dilihat / Harus diselesaikan dengan tombol buka ke layar perbaikannya.",
+   "aksi": "Pilih periode Oktober 2026, lalu klik [[Pratinjau]].",
+   "isi": "*Jenis periode*: Bulanan · *Bulan*: Oktober · *Tahun*: 2026",
+   "hasil": "Muncul 'Daftar Periksa Sebelum Tutup Buku' dengan ringkasan 'N beres · N perlu dilihat · N harus diselesaikan'. Tiap butir (misalnya 'Saldo akun penampung nol' dan 'Neraca saldo seimbang') berstatus Beres, Perlu Dilihat, atau Harus Diselesaikan, dengan tombol [[Buka]] ke layar perbaikannya.",
    "gambar": "uji/hasil/F18/02-daftar-periksa-oktober.png"
   },
   {
    "no": 3,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "Gulir ke hasil Pratinjau Oktober — JANGAN klik [[Tutup Buku]] untuk Oktober",
+   "aksi": "Gulir ke hasil pratinjau Oktober. Jangan klik [[Tutup Buku]].",
    "isi": "",
-   "hasil": "Kotak Pendapatan · Beban · Laba/Rugi Bersih → Laba Ditahan (Oktober latihan: pendapatan Rp 0, beban gaji ± Rp 50,6 jt → rugi). Tabel 'Jurnal Penutup (Pratinjau)' menutup tiap akun beban/pendapatan ke Laba Ditahan; debit = kredit. Tombol [[Tutup Buku]] (disorot) TIDAK diklik untuk Oktober.",
+   "hasil": "Kotak PENDAPATAN, BEBAN, dan LABA/RUGI BERSIH → LABA DITAHAN (Oktober latihan: pendapatan Rp 0 dan beban gaji sekitar Rp 54 juta, jadi rugi). Tabel 'Jurnal Penutup (Pratinjau)' menutup tiap akun beban ke Laba Ditahan; debit = kredit.",
    "gambar": "uji/hasil/F18/03-pratinjau-oktober.png"
   },
   {
    "no": 4,
    "peran": "Manajer (demo pelatih)",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "*Bulan* September · *Tahun* 2026 → [[Pratinjau]] → [[Tutup Buku]]",
+   "aksi": "Pilih September 2026 dan klik [[Pratinjau]]. Klik [[Tutup Buku]].",
    "isi": "*Bulan*: September · *Tahun*: 2026",
-   "hasil": "Pratinjau 'Tidak ada saldo laba/rugi untuk ditutup pada periode ini.' Dialog merah 'Tutup buku September 2026 — Sukacita?': jurnal penutup (laba/rugi → Laba Ditahan) dibuat dan periode terkunci; membuka lagi hanya lewat Buka Kembali (Admin) atau usul Buka Periode.",
+   "hasil": "Jendela 'Tutup buku September 2026 — Sukacita?' menjelaskan bahwa jurnal penutup dibuat dan periode terkunci. Bisa muncul peringatan oranye bila ada penggajian bulan itu yang belum diposting.",
    "gambar": "uji/hasil/F18/04-dialog-tutup-buku.png"
   },
   {
    "no": 5,
    "peran": "Manajer (demo pelatih)",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "Di dialog klik [[Tutup Buku]]",
+   "aksi": "Di jendela itu, klik [[Tutup Buku]].",
    "isi": "",
-   "hasil": "Pesan hijau 'Periode September 2026 berhasil ditutup. Jurnal penutup: —.' (bulan kosong → tanpa jurnal penutup); Riwayat Tutup Buku: September 2026 · Bulanan · Rp 0 · Tertutup · Dewi Manager; kartu PERIODE TERTUTUP bertambah 1. Jurnal bertanggal September kini ditolak.",
+   "hasil": "Pesan hijau 'Periode September 2026 berhasil ditutup. Jurnal penutup: —.' Riwayat Tutup Buku mendapat baris September 2026 berstatus 'Tertutup', dan kartu PERIODE TERTUTUP bertambah 1.",
    "gambar": "uji/hasil/F18/05-riwayat-tertutup.png"
   },
   {
    "no": 6,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Tutup Buku › Buka Periode",
-   "aksi": "Tab [[Buka Periode]] → *Periode Tertutup* September 2026 · *Alasan (wajib)* → [[Ajukan Usul]]",
-   "isi": "*Periode Tertutup*: September 2026 · *Alasan (wajib)*: Latihan F18 — contoh koreksi salah akun beban",
-   "hasil": "Pesan hijau 'Usul buka periode dikirim. Perlu disetujui admin/manager LAIN (kontrol ganda) agar jendela terbuka.' Baris usul berstatus 'Menunggu Persetujuan'; tombol [[Setujui]] Anda abu-abu dengan tulisan 'perlu orang lain' (pengusul tidak boleh menyetujui sendiri).",
+   "aksi": "Buka tab [[Buka Periode]]. Pilih periode dan isi alasan, lalu klik [[Ajukan Usul]].",
+   "isi": "*Periode tertutup*: September 2026 · *Alasan (wajib)*: Latihan F18 — contoh koreksi salah akun beban",
+   "hasil": "Pesan hijau 'Usul buka periode dikirim. Perlu disetujui admin/manager LAIN (kontrol ganda) agar jendela terbuka.' Baris usul berstatus 'Menunggu Persetujuan'; tombol [[Setujui]] Anda abu-abu dengan tulisan 'perlu orang lain'.",
    "gambar": "uji/hasil/F18/06-usul-buka-periode.png"
   },
   {
    "no": 7,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Tutup Buku › Posting Gagal",
-   "aksi": "Tab [[Posting Gagal]]",
+   "aksi": "Buka tab [[Posting Gagal]].",
    "isi": "",
-   "hasil": "Daftar dokumen yang jurnalnya gagal tercatat (jenis, nomor, penyebab, [[Ulang Posting]]); bila kosong: 'Tidak ada dokumen dengan jurnal gagal. Semua posting tercatat.' Jumlahnya sama dengan kartu 'Posting gagal' di Beranda Keuangan dan butir daftar periksa 'Tidak ada jurnal yang gagal diposting'.",
+   "hasil": "Daftar dokumen yang jurnalnya gagal tercatat, dengan tombol [[Ulang Posting]]. Bila kosong: 'Tidak ada dokumen dengan jurnal gagal. Semua posting tercatat.'",
    "gambar": "uji/hasil/F18/07-posting-gagal.png"
   },
   {
    "no": 8,
    "peran": "Admin (pelatih, orang kedua)",
    "menu": "Akuntansi & Pajak › Tutup Buku › Buka Periode",
-   "aksi": "Masuk sebagai admin, PT Sukacita → baris usul → [[Tolak]] → isi alasan → [[Tolak Usul]]",
+   "aksi": "Masuk sebagai admin (PT Sukacita). Pada baris usul, klik [[Tolak]], isi alasan, lalu klik [[Tolak Usul]].",
    "isi": "*Alasan menolak*: Latihan selesai — tidak ada koreksi",
-   "hasil": "Status usul 'Ditolak' dengan alasannya; periode tetap tertutup. (Bila [[Setujui]]: periode terbuka sementara beberapa jam dan pita merah tampil untuk SEMUA pengguna — tidak dilakukan saat latihan.)",
+   "hasil": "Pesan 'Usul buka periode ditolak.' Status usul 'Ditolak' beserta alasannya; periode tetap tertutup.",
    "gambar": "uji/hasil/F18/08-usul-ditolak.png"
   },
   {
    "no": 9,
    "peran": "Admin (pelatih)",
    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
-   "aksi": "Riwayat Tutup Buku: baris September 2026 → [[Buka Kembali]] → dialog [[Buka Kembali]]",
+   "aksi": "Di Riwayat Tutup Buku, klik [[Buka Kembali]] pada baris September 2026. Konfirmasi dengan [[Buka Kembali]].",
    "isi": "",
-   "hasil": "Pesan 'Periode September 2026 dibuka kembali (jurnal penutup dianulir).'; status baris 'Dibuka'; kartu PERIODE TERTUTUP kembali seperti semula. Tombol [[Buka Kembali]] hanya terlihat oleh Admin (izin buka kembali tutup buku).",
+   "hasil": "Pesan 'Periode September 2026 dibuka kembali (jurnal penutup dianulir).' Status baris menjadi 'Dibuka' dan kartu PERIODE TERTUTUP kembali seperti semula.",
    "gambar": "uji/hasil/F18/09-riwayat-dibuka-kembali.png"
   },
   {
    "no": 10,
    "peran": "Pelatih",
    "menu": "Akuntansi & Pajak › Tutup Buku",
-   "aksi": "Pastikan keadaan periode kembali seperti sebelum demo",
+   "aksi": "Pastikan keadaan periode sama seperti sebelum demo.",
    "isi": "",
-   "hasil": "Riwayat: September 2026 berstatus 'Dibuka', usul berstatus 'Ditolak'; PERIODE TERTUTUP sama dengan sebelum demo dan tidak ada pita merah 'periode dibuka' di bilah atas.",
+   "hasil": "Riwayat menunjukkan September 2026 berstatus 'Dibuka' dan usul berstatus 'Ditolak'. PERIODE TERTUTUP sama dengan sebelum demo, dan tidak ada pita merah 'periode dibuka' di bilah atas.",
    "gambar": "uji/hasil/F18/09-riwayat-dibuka-kembali.png"
   }
  ],
  "cek_buku": [
-  "Pratinjau Oktober: Pendapatan, Beban, Laba/Rugi = jumlah jurnal akun 4-…/5-…/6-… bertanggal 1–31 Okt (uji menghitung ulang); jurnal penutup pratinjau seimbang.",
-  "Setelah Tutup Buku: server mencatat September 2026 'closed' dan tanggal 15 Sep dinyatakan tertutup; setelah Buka Kembali: tidak tertutup lagi.",
-  "Usul buka periode tercatat 'pending' lalu 'rejected'; tidak ada jendela buka yang aktif.",
-  "Jumlah Posting Gagal = API posting gagal (0 saat uji).",
-  "Akhir latihan: daftar periode tertutup & usul hidup PT Sukacita SAMA dengan sebelum latihan (diperiksa otomatis)."
+  "Pratinjau Oktober (contoh): 6-1000 Beban Gaji (K) Rp 45.300.000 · 6-1100 Beban BPJS (Perusahaan) (K) Rp 4.543.612 · 6-5000 Beban Insentif Penjualan (K) Rp 4.521.000 · 3-2000 Laba Ditahan (D) Rp 54.364.612 — seimbang; angkanya = jurnal akun 4-…, 5-…, 6-… bertanggal 1–31 Okt",
+  "Sesudah Tutup Buku, September 2026 terkunci; sesudah Buka Kembali, tidak terkunci lagi",
+  "Usul buka periode tercatat 'Menunggu Persetujuan' lalu 'Ditolak'; tidak ada jendela buka yang aktif",
+  "Akhir latihan: daftar periode tertutup dan usul aktif PT Sukacita sama dengan sebelum latihan"
  ],
  "kesalahan_umum": [
-  "Menutup bulan yang masih dipakai latihan (Oktober: jurnal gaji) — jurnal mundur peserta lain akan ditolak.",
-  "Mencari daftar periksa sebelum menekan [[Pratinjau]] — daftar periksa dimuat bersama pratinjau.",
-  "Mengira Buka Periode = membatalkan penutupan. Buka Periode hanya jendela sementara (dua orang, berbatas jam); membatalkan penutupan = [[Buka Kembali]] oleh Admin.",
-  "Menyetujui usul sendiri — tidak bisa (kontrol ganda); minta admin/manajer lain.",
-  "Menutup bulan berjalan dengan saldo Suspense ≠ 0 — diblokir; reklasifikasi dulu di seksi Akun sementara."
+  "Menutup bulan yang masih dipakai latihan (Oktober). Jurnal mundur peserta lain akan ditolak.",
+  "Mencari daftar periksa sebelum menekan [[Pratinjau]]. Daftar periksa dimuat bersama pratinjau.",
+  "Mengira Buka Periode sama dengan membatalkan penutupan. Buka Periode hanya jendela sementara; membatalkan penutupan = [[Buka Kembali]] oleh Admin.",
+  "Menutup bulan dengan saldo Suspense tidak nol. Penutupan diblokir; reklasifikasi dulu di bagian 'Akun sementara'."
  ],
- "catatan_pelatih": "PENTING di VPS: tutup buku berlaku untuk SEMUA pengguna PT Sukacita, jadi langkah 4–8 dilakukan pelatih sebagai DEMO (peserta menonton), bukan oleh tiap peserta. Pakai bulan kosong (September 2026) dan segera Buka Kembali; jangan menutup Oktober selama latihan penggajian masih berjalan, dan jangan pernah menutup November (bulan berjalan). Jangan menyetujui usul Buka Periode saat latihan: jendela aktif memunculkan pita merah untuk semua pengguna selama berjam-jam. Riwayat (penutupan 'Dibuka', usul 'Ditolak') tetap tersimpan sebagai jejak audit — itu wajar. Tombol 'Reopen' sudah diganti label 'Buka Kembali'.",
+ "catatan_pelatih": "Penting di VPS: tutup buku berlaku untuk semua pengguna PT Sukacita, jadi langkah 4–9 diperagakan pelatih (peserta menonton), bukan dikerjakan tiap peserta. Pakai bulan kosong (September 2026) dan segera Buka Kembali. Jangan menutup Oktober selama latihan penggajian berjalan, dan jangan pernah menutup November (bulan berjalan). Jangan menyetujui usul Buka Periode saat latihan: jendela aktif memunculkan pita merah untuk semua pengguna selama berjam-jam. Riwayat (penutupan 'Dibuka', usul 'Ditolak') tetap tersimpan sebagai jejak audit; itu wajar, dan baris dari uji sebelumnya bisa sudah ada. Data latihan berisi penggajian September (KSC/PAY-00002) yang masih menunggu pengesahan, sehingga daftar periksa September menulis 'Perlu Dilihat' dan jendela tutup buku menampilkan peringatan oranye; penutupan tetap bisa dilakukan. Tombol 'Reopen' sudah berganti label menjadi 'Buka Kembali'.",
  "uji": {
   "berkas": "uji/F18_tutup_buku.js",
   "peserta_uji": "05"

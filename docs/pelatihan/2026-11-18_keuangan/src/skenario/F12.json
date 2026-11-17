@@ -1,12 +1,19 @@
 {
  "kode": "F12",
- "judul": "Kontrabon (tukar faktur) — siapa mengerjakan apa, sampai dibayar Finance",
+ "modul": "3.2",
+ "judul": "Kontrabon (tukar faktur) — dari tanda terima sampai dibayar",
  "bagian": "A",
- "tujuan": "Peserta memahami siklus kontrabon dan pembagian tugasnya: Manajer membuat tanda terima tukar faktur, mengajukan, memverifikasi 3-way match dan menjadwalkan bayar; orang KEDUA (Admin) menyetujui; Finance mencatat pembayarannya. Peserta membuktikan tagihan menjadi Lunas lewat kontrabon dan jurnalnya seimbang.",
- "kapan": "Saat pemasok datang menukar faktur (mis. tiap Selasa) dengan beberapa faktur sekaligus: faktur ditukar tanda terima bernomor KSC/CB-…, dibayar sekali sesuai jadwal. Finance setiap hari bayar memeriksa kartu 'Dijadwalkan bayar'.",
+ "tujuan": "Peserta memahami siklus kontrabon dan pembagian tugasnya, lalu mencatat pembayarannya sebagai Finance.",
+ "kapan": "Saat pemasok datang menukar beberapa faktur sekaligus, misalnya tiap Selasa. Finance memeriksa kartu 'Dijadwalkan bayar' setiap hari bayar.",
+ "konsep": [
+  "Kontrabon adalah tanda terima tukar faktur: pemasok menyerahkan faktur, kita memberi nomor KSC/CB-… dan tanggal janji bayar.",
+  "Pembagian tugas: Manajer membuat, mengajukan, memverifikasi, dan menjadwalkan; orang kedua (Admin) menyetujui; Finance membayar.",
+  "Kontrol dua orang: orang yang mengajukan kontrabon tidak boleh menyetujuinya sendiri.",
+  "Kontrabon tidak membuat jurnal sampai dibayar. Hutang sudah diakui saat tagihan terposting."
+ ],
  "peran": "Finance (akun peserta) + Manajer (manager@) + Admin (admin@)",
  "menit": 30,
- "data_awal": "Kartu Peserta baris *a_dasar:tagihan_kontrabon*: tagihan kedua pemasok Anda (contoh peserta 04: VB-00009, faktur INV-LTH04-…, total Rp 1.287.600), terposting dan belum dibayar. Akun Manajer: manager@kainnusantara.id, akun Admin: admin@kainnusantara.id (sandi demo12345). Kerjakan sesudah F11.",
+ "data_awal": "Kartu Peserta › Tagihan untuk kontrabon: tagihan kedua pemasok Anda, terposting dan belum dibayar (contoh: VB-00005, Rp 1.287.600). Akun Manajer manager@kainnusantara.id dan akun Admin admin@kainnusantara.id, sandi demo12345. Kerjakan sesudah F11.",
  "alur": [
   {
    "peran": "Pemasok",
@@ -50,106 +57,105 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Hutang › Kontrabon",
-   "aksi": "Dengan akun peserta, klik menu [[Hutang]] lalu tab [[Kontrabon]]",
+   "aksi": "Dengan akun peserta, klik [[Hutang]] lalu tab [[Kontrabon]].",
    "isi": "",
-   "hasil": "Layar 'Kontrabon · Tukar Faktur Supplier' dengan kartu Menunggu tindakan, Dijadwalkan bayar, Jatuh tempo ≤ 7 hari, Sengketa, Lewat batas waktu, GR belum ditagih. TIDAK ada tombol [[Kontrabon baru]] — Finance hanya melihat & membayar.",
+   "hasil": "Layar 'Kontrabon · Tukar Faktur Supplier' dengan kartu MENUNGGU TINDAKAN, DIJADWALKAN BAYAR, JATUH TEMPO ≤ 7 HARI, SENGKETA, LEWAT BATAS WAKTU, dan GR BELUM DITAGIH. Tidak ada tombol [[Kontrabon baru]] untuk Finance.",
    "gambar": "uji/hasil/F12/02-finance-kontrabon.png"
   },
   {
    "no": 2,
    "peran": "Manajer",
    "menu": "Keuangan › Hutang › Kontrabon",
-   "aksi": "Keluar, masuk sebagai Manajer, buka Kontrabon → [[Kontrabon baru]] → pilih *Supplier yang datang menukar faktur*",
-   "isi": "*Email*: manager@kainnusantara.id · *Kata sandi*: demo12345 · *Supplier*: Latihan NN · Pemasok Grey Peserta NN",
-   "hasil": "Wizard 3 langkah (Pilih supplier · Pilih faktur · Periksa & terbitkan). Ringkasan: Tagihan siap 1 (Rp 1.287.600), Potongan tersedia 0, Belum ditagih Rp 0, Termin NET30 — jatuh tempo diusulkan +30 hari.",
+   "aksi": "Keluar, lalu masuk sebagai Manajer. Di Kontrabon, klik [[Kontrabon baru]] dan pilih pemasok.",
+   "isi": "*Email*: manager@kainnusantara.id · *Kata sandi*: demo12345 · *Supplier yang datang menukar faktur*: Latihan NN · Pemasok Grey Peserta NN",
+   "hasil": "Wizard tiga langkah (Pilih supplier · Pilih faktur · Periksa & terbitkan). Ringkasan: TAGIHAN SIAP 1, POTONGAN TERSEDIA 0, BELUM DITAGIH Rp 0, dan TERMIN NET30 dengan jatuh tempo yang diusulkan.",
    "gambar": "uji/hasil/F12/04-wizard-supplier.png"
   },
   {
    "no": 3,
    "peran": "Manajer",
    "menu": "Wizard Kontrabon baru",
-   "aksi": "[[Lanjut]] → pastikan hanya faktur Anda (tagihan_kontrabon) yang tercentang → [[Lanjut]]",
+   "aksi": "Klik [[Lanjut]]. Pastikan hanya tagihan kontrabon Anda yang tercentang, lalu klik [[Lanjut]].",
    "isi": "",
-   "hasil": "'Terpilih 1 faktur dari 1 PO · nilai Rp 1.287.600'.",
+   "hasil": "Tertulis 'Terpilih 1 faktur dari 1 PO · nilai Rp …'.",
    "gambar": "uji/hasil/F12/05-wizard-faktur.png"
   },
   {
    "no": 4,
    "peran": "Manajer",
    "menu": "Wizard Kontrabon baru",
-   "aksi": "Periksa tanggal tukar faktur & jatuh tempo, centang *Ajukan langsung*, klik [[Terbitkan kontrabon]]",
-   "isi": "*Tanggal tukar faktur*: hari ini · *Jatuh tempo*: biarkan usulan · *PIC pemasok*: opsional",
-   "hasil": "Bilah hijau 'Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp 1.287.600.'; rincian kontrabon terbuka berstatus 'Diajukan', tombol utama [[Verifikasi 3-way match]].",
+   "aksi": "Periksa tanggal dan centang *Ajukan langsung*. Klik [[Terbitkan kontrabon]].",
+   "isi": "*Tanggal tukar faktur*: hari ini · *Jatuh tempo*: biarkan usulan · *PIC pemasok*: boleh kosong",
+   "hasil": "Bilah hijau 'Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp ….' Rincian kontrabon berstatus 'Diajukan' dengan tombol [[Verifikasi 3-way match]].",
    "gambar": "uji/hasil/F12/07-kontrabon-terbit.png"
   },
   {
    "no": 5,
    "peran": "Manajer",
    "menu": "Rincian kontrabon",
-   "aksi": "Klik [[Verifikasi 3-way match]]",
+   "aksi": "Klik [[Verifikasi 3-way match]].",
    "isi": "",
-   "hasil": "Status 'Terverifikasi' dan bilah 'KSC/CB-… terverifikasi — 3-way match dijalankan ulang.'",
+   "hasil": "Status menjadi 'Terverifikasi' dan muncul bilah 'KSC/CB-… terverifikasi — 3-way match dijalankan ulang.'",
    "gambar": "uji/hasil/F12/08-kontrabon-verifikasi.png"
   },
   {
    "no": 6,
    "peran": "Manajer",
    "menu": "Rincian kontrabon",
-   "aksi": "(Coba) klik [[Setujui kontrabon]] dengan akun Manajer yang sama",
+   "aksi": "Coba klik [[Setujui kontrabon]] dengan akun Manajer yang sama.",
    "isi": "",
-   "hasil": "Ditolak dengan kotak merah: 'Kontrabon harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.' — inilah kontrol dua orang.",
+   "hasil": "Ditolak dengan kotak merah 'Kontrabon harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. …' Inilah kontrol dua orang.",
    "gambar": "uji/hasil/F12/09-tolak-setuju-sendiri.png"
   },
   {
    "no": 7,
    "peran": "Admin",
    "menu": "Keuangan › Hutang › Kontrabon",
-   "aksi": "Masuk sebagai Admin, cari nomor kontrabon di *Cari nomor / supplier*, klik barisnya → [[Setujui kontrabon]]",
-   "isi": "*Email*: admin@kainnusantara.id · *Kata sandi*: demo12345 · *Cari*: KSC/CB-…",
-   "hasil": "Status 'Disetujui'; bilah 'KSC/CB-… disetujui.'; tombol utama berikutnya [[Jadwalkan pembayaran]].",
+   "aksi": "Masuk sebagai Admin. Cari nomor kontrabon dan klik barisnya, lalu klik [[Setujui kontrabon]].",
+   "isi": "*Email*: admin@kainnusantara.id · *Kata sandi*: demo12345 · *Cari nomor / supplier*: KSC/CB-…",
+   "hasil": "Status 'Disetujui' dan bilah 'KSC/CB-… disetujui.' Tombol berikutnya: [[Jadwalkan pembayaran]].",
    "gambar": "uji/hasil/F12/11-kontrabon-disetujui.png"
   },
   {
    "no": 8,
    "peran": "Manajer",
    "menu": "Keuangan › Hutang › Kontrabon",
-   "aksi": "Masuk lagi sebagai Manajer, buka kontrabon → [[Jadwalkan pembayaran]] → isi → [[Simpan jadwal bayar]]",
-   "isi": "*Tanggal rencana pembayaran*: biarkan (= jatuh tempo) · *Cara bayar*: Transfer bank · *Rekening rencana*: BCA Operasional KSC · *Catatan*: opsional",
-   "hasil": "Status 'Dijadwalkan bayar'; kartu 'Dijadwalkan bayar' bertambah.",
+   "aksi": "Masuk lagi sebagai Manajer dan buka kontrabon. Klik [[Jadwalkan pembayaran]], lalu [[Simpan jadwal bayar]].",
+   "isi": "*Tanggal rencana pembayaran (wajib)*: biarkan (= jatuh tempo) · *Cara bayar*: Transfer bank · *Rekening rencana*: BCA Operasional KSC · *Catatan*: boleh kosong",
+   "hasil": "Status 'Dijadwalkan bayar' dan kartu DIJADWALKAN BAYAR bertambah.",
    "gambar": "uji/hasil/F12/13-jadwal-bayar.png"
   },
   {
    "no": 9,
    "peran": "Finance",
    "menu": "Keuangan › Hutang › Kontrabon",
-   "aksi": "Masuk dengan akun peserta, cari nomor kontrabon, klik barisnya → [[Catat pembayaran]]",
-   "isi": "*Cari*: KSC/CB-… · Form Bayar pemasok: *Nominal dibayar* terisi Rp 1.287.600 · *Rekening sumber* BCA Operasional KSC (dari jadwal)",
-   "hasil": "Form 'Bayar pemasok' untuk 'Kontrabon KSC/CB-…', Sisa hutang Rp 1.287.600, rekening sudah terpilih dari jadwal.",
+   "aksi": "Masuk dengan akun peserta. Cari nomor kontrabon dan klik barisnya, lalu klik [[Catat pembayaran]].",
+   "isi": "*Cari nomor / supplier*: KSC/CB-…",
+   "hasil": "Form 'Bayar pemasok' untuk 'Kontrabon KSC/CB-…': Sisa hutang, *Nominal dibayar* terisi penuh, dan *Rekening sumber* BCA Operasional KSC sesuai jadwal.",
    "gambar": "uji/hasil/F12/15-form-bayar-kontrabon.png"
   },
   {
    "no": 10,
    "peran": "Finance",
-   "menu": "Form Bayar pemasok",
-   "aksi": "Klik [[Bayar]] → [[Ya, bayar]]",
+   "menu": "Form 'Bayar pemasok'",
+   "aksi": "Klik [[Bayar]], lalu [[Ya, bayar]].",
    "isi": "",
-   "hasil": "Bilah hijau 'Pembayaran dicatat: Rp 1.287.600 lewat kas KSC/CASH-… — kontrabon LUNAS.'; status 'Sudah dibayar'; tagihan VB-… di tab Tagihan berstatus Lunas.",
+   "hasil": "Bilah hijau 'Pembayaran dicatat: Rp … lewat kas KSC/CASH-… — kontrabon LUNAS.' Status kontrabon 'Sudah dibayar'; tagihan VB-… di tab Tagihan berstatus Lunas.",
    "gambar": "uji/hasil/F12/16-kontrabon-dibayar.png"
   }
  ],
  "cek_buku": [
-  "Jurnal pembayaran kontrabon: 2-1100 Hutang Usaha (D) Rp 1.287.600 · 1-1100 Kas Besar / Bank (K) Rp 1.287.600 — seimbang; SATU kas keluar untuk seluruh kontrabon.",
-  "Tagihan di dalam kontrabon menjadi 'Lunas' (pelunasan 'lewat kontrabon KSC/CB-…' di riwayat pembayarannya); Sisa Hutang Rp 0.",
-  "Membuat, memverifikasi, menyetujui dan menjadwalkan kontrabon TIDAK membuat jurnal — hutang sudah diakui saat tagihan terposting; jurnal baru terbit saat dibayar."
+  "Jurnal pembayaran (contoh): 2-1100 Hutang Usaha (D) Rp 1.287.600 · 1-1100 Kas Besar / Bank (K) Rp 1.287.600 — seimbang; satu kas keluar untuk seluruh kontrabon",
+  "Tagihan di dalam kontrabon menjadi 'Lunas' dengan Sisa Hutang Rp 0",
+  "Membuat, memverifikasi, menyetujui, dan menjadwalkan kontrabon tidak membuat jurnal"
  ],
  "kesalahan_umum": [
-  "Finance mencari tombol [[Kontrabon baru]] — tidak ada untuk Finance (izin lihat & bayar). Kontrabon dibuat Manajer.",
-  "Manajer menyetujui kontrabon buatannya sendiri — ditolak (kontrol dua orang); harus orang lain (di data latihan: Admin).",
-  "Finance membuka kontrabon berstatus 'Disetujui' dan tidak menemukan tombol bayar — kontrabon harus 'Dijadwalkan bayar' dulu (layar menulis: 'Langkah berikutnya — Jadwalkan pembayaran — dikerjakan pemegang izin kontrabon').",
-  "Di wizard ikut mencentang tagihan F11 yang belum dibayar — hapus centangnya; satu faktur hanya boleh di satu kontrabon.",
-  "Lupa keluar dari akun Manajer/Admin sebelum langkah Finance — pembayaran tercatat atas nama Manajer, bukan peserta."
+  "Finance mencari tombol [[Kontrabon baru]]. Kontrabon dibuat Manajer; Finance hanya melihat dan membayar.",
+  "Manajer menyetujui kontrabon buatannya sendiri. Ditolak; harus orang lain (di data latihan: Admin).",
+  "Finance tidak menemukan tombol bayar pada kontrabon 'Disetujui'. Kontrabon harus 'Dijadwalkan bayar' dulu.",
+  "Lupa keluar dari akun Manajer atau Admin sebelum langkah Finance. Pembayaran tercatat atas nama orang lain."
  ],
- "catatan_pelatih": "Pembagian izin bawaan: Finance = contra_bon lihat + bayar (K-17); Manajer = buat/ubah/verifikasi/setujui/jadwalkan; kontrol dua orang 'Kontrabon' bawaan = 2 orang, jadi penyetuju ≠ pembuat (di data demo: Admin). Pilihan penyelenggaraan: (a) peserta berganti akun sendiri (manager@ / admin@ dipakai bersama, sesi paralel aman), atau (b) pelatih memperagakan langkah 2–8 di proyektor untuk satu peserta, peserta lain mengerjakan langkah Manajer/Admin bergiliran. Jangan pakai [[Sengketakan]] atau [[Batalkan]] pada kontrabon latihan. Perbaikan 17 Nov: Finance yang membuka kontrabon belum dijadwalkan kini membaca langkah berikutnya, bukan 'Peran Anda hanya bisa memantau kontrabon — keputusan atas uang ada di Keuangan'. Pertanyaan terbuka untuk pemilik: server mengizinkan bayar kontrabon berstatus 'Disetujui' (tanpa jadwal), tetapi layar baru menampilkan tombol bayar setelah dijadwalkan — tetap begitu?",
+ "catatan_pelatih": "Pembagian izin bawaan: Finance melihat dan membayar kontrabon; Manajer membuat, mengubah, memverifikasi, menyetujui, dan menjadwalkan. Kontrol dua orang untuk kontrabon aktif, jadi penyetuju harus berbeda dari pembuat (di data demo: Admin). Dua cara menjalankan: (a) peserta berganti akun sendiri (manager@ dan admin@ dipakai bersama, sesi paralel aman), atau (b) pelatih memperagakan langkah 2–8 di proyektor, lalu peserta mengerjakan langkah Finance. Di wizard, hanya tagihan kontrabon peserta yang boleh dicentang; satu faktur hanya boleh ada di satu kontrabon. Jangan pakai [[Sengketakan]] atau [[Batalkan]] pada kontrabon latihan. Perbaikan 17 Nov: Finance yang membuka kontrabon belum dijadwalkan kini membaca 'Langkah berikutnya — Jadwalkan pembayaran — dikerjakan pemegang izin kontrabon'. Pertanyaan untuk pemilik: server mengizinkan bayar kontrabon berstatus 'Disetujui' tanpa jadwal, sedangkan layar baru menampilkan tombol bayar setelah dijadwalkan — tetap begitu?",
  "uji": {
   "berkas": "uji/F12_kontrabon.js",
   "peserta_uji": "04"

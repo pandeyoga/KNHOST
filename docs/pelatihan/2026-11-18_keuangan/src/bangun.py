@@ -18,6 +18,7 @@ from html import escape
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
+REPO = os.path.abspath(os.path.join(ROOT, "..", "..", ".."))
 NAME = "Panduan_Pelatihan_Keuangan_ERP_Kain_Nusantara"
 DOC_ID = "KN-LATIH-FIN-001"
 DATE = "18 November 2026"
@@ -100,20 +101,38 @@ ol.navsteps { margin:.8mm 0 0; padding-left:5mm; } ol.navsteps li { margin:.4mm 
 """
 
 
+# Label Kartu Peserta — harus sama persis dengan LABEL di backend/scripts/seed_pelatihan_keuangan_kn.py (dicek saat membangun)
 KARTU = [
+    ("a_dasar:akun", "Akun", "F01"),
+    ("a_dasar:mitra", "Pelanggan & pemasok", "F01"),
     ("a_dasar:so_lunas", "SO untuk pelunasan penuh", "F02 · F13"),
-    ("a_dasar:so_sebagian", "SO untuk bayar sebagian & lebih bayar", "F03 · F04"),
-    ("b_piutang:cicilan", "Pelanggan cicilan + rencana pembayaran", "F05"),
-    ("b_piutang:izin_kredit", "Pengajuan izin kredit (menunggu Manajer)", "F06"),
-    ("c_kas:pd_kas_kecil", "PD kas kecil (uang muka karyawan)", "F07"),
-    ("c_kas:titipan_sales", "Titipan tunai sales", "F08"),
-    ("c_kas:kwitansi_transfer", "Kwitansi transfer untuk rekonsiliasi", "F10"),
-    ("a_dasar:tagihan_bayar", "Tagihan supplier untuk dibayar", "F11"),
-    ("a_dasar:tagihan_kontrabon", "Tagihan supplier untuk kontrabon", "F12"),
+    ("a_dasar:so_sebagian", "SO untuk bayar sebagian", "F03 · F04"),
+    ("b_piutang:so_berikut", "Tagihan berikutnya", "F04"),
+    ("b_piutang:cicilan", "Pelanggan cicilan", "F05"),
+    ("b_piutang:izin_kredit", "Izin kredit", "F06"),
+    ("c_kas:pd_kas_kecil", "PD kas kecil", "F07"),
+    ("c_kas:titipan_sales", "Titipan sales", "F08"),
+    ("c_kas:kwitansi_transfer", "Kwitansi transfer", "F10"),
+    ("a_dasar:tagihan_bayar", "Tagihan pemasok untuk dibayar", "F11"),
+    ("a_dasar:tagihan_kontrabon", "Tagihan untuk kontrabon", "F12"),
     ("d_hutang:sample_berbayar", "Pesanan sample berbayar", "F14"),
-    ("d_hutang:gaji_susulan", "Proses gaji susulan", "F15"),
-    ("e_buku:so_jejak", "SO lunas untuk penelusuran jurnal", "F16"),
+    ("d_hutang:gaji_susulan", "Gaji susulan", "F15"),
+    ("e_buku:so_jejak", "SO lunas untuk penelusuran", "F16"),
 ]
+
+
+def kartu_bernomor(sc):
+    """KARTU dengan kode skenario diganti nomor materi (mis. F02 → 3.1.1); sekaligus cek label = skrip data latihan."""
+    nomor = {d["kode"]: d.get("_no", d["kode"]) for d in sc}
+    try:
+        seed = open(os.path.join(REPO, "backend", "scripts", "seed_pelatihan_keuangan_kn.py"), encoding="utf-8").read()
+        label = dict(re.findall(r'"([a-z_]+:[a-z_]+)": "([^"]+)"', seed[seed.index("LABEL = {"):seed.index("}", seed.index("LABEL = {"))]))
+        beda = [(k, lbl, label.get(k)) for k, lbl, _ in KARTU if label.get(k) != lbl]
+        if beda:
+            print("PERINGATAN label Kartu Peserta beda dengan skrip data latihan:", beda)
+    except (OSError, ValueError):
+        pass
+    return [(k, lbl, " · ".join(nomor.get(c.strip(), c.strip()) for c in sk.split("·"))) for k, lbl, sk in KARTU]
 
 MENU = [
     ("Keuangan › Beranda Keuangan", "Perlu Tindakan (antrean kerja: faktur pajak perlu terbit, uang masuk perlu dicatat, selisih bayar) · Posisi (kas, bank, piutang, hutang) · Analisis"),
@@ -572,7 +591,7 @@ def modul_html(m, isi) -> str:
 
 def build_html(sc) -> str:
     KARTU_ROWS = "".join(f'<tr><td>{escape(lbl)} <span class="muted">(dipakai di {escape(sk)})</span></td><td></td></tr>'  # noqa: N806
-                         for _k, lbl, sk in KARTU)
+                         for _k, lbl, sk in kartu_bernomor(sc))
     MENU_ROWS = "".join(f'<tr><td><span class="nav">{escape(m)}</span></td><td>{escape(t)}</td></tr>' for m, t in MENU)  # noqa: N806
     ISTILAH_ROWS = "".join(f"<tr><td><b>{escape(k)}</b></td><td>{escape(v)}</td></tr>" for k, v in ISTILAH)  # noqa: N806
     PERAN_ROWS = "".join(f"<tr><td><b>{escape(k)}</b></td><td>{escape(v)}</td></tr>" for k, v in KUR.get("peran", []))  # noqa: N806

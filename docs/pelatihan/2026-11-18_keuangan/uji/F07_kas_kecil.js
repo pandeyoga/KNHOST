@@ -159,7 +159,7 @@ const PAKAI = LPJ.reduce((s, l) => s + l.amount, 0);   // 232.000
     });
 
   await r.step(8, "Finance", `Login akun peserta → cek jurnal LPJ: Buku Besar › Jurnal → ketik nomor LPJ (KSC/STL-…) → klik baris "LPJ Kas Kecil"`,
-    `Jurnal "Pertanggungjawaban petty cash KSC/STL-…": Debit 6-4600 Beban Transportasi & BBM ${rp(LPJ[0].amount)} · Debit 6-4300 Beban Cetak, Fotokopi & Materai ${rp(LPJ[1].amount)} · Kredit 1-1400 Uang Muka ${rp(PAKAI)}`, async () => {
+    `Jurnal "Pertanggungjawaban kas kecil KSC/STL-…": Debit 6-4600 Beban Transportasi & BBM ${rp(LPJ[0].amount)} · Debit 6-4300 Beban Cetak, Fotokopi & Materai ${rp(LPJ[1].amount)} · Kredit 1-1400 Uang Muka ${rp(PAKAI)}`, async () => {
       const je = kb.seimbang(kb.jurnal("petty_cash_settlement", stl.id), "jurnal LPJ");
       for (const l of LPJ) assert(kb.adaBaris(je, l.akun, "D", l.amount), `beban ${l.akun}: ${kb.teksJurnal(je)}`);
       assert(kb.adaBaris(je, "1-1400", "K", PAKAI), `kredit uang muka: ${kb.teksJurnal(je)}`);

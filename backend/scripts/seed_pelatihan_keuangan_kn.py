@@ -53,14 +53,14 @@ def preps():
     return out
 
 
-LABEL = {
-    "a_dasar:akun": "Akun", "a_dasar:mitra": "Pelanggan & pemasok", "a_dasar:so_lunas": "F02/F13 SO pelunasan penuh",
-    "a_dasar:so_sebagian": "F03/F04 SO bayar sebagian", "b_piutang:cicilan": "F05 Pelanggan cicilan",
-    "b_piutang:izin_kredit": "F06 Izin kredit", "b_piutang:so_berikut": "F04 Tagihan berikutnya",
-    "c_kas:pd_kas_kecil": "F07 PD kas kecil", "c_kas:titipan_sales": "F08 Titipan sales",
-    "c_kas:kwitansi_transfer": "F10 Kwitansi transfer", "a_dasar:tagihan_bayar": "F11 Tagihan dibayar",
-    "a_dasar:tagihan_kontrabon": "F12 Tagihan kontrabon", "d_hutang:sample_berbayar": "F14 Sample berbayar",
-    "d_hutang:gaji_susulan": "F15 Gaji susulan", "e_buku:so_jejak": "F16 SO jejak dokumen",
+LABEL = {   # sama persis dengan label Kartu Peserta di manual pelatihan (docs/pelatihan/2026-11-18_keuangan/src/bangun.py)
+    "a_dasar:akun": "Akun", "a_dasar:mitra": "Pelanggan & pemasok", "a_dasar:so_lunas": "SO untuk pelunasan penuh",
+    "a_dasar:so_sebagian": "SO untuk bayar sebagian", "b_piutang:cicilan": "Pelanggan cicilan",
+    "b_piutang:izin_kredit": "Izin kredit", "b_piutang:so_berikut": "Tagihan berikutnya",
+    "c_kas:pd_kas_kecil": "PD kas kecil", "c_kas:titipan_sales": "Titipan sales",
+    "c_kas:kwitansi_transfer": "Kwitansi transfer", "a_dasar:tagihan_bayar": "Tagihan pemasok untuk dibayar",
+    "a_dasar:tagihan_kontrabon": "Tagihan untuk kontrabon", "d_hutang:sample_berbayar": "Pesanan sample berbayar",
+    "d_hutang:gaji_susulan": "Gaji susulan", "e_buku:so_jejak": "SO lunas untuk penelusuran",
 }
 
 

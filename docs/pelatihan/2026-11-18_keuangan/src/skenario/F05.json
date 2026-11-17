@@ -1,12 +1,19 @@
 {
  "kode": "F05",
+ "modul": "3.1",
  "judul": "Rencana pembayaran (cicilan) & denda keterlambatan",
  "bagian": "A",
- "tujuan": "Peserta bisa membaca rencana cicilan pelanggan (siapa menyusun, baris mana yang telat), memahami cara denda dihitung (sisa cicilan telat × 2%/bulan × hari telat/30, tenggang 0 hari), membuat nota denda dari Saldo & Umur (masih USULAN, belum berjurnal), lalu menerbitkannya sehingga piutang denda masuk buku.",
- "kapan": "Saat pelanggan menyepakati bayar bertahap (Admin Penjualan menyusun rencana), dan rutin (mis. awal bulan / saat Beranda menunjukkan tagihan telat) untuk memeriksa cicilan yang lewat jatuh tempo dan menagihkan dendanya.",
+ "tujuan": "Peserta bisa membaca rencana cicilan pelanggan, membuat nota denda untuk cicilan yang telat, lalu menerbitkannya.",
+ "kapan": "Saat pelanggan sepakat membayar bertahap (rencana disusun Admin Penjualan). Rutin, misalnya awal bulan, untuk menagih denda cicilan yang lewat jatuh tempo.",
+ "konsep": [
+  "Rencana pembayaran membagi satu SO menjadi beberapa cicilan, masing-masing dengan tanggal jatuh tempo sendiri.",
+  "Denda dihitung dari sisa cicilan yang telat: sisa × 2% per bulan × hari telat ÷ 30. Aturan PT Sukacita tidak memberi hari tenggang.",
+  "Nota denda lahir sebagai usulan dan belum masuk buku. Selama masih usulan, nominalnya bisa diubah atau dibebaskan Manajer.",
+  "Setelah diterbitkan, denda menjadi piutang denda (1-1270) dan pendapatan denda (4-9300)."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 25,
- "data_awal": "Kartu Peserta baris *b_piutang:cicilan*: pelanggan KEDUA 'Latihan NN · Toko Kain Cicilan NN' dengan SO terkirim (contoh peserta 02: KSC/SO-00097, total Rp 3.233.985) dan rencana KSC/RPB-… yang disusun Admin Penjualan: Cicilan 1 (50%) Rp 1.616.992 jatuh tempo 28 Okt 2026 — BELUM dibayar (telat ±20 hari, bertambah 1 hari tiap hari); Cicilan 2 (pelunasan) Rp 1.616.993 jatuh tempo 27 Nov 2026. Aturan denda PT: 2% per bulan, tenggang 0 hari, dasar = sisa cicilan yang telat, nota lahir sebagai usulan.",
+ "data_awal": "Kartu Peserta › Pelanggan cicilan: pelanggan kedua Anda 'Latihan NN · Toko Kain Cicilan NN' dengan SO terkirim dan rencana pembayaran KSC/RPB-… yang disusun Admin Penjualan (contoh: KSC/SO-00012, Rp 3.231.765). Cicilan 1 (50%) jatuh tempo 28 Okt 2026 dan belum dibayar (telat sekitar 20 hari). Cicilan 2 (pelunasan) jatuh tempo 27 Nov 2026.",
  "alur": [
   {
    "peran": "Sales",
@@ -35,7 +42,7 @@
   },
   {
    "peran": "Sistem",
-   "label": "Jurnal Piutang Denda D / Pendapatan Denda K"
+   "label": "Jurnal Piutang Denda / Pendapatan Denda"
   }
  ],
  "navigasi": [
@@ -55,43 +62,43 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Piutang",
-   "aksi": "Klik menu [[Piutang]] di grup KEUANGAN",
+   "aksi": "Klik [[Piutang]] di grup KEUANGAN.",
    "isi": "",
-   "hasil": "Hub Piutang terbuka (tab pertama Saldo & Umur).",
+   "hasil": "Halaman Piutang terbuka di tab pertama, Saldo & Umur.",
    "gambar": "uji/hasil/F05/01-menu-rencana-menu.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Rencana & Denda",
-   "aksi": "Klik tab [[Rencana & Denda]]",
+   "aksi": "Klik tab [[Rencana & Denda]].",
    "isi": "",
-   "hasil": "Judul 'Rencana Pembayaran & Denda', lima kartu: RENCANA AKTIF · RENCANA ADA BARIS TELAT · USULAN DENDA · DENDA TERBIT (BELUM DIBAYAR) · DENDA DIBEBASKAN; tab Antrean Denda · Jadwal Pembayaran · Selisih Bayar.",
+   "hasil": "Judul 'Rencana Pembayaran & Denda' dengan lima kartu: RENCANA AKTIF · RENCANA ADA BARIS TELAT · USULAN DENDA · DENDA TERBIT (BELUM DIBAYAR) · DENDA DIBEBASKAN. Di bawahnya ada tab Antrean Denda · Jadwal Pembayaran · Selisih Bayar.",
    "gambar": "uji/hasil/F05/02-menu-rencana-tab.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Rencana & Denda › Jadwal Pembayaran",
-   "aksi": "Klik [[Jadwal Pembayaran]] → ketik 'Latihan NN' di kotak cari",
-   "isi": "*Cari nomor / pesanan / pelanggan*: Latihan NN",
-   "hasil": "Daftar rencana cicilan yang disaring.",
+   "aksi": "Klik [[Jadwal Pembayaran]]. Ketik 'Latihan NN' di kotak cari.",
+   "isi": "*Cari*: Latihan NN",
+   "hasil": "Daftar rencana tersaring ke pelanggan Anda.",
    "gambar": "uji/hasil/F05/03-tab-jadwal-pembayaran.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Rencana & Denda › Jadwal Pembayaran",
-   "aksi": "Baca baris rencana pelanggan Cicilan Anda",
+   "aksi": "Baca baris rencana pelanggan cicilan Anda.",
    "isi": "",
-   "hasil": "Baris KSC/RPB-…: Pesanan KSC/SO-… · Pelanggan 'Latihan NN · Toko Kain Cicilan NN' · Mode 'Bebas / campuran' · Nilai Rp 3.233.985 · Terbayar Rp 0 · Berikutnya '2026-10-28 · Rp 1.616.992' dengan tanda merah '1 telat' · Status 'Aktif'.",
+   "hasil": "Baris KSC/RPB-… menunjukkan pesanan, pelanggan 'Latihan NN · Toko Kain Cicilan NN', mode 'Bebas / campuran', nilai, Terbayar Rp 0, dan Berikutnya '2026-10-28 · Rp …' dengan tanda merah '1 telat'. Status 'Aktif'.",
    "gambar": "uji/hasil/F05/04-rencana-jadwal.png"
   },
   {
    "no": 5,
    "peran": "Finance",
    "menu": "Rencana & Denda › Jadwal Pembayaran",
-   "aksi": "Klik ikon [[Buka pesanan]] (kolom Aksi)",
+   "aksi": "Klik ikon ↗ (Buka pesanan) di kolom Aksi.",
    "isi": "",
    "hasil": "Layar Pesanan Penjualan terbuka dengan pratinjau SO di kanan.",
    "gambar": "uji/hasil/F05/05-buka-pesanan.png"
@@ -100,7 +107,7 @@
    "no": 6,
    "peran": "Finance",
    "menu": "Penjualan › Pesanan (pratinjau SO)",
-   "aksi": "Klik [[Lihat detail & aksi]]",
+   "aksi": "Klik [[Lihat detail & aksi]].",
    "isi": "",
    "hasil": "Jendela detail SO terbuka.",
    "gambar": "uji/hasil/F05/06-lihat-detail-pesanan.png"
@@ -109,105 +116,105 @@
    "no": 7,
    "peran": "Finance",
    "menu": "Detail SO › Jadwal Pembayaran & Denda",
-   "aksi": "Gulir ke panel 'Jadwal Pembayaran & Denda' dan baca barisnya",
+   "aksi": "Gulir ke panel 'Jadwal Pembayaran & Denda'.",
    "isi": "",
-   "hasil": "Label KSC/RPB-…, 'Bebas / campuran · Terbayar Rp 0 dari Rp 3.233.985 · berikutnya 2026-10-28 Rp 1.616.992', tanda '1 baris telat'; tabel Cicilan 1 (50%) dan Cicilan 2 (pelunasan) 'Belum dibayar'. Tombol [[Hitung Denda]] dan [[Ubah Jadwal]] tersedia untuk Finance (Finance boleh MENGUBAH jadwal; MENYUSUN rencana baru = Admin Penjualan/Manajer).",
+   "hasil": "Panel menulis 'Bebas / campuran · Terbayar Rp 0 dari Rp … · berikutnya 2026-10-28 Rp …' dan '1 baris telat'. Tabel berisi Cicilan 1 (50%) dan Cicilan 2 (pelunasan) yang 'Belum dibayar', dengan tombol [[Hitung Denda]] dan [[Ubah Jadwal]].",
    "gambar": "uji/hasil/F05/07-pesanan-jadwal-cicilan.png"
   },
   {
    "no": 8,
    "peran": "Finance",
    "menu": "Keuangan › Piutang",
-   "aksi": "Tutup detail SO (×) → klik menu [[Piutang]]",
+   "aksi": "Tutup detail SO (×). Klik [[Piutang]].",
    "isi": "",
-   "hasil": "Kembali ke hub Piutang.",
+   "hasil": "Halaman Piutang terbuka lagi.",
    "gambar": "uji/hasil/F05/08-menu-saldo-umur-menu.png"
   },
   {
    "no": 9,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Saldo & Umur",
-   "aksi": "Klik tab [[Saldo & Umur]] → cari 'Cicilan NN'",
+   "aksi": "Klik tab [[Saldo & Umur]]. Cari 'Cicilan NN'.",
    "isi": "*Cari pelanggan / sales*: Cicilan NN",
-   "hasil": "Tabel Piutang per Pelanggan tersaring.",
+   "hasil": "Tabel Piutang per Pelanggan tersaring ke pelanggan cicilan Anda.",
    "gambar": "uji/hasil/F05/09-menu-saldo-umur-tab.png"
   },
   {
    "no": 10,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Saldo & Umur",
-   "aksi": "Baca baris pelanggan → klik barisnya",
+   "aksi": "Baca baris pelanggan, lalu klik barisnya.",
    "isi": "",
-   "hasil": "'Ayu Marketing · telat 20 hr', status kredit 'Terblokir'; Belum jatuh tempo Rp 1.616.993 (cicilan 2), 1–30 hari Rp 1.616.992 (cicilan 1), Belum Lunas Rp 3.233.985; kolom Denda 'Rp 21.560 · est. — belum jadi nota' + tombol kecil [[Buat Nota]].",
+   "hasil": "Baris menunjukkan 'Ayu Marketing · telat 20 hr' dan status kredit 'Terblokir'. Cicilan 2 ada di kolom Belum jatuh tempo dan Cicilan 1 di kolom 1-30 hari; kolom Denda menulis 'Rp … est. — belum jadi nota' dengan tombol kecil [[Buat Nota]].",
    "gambar": "uji/hasil/F05/10-umur-pelanggan-telat.png"
   },
   {
    "no": 11,
    "peran": "Finance",
-   "menu": "Pop-up rincian pelanggan",
-   "aksi": "Baca Jadwal Tagihan & Nota Denda → klik [[Buat Nota Denda]]",
+   "menu": "Jendela rincian pelanggan",
+   "aksi": "Baca Jadwal Tagihan dan Nota Denda. Klik [[Buat Nota Denda]].",
    "isi": "",
-   "hasil": "Baris SO 'Telat 20 Hari', EST. DENDA Rp 21.560 'belum jadi nota'; Jadwal Tagihan: Cicilan 1 (50%) jatuh tempo 28 Okt 2026 sisa Rp 1.616.992 telat 20, Cicilan 2 '10 lagi'; 'Nota Denda Pelanggan Ini … est. Rp 21.560 belum jadi nota'.",
+   "hasil": "Sebelum diklik: baris SO 'Telat 20 Hari' dengan EST. DENDA 'belum jadi nota'. Jadwal Tagihan menunjukkan Cicilan 1 (50%) jatuh tempo 28 Okt 2026, telat 20, dan Cicilan 2 '10 lagi'.",
    "gambar": "uji/hasil/F05/11-umur-rincian-sebelum-nota.png"
   },
   {
    "no": 12,
    "peran": "Finance",
-   "menu": "Pop-up rincian pelanggan",
-   "aksi": "Baca pesan hasil",
+   "menu": "Jendela rincian pelanggan",
+   "aksi": "Baca pesan hasil.",
    "isi": "",
-   "hasil": "Pesan '1 nota denda siap: KSC/DN-DENDA-…. Nota masih USULAN — belum menyentuh buku besar.' Tombol [[Buat Nota Denda]] kini MATI dengan alasan tertulis 'Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang.'",
+   "hasil": "Pesan '1 nota denda siap: KSC/DN-DENDA-…. Nota masih USULAN — belum menyentuh buku besar.' Tombol [[Buat Nota Denda]] kini mati dengan alasan 'Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang.'",
    "gambar": "uji/hasil/F05/12-nota-denda-usulan.png"
   },
   {
    "no": 13,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Rencana & Denda",
-   "aksi": "Tutup rincian → klik tab [[Rencana & Denda]] → [[Antrean Denda]] → saring [[Usulan (draf)]], cari nomor nota",
-   "isi": "",
-   "hasil": "Kartu USULAN DENDA berisi Rp 21.560.",
+   "aksi": "Tutup rincian, lalu klik tab [[Rencana & Denda]].",
+   "isi": "Di [[Antrean Denda]]: saring [[Usulan (draf)]] · *Cari*: nomor nota KSC/DN-DENDA-…",
+   "hasil": "Kartu USULAN DENDA berisi nominal nota Anda (contoh: Rp 21.545).",
    "gambar": "uji/hasil/F05/13-tab-rencana-denda.png"
   },
   {
    "no": 14,
    "peran": "Finance",
    "menu": "Rencana & Denda › Antrean Denda",
-   "aksi": "Baca rincian nota → klik [[Terbitkan]]",
+   "aksi": "Baca rincian nota, lalu klik [[Terbitkan]].",
    "isi": "",
-   "hasil": "Nota KSC/DN-DENDA-… 'USULAN (BELUM BERJURNAL)': 'Cicilan 1 (50%) · jatuh tempo 2026-10-28 · telat 20 hari', 'Bunga 2% / bulan × 20/30 hari → Rp 21.560', 'Aturan dari: PT', nominal Rp 21.560. (Ubah Nominal / Bebaskan hanya untuk Manajer.)",
+   "hasil": "Nota KSC/DN-DENDA-… berlabel 'USULAN (BELUM BERJURNAL)' menulis 'Cicilan 1 (50%) · jatuh tempo 2026-10-28 · telat 20 hari', 'Bunga 2% / bulan × 20/30 hari → Rp …', dan 'Aturan dari: PT'.",
    "gambar": "uji/hasil/F05/14-antrean-denda-usulan.png"
   },
   {
    "no": 15,
    "peran": "Finance",
    "menu": "Jendela 'Terbitkan denda …?'",
-   "aksi": "Klik [[Terbitkan]]",
+   "aksi": "Klik [[Terbitkan]].",
    "isi": "",
-   "hasil": "Kalimat 'Denda Rp 21.560 diterbitkan dan dijurnal ke piutang denda pelanggan.'",
+   "hasil": "Muncul kalimat 'Denda Rp … diterbitkan dan dijurnal ke piutang denda pelanggan.'",
    "gambar": "uji/hasil/F05/15-konfirmasi-terbitkan.png"
   },
   {
    "no": 16,
    "peran": "Finance",
    "menu": "Rencana & Denda › Antrean Denda",
-   "aksi": "Saring [[Terbit]]",
+   "aksi": "Saring [[Terbit]].",
    "isi": "",
-   "hasil": "Nota berstatus 'TERBIT (BERJURNAL)'; kartu DENDA TERBIT (BELUM DIBAYAR) bertambah Rp 21.560.",
+   "hasil": "Nota berstatus 'TERBIT (BERJURNAL)'. Kartu DENDA TERBIT (BELUM DIBAYAR) bertambah sebesar nota Anda.",
    "gambar": "uji/hasil/F05/16-denda-terbit.png"
   }
  ],
  "cek_buku": [
-  "Nota usulan (draf) TIDAK punya jurnal.",
-  "Nota terbit: 1-1270 Piutang Denda Pelanggan (D) Rp 21.559,89 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 21.559,89 — seimbang (peserta 02, telat 20 hari: 1.616.992 × 2% × 20/30). Pada 18 Nov telat 21 hari → Rp 22.637,89.",
-  "Piutang usaha SO tidak berubah (Rp 3.233.985); denda adalah piutang terpisah."
+  "Nota usulan (draf) belum berjurnal",
+  "Nota terbit (contoh, telat 20 hari): 1-1270 Piutang Denda Pelanggan (D) Rp 21.545,09 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 21.545,09 — seimbang. Hitungan: Rp 1.615.882 × 2% × 20/30",
+  "Piutang usaha SO tidak berubah; denda adalah piutang terpisah"
  ],
  "kesalahan_umum": [
-  "Mencari tombol 'Susun Jadwal' dengan akun Finance: rencana BARU disusun Admin Penjualan/Manajer; Finance hanya [[Ubah Jadwal]] rencana yang sudah ada.",
-  "Menganggap estimasi denda di Saldo & Umur sudah tagihan: selama 'est. — belum jadi nota' belum ada dokumen maupun jurnal.",
-  "Menerbitkan nota yang masih dinegosiasikan: setelah terbit, perubahan nominal/pembebasan butuh Manajer dan jurnal pembalik.",
-  "Membuat nota dua kali: tombol mati sendiri bila tidak ada denda baru (satu nota per baris per bulan)."
+  "Mencari tombol 'Susun Jadwal' dengan akun Finance. Rencana baru disusun Admin Penjualan atau Manajer; Finance hanya bisa [[Ubah Jadwal]].",
+  "Menganggap estimasi denda di Saldo & Umur sudah tagihan. Selama tertulis 'est. — belum jadi nota', belum ada dokumen maupun jurnal.",
+  "Menerbitkan nota yang masih dinego. Setelah terbit, mengubah nominal atau membebaskan denda butuh Manajer dan jurnal pembalik.",
+  "Mencoba membuat nota dua kali. Tombol mati sendiri bila tidak ada denda baru."
  ],
- "catatan_pelatih": "Tanggal cicilan 1 dibuat 20 hari sebelum hari seed (rencana yang disepakati lalu dicatat belakangan — tanpa ubah database). Angka denda bertambah setiap hari: pada hari pelatihan nominalnya ±Rp 22.6xx bila seed dijalankan 17 Nov. Pelanggan Cicilan sengaja pelanggan KEDUA supaya tidak mengganggu F04 (alokasi 'Tertua dulu'). Status rencana kini 'Aktif' (dulu tertulis 'Active' — perbaikan 17 Nov).",
+ "catatan_pelatih": "Tanggal Cicilan 1 dibuat 20 hari sebelum hari data latihan disiapkan, jadi nominal denda bertambah setiap hari (contoh: bila data disiapkan 17 Nov, pada 18 Nov telat 21 hari). Pelanggan cicilan sengaja pelanggan kedua peserta supaya tidak mengganggu alokasi [[Tertua dulu]] di F04. Saat kotak cari berisi nomor nota, kartu RENCANA AKTIF dan jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0 — beri tahu peserta supaya tidak bingung. Status rencana kini 'Aktif' (dulu 'Active').",
  "uji": {
   "berkas": "uji/F05_rencana_denda.js",
   "peserta_uji": "02"

@@ -1,81 +1,88 @@
 {
  "kode": "F17",
- "judul": "Laporan Keuangan — Laba-Rugi, Neraca, Arus Kas & Profitabilitas",
+ "modul": "4",
+ "judul": "Laporan keuangan — Laba-Rugi, Neraca, Arus Kas, Profitabilitas",
  "bagian": "B",
- "tujuan": "Manajer membaca Laba-Rugi bulan berjalan, Neraca (Aset = Kewajiban + Ekuitas), Arus Kas dan Profitabilitas PT Sukacita, bisa menelusuri angka laporan ke buku besar, dan tahu tanda-tanda yang harus diperiksa sebelum tutup buku (mis. akun Suspense).",
- "kapan": "Akhir minggu/bulan, sebelum rapat, dan sebelum tutup buku.",
+ "tujuan": "Manajer bisa membaca empat laporan utama PT Sukacita, menelusuri angkanya ke buku besar, dan mengenali tanda yang harus diperiksa sebelum tutup buku.",
+ "kapan": "Akhir minggu atau akhir bulan, sebelum rapat, dan sebelum tutup buku.",
+ "konsep": [
+  "Laba-Rugi = pendapatan − HPP − beban operasional dalam satu periode.",
+  "Neraca adalah posisi pada satu tanggal: Aset = Kewajiban + Ekuitas. Laba tahun berjalan masuk ke ekuitas.",
+  "Arus Kas menjelaskan perubahan kas dari awal sampai akhir periode, dikelompokkan menjadi operasi, investasi, dan pendanaan.",
+  "Semua angka laporan berasal dari jurnal. Klik nama akun untuk melihat buku besarnya."
+ ],
  "peran": "Manajer (manager@kainnusantara.id)",
  "menit": 20,
- "data_awal": "Tidak perlu data khusus: laporan dibaca dari jurnal PT Sukacita (transaksi demo + semua latihan peserta hari ini). Angka bergerak selama pelatihan.",
+ "data_awal": "Tidak perlu data khusus. Laporan dibaca dari jurnal PT Sukacita, yaitu transaksi demo dan semua latihan peserta hari ini, sehingga angkanya bergerak selama pelatihan.",
  "langkah": [
   {
    "no": 1,
    "peran": "Manajer",
    "menu": "Bilah atas › kotak PT; Akuntansi & Pajak › Laporan",
-   "aksi": "Masuk sebagai manajer → klik kotak PT di bilah atas → pilih 'Sukacita' → menu Akuntansi & Pajak › Laporan",
+   "aksi": "Masuk sebagai manajer dan pilih 'Sukacita' di kotak PT. Buka Akuntansi & Pajak › Laporan.",
    "isi": "*Email*: manager@kainnusantara.id · *Kata sandi*: demo12345",
-   "hasil": "Tab hub 'Laba-Rugi, Neraca & Arus Kas' terbuka; pita 'Angka untuk Sukacita Textile'; empat tab: Laba-Rugi · Neraca · Arus Kas · Perubahan Ekuitas. Bila PT masih 'Semua PT', laporan menggabungkan semua PT — pilih Sukacita dulu.",
+   "hasil": "Tab 'Laba-Rugi, Neraca & Arus Kas' terbuka dengan pita 'Angka untuk Sukacita Textile' dan empat tab: Laba-Rugi · Neraca · Arus Kas · Perubahan Ekuitas.",
    "gambar": "uji/hasil/F17/01-laporan-sukacita.png"
   },
   {
    "no": 2,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Laporan › Laba-Rugi, Neraca & Arus Kas › Laba-Rugi",
-   "aksi": "Klik [[Periode (Bulan/Tahun)]] → *Tipe Periode* Bulanan · *Bulan* November · *Tahun* 2026",
-   "isi": "*Tipe Periode*: Bulanan · *Bulan*: November · *Tahun*: 2026",
-   "hasil": "Keterangan '01 Nov 2026 s/d 30 Nov 2026'. Tabel: Pendapatan (4-1000 Pendapatan Penjualan) · Beban Pokok Penjualan (5-1000 HPP) · Beban Operasional (6-…) · Laba Kotor (marjin %) · Laba Bersih = Pendapatan − HPP − Beban Operasional. Kartu atas: PENDAPATAN, LABA KOTOR, LABA BERSIH, MARJIN BERSIH.",
+   "aksi": "Klik [[Periode (Bulan/Tahun)]]. Pilih bulan berjalan.",
+   "isi": "*Tipe periode*: Bulanan · *Bulan*: November · *Tahun*: 2026",
+   "hasil": "Keterangan '01 Nov 2026 s/d 30 Nov 2026'. Tabel berisi Pendapatan, Beban Pokok Penjualan (HPP), dan Beban Operasional; kartu atas menunjukkan PENDAPATAN, LABA KOTOR, LABA BERSIH, dan MARJIN BERSIH.",
    "gambar": "uji/hasil/F17/02-laba-rugi-bulan-ini.png"
   },
   {
    "no": 3,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Laporan › Laba-Rugi",
-   "aksi": "Klik nama akun '4-1000 Pendapatan Penjualan' di tabel",
+   "aksi": "Klik nama akun '4-1000 Pendapatan Penjualan' di tabel.",
    "isi": "",
-   "hasil": "Pindah ke Buku Besar tab Buku Besar akun 4-1000 dengan rentang bulan yang sama; 'Saldo akhir' = angka pendapatan di Laba-Rugi; tombol [[← Kembali ke Laporan Keuangan]] membawa kembali.",
+   "hasil": "Buku Besar akun 4-1000 terbuka untuk bulan yang sama. 'Saldo akhir' di kanan atas sama dengan baris 4-1000 di Laba-Rugi, dan tombol [[Kembali ke Laporan Keuangan]] membawa Anda kembali.",
    "gambar": "uji/hasil/F17/03-buku-besar-pendapatan.png"
   },
   {
    "no": 4,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Laporan › Laba-Rugi, Neraca & Arus Kas › Neraca",
-   "aksi": "Klik tab [[Neraca]] (per hari ini)",
+   "aksi": "Klik tab [[Neraca]] (posisi per hari ini).",
    "isi": "",
-   "hasil": "TOTAL ASET = TOTAL KEWAJIBAN + EKUITAS (tanda ✓) dan kartu 'Status Neraca: Seimbang'. Ekuitas memuat baris 'Laba Tahun Berjalan'. Perhatikan baris 1-9999 Akun Sementara (Suspense) bernilai minus (−Rp 12.000.000 di data demo): saldo penampung harus dinolkan (reklasifikasi) sebelum menutup bulan berjalan.",
+   "hasil": "TOTAL KEWAJIBAN + EKUITAS ✓ sama dengan TOTAL ASET, dan kartu STATUS NERACA 'Seimbang'. Ekuitas memuat baris 'Laba Tahun Berjalan'; akun 1-9999 Akun Sementara (Suspense) bernilai minus (contoh: −Rp 2.000.000).",
    "gambar": "uji/hasil/F17/04-neraca.png"
   },
   {
    "no": 5,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Laporan › Laba-Rugi, Neraca & Arus Kas › Arus Kas",
-   "aksi": "Klik tab [[Arus Kas]] (rentang bawaan 1 Jan s/d hari ini)",
+   "aksi": "Klik tab [[Arus Kas]] (rentang bawaan 1 Jan sampai hari ini).",
    "isi": "",
-   "hasil": "Kas Awal Periode + 'Saldo awal rekening yang didaftarkan periode ini' (tulisan kecil di kartu Kas Awal dan baris di tabel) + Perubahan Kas Bersih = Kas Akhir Periode; Kas Akhir = saldo kas & bank di buku besar; lencana hijau 'Terekonsiliasi'. Tabel: arus operasi (dimulai dari laba bersih), investasi, pendanaan.",
+   "hasil": "Kas Awal Periode + 'Saldo awal rekening yang didaftarkan periode ini' + kenaikan kas bersih = Kas Akhir Periode, dengan lencana hijau 'Terekonsiliasi'. Tabel dibagi menjadi arus kas operasi, investasi, dan pendanaan.",
    "gambar": "uji/hasil/F17/05-arus-kas.png"
   },
   {
    "no": 6,
    "peran": "Manajer",
    "menu": "Akuntansi & Pajak › Laporan › Profitabilitas",
-   "aksi": "Klik tab hub [[Profitabilitas]] (tab Realisasi, 1 Jan s/d hari ini)",
+   "aksi": "Klik tab [[Profitabilitas]] (tab Realisasi, 1 Jan sampai hari ini).",
    "isi": "",
-   "hasil": "Kartu PENDAPATAN (realisasi · terkirim), HPP (saat kirim), MARJIN KOTOR, MARJIN %; tabel 'Pencocokan ke Laba-Rugi': marjin kotor layar ini + penyesuaian persediaan + penjualan antar-PT + 'Pendapatan lain di Laba-Rugi (denda, bunga, klaim — bukan penjualan barang)' = 'Laba kotor menurut Laba-Rugi', dengan 'Selisih belum dijelaskan Rp 0'. Rincian per produk/pelanggan/sales di bawahnya.",
+   "hasil": "Kartu PENDAPATAN (REALISASI · TERKIRIM), HPP (SAAT KIRIM), MARJIN KOTOR, dan MARJIN %. Tabel 'Pencocokan ke Laba-Rugi' menjelaskan jalan ke 'Laba kotor menurut Laba-Rugi', termasuk 'Pendapatan lain di Laba-Rugi (denda, bunga, klaim — bukan penjualan barang)', dengan 'Selisih belum dijelaskan Rp 0'.",
    "gambar": "uji/hasil/F17/06-profitabilitas.png"
   }
  ],
  "cek_buku": [
-  "Laba-Rugi bulan berjalan: Pendapatan = saldo kredit akun 4-… bulan ini; HPP = saldo debit 5-…; Beban Operasional = saldo debit 6-…; Laba Bersih = selisihnya (uji menghitung ulang dari jurnal, sama sampai rupiah).",
-  "Neraca per hari ini: Total Aset = saldo akun 1-…; Kewajiban = 2-…; Ekuitas = 3-… + laba berjalan (semua akun 4-…/5-…/6-… sampai hari ini); Aset − Kewajiban − Ekuitas = 0.",
-  "Arus Kas: Kas Akhir = saldo 1-1100 + 1-1110 hari ini.",
-  "Profitabilitas: 'Laba kotor menurut Laba-Rugi' = Pendapatan (semua akun 4-…, termasuk denda 4-9300) − HPP jurnal tahun berjalan; baris 'Pendapatan lain' = akun pendapatan selain 4-1000; selisih belum dijelaskan = 0."
+  "Laba-Rugi bulan berjalan: Pendapatan = saldo akun 4-… (K); HPP = saldo 5-… (D); Beban Operasional = saldo 6-… (D); Laba Bersih = selisihnya",
+  "Neraca per hari ini: Aset (saldo 1-…) = Kewajiban (2-…) + Ekuitas (3-… + laba tahun berjalan)",
+  "Arus Kas: Kas Akhir Periode = saldo 1-1100 Kas Besar / Bank (D) + 1-1110 Kas Kecil (D) hari ini",
+  "Profitabilitas: 'Laba kotor menurut Laba-Rugi' = semua pendapatan 4-… (termasuk denda 4-9300) − HPP; selisih belum dijelaskan Rp 0"
  ],
  "kesalahan_umum": [
-  "Membaca laporan dengan PT 'Semua PT' (angka gabungan) padahal yang dibahas PT Sukacita.",
-  "Membandingkan Laba Bersih bulan ini dengan 'Laba Tahun Berjalan' di Neraca — yang kedua akumulasi sejak awal (termasuk beban gaji Oktober), jadi bisa berbeda tanda.",
-  "Mengira Arus Kas tidak cocok karena Kas Awal Rp 0 — saldo awal rekening yang didaftarkan tahun ini ditulis terpisah ('Saldo awal rekening …').",
-  "Mengabaikan baris Suspense 1-9999 di Neraca — saldonya memblokir tutup buku."
+  "Membaca laporan dengan PT 'Semua PT'. Angkanya gabungan semua PT; pilih Sukacita dulu.",
+  "Membandingkan Laba Bersih bulan ini dengan 'Laba Tahun Berjalan' di Neraca. Yang kedua adalah akumulasi sejak awal tahun (termasuk beban gaji Oktober), jadi bisa berbeda tanda.",
+  "Mengira Arus Kas tidak cocok karena Kas Awal Rp 0. Saldo awal rekening yang didaftarkan tahun ini ditulis di baris terpisah.",
+  "Mengabaikan saldo Suspense 1-9999 di Neraca. Saldo itu harus nol sebelum tutup buku."
  ],
- "catatan_pelatih": "Semua angka bergerak selama pelatihan karena peserta lain memposting di PT Sukacita yang sama — uji membaca ulang layar sampai sama dengan jurnal. Laba berjalan di Neraca bisa negatif walau Laba-Rugi November positif: jurnal gaji Oktober (latihan penggajian, bertanggal 31 Okt) masuk tahun berjalan. Saldo Suspense −Rp 12.000.000 berasal dari kas masuk demo tanpa akun lawan (bukan dari peserta). Baris 'Pendapatan lain di Laba-Rugi' di pencocokan Profitabilitas baru ditambahkan: denda keterlambatan (4-9300) dulu membuat 'Selisih belum dijelaskan' ≠ 0. Pertanyaan ke pemilik: apakah denda/bunga/klaim (4-9xxx) seharusnya tampil sebagai 'Pendapatan lain-lain' di bawah laba kotor, bukan di Pendapatan?",
+ "catatan_pelatih": "Semua angka bergerak selama pelatihan karena peserta lain memposting di PT Sukacita yang sama. Laba tahun berjalan di Neraca bisa negatif walau Laba-Rugi November positif, karena jurnal gaji latihan bertanggal 31 Okt. Saldo minus di 1-9999 Akun Sementara (Suspense) dan 1-1150 Kas & Bank Transit berasal dari kas demo, bukan dari peserta (di tangkapan layar −Rp 2.000.000 dan −Rp 10.000.000). Total Pendapatan di Laba-Rugi termasuk denda (4-9300), jadi lebih besar daripada saldo 4-1000 saja. Baris 'Pendapatan lain di Laba-Rugi' di Profitabilitas baru ditambahkan; dulu denda membuat 'Selisih belum dijelaskan' tidak nol. Pertanyaan untuk pemilik: apakah denda, bunga, dan klaim (4-9xxx) seharusnya tampil sebagai 'Pendapatan lain-lain' di bawah laba kotor, bukan di Pendapatan?",
  "uji": {
   "berkas": "uji/F17_laporan_keuangan.js",
   "peserta_uji": "05"

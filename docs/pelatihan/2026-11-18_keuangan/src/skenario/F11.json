@@ -1,12 +1,18 @@
 {
  "kode": "F11",
- "judul": "Bayar tagihan supplier (Hutang) dari BCA Operasional + baca GR/IR",
+ "modul": "3.2",
+ "judul": "Bayar tagihan pemasok dari BCA Operasional & baca GR/IR",
  "bagian": "A",
- "tujuan": "Peserta bisa menemukan tagihan pemasok yang sudah terposting, memeriksa 3-way match (PO ↔ penerimaan ↔ tagihan) sebelum membayar, membayar penuh dari rekening BCA Operasional KSC, lalu membuktikan hasilnya di layar (status Lunas, Sisa Hutang Rp 0) dan di buku (jurnal Hutang Usaha / Kas-Bank seimbang, sisa GR/IR PO nol).",
- "kapan": "Setiap hari bayar pemasok (mis. sesuai jadwal transfer atau saat kartu 'Hutang jatuh tempo' di Beranda Keuangan berisi). Dipakai untuk tagihan per faktur; banyak faktur satu pemasok sekaligus → Kontrabon (F12).",
+ "tujuan": "Peserta bisa memeriksa kecocokan tagihan pemasok, membayarnya penuh dari BCA Operasional KSC, dan memastikan hutang serta GR/IR menjadi nol.",
+ "kapan": "Setiap hari bayar pemasok, misalnya sesuai jadwal transfer. Untuk banyak faktur dari satu pemasok sekaligus, pakai kontrabon (F12).",
+ "konsep": [
+  "Hutang usaha lahir saat tagihan pemasok terposting. Membayar tagihan mengurangi hutang dan saldo bank.",
+  "3-way match membandingkan tiga dokumen: pesanan pembelian (PO), penerimaan barang, dan tagihan pemasok. Jumlah dan harga harus sama sebelum dibayar.",
+  "GR/IR (barang diterima, belum ditagih) menampung nilai barang yang sudah diterima tetapi tagihannya belum datang. Setelah tagihan masuk, sisanya nol."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta baris *a_dasar:tagihan_bayar*: No. tagihan (contoh peserta 04: VB-00008), PO (KSC/PO-00008), faktur pemasok (INV-LTH04-…), total Rp 1.864.800 (DPP Rp 1.680.000 + PPN 12% atas DPP nilai lain 11/12 = Rp 184.800). Pemasok 'Latihan NN · Pemasok Grey Peserta NN'. Barang sudah diterima di Gudang Sukacita (WH-JKT) dan tagihan sudah terposting (hutang diakui).",
+ "data_awal": "Kartu Peserta › Tagihan pemasok untuk dibayar: nomor tagihan, PO, dan faktur pemasok (contoh: VB-00004, KSC/PO-00004, INV-LTH02-…, total Rp 1.864.800 = DPP Rp 1.680.000 + PPN Rp 184.800). Pemasok 'Latihan NN · Pemasok Grey Peserta NN'. Barang sudah diterima dan tagihan sudah terposting.",
  "alur": [
   {
    "peran": "Manajer",
@@ -55,73 +61,70 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Hutang",
-   "aksi": "Masuk dengan akun peserta, lalu klik menu [[Hutang]] di grup KEUANGAN",
+   "aksi": "Masuk dengan akun peserta. Klik [[Hutang]] di grup KEUANGAN.",
    "isi": "",
-   "hasil": "Terbuka tab 'Tagihan' (judul 'Tagihan Supplier'): kartu Total hutang (AP) dan kelompok umur (Belum jatuh tempo, Lewat 1–30 hari, …), baris pencocokan 'Tagihan belum lunas … = Saldo akun hutang … Cocok dengan saldo akun hutang', lalu daftar tagihan PT Sukacita.",
+   "hasil": "Tab 'Tagihan' (judul 'Tagihan Supplier') terbuka: kartu TOTAL HUTANG (AP), kelompok umur, baris pencocokan '… Cocok dengan saldo akun hutang', lalu daftar tagihan.",
    "gambar": "uji/hasil/F11/01-menu-hutang.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Keuangan › Hutang › Tagihan",
-   "aksi": "Ketik nama pemasok Anda di kotak cari",
-   "isi": "*Cari no. tagihan / supplier / PO / inv. supplier*: Latihan NN (nomor peserta Anda)",
-   "hasil": "Hanya tagihan pemasok 'Latihan NN · Pemasok Grey Peserta NN' yang tampil. Baris tagihan bayar: Total = Sisa (merah) = Rp 1.864.800, Pencocokan 'Cocok', Status 'Terposting', Inv. supplier INV-LTHNN-…, tombol [[Bayar]] dan [[Detail →]].",
+   "aksi": "Ketik nama pemasok Anda di kotak cari.",
+   "isi": "*Cari no. tagihan / supplier / PO / inv. supplier*: Latihan NN",
+   "hasil": "Hanya tagihan pemasok Anda yang tampil. Baris tagihan untuk dibayar: Total = Sisa (merah), Pencocokan 'Cocok', Status 'Terposting', serta tombol [[Bayar]] dan [[Detail →]].",
    "gambar": "uji/hasil/F11/03-cari-pemasok.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Keuangan › Hutang › Tagihan",
-   "aksi": "Klik [[Detail →]] pada baris tagihan bayar (nomor sesuai Kartu Peserta)",
+   "aksi": "Klik [[Detail →]] pada tagihan yang nomornya sesuai Kartu Peserta.",
    "isi": "",
-   "hasil": "Rincian tagihan: lencana 'Terposting' + 'Match Bersih', 'Jurnal Terbit'; Dokumen Terkait: PO KSC/PO-… (Berasal dari) dan jurnal (Dijurnal di); kartu Total Tagihan, Sudah Dibayar Rp 0, Sisa Hutang, PPN Masukan; teks hijau '3-way match bersih: qty & harga sesuai PO/penerimaan.'; tabel Pesan = Terima = Tagih (120), Harga PO = Harga Bill. Di kaki hanya tombol [[Bayar]] (Finance tidak bisa membatalkan tagihan).",
+   "hasil": "Rincian berlencana 'Terposting' dan 'Match Bersih', dengan teks hijau '3-way match bersih: qty & harga sesuai PO/penerimaan.' Tabel menunjukkan Pesan = Terima = Tagih dan Harga PO = Harga Bill; di kaki hanya ada tombol [[Bayar]].",
    "gambar": "uji/hasil/F11/04-rincian-3way.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Rincian tagihan",
-   "aksi": "Klik [[Bayar]], lalu pilih rekening sumber",
-   "isi": "*Nominal dibayar*: biarkan (terisi penuh = Sisa hutang) · *Tanggal bayar*: hari ini · *Cara bayar*: Transfer bank · *Rekening sumber*: BCA Operasional KSC · *Catatan*: opsional (mis. nomor bukti transfer)",
-   "hasil": "Form 'Bayar pemasok' dengan pita 'PT: Sukacita', Pemasok, Dokumen 'Tagihan pemasok VB-…', Sisa hutang Rp 1.864.800; tulisan 'Bayar sebagian diizinkan; sisanya tetap hutang (kecuali selisih receh ≤ Rp 5.000: ditutup otomatis).'",
+   "aksi": "Klik [[Bayar]]. Periksa isian dan pilih rekening sumber.",
+   "isi": "*Nominal dibayar*: biarkan (= sisa hutang) · *Tanggal bayar*: hari ini · *Cara bayar*: Transfer bank · *Rekening sumber*: BCA Operasional KSC · *Catatan*: boleh diisi nomor bukti transfer",
+   "hasil": "Form 'Bayar pemasok' dengan pita 'PT: Sukacita', pemasok, dokumen 'Tagihan pemasok VB-…', dan Sisa hutang. Tertulis 'Bayar sebagian diizinkan; sisanya tetap hutang (kecuali selisih receh ≤ Rp 5.000: ditutup otomatis).'",
    "gambar": "uji/hasil/F11/05-form-bayar.png"
   },
   {
    "no": 5,
    "peran": "Finance",
-   "menu": "Form Bayar pemasok",
-   "aksi": "Klik [[Bayar]], baca kalimat konfirmasi, lalu klik [[Ya, bayar]]",
+   "menu": "Form 'Bayar pemasok'",
+   "aksi": "Klik [[Bayar]]. Baca kalimat konfirmasi, lalu klik [[Ya, bayar]].",
    "isi": "",
-   "hasil": "Konfirmasi: 'Bayar Rp 1.864.800 ke Latihan NN · Pemasok Grey Peserta NN dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?'. Sesudah [[Ya, bayar]]: form tertutup, rincian berstatus 'Lunas', Sudah Dibayar Rp 1.864.800, Sisa Hutang Rp 0, muncul bagian 'Pembayaran' (nominal · transfer · KSC/CASH-…) dan tulisan 'Tagihan lunas.'",
+   "hasil": "Konfirmasi: 'Bayar Rp … ke Latihan NN · Pemasok Grey Peserta NN dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?'. Sesudahnya rincian berstatus 'Lunas', Sisa Hutang Rp 0, dan muncul bagian 'Pembayaran' dengan nomor KSC/CASH-….",
    "gambar": "uji/hasil/F11/07-tagihan-lunas.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Keuangan › Hutang › GR/IR (Diterima Belum Ditagih)",
-   "aksi": "Tutup rincian (×), klik tab [[GR/IR (Diterima Belum Ditagih)]], ketik nomor PO di kotak cari, centang *Tampilkan yang sudah nol*",
-   "isi": "*Cari nomor PO/SPK, pemasok, atau mitra*: KSC/PO-… (dari Kartu Peserta)",
-   "hasil": "Baris PO Anda: Status 'Selesai', Nilai diterima Rp 1.680.000 = Sudah ditagih Rp 1.680.000 (DPP, tanpa PPN), Sisa GR/IR Rp 0 — barang sudah diterima DAN sudah ditagih. Tanpa centang, PO ini tidak tampil (yang tampil hanya sisa ≠ 0). Catatan 'Kliring butuh akses kelola Akuntansi.'",
+   "aksi": "Tutup rincian (×). Di tab [[GR/IR (Diterima Belum Ditagih)]], cari nomor PO dan centang *Tampilkan yang sudah nol*.",
+   "isi": "*Cari nomor PO/SPK, pemasok, atau mitra*: nomor PO dari Kartu Peserta",
+   "hasil": "Baris PO Anda berstatus 'Selesai': Nilai diterima = Sudah ditagih (DPP, tanpa PPN) dan Sisa GR/IR Rp 0. Tanpa centang, PO ini tidak tampil.",
    "gambar": "uji/hasil/F11/09-grir-po.png"
   }
  ],
  "cek_buku": [
-  "Jurnal pembayaran (sumber kas KSC/CASH-…): 2-1100 Hutang Usaha (D) Rp 1.864.800 · 1-1100 Kas Besar / Bank (K) Rp 1.864.800 — seimbang; kas keluar tercatat di rekening BCA Operasional KSC.",
-  "Jurnal tagihan saat terposting (sebelum latihan): 2-1150 Hutang Belum Ditagih (GR/IR) (D) Rp 1.680.000 + 1-1500 PPN Masukan (D) Rp 184.800 / 2-1100 Hutang Usaha (K) Rp 1.864.800.",
-  "Sisa GR/IR PO = nilai diterima − sudah ditagih = Rp 0 (penerimaan barang mengkredit GR/IR, tagihan mendebitnya).",
-  "Kartu Total hutang (AP) turun Rp 1.864.800; baris pencocokan 'Tagihan belum lunas = Saldo akun hutang' tetap 'Cocok'."
+  "Jurnal pembayaran (contoh): 2-1100 Hutang Usaha (D) Rp 1.864.800 · 1-1100 Kas Besar / Bank (K) Rp 1.864.800 — seimbang",
+  "Jurnal saat tagihan terposting (sebelum latihan): 2-1150 Hutang Belum Ditagih (GR/IR) (D) Rp 1.680.000 · 1-1500 PPN Masukan (D) Rp 184.800 · 2-1100 Hutang Usaha (K) Rp 1.864.800",
+  "Sisa GR/IR PO = nilai diterima − sudah ditagih = Rp 0",
+  "TOTAL HUTANG (AP) turun sebesar pembayaran; baris pencocokan tetap 'Cocok dengan saldo akun hutang'"
  ],
  "kesalahan_umum": [
-  "Membayar tanpa membuka Detail: selalu cek 'Match Bersih' dan Pesan = Terima = Tagih dulu; tagihan berselisih (Selisih / Lebih tagih) jangan dibayar sebelum diputus Pembelian/Manajer.",
-  "Lupa memilih *Rekening sumber* — tombol Bayar mati dan muncul 'Pilih rekening atau kas sumber pembayaran.'",
-  "Membayar tagihan kontrabon (VB kedua) di sini — tagihan itu dipakai di F12; bayar hanya tagihan baris *tagihan_bayar*.",
-  "Mengira jurnal bank memakai akun per rekening: di buku besar semua rekening bank/kas besar PT memakai akun 1-1100 'Kas Besar / Bank'; rinciannya per rekening ada di Kas & Bank.",
-  "Mencari PO di GR/IR tanpa mencentang 'Tampilkan yang sudah nol' → 'Tidak ada sisa GR/IR yang cocok' (itu justru tanda sudah beres).",
-  "Mengetik nominal lebih dari sisa hutang (mis. salah ketik 1.864.900) — tombol Bayar mati: 'Nominal Rp … melebihi sisa hutang Rp …'. Kurang bayar ≤ Rp 5.000 (toleransi selisih) TIDAK tinggal sebagai hutang: form menulis 'sisa itu DITUTUP otomatis' — ketik nominal penuh bila ingin membayar persis.",
-  "Memilih *Tanggal bayar* bulan depan: kalender mengizinkan dan jurnal kas lahir di bulan itu — pakai tanggal hari ini kecuali diminta pelatih."
+  "Membayar tanpa membuka [[Detail →]]. Cek dulu 'Match Bersih' dan Pesan = Terima = Tagih; tagihan berselisih jangan dibayar sebelum diputus Pembelian atau Manajer.",
+  "Membayar tagihan kedua (untuk kontrabon) di sini. Tagihan itu dipakai di F12.",
+  "Mengetik nominal sedikit di bawah sisa hutang. Selisih Rp 5.000 atau kurang ditutup otomatis, tidak tinggal sebagai hutang; biarkan nominal penuh.",
+  "Mencari PO di GR/IR tanpa mencentang *Tampilkan yang sudah nol*. Muncul 'Tidak ada sisa GR/IR yang cocok', dan itu justru tanda sudah beres."
  ],
- "catatan_pelatih": "Izin Finance = lihat & bayar tagihan (K-17); membuat/membatalkan tagihan tetap Manajer — sejak perbaikan 17 Nov tombol [[Batalkan]] tidak lagi tampil untuk Finance (dulu tampil lalu ditolak). Di GR/IR ada pita kuning 'Akun “Selisih harga pembelian” belum diatur untuk PT ini…' — data acuan belum memetakan akun itu; tidak menghalangi latihan (kliring tidak dipakai), sebutkan saja. Rincian tagihan menampilkan 'Belum ada kedatangan (GRN) tertutup…' karena data latihan menerima barang lewat jalur penerimaan lama — normal. Semua peserta membayar dari BCA Operasional KSC yang sama: saldo rekening & total hutang bergerak selama sesi. Jalankan F11 SEBELUM F12 (wizard kontrabon menawarkan semua tagihan terbuka pemasok; bila F11 belum dibayar, peserta harus menghapus centang tagihan bayar).",
+ "catatan_pelatih": "Jalankan F11 sebelum F12: wizard kontrabon menawarkan semua tagihan terbuka pemasok, jadi bila F11 belum dibayar peserta harus menghapus centang tagihan itu. Finance boleh melihat dan membayar tagihan; membuat dan membatalkan tagihan tetap wewenang Manajer (sejak 17 Nov tombol batalkan tagihan tidak lagi tampil untuk Finance). Di tab GR/IR ada pita kuning 'Akun “Selisih harga pembelian” belum diatur untuk PT ini…' — data acuan belum memetakan akun itu; tidak menghalangi latihan. Rincian tagihan menulis 'Belum ada kedatangan (GRN) tertutup…' karena data latihan memakai jalur penerimaan lama — normal. Kalender *Tanggal bayar* mengizinkan tanggal bulan depan; minta peserta memakai tanggal hari ini. Semua peserta membayar dari BCA Operasional KSC yang sama, jadi saldo dan total hutang bergerak selama sesi.",
  "uji": {
   "berkas": "uji/F11_bayar_tagihan.js",
   "peserta_uji": "04"

@@ -1,12 +1,19 @@
 {
  "kode": "F03",
- "judul": "Pembayaran sebagian (40%) & membaca Saldo & Umur piutang",
+ "modul": "3.1",
+ "judul": "Pembayaran sebagian & membaca Saldo & Umur piutang",
  "bagian": "A",
- "tujuan": "Peserta bisa mencatat pembayaran sebagian atas satu SO, memutus selisih 'kurang bayar' dengan label yang benar (sisa tetap piutang), lalu membaca sisa tagihan pelanggan di Saldo & Umur (kolom umur, rincian per pesanan, jadwal tagihan).",
- "kapan": "Saat pelanggan mentransfer kurang dari tagihan (cicilan tanpa rencana, bayar sebagian karena arus kas, potong biaya bank) — dan setiap kali perlu menjawab 'berapa sisa utang pelanggan ini dan sudah berapa lama'.",
+ "tujuan": "Peserta bisa mencatat pembayaran sebagian atas satu SO dan membaca sisa piutang pelanggan di Saldo & Umur.",
+ "kapan": "Saat pelanggan mentransfer kurang dari tagihan, misalnya bayar 40% dulu. Juga setiap kali perlu menjawab 'berapa sisa tagihan pelanggan ini dan sudah berapa lama'.",
+ "konsep": [
+  "Pembayaran sebagian hanya mengurangi piutang sebesar uang yang masuk. Sisanya tetap piutang dan tetap ditagih.",
+  "Bila selisih melebihi toleransi (bawaan Rp 5.000), sistem meminta keputusan berlabel: sisa tetap piutang, ubah jadwal, atau hapus sisa (wajib Manajer).",
+  "Umur piutang dihitung dari tanggal jatuh tempo. Sisa yang belum jatuh tempo ada di kolom 'Belum jatuh tempo'; bila sudah lewat, pindah ke kolom 1-30 hari, 31-60 hari, dan seterusnya.",
+  "Keputusan 'Sisa tetap jadi piutang' tidak membuat jurnal. Yang berjurnal hanya uang yang masuk."
+ ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta baris *a_dasar:so_sebagian*: SO kedua pelanggan 'Latihan NN · Toko Kain Peserta NN' (contoh peserta 02: KSC/SO-00007, total Rp 3.480.127,50 → layar Rp 3.480.128), belum dibayar, tempo 30 hari. Pelanggan mentransfer 40% = Rp 1.392.051 (peserta 02).",
+ "data_awal": "Kartu Peserta › SO untuk bayar sebagian: SO kedua pelanggan 'Latihan NN · Toko Kain Peserta NN', belum dibayar, tempo 30 hari (contoh: KSC/SO-00011, Rp 3.300.863). Pelanggan mentransfer 40% dari total SO, dibulatkan ke rupiah (contoh: Rp 1.320.345).",
  "alur": [
   {
    "peran": "Gudang",
@@ -27,7 +34,7 @@
   },
   {
    "peran": "Sistem",
-   "label": "Jurnal Bank D / Piutang K 40%"
+   "label": "Jurnal Bank (D) / Piutang (K)"
   },
   {
    "peran": "Finance",
@@ -51,87 +58,88 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
-   "aksi": "Cari baris SO kedua Anda → klik ikon dompet (Terima pembayaran)",
+   "aksi": "Cari baris SO kedua Anda. Klik ikon dompet (Terima pembayaran).",
    "isi": "",
-   "hasil": "Baris SO: Belum Lunas Rp 3.480.128 · Jatuh Tempo 17 Des 2026 · '30h Lagi'.",
+   "hasil": "Baris SO menunjukkan Belum Lunas sebesar total SO dan Telat '30h Lagi' (contoh: Rp 3.300.863, jatuh tempo 17 Des 2026).",
    "gambar": "uji/hasil/F03/01-penagihan-baris-so.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Form 'Terima pembayaran'",
-   "aksi": "Ganti angka di kotak alokasi SO menjadi nominal transfer 40%, isi *No. referensi*",
-   "isi": "Kotak alokasi SO: 1392051 (peserta 02; peserta lain = 40% × total SO, dibulatkan) · *No. referensi*: TRF-LATIHNN-F03",
-   "hasil": "*Nominal diterima* & 'Total diterima' = Rp 1.392.051; petunjuk kuning 'Kurang bayar Rp 2.088.077 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 3.480.128) — akan diminta keputusan saat disimpan.' + tombol [[Putuskan]].",
+   "aksi": "Ganti angka di kotak alokasi SO dengan nominal transfer. Isi *No. referensi*.",
+   "isi": "Kotak alokasi SO: 40% × total SO, dibulatkan (contoh: 1320345) · *No. referensi*: TRF-LATIHNN-F03",
+   "hasil": "*Nominal diterima* ikut berubah. Muncul petunjuk kuning 'Kurang bayar Rp … dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp …) — akan diminta keputusan saat disimpan.'",
    "gambar": "uji/hasil/F03/02-form-bayar-sebagian.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Jendela 'Selisih Pembayaran · Kurang bayar'",
-   "aksi": "Klik [[Simpan kwitansi]] → pilih kartu 'Sisa tetap jadi piutang', *Label alasan* 'Bayar sebagian (disepakati)', isi *Catatan* → [[Lanjutkan & simpan kwitansi]]",
+   "aksi": "Klik [[Simpan kwitansi]]. Di jendela selisih, pilih 'Sisa tetap jadi piutang', isi alasan, lalu klik [[Lanjutkan & simpan kwitansi]].",
    "isi": "*Label alasan (wajib)*: Bayar sebagian (disepakati) · *Catatan*: Pelanggan bayar 40% dulu, sisanya bulan depan",
-   "hasil": "Kalimat 'Dibayar Rp 1.392.051, seharusnya Rp 3.480.128 (sisa tagihan pesanan tujuan, belum jatuh tempo). Kurang Rp 2.088.077 — mau bagaimana?'. Tiga pilihan: Sisa tetap jadi piutang (DISARANKAN) · Ubah jadwal (mati: 'Pesanan ini belum punya rencana pembayaran') · Hapus sisa kurang bayar (WAJIB MANAGER).",
+   "hasil": "Jendela menulis 'Dibayar Rp …, seharusnya Rp … Kurang Rp … — mau bagaimana?' dengan tiga pilihan. 'Ubah jadwal' mati karena pesanan belum punya rencana pembayaran; 'Hapus sisa kurang bayar' bertanda WAJIB MANAGER.",
    "gambar": "uji/hasil/F03/03-dialog-selisih-kurang.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Jendela 'Simpan kwitansi'",
-   "aksi": "Periksa kalimat → klik [[Ya, simpan]]",
+   "aksi": "Periksa kalimat konfirmasi, lalu klik [[Ya, simpan]].",
    "isi": "",
-   "hasil": "'Catat penerimaan Rp 1.392.051 dari Latihan NN … ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?'",
+   "hasil": "Kalimat berbunyi 'Catat penerimaan Rp … dari Latihan NN · Toko Kain Peserta NN ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?'",
    "gambar": "uji/hasil/F03/04-konfirmasi-simpan.png"
   },
   {
    "no": 5,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
-   "aksi": "Lihat pesan dan baris SO",
+   "aksi": "Baca pesan hasil dan baris SO.",
    "isi": "",
-   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp 1.392.051) dicatat … Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-…).' Baris SO TETAP ada dengan Belum Lunas Rp 2.088.077.",
+   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat … Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-…).' Baris SO tetap ada dengan Belum Lunas = sisa (contoh: Rp 1.980.518).",
    "gambar": "uji/hasil/F03/05-penagihan-sisa-baru.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Saldo & Umur",
-   "aksi": "Klik tab [[Saldo & Umur]]",
+   "aksi": "Klik tab [[Saldo & Umur]].",
    "isi": "",
-   "hasil": "Ringkasan piutang PT Sukacita, batang umur, tabel 'Piutang per Pelanggan' (kolom umur: Belum jatuh tempo · 1–30 · 31–60 · 61–90 · > 90 hari · Belum Lunas · Denda · Aksi).",
+   "hasil": "Tampil ringkasan piutang PT Sukacita, batang 'Sebaran Umur Piutang', dan tabel 'Piutang per Pelanggan' dengan kolom Belum jatuh tempo · 1-30 hari · 31-60 hari · 61-90 hari · > 90 hari · Belum Lunas · Denda · Aksi.",
    "gambar": "uji/hasil/F03/06-tab-saldo-umur.png"
   },
   {
    "no": 7,
    "peran": "Finance",
    "menu": "Keuangan › Piutang › Saldo & Umur",
-   "aksi": "Ketik 'Latihan NN · Toko Kain Peserta' di kotak cari → klik baris pelanggan",
+   "aksi": "Ketik nama pelanggan Anda di kotak cari, lalu klik barisnya.",
    "isi": "*Cari pelanggan / sales*: Latihan NN · Toko Kain Peserta",
-   "hasil": "Baris pelanggan: status kredit 'Sehat', kolom Belum jatuh tempo Rp 2.088.077, Belum Lunas Rp 2.088.077, Denda '—'.",
+   "hasil": "Baris pelanggan berstatus kredit 'Sehat'. Kolom Belum jatuh tempo dan Belum Lunas sama dengan sisa SO; kolom Denda '—'.",
    "gambar": "uji/hasil/F03/07-saldo-umur-pelanggan.png"
   },
   {
    "no": 8,
    "peran": "Finance",
-   "menu": "Pop-up rincian pelanggan",
-   "aksi": "Baca rincian per pesanan & Jadwal Tagihan",
+   "menu": "Jendela rincian pelanggan",
+   "aksi": "Baca rincian per pesanan dan Jadwal Tagihan.",
    "isi": "",
-   "hasil": "'Belum lunas Rp 2.088.077 (tercatat Rp 2.088.077 · belum dikirim Rp 0)'. Baris SO: Jatuh tempo 17 Des 2026 · 'Belum Jatuh Tempo' · Total Rp 3.480.128 · Terbayar Rp 1.392.051 · Belum Lunas Rp 2.088.077. Jadwal Tagihan: Surat jalan … sisa Rp 2.088.077, '30 lagi'. Nota denda: belum ada.",
+   "hasil": "Judul menulis 'Belum lunas Rp … (tercatat Rp … · belum dikirim Rp 0)'. Baris SO menunjukkan Total, Terbayar (40%), dan Belum Lunas; Jadwal Tagihan menunjukkan sisa yang jatuh tempo 30 hari lagi.",
    "gambar": "uji/hasil/F03/08-saldo-umur-rincian.png"
   }
  ],
  "cek_buku": [
-  "Jurnal kwitansi: 1-1100 Kas Besar / Bank (D) Rp 1.392.051 · 1-1200 Piutang Usaha (K) Rp 1.392.051 — seimbang. Keputusan 'Sisa tetap jadi piutang' TIDAK membuat jurnal (hanya dokumen keputusan KSC/SLB-… berlabel).",
-  "SO a_dasar:so_sebagian: status bayar Sebagian (partial), sisa Rp 2.088.076,50 (peserta 02) = total − 40%.",
-  "Saldo & Umur pelanggan = sisa SO; baris pencocokan 'Piutang tercatat = Saldo akun piutang' tetap selisih Rp 0."
+  "Jurnal kwitansi (contoh): 1-1100 Kas Besar / Bank (D) Rp 1.320.345 · 1-1200 Piutang Usaha (K) Rp 1.320.345 — seimbang",
+  "Keputusan 'Sisa tetap jadi piutang' tidak berjurnal; hanya tercatat sebagai dokumen keputusan KSC/SLB-…",
+  "SO berstatus bayar Sebagian; sisa = total SO − pembayaran (contoh: Rp 1.980.518)",
+  "Di Saldo & Umur, baris 'Piutang tercatat … Saldo akun piutang' menunjukkan selisih Rp 0"
  ],
  "kesalahan_umum": [
-  "Membiarkan alasan bawaan tanpa membaca: untuk bayar sebagian pilih 'Bayar sebagian (disepakati)', bukan 'Dipotong biaya bank'.",
-  "Memilih 'Hapus sisa kurang bayar' — itu menghapus piutang ke beban (perlu Manajer / orang kedua); bayar sebagian = 'Sisa tetap jadi piutang'.",
-  "Menekan [[Batal]] di jendela Selisih lalu bingung: kwitansi belum tersimpan; ulangi [[Simpan kwitansi]].",
-  "Mencari pelanggan di Saldo & Umur dengan nomor SO — kotak cari menerima nama pelanggan / sales."
+  "Tidak membaca *Label alasan*. Untuk bayar sebagian pilih 'Bayar sebagian (disepakati)', bukan 'Dipotong biaya bank'.",
+  "Memilih 'Hapus sisa kurang bayar'. Pilihan itu membebankan sisa piutang ke beban dan wajib Manajer.",
+  "Menekan [[Batal]] di jendela selisih. Kwitansi belum tersimpan; ulangi [[Simpan kwitansi]].",
+  "Mencari di Saldo & Umur dengan nomor SO. Kotak cari menerima nama pelanggan atau sales."
  ],
- "catatan_pelatih": "Selisih di dalam toleransi (bawaan Rp 5.000) diputus otomatis sebagai pembulatan; di atasnya wajib keputusan berlabel. Kalimat batas kini menyebut 'sisa tagihan pesanan tujuan, belum jatuh tempo' untuk SO yang belum jatuh tempo (dulu tertulis 'tagihan yang jatuh tempo' — perbaikan 17 Nov). Daftar alasan di bawah kalimat memakai pembulatan server (bisa beda Rp 1 dari angka besar di atasnya untuk nilai ,50 — lihat pertanyaan pemilik). Kerjakan F03 sebelum F04.",
+ "catatan_pelatih": "Kerjakan F03 sesudah F02 dan sebelum F04. Selisih di dalam toleransi (bawaan Rp 5.000) diputus otomatis sebagai pembulatan; di atasnya wajib keputusan berlabel. Kalimat batas kini menyebut 'sisa tagihan pesanan tujuan, belum jatuh tempo' (perbaikan 17 Nov). Untuk SO bernilai ,50 rupiah, angka di daftar rincian bisa berbeda Rp 1 dari angka besar di atasnya karena pembulatan (pertanyaan untuk pemilik).",
  "uji": {
   "berkas": "uji/F03_bayar_sebagian.js",
   "peserta_uji": "02"

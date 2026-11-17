@@ -3709,7 +3709,7 @@ async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
             continue
         lines.append({"account_code": cl.get("account_code") or ACC_BEBAN_OPS,
                       "debit": amt, "credit": 0.0,
-                      "description": cl.get("desc") or f"Beban petty cash {label}".strip()})
+                      "description": cl.get("desc") or f"Beban kas kecil {label}".strip()})
         total += amt
     total = round(total, 2)
     if total <= EPS:
@@ -3723,7 +3723,7 @@ async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
         lines.append({"account_code": ACC_HUTANG_REIMBURSE, "debit": 0.0, "credit": excess,
                       "description": f"Kelebihan pengeluaran di atas uang muka {label}".strip()})
     return await _insert_entry(
-        lines=lines, description=f"Pertanggungjawaban petty cash {label}".strip(),
+        lines=lines, description=f"Pertanggungjawaban kas kecil {label}".strip(),
         date=date or now_iso(), source_type="petty_cash_settlement",
         source_id=settlement_id, entity_id=entity_id, created_by=actor_name,
         source_label=label)

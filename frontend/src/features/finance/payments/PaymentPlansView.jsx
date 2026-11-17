@@ -53,6 +53,9 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
     onClearFocus?.();
   }, [focusDoc?.focus_id]); // eslint-disable-line
   const [plans, setPlans] = useState([]);
+  // Kartu ringkasan = seluruh PT (sama dengan kartu denda dari server); daftar mengikuti kotak cari. Dulu kartu rencana
+  // ikut tersaring pencarian sedangkan kartu denda tidak — pelatihan 18 Nov (F05) menemukan angka yang tidak sejalan.
+  const [plansAll, setPlansAll] = useState([]);
   const [pen, setPen] = useState({ items: [], stats: {} });
   const [vstats, setVstats] = useState({ pending: 0 });
   const [loading, setLoading] = useState(true);
@@ -65,12 +68,14 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
-      const [pl, pn, vr] = await Promise.all([
+      const [pl, pn, vr, plAll] = await Promise.all([
         listPlans({ ...params, q: q || undefined }),
         listPenalties({ ...params, status: status || undefined, q: q || undefined }),
         listVariances({ ...params, limit: 1 }).catch(() => ({ stats: {} })),
+        q ? listPlans(params) : null,
       ]);
       setPlans(pl.items || []);
+      setPlansAll((plAll || pl).items || []);
       setPen(pn || { items: [], stats: {} });
       setVstats(vr.stats || { pending: 0 });
       setError("");
@@ -81,7 +86,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
 
   const stats = pen.stats || {};
-  const overduePlans = useMemo(() => plans.filter((p) => (p.overdue_count || 0) > 0), [plans]);
+  const overduePlans = useMemo(() => plansAll.filter((p) => (p.overdue_count || 0) > 0), [plansAll]);
 
   return (
     <div data-testid="payment-plans-view">
@@ -115,7 +120,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
         </div>
         <div className="section-body space-y-2.5">
           <div className="grid grid-cols-2 gap-2 md:grid-cols-5" data-testid="pp-kpis">
-            <Kpi testId="pp-kpi-plans" label="Rencana aktif" value={String(plans.filter((p) => p.status === "active").length)} />
+            <Kpi testId="pp-kpi-plans" label="Rencana aktif" value={String(plansAll.filter((p) => p.status === "active").length)} />
             <Kpi testId="pp-kpi-overdue" label="Rencana ada baris telat" value={String(overduePlans.length)} tone="#9B1C1C" />
             <Kpi testId="pp-kpi-draft" label="Usulan denda" value={money(stats.draft_amount)} tone="#B26A00" />
             <Kpi testId="pp-kpi-issued" label="Denda terbit (belum dibayar)" value={money(stats.issued_outstanding)} tone="#0058CC" />

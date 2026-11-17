@@ -1,16 +1,23 @@
 {
  "kode": "F07",
- "judul": "Kas Kecil — cairkan uang muka, pertanggungjawaban (LPJ) dengan bukti, terima sisa",
+ "modul": "3.3",
+ "judul": "Kas Kecil — cairkan uang muka, pertanggungjawaban (LPJ), terima sisa",
  "bagian": "A",
- "tujuan": "Peserta menjalankan alur harian kas kecil dari ujung ke ujung: mencairkan pengajuan dana (PD) karyawan yang sudah disetujui dari Kas Toko, mengetik pertanggungjawaban (LPJ) per kategori biaya dengan foto nota, meminta persetujuan Manajer, lalu menerima kembali sisa uang muka — dan membuktikan di Buku Besar bahwa uang muka karyawan kembali nol dan beban masuk ke akun yang benar.",
- "kapan": "Setiap kali karyawan (sales, sopir, admin) butuh uang tunai untuk keperluan kantor: pagi dicairkan, sore/esok hari nota dikumpulkan dan sisa uang dikembalikan ke kasir.",
+ "tujuan": "Peserta bisa menjalankan alur kas kecil dari pencairan uang muka sampai sisa uangnya kembali, dan memeriksa jurnalnya.",
+ "kapan": "Setiap kali karyawan butuh uang tunai untuk keperluan kantor. Pagi dicairkan; sore atau esok hari nota dikumpulkan dan sisa uang dikembalikan.",
+ "konsep": [
+  "Pengajuan dana (PD) adalah permintaan uang muka dari karyawan. PD harus disetujui berjenjang sebelum dicairkan.",
+  "Saat dicairkan, uang belum menjadi beban. Uang itu dicatat sebagai uang muka karyawan (1-1400).",
+  "Pertanggungjawaban (LPJ) mengubah uang muka menjadi beban sesuai nota. Kategori di LPJ menentukan akun beban.",
+  "Sisa uang yang dikembalikan menutup uang muka, sehingga saldo uang muka PD itu kembali nol."
+ ],
  "peran": "Finance (akun peserta) · Manajer (pelatih, akun manager@)",
  "menit": 25,
- "data_awal": "Kartu Peserta baris *c_kas:pd_kas_kecil*: PD nomor KSC/PD-… sebesar Rp 500.000 atas nama karyawan sales (pemohon), keperluan 'Latihan NN · Kunjungan Toko Kain Peserta NN', SUDAH disetujui tiga jenjang (Atasan Langsung, Pimpinan, Bagian Keuangan). Rekening kas kecil PT Sukacita: 'Kas Toko KSC' (satu-satunya rekening kas kecil → terisi otomatis). Siapkan foto nota (boleh foto struk apa saja dari HP) untuk diunggah.",
+ "data_awal": "Kartu Peserta › PD kas kecil: PD KSC/PD-… sebesar Rp 500.000 atas nama karyawan sales, keperluan 'Latihan NN · Kunjungan Toko Kain Peserta NN'. PD sudah disetujui tiga jenjang (Atasan Langsung, Pimpinan, Bagian Keuangan). Rekening kas kecil PT Sukacita adalah Kas Toko KSC. Siapkan satu foto nota (boleh foto struk apa saja) untuk diunggah.",
  "alur": [
   {
    "peran": "Karyawan (sales)",
-   "label": "Ajukan dana PD"
+   "label": "Ajukan dana (PD)"
   },
   {
    "peran": "Atasan/Pimpinan",
@@ -27,7 +34,7 @@
   {
    "peran": "Manajer",
    "label": "Setujui & posting LPJ",
-   "cabang": "biaya > uang muka → bayar reimburse"
+   "cabang": "Biaya > uang muka → bayar reimburse"
   },
   {
    "peran": "Finance",
@@ -60,117 +67,116 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Kas Kecil",
-   "aksi": "Masuk dengan akun peserta, buka menu, ketik *Latihan NN* di kotak cari 'Cari nomor PD/LPJ, keperluan, pemohon…'",
-   "isi": "*Cari*: Latihan NN (NN = nomor peserta)",
-   "hasil": "Satu baris PD: nomor KSC/PD-…, keperluan 'Latihan NN · Kunjungan Toko Kain Peserta NN', pemohon karyawan sales · Penjualan, Jumlah Rp 500.000, Tahap 'Diajukan' dengan keterangan kecil 'Disetujui' (= siap dicairkan), Pertanggungjawaban 'Belum ada', tombol [[Buka]].",
+   "aksi": "Masuk dengan akun peserta dan buka Kas Kecil. Ketik 'Latihan NN' di kotak cari.",
+   "isi": "*Cari nomor PD/LPJ, keperluan, pemohon…*: Latihan NN",
+   "hasil": "Satu baris PD: KSC/PD-…, keperluan 'Latihan NN · Kunjungan Toko Kain Peserta NN', jumlah Rp 500.000, Tahap 'Diajukan' dengan keterangan kecil 'Disetujui' (siap dicairkan), Pertanggungjawaban 'Belum ada', dan tombol [[Buka]].",
    "gambar": "uji/hasil/F07/01-daftar-kas-kecil.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Kas Kecil › rincian PD",
-   "aksi": "Klik [[Buka]] → baca rincian dan Riwayat Persetujuan",
+   "aksi": "Klik [[Buka]]. Baca rincian dan Riwayat Persetujuan.",
    "isi": "",
-   "hasil": "Pop-up rincian: status 'Disetujui', Total Pengajuan Rp 500.000, Riwayat Persetujuan tiga baris hijau (Atasan Langsung, Pimpinan, Bagian Keuangan — Disetujui). Di kanan atas ada tombol [[Cairkan]].",
+   "hasil": "Status 'Disetujui', Total Pengajuan Rp 500.000, dan tiga baris persetujuan hijau. Di kanan atas ada tombol [[Cairkan]].",
    "gambar": "uji/hasil/F07/02-pd-disetujui.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Kas Kecil › rincian PD › Cairkan",
-   "aksi": "Klik [[Cairkan]] → periksa isian → [[Cairkan Dana]] → di dialog konfirmasi klik [[Cairkan Dana]]",
-   "isi": "*Sumber Kas*: Kas Kecil (tunai) · *Rekening*: Kas Toko KSC (terisi otomatis, tulisan 'Satu-satunya rekening Kas Kecil Sukacita')",
-   "hasil": "Dialog 'Cairkan KSC/PD-…?' menyebut kas keluar dari Kas Toko KSC, Nominal Rp 500.000 · Sukacita Textile. Sesudah konfirmasi: notifikasi hijau 'KSC/PD-… dicairkan (Rp 500.000).', status berubah 'Dicairkan', muncul 'Kas Keluar KSC/CASH-… · Kas Kecil' dan bilah 'Dana sudah dicairkan dan belum dipertanggungjawabkan' dengan tombol [[Pertanggungjawabkan]]. Serahkan uangnya ke karyawan (cetak [[Tanda Terima]] bila perlu).",
+   "aksi": "Klik [[Cairkan]]. Periksa isian, lalu klik [[Cairkan Dana]] di form dan di jendela konfirmasi.",
+   "isi": "*Sumber kas*: Kas Kecil (tunai) · *Rekening*: Kas Toko KSC (terisi otomatis)",
+   "hasil": "Notifikasi hijau 'KSC/PD-… dicairkan (Rp 500.000).' Status berubah menjadi 'Dicairkan' dan muncul tombol [[Pertanggungjawabkan]].",
    "gambar": "uji/hasil/F07/03-form-cairkan.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Tutup rincian PD (×), buka Buku Besar, ketik nomor PD di kotak 'Cari nomor jurnal / keterangan…' → klik baris bersumber [[Kas]]",
-   "isi": "*Cari*: KSC/PD-… (nomor PD Anda)",
-   "hasil": "Rincian jurnal 'Kas keluar · Pencairan KSC/PD-… — Latihan NN …': 1-1400 Uang Muka & Biaya Dibayar Dimuka — Debit Rp 500.000; 1-1110 Kas Kecil — Kredit Rp 500.000; baris Total debit = kredit. Artinya uang belum menjadi beban — masih piutang karyawan (uang muka).",
+   "aksi": "Tutup rincian PD (×). Di Buku Besar, cari nomor PD lalu klik baris bersumber 'Kas'.",
+   "isi": "*Cari nomor jurnal / keterangan…*: nomor PD Anda",
+   "hasil": "Jurnal 'Kas keluar · Pencairan KSC/PD-…': 1-1400 Uang Muka & Biaya Dibayar Dimuka di Debit Rp 500.000 dan 1-1110 Kas Kecil di Kredit Rp 500.000.",
    "gambar": "uji/hasil/F07/06-jurnal-pencairan.png"
   },
   {
    "no": 5,
    "peran": "Finance",
-   "menu": "Keuangan › Kas & Bank › Kas Kecil › rincian PD › Pertanggungjawabkan",
-   "aksi": "Buka lagi PD Anda → klik [[Pertanggungjawabkan]] → isi baris pertama, klik [[Tambah Baris]], isi baris kedua → [[Simpan LPJ]]",
-   "isi": "Baris 1: *Tanggal* hari ini · *Uraian*: Bensin & tol kunjungan pelanggan · *Kategori*: Transportasi (Service Mobil/Taxi/BBM/Tol/Parkir) · *Nominal*: 185000\nBaris 2: *Tanggal* hari ini · *Uraian*: Fotokopi katalog & materai · *Kategori*: Fotokopi / Printing / Jilid / Materai · *Nominal*: 47000\n*Divisi*: Penjualan (PD dan *Periode* sudah terisi)",
-   "hasil": "Sebelum simpan: 'Ringkasan per Kategori' (Transportasi Rp 185.000 · Fotokopi Rp 47.000), Total Pengeluaran Rp 232.000, Dana Diterima Rp 500.000, 'Sisa Uang Muka (dikembalikan sesudah disetujui)' Rp 268.000 (hijau). Sesudah simpan: notifikasi 'KSC/STL-… disimpan.' dan kartu LPJ berstatus 'Draf' muncul di bawah rincian PD.",
+   "menu": "Kas Kecil › rincian PD › Pertanggungjawabkan",
+   "aksi": "Buka lagi PD Anda dan klik [[Pertanggungjawabkan]]. Isi dua baris pengeluaran, lalu klik [[Simpan LPJ]].",
+   "isi": "Baris 1: *Tanggal* hari ini · *Uraian*: Bensin & tol kunjungan pelanggan · *Kategori*: Transportasi (Service Mobil/Taxi/BBM/Tol/Parkir) · *Nominal*: 185000\nKlik [[Tambah Baris]]. Baris 2: *Tanggal* hari ini · *Uraian*: Fotokopi katalog & materai · *Kategori*: Fotokopi / Printing / Jilid / Materai · *Nominal*: 47000\n*Divisi*: Penjualan (PD dan *Periode* sudah terisi)",
+   "hasil": "Sebelum disimpan: Total Pengeluaran Rp 232.000, Dana Diterima Rp 500.000, dan Sisa Uang Muka Rp 268.000 (hijau). Sesudah disimpan: notifikasi 'KSC/STL-… disimpan.' dan kartu LPJ berstatus 'Draf'.",
    "gambar": "uji/hasil/F07/07-form-lpj.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Kas Kecil › rincian PD › kartu LPJ",
-   "aksi": "Di bagian 'Lampiran bukti' klik [[Unggah Bukti]] → pilih foto nota → klik [[Ajukan]] di kepala kartu LPJ",
-   "isi": "*Berkas*: foto/PDF nota (maks. 10 MB)",
-   "hasil": "Notifikasi 'Bukti … dilampirkan.'; 'Lampiran bukti (1)' menampilkan gambar kecil, nama berkas, ukuran, nama Anda. Sesudah [[Ajukan]]: notifikasi 'KSC/STL-… diajukan.', status LPJ 'Diajukan'. Isi LPJ tidak bisa diubah lagi (tombol Ubah & Unggah Bukti hilang).",
+   "aksi": "Klik [[Unggah Bukti]] dan pilih foto nota. Klik [[Ajukan]] di kepala kartu LPJ.",
+   "isi": "*Berkas*: foto atau PDF nota (maks. 10 MB)",
+   "hasil": "'Lampiran bukti (1)' menampilkan gambar kecil nota. Sesudah [[Ajukan]], status LPJ menjadi 'Diajukan' dan isinya tidak bisa diubah lagi.",
    "gambar": "uji/hasil/F07/08-lpj-bukti.png"
   },
   {
    "no": 7,
    "peran": "Manajer (pelatih)",
    "menu": "Keuangan › Kas & Bank › Kas Kecil (akun manager@)",
-   "aksi": "Pelatih masuk sebagai manager@, cari PD peserta → [[Buka]] → di kartu LPJ klik [[Setujui & Posting GL]] → konfirmasi [[Setujui & Posting]]",
+   "aksi": "Pelatih masuk sebagai manager@ dan membuka PD peserta. Di kartu LPJ, klik [[Setujui & Posting GL]], lalu [[Setujui & Posting]].",
    "isi": "",
-   "hasil": "Notifikasi 'KSC/STL-… disetujui & diposting ke GL.'; status LPJ 'Terposting GL', lencana 'Jurnal Terbit'; bilah kuning 'Sisa uang muka Rp 268.000 harus dikembalikan <nama pemohon PD>.' Finance TIDAK bisa menyetujui LPJ sendiri — itu tugas Manajer.",
+   "hasil": "Notifikasi 'KSC/STL-… disetujui & diposting ke GL.' Status LPJ 'Terposting GL' dan muncul bilah kuning 'Sisa uang muka Rp 268.000 harus dikembalikan …'.",
    "gambar": "uji/hasil/F07/10-lpj-disetujui.png"
   },
   {
    "no": 8,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Masuk lagi dengan akun peserta → ketik nomor LPJ (KSC/STL-…) di kotak cari → klik baris bersumber [[LPJ Kas Kecil]]",
-   "isi": "*Cari*: KSC/STL-… (nomor LPJ Anda)",
-   "hasil": "Jurnal 'Pertanggungjawaban petty cash KSC/STL-…': 6-4600 Beban Transportasi & BBM — Debit Rp 185.000; 6-4300 Beban Cetak, Fotokopi & Materai — Debit Rp 47.000; 1-1400 Uang Muka & Biaya Dibayar Dimuka — Kredit Rp 232.000. Kategori di LPJ menentukan akun beban.",
+   "aksi": "Masuk lagi dengan akun peserta. Di Buku Besar, cari nomor LPJ lalu klik baris bersumber 'LPJ Kas Kecil'.",
+   "isi": "*Cari*: nomor LPJ Anda (KSC/STL-…)",
+   "hasil": "Jurnal 'Pertanggungjawaban kas kecil KSC/STL-…': 6-4600 Beban Transportasi & BBM (D) Rp 185.000, 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000, dan 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 232.000.",
    "gambar": "uji/hasil/F07/11-jurnal-lpj.png"
   },
   {
    "no": 9,
    "peran": "Finance",
-   "menu": "Keuangan › Kas & Bank › Kas Kecil › rincian PD › kartu LPJ",
-   "aksi": "Terima uang sisa dari karyawan, lalu buka PD → klik [[Terima Pengembalian Sisa Rp 268.000]] → periksa isian → [[Terima Pengembalian]] → konfirmasi [[Terima Pengembalian]]",
+   "menu": "Kas Kecil › rincian PD › kartu LPJ",
+   "aksi": "Setelah uang sisa diterima, klik [[Terima Pengembalian Sisa Rp 268.000]] di PD Anda. Klik [[Terima Pengembalian]] di form dan di jendela konfirmasi.",
    "isi": "*Jenis kas*: Kas Kecil (tunai) · *Rekening*: Kas Toko KSC (otomatis) · *Tanggal*: hari ini",
-   "hasil": "Dialog 'Terima Rp 268.000 dari <pemohon> ke Kas Toko KSC · Sukacita Textile?'. Sesudah konfirmasi: notifikasi 'Sisa uang muka KSC/STL-… diterima (KSC/CASH-…).'; ringkasan LPJ 'Sisa Dikembalikan · KSC/CASH-…' Rp 268.000 (hijau). Tutup pop-up: di daftar Kas Kecil tahap PD menjadi 'Selesai'.",
+   "hasil": "Notifikasi 'Sisa uang muka KSC/STL-… diterima (KSC/CASH-…).' Ringkasan LPJ menulis 'Sisa Dikembalikan' Rp 268.000, dan di daftar Kas Kecil tahap PD menjadi 'Selesai'.",
    "gambar": "uji/hasil/F07/13-form-terima-sisa.png"
   },
   {
    "no": 10,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik nomor LPJ lagi → klik baris bersumber [[Kas]] ('Kas masuk · Pengembalian sisa uang muka …')",
+   "aksi": "Cari nomor LPJ lagi. Klik baris bersumber 'Kas' berketerangan 'Kas masuk · Pengembalian sisa uang muka …'.",
    "isi": "*Cari*: KSC/STL-…",
-   "hasil": "Jurnal: 1-1110 Kas Kecil — Debit Rp 268.000; 1-1400 Uang Muka & Biaya Dibayar Dimuka — Kredit Rp 268.000. Uang muka PD ini sekarang nol: 500.000 (cair) − 232.000 (LPJ) − 268.000 (sisa) = 0.",
+   "hasil": "Jurnal: 1-1110 Kas Kecil (D) Rp 268.000 dan 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 268.000.",
    "gambar": "uji/hasil/F07/16-jurnal-pengembalian.png"
   },
   {
    "no": 11,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
-   "aksi": "Klik kartu [[Kas Toko KSC]] → tab Mutasi",
+   "aksi": "Klik kartu [[Kas Toko KSC]] untuk melihat daftar mutasinya.",
    "isi": "",
-   "hasil": "Dua baris milik Anda: keluar Rp 500.000 'Pencairan KSC/PD-…' dan masuk Rp 268.000 'Pengembalian sisa uang muka KSC/STL-…' — bersih Kas Toko turun Rp 232.000 (= biaya yang sudah dibuktikan nota). Saldo kartu ikut bergerak karena transaksi peserta lain di Kas Toko yang sama.",
+   "hasil": "Dua baris milik Anda: keluar Rp 500.000 'Pencairan KSC/PD-…' dan masuk Rp 268.000 'Pengembalian sisa uang muka KSC/STL-…'. Bersihnya Kas Toko turun Rp 232.000, sama dengan total nota.",
    "gambar": "uji/hasil/F07/17-mutasi-kas-toko.png"
   }
  ],
  "cek_buku": [
-  "Pencairan: 1-1400 Uang Muka & Biaya Dibayar Dimuka (D) Rp 500.000 · 1-1110 Kas Kecil (K) Rp 500.000 — seimbang",
-  "LPJ disetujui: 6-4600 Beban Transportasi & BBM (D) Rp 185.000 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka (K) Rp 232.000 — seimbang; tanggal jurnal = tanggal pengeluaran terakhir di LPJ",
-  "Pengembalian sisa: 1-1110 Kas Kecil (D) Rp 268.000 · 1-1400 Uang Muka (K) Rp 268.000 — seimbang",
-  "Saldo 1-1400 untuk PD ini = 500.000 − 232.000 − 268.000 = Rp 0; Kas Toko bersih −Rp 232.000",
-  "Bila biaya LEBIH besar dari uang muka: LPJ mencatat Hutang Reimburse Karyawan 2-1650 dan muncul tombol [[Bayar Reimburse]] (kas keluar Dr 2-1650 / Cr Kas)"
+  "Pencairan: 1-1400 Uang Muka & Biaya Dibayar Dimuka (D) Rp 500.000 · 1-1110 Kas Kecil (K) Rp 500.000",
+  "LPJ disetujui: 6-4600 Beban Transportasi & BBM (D) Rp 185.000 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka (K) Rp 232.000",
+  "Pengembalian sisa: 1-1110 Kas Kecil (D) Rp 268.000 · 1-1400 Uang Muka (K) Rp 268.000",
+  "Saldo uang muka PD ini: 500.000 − 232.000 − 268.000 = Rp 0; Kas Toko bersih turun Rp 232.000",
+  "Bila biaya lebih besar dari uang muka: LPJ mencatat 2-1650 Hutang Reimburse Karyawan (K) dan muncul tombol [[Bayar Reimburse]]"
  ],
  "kesalahan_umum": [
-  "Mencatat pembelian kas kecil sebagai 'Transaksi Kas · Keluar' terpisah, padahal sudah dicairkan lewat PD → biaya tercatat dua kali. Uang PD dipertanggungjawabkan lewat LPJ, bukan lewat Transaksi Kas.",
-  "Memilih kategori 'Petty Cash Lainnya' untuk semua nota → semua masuk 6-4900; pilih kategori yang sesuai (BBM/tol = Transportasi, fotokopi/materai = Fotokopi/Printing).",
-  "Lupa [[Ajukan]] sesudah [[Simpan LPJ]] → LPJ tetap Draf dan Manajer tidak bisa menyetujui.",
-  "Mengunggah bukti sesudah LPJ diajukan → tidak bisa; lampiran hanya selama Draf. Bila ditolak Manajer, pembuat LPJ klik [[Perbaiki & Ajukan Lagi]].",
-  "Menerima uang sisa tetapi tidak klik [[Terima Pengembalian Sisa …]] → uang fisik di laci bertambah, buku tidak; PD tetap di tahap 'Dipertanggungjawabkan'."
+  "Mencatat belanja kas kecil lagi lewat Transaksi Kas, padahal uangnya sudah dicairkan lewat PD. Biaya jadi tercatat dua kali; pakai LPJ.",
+  "Memilih kategori 'Petty Cash Lainnya' untuk semua nota. Semua masuk ke satu akun beban; pilih kategori yang sesuai.",
+  "Lupa [[Ajukan]] sesudah [[Simpan LPJ]]. LPJ tetap Draf dan Manajer tidak bisa menyetujuinya. Bukti hanya bisa diunggah selama Draf.",
+  "Menerima uang sisa tanpa klik [[Terima Pengembalian Sisa …]]. Uang di laci bertambah, tetapi buku tidak."
  ],
- "catatan_pelatih": "Data PD disiapkan skrip (scripts/latih_keuangan/c_kas.py: PD dibuat akun sales@ lalu disetujui manajer + admin dua kali sesuai Aturan Persetujuan bawaan — jenjang 'Pimpinan' dan 'Bagian Keuangan' hanya admin, Finance tidak bisa menyetujui PD). Langkah 7 dilakukan pelatih dengan manager@ (sandi demo12345) untuk tiap peserta — sebutkan nomor PD/LPJ peserta. Kas Toko KSC dipakai bersama semua peserta, jadi saldo kartu bergerak terus; yang dicek peserta adalah BARIS mutasi miliknya. LPJ yang diketik Finance tercatat atas nama pemohon PD (diperbaiki 17 Nov: dulu atas nama pengetik). Jangan menyalakan 'Lampiran wajib' di Pengaturan selama latihan kecuali ingin menunjukkan penolakan tanpa bukti.",
+ "catatan_pelatih": "Langkah 7 dikerjakan pelatih dengan akun manager@ (sandi demo12345) untuk tiap peserta; minta peserta menyebut nomor PD atau LPJ-nya. Finance tidak bisa menyetujui PD maupun LPJ: jenjang Pimpinan dan Bagian Keuangan dipegang admin, sedangkan LPJ disetujui Manajer. Sesudah pencairan, uang diserahkan ke karyawan; tombol [[Tanda Terima]] mencetak bukti serah. Bila LPJ ditolak Manajer, pembuat LPJ klik [[Perbaiki & Ajukan Lagi]]. Kas Toko KSC dipakai bersama semua peserta, jadi saldo kartunya terus bergerak; yang dicek adalah baris mutasi milik peserta. LPJ yang diketik Finance tercatat atas nama pemohon PD (perbaikan 17 Nov). Jangan menyalakan 'Lampiran wajib' di Pengaturan selama latihan, kecuali ingin menunjukkan penolakan tanpa bukti.",
  "uji": {
   "berkas": "uji/F07_kas_kecil.js",
   "peserta_uji": "35"

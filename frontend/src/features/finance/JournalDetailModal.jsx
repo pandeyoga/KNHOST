@@ -72,6 +72,8 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
   const cashIn = cashLines.reduce((a, l) => a + Number(l.debit || 0), 0);
   const cashOut = cashLines.reduce((a, l) => a + Number(l.credit || 0), 0);
   const cashDir = cashIn > 0 && cashOut <= 0 ? "in" : cashOut > 0 && cashIn <= 0 ? "out" : "";
+  // Jurnal tanpa baris kas/bank (mis. pendapatan, HPP, penyesuaian) tidak punya bukti kas — tombol disembunyikan.
+  const adaKas = cashLines.length > 0;
 
   const doVoid = async () => {
     if (!(await askConfirm({
@@ -175,11 +177,11 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
           </button>
         )}
         {/* G1-26 — hanya bukti kas yang sesuai arah kas jurnal ini (dulu "Payment Voucher" & "Received Voucher"
-            selalu tampil berdua, juga untuk jurnal kas masuk). Arah tak jelas → keduanya. */}
-        {cashDir !== "in" && (
+            selalu tampil berdua, juga untuk jurnal kas masuk). Arah tak jelas → keduanya; tanpa baris kas → tidak ada. */}
+        {adaKas && cashDir !== "in" && (
           <button type="button" data-testid="gl-print-payment-voucher" className="secondary-button" onClick={() => printPaymentVoucher(je, entityName)}><Printer size={13} /> Bukti Kas Keluar</button>
         )}
-        {cashDir !== "out" && (
+        {adaKas && cashDir !== "out" && (
           <button type="button" data-testid="gl-print-received-voucher" className="secondary-button" onClick={() => printReceivedVoucher(je, entityName)}><Printer size={13} /> Bukti Kas Masuk</button>
         )}
         {je.source_type === "manual" && je.status !== "void" && onVoid && (

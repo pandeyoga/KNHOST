@@ -1,12 +1,19 @@
 {
  "kode": "F08",
- "judul": "Titipan Sales — terima setoran tunai yang ditagih sales ke Kas Toko",
+ "modul": "3.3",
+ "judul": "Titipan Sales — terima setoran tunai dari sales",
  "bagian": "A",
- "tujuan": "Peserta memahami alur tunai yang ditagih sales di lapangan: piutang pelanggan langsung lunas saat sales membuat kwitansi, tetapi uangnya masih 'titipan' di tangan sales (piutang karyawan), dan baru menjadi kas kantor saat Finance menghitung uangnya lalu klik Terima setoran. Peserta memeriksa jurnal kedua tahap.",
- "kapan": "Setiap sore saat sales kembali dari penagihan dan menyerahkan uang tunai ke kasir; juga untuk memantau sales yang belum menyetor (lewat tenggat).",
+ "tujuan": "Peserta bisa menerima setoran tunai yang ditagih sales ke Kas Toko dan memeriksa jurnal kedua tahapnya.",
+ "kapan": "Setiap sore saat sales kembali dari penagihan dan menyerahkan uang tunai ke kasir. Juga untuk memantau sales yang belum menyetor.",
+ "konsep": [
+  "Saat sales menerima tunai dan membuat kwitansi, piutang pelanggan langsung lunas. Tetapi uangnya masih di tangan sales.",
+  "Uang di tangan sales dicatat sebagai titipan: piutang ke karyawan (1-1280 Piutang Titipan Karyawan), belum kas kantor.",
+  "Uang baru menjadi kas setelah Finance menghitungnya dan klik [[Terima setoran]].",
+  "Bila uangnya kurang, setoran ditolak dan titipan tetap tercatat atas nama sales."
+ ],
  "peran": "Finance (akun peserta) · Sales (disiapkan skrip / diperagakan pelatih)",
  "menit": 15,
- "data_awal": "Kartu Peserta baris *c_kas:titipan_sales*: pesanan baru KSC/SO-… untuk 'Latihan NN · Toko Kain Peserta NN' sudah terkirim; sales (sales@) menagih TUNAI penuh lewat kwitansi KSC/AR-… → titipan KSC/TTP-… di tangan sales, lalu mengajukan setoran KSC/STT-… dengan catatan 'Setoran tunai Latihan NN · Toko Kain Peserta NN'. PT Sukacita memakai pengaturan 'Tunai yang diterima sales dicatat sebagai' = Titipan di tangan sales sampai disetor (dinyalakan skrip persiapan).",
+ "data_awal": "Kartu Peserta › Titipan sales: pesanan baru untuk 'Latihan NN · Toko Kain Peserta NN' sudah dikirim. Sales menagih tunai penuh lewat kwitansi KSC/AR-…, sehingga terbentuk titipan KSC/TTP-…. Sales lalu mengajukan setoran KSC/STT-… dengan catatan 'Setoran tunai Latihan NN · Toko Kain Peserta NN'.",
  "alur": [
   {
    "peran": "Sales",
@@ -23,7 +30,7 @@
   {
    "peran": "Finance",
    "label": "Hitung uang, terima setoran",
-   "cabang": "uang kurang → Tolak setoran"
+   "cabang": "Uang kurang → Tolak setoran"
   },
   {
    "peran": "Buku",
@@ -52,68 +59,68 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Titipan Sales",
-   "aksi": "Masuk dengan akun peserta → buka tab Titipan Sales → baca bagian 'Setoran menunggu diterima'",
+   "aksi": "Masuk dengan akun peserta dan buka tab Titipan Sales. Baca bagian 'Setoran menunggu diterima'.",
    "isi": "",
-   "hasil": "Baris setoran KSC/STT-… : Penyetor = nama sales, Jumlah = nominal kwitansi, Umur 'hari ini', Catatan 'Setoran tunai Latihan NN · Toko Kain Peserta NN', tombol [[Terima setoran]] dan [[Tolak]]. Di bawah tabel: jumlah setoran & total rupiah yang menunggu.",
+   "hasil": "Baris setoran KSC/STT-… berisi penyetor (nama sales), jumlah, umur 'hari ini', catatan 'Setoran tunai Latihan NN · Toko Kain Peserta NN', serta tombol [[Terima setoran]] dan [[Tolak]].",
    "gambar": "uji/hasil/F08/01-setoran-menunggu.png"
   },
   {
    "no": 2,
    "peran": "Finance",
    "menu": "Titipan Sales › Titipan belum disetor",
-   "aksi": "Ketik *Latihan NN* di kotak cari 'Cari nomor titipan / kwitansi / pelanggan / pemegang…' → klik [[Lihat kwitansi]] pada baris sales",
-   "isi": "*Cari*: Latihan NN",
-   "hasil": "Tabel per pemegang (Pemegang, Kwitansi, Belum disetor, Terima paling lama, Lewat tenggat) → sesudah [[Lihat kwitansi]]: baris KSC/TTP-… · kwitansi KSC/AR-… · pelanggan Latihan NN · Toko Kain Peserta NN · Jumlah = Belum disetor · status 'Dipegang'. Uang ini masih di tangan sales walaupun setorannya sudah diajukan.",
+   "aksi": "Ketik 'Latihan NN' di kotak cari. Klik [[Lihat kwitansi]] pada baris sales.",
+   "isi": "*Cari nomor titipan / kwitansi / pelanggan / pemegang…*: Latihan NN",
+   "hasil": "Baris KSC/TTP-… dengan kwitansi KSC/AR-…, pelanggan Anda, jumlah, dan status 'Dipegang'. Uang ini masih di tangan sales walaupun setorannya sudah diajukan.",
    "gambar": "uji/hasil/F08/03-titipan-dipegang.png"
   },
   {
    "no": 3,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik nomor kwitansi (KSC/AR-…) di kotak cari → klik baris bersumber [[Titipan Tunai Sales]]",
-   "isi": "*Cari*: KSC/AR-… (dari Kartu Peserta)",
-   "hasil": "Jurnal 'Titipan tunai sales · Titipan tunai <sales> · KSC/AR-…': 1-1280 Piutang Titipan Karyawan — Debit; 1-1200 Piutang Usaha — Kredit (nominal sama). Piutang pelanggan sudah lunas, tetapi BELUM ada kas — yang ada piutang ke karyawan (sales).",
+   "aksi": "Di Buku Besar, cari nomor kwitansi lalu klik baris bersumber 'Titipan Tunai Sales'.",
+   "isi": "*Cari*: nomor kwitansi KSC/AR-… dari Kartu Peserta",
+   "hasil": "Jurnal 'Titipan tunai sales …': 1-1280 Piutang Titipan Karyawan di Debit dan 1-1200 Piutang Usaha di Kredit, nominal sama. Belum ada kas.",
    "gambar": "uji/hasil/F08/04-jurnal-titipan.png"
   },
   {
    "no": 4,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Titipan Sales",
-   "aksi": "Hitung uang dari sales. Bila cocok: klik [[Terima setoran]] pada KSC/STT-… → pilih rekening → [[Terima setoran]] → konfirmasi [[Ya, terima setoran]]",
-   "isi": "*Masuk ke rekening*: Kas Toko KSC (uang tunai masuk laci/brankas toko)",
-   "hasil": "Pop-up menampilkan Penyetor & Jumlah. Dialog konfirmasi: 'Setoran KSC/STT-… dari <sales> untuk Sukacita, masuk ke Kas Toko KSC. Kas masuk dan jurnalnya dibuat; titipan penyetor berkurang.' Sesudahnya bilah hijau 'Setoran KSC/STT-… (Rp …) diterima ke Kas Toko KSC.' dan baris hilang dari 'Setoran menunggu diterima'.",
+   "aksi": "Hitung uangnya. Bila cocok, klik [[Terima setoran]] dan konfirmasi dengan [[Ya, terima setoran]].",
+   "isi": "*Masuk ke rekening*: Kas Toko KSC",
+   "hasil": "Jendela konfirmasi menulis 'Setoran KSC/STT-… dari <sales> untuk Sukacita, masuk ke Kas Toko KSC…'. Sesudahnya muncul bilah hijau 'Setoran KSC/STT-… (Rp …) diterima ke Kas Toko KSC.' dan barisnya hilang dari daftar.",
    "gambar": "uji/hasil/F08/05-form-terima-setoran.png"
   },
   {
    "no": 5,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik nomor setoran (KSC/STT-…) di kotak cari → klik baris bersumber [[Kas]]",
+   "aksi": "Di Buku Besar, cari nomor setoran lalu klik baris bersumber 'Kas'.",
    "isi": "*Cari*: KSC/STT-…",
-   "hasil": "Jurnal 'Kas masuk · Setoran KSC/STT-… — <sales>': 1-1110 Kas Kecil — Debit; 1-1280 Piutang Titipan Karyawan — Kredit (nominal sama). Titipan sales untuk kwitansi ini kembali nol; di daftar titipan statusnya 'Disetor' (tidak tampil lagi di 'Titipan belum disetor').",
+   "hasil": "Jurnal 'Kas masuk · Setoran KSC/STT-… — <sales>': 1-1110 Kas Kecil di Debit dan 1-1280 Piutang Titipan Karyawan di Kredit, nominal sama.",
    "gambar": "uji/hasil/F08/08-jurnal-setoran.png"
   },
   {
    "no": 6,
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
-   "aksi": "Klik kartu [[Kas Toko KSC]] → tab Mutasi",
+   "aksi": "Klik kartu [[Kas Toko KSC]] untuk melihat daftar mutasinya.",
    "isi": "",
-   "hasil": "Baris masuk 'Setoran KSC/STT-… — <sales>' sebesar nominal setoran, status rekonsiliasi 'Belum' (wajar untuk kas tunai).",
+   "hasil": "Baris masuk 'Setoran KSC/STT-… — <sales>' sebesar setoran, dengan status rekonsiliasi 'Belum' (wajar untuk kas tunai).",
    "gambar": "uji/hasil/F08/09-mutasi-kas-toko.png"
   }
  ],
  "cek_buku": [
-  "Saat sales membuat kwitansi tunai (mode titipan): 1-1280 Piutang Titipan Karyawan (D) · 1-1200 Piutang Usaha (K) — seimbang; TIDAK ada transaksi kas",
-  "Saat Finance menerima setoran: 1-1110 Kas Kecil (D) · 1-1280 Piutang Titipan Karyawan (K) — seimbang; kas masuk Kas Toko KSC",
-  "Pesanan pelanggan berstatus lunas sejak kwitansi; saldo 1-1280 untuk titipan ini = 0 sesudah setoran diterima"
+  "Sales membuat kwitansi tunai (contoh): 1-1280 Piutang Titipan Karyawan (D) Rp 3.230.378 · 1-1200 Piutang Usaha (K) Rp 3.230.378 — belum ada kas",
+  "Finance menerima setoran (contoh): 1-1110 Kas Kecil (D) Rp 3.230.378 · 1-1280 Piutang Titipan Karyawan (K) Rp 3.230.378; kas masuk ke Kas Toko KSC",
+  "Pesanan pelanggan lunas sejak kwitansi dibuat; saldo titipan untuk kwitansi ini Rp 0 setelah setoran diterima"
  ],
  "kesalahan_umum": [
-  "Menerima setoran sebelum uangnya dihitung → bila ternyata kurang, kas sudah tercatat. Hitung dulu; bila kurang/berbeda klik [[Tolak]] dan isi alasan (titipan tetap tercatat di sales).",
-  "Memilih rekening BCA padahal uang tunai diserahkan ke kasir toko → saldo bank naik tanpa mutasi bank; rekonsiliasi bank jadi selisih. Tunai = Kas Toko KSC; pilih BCA hanya bila sales sudah menyetor ke bank (ada slip setoran).",
-  "Sales yang juga memegang izin catat kas (cash.create) TIDAK memakai titipan — kwitansinya langsung menjadi kas."
+  "Menerima setoran sebelum uang dihitung. Bila ternyata kurang, kas sudah tercatat. Hitung dulu; bila berbeda, klik [[Tolak]] dan isi alasannya.",
+  "Memilih rekening BCA padahal uang tunai diserahkan ke kasir. Saldo bank naik tanpa mutasi bank dan rekonsiliasi jadi selisih. Pilih BCA hanya bila ada slip setoran bank.",
+  "Mengira semua kwitansi sales menjadi titipan. Sales yang juga punya izin mencatat kas langsung mencatat kas, tanpa titipan."
  ],
- "catatan_pelatih": "Skrip persiapan menyalakan pengaturan PT Sukacita 'pembayaran.sales_terima_tunai = titipan' (Pengaturan › Uang masuk › Kwitansi, lapisan PT) — di data nyata ini keputusan pemilik (titik henti H5). Semua setoran latihan dari akun sales@ yang sama, jadi tabel 'Setoran menunggu diterima' berisi setoran semua peserta: peserta memilih baris dengan catatan 'Latihan NN' miliknya. Tombol [[Terima setoran]] mati untuk penyetor sendiri (setoran harus diterima orang lain). Bila ingin memperagakan sisi sales: masuk sales@ di HP → Titipan Saya → Ajukan setoran.",
+ "catatan_pelatih": "Skrip persiapan menyalakan pengaturan PT Sukacita 'Tunai yang diterima sales dicatat sebagai: titipan di tangan sales sampai disetor' (Pengaturan › Uang masuk › Kwitansi). Untuk data nyata, ini keputusan pemilik. Semua setoran latihan berasal dari akun sales@ yang sama, jadi daftar 'Setoran menunggu diterima' berisi setoran semua peserta; peserta memilih baris dengan catatan 'Latihan NN' miliknya. Tombol [[Terima setoran]] mati untuk penyetor sendiri (setoran harus diterima orang lain). Sisi sales bisa diperagakan dengan akun sales@ di HP: Titipan Saya › Ajukan setoran.",
  "uji": {
   "berkas": "uji/F08_titipan_sales.js",
   "peserta_uji": "35"

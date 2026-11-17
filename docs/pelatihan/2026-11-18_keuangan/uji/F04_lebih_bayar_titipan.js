@@ -50,7 +50,7 @@ async function prasyarat(k, cust) {
     const terbuka = (await (await api(akunPeserta(NO))).get(`/ar-receipts/open-orders?customer_id=${cust.id}`, KSC));
     assert(terbuka.length === 1 && terbuka[0].order_id === so.so_id,
       `pelanggan harus hanya punya ${so.so} terbuka (ada: ${terbuka.map((o) => o.number).join(", ")})`);
-    const transfer = Math.ceil((sisa + 1) / 500000) * 500000;      // pelanggan mentransfer angka bulat di atas sisa
+    const transfer = Math.ceil((sisa + 10000) / 500000) * 500000;  // dibulatkan ke atas ke Rp 500.000, kelebihan ≥ Rp 10.000 (di atas toleransi)
     const lebih = Math.round((transfer - sisa) * 100) / 100;
     r.note(`Peserta ${NO} · ${so.so} sisa ${sisa} · transfer ${transfer} · lebih ${lebih}`);
 

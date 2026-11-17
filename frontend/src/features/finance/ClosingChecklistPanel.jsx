@@ -61,9 +61,11 @@ export function checklistSummary(items = []) {
   return parts.join(" · ");
 }
 
-/** Butir `warning` sebagai baris peringatan dialog konfirmasi tutup buku. */
+/** Butir `warning` sebagai baris peringatan dialog konfirmasi tutup buku. Rincian server sudah berupa kalimat masalah
+ *  ("Penggajian belum diposting: …"); nama butir berupa pernyataan yang belum terpenuhi ("… sudah diposting") sehingga
+ *  hanya dipakai bila rincian kosong — digabung keduanya terbaca bertentangan. */
 export const checklistWarnings = (data) => (data?.items || []).filter((it) => it.status === "warning")
-  .map((it) => `${it.label}: ${it.detail || checkValueText(it)}`);
+  .map((it) => it.detail || `${it.label}: ${checkValueText(it)}`);
 
 export function useClosingChecklist(entityId, periodType, periodKey) {
   const [state, setState] = useState("idle");   // idle | loading | ok | error
