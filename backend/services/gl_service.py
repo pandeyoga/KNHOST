@@ -3228,20 +3228,28 @@ async def post_amendment_debit_note(note: Dict[str, Any]) -> Optional[Dict[str, 
 
 
 async def post_store_credit_redemption(*, redemption_id: str, entity_id: str, amount: float,
-                                        customer_label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
+                                        customer_label: str = "", date: str = "",
+                                        advance: float = 0.0) -> Optional[Dict[str, Any]]:
     """R5.2 — Redeem store credit sebagai pembayaran piutang.
       Dr 2-1450 Saldo Kredit Pelanggan / Cr 1-1200 Piutang (sebesar yang dialokasikan).
+    KEB-PDPT (temuan gate INV-BAL-02, 18 Nov) — bagian yang dialokasikan ke pesanan yang pendapatannya BELUM lahir
+    (`advance`, baris bayarnya ditandai `gl_bucket=advance`) adalah uang muka: Cr 2-1400, bukan Cr 1-1200; direklas ke
+    piutang saat surat jalan (`post_advance_reclass`) — sama dengan kwitansi kas (`_receipt_lines`).
     Idempotent (source_type='store_credit_redeem', source_id=redemption_id)."""
     amount = round(float(amount or 0), 2)
     if not redemption_id or amount <= EPS or await _already_posted("store_credit_redeem", redemption_id):
         return None
     lbl = customer_label or redemption_id
-    lines = [
-        {"account_code": ACC_STORE_CREDIT, "debit": amount, "credit": 0.0,
-         "description": f"Pemakaian store credit {lbl}"},
-        {"account_code": ACC_PIUTANG, "debit": 0.0, "credit": amount,
-         "description": f"Pelunasan piutang via store credit {lbl}"},
-    ]
+    advance = round(min(max(float(advance or 0), 0.0), amount), 2)
+    to_ar = round(amount - advance, 2)
+    lines = [{"account_code": ACC_STORE_CREDIT, "debit": amount, "credit": 0.0,
+              "description": f"Pemakaian store credit {lbl}"}]
+    if to_ar > 0:
+        lines.append({"account_code": ACC_PIUTANG, "debit": 0.0, "credit": to_ar,
+                      "description": f"Pelunasan piutang via store credit {lbl}"})
+    if advance > 0:
+        lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": 0.0, "credit": advance,
+                      "description": f"Uang muka pesanan belum dikirim via store credit {lbl}"})
     return await _insert_entry(
         lines=lines, description=f"Redeem store credit {lbl}",
         date=date or now_iso(), source_type="store_credit_redeem",

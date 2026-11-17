@@ -889,10 +889,13 @@ async def _apply(amd: Dict[str, Any], actor: Dict[str, Any], auto: bool) -> Dict
         logging.getLogger(__name__).warning("[CR-T3] gerbang kredit sesudah amandemen %s gagal: %s", amd.get("number"), exc)
 
     now = now_iso()
+    # `refs` TIDAK ditulis di sini: tautan dua arah (amends, issued) sudah didorong `doc_refs_service` selama penerapan.
+    # Dulu `"refs": salinan.refs + refs` dengan `$set` menimpa tautan balik itu (amandemen auto lahir dengan refs kosong
+    # → kehilangan `amends`; nota → amandemen satu arah) dan menambah baris tak baku (`issued`→`debit_note`,
+    # `applied_to`) — INV-REF-02 / INV-AMD-01. Hasil penerapan tetap di `result_refs`.
     await db[AMD_COLL].update_one({"id": amd["id"]}, {"$set": {
         "status": "auto_applied" if auto else "applied",
         "applied_at": now, "result_refs": refs, "updated_at": now,
-        "refs": (amd.get("refs") or []) + refs,
     }})
     return safe_doc(await db[AMD_COLL].find_one({"id": amd["id"]}, {"_id": 0}))
 

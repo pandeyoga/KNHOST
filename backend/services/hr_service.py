@@ -122,6 +122,15 @@ async def get_hr_settings(entity_id: str = "") -> Dict[str, Any]:
     return merged
 
 
+async def employee_id_of_user(user_id: str) -> str:
+    """PR-T7 — id karyawan milik akun ini, dari SUMBER YANG SAMA dengan `GET /api/hr/employees/me`
+    (`hr_employees.user_id`). Hanya membaca baris karyawan pengguna itu sendiri (bukan daftar), jadi tidak butuh
+    pagar entitas; dipindah dari `routers/auth.py` supaya router tidak menyentuh koleksi ter-scope secara langsung
+    (gate isolasi E0.10)."""
+    emp = await db.hr_employees.find_one({"user_id": user_id or ""}, {"_id": 0, "id": 1})
+    return (emp or {}).get("id", "") or ""
+
+
 async def org_unit_map(entity_ids: List[str]) -> Dict[str, Dict[str, Any]]:
     """Map id -> unit (name/unit_type/parent) untuk resolusi nama dept/posisi."""
     ids = [e for e in (entity_ids or []) if e]

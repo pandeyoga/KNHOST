@@ -7,7 +7,7 @@ Saldo per (customer_id, entity_id) = Σ amount entri non-void.
 
 Sisi GL (idempotent, via gl_service):
     issue  → Cr 2-1450 (di-posting oleh post_sales_return saat settle store_credit)
-    redeem → Dr 2-1450 / Cr 1-1200 Piutang  (post_store_credit_redemption)
+    redeem → Dr 2-1450 / Cr 1-1200 Piutang  (post_store_credit_redemption; pesanan belum dikirim → Cr 2-1400 uang muka)
     adjust → post_store_credit_adjust
 
 Redeem meng-apply saldo ke Sales Order ber-AR terbuka (payments[].method='store_credit'),
@@ -244,12 +244,24 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
                             detail="Tidak ada order piutang terbuka untuk dialokasikan store credit")
 
     label = f"{number} — {customer.get('name', '')}"
+    adv_orders: List[str] = []
     # CX-03 — jurnal gagal → alokasi AR yang sudah ditulis DIKOMPENSASI (tidak ada AR terbayar tanpa
     # kredit terpotong), lalu galat dilempar; retry memakai saldo yang masih utuh secara konsisten.
     try:
+        # KEB-PDPT (gate INV-BAL-02, 18 Nov) — pesanan yang pendapatannya belum lahir (belum dikirim): bagian itu uang
+        # muka (Cr 2-1400, baris bayar `gl_bucket=advance`, direklas saat surat jalan) — aturan sama dengan kwitansi kas
+        # (`gl_service._receipt_lines`). Dulu selalu Cr 1-1200 → piutang buku besar minus untuk pesanan belum terkirim.
+        advance = 0.0
+        for a in applied:
+            oid, amt_al = a.get("order_id"), round(float(a.get("applied") or 0), 2)
+            if oid and amt_al > EPS and \
+                    amt_al > (await gl_service.order_ar_room(oid, exclude_receipt_id=redemption_id)) + EPS:
+                advance = round(advance + amt_al, 2)
+                adv_orders.append(oid)
+                await gl_service.tag_advance_payment(oid, redemption_id)
         je = await gl_service.post_store_credit_redemption(
             redemption_id=redemption_id, entity_id=entity_id, amount=applied_total,
-            customer_label=label, date=now)
+            customer_label=label, date=now, advance=advance)
     except Exception as exc:
         await _aas.remove_unborn(redemption_id)   # PK-19 — penebusan tidak pernah sah → barisnya dicabut
         raise HTTPException(status_code=409, detail=f"Jurnal store credit gagal, penebusan dibatalkan: {exc}")
@@ -281,7 +293,18 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
         "updated_at": now,
     }
     await db.store_credit_redemptions.insert_one(dict(doc))
-    return safe_doc(doc)
+    # Pesanan yang SUDAH sebagian berpendapatan: porsi uang muka yang piutangnya sudah lahir direklas ke piutang
+    # sekarang (Dr 2-1400 / Cr 1-1200), bukan menunggu surat jalan berikutnya — pola kwitansi kas (`_post_cash_transaction`
+    # sesudah `_receipt_lines`). Pesanan belum dikirim: tidak ada yang direklas. Gagal reklas tidak membatalkan
+    # penebusan (penandanya di `reclass_gl_status`; surat jalan berikutnya menghitung ulang selisih reklasnya).
+    for oid in dict.fromkeys(adv_orders):
+        fresh = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+        if fresh:
+            await gl_service.post_durable(
+                "store_credit_redemptions", redemption_id,
+                lambda fresh=fresh: gl_service.post_advance_reclass(fresh),
+                source_type="advance_reclass", source_id=oid, field="reclass_gl_status")
+    return safe_doc(await db.store_credit_redemptions.find_one({"id": redemption_id}, {"_id": 0}) or doc)
 
 
 # ─── Adjust (koreksi manual admin) ───────────────────────────────────────────
@@ -363,13 +386,33 @@ async def reverse_redemption(redemption_id: str, *, reason: str = "",
         return safe_doc(red)   # idempotent
 
     applied_total = round(float(red.get("applied_amount", 0) or 0), 2)
+    # Uang muka (pesanan belum berpendapatan saat ditebus) per pesanan — dibaca SEBELUM baris dibalik
+    # (pola `posting_registry.post_receipt_void`).
+    uang_muka: Dict[str, float] = {}
+    for oid in dict.fromkeys(a.get("order_id") for a in red.get("allocations") or [] if a.get("order_id")):
+        o = await db.sales_orders.find_one({"id": oid}, {"_id": 0, "payments": 1}) or {}
+        adv = round(sum(float(p.get("amount") or 0) for p in o.get("payments") or []
+                        if p.get("receipt_id") == redemption_id and p.get("gl_bucket") == gl_service.ADVANCE_BUCKET
+                        and float(p.get("amount") or 0) > 0 and not p.get("reverses")), 2)
+        if adv > EPS:
+            uang_muka[oid] = adv
     # 1) Kembalikan outstanding tiap order yang sempat dilunasi via redemption ini. PK-19 (SL-06) — baris DIBALIK
     #    (baris pembalik bertanggal hari ini), tidak dihapus; periode lalu tidak berubah mundur.
     from services import ar_allocation_service as _aas
     await _aas.reverse(source_id=redemption_id, date=now_iso(), actor=_actor_name(actor),
                        reason=reason or "Pembatalan pemakaian store credit")
 
-    # 2) Balik GL redeem (Dr 1-1200 / Cr 2-1450) — idempotent.
+    # 2) Balik GL redeem (Dr 1-1200 / Dr 2-1400 uang muka / Cr 2-1450) — idempotent. Uang muka yang SUDAH direklas ke
+    #    piutang saat surat jalan dikembalikan dulu ke piutang (Dr 1-1200 / Cr 2-1400), sama dengan batal kwitansi.
+    for oid, adv in uang_muka.items():
+        o = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+        if o:
+            await gl_service.post_durable(
+                "store_credit_redemptions", redemption_id,
+                lambda o=o, adv=adv: gl_service.post_advance_reclass_reversal(
+                    o, redemption_id, adv, label=f"batal {red.get('number', '')}"),
+                source_type="advance_reclass_reversal", source_id=f"{oid}:{redemption_id}",
+                field="reclass_void_gl_status", raise_on_fail=True)
     rev_jes = await gl_service.reverse_document(
         "store_credit_redeem", redemption_id, reason=reason or "Pembatalan pemakaian store credit",
         actor_name=_actor_name(actor))

@@ -42,6 +42,7 @@ SCOPE_FIELD: Dict[str, Optional[str]] = {
     "rfid_print_jobs": "owner_entity_id",
     "rfid_verify_sessions": "owner_entity_id",
     "putaway_orders": "owner_entity_id",
+    "material_reservations": "owner_entity_id",   # FIX-9 — cadangan bahan makloon mengikuti pemilik roll
     "warehouse_sites": SHARED,
     # FASE R6 — log keamanan lintas entitas (insiden gate & cycle count)
     "rfid_incidents": SHARED,
@@ -196,6 +197,16 @@ SCOPED_COLLECTIONS = {
     "incentive_components", "incentive_definitions",   # KM-T1 — komponen & versi definisi angka insentif per PT
     "incentive_sheets",                                # KM-T3 — lembar insentif (dokumen keputusan per PT)
     "fact_shipment_sales", "fact_collections",         # KM-T1 — fakta omzet terkirim & pencairan (turunan, per PT)
+    # Gate merah lama 17 Nov (audit_entity_isolation E0.10 / POC E-0 L15): tiga koleksi ber-entitas belum terdaftar.
+    "customer_balances",              # CR-T2 — saldo piutang tersimpan per (pelanggan, PT), turunan
+    "fact_sales_lines",               # Tanya KN F1.1 — fakta baris penjualan per PT pesanan (turunan)
+    "material_reservations",          # FIX-9 — cadangan bahan makloon per roll (field `owner_entity_id`)
+    # Data latihan keuangan 18 Nov (sapuan statik baca-saja ke DB bersama): enam koleksi uang/buku ber-entitas lagi.
+    "store_credit_redemptions",       # pemakaian saldo kredit pelanggan (uang satu PT)
+    "collection_followups",           # tindak lanjut penagihan per PT
+    "credit_overrides",               # izin lewat batas kredit per pesanan (PT pesanan)
+    "period_closings", "period_unlock_requests",   # tutup buku & permintaan buka periode per PT
+    "gl_account_mappings", "gl_account_mapping_history",   # pemetaan akun berlapis (global "" → PT)
     "warehouse_transfers",            # L13/L14 — transfer gudang (antar-entitas: lihat E0.8b)
     "purchase_returns",               # retur beli = dokumen entitas
     "repair_orders",                  # UAT 24 Okt (P7) — perbaikan / celup ulang roll milik entitas
@@ -329,6 +340,8 @@ INHERITED_GLOBAL_VALUES: Dict[str, List[Any]] = {
     # lininya sedang dipakai 12 layar lain.
     "product_lines": ["all", "", None],
     "payment_methods": ["all", "", None],   # PM-T1 — baris global cara bayar berlaku di semua PT
+    "gl_account_mappings": ["", None],         # pemetaan akun global (entity_id kosong) berlaku di semua PT
+    "gl_account_mapping_history": ["", None],  # idem — riwayat pemetaan global
     # FASE T — tahapan proses: baris global "all" WAJIB tetap terlihat di semua badan
     # usaha. Tanpa baris ini, pemilih langkah SPK & layar Master → Tahapan Proses
     # akan tampak KOSONG padahal tahapnya sedang dipakai SPK.

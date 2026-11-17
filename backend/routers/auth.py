@@ -62,8 +62,8 @@ async def _my_nav(role: str) -> Dict[str, Any]:
 # `users.employee_id` tidak cukup: proses awal menautkan karyawan hanya dari sisi HR (data acuan: 14 dari 17 akun
 # tertaut tanpa `users.employee_id`). Layar Profil Saya tidak memanggil `/hr/employees/me` bila nilainya kosong.
 async def _employee_id_of(user: Dict[str, Any]) -> str:
-    emp = await db.hr_employees.find_one({"user_id": user.get("id") or ""}, {"_id": 0, "id": 1})
-    return (emp or {}).get("id", "") or ""
+    from services.hr_service import employee_id_of_user
+    return await employee_id_of_user(user.get("id") or "")
 
 
 async def _roles_list() -> list:

@@ -224,7 +224,10 @@ def part_dedication_guard(admin) -> None:
 
 
 def part_new_warehouse_default(admin, sales_ksc) -> None:
-    print("\n── E4.1 · 6 · gudang baru bawaannya khusus ───────────────────────────")
+    # Keputusan pemilik K-GDG-07 (8 Nov 2026, `docs/rfid/KEPUTUSAN_GATE_RFID.md`; PREP-C): semua gedung DIPAKAI
+    # BERSAMA semua PT (roll tetap milik PT-nya) → gudang baru bawaannya `shared`. Mode khusus tetap bisa dipilih
+    # SENGAJA dan saat itu otomatis milik badan usaha aktif. Dulu bagian ini menuntut bawaan `dedicated` (uji usang).
+    print("\n── E4.1 · 6 · gudang baru: bawaan bersama (K-GDG-07), khusus bila dipilih ──")
     code = f"POC-{uuid.uuid4().hex[:5].upper()}"
     r = admin.post(f"{BASE}/api/warehouses", headers=h(KANDA), json={
         "code": code, "name": f"Gudang POC {code}", "city": "Semarang"}, timeout=30)
@@ -232,12 +235,25 @@ def part_new_warehouse_default(admin, sales_ksc) -> None:
         return
     doc = r.json()
     CLEAN_WAREHOUSES.append(doc["id"])
-    ok(doc.get("sharing_mode") == "dedicated" and doc.get("entity_ids") == [KANDA],
-       "gudang baru otomatis KHUSUS badan usaha aktif (harus sengaja dibuka)",
+    ok(doc.get("sharing_mode") == "shared" and doc.get("entity_ids") == [],
+       "gudang baru tanpa pilihan = BERSAMA semua badan usaha (K-GDG-07)",
        str({k: doc.get(k) for k in ("sharing_mode", "entity_ids")}))
     seen = {w["id"] for w in sales_ksc.get(f"{BASE}/api/warehouses", timeout=30).json()}
-    ok(doc["id"] not in seen,
-       "badan usaha lain langsung TIDAK melihat gudang baru itu")
+    ok(doc["id"] in seen, "badan usaha lain melihat gudang bersama baru itu")
+
+    code2 = f"POC-{uuid.uuid4().hex[:5].upper()}"
+    r = admin.post(f"{BASE}/api/warehouses", headers=h(KANDA), json={
+        "code": code2, "name": f"Gudang POC {code2}", "city": "Semarang", "sharing_mode": "dedicated"}, timeout=30)
+    if not ok(r.status_code in (200, 201), "gudang khusus dibuat", f"{r.status_code} {r.text[:200]}"):
+        return
+    doc2 = r.json()
+    CLEAN_WAREHOUSES.append(doc2["id"])
+    ok(doc2.get("sharing_mode") == "dedicated" and doc2.get("entity_ids") == [KANDA],
+       "mode KHUSUS dipilih tanpa daftar PT → otomatis milik badan usaha aktif",
+       str({k: doc2.get(k) for k in ("sharing_mode", "entity_ids")}))
+    seen = {w["id"] for w in sales_ksc.get(f"{BASE}/api/warehouses", timeout=30).json()}
+    ok(doc2["id"] not in seen,
+       "badan usaha lain langsung TIDAK melihat gudang khusus baru itu")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

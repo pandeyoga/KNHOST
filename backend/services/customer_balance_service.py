@@ -349,15 +349,35 @@ async def reconcile_gl(entity_id: str, today: Any = None) -> Dict[str, Any]:
     gl = await rb.saldo_akun_sen("penjualan.piutang", [entity_id], hari)
     codes = [c for c in await known_codes("penjualan.piutang", entity_id) if c]
     explained: Dict[str, int] = {}
+    kasus: set = set()
     if codes:
         async for je in db.journal_entries.find(
                 {"entity_id": entity_id, "status": {"$ne": "void"}, "source_type": {"$in": sorted(SEBAB)},
                  "lines.account_code": {"$in": codes}, "date": {"$lte": f"{hari}T23:59:59.999999"}},
-                {"_id": 0, "source_type": 1, "lines": 1}):
+                {"_id": 0, "source_type": 1, "source_id": 1, "lines": 1}):
             net = sum(to_cents(float(ln.get("debit") or 0)) - to_cents(float(ln.get("credit") or 0))
                       for ln in je.get("lines") or [] if ln.get("account_code") in codes)
             sebab = SEBAB[je["source_type"]]
             explained[sebab] = explained.get(sebab, 0) + net
+            if je["source_type"] == "finance_case" and je.get("source_id"):
+                kasus.add(str(je["source_id"]).split(":")[0])   # kunci jurnal kasus = `{id kasus}:{akhiran}`
+    if kasus:
+        # Penyelesaian kasus yang mengkredit piutang (biaya bank, titipan, uang muka, titipan karyawan, salah PT) JUGA
+        # menempelkan pelunasan ke pesanan (`ar_allocation_service`, `receipt_id` = id kasus): piutang dokumen sudah
+        # ikut turun, jadi bagian itu BUKAN sebab selisih (dulu dihitung dua kali → INV-BAL-02 merah palsu sebesar
+        # nominal kasus). Hanya sisa jurnal kasus yang tidak menempel di pesanan yang tetap "kasus keuangan".
+        tempel = 0
+        async for o in db.sales_orders.find({"entity_id": entity_id, "payments.receipt_id": {"$in": sorted(kasus)}},
+                                            {"_id": 0, "payments": 1}):
+            for p in o.get("payments") or []:
+                if p.get("receipt_id") not in kasus:
+                    continue
+                # aturan tanggal sama dengan `report_basis._terbayar_sen`
+                tgl = rb._tgl_aman(p.get("date") or p.get("created_at"))   # noqa: SLF001
+                if tgl is not None and tgl > hari:
+                    continue
+                tempel += to_cents(float(p.get("amount") or 0))
+        explained[SEBAB["finance_case"]] = explained.get(SEBAB["finance_case"], 0) + tempel
     diff = gl - total
     return {"entity_id": entity_id, "ar_delivered": from_cents(total), "gl_balance": from_cents(gl),
             "difference": from_cents(diff), "explained": {k: from_cents(v) for k, v in explained.items() if v},

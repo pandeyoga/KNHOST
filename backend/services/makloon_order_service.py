@@ -1550,7 +1550,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     step.pop("receive_progress", None)
     step["receive_op_id"] = prog.get("op_id", "")
     # CX-13 — tulisan terarah milik pemegang token (bukan replace_one seluruh dokumen dari snapshot).
-    upd = {k: v for k, v in order.items() if k not in ("id", "_id")}
+    upd = _receive_final_set(order)
     res = await db.makloon_orders.update_one({"id": mko_id, "saga_lock.token": token},
                                              {"$set": upd, "$unset": {"saga_lock": ""}})
     if res.matched_count != 1:
@@ -1659,6 +1659,18 @@ async def _release_leftover_reservation(order: Dict[str, Any], actor_name: str) 
             {"id": order["id"]},
             {"$push": {"timeline": {"at": now_iso(), "event": "reservation_released",
                                     "note": f"Sisa cadangan bahan dilepas (MKO selesai) oleh {actor_name}"}}})
+
+
+#: Field SPK makloon yang ditulis pihak LAIN selama klaim penerimaan, jadi tidak ikut `$set` salinan memori di tulisan
+#: akhir `receive_step`: `refs` milik `doc_refs_service` — tugas QC hasil (`makloon_receipt_qc.open_receipt_tasks`)
+#: menautkan dirinya ke SPK DI TENGAH penerimaan; salinan lama menimpa tautan balik itu (gate INV-REF-02 17 Nov:
+#: `grn:wms_mko_…` → `makloon_order` satu arah).
+_BUKAN_MILIK_PENERIMAAN = ("id", "_id", "refs")
+
+
+def _receive_final_set(order: Dict[str, Any]) -> Dict[str, Any]:
+    """Isi `$set` tulisan akhir penerimaan: semua field salinan pesanan KECUALI `_BUKAN_MILIK_PENERIMAAN`."""
+    return {k: v for k, v in order.items() if k not in _BUKAN_MILIK_PENERIMAAN}
 
 
 def _recompute_status_and_costing(order: Dict[str, Any]) -> None:
