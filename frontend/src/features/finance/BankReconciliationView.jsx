@@ -20,7 +20,7 @@
  * `bankLineId` → form yang menautkan); mutasi keluar → "Bayar pemasok" (`ReconPayablePicker` → `PaySupplierModal`).
  */
 import KNDatePicker from "@/components/KNDatePicker";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RefreshCw, Landmark, Wand2, Upload, CheckCircle2, AlertTriangle, PiggyBank,
   Sparkles, FileCog, ListChecks, FilterX,
@@ -123,7 +123,13 @@ export default function BankReconciliationView({ user = null }) {
   const [fStart, setFStart] = useState("");
   const [fEnd, setFEnd] = useState("");
 
-  const notify = (m) => { setMsg(m); setTimeout(() => setMsg(""), 5000); };
+  // Uji adversarial 18 Nov (O8): timer pesan sebelumnya dulu menghapus pesan berikutnya — kini satu timer, 8 detik.
+  const msgTimer = useRef(null);
+  const notify = (m) => {
+    setMsg(m);
+    if (msgTimer.current) clearTimeout(msgTimer.current);
+    msgTimer.current = setTimeout(() => setMsg(""), 8000);
+  };
   // KN-G9-ERR-SILENT — semua penolakan backend dinormalkan ke KALIMAT sebelum
   // ditampilkan, supaya tidak ada objek axios mentah yang masuk ke <ErrorNotice>.
   const fail = (e) => setErr(apiErrorText(e));

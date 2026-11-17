@@ -24,6 +24,7 @@ import { AskKnButton } from "../../../components/AskKnButton";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
+import { askConfirm } from "../../../services/confirmService";
 import ReconPayablePicker from "./ReconPayablePicker";   // MN-T3 — pilih dokumen, bayar lewat satu form Bayar pemasok
 import { can } from "../../../config/roles";
 import useListSearch from "@/hooks/useListSearch";
@@ -302,7 +303,19 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                     {canEdit && l.status === "matched" && (
                       <button data-testid={`recon-unmatch-${l.id}`} className="link-button"
                         style={{ color: "#B4231F" }} disabled={busy === l.id + "unmatch"}
-                        onClick={() => onAction(l.id, "unmatch", {}, "Tautan dilepas.")}>
+                        onClick={async () => {
+                          // Uji adversarial 18 Nov (O3, N5): melepas baris biaya/bunga bank MEMBATALKAN kas & jurnalnya
+                          // (pembalik terbit) — dulu tanpa konfirmasi, padahal mencatatnya bertanya dulu.
+                          const kasBank = ["charge", "interest"].includes(l.match_type) || !!l.charge?.cash_txn_id;
+                          if (kasBank && !(await askConfirm({
+                            title: "Lepas dan batalkan pembukuan biaya/bunga bank?",
+                            message: `Baris ${formatCurrency(l.amount)} kembali ke antrean; transaksi kas `
+                              + `${l.charge?.cash_number || ""} dan jurnalnya dibatalkan (jurnal pembalik terbit).`,
+                            confirmLabel: "Lepas & batalkan", danger: true,
+                          }))) return;
+                          onAction(l.id, "unmatch", {}, kasBank ? "Tautan dilepas; kas & jurnal biaya/bunga bank dibatalkan."
+                            : "Tautan dilepas.");
+                        }}>
                         <Unlink size={12} /> Lepas
                       </button>
                     )}

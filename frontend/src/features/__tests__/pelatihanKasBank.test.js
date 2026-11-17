@@ -139,3 +139,41 @@ test("F08 — sumber jurnal titipan tunai sales berlabel Indonesia di Buku Besar
   expect(sourceLabel("cash_holding")).toBe("Titipan Tunai Sales");
   expect(sourceLabel("cash_holding_reversal")).toBe("Pembalik Titipan Tunai");
 });
+
+describe("Uji adversarial 18 Nov (O3) — Lepas baris biaya bank membatalkan kas & jurnal: wajib konfirmasi", () => {
+  const baris = [
+    { id: "L3", status: "matched", match_type: "charge", direction: "out", amount: 15000, description: "BIAYA ADM",
+      entity_id: "ent_ksc", stmt_date: "2026-11-18", matched_txns: [],
+      charge: { cash_txn_id: "cash_1", cash_number: "KSC/CASH-00105", label: "Biaya bank", account_code: "6-8000" } },
+    { id: "L4", status: "matched", match_type: "manual", direction: "in", amount: 250000, description: "TRSF CR",
+      entity_id: "ent_ksc", stmt_date: "2026-11-18", matched_txns: [{ id: "t1", number: "KSC/CASH-00010", allocated: 250000 }] },
+  ];
+  async function pasang(jawab) {
+    mockAsk.mockReset();
+    mockAsk.mockResolvedValue(jawab);
+    const onAction = jest.fn(async () => true);
+    const host = await mount(<ReconLinesTable lines={baris} busy="" onAction={onAction} onOpenMatch={() => {}}
+      onReload={() => {}} onError={() => {}} onNotify={() => {}} perms={{}} />);
+    return { host, onAction };
+  }
+  test("baris biaya bank: Lepas bertanya dulu; Tidak → tidak ada aksi", async () => {
+    const { host, onAction } = await pasang(false);
+    await click(q(host, "recon-unmatch-L3"));
+    await flush();
+    expect(mockAsk).toHaveBeenCalledTimes(1);
+    expect(mockAsk.mock.calls[0][0]).toMatchObject({ danger: true, confirmLabel: "Lepas & batalkan" });
+    expect(mockAsk.mock.calls[0][0].message).toContain("KSC/CASH-00105");
+    expect(onAction).not.toHaveBeenCalled();
+  });
+  test("baris biaya bank: Ya → unmatch; baris tautan biasa: tanpa konfirmasi", async () => {
+    const { host, onAction } = await pasang(true);
+    await click(q(host, "recon-unmatch-L3"));
+    await flush();
+    expect(onAction).toHaveBeenCalledWith("L3", "unmatch", {}, expect.stringContaining("dibatalkan"));
+    mockAsk.mockClear();
+    await click(q(host, "recon-unmatch-L4"));
+    await flush();
+    expect(mockAsk).not.toHaveBeenCalled();
+    expect(onAction).toHaveBeenCalledWith("L4", "unmatch", {}, "Tautan dilepas.");
+  });
+});
