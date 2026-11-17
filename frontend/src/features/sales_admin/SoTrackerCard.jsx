@@ -20,7 +20,7 @@ const TRACKER_SORTS = {
   value: { label: "Nilai terbesar", cmp: (a, b) => Number(b.grand_total || 0) - Number(a.grand_total || 0) },
 };
 
-export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onOpen, testPrefix = "desk" }) {
+export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onOpen, testPrefix = "desk", refreshKey = 0 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -33,7 +33,8 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
     } catch (e) { setError(apiErrorText(e, "Gagal memuat pelacak SO.")); }
     finally { setLoading(false); }
   }, [desk, selectedEntity]);
-  useEffect(() => { load(); }, [load]);
+  // `refreshKey` naik = meja induk baru saja mengubah SO (mis. Periksa & lepas) → muat ulang supaya status tidak basi.
+  useEffect(() => { load(); }, [load, refreshKey]);
   const all = data?.rows || [];
   const f = useTableFilter(all, {
     text: (r) => `${r.number || ""} ${r.customer_name || ""} ${r.sales_name || ""} ${r.next_step || ""} ${r.status_label || ""}`,

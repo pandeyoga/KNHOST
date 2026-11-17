@@ -72,6 +72,8 @@ export function OrderDetailPanel({
   embedded = false,
 }) {
   const [shipments, setShipments] = useState([]);
+  // Pelatihan 18 Nov (A1): dulu "Belum ada pengiriman tercatat" tampil selama daftar surat jalan masih dimuat.
+  const [shipmentsLoading, setShipmentsLoading] = useState(false);
   const [taxInvoices, setTaxInvoices] = useState([]);
   const [issuingTax, setIssuingTax] = useState(false);
   // TX-T2 (K-32) — pemicu faktur PT pesanan (`tax.pemicu_faktur`): per surat jalan → tombol terbit manual diganti tautan draf.
@@ -121,11 +123,14 @@ export function OrderDetailPanel({
   useEffect(() => {
     let active = true;
     if (sel?.id && FULFILL_STATUSES.includes(sel.status) && canSeeShipments) {
+      setShipmentsLoading(true);
       axios.get(`${API}/shipments`, { params: { order_id: sel.id } })
         .then((r) => { if (active) setShipments(Array.isArray(r.data) ? r.data : []); })
-        .catch(() => { if (active) setShipments([]); });
+        .catch(() => { if (active) setShipments([]); })
+        .finally(() => { if (active) setShipmentsLoading(false); });
     } else {
       setShipments([]);
+      setShipmentsLoading(false);
     }
     if (sel?.id && TAX_ELIGIBLE.includes(sel.status) && can(perms, "tax_invoice", "view")) {
       axios.get(`${API}/tax-invoices`, { params: { order_id: sel.id } })
@@ -491,7 +496,9 @@ export function OrderDetailPanel({
                 ))}
               </div>
             ) : canSeeShipments ? (
-              <p className="text-[10.5px] text-[#6B6B73]">Belum ada pengiriman tercatat.</p>
+              <p className="text-[10.5px] text-[#6B6B73]" data-testid="order-shipments-empty">
+                {shipmentsLoading ? "Memuat pengiriman…" : "Belum ada pengiriman tercatat."}
+              </p>
             ) : (
               <p className="text-[10.5px] text-[#6B6B73]"
                  data-testid="order-shipments-no-access">

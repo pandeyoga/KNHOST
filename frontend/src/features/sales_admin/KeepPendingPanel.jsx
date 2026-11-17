@@ -25,7 +25,7 @@ export default function KeepPendingPanel(props) {
   return <KeepPendingBody {...props} />;
 }
 
-function KeepPendingBody({ selectedEntity = "all", onOpenDocument, testPrefix = "kp" }) {
+function KeepPendingBody({ selectedEntity = "all", onOpenDocument, testPrefix = "kp", refreshKey = 0 }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("keep");
   const [error, setError] = useState("");
@@ -44,7 +44,8 @@ function KeepPendingBody({ selectedEntity = "all", onOpenDocument, testPrefix = 
     } catch (e) { setError(apiErrorText(e, "Gagal memuat Keep & Pending.")); }
     finally { setLoading(false); }
   }, [selectedEntity]);
-  useEffect(() => { load(); }, [load]);
+  // Uji alur A1 — `refreshKey` naik = meja induk baru saja melepas SO: SO itu keluar dari "Keep" (sudah diverifikasi).
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const c = data?.counts || {};
   const open = (id, number) => onOpenDocument?.(soTrackerLink({ id, number }));

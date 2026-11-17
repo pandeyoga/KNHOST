@@ -32,6 +32,11 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const [busyRef, setBusyRef] = useState("");
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
+  // Uji alur A1 (pelatihan 18 Nov) — Pelacak SO & Keep/Pending dimuat sendiri; sesudah aksi meja (periksa & lepas,
+  // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang. Dulu baris SO yang baru dilepas tetap "Dicadangkan · Periksa &
+  // lepas" (dan tetap di "Keep") sampai halaman dimuat ulang, sehingga Admin Sales mengira pelepasan gagal.
+  const [trackerTick, setTrackerTick] = useState(0);
+  const reloadAll = () => { load(); setTrackerTick((t) => t + 1); };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,7 +59,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     setBusyRef(row.ref_id); setError(""); setErrorAction(null);
     try {
       flash(releaseMessage(await releaseOrder(row.ref_id), row.number));
-      await load();
+      reloadAll();
     } catch (e) {
       setError(apiErrorText(e, "Gagal melepas pesanan ke gudang."));
     } finally { setBusyRef(""); }
@@ -97,7 +102,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
             <span className="kicker">Admin Sales</span>
             <h2 data-testid="desk-title">Meja Admin Sales</h2>
           </div>
-          <button data-testid="desk-refresh" className="icon-button" onClick={load}
+          <button data-testid="desk-refresh" className="icon-button" onClick={reloadAll}
                   aria-label="Muat ulang meja">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
@@ -134,7 +139,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
       </section>
 
       {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
-      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" onOpen={(r) => {
+      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" refreshKey={trackerTick} onOpen={(r) => {
         const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
         if (r.action === "Atur pemenuhan") return setFulfillRow(row);
         if (r.action === "Periksa & lepas") return setVerifyRow(row);
@@ -144,7 +149,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
 
       {/* Pola UI (M4, pemilik 16 Nov) — Keep & Pending butuh ruang: satu baris penuh, tidak berdampingan. */}
       <div className="grid gap-3">
-        <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={onOpenDocument} />
+        <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={onOpenDocument} refreshKey={trackerTick} />
         <CustomerGradeRulesCard selectedEntity={selectedEntity} />
       </div>
 
@@ -176,7 +181,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           orderNumber={verifyRow.number}
           customerName={verifyRow.title}
           onClose={() => setVerifyRow(null)}
-          onVerified={(msg) => { setVerifyRow(null); flash(msg); load(); }}
+          onVerified={(msg) => { setVerifyRow(null); flash(msg); reloadAll(); }}
           onOpenFull={() => openFull(verifyRow)}
         />
       )}
@@ -187,7 +192,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           orderNumber={fulfillRow.number}
           customerName={fulfillRow.title}
           onClose={() => setFulfillRow(null)}
-          onDecided={(msg) => { setFulfillRow(null); flash(msg); load(); }}
+          onDecided={(msg) => { setFulfillRow(null); flash(msg); reloadAll(); }}
           onOpenFull={() => openFull(fulfillRow)}
         />
       )}

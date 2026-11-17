@@ -15,7 +15,7 @@ export default function CheckoutStep3({
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked, spReq = {}, requestedGrand = null,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
-  sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null, entityId = "",
+  sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null, entityId = "", onRecheckCredit = null,
 }) {
   const today = todayWib();   // batas bawah tanggal ambil/kirim = hari ini WIB (bukan zona perangkat)
   const [pickDate, setPickDate] = useState(!!deliveryDate);
@@ -171,7 +171,7 @@ export default function CheckoutStep3({
         </div>
       )}
 
-      {credit?.gate && <CreditGateBox credit={credit} customer={selectedCustomer} amount={p.grand} entityId={entityId} />}
+      {credit?.gate && <CreditGateBox credit={credit} customer={selectedCustomer} amount={p.grand} entityId={entityId} onRecheck={onRecheckCredit} />}
       {credit && !credit.gate && credit.level !== "ok" && (
         <div data-testid="credit-status-banner" className={`rounded-md border p-2.5 ${creditBlocked ? "border-[#F1B0AB] bg-[#FDECEA]" : credit.has_approved_override ? "border-[#A7D8B0] bg-[#EAF7EE]" : "border-[#F5C9A6] bg-[#FFF7EF]"}`}>
           <div className="flex items-start gap-2">

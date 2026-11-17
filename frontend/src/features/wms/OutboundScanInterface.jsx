@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DispatchPaymentGatePanel from "../orders/DispatchPaymentGatePanel";
 import PickListPanel from "./PickListPanel";
 import { dualLen } from "../../components/RollPicker";
@@ -66,11 +66,17 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
    *  Roll yang benar untuk tugas ini adalah roll yang DICADANGKAN untuk pesanannya (status reserved/
    *  committed/…), jadi pencarian tidak dibatasi status "available"; kelayakan dicek sama seperti server. */
   const SHIPPABLE = ["committed", "packed", "picked", "reserved"];
+  // Uji alur A1 (pelatihan 18 Nov) — klik [Kirim Pengambilan] juga memicu onBlur kotak kode roll → pencarian roll kedua
+  // yang jawabannya tiba SESUDAH pengambilan tercatat, lalu kotak hijau "Roll …" + data scan muncul lagi (klik ulang =
+  // ditolak server). Nomor urut pencarian: jawaban yang sudah usang (ada pencarian/pengambilan lebih baru) diabaikan.
+  const resolveSeq = useRef(0);
   const resolveRoll = async (code) => {
     const q = String(code || "").trim();
     if (!q) return;
+    const seq = ++resolveSeq.current;
     try {
       const res = await axios.get(`${API}/inventory/rolls`, { params: { q, limit: 20, ...(selectedTask?.product_id ? { product_id: selectedTask.product_id } : {}) } });
+      if (seq !== resolveSeq.current) return;
       const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
       const roll = list.find(r => String(r.roll_no || "").toLowerCase() === q.toLowerCase() || r.id === q);
       if (!roll) { setRollInfo(null); setError(`Roll "${q}" tidak ditemukan untuk produk tugas ini (${selectedTask?.sku || selectedTask?.product_name || "-"}).`); return; }
@@ -175,6 +181,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     setSubmitting(true);
     try {
       const res = await axios.post(`${API}/outbound/tasks/${selectedTask.id}/scan-pick`, null, { params: scanData });
+      resolveSeq.current += 1;   // pencarian roll yang masih berjalan (onBlur) tidak boleh mengisi ulang form
       setTasks(prev => prev.map(t => t.id === selectedTask.id ? withEnrichment(t, res.data) : t));
       setSelectedTask((cur) => withEnrichment(cur, res.data));
       setScanData({ actual_qty: 0, batch: "", lot: "", roll_id: "", bin_id: "" });

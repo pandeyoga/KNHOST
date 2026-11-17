@@ -11,7 +11,8 @@ import { formatCurrency } from "../../utils/formatters";
 // Pop-up dimuat saat dibuka (KNSelect/FormModal tidak ikut dimuat layar checkout sebelum dibutuhkan).
 const CreditOverrideModal = lazy(() => import("../crm/CreditOverrideModal"));
 
-export default function CreditOverrideRequest({ customer, amount, entityId = "", entityName = "", rejectionId = "" }) {
+export default function CreditOverrideRequest({ customer, amount, entityId = "", entityName = "", rejectionId = "",
+  afterHint = "setelah izin disetujui, tekan Buat Sales Order lagi." }) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   if (!customer?.id) return null;
@@ -35,7 +36,7 @@ export default function CreditOverrideRequest({ customer, amount, entityId = "",
         <Suspense fallback={null}>
           <CreditOverrideModal open customer={customer} amount={amount} entityId={entityId} entityName={entityName}
             rejectionId={rejectionId} onClose={() => setOpen(false)}
-            onSaved={(text) => { setOpen(false); setMsg(`${text} Isi keranjang tetap di layar ini; setelah izin disetujui, tekan Buat Sales Order lagi.`); }} />
+            onSaved={(text) => { setOpen(false); setMsg(`${text} Isi keranjang tetap di layar ini; ${afterHint}`); }} />
         </Suspense>
       )}
     </div>

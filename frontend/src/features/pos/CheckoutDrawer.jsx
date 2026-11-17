@@ -57,6 +57,9 @@ export default function CheckoutDrawer({
   const [transferRequests, setTransferRequests] = useState({});
   const [lotPlan, setLotPlan] = useState({ requires_confirmation: false, lines: [], policy: {}, loading: false });
   const [credit, setCredit] = useState(null);
+  // Uji alur A1 (pelatihan 18 Nov) — izin kredit disetujui Manajer SESUDAH kotak kredit dimuat: tanpa periksa ulang tombol
+  // tetap "Kredit Tertahan" (pesan izin menyuruh menekan Buat Sales Order lagi, tetapi tombolnya mati). Naikkan = muat ulang.
+  const [creditTick, setCreditTick] = useState(0);
   const [needsTaxInvoice, setNeedsTaxInvoice] = useState(false);  // F6 — minta Faktur Pajak
   // TX-T1 (K-33) — pesanan tanpa PPN: hanya pemegang izin `order.tax_override` di PT PKP, wajib beralasan (PK-45).
   const [nonPpn, setNonPpn] = useState(false);
@@ -192,7 +195,7 @@ export default function CheckoutDrawer({
         .then((r) => { if (active) setCredit(r.data); }).catch(() => { if (active) setCredit(null); });
     }, 350);
     return () => { active = false; clearTimeout(t); };
-  }, [open, selectedCustomer, p.grand, cart.length, paymentTerm, entityFor]); // eslint-disable-line
+  }, [open, selectedCustomer, p.grand, cart.length, paymentTerm, entityFor, creditTick]); // eslint-disable-line
 
   // Cek UI UAT v3 (S7) — kekurangan yang bisa dipenuhi PT lain (`inter_company`) juga butuh izin backorder di server
   // ("Stok milik entitas tidak mencukupi … Aktifkan backorder"); dulu kartu backorder tidak muncul → SO ditolak tanpa jalan.
@@ -523,6 +526,7 @@ export default function CheckoutDrawer({
               needsTaxInvoice={needsTaxInvoice} setNeedsTaxInvoice={setNeedsTaxInvoice}
               nonPpn={canNonPpn ? { on: nonPpn, setOn: setNonPpn, reason: nonPpnReason, setReason: setNonPpnReason } : null}
               credit={credit} creditBlocked={creditBlocked} entityId={entityFor && entityFor !== "all" ? entityFor : ""}
+              onRecheckCredit={() => setCreditTick((t) => t + 1)}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
               spReq={spReq} requestedGrand={pReq?.grand ?? null}

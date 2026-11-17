@@ -7,6 +7,7 @@ import { ScanLine, Zap, CheckCircle, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { formatDateTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
+import { canCurrent } from "../../config/roles";
 
 export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const [session, setSession] = useState(null);
@@ -144,10 +145,18 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
             className="rounded-lg bg-[#4B3B9E] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">
             {lastResult ? "Ulangi Loading Check" : "Mulai Loading Check"}
           </button>
-          <input data-testid="lc-override-reason" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
-            placeholder="Alasan override (izin supervisor)" className="min-w-[180px] flex-1 rounded border border-[#D9D2F0] px-2 py-1 text-[10.5px]" />
-          <button data-testid="lc-override" disabled={busy || overrideReason.trim().length < 5} onClick={override}
-            className="rounded border border-[#B23B14] px-2.5 py-1 text-[10.5px] font-semibold text-[#B23B14] disabled:opacity-40">Override</button>
+          {/* Pelatihan 18 Nov (A1): override = izin `wms.approve` di server. Dulu Gudang melihat isian & tombolnya lalu
+              ditolak 403; kini hanya akun berizin (Kepala Gudang/Manajer) yang melihatnya. */}
+          {canCurrent("wms", "approve") ? (<>
+            <input data-testid="lc-override-reason" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
+              placeholder="Alasan override (izin supervisor)" className="min-w-[180px] flex-1 rounded border border-[#D9D2F0] px-2 py-1 text-[10.5px]" />
+            <button data-testid="lc-override" disabled={busy || overrideReason.trim().length < 5} onClick={override}
+              className="rounded border border-[#B23B14] px-2.5 py-1 text-[10.5px] font-semibold text-[#B23B14] disabled:opacity-40">Override</button>
+          </>) : (
+            <span data-testid="lc-override-hint" className="text-[10.5px] text-[#6B6B73]">
+              Tidak bisa dipindai? Minta override ke Kepala Gudang / Manajer.
+            </span>
+          )}
         </div>
       ) : (
         <div className="space-y-1.5">

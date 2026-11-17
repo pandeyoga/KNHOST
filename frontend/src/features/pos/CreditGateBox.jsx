@@ -4,7 +4,7 @@
  * Sisa plafon, dan pesan alasan — angka yang DIPAKAI mesin (L6), termasuk komponen yang tidak dihitung pengaturan PT.
  * Tertahan → tombol "Ajukan izin kredit" (`CreditOverrideRequest`); ditolak termin → petunjuk pilih termin lain.
  */
-import { AlertTriangle, CheckCircle2, Info, ShieldAlert, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, RefreshCw, ShieldAlert, ShieldCheck, XCircle } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import CreditOverrideRequest from "./CreditOverrideRequest";
 
@@ -31,7 +31,7 @@ function Baris({ label, value, note = "", strong = false, testId }) {
   );
 }
 
-export default function CreditGateBox({ credit, customer, amount = 0, entityId = "", testId = "credit-gate-box" }) {
+export default function CreditGateBox({ credit, customer, amount = 0, entityId = "", testId = "credit-gate-box", onRecheck = null }) {
   const g = credit?.gate;
   if (!g) return null;
   if (!g.checked) {
@@ -87,8 +87,15 @@ export default function CreditGateBox({ credit, customer, amount = 0, entityId =
         <>
           <p className="mt-2 text-kn-danger-text" data-testid={`${testId}-blocked-note`}>Pesanan belum bisa dibuat: kredit tertahan.</p>
           {!(g.reasons || []).some((r) => r.code === "BLOKIR_MANUAL")
-            ? <CreditOverrideRequest customer={customer} amount={amount} entityId={entityId} />
+            ? <CreditOverrideRequest customer={customer} amount={amount} entityId={entityId}
+                afterHint={onRecheck ? "setelah izin disetujui, tekan Periksa ulang kredit lalu Buat Sales Order." : undefined} />
             : <p className="mt-1 text-kn-text-2">Blokir manual tidak dilepas izin kredit — buka blokir lewat pengajuan perubahan kredit di kartu pelanggan.</p>}
+          {onRecheck && (
+            <button type="button" className="ghost-button btn-sm mt-1.5 whitespace-nowrap" data-testid={`${testId}-recheck`}
+              onClick={onRecheck}>
+              <RefreshCw size={12} aria-hidden="true" /> Periksa ulang kredit
+            </button>
+          )}
         </>
       )}
       {g.result === "tolak" && (
