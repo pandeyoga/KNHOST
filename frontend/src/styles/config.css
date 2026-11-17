@@ -623,3 +623,112 @@
 .cfg-toolbar .cfg-scope-box { flex-wrap: nowrap; }
 .cfg-toolbar .cfg-select-sm, .cfg-toolbar .field { width: auto !important; min-width: 170px; flex: 0 0 auto; }
 .cfg-scope-caption { text-transform: none; letter-spacing: 0; font-size: 12px; }
+
+/* ── Pola UI 16 Nov — gelombang Pengaturan (M43): Aturan Persetujuan, Kontrol dua orang, Peran & Hak Akses ─────────
+   Daftar padat yang sama dengan daftar pengaturan pilot: satu kartu bergaris pemisah, satu baris per butir; rincian,
+   isian, dan penjelasan dibuka di tempat. Tanpa gulir mendatar: kolom nama menyusut (min-width 0), kolom lain tetap. */
+.cfg-rows { background: #fff; border: 1px solid var(--kn-divider); border-radius: 12px; }
+.cfg-rows > * + * { border-top: 1px solid var(--kn-divider); }
+.cfg-row { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px; font-size: 13px; }
+.cfg-row.is-open { background: var(--kn-neutral-soft); }
+.cfg-row-name { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.cfg-row-title { font-weight: 600; color: var(--kn-text); overflow-wrap: break-word; }
+.cfg-row-val {
+  margin-left: auto; padding-left: 12px; max-width: 55%; color: var(--kn-action); font-weight: 600; text-align: right;
+  overflow-wrap: break-word;
+}
+.cfg-row-tags { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.cfg-row-body {
+  display: flex; flex-direction: column; gap: 8px; padding: 4px 12px 12px 36px; background: var(--kn-neutral-soft);
+  min-width: 0;
+}
+.cfg-row-body.cfg-check-grid { flex-direction: row; }
+.cfg-row-line { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 12px; color: var(--kn-text-2); }
+.cfg-row-line.warn { color: var(--kn-warning-text); }
+.cfg-row-line.err { color: var(--kn-danger-text); }
+.cfg-row-line svg { flex: 0 0 auto; margin-top: 2px; }
+.cfg-readonly-line { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--kn-text-2); }
+.cfg-savebar {
+  position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 8px 12px; background: #fff; border: 1px solid var(--kn-divider); border-radius: 12px; box-shadow: var(--shadow-1);
+}
+
+/* Kontrol dua orang — nama (?) · jumlah orang ▾ · batas (hanya bila berlaku) · sumber. */
+.cfg-dual-row {
+  display: grid; grid-template-columns: minmax(160px, 1fr) 170px minmax(0, 250px) minmax(90px, max-content); align-items: center;
+  gap: 6px 12px; min-height: 44px; padding: 6px 12px; font-size: 13px;
+}
+.cfg-dual-row .cfg-select-sm { min-width: 0; width: 100%; }
+.cfg-dual-limit { min-width: 0; }
+.cfg-dual-amount { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--kn-text-2); }
+.cfg-dual-money { flex: 0 1 150px; min-width: 110px; }
+.cfg-dual-source { text-align: right; }
+@media (max-width: 900px) {
+  .cfg-dual-row { grid-template-columns: minmax(0, 1fr) 180px; }
+  .cfg-dual-source { text-align: left; }
+}
+
+/* Aturan Persetujuan — satu penguji "Coba nilai" di bilah atas; tabel jenjang di baris yang dibuka. */
+.cfg-try { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cfg-try-money { flex: 0 0 170px; min-width: 0; }
+.cfg-try-money .field, .cfg-dual-money .field { width: 100% !important; min-width: 0; }
+.cfg-try-result {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0; font-size: 12px; color: var(--kn-text);
+}
+.cfg-row-body .table-container { margin: 0; overflow-x: visible; }
+.cfg-row-body .data-table { width: 100%; }
+.cfg-row-body .data-table td { overflow-wrap: anywhere; }
+.cfg-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cfg-inline-editor { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cfg-ed-level {
+  display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 8px 10px; min-width: 0;
+  background: #fff; border: 1px solid var(--kn-divider); border-radius: 10px;
+}
+.cfg-ed-tier { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--kn-divider); }
+
+/* Peran & Hak Akses — satu baris per peran: nama (?) · lencana · jumlah akun & tingkat · aksi. */
+.cfg-row.cfg-row-wrap { flex-wrap: wrap; }
+.cfg-row-wrap .cfg-row-name { flex-wrap: wrap; }
+.cfg-row-spacer { display: inline-block; width: 32px; }
+.cfg-role-meta {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin-left: auto;
+  font-size: 12px; font-weight: 600;
+}
+
+/* Editor hak akses per peran — matriks: baris = modul (berkelompok), kolom = tingkat. Kolom tingkat lebar tetap, kolom
+   nama menyusut, sehingga tidak ada gulir mendatar di jendela 1024–1366 px. */
+.cfg-mx-scroll { overflow-x: hidden; }
+.cfg-mx-scroll > * { min-width: 0; }
+/* Kolom kanan (sifat peran, akun, menu): isi grid boleh menyusut — pemilih berteks panjang memendek (elipsis),
+   bukan melebarkan kolom keluar jendela. */
+.cfg-role-side .grid > * { min-width: 0; }
+.cfg-mx { background: #fff; border: 1px solid var(--kn-divider); border-radius: 12px; }
+.cfg-mx-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 76px) 44px; align-items: center;
+  column-gap: 4px; min-height: 40px; padding: 4px 8px 4px 12px;
+}
+.cfg-mx-head {
+  position: sticky; top: 0; z-index: 2; background: #fff; border-bottom: 1px solid var(--kn-divider);
+  border-radius: 12px 12px 0 0; font-size: 12px; font-weight: 700; color: var(--kn-text-2);
+}
+.cfg-mx-cell { display: flex; align-items: center; justify-content: center; text-align: center; }
+.cfg-mx-levels { grid-column: span 3; display: grid; grid-template-columns: repeat(3, 76px); align-items: center; column-gap: 4px; }
+.cfg-mx-all { background: var(--kn-neutral-soft); font-size: 12px; font-weight: 600; color: var(--kn-text); }
+.cfg-mx-group {
+  padding: 8px 12px 2px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--kn-text-2); border-top: 1px solid var(--kn-divider);
+}
+.cfg-mx-item + .cfg-mx-item { border-top: 1px solid var(--kn-neutral-soft); }
+.cfg-mx-item.is-changed { background: var(--kn-warning-soft); }
+.cfg-mx-name { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; font-size: 13px; }
+.cfg-mx-name > b { font-weight: 600; color: var(--kn-text); overflow-wrap: anywhere; }
+.cfg-mx-sub { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--kn-text-2); }
+.cfg-mx-pick { justify-content: center; width: 100%; min-height: 32px; }
+.cfg-mx-detail { padding: 0 12px 10px; min-width: 0; }
+.cfg-role-line { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 0; font-size: 12px; color: var(--kn-text); }
+.cfg-role-line.warn { color: var(--kn-warning-text); }
+.cfg-role-line.err { color: var(--kn-danger-text); }
+.cfg-role-line svg { flex: 0 0 auto; }
+.cfg-role-line-clamp { display: block; min-width: 0; flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cfg-role-more > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--kn-action); width: fit-content; }
+.cfg-role-more[open] > summary { margin-bottom: 4px; }

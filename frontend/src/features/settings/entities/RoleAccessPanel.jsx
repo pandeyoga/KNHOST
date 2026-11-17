@@ -1,58 +1,70 @@
 /**
  * RoleAccessPanel — tab "Peran & Hak Akses": daftar peran (bawaan + kustom),
  * jumlah akun, ringkasan tingkat akses, dan pintu ke editor.
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md`, pemilik M43): SATU bilah daftar (cari · jumlah · (?) · muat ulang ·
+ * + Buat Peran Baru) — dua bilah penjelasan panjang pindah ke ikon ?, tombol muat ulang tidak lagi sendirian di satu
+ * baris. Daftar padat: satu baris per peran (nama (?) · lencana · jumlah akun & tingkat · aksi), bukan kartu bertumpuk.
  */
-import { useCallback, useEffect, useState } from "react";
-import { Plus, ShieldCheck, Lock, Users, Sparkles, Pencil, Copy } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Lock, Users, Pencil, Copy, RefreshCw } from "lucide-react";
 
 import RoleEditorDrawer from "./RoleEditorDrawer";
-import useListSearch from "@/hooks/useListSearch";
+import { HelpTip, ListToolbar, SearchInput } from "../../../components/ListPageParts";
 import { accessModules, accessRolesFull, errText } from "./entityApi";
 
 const NO_MANAGE_HINT = "Peran Anda tidak diberi wewenang mengelola akun/peran ini.";
+const BANTUAN = "Peran menentukan modul mana yang boleh dilihat dan dikelola. Tingkat per modul: Tidak ada (menu "
+  + "tersembunyi) · Lihat saja (baca tanpa tombol ubah) · Semua aksi; bila hanya sebagian aksi yang diberikan, modul "
+  + "berlencana Sebagian (rinciannya di \"Rinci\"). Notifikasi mengikuti pengaturan ini — pengguna hanya menerima "
+  + "pemberitahuan untuk layar yang boleh dibukanya. Buat peran kustom bila peran bawaan tidak pas — misalnya \"Staf "
+  + "Penagihan\" yang hanya butuh piutang & pelanggan.";
 
-function RoleCard({ role, onOpen, onDuplicate }) {
+function RoleRow({ role, onOpen, onDuplicate, reserveAction = false }) {
   const lv = Object.values(role.levels || {});
   const n = (k) => lv.filter((x) => x.level === k && !x.partial).length;   // PR-T5 — sebagian dihitung terpisah
   const partial = lv.filter((x) => x.partial).length;
+  const open = () => onOpen(role);
   return (
-    <div role="button" tabIndex={0} data-testid={`role-card-${role.id}`} onClick={() => onOpen(role)}
-         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(role); } }}
-         className="flex cursor-pointer flex-col gap-1.5 rounded-xl border border-[#EFF0F2] bg-white p-3 text-left transition-colors hover:border-[#0058CC]/50">
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-[12.5px] font-bold text-[#1C1C1E]" data-testid={`role-card-label-${role.id}`}>{role.label}</p>
-          <p className="line-clamp-2 text-[10.5px] text-[#6B6B73]">{role.description || "—"}</p>
-        </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-semibold ${
-          role.custom ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#F2F2F7] text-[#6B6B73]"}`}
-              data-testid={`role-card-kind-${role.id}`}>
+    <div role="button" tabIndex={0} data-testid={`role-card-${role.id}`} onClick={open}
+         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+         className="cfg-row cfg-row-wrap cursor-pointer hover:bg-kn-neutral-soft">
+      <span className="cfg-row-name">
+        <span className="cfg-row-title" data-testid={`role-card-label-${role.id}`}>{role.label}</span>
+        <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation">
+          <HelpTip text={role.description || ""} testId={`role-card-help-${role.id}`} label={`Tentang peran ${role.label}`} />
+        </span>
+        <span className={role.custom ? "badge-purple" : "badge-muted"} data-testid={`role-card-kind-${role.id}`}>
           {role.custom ? "Kustom" : "Bawaan"}
         </span>
+        {role.locked && <span className="badge-red"><Lock size={11} /> dikunci</span>}
+        {role.modified && <span className="badge-orange" data-testid={`role-card-modified-${role.id}`}><Pencil size={11} /> diubah dari bawaan</span>}
+        {role.cross_entity && <span className="badge-blue" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
+        {role.base_role_label && <span className="text-fs-12 text-kn-text-2">peran dasar: {role.base_role_label}</span>}
+        {role.can_manage === false && !role.locked && (
+          <span className="text-fs-12 text-kn-text-2" data-testid={`role-card-no-manage-${role.id}`}>· {NO_MANAGE_HINT}</span>
+        )}
+      </span>
+      <span className="cfg-role-meta">
+        <span className="inline-flex items-center gap-1 text-kn-text" data-testid={`role-card-users-${role.id}`}>
+          <Users size={12} aria-hidden="true" /> {role.users} akun
+        </span>
+        <span className="text-kn-success-text" data-testid={`role-card-count-manage-${role.id}`}>{n("manage")} semua aksi</span>
+        <span className="text-kn-warning-text" data-testid={`role-card-count-partial-${role.id}`}>{partial} sebagian</span>
+        <span className="text-kn-action" data-testid={`role-card-count-view-${role.id}`}>{n("view")} lihat</span>
+        <span className="text-kn-text-2" data-testid={`role-card-count-none-${role.id}`}>{n("none")} tidak ada</span>
+      </span>
+      <span className="cfg-row-tags">
         {onDuplicate && (
-          <button type="button" className="icon-button shrink-0" title="Duplikat peran ini" aria-label={`Duplikat ${role.label}`}
+          <button type="button" className="icon-button btn-sm" title="Duplikat peran ini" aria-label={`Duplikat ${role.label}`}
                   data-testid={`role-card-duplicate-${role.id}`}
                   onClick={(e) => { e.stopPropagation(); onDuplicate(role); }}>
-            <Copy size={12} />
+            <Copy size={13} />
           </button>
         )}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#E5E5EA] px-2 py-0.5 font-semibold text-[#3A3A3C]" data-testid={`role-card-users-${role.id}`}>
-          <Users size={10} /> {role.users} akun
-        </span>
-        <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 font-semibold text-[#1B7F4B]" data-testid={`role-card-count-manage-${role.id}`}>{n("manage")} semua aksi</span>
-        <span className="rounded-full bg-kn-warning-soft px-2 py-0.5 font-semibold text-kn-warning-text" data-testid={`role-card-count-partial-${role.id}`}>{partial} sebagian</span>
-        <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-count-view-${role.id}`}>{n("view")} lihat</span>
-        <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 font-semibold text-[#6B6B73]" data-testid={`role-card-count-none-${role.id}`}>{n("none")} tidak ada</span>
-        {role.locked && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FCEBEA] px-2 py-0.5 font-semibold text-[#A8221A]"><Lock size={9} /> dikunci</span>}
-        {role.modified && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF7EC] px-2 py-0.5 font-semibold text-[#8C4A00]" data-testid={`role-card-modified-${role.id}`}><Pencil size={9} /> diubah dari bawaan</span>}
-        {role.cross_entity && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F2F7FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
-        {role.base_role_label && <span className="text-kn-text-2">peran dasar: {role.base_role_label}</span>}
-      </div>
-      {role.can_manage === false && !role.locked && (
-        <p className="text-fs-12 text-kn-text-2" data-testid={`role-card-no-manage-${role.id}`}>{NO_MANAGE_HINT}</p>
-      )}
+        {/* Kolom aksi tetap selebar tombol supaya angka baris lain sejajar (mis. Admin yang tidak bisa diduplikat). */}
+        {!onDuplicate && reserveAction && <span className="cfg-row-spacer" aria-hidden="true" />}
+      </span>
     </div>
   );
 }
@@ -64,6 +76,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError, onOpenA
   const [loading, setLoading] = useState(true);
   const [canEditAssignable, setCanEditAssignable] = useState(false);
   const [editor, setEditor] = useState(null);   // null | {} (baru) | {template} (duplikat) | role
+  const [q, setQ] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,53 +100,57 @@ export default function RoleAccessPanel({ canManage, onChanged, onError, onOpenA
     setEditor(cur || null);
   };
 
-  const customs = roles.filter((r) => r.custom);
-  const builtins = roles.filter((r) => !r.custom);
-  const pgBuilt = useListSearch(builtins, (r) => [r.label, r.name, r.id, r.description], { testId: "role-builtin", pageSize: 18, placeholder: "Cari peran…" });
+  const term = q.trim().toLowerCase();
+  const shown = useMemo(() => (term ? roles.filter((r) => [r.label, r.name, r.id, r.description]
+    .some((v) => String(v || "").toLowerCase().includes(term))) : roles), [roles, term]);
+  const customs = shown.filter((r) => r.custom);
+  const builtins = shown.filter((r) => !r.custom);
 
   return (
     <div data-testid="role-access-panel">
-      <div className="mb-3 flex flex-wrap items-start gap-2 rounded-md border border-[#C9DBF7] bg-[#F2F7FF] px-3 py-2">
-        <ShieldCheck size={14} className="mt-0.5 text-[#0058CC]" />
-        <div className="min-w-0 flex-1">
-          <p className="text-[11.5px] font-bold text-[#1C1C1E]">Peran menentukan modul mana yang boleh dilihat dan dikelola.</p>
-          <p className="text-[10.5px] text-[#6B6B73]">
-            Tingkat per modul: <b>Tidak ada</b> (menu tersembunyi) · <b>Lihat saja</b> (baca tanpa tombol ubah) · <b>Semua aksi</b>;
-            bila hanya sebagian aksi yang diberikan, modul berlencana <b>Sebagian</b> (rinciannya di "Atur rinci").
-            Notifikasi mengikuti pengaturan ini — pengguna hanya menerima pemberitahuan untuk layar yang boleh dibukanya.
-            Buat peran kustom bila peran bawaan tidak pas — misalnya "Staf Penagihan" yang hanya butuh piutang & pelanggan.
-          </p>
-        </div>
-        {canManage && (
-          <button type="button" className="primary-button" data-testid="role-create-button" onClick={() => setEditor({})}>
-            <Plus size={14} /> Buat Peran Baru
-          </button>
-        )}
-      </div>
+      <ListToolbar testId="role-toolbar" count={loading ? null : `${shown.length} peran`}
+        actions={(
+          <>
+            <button type="button" className="icon-button" data-testid="role-access-refresh" aria-label="Muat ulang daftar peran"
+                    title="Muat ulang" onClick={() => load()}>
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+            {canManage && (
+              <button type="button" className="primary-button btn-sm" data-testid="role-create-button" onClick={() => setEditor({})}>
+                <Plus size={14} /> Buat Peran Baru
+              </button>
+            )}
+          </>
+        )}>
+        <SearchInput value={q} onChange={setQ} placeholder="Cari peran…" testId="role-search" />
+        <HelpTip text={BANTUAN} testId="role-access-help" label="Tentang peran & hak akses" />
+      </ListToolbar>
 
       {loading && <p className="text-fs-12 text-kn-text-2" data-testid="role-access-loading">Memuat peran…</p>}
 
       {!loading && (
         <>
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Sparkles size={12} className="text-[#6B219A]" />
-            <p className="kicker !mb-0">Peran kustom ({customs.length})</p>
-          </div>
-          {customs.length === 0 ? (
-            <div className="mb-4 rounded-xl border border-dashed border-[#E5E5EA] bg-[#FAFBFC] px-4 py-5 text-center" data-testid="role-custom-empty">
-              <p className="text-[11.5px] font-semibold text-[#1C1C1E]">Belum ada peran kustom.</p>
-              <p className="text-[10.5px] text-[#8E8E93]">Klik "Buat Peran Baru", salin dari peran bawaan yang paling mirip, lalu sesuaikan modulnya.</p>
+          <section className="cfg-section">
+            <h4 className="cfg-section-title">Peran kustom ({customs.length})</h4>
+            {customs.length === 0 ? (
+              <p className="cfg-readonly-line" data-testid="role-custom-empty">
+                {term ? "Tidak ada peran kustom yang cocok." : "Belum ada peran kustom — klik \"Buat Peran Baru\", salin dari peran bawaan yang paling mirip, lalu sesuaikan modulnya."}
+              </p>
+            ) : (
+              <div className="cfg-rows" data-testid="role-custom-grid">
+                {customs.map((r) => <RoleRow key={r.id} role={r} onOpen={setEditor} onDuplicate={duplicate} />)}
+              </div>
+            )}
+          </section>
+          <section className="cfg-section">
+            <h4 className="cfg-section-title">
+              Peran bawaan sistem ({builtins.length}) <span className="font-normal text-kn-text-2">· hak aksesnya bisa disesuaikan</span>
+            </h4>
+            <div className="cfg-rows" data-testid="role-builtin-grid">
+              {builtins.map((r) => <RoleRow key={r.id} role={r} onOpen={setEditor} onDuplicate={r.locked ? null : duplicate}
+                                            reserveAction={Boolean(duplicate)} />)}
             </div>
-          ) : (
-            <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="role-custom-grid">
-              {customs.map((r) => <RoleCard key={r.id} role={r} onOpen={setEditor} onDuplicate={duplicate} />)}
-            </div>
-          )}
-          <p className="kicker mb-1.5">Peran bawaan sistem ({builtins.length}) — hak aksesnya bisa disesuaikan</p>
-          {pgBuilt.toolbar}
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="role-builtin-grid">
-            {pgBuilt.pageRows.map((r) => <RoleCard key={r.id} role={r} onOpen={setEditor} onDuplicate={r.locked ? null : duplicate} />)}
-          </div>
+          </section>
         </>
       )}
 

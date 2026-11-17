@@ -3,12 +3,18 @@
  * 3 tingkat per modul, "Peran dasar" dan "Salin hak akses dari…" (dua kontrol terpisah, PR-T6), panel Ringkasan
  * peran dari pratinjau server, pratinjau menu, riwayat perubahan, dan ringkasan perubahan sebelum disimpan.
  * Mode baca (PR-T6): pelaku tanpa `permission.update` — semua isian mati, tanpa tombol simpan/hapus/kembalikan/pindah.
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md`, pemilik M43 — foto 36): hak akses = MATRIKS tanpa gulir mendatar
+ * (baris = modul berkelompok, kolom = Tidak ada · Lihat saja · Semua aksi · Rinci; baris "Semua modul" di atasnya),
+ * ringkasan peran SATU baris (rincian per modul di "Rincian"), peringatan masing-masing satu baris kecil, keterangan
+ * panjang di ikon ? judul. Isi kiriman simpan, cek versi (409), dan izin tidak berubah.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useEscapeClose } from "@/utils/escapeLayers";
 import { X, Save, Loader2, ShieldCheck, Trash2, RotateCcw, Info, Lock } from "lucide-react";
 
 import PageTabs from "../../../components/PageTabs";
+import { HelpTip } from "../../../components/ListPageParts";
 import RoleModuleRow, { LEVELS, levelLabel, partialLabel } from "./RoleModuleRow";
 import RoleMenuPreview from "./RoleMenuPreview";
 import RoleAccountsList from "./RoleAccountsList";
@@ -107,10 +113,10 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   // PR-T5 — ringkasan empat keadaan (sebagian tidak lagi dihitung sebagai "semua aksi").
   const isPartial = (m) => Boolean(levelInfo[m.id]?.partial);
   const counts = [
-    { id: "manage", label: "semua aksi", on: LEVELS[2].on, n: modules.filter((m) => levels[m.id] === "manage" && !isPartial(m)).length },
-    { id: "partial", label: "sebagian", on: "border-kn-field-border bg-kn-warning-soft text-kn-warning-text", n: modules.filter(isPartial).length },
-    { id: "view", label: "lihat", on: LEVELS[1].on, n: modules.filter((m) => levels[m.id] === "view").length },
-    { id: "none", label: "tidak ada", on: LEVELS[0].on, n: modules.filter((m) => levels[m.id] === "none").length },
+    { id: "manage", label: "semua aksi", tone: "text-kn-success-text", n: modules.filter((m) => levels[m.id] === "manage" && !isPartial(m)).length },
+    { id: "partial", label: "sebagian", tone: "text-kn-warning-text", n: modules.filter(isPartial).length },
+    { id: "view", label: "lihat", tone: "text-kn-action", n: modules.filter((m) => levels[m.id] === "view").length },
+    { id: "none", label: "tidak ada", tone: "text-kn-text-2", n: modules.filter((m) => levels[m.id] === "none").length },
   ];
   // PR-T5 — aksi berisiko yang DITAMBAHKAN simpan ini (kalimat akibat dari `sensitive_actions` server).
   const riskyAdded = sensitiveAdded(perms, originalPerms, modules);
@@ -224,24 +230,30 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const accountsTotal = editing ? (role.users || 0) + (role.users_inactive || 0) : 0;
   const deleteHint = editing && custom && !role.deletable
     ? `Masih dipakai ${accountsTotal} akun (${role.users_inactive || 0} nonaktif) — pindahkan akunnya dulu.` : "";
+  // Pola UI 16 Nov (M43) — keterangan judul & kotak "berlaku otomatis" dulu dipajang terbuka; kini di ikon ? judul.
+  const headHelp = [
+    !custom && role?.description ? String(role.description).replace(/\.?\s*$/, ".") : "",
+    viewOnly ? "Anda bisa melihat hak peran ini, tetapi tidak mengubahnya."
+      : "Pilih tingkat akses tiap modul. Perubahan berlaku untuk semua akun dengan peran ini.",
+    "Tingkat: Tidak ada (menu tersembunyi) · Lihat saja (baca tanpa tombol ubah) · Semua aksi; Sebagian = hanya sebagian "
+      + "aksi (atur di Rinci).",
+    "Perubahan berlaku otomatis untuk yang sedang masuk (paling lama 1 menit atau saat muat ulang) — tidak perlu "
+      + "keluar-masuk lagi. Notifikasi ikut menyesuaikan: hanya layar yang boleh dibuka yang muncul di lonceng, dan "
+      + "\"giliran Anda\" dikirim ke peran yang memegang wewenangnya.",
+  ].filter(Boolean).join(" ");
 
   return (
     <div className="modal-overlay" data-testid="role-editor-drawer"
          onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 1080, width: "96vw" }}>
-        <div className="flex items-start gap-2 border-b border-kn-divider px-4 py-3">
-          <ShieldCheck size={16} className="mt-0.5 text-kn-action" />
-          <div className="min-w-0 flex-1">
-            <h3 className="text-[13.5px] font-bold" data-testid="role-editor-title">
-              {title}
-              {editing && !custom && <span className="ml-2 rounded-full bg-kn-neutral-soft px-2 py-0.5 text-fs-12 font-semibold text-kn-text-2">bawaan sistem</span>}
-              {locked && <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-kn-danger-soft px-2 py-0.5 text-fs-12 font-semibold text-kn-danger-text"><Lock size={9} /> dikunci</span>}
-            </h3>
-            <p className="text-fs-12 text-kn-text-2">
-              {viewOnly ? "Anda bisa melihat hak peran ini, tetapi tidak mengubahnya." : "Pilih tingkat akses tiap modul. Perubahan berlaku untuk semua akun dengan peran ini."}
-            </p>
-          </div>
-          <button type="button" className="icon-button" aria-label="Tutup" data-testid="role-editor-close" onClick={requestClose}><X size={14} /></button>
+      {/* Pola UI 16 Nov — kepala, tab, dan kaki tetap; hanya isi yang bergulir (dulu dua bilah gulir bertumpuk). */}
+      <div className="modal-card flex flex-col" style={{ maxWidth: 1080, width: "96vw", overflow: "hidden" }}>
+        <div className="flex items-center gap-2 border-b border-kn-divider px-4 py-2.5">
+          <ShieldCheck size={16} className="shrink-0 text-kn-action" aria-hidden="true" />
+          <h3 className="min-w-0 text-fs-14 font-bold" data-testid="role-editor-title">{title}</h3>
+          {editing && !custom && <span className="badge-muted" data-testid="role-editor-builtin-badge">bawaan sistem</span>}
+          {locked && <span className="badge-red"><Lock size={11} /> dikunci</span>}
+          <HelpTip text={headHelp} testId="role-editor-help" label="Tentang editor hak akses" />
+          <button type="button" className="icon-button ml-auto shrink-0" aria-label="Tutup" data-testid="role-editor-close" onClick={requestClose}><X size={14} /></button>
         </div>
         {editing && (
           <div className="px-4 pt-2">
@@ -251,74 +263,98 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
         )}
 
         {tab === "riwayat" && editing ? (
-          <div className="p-4" style={{ maxHeight: "68vh", overflowY: "auto" }}><RoleHistoryTab roleId={role.id} /></div>
+          <div className="min-h-0 flex-1 p-4" style={{ overflowY: "auto" }}><RoleHistoryTab roleId={role.id} /></div>
         ) : (
-        <div className="grid gap-3 p-4 lg:grid-cols-[1fr_300px]" style={{ maxHeight: "68vh", overflowY: "auto" }}>
-          <div className="space-y-2.5">
-            {custom ? (
-              <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="cfg-mx-scroll grid min-h-0 flex-1 content-start gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_280px]" style={{ overflowY: "auto" }}>
+          <div className="min-w-0 space-y-2">
+            {custom && (
+              <div className="grid gap-2 sm:grid-cols-2">
                 <div className="grid gap-1">
-                  <label className="kicker">Nama peran</label>
-                  <input className="field" data-testid="role-editor-label" value={label} placeholder="mis. Staf Penagihan" disabled={readOnly}
+                  <label className="kicker" htmlFor="role-editor-label">Nama peran</label>
+                  <input className="field" id="role-editor-label" data-testid="role-editor-label" value={label} placeholder="mis. Staf Penagihan" disabled={readOnly}
                          onChange={(e) => setLabel(e.target.value)} />
                 </div>
                 <div className="grid gap-1">
-                  <label className="kicker">Keterangan singkat (opsional)</label>
-                  <input className="field" data-testid="role-editor-description" value={description} placeholder="Untuk siapa peran ini?" disabled={readOnly}
+                  <label className="kicker" htmlFor="role-editor-description">Keterangan singkat (opsional)</label>
+                  <input className="field" id="role-editor-description" data-testid="role-editor-description" value={description} placeholder="Untuk siapa peran ini?" disabled={readOnly}
                          onChange={(e) => setDescription(e.target.value)} />
                 </div>
               </div>
-            ) : (
-              <p className="text-fs-12 text-kn-text-2" data-testid="role-editor-builtin-note">{role.description}</p>
             )}
 
+            {/* Pola UI 16 Nov (M43) — peringatan masing-masing SATU baris kecil (dulu kotak berparagraf). */}
             {blocked && (
-              <div className="flex items-start gap-1.5 rounded-md border border-kn-field-border bg-kn-warning-soft p-2.5" data-testid="role-editor-no-manage">
-                <Lock size={13} className="mt-0.5 shrink-0 text-kn-warning-text" />
-                <p className="text-fs-12 text-kn-text">Peran Anda tidak diberi wewenang mengelola akun/peran ini. Peran ini hanya bisa diubah Admin.</p>
-              </div>
+              <p className="cfg-role-line warn" data-testid="role-editor-no-manage">
+                <Lock size={12} aria-hidden="true" /> Peran Anda tidak diberi wewenang mengelola akun/peran ini. Peran ini hanya bisa diubah Admin.
+              </p>
             )}
-            {!locked && (custom || !readOnly) && (
-              <RoleBaseControls custom={custom} roleId={role?.id} baseRole={baseRole} roles={roles} disabled={readOnly || busy}
-                                onChooseBase={chooseBase} onCopy={copyFrom} />
+            {locked && (
+              <p className="cfg-role-line err" data-testid="role-editor-locked">
+                <Lock size={12} aria-hidden="true" /> Peran Admin selalu punya semua akses dan tidak bisa diubah, supaya tidak ada yang terkunci keluar dari sistem.
+              </p>
             )}
-            {!readOnly && (
-              <div className="flex flex-wrap items-center gap-1.5" data-testid="role-editor-all">
-                <span className="text-fs-12 font-semibold text-kn-text">Semua modul:</span>
-                {LEVELS.map((l) => (
-                  <button key={l.id} type="button" data-testid={`role-editor-all-${l.id}`} onClick={() => setAll(l.id)}
-                          className="secondary-button btn-sm">
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
             {pendingCount > 0 && (
-              <div className="flex flex-wrap items-center gap-2 rounded-md border border-kn-divider bg-kn-action-soft p-2.5" data-testid="role-editor-pending-base">
-                <Info size={13} className="shrink-0 text-kn-action" />
-                <p className="min-w-0 flex-1 text-fs-12 text-kn-text">
-                  Peran dasar {role.base_role_label || role.base_role} mendapat {pendingCount} izin baru yang belum diikuti peran ini.
-                </p>
+              <p className="cfg-role-line" data-testid="role-editor-pending-base">
+                <Info size={12} className="text-kn-action" aria-hidden="true" />
+                <span>Peran dasar {role.base_role_label || role.base_role} mendapat {pendingCount} izin baru yang belum diikuti peran ini.</span>
                 {canFollow && !readOnly && (
                   <button type="button" className="secondary-button btn-sm" data-testid="role-editor-follow-base" disabled={busy}
                           onClick={() => setDanger("follow")}>
                     Ikuti peran dasar
                   </button>
                 )}
-              </div>
+              </p>
             )}
-            {locked && (
-              <div className="flex items-start gap-1.5 rounded-md border border-kn-divider bg-kn-danger-soft p-2.5" data-testid="role-editor-locked">
-                <Lock size={13} className="mt-0.5 shrink-0 text-kn-danger-text" />
-                <p className="text-fs-12 text-kn-text">Peran Admin selalu punya semua akses dan tidak bisa diubah, supaya tidak ada yang terkunci keluar dari sistem.</p>
-              </div>
+            {!locked && (custom || !readOnly) && (
+              <RoleBaseControls custom={custom} roleId={role?.id} baseRole={baseRole} roles={roles} disabled={readOnly || busy}
+                                onChooseBase={chooseBase} onCopy={copyFrom} />
+            )}
+            {/* PR-T6 — "Ringkasan peran" dari pratinjau server; kini satu baris + "Rincian". */}
+            {!locked && (
+              <RoleSummaryPanel summary={summary} loading={preview.loading} error={preview.error && !summary} onRetry={preview.retry}
+                                header={(
+                                  <span className="inline-flex flex-wrap items-center gap-x-2 font-semibold" data-testid="role-editor-summary">
+                                    {counts.map((c) => (
+                                      <span key={c.id} data-testid={`role-editor-count-${c.id}`} className={c.tone}>
+                                        {c.n} {c.label}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )} />
             )}
 
-            {groups.map((g) => (
-              <div key={g.name} data-testid={`role-editor-group-${g.name}`}>
-                <p className="kicker mb-1 mt-1">{g.name}</p>
-                <div className="space-y-1.5">
+            <div className="cfg-mx" data-testid="role-editor-matrix">
+              <div className="cfg-mx-row cfg-mx-head">
+                <span>Modul</span>
+                <span className="cfg-mx-levels">
+                  {LEVELS.map((l) => <span key={l.id} className="cfg-mx-cell">{l.label}</span>)}
+                </span>
+                <span className="cfg-mx-cell">Rinci</span>
+              </div>
+              {!readOnly && (
+                <div className="cfg-mx-row cfg-mx-all" data-testid="role-editor-all">
+                  <span className="inline-flex items-center gap-1">
+                    Semua modul
+                    <HelpTip text="Menyetel satu tingkat untuk semua modul sekaligus. Modul yang tidak punya tingkat itu (mis. modul sakelar tanpa Lihat saja) dibiarkan apa adanya."
+                             testId="role-editor-all-help" label="Tentang Semua modul" />
+                  </span>
+                  <span className="cfg-mx-levels">
+                    {LEVELS.map((l) => (
+                      <span key={l.id} className="cfg-mx-cell">
+                        <button type="button" data-testid={`role-editor-all-${l.id}`} onClick={() => setAll(l.id)}
+                                className="secondary-button btn-sm" aria-label={`Jadikan semua modul: ${l.label}`}
+                                title={`Jadikan semua modul: ${l.label}`} disabled={busy}>
+                          Semua
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                  <span />
+                </div>
+              )}
+              {groups.map((g) => (
+                <div key={g.name} data-testid={`role-editor-group-${g.name}`}>
+                  <p className="cfg-mx-group">{g.name}</p>
                   {g.items.map((m) => (
                     <RoleModuleRow key={m.id} module={m} value={levels[m.id]} original={original[m.id]}
                                    dirty={moduleActionsChanged(perms, originalPerms, m)}
@@ -328,7 +364,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                                    onChange={(v) => setModuleLevel(m, v)}
                                    advanced={!!advanced[m.id]}
                                    onToggleAdvanced={readOnly ? null : () => setAdvanced((s) => ({ ...s, [m.id]: !s[m.id] }))}>
-                      <div className="mt-2 space-y-2">
+                      <div className="space-y-2">
                         <RoleNavTree module={m} hidden={hidden} original={originalHidden} disabled={readOnly || busy}
                                      off={levels[m.id] === "none"} onToggle={toggleView} onSetMany={setViews} />
                         <RoleAdvancedPanel module={m} perms={perms} original={originalPerms} labels={labels} disabled={readOnly || busy}
@@ -337,24 +373,11 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                     </RoleModuleRow>
                   ))}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-2.5">
-            {/* PR-T6 — "Ringkasan peran" menggantikan kotak "Ringkasan": isinya dari pratinjau server. */}
-            {!locked && (
-              <RoleSummaryPanel summary={summary} loading={preview.loading} error={preview.error && !summary} onRetry={preview.retry}
-                                header={(
-                                  <div className="mb-1.5 flex flex-wrap gap-1.5" data-testid="role-editor-summary">
-                                    {counts.map((c) => (
-                                      <span key={c.id} data-testid={`role-editor-count-${c.id}`} className={`rounded-full border px-2 py-0.5 text-fs-12 font-semibold ${c.on}`}>
-                                        {c.n} {c.label}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )} />
-            )}
+          <div className="cfg-role-side min-w-0 space-y-2">
             <div className="rounded-md border border-kn-divider bg-white p-2.5" data-testid="role-editor-settings">
               <CrossEntityBox cross={cross} disabled={readOnly || busy} role={editing && !locked ? role : null}
                               onChange={(v) => { setCross(v); setCrossTouched(true); }} />
@@ -374,10 +397,6 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
             )}
             <RoleMenuPreview modules={modules} levels={levels} baseRole={editing ? (custom ? baseRole : "") : baseRole} perms={perms} hidden={hidden}
                              builtinId={editing && !custom ? role.id : ""} navAdded={preview.data?.nav_added || []} />
-            <div className="flex items-start gap-1.5 rounded-md border border-kn-divider bg-kn-action-soft p-2.5">
-              <Info size={12} className="mt-0.5 shrink-0 text-kn-action" />
-              <p className="text-fs-12 text-kn-text">Perubahan berlaku otomatis untuk yang sedang masuk (paling lama 1 menit atau saat muat ulang) — tidak perlu keluar-masuk lagi. <b>Notifikasi ikut menyesuaikan</b>: hanya layar yang boleh dibuka yang muncul di lonceng, dan "giliran Anda" dikirim ke peran yang memegang wewenangnya.</p>
-            </div>
           </div>
         </div>
         )}

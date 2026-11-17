@@ -24,6 +24,7 @@ import { Building2, Users, ClipboardCheck, Plus, RefreshCw, UserCheck, ShieldChe
 
 import ErrorNotice from "../../../components/ErrorNotice";
 import PageTabs from "../../../components/PageTabs";
+import { HelpTip } from "../../../components/ListPageParts";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import EntityList from "./EntityList";
 import EntityWizard from "./EntityWizard";
@@ -54,6 +55,10 @@ export const PART_VIEW = { entities: "settings-pt-profile", readiness: "settings
   roles: "permission-matrix", "role-reality": "settings-role-check" };
 /** Modul akses yang membuka bagian ber-`need` (kalimat bila bagian dibuka tanpa izin). */
 const PART_MODULE = { accounts: "Akun Pengguna", roles: "Peran & Hak Akses", "role-reality": "Peran & Hak Akses" };
+/** Isi ikon ? (dulu pita penjelas permanen di atas setiap bagian). */
+const INTRO = "Satu grup, beberapa PT — buku keuangan, pajak, harga, dan pelanggan tiap PT terpisah. Karyawan hanya "
+  + "melihat data PT tempat dia ditugaskan. PT utama akun diambil dari data karyawan (HR) supaya penggajian dan hak "
+  + "akses tidak pernah bertentangan.";
 
 export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate, initialTab = "entities", only = "" }) {
   const perms = currentUser?.permissions;
@@ -109,58 +114,50 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
     ? (nav.canOpen(PART_VIEW.accounts) ? () => nav.go(PART_VIEW.accounts) : undefined)
     : (tabs.some((t) => t.key === "accounts") ? () => setTab("accounts") : undefined);
 
+  // Pola UI 16 Nov (M43) — Peran & Hak Akses punya bilah daftarnya sendiri (cari · ? · muat ulang · + Buat Peran Baru);
+  // bilah atas layar ini tidak dirender di bagian itu supaya tombol muat ulang tidak sendirian di satu baris.
+  const ownToolbar = tab === "roles";
   return (
     <div data-testid="entities-access-view">
       <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
-      {/* Pita penjelas: layar ini mengatur SIAPA boleh melihat APA. */}
-      <div
-        data-testid="entities-access-intro"
-        className="mb-3 flex flex-wrap items-start gap-2 rounded-md border border-[#C9DBF7] bg-[#F2F7FF] px-3 py-2"
-      >
-        <Building2 size={14} className="mt-0.5 text-[#0058CC]" />
-        <div className="min-w-0">
-          <p className="text-[11.5px] font-bold text-[#1C1C1E]">
-            Satu grup, beberapa PT — buku keuangan, pajak, harga, dan pelanggan tiap PT terpisah.
-          </p>
-          <p className="text-[10.5px] text-[#6B6B73]">
-            Karyawan hanya melihat data PT tempat dia ditugaskan. PT
-            utama akun diambil dari data karyawan (HR) supaya penggajian dan hak akses
-            tidak pernah bertentangan.
-          </p>
-        </div>
-      </div>
 
       {/* Fase 3 · P2 (L-01) — pil buatan sendiri → PageTabs baku (tingkat 2); testid `entities-access-tab-<key>` tetap.
-          KP-T9 — dibuka per bagian (`only`): tanpa bilah tab dalam, tombol tetap di bilahnya sendiri. */}
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {!part && (
-          <div className="min-w-0 flex-1">
-            <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
-              ariaLabel="Badan Usaha & Akses" tabs={tabs.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
-          </div>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          {tab === "entities" && canCreateEntity && (
-            <button
-              type="button"
-              className="primary-button"
-              data-testid="entity-add-button"
-              onClick={() => setWizardOpen(true)}
-            >
-              <Plus size={14} /> Tambah PT
-            </button>
+          KP-T9 — dibuka per bagian (`only`): tanpa bilah tab dalam, tombol tetap di bilahnya sendiri.
+          Pola UI 16 Nov (M43) — pita penjelas "Satu grup, beberapa PT …" pindah ke ikon ? di bilah yang sama. */}
+      {!part || !ownToolbar ? (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {!part && (
+            <div className="min-w-0 flex-1">
+              <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
+                ariaLabel="Badan Usaha & Akses" tabs={tabs.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
+            </div>
           )}
-          <button
-            type="button"
-            className="icon-button"
-            data-testid="entities-access-refresh"
-            aria-label="Muat ulang"
-            onClick={refreshAll}
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
+          <HelpTip text={INTRO} testId="entities-access-intro" label="Tentang PT & hak akses" />
+          <div className="ml-auto flex items-center gap-2">
+            {tab === "entities" && canCreateEntity && (
+              <button
+                type="button"
+                className="primary-button"
+                data-testid="entity-add-button"
+                onClick={() => setWizardOpen(true)}
+              >
+                <Plus size={14} /> Tambah PT
+              </button>
+            )}
+            {!ownToolbar && (
+              <button
+                type="button"
+                className="icon-button"
+                data-testid="entities-access-refresh"
+                aria-label="Muat ulang"
+                onClick={refreshAll}
+              >
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {flash && (
         <div className="notice-bar success !py-1.5 mb-2" data-testid="entities-access-flash">

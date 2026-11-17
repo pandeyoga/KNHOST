@@ -3,10 +3,13 @@
 
 export const GROUP_ORDER = ["Penjualan", "Pembelian", "Keuangan", "Gudang", "R&D", "SDM"];
 
+// Pola UI 16 Nov (M43) — lencana asal pendek, sama dengan daftar pengaturan (Bawaan sistem · Aturan grup · Khusus PT);
+// keterangan panjangnya di tooltip. Dulu "Aturan bawaan (belum disimpan)" memenuhi tiap kartu.
 export const SOURCE_BADGE = {
-  pt: { label: "Aturan khusus PT ini", cls: "badge-purple" },
-  grup: { label: "Aturan grup", cls: "badge-blue" },
-  bawaan: { label: "Aturan bawaan (belum disimpan)", cls: "badge-gray" },
+  pt: { label: "Khusus PT ini", cls: "badge-purple", title: "Aturan khusus PT ini — PT lain tidak terpengaruh" },
+  grup: { label: "Aturan grup", cls: "badge-blue",
+    title: "Aturan grup — berlaku untuk semua PT yang tidak punya aturan sendiri" },
+  bawaan: { label: "Bawaan sistem", cls: "badge-muted", title: "Aturan bawaan sistem — belum pernah disimpan" },
 };
 
 export const ANY_HOLDER_LABEL = "Semua pemegang akses";
@@ -43,6 +46,31 @@ export function passingText(tier) {
   if (tier.any_holder) return ANY_HOLDER_LABEL;
   if (!tier.roles || tier.roles.length === 0) return "—";
   return (tier.passing_labels || []).length ? tier.passing_labels.join(", ") : "Belum ada";
+}
+
+const tierAktif = (t) => Boolean(t.any_holder) || (t.roles || []).length > 0;
+
+/** Pola UI 16 Nov — ringkasan SATU baris di daftar padat: "Tanpa persetujuan" · "mulai Rp 50.000.000 · Manajer,
+ *  Finance" · "3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan". Rentang tanpa peran tidak dihitung. */
+export function ruleSummary(kind) {
+  const levels = (kind?.levels || [])
+    .map((lv) => ({ ...lv, tiers: (lv.tiers || []).filter(tierAktif) }))
+    .filter((lv) => lv.tiers.length);
+  if (!levels.length) return "Tanpa persetujuan";
+  const terendah = Math.min(...levels.flatMap((lv) => lv.tiers.map((t) => Number(t.min_amount) || 0)));
+  const mulai = kind.has_amount && terendah > 0 ? `mulai Rp ${fmtAngka(terendah)} · ` : "";
+  if (levels.length === 1) {
+    const tiers = levels[0].tiers;
+    return tiers.length === 1 ? `${mulai}${approverText(tiers[0])}` : `${mulai}${tiers.length} rentang nilai`;
+  }
+  return `${mulai}${levels.length} jenjang: ${levels.map((lv) => lv.label || `Jenjang ${lv.level}`).join(" → ")}`;
+}
+
+/** Jumlah hal yang perlu dicek pada satu jenis: peringatan server + rentang berperan tanpa izin. */
+export function issueCount(kind) {
+  const noPerm = (kind?.levels || []).reduce((n, lv) => n
+    + (lv.tiers || []).filter((t) => (t.no_permission_labels || []).length).length, 0);
+  return (kind?.warnings || []).length + noPerm;
 }
 
 /** Baris tabel datar untuk satu jenis: [{key, level, label, tier, first}] (sel jenjang hanya di baris pertama). */

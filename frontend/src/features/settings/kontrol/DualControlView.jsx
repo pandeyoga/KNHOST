@@ -7,9 +7,13 @@
  *
  * Baca: `GET /api/kontrol/aturan` (izin `settings.view`). Simpan: `PUT /api/config/values` (banyak butir, SATU
  * alasan) — validasi, wajib-alasan, riwayat, dan jejak audit sama dengan Pusat Pengaturan; tidak ada jalur tulis baru.
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md` §2.D, pemilik M43): daftar padat, SATU baris per aksi — nama (?) ·
+ * jumlah orang ▾ · batas nominal (hanya bila berlaku: aksi bernominal yang "Cukup satu orang") · sumber. Tanpa baris
+ * gema "Rp 0" di bawah isian; paragraf pengantar pindah ke ikon ?; satu tombol Simpan di bilah simpan bawah.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Save, ShieldCheck, Users } from "lucide-react";
+import { Building2, ChevronDown, ChevronRight, Eye, Save, Users } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { askConfirm, askReason } from "../../../services/confirmService";
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -17,6 +21,7 @@ import KNSelect from "../../../components/KNSelect";
 import LoadingLine from "../../../components/LoadingLine";
 import MoneyInput from "../../../components/MoneyInput";
 import OkNotice from "../../../components/OkNotice";
+import { HelpTip } from "../../../components/ListPageParts";
 import { entityOptions, entityShortById } from "../../../utils/entityLabel";
 import { parseDecimal } from "../../../utils/decimalInput";
 import { formatCurrency } from "../../../utils/formatters";
@@ -30,6 +35,22 @@ export function sumberLabel(sumber, layerAll) {
   if (sumber === "global") return layerAll ? "Aturan semua PT" : "Mengikuti semua PT";
   return "Bawaan";
 }
+/** Warna lencana sumber = warna lapisan Pusat Pengaturan (bawaan abu · grup biru · PT ungu). */
+const SUMBER_TONE = { entity: "badge-purple", global: "badge-blue" };
+
+const BANTUAN = "Atur aksi mana yang harus diputuskan orang lain selain pengajunya. \"Cukup satu orang\" berarti pengaju "
+  + "boleh memutuskan dokumennya sendiri; di atas batas nominal, dokumen selalu butuh orang kedua (0 = tanpa batas). "
+  + "\"Harus dua orang\" berarti selalu orang lain yang memutuskan.";
+
+/** Penjelasan satu baris aksi (ikon ? di nama) — kalimat dampak yang sama dengan registri pengaturan. */
+export function bantuanAksi(r) {
+  return `Harus dua orang: pengaju “${r.label}” tidak bisa memutuskannya sendiri — rekan lain yang berwenang yang `
+    + `memutuskan. Cukup satu orang: pengaju boleh memutuskan sendiri${r.punya_nominal
+      ? ", kecuali nilainya di atas batas nominal (0 = tanpa batas)." : "."}`;
+}
+
+/** Batas nominal hanya berlaku untuk aksi bernominal yang "Cukup satu orang" (dua orang = selalu dua orang). */
+export const batasBerlaku = (r, minOrang) => Boolean(r.punya_nominal) && String(minOrang) === "1";
 
 /** Butir `PUT /api/config/values` dari perubahan layar (dipakai tombol simpan & uji). */
 export function itemsPerubahan(data, draft, layer, reason) {
@@ -65,6 +86,7 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
   const [draft, setDraft] = useState(KOSONG);
   const [busy, setBusy] = useState(false);
   const [ok, setOk] = useState("");
+  const [adminOpen, setAdminOpen] = useState(false);
 
   const layerAll = layer === SEMUA_PT;
   const namaLapisan = layerAll ? "Semua PT" : entityShortById(entities, layer, "PT terpilih");
@@ -139,22 +161,47 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
       confirmLabel: "Buang", testId: "dual-discard-confirm" })) setDraft(KOSONG);
   };
 
+  // Kolom batas: isian hanya bila berlaku; selain itu "—" (aksi tanpa nominal, atau "Harus dua orang").
+  const kolomBatas = (r) => {
+    if (!batasBerlaku(r, nilai(r, "min_orang"))) {
+      return (
+        <span className="text-kn-text-2" data-testid={`dual-limit-${r.aksi}`}
+          title={r.punya_nominal ? "Selalu dua orang — batas nominal tidak dipakai" : "Aksi ini tanpa nominal"}>—</span>
+      );
+    }
+    if (!canEdit) {
+      const batas = Number(r.batas_nominal || 0);
+      return (
+        <span data-testid={`dual-limit-${r.aksi}`}>
+          {batas > 0 ? `dua orang di atas ${formatCurrency(batas)}` : "tanpa batas nominal"}
+        </span>
+      );
+    }
+    return (
+      <span className="cfg-dual-amount">
+        <span className="whitespace-nowrap">dua orang di atas</span>
+        <span className="cfg-dual-money">
+          <MoneyInput value={nilai(r, "batas_nominal")} disabled={busy} showPreview={false}
+            aria-label={`${r.label}: dua orang di atas (Rp)`}
+            onChange={(v) => ubahBaris(r.aksi, { batas_nominal: v })} testId={`dual-limit-${r.aksi}`} />
+        </span>
+      </span>
+    );
+  };
+
   const bagian = data?.bagian || [];
+  const jumlahTetap = adminTetap.filter((a) => (data?.rows || []).some((r) => r.aksi === a)).length;
   return (
-    <div className="cfg-hub" data-testid="dual-control-view">
-      <p className="cfg-group-intro">
-        <ShieldCheck size={13} className="mr-1 inline align-[-2px] text-kn-action" aria-hidden="true" />
-        Atur aksi mana yang <b>harus diputuskan orang lain</b> selain pengajunya. "Cukup satu orang" berarti pengaju boleh
-        memutuskan dokumennya sendiri; di atas batas nominal, dokumen selalu butuh orang kedua.
-      </p>
+    <div className="cfg-hub cfg-group-view" data-testid="dual-control-view">
       <div className="cfg-toolbar">
         <div className="cfg-scope-box" data-testid="dual-scope-box">
-          <span className="cfg-scope-caption">Berlaku untuk</span>
+          <span className="cfg-scope-caption"><Building2 size={13} /> Berlaku untuk</span>
           <KNSelect value={layer} onValueChange={(v) => { setOk(""); setLayer(v || SEMUA_PT); }} options={opsiLapisan}
             className="field cfg-select-sm" data-testid="dual-scope" />
         </div>
+        <HelpTip text={BANTUAN} testId="dual-help" label="Tentang kontrol dua orang" />
         {canEdit ? (
-          <button type="button" className="btn-secondary btn-sm" onClick={timKecil} disabled={busy || loading}
+          <button type="button" className="btn-secondary btn-sm ml-auto" onClick={timKecil} disabled={busy || loading}
             data-testid="dual-small-team">
             <Users size={13} /> Tim kecil — semua cukup satu orang
           </button>
@@ -165,13 +212,11 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
       {ok ? <OkNotice message={ok} testId="dual-ok" /> : null}
       {loading && !data ? <LoadingLine text="Memuat aturan kontrol dua orang…" testId="dual-loading" /> : null}
       {data && !canEdit ? (
-        <div className="cfg-notice info" data-testid="dual-readonly">
-          <ShieldCheck size={15} />
-          <span>
-            Anda dapat melihat aturan ini, tetapi tidak dapat mengubahnya
-            {layerAll ? " untuk Semua PT (khusus peran lintas PT dengan akses kelola pengaturan)." : "."}
-          </span>
-        </div>
+        <p className="cfg-readonly-line" data-testid="dual-readonly">
+          <Eye size={13} aria-hidden="true" />
+          Hanya baca — Anda dapat melihat aturan ini, tetapi tidak dapat mengubahnya
+          {layerAll ? " untuk Semua PT (khusus peran lintas PT dengan akses kelola pengaturan)." : "."}
+        </p>
       ) : null}
 
       {data ? (
@@ -180,64 +225,88 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
             const baris = data.rows.filter((r) => r.bagian === b);
             if (!baris.length) return null;
             return (
-              <section key={b} className="section-card mt-3" data-testid={`dual-section-${b}`}>
-                <h3 className="text-fs-13 font-semibold mb-2">{b}</h3>
-                <table className="data-table">
-                  <thead>
-                    <tr><th>Aksi</th><th>Jumlah orang</th><th>Dua orang di atas (Rp)</th><th>Sumber</th></tr>
-                  </thead>
-                  <tbody>
-                    {baris.map((r) => (
-                      <tr key={r.aksi} data-testid={`dual-row-${r.aksi}`}>
-                        <td>{r.label}</td>
-                        <td>
-                          <KNSelect value={nilai(r, "min_orang")} options={OPSI_ORANG} disabled={!canEdit || busy}
-                            onValueChange={(v) => ubahBaris(r.aksi, { min_orang: v })}
-                            className="field cfg-select-sm" data-testid={`dual-min-${r.aksi}`} />
-                        </td>
-                        <td>
-                          {r.punya_nominal ? (
-                            canEdit ? (
-                              <MoneyInput value={nilai(r, "batas_nominal")} disabled={busy}
-                                onChange={(v) => ubahBaris(r.aksi, { batas_nominal: v })} testId={`dual-limit-${r.aksi}`} />
-                            ) : <span data-testid={`dual-limit-${r.aksi}`}>{formatCurrency(r.batas_nominal || 0)}</span>
-                          ) : <span className="text-kn-text-2" data-testid={`dual-limit-${r.aksi}`}>—</span>}
-                        </td>
-                        <td data-testid={`dual-source-${r.aksi}`}>{sumberLabel(r.sumber, layerAll)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <section key={b} className="cfg-section" data-testid={`dual-section-${b}`}>
+                <h4 className="cfg-section-title">{b}</h4>
+                <div className="cfg-rows">
+                  {baris.map((r) => (
+                    <div key={r.aksi} className="cfg-dual-row" data-testid={`dual-row-${r.aksi}`}>
+                      <span className="cfg-row-name">
+                        <span className="cfg-row-title">{r.label}</span>
+                        <HelpTip text={bantuanAksi(r)} testId={`dual-help-${r.aksi}`} label={`Tentang ${r.label}`} />
+                      </span>
+                      <KNSelect value={nilai(r, "min_orang")} options={OPSI_ORANG} disabled={!canEdit || busy}
+                        onValueChange={(v) => ubahBaris(r.aksi, { min_orang: v })} aria-label={`${r.label}: jumlah orang`}
+                        className="field cfg-select-sm" data-testid={`dual-min-${r.aksi}`} />
+                      <span className="cfg-dual-limit">{kolomBatas(r)}</span>
+                      <span className="cfg-dual-source">
+                        <span className={SUMBER_TONE[r.sumber] || "badge-muted"} title="Asal nilai yang berlaku sekarang"
+                          data-testid={`dual-source-${r.aksi}`}>{sumberLabel(r.sumber, layerAll)}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </section>
             );
           })}
 
-          <section className="section-card mt-3" data-testid="dual-admin">
-            <h3 className="text-fs-13 font-semibold mb-2">Pengecualian Admin</h3>
-            <label className="flex items-center gap-2 text-fs-13">
-              <input type="checkbox" checked={!!adminBoleh} disabled={!canEdit || busy} data-testid="dual-admin-self"
-                onChange={(e) => { setOk(""); setDraft((d) => ({ ...d, admin_boleh_sendiri: e.target.checked })); }} />
-              Admin boleh memutuskan dokumennya sendiri (tiap kejadian dicatat di jejak persetujuan)
-            </label>
-            <p className="text-fs-12 text-kn-text-2 mt-2 mb-1">Tetap dua orang walau Admin:</p>
-            <div className="grid gap-1 sm:grid-cols-2">
-              {data.rows.map((r) => (
-                <label key={r.aksi} className="flex items-center gap-2 text-fs-12">
-                  <input type="checkbox" checked={adminTetap.includes(r.aksi)} disabled={!canEdit || busy}
-                    data-testid={`dual-admin-keep-${r.aksi}`}
-                    onChange={(e) => {
-                      setOk("");
-                      const next = e.target.checked ? [...adminTetap, r.aksi] : adminTetap.filter((x) => x !== r.aksi);
-                      setDraft((d) => ({ ...d, admin_tetap_dua_orang: next }));
-                    }} />
-                  {r.label}
-                </label>
-              ))}
+          <section className="cfg-section" data-testid="dual-admin">
+            <h4 className="cfg-section-title">Pengecualian Admin</h4>
+            <div className="cfg-rows">
+              <div className="cfg-row">
+                <span className="cfg-row-name">
+                  <label className="cfg-row-title" htmlFor="dual-admin-self">Admin boleh memutuskan dokumennya sendiri</label>
+                  <HelpTip text="Bila dicentang, Admin tidak terkena aturan dua orang; tiap kejadian dicatat di jejak persetujuan."
+                    testId="dual-admin-self-help" label="Tentang pengecualian Admin" />
+                </span>
+                <input type="checkbox" id="dual-admin-self" checked={!!adminBoleh} disabled={!canEdit || busy}
+                  data-testid="dual-admin-self"
+                  onChange={(e) => { setOk(""); setDraft((d) => ({ ...d, admin_boleh_sendiri: e.target.checked })); }} />
+              </div>
+              <div>
+                <div className="cfg-row">
+                  <button type="button" className="cfg-card-toggle" aria-expanded={adminOpen}
+                    aria-label="Buka daftar aksi yang tetap dua orang walau Admin" data-testid="dual-admin-keep-toggle"
+                    onClick={() => setAdminOpen((v) => !v)}>
+                    {adminOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                  <span className="cfg-row-name">
+                    <span className="cfg-row-title">Tetap dua orang walau Admin</span>
+                    <HelpTip text="Admin pun tidak boleh memutuskan sendiri untuk aksi yang dicentang di daftar ini."
+                      testId="dual-admin-keep-help" label="Tentang daftar tetap dua orang" />
+                  </span>
+                  <span className="cfg-row-val" data-testid="dual-admin-keep-count">
+                    {adminBoleh ? `${jumlahTetap} aksi` : "tidak berlaku — Admin ikut aturan dua orang"}
+                  </span>
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => setAdminOpen((v) => !v)}
+                    data-testid="dual-admin-keep-open">{adminOpen ? "Tutup" : (canEdit ? "Ubah" : "Lihat")}</button>
+                </div>
+                {adminOpen ? (
+                  <div className="cfg-row-body cfg-check-grid" data-testid="dual-admin-keep-list">
+                    {data.rows.map((r) => (
+                      <label key={r.aksi} className="cfg-check">
+                        <input type="checkbox" checked={adminTetap.includes(r.aksi)} disabled={!canEdit || busy}
+                          data-testid={`dual-admin-keep-${r.aksi}`}
+                          onChange={(e) => {
+                            setOk("");
+                            const next = e.target.checked ? [...adminTetap, r.aksi] : adminTetap.filter((x) => x !== r.aksi);
+                            setDraft((d) => ({ ...d, admin_tetap_dua_orang: next }));
+                          }} />
+                        {r.label}
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
 
           {canEdit ? (
-            <div className="flex gap-2 justify-end mt-3">
+            <div className="cfg-savebar" data-testid="dual-savebar">
+              {perubahan.length ? (
+                <span className="text-fs-12 text-kn-warning-text" data-testid="dual-dirty-count">
+                  {perubahan.length} perubahan belum disimpan
+                </span>
+              ) : null}
               <button type="button" className="btn-secondary btn-sm" onClick={batal} disabled={!perubahan.length || busy}
                 data-testid="dual-discard">Buang perubahan</button>
               <button type="button" className="btn-primary btn-sm" onClick={simpan} disabled={!perubahan.length || busy}

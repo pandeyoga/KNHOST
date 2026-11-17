@@ -10,6 +10,7 @@ import { Copy, GitBranch } from "lucide-react";
 
 import ConfirmModal from "../../../components/ConfirmModal";
 import KNSelect from "../../../components/KNSelect";
+import { HelpTip } from "../../../components/ListPageParts";
 
 export const NO_BASE = "__tanpa__";
 export const baseOptions = (roles) => [
@@ -18,25 +19,28 @@ export const baseOptions = (roles) => [
 ];
 export const baseLabelOf = (roles, id) => (id ? ((roles || []).find((r) => r.id === id)?.label || id) : "tanpa peran dasar");
 
+// Pola UI 16 Nov (M43) — dua pemilih dalam satu baris; kalimat penjelasnya pindah ke ikon ? (dulu paragraf di bawahnya).
 export default function RoleBaseControls({ custom, roleId, baseRole, roles, disabled, onChooseBase, onCopy }) {
   return (
-    <div className="grid gap-2.5 rounded-md border border-kn-divider bg-white p-2.5 sm:grid-cols-2" data-testid="role-editor-tools">
+    <div className="grid gap-2 sm:grid-cols-2" data-testid="role-editor-tools">
       {custom && (
-        <div className="grid gap-1" data-testid="role-editor-base">
-          <label className="flex items-center gap-1 text-fs-12 font-semibold text-kn-text"><GitBranch size={12} className="text-kn-action" /> Peran dasar</label>
-          <KNSelect className="field" data-testid="role-editor-base-select" disabled={disabled}
-                    value={baseRole || NO_BASE} options={baseOptions(roles)}
+        <div className="flex min-w-0 items-center gap-1.5" data-testid="role-editor-base">
+          <span className="inline-flex shrink-0 items-center gap-1 text-fs-12 font-semibold text-kn-text"><GitBranch size={12} className="text-kn-action" /> Peran dasar</span>
+          <HelpTip text="Menentukan nilai awal halaman awal, data yang terlihat, kategori kerja, dan menu warisan. Tidak menyalin hak akses."
+                   testId="role-editor-base-help" label="Tentang peran dasar" />
+          <KNSelect className="field min-w-0 flex-1" data-testid="role-editor-base-select" disabled={disabled}
+                    value={baseRole || NO_BASE} options={baseOptions(roles)} aria-label="Peran dasar"
                     onValueChange={(v) => onChooseBase?.(v === NO_BASE ? "" : v)} />
-          <p className="text-fs-12 text-kn-text-2">Menentukan nilai awal halaman awal, data yang terlihat, kategori kerja, dan menu warisan. Tidak menyalin hak akses.</p>
         </div>
       )}
       {!disabled && (
-        <div className="grid gap-1" data-testid="role-editor-copy">
-          <label className="flex items-center gap-1 text-fs-12 font-semibold text-kn-text"><Copy size={12} className="text-kn-action" /> Salin hak akses dari…</label>
-          <KNSelect className="field" data-testid="role-editor-copy-from" value="" placeholder="pilih peran…"
-                    onValueChange={onCopy}
+        <div className="flex min-w-0 items-center gap-1.5" data-testid="role-editor-copy">
+          <span className="inline-flex shrink-0 items-center gap-1 text-fs-12 font-semibold text-kn-text"><Copy size={12} className="text-kn-action" /> Salin dari</span>
+          <HelpTip text="Salin hak akses dari peran lain: hanya menyalin centang tingkat & aksi; boleh diubah setelahnya."
+                   testId="role-editor-copy-help" label="Tentang salin hak akses" />
+          <KNSelect className="field min-w-0 flex-1" data-testid="role-editor-copy-from" value="" placeholder="pilih peran…"
+                    onValueChange={onCopy} aria-label="Salin hak akses dari"
                     options={(roles || []).filter((r) => r.id !== roleId && r.id !== "admin").map((r) => ({ value: r.id, label: r.label }))} />
-          <p className="text-fs-12 text-kn-text-2">Hanya menyalin centang; boleh diubah setelahnya.</p>
         </div>
       )}
     </div>

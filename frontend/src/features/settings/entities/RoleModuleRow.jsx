@@ -1,15 +1,19 @@
-// Kontrol tingkat per modul: Tidak ada · Lihat saja · Semua aksi (+ Konfigurasi lanjutan per halaman).
+// Satu baris matriks hak akses: nama modul (?) · Tidak ada · Lihat saja · Semua aksi · Rinci (+ konfigurasi lanjutan
+// per halaman yang dibuka di bawah barisnya).
 // PR-T5 — hanya tingkat yang berlaku untuk modul ini yang ditawarkan (`levels_available` dari server); modul sakelar
-// (tanpa aksi lihat) memakai Mati · Nyala. Tingkat sebagian tidak menyalakan tombol apa pun: lencananya menyebut jumlah
-// aksi ("Sebagian (7 dari 13 aksi)").
-import { Eye, EyeOff, Pencil, AlertTriangle, SlidersHorizontal, ChevronUp } from "lucide-react";
+// (tanpa aksi lihat) memakai Mati · Nyala (kolom Tidak ada · Semua aksi). Tingkat sebagian tidak menyalakan tombol apa
+// pun: lencananya menyebut jumlah aksi ("Sebagian (7 dari 13 aksi)") dan kolom Semua aksi bertanda setengah.
+// Pola UI 16 Nov (M43) — dulu kartu per modul dengan empat pil lebar + keterangan dua baris (jendela bergulir mendatar);
+// kini satu baris berkolom tetap, keterangan modul di ikon ?.
+import { AlertTriangle, ChevronUp, Circle, CircleCheck, CircleDashed, SlidersHorizontal } from "lucide-react";
 
+import { HelpTip } from "../../../components/ListPageParts";
 import { levelsAvailable } from "./roleAccessUtil";
 
 export const LEVELS = [
-  { id: "none",   label: "Tidak ada",  icon: EyeOff,  on: "border-[#1C1C1E] bg-[#1C1C1E] text-white" },
-  { id: "view",   label: "Lihat saja", icon: Eye,     on: "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" },
-  { id: "manage", label: "Semua aksi", icon: Pencil,  on: "border-[#1B7F4B] bg-[#EEF9F1] text-[#1B7F4B]" },
+  { id: "none",   label: "Tidak ada",  tone: "text-kn-text" },
+  { id: "view",   label: "Lihat saja", tone: "text-kn-action" },
+  { id: "manage", label: "Semua aksi", tone: "text-kn-success-text" },
 ];
 const TOGGLE_LABEL = { none: "Mati", manage: "Nyala" };
 
@@ -21,72 +25,75 @@ export const levelLabel = (id, module) =>
 
 export const partialLabel = (held, total) => `Sebagian (${held} dari ${total} aksi)`;
 
+function helpText(module) {
+  const sakelar = isToggleModule(module) ? " Modul sakelar: kolom Tidak ada = Mati, Semua aksi = Nyala." : "";
+  return `${module.description || ""}${sakelar}`.trim();
+}
+
 export default function RoleModuleRow({ module, value, partial, held, total, original, dirty, originalLabel, disabled, onChange, advanced, onToggleAdvanced, children }) {
   // PR-T5 — "diubah" juga bila hanya aksi rincinya yang berubah (dulu pembanding hanya tingkat).
   const changed = dirty !== undefined ? dirty : (original !== undefined && original !== value);
   const avail = levelsAvailable(module);
-  const shown = LEVELS.filter((l) => avail.includes(l.id));
   const excludes = value === "view" && !partial ? (module.view_excludes || []) : [];
   return (
-    <div data-testid={`role-module-row-${module.id}`}
-         className={`rounded-md border bg-white px-3 py-2 ${changed ? "border-[#F0C88A]" : "border-[#EFF0F2]"}`}>
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-bold text-[#1C1C1E]">
-          {module.label}
+    <div data-testid={`role-module-row-${module.id}`} className={`cfg-mx-item${changed ? " is-changed" : ""}`}>
+      <div className="cfg-mx-row">
+        <div className="cfg-mx-name">
+          <b>{module.label}</b>
+          <HelpTip text={helpText(module)} testId={`role-module-help-${module.id}`} label={`Tentang ${module.label}`} />
           {partial && (
-            <span className="ml-1.5 rounded-full bg-kn-warning-soft px-1.5 py-0.5 text-fs-12 font-semibold text-kn-warning-text"
-                  data-testid={`role-module-partial-${module.id}`}>
+            <span className="badge-orange" data-testid={`role-module-partial-${module.id}`}>
               {partialLabel(held, total)}
             </span>
           )}
           {module.sensitive && (
-            <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9.5px] font-semibold text-[#B45309]"
+            <span className="inline-flex items-center gap-0.5 text-fs-12 font-semibold text-kn-warning-text"
                   data-testid={`role-module-sensitive-${module.id}`}>
-              <AlertTriangle size={9} /> sensitif
+              <AlertTriangle size={12} /> sensitif
             </span>
           )}
           {changed && (
-            <span className="ml-1.5 text-[9.5px] font-semibold text-[#8C4A00]"
-                  data-testid={`role-module-changed-${module.id}`}>
+            <span className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`role-module-changed-${module.id}`}>
               diubah · sebelumnya {originalLabel || levelLabel(original, module)}
             </span>
           )}
-        </p>
-        <p className="text-[10.5px] text-[#6B6B73]">{module.description}</p>
-        {excludes.length > 0 && (
-          <p className="text-fs-12 text-kn-text-2" data-testid={`role-module-view-excludes-${module.id}`}>
-            Tidak termasuk pada Lihat saja: {excludes.join(", ")}.
-          </p>
-        )}
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-1" role="radiogroup" aria-label={`Tingkat akses ${module.label}`}>
-        {shown.map((l) => {
-          const Icon = l.icon;
-          const on = !partial && value === l.id;
-          return (
-            <button key={l.id} type="button" disabled={disabled}
-                    data-testid={`role-level-${module.id}-${l.id}`}
-                    aria-pressed={on}
-                    onClick={() => onChange(l.id)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition-colors disabled:opacity-50 ${
-                      on ? l.on : "border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#1C1C1E]/40"}`}>
-              <Icon size={11} /> {levelLabel(l.id, module)}
+          {excludes.length > 0 && (
+            <p className="cfg-mx-sub" data-testid={`role-module-view-excludes-${module.id}`}>
+              Tidak termasuk pada Lihat saja: {excludes.join(", ")}.
+            </p>
+          )}
+        </div>
+        <div className="cfg-mx-levels" role="radiogroup" aria-label={`Tingkat akses ${module.label}`}>
+          {LEVELS.map((l) => {
+            if (!avail.includes(l.id)) return <span key={l.id} className="cfg-mx-cell" aria-hidden="true" />;
+            const on = !partial && value === l.id;
+            const half = partial && l.id === "manage";
+            const label = levelLabel(l.id, module);
+            const Icon = on ? CircleCheck : (half ? CircleDashed : Circle);
+            const tone = on ? l.tone : (half ? "text-kn-warning-text" : "text-kn-neutral");
+            return (
+              <button key={l.id} type="button" disabled={disabled} className="link-button cfg-mx-pick"
+                      data-testid={`role-level-${module.id}-${l.id}`} aria-pressed={on}
+                      title={half ? `${label} — saat ini ${partialLabel(held, total)}` : label}
+                      onClick={() => onChange(l.id)}>
+                <Icon size={18} className={tone} aria-hidden="true" />
+                <span className="sr-only">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="cfg-mx-cell">
+          {onToggleAdvanced && (
+            <button type="button" disabled={disabled} data-testid={`role-module-advanced-${module.id}`}
+                    aria-expanded={advanced} title="Atur aksi rinci per halaman (buat / ubah / hapus / setujui …)"
+                    aria-label={`Atur rinci ${module.label}`} className="link-button cfg-mx-pick"
+                    onClick={onToggleAdvanced}>
+              {advanced ? <ChevronUp size={16} aria-hidden="true" /> : <SlidersHorizontal size={16} aria-hidden="true" />}
             </button>
-          );
-        })}
-        {onToggleAdvanced && (
-          <button type="button" disabled={disabled} data-testid={`role-module-advanced-${module.id}`}
-                  aria-expanded={advanced} title="Atur aksi rinci per halaman (buat / ubah / hapus / setujui …)"
-                  onClick={onToggleAdvanced}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition-colors disabled:opacity-50 ${
-                    advanced ? "border-[#6B219A] bg-[#F3E9FA] text-[#6B219A]" : "border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#6B219A]/50"}`}>
-            {advanced ? <ChevronUp size={11} /> : <SlidersHorizontal size={11} />} Atur rinci{/* PR-T6 — dulu "Menu, tab & aktivitas" */}
-          </button>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-    {advanced && children}
+      {advanced && <div className="cfg-mx-detail">{children}</div>}
     </div>
   );
 }

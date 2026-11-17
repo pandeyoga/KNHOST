@@ -1,13 +1,15 @@
 /**
- * KP-T4 — pop-up ubah Aturan Persetujuan untuk SATU jenis dokumen pada satu lapisan (Semua PT / satu PT).
+ * KP-T4 — isian ubah Aturan Persetujuan untuk SATU jenis dokumen pada satu lapisan (Semua PT / satu PT).
  * Mengganti seluruh baris lapisan itu sekaligus (`PUT /api/approval-policies/{doc_kind}`), alasan wajib, versi dicek
  * server (409 bila sudah diubah orang lain). Pilihan penyetuju: semua peran registry (termasuk peran kustom) atau
  * "Semua pemegang akses".
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md` §2.D, pemilik M43): isian dibuka DI TEMPAT, di dalam baris jenis
+ * dokumen yang sedang diubah (dulu pop-up yang menutupi daftar). Isi kiriman, alasan wajib, dan cek versi tidak berubah.
  */
 import { useEffect, useState } from "react";
 import { Plus, Settings, Trash2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import FormModal from "../../components/FormModal";
 import MoneyInput from "../../components/MoneyInput";
 import { parseDecimal } from "../../utils/decimalInput";
 import { ANY_HOLDER_LABEL, draftFromView, payloadFromDraft } from "./approvalPolicyHelpers";
@@ -62,50 +64,52 @@ export default function ApprovalPolicyEditor({ open, kind, entityId, entityLabel
     }
   };
 
+  const judul = mode === "create" ? "Buat aturan khusus PT ini" : "Ubah aturan";
   return (
-    <FormModal open={open} onClose={onClose} icon={Settings} size="lg" testId="appol-editor"
-      title={mode === "create" ? `Buat aturan khusus PT ini — ${kind.label}` : `Ubah aturan — ${kind.label}`}
-      subtitle={`Berlaku untuk: ${entityLabel}`} onSubmit={simpan} submitLabel="Simpan aturan" busy={busy}
-      error={error} submitTestId="appol-editor-save">
+    <div className="cfg-inline-editor" data-testid="appol-editor" role="group" aria-label={`${judul} — ${kind.label}`}>
+      <p className="cfg-row-line">
+        <Settings size={12} aria-hidden="true" />
+        <span><b className="text-kn-text">{judul}</b> · Berlaku untuk: {entityLabel}</span>
+      </p>
       {draft.map((lv, i) => (
-        <fieldset key={`lv-${i}`} className="section-card mb-3" data-testid={`appol-ed-level-${i}`}>
-          <div className="flex flex-wrap items-end gap-2 mb-2">
+        <fieldset key={`lv-${i}`} className="cfg-ed-level" data-testid={`appol-ed-level-${i}`}>
+          <div className="flex flex-wrap items-end gap-2">
             <label className="text-fs-12">
-              <span className="block text-kn-text-2 mb-1">Jenjang</span>
+              <span className="mb-1 block text-kn-text-2">Jenjang</span>
               <input className="field w-20" type="number" min={1} value={lv.level}
                 data-testid={`appol-ed-levelno-${i}`} onChange={(e) => ubahLevel(i, { level: e.target.value })} />
             </label>
-            <label className="text-fs-12 flex-1">
-              <span className="block text-kn-text-2 mb-1">Nama jenjang</span>
+            <label className="min-w-0 flex-1 text-fs-12">
+              <span className="mb-1 block text-kn-text-2">Nama jenjang</span>
               <input className="field" value={lv.label} placeholder="mis. Direksi"
                 data-testid={`appol-ed-label-${i}`} onChange={(e) => ubahLevel(i, { label: e.target.value })} />
             </label>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => hapusLevel(i)}
+            <button type="button" className="ghost-button btn-sm" onClick={() => hapusLevel(i)}
               data-testid={`appol-ed-del-level-${i}`}><Trash2 size={13} /> Hapus jenjang</button>
           </div>
           {lv.tiers.map((t, k) => (
-            <div key={`t-${k}`} className="border-t border-kn-divider pt-2 mt-2" data-testid={`appol-ed-tier-${i}-${k}`}>
+            <div key={`t-${k}`} className="cfg-ed-tier" data-testid={`appol-ed-tier-${i}-${k}`}>
               {hasAmount && (
-                <div className="grid gap-2 sm:grid-cols-2 mb-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <label className="text-fs-12">
-                    <span className="block text-kn-text-2 mb-1">Mulai dari (Rp)</span>
+                    <span className="mb-1 block text-kn-text-2">Mulai dari (Rp)</span>
                     <MoneyInput value={t.min} onChange={(v) => ubahTier(i, k, { min: v })} testId={`appol-ed-min-${i}-${k}`} />
                   </label>
                   <label className="text-fs-12">
-                    <span className="block text-kn-text-2 mb-1">Sampai di bawah (Rp) — kosong = tanpa batas</span>
+                    <span className="mb-1 block text-kn-text-2">Sampai di bawah (Rp) — kosong = tanpa batas</span>
                     <MoneyInput value={t.max} onChange={(v) => ubahTier(i, k, { max: v })} testId={`appol-ed-max-${i}-${k}`} />
                   </label>
                 </div>
               )}
-              <label className="flex items-center gap-2 text-fs-12 mb-1">
+              <label className="flex items-center gap-2 text-fs-12">
                 <input type="checkbox" checked={t.any_holder} data-testid={`appol-ed-any-${i}-${k}`}
                   onChange={(e) => ubahTier(i, k, { any_holder: e.target.checked })} />
                 {ANY_HOLDER_LABEL}
               </label>
               {!t.any_holder && (
-                <div className="grid gap-1 sm:grid-cols-3" data-testid={`appol-ed-roles-${i}-${k}`}>
+                <div className="cfg-check-grid" data-testid={`appol-ed-roles-${i}-${k}`}>
                   {roles.map((r) => (
-                    <label key={r.id} className="flex items-center gap-2 text-fs-12">
+                    <label key={r.id} className="cfg-check">
                       <input type="checkbox" checked={t.roles.includes(r.id)}
                         data-testid={`appol-ed-role-${i}-${k}-${r.id}`} onChange={() => togglePeran(i, k, r.id)} />
                       {r.label}
@@ -114,28 +118,35 @@ export default function ApprovalPolicyEditor({ open, kind, entityId, entityLabel
                 </div>
               )}
               {!t.any_holder && t.roles.length === 0 && (
-                <p className="text-fs-12 text-kn-text-2 mt-1">Tanpa peran = rentang ini tidak butuh persetujuan.</p>
+                <p className="text-fs-12 text-kn-text-2">Tanpa peran = rentang ini tidak butuh persetujuan.</p>
               )}
               {lv.tiers.length > 1 && (
-                <button type="button" className="btn-ghost btn-sm mt-1" onClick={() => hapusTier(i, k)}
+                <button type="button" className="ghost-button btn-sm w-fit" onClick={() => hapusTier(i, k)}
                   data-testid={`appol-ed-del-tier-${i}-${k}`}><Trash2 size={13} /> Hapus rentang</button>
               )}
             </div>
           ))}
           {hasAmount && (
-            <button type="button" className="btn-secondary btn-sm mt-2" onClick={() => tambahTier(i)}
+            <button type="button" className="btn-secondary btn-sm w-fit" onClick={() => tambahTier(i)}
               data-testid={`appol-ed-add-tier-${i}`}><Plus size={13} /> Tambah rentang</button>
           )}
         </fieldset>
       ))}
-      <button type="button" className="btn-secondary btn-sm mb-3" onClick={tambahLevel} data-testid="appol-ed-add-level">
+      <button type="button" className="btn-secondary btn-sm w-fit" onClick={tambahLevel} data-testid="appol-ed-add-level">
         <Plus size={13} /> Tambah jenjang
       </button>
-      <label className="text-fs-12 block">
-        <span className="block text-kn-text-2 mb-1">Alasan perubahan (wajib, tercatat di riwayat)</span>
+      <label className="block text-fs-12">
+        <span className="mb-1 block text-kn-text-2">Alasan perubahan (wajib, tercatat di riwayat)</span>
         <textarea className="field" rows={2} value={reason} data-testid="appol-ed-reason"
           onChange={(e) => setReason(e.target.value)} />
       </label>
-    </FormModal>
+      {error ? <p className="cfg-row-line err" role="alert" data-testid="appol-editor-error">{error}</p> : null}
+      <div className="cfg-row-actions">
+        <button type="button" className="btn-primary btn-sm" onClick={simpan} disabled={busy}
+          data-testid="appol-editor-save">{busy ? "Menyimpan…" : "Simpan aturan"}</button>
+        <button type="button" className="btn-secondary btn-sm" onClick={onClose} disabled={busy}
+          data-testid="appol-editor-cancel">Batal</button>
+      </div>
+    </div>
   );
 }

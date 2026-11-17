@@ -105,7 +105,10 @@ describe("Badan Usaha & Akses dipecah: satu bagian per tab hub, tanpa bilah tab 
     expect(q("entities-access-tabs")).toBeNull();
     expect(qa("isi-").filter((t) => !t.startsWith("isi-roles-"))).toEqual([isi]);
     expect(!!q("entity-add-button")).toBe(only === "entities");   // Tambah PT hanya di Profil PT
-    expect(q("entities-access-refresh")).not.toBeNull();
+    // Pola UI 16 Nov (M43): Peran & Hak Akses memuat ulang dari bilah daftarnya sendiri (`role-access-refresh` di
+    // RoleAccessPanel, diuji di polaUiPengaturan) — bilah atas tidak menyisakan tombol muat ulang sendirian di satu baris.
+    expect(!!q("entities-access-refresh")).toBe(only !== "roles");
+    expect(!!q("entities-access-intro")).toBe(only !== "roles");   // pita penjelas → ikon ?
   });
 
   test("tanpa `only` (rute lama tidak dipakai lagi) bilah tab dalam tetap ada", async () => {

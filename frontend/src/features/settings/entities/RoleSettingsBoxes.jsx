@@ -5,6 +5,8 @@
  *    (peran kustom: nilai EFEKTIF peran dasarnya, PR-T6).
  *  · `AssignableBox` — PR-T1, peran yang akunnya boleh dikelola pemegang peran ini (hanya Admin yang mengubah).
  */
+import { HelpTip } from "../../../components/ListPageParts";
+
 export function CrossEntityBox({ cross, disabled, role, onChange }) {
   return (
     <label className={`flex items-start gap-2 rounded-md border border-kn-divider p-2 ${cross ? "bg-kn-action-soft" : "bg-white"}`}
@@ -28,10 +30,11 @@ export function CrossEntityBox({ cross, disabled, role, onChange }) {
 export function AssignableBox({ roles, assignable, canEdit, disabled, onToggle }) {
   return (
     <div className="rounded-md border border-kn-divider bg-white p-2.5" data-testid="role-editor-assignable">
-      <p className="kicker mb-0.5">Boleh mengelola akun dengan peran</p>
-      <p className="mb-1.5 text-fs-12 text-kn-text-2">
-        Pemegang peran ini hanya bisa membuat, mengubah, dan mereset sandi akun yang perannya dicentang di sini.
-        Kosong = tidak bisa mengelola akun siapa pun.
+      {/* Pola UI 16 Nov (M43) — penjelasan pindah ke ikon ?. */}
+      <p className="kicker mb-1 flex items-center gap-1">
+        Boleh mengelola akun dengan peran
+        <HelpTip text="Pemegang peran ini hanya bisa membuat, mengubah, dan mereset sandi akun yang perannya dicentang di sini. Kosong = tidak bisa mengelola akun siapa pun."
+                 testId="role-editor-assignable-help" label="Tentang daftar ini" />
       </p>
       {!canEdit && <p className="mb-1 text-fs-12 text-kn-text-2" data-testid="role-editor-assignable-readonly">Hanya Admin yang bisa mengubah daftar ini.</p>}
       <div className="grid gap-0.5">

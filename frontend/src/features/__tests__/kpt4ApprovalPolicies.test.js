@@ -116,7 +116,14 @@ test("U16 (komponen): kartu Uang Muka PT Kanda — tiga jenjang berlabel, lencan
   await mountView(<ApprovalPoliciesView />);
   expect(mockGet.mock.calls.find(([u]) => u.endsWith("/approval-policies"))[1].params).toEqual({ entity_id: "ent_kanda" });
   expect(q("appol-source-cash_advance").textContent).toBe("Aturan grup");
-  expect(q("appol-source-purchase_order").textContent).toBe("Aturan khusus PT ini");
+  // Pola UI 16 Nov (M43) — lencana asal pendek seperti daftar pengaturan ("Khusus PT ini", dulu "Aturan khusus PT ini").
+  expect(q("appol-source-purchase_order").textContent).toBe("Khusus PT ini");
+  // Daftar padat: satu baris per jenis dengan ringkasan; tabel jenjang baru tampil saat baris dibuka.
+  expect(q("appol-summary-cash_advance").textContent).toBe("3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan");
+  expect(q("appol-summary-purchase_order").textContent).toBe("mulai Rp 50.000.000 · Manajer, Finance");
+  expect(q("appol-issues-purchase_order").textContent).toContain("2 perlu dicek");   // 1 peringatan + 1 tanpa izin
+  expect(q("appol-row-cash_advance-1")).toBeNull();
+  for (const k of ["cash_advance", "purchase_order", "transfer"]) await click(q(`appol-toggle-${k}`));
   const rows = [1, 2, 3].map((n) => q(`appol-row-cash_advance-${n}`).textContent);
   expect(rows[0]).toContain("1 · Atasan Langsung");
   expect(rows[1]).toContain("2 · Pimpinan");
@@ -138,10 +145,19 @@ test("U16 (komponen): kartu Uang Muka PT Kanda — tiga jenjang berlabel, lencan
 test("U16 (komponen): Coba nilai menampilkan jenjang dan siapa yang lolos", async () => {
   route();
   await mountView(<ApprovalPoliciesView />);
-  await click(q("appol-try-btn-cash_advance"));
+  // Pola UI 16 Nov (M43) — SATU penguji di bilah atas (jenis ▾ · nominal · Coba), bukan isian di tiap kartu.
+  expect(q("appol-try-btn-cash_advance")).toBeNull();
+  expect(q("appol-try-btn").disabled).toBe(true);                    // belum memilih jenis dokumen
+  await act(async () => {
+    q("appol-try-kind").value = "cash_advance";
+    q("appol-try-kind").dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+  await click(q("appol-try-btn"));
   const call = mockGet.mock.calls.find(([u]) => u.endsWith("/approval-policies/check"));
   expect(call[1].params).toEqual({ doc_kind: "cash_advance", entity_id: "ent_kanda", amount: 0 });
-  const res = q("appol-try-result-cash_advance").textContent;
+  const res = q("appol-try-result").textContent;
+  expect(res).toContain("Uang muka (panjar) · Rp 0");
   expect(res).toContain("Jenjang 1 — Atasan Langsung: Admin, Manajer");
   expect(res).toContain("Jenjang 3 — Bagian Keuangan: Admin");
 });
@@ -156,6 +172,7 @@ test("memuat / galat + coba lagi / pemilih PT memuat ulang", async () => {
   const retry = q("appol-error").querySelector("button");
   await click(retry);
   expect(q("appol-card-transfer")).not.toBeNull();
+  expect(q("appol-summary-transfer").textContent).toBe("Semua pemegang akses");
   await act(async () => {
     q("appol-entity").value = "all";
     q("appol-entity").dispatchEvent(new Event("change", { bubbles: true }));
@@ -189,13 +206,49 @@ function routeFull(list) {
 test("layar penuh: aturan khusus PT → Ubah & Kembali ke aturan grup; aturan grup di PT → Buat aturan khusus PT ini", async () => {
   routeFull((p) => ({ entity_id: p.entity_id, kinds: [CA_KANDA, PO_KANDA] }));
   await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  // Pola UI 16 Nov (M43) — satu tombol "Ubah" per baris; pada PT yang ikut aturan grup, Ubah = buat aturan khusus PT ini.
   expect(q("appol-create-cash_advance")).not.toBeNull();           // sumber grup di PT Kanda
+  expect(q("appol-create-cash_advance").textContent).toBe("Ubah");
+  expect(q("appol-create-cash_advance").getAttribute("title")).toContain("Buat aturan khusus PT ini");
   expect(q("appol-edit-purchase_order")).not.toBeNull();           // sumber PT
+  expect(q("appol-reset-purchase_order")).toBeNull();              // "Kembali ke aturan grup" ada di baris yang dibuka
+  await click(q("appol-toggle-purchase_order"));
   expect(q("appol-reset-purchase_order")).not.toBeNull();
+  await click(q("appol-toggle-cash_advance"));
+  expect(q("appol-follow-cash_advance").textContent).toContain("mengikuti aturan grup");
+  expect(q("appol-reset-cash_advance")).toBeNull();
   expect(q("approval-rules-readonly")).toBeNull();
 });
 
-test("Ubah: pop-up baku, alasan wajib, PUT seluruh jenjang dengan versi; peran registry bisa dicentang", async () => {
+test("Buat aturan khusus PT ini: isian di tempat berjudul sesuai mode, PUT versi 0", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [CA_KANDA] }));
+  mockPut.mockResolvedValue({ data: { ...CA_KANDA, source: "pt", version: 1 } });
+  await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  await click(q("appol-create-cash_advance"));
+  const ed = q("appol-editor");
+  expect(q("appol-card-cash_advance").contains(ed)).toBe(true);    // di dalam barisnya, bukan pop-up
+  expect(document.body.querySelector(".modal-overlay")).toBeNull();
+  expect(ed.textContent).toContain("Buat aturan khusus PT ini");
+  expect(ed.textContent).toContain("Berlaku untuk: CV Kanda Suka (KND)");
+  expect(q("appol-create-cash_advance")).toBeNull();               // tombol Ubah baris disembunyikan selama mengubah
+  await type(q("appol-ed-reason"), "PT Kanda butuh aturan sendiri");
+  await click(q("appol-editor-save"));
+  expect(mockPut).toHaveBeenCalledTimes(1);
+  expect(mockPut.mock.calls[0][1]).toEqual(expect.objectContaining({ entity_id: "ent_kanda", expected_version: 0 }));
+  expect(q("appol-editor")).toBeNull();
+});
+
+test("Batal menutup isian tanpa PUT", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
+  await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  await click(q("appol-edit-purchase_order"));
+  await click(q("appol-editor-cancel"));
+  expect(q("appol-editor")).toBeNull();
+  expect(mockPut).not.toHaveBeenCalled();
+  expect(q("appol-edit-purchase_order")).not.toBeNull();
+});
+
+test("Ubah: isian di tempat, alasan wajib, PUT seluruh jenjang dengan versi; peran registry bisa dicentang", async () => {
   routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
   mockPut.mockResolvedValue({ data: { ...PO_KANDA, version: 4 } });
   await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
@@ -220,6 +273,7 @@ test("Kembali ke aturan grup: alasan wajib lalu DELETE berparameter PT", async (
   routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
   mockDelete.mockResolvedValue({ data: { ...PO_KANDA, source: "grup" } });
   await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  await click(q("appol-toggle-purchase_order"));
   await click(q("appol-reset-purchase_order"));
   await type(q("appol-reset-confirm-reason"), "Ikuti aturan grup lagi");
   await click(q("appol-reset-confirm-confirm"));
@@ -232,5 +286,7 @@ test("tanpa izin kelola: baca-saja, tidak ada tombol ubah", async () => {
   await mountView(<ApprovalRulesSettings currentUser={{ role: "manager", permissions: { settings: ["view"] } }} />);
   expect(q("approval-rules-readonly")).not.toBeNull();
   expect(q("appol-edit-purchase_order")).toBeNull();
+  await click(q("appol-toggle-purchase_order"));
+  expect(q("appol-row-purchase_order-1")).not.toBeNull();          // tetap bisa membaca jenjangnya
   expect(q("appol-reset-purchase_order")).toBeNull();
 });

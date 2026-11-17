@@ -7,20 +7,29 @@
  * (`services/approval_policy_service.py`).
  *
  * Isi layar KP-T3 (tabel `approval_rules` + "Jenjang yang berlaku") digantikan: jalur tulis lama dimatikan server (410).
- * Tombol: **Ubah** (pop-up baku, alasan wajib), **Buat aturan khusus PT ini**, **Kembali ke aturan grup** (alasan
- * wajib), **Coba nilai**. Mengubah butuh izin kelola pengaturan; lapisan "Semua PT" hanya untuk peran lintas PT (server).
+ * Mengubah butuh izin kelola pengaturan; lapisan "Semua PT" hanya untuk peran lintas PT (server).
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md` §2.D, pemilik M43): tab hub sudah menamai layar — tanpa kepala halaman
+ * kedua. Tiap baris punya SATU tombol **Ubah** yang membuka isian di tempat; pada PT yang masih mengikuti aturan grup,
+ * Ubah = membuat aturan khusus PT ini (judul isian menyebutnya). **Kembali ke aturan grup** (alasan wajib) ada di baris
+ * yang dibuka. Dulu: tombol "Buat aturan khusus PT ini" di tiap kartu dan pop-up yang menutupi daftar.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Eye, Settings } from "lucide-react";
+import { Eye } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import OkNotice from "../../components/OkNotice";
-import { PageHeader } from "../../components/ListPageParts";
 import { askReason } from "@/services/confirmService";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { can } from "../../config/roles";
 import ApprovalPoliciesView from "./ApprovalPoliciesView";
 import ApprovalPolicyEditor from "./ApprovalPolicyEditor";
+
+/** Mode isian untuk satu jenis pada lapisan terpilih: "edit" (aturan lapisan ini sudah ada) atau "create". */
+export function editMode(kind, entityId) {
+  if (entityId === "all") return kind.source === "grup" ? "edit" : "create";
+  return kind.source === "pt" ? "edit" : "create";
+}
 
 export default function ApprovalRulesSettings({ currentUser }) {
   const canEdit = can(currentUser?.permissions, "settings", "manage");
@@ -62,54 +71,66 @@ export default function ApprovalRulesSettings({ currentUser }) {
     }
   };
 
+  const sedangDiubah = (kind, data) => Boolean(editor) && editor.kind.doc_kind === kind.doc_kind
+    && editor.entityId === (data?.entity_id || "all");
+
+  // Satu tombol di baris: Ubah. Pada PT yang masih ikut aturan grup/bawaan, Ubah membuat aturan khusus PT ini.
   const renderActions = (kind, data) => {
-    if (!canEdit) return null;
+    if (!canEdit || sedangDiubah(kind, data)) return null;
     const entityId = data?.entity_id || "all";
-    if (entityId === "all") {
-      return (
-        <button type="button" className="btn-secondary btn-sm" data-testid={`appol-edit-${kind.doc_kind}`}
-          onClick={() => setEditor({ kind, entityId, mode: kind.source === "grup" ? "edit" : "create" })}>Ubah</button>
-      );
-    }
-    if (kind.source === "pt") {
-      return (
-        <>
-          <button type="button" className="btn-secondary btn-sm" data-testid={`appol-edit-${kind.doc_kind}`}
-            onClick={() => setEditor({ kind, entityId, mode: "edit" })}>Ubah</button>
-          <button type="button" className="btn-ghost btn-sm" data-testid={`appol-reset-${kind.doc_kind}`}
-            onClick={() => kembaliKeGrup(kind, entityId)}>Kembali ke aturan grup</button>
-        </>
-      );
-    }
+    const mode = editMode(kind, entityId);
+    const buatKhusus = entityId !== "all" && mode === "create";
     return (
-      <button type="button" className="btn-secondary btn-sm" data-testid={`appol-create-${kind.doc_kind}`}
-        onClick={() => setEditor({ kind, entityId, mode: "create" })}>Buat aturan khusus PT ini</button>
+      <button type="button" className="btn-secondary btn-sm"
+        data-testid={buatKhusus ? `appol-create-${kind.doc_kind}` : `appol-edit-${kind.doc_kind}`}
+        title={buatKhusus ? "Buat aturan khusus PT ini (PT lain tetap mengikuti aturan grup)" : undefined}
+        onClick={() => { setOk(""); setEditor({ kind, entityId, mode }); }}>Ubah</button>
     );
   };
+
+  // Di baris yang dibuka: keterangan lapisan + "Kembali ke aturan grup" untuk aturan khusus PT.
+  const renderDetailActions = (kind, data) => {
+    const entityId = data?.entity_id || "all";
+    if (entityId === "all") return null;
+    if (kind.source === "pt") {
+      return canEdit ? (
+        <div className="cfg-row-actions">
+          <button type="button" className="ghost-button btn-sm" data-testid={`appol-reset-${kind.doc_kind}`}
+            onClick={() => kembaliKeGrup(kind, entityId)}>Kembali ke aturan grup</button>
+        </div>
+      ) : null;
+    }
+    return (
+      <p className="cfg-row-line" data-testid={`appol-follow-${kind.doc_kind}`}>
+        {namaPT(entityId)} mengikuti {kind.source === "grup" ? "aturan grup" : "aturan bawaan sistem"}
+        {canEdit ? ". Ubah = membuat aturan khusus PT ini; PT lain tidak terpengaruh." : "."}
+      </p>
+    );
+  };
+
+  const renderEditor = (kind, data) => (sedangDiubah(kind, data) ? (
+    <ApprovalPolicyEditor open kind={editor.kind} entityId={editor.entityId}
+      entityLabel={namaPT(editor.entityId)} mode={editor.mode} roles={roles}
+      onClose={() => setEditor(null)}
+      onSaved={(res) => {
+        setEditor(null);
+        setOk(`${res?.label || "Aturan"} tersimpan untuk ${namaPT(res?.entity_id || editor?.entityId)}.`);
+        setReloadKey((k) => k + 1);
+      }} />
+  ) : null);
 
   return (
     <div className="page-shell" data-testid="approval-rules-settings">
       <DesktopOnlyNotice />
-      <PageHeader icon={Settings} title="Aturan Persetujuan" testId="approval-rules-head"
-        subtitle="Siapa menyetujui apa, mulai nominal berapa — per PT, untuk semua antrean persetujuan" />
       {!canEdit && (
-        <div className="notice-bar" data-testid="approval-rules-readonly">
-          <Eye size={14} /> Mode baca — mengubah aturan persetujuan butuh izin kelola pengaturan.
-        </div>
+        <p className="cfg-readonly-line mb-2" data-testid="approval-rules-readonly">
+          <Eye size={13} aria-hidden="true" /> Hanya baca — mengubah aturan persetujuan butuh izin kelola pengaturan.
+        </p>
       )}
       <OkNotice message={ok} onDismiss={() => setOk("")} testId="appol-ok" />
       {error && <div className="notice-bar danger" data-testid="appol-action-error">{error}</div>}
-      <section className="section-card">
-        <ApprovalPoliciesView renderActions={renderActions} reloadKey={reloadKey} />
-      </section>
-      <ApprovalPolicyEditor open={!!editor} kind={editor?.kind} entityId={editor?.entityId}
-        entityLabel={namaPT(editor?.entityId)} mode={editor?.mode} roles={roles}
-        onClose={() => setEditor(null)}
-        onSaved={(res) => {
-          setEditor(null);
-          setOk(`${res?.label || "Aturan"} tersimpan untuk ${namaPT(res?.entity_id || editor?.entityId)}.`);
-          setReloadKey((k) => k + 1);
-        }} />
+      <ApprovalPoliciesView renderActions={renderActions} renderDetailActions={renderDetailActions}
+        renderEditor={renderEditor} reloadKey={reloadKey} />
     </div>
   );
 }
