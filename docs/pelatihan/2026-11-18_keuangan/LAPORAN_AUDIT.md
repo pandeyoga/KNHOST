@@ -6,19 +6,19 @@ dicatat sebagai keputusan pemilik. Rekap hasil uji per skenario ada di panduan (
 
 Status: **D** = diperbaiki (berkas · uji) · **K** = perlu keputusan pemilik · **C** = catatan untuk pelatih/data.
 
-## 0. Hasil uji akhir (kode final, data dipulihkan bersih)
+## 0. Hasil uji akhir (kode final 18 Nov dini hari, data dipulihkan bersih)
 
 | Uji | Hasil |
 |---|---|
 | Pemulihan data acuan dari nol (`restore_local_demo.sh`, kode terbaru) | lulus — 9/9 skenario transaksi demo OK |
-| Data latihan (`seed_pelatihan_keuangan_kn.py`) | peserta kelas 01 + peserta peraga 21, 31, 41–43, 61, 66, 72, 81 lulus; peserta baru sesudah aktivitas kelas juga lulus (C-31) |
-| **Uji jalan kurikulum lengkap Bagian 0–5** (`uji/jalankan_semua.sh`, berurutan sesuai kurikulum) | **40 skrip · 459/459 langkah lulus di layar + buku · 0 galat 5xx**. Praktik Finance (F, K, H) berurutan di SATU akun peserta kelas (01) seperti di kelas; alur ujung ke ujung A1–A3 di peserta peraga 21, 31, 41–43; Bagian 5: S1 (61) 20/20 · S2 (66) 31/31 · S3 (72) 34/34 · S4 (81) 41/41; potret navigasi 36 layar. Tangkapan layar manual & slide dari putaran ini |
+| Data latihan (`seed_pelatihan_keuangan_kn.py`) | data acuan + peserta 01, 21, 31, 41–43 dipulihkan bersih; peserta 02–04, 61, 66 (akun+pemasok), 72 (sebagian), 76, 91, 47 disiapkan malam ini — semua lulus |
+| **Uji jalan kurikulum lengkap Bagian 0–5** (`uji/jalankan_semua.sh`, berurutan sesuai kurikulum) | **41 skrip lulus di layar + buku · 0 galat 5xx** (sesudah K-FIN-01): putaran penuh 36 skrip lulus; 5 yang gagal (K02, K07, K09 — harapan skrip lama sebelum K-FIN-01; F05 — skrip menghitung hari dengan UTC; F10 — bug rekonsiliasi D-24) diperbaiki lalu diulang: K02/K07/K09 di peserta 01, F02/F05/F09/F10 di peserta 04; A3 tukar barang diulang di peserta 47 sesudah perbaikan tebus saldo retur. Bagian 5: S1 (61) 20/20 · S2 (66) 31/31 · S3 (72) · S4 (76) 41/41 · S5 (91) 20/20; potret navigasi 36 layar |
 | Bukti setiap klaim di teks materi (V9) | 433 klaim: 346 terbukti uji lama · 47 dibuktikan baru di layar (61/61) · 20 teks dikoreksi · 1 bug diperbaiki · 16 menunggu keputusan pemilik · 3 belum (perilaku kelas / memengaruhi semua pengguna) — §2d |
 | Dokumen cetak (`uji/dokumen/`, peserta 01, data bersih) | D1 dokumen penjualan 12/12 · D2 dokumen keuangan 16/16 · D3 naskah/template 9/9 |
 | Uji variasi isian & hitungan (`uji/variasi/` V1–V8) | 164 kasus (lihat §2a) |
-| Jest penuh (pohon akhir) | 1.717 lulus · 9 gagal = himpunan lama yang sama (phase3P3, roleGateSweep2, phase4R1, fe07ReturnErrors, phase3P8Activation) |
-| Backend `tests_mem` penuh (pohon akhir) | 2.503 lulus · 0 gagal |
-| Gate `--ci` (pohon akhir) | keluar 1 (merah lama) · dibanding garis dasar `2026-11-17_latih_keuangan2_gate_ci.log`: **tidak ada pelanggaran baru**. Log: `docs/blueprint/garis-dasar-gate/2026-11-17_latih_keuangan3_gate_ci.log` |
+| Jest penuh (pohon akhir) | **1.780/1.780 lulus · 0 gagal** (9 kegagalan "lama" diselesaikan: 7 uji usang, 2 bug nyata — §2f) |
+| Backend `tests_mem` penuh (pohon akhir) | **2.566 lulus · 0 gagal** (2 skip, 3 xfail) |
+| Gate `--ci` (pohon akhir) | _menunggu — diisi sesudah gate selesai_ |
 
 ## 1. Data acuan & data demo
 
