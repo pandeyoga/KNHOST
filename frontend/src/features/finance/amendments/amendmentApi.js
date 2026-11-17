@@ -9,6 +9,7 @@
  *   + persetujuan berbasis dampak + jejak dua arah. Tidak ada edit senyap.
  */
 import axios, { API } from "../../../services/apiClient";
+import { roleLabel } from "../../../config/roles";
 
 // ── Label status (SSOT tampilan) ────────────────────────────────────────────
 export const AMD_STATUS_META = {
@@ -46,6 +47,20 @@ export const METHOD_META = {
 
 export function methodMeta(method) {
   return METHOD_META[method] || { label: method || "—", help: "", fg: "#6B6B73", bg: "#F2F2F7" };
+}
+
+/** Pelatihan 18 Nov (S1) — peran penyetuju untuk dibaca orang: "Manajer", bukan kode peran `manager`. */
+export function approverLabel(role) {
+  return roleLabel(role || "manager");
+}
+
+/** Pelatihan 18 Nov (S1) — jenis dokumen hasil amandemen untuk dibaca orang ("Nota Debit", bukan `debit_note`). */
+export const RESULT_DOC_LABEL = {
+  sales_order: "Pesanan Penjualan", credit_note: "Nota Kredit", debit_note: "Nota Debit", doc_amendment: "Amandemen",
+};
+
+export function resultDocLabel(docType) {
+  return RESULT_DOC_LABEL[docType] || "Dokumen";
 }
 
 /** Field baris dokumen yang boleh dikoreksi (cermin EDITABLE_FIELDS backend). */

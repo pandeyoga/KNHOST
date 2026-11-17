@@ -39,7 +39,7 @@ import { openConfig } from "../../settings/config/configDeepLink";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import AmendmentItemRows, { AMD_FIELDS, EPS, autoReasonFor, clampPct } from "./AmendmentItemRows";
 import {
-  errText, listReasons, previewAmendment, proposeAmendment, statusMeta,
+  approverLabel, errText, listReasons, previewAmendment, proposeAmendment, resultDocLabel, statusMeta,
 } from "./amendmentApi";
 
 const LABEL = "block text-[10.5px] font-semibold text-[#6B6B73] mb-1";
@@ -62,7 +62,7 @@ function buildDraft(order) {
 }
 
 /** Hasil pengajuan — menyatakan jelas: langsung diterapkan atau menunggu persetujuan siapa. */
-function AmendmentResult({ result, onClose, testId }) {
+export function AmendmentResult({ result, onClose, testId }) {
   const meta = statusMeta(result.status);
   const waiting = result.status === "pending_approval";
   return (
@@ -80,7 +80,7 @@ function AmendmentResult({ result, onClose, testId }) {
         </span>
         <p data-testid="amd-result-message" className="text-[12px] leading-relaxed text-[#3C3C43]">
           {waiting
-            ? `Usulan terkirim dan MENUNGGU persetujuan ${result.required_role || "manager"}. Nilai dokumen belum berubah sampai keputusan keluar.`
+            ? `Usulan terkirim dan menunggu persetujuan ${approverLabel(result.required_role)}. Nilai dokumen belum berubah sampai keputusan keluar.`
             : `Koreksi sudah diterapkan (${result.method_label}). Dampak ${formatCurrency(Math.abs(Number(result.impact?.delta || 0)))}.`}
         </p>
         {(result.result_refs || []).length > 0 && (
@@ -88,7 +88,7 @@ function AmendmentResult({ result, onClose, testId }) {
             <p className="text-[10px] font-bold uppercase text-[#6B6B73]">Dokumen yang dihasilkan</p>
             {(result.result_refs || []).map((r, i) => (
               <p key={i} className="text-[11px] text-[#3C3C43]">
-                <b className="text-[#0058CC]">{r.doc_number}</b> · {r.doc_type} {r.note ? `· ${r.note}` : ""}
+                <b className="text-[#0058CC]">{r.doc_number}</b> · {resultDocLabel(r.doc_type)} {r.note ? `· ${r.note}` : ""}
               </p>
             ))}
           </div>

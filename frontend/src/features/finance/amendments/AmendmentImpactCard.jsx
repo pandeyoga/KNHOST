@@ -9,7 +9,7 @@
  */
 import { ArrowDownRight, ArrowUpRight, Info, ShieldAlert, Zap } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
-import { methodMeta } from "./amendmentApi";
+import { approverLabel, methodMeta } from "./amendmentApi";
 
 export default function AmendmentImpactCard({ data, testId = "amd-impact", compact = false }) {
   if (!data) return null;
@@ -58,7 +58,7 @@ export default function AmendmentImpactCard({ data, testId = "amd-impact", compa
         {needsApproval ? (
           <span data-testid={`${testId}-approval`}
             className="inline-flex items-center gap-1 rounded bg-[#FFF3CD] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[#8A6D00]">
-            <ShieldAlert size={11} /> Butuh persetujuan {data.required_role || "manager"}
+            <ShieldAlert size={11} /> Butuh persetujuan {approverLabel(data.required_role)}
           </span>
         ) : (
           <span data-testid={`${testId}-autoapply`}

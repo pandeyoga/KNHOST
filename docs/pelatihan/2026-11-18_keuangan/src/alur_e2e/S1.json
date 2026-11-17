@@ -1,0 +1,374 @@
+{
+ "kode": "S1",
+ "modul": "5",
+ "judul": "Amandemen & Koreksi Penjualan (Nota Kredit · Nota Debit)",
+ "bagian": "A",
+ "tujuan": "Peserta bisa menelusuri koreksi harga dan baris pesanan penjualan, sebelum dan sesudah barang dikirim, sampai ke jurnal, piutang, dan faktur pajaknya.",
+ "kapan": "Saat pelanggan menawar ulang harga, mendapat diskon susulan, harga ternyata salah ketik, atau membatalkan satu baris pesanan. Finance memeriksa angkanya sebelum menagih dan saat tutup bulan.",
+ "konsep": [
+  "Angka pesanan tidak pernah diubah diam-diam. Setiap koreksi menjadi amandemen bernomor (KSC/AMD-…) yang berisi alasan, dampak rupiah, pengusul, penyetuju, dan jejak ke pesanan.",
+  "Pesanan yang belum terbit (belum dikirim, belum dibayar, belum ada faktur pajak) dihitung ulang: nilai pesanan langsung berubah dan tidak ada jurnal, karena pendapatan belum lahir. Yang berubah hanya eksposur kredit pelanggan.",
+  "Pesanan yang sudah terbit (sudah dikirim, sudah ada faktur pajak, atau sudah ada uang masuk) tidak diubah angkanya. Penurunan nilai menjadi Nota Kredit; kenaikan nilai menjadi Nota Debit (tagihan tambahan). Keduanya berjurnal dan mengubah piutang.",
+  "Siapa menyetujui ditentukan aturan: koreksi yang menurunkan harga di bawah harga PT, atau yang dampaknya (dijumlah dengan koreksi sebelumnya) mencapai 5% atau Rp 5.000.000, menunggu Manajer. Di atas Rp 50.000.000 naik ke Admin. Pengusul tidak boleh menyetujui sendiri. Koreksi kecil yang menaikkan harga langsung berlaku.",
+  "Hapus atau ubah jumlah baris sebelum gudang mengambil barang dilakukan Admin Sales lewat Edit / Override SO: roll dilepas, nilai dihitung ulang, dan tercatat sebagai amandemen otomatis. Sesudah ada uang muka, pesanan terkunci untuk perubahan ini."
+ ],
+ "peran": "Sales · Admin Sales · Manajer · Finance (akun peserta)",
+ "menit": 40,
+ "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30). Empat pesanan: SO-A dan SO-B baru, masing-masing 2 baris (contoh DENIM TENCEL TAUPE A Rp 25.000/yard dan DENIM TENCEL HITAM A Rp 20.000/yard, 1 roll per baris, belum dikirim); SO-B sudah menerima uang muka 30% (contoh Rp 1.779.935). SO-C = Kartu Peserta › SO untuk pelunasan penuh dan SO-D = Kartu Peserta › SO untuk bayar sebagian (keduanya sudah dikirim, belum dibayar). Akun peran: sales@, salesadmin@, manager@ (sandi demo12345) dan akun Finance peserta.",
+ "alur": [
+  {
+   "peran": "Sales",
+   "label": "Ajukan koreksi harga SO-A"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui → SO dihitung ulang",
+   "cabang": "Tolak → angka tetap"
+  },
+  {
+   "peran": "Admin Sales",
+   "label": "Override: hapus baris SO-A"
+  },
+  {
+   "peran": "Admin Sales",
+   "label": "SO-B ber-uang muka terkunci"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terbitkan faktur pajak SO-C"
+  },
+  {
+   "peran": "Admin Sales",
+   "label": "Diskon susulan SO-C"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui → Nota Kredit"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terima sisa tagihan SO-C"
+  },
+  {
+   "peran": "Sales",
+   "label": "Naik harga SO-D → Nota Debit"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terima tagihan + tambahan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Jejak, umur piutang, PPN"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Penjualan › Pesanan",
+   "nav_id": "sales-orders",
+   "tab": ""
+  },
+  {
+   "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
+   "nav_id": "sales-orders",
+   "tab": "amendments"
+  },
+  {
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "nav_id": "ar-aging",
+   "tab": "collection-worklist"
+  },
+  {
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "nav_id": "document-center",
+   "tab": "doc-trace"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Sales",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Masuk sebagai Sales. Cari nomor SO-A, klik barisnya, lalu klik [[Lihat detail & aksi]].",
+   "isi": "*Akun*: sales@kainnusantara.id · *Cari*: nomor SO-A (contoh KSC/SO-00133)",
+   "hasil": "Rincian SO terbuka. Panel 'Koreksi & Amandemen' berisi 'Belum ada koreksi pada dokumen ini' dan tombol [[Ajukan Amandemen]].",
+   "gambar": "uji/hasil/S1/03-a-sales-panel-koreksi.png"
+  },
+  {
+   "no": 2,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Klik [[Ajukan Amandemen]]. Pilih label alasan dan ubah harga baris 1.",
+   "isi": "*Label alasan koreksi*: Negosiasi pelanggan · *Harga satuan* baris 1: Rp 25.000 → Rp 24.000 · *Penjelasan tertulis*: kronologi singkat",
+   "hasil": "Kotak Dampak Koreksi: Nilai sekarang Rp 5.862.410 → Setelah koreksi Rp 5.735.725, dampak Rp 126.684 (contoh). Lencana 'Dihitung ulang' dan 'Butuh persetujuan Manajer', karena harga Rp 24.000 di bawah harga PT Rp 25.000.",
+   "gambar": "uji/hasil/S1/05-a-sales-pratinjau.png"
+  },
+  {
+   "no": 3,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Klik [[Ajukan Amandemen]] di bawah. Klik [[Selesai]].",
+   "isi": "—",
+   "hasil": "Kartu 'Amandemen KSC/AMD-…' berstatus 'Menunggu persetujuan': nilai dokumen belum berubah sampai keputusan keluar. Buku: belum ada jurnal.",
+   "gambar": "uji/hasil/S1/07-a-sales-hasil.png"
+  },
+  {
+   "no": 4,
+   "peran": "Manajer",
+   "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
+   "aksi": "Masuk sebagai Manajer. Buka tab [[Koreksi & Amandemen]]. Ketik nomor amandemen lalu klik barisnya.",
+   "isi": "*Akun*: manager@kainnusantara.id · *Cari*: KSC/AMD-… (contoh KSC/AMD-00017)",
+   "hasil": "Rincian amandemen di kanan: alasan, dampak, rincian perubahan (harga Rp 25.000 → Rp 24.000), ambang yang berlaku, dan kotak 'Keputusan diperlukan (Manajer)' berisi catatan keputusan serta tombol [[Setujui & Terapkan]] dan [[Tolak]].",
+   "gambar": "uji/hasil/S1/11-a-mgr-putus.png"
+  },
+  {
+   "no": 5,
+   "peran": "Manajer",
+   "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
+   "aksi": "Isi catatan keputusan. Klik [[Setujui & Terapkan]].",
+   "isi": "*Catatan keputusan*: Disetujui: pelanggan tetap, volume 2 roll",
+   "hasil": "Status 'Diterapkan'. Nilai SO-A kini Rp 5.735.725 (DPP Rp 5.167.320 + PPN Rp 568.405, contoh). Buku: tidak ada jurnal. Eksposur kredit pelanggan (pesanan terbuka) turun Rp 126.684.",
+   "gambar": "uji/hasil/S1/12-a-mgr-hasil.png"
+  },
+  {
+   "no": 6,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Masuk lagi sebagai Sales. Buka SO-A dan ajukan koreksi harga baris 2.",
+   "isi": "*Label alasan koreksi*: Negosiasi pelanggan · *Harga satuan* baris 2: Rp 20.000 → Rp 16.000",
+   "hasil": "Penjelasan dampak: 'Dampak 11,36% mencapai ambang 5%' (koreksi kedua dijumlah dengan koreksi pertama) dan harga di bawah harga PT. Kartu hasil: 'Menunggu persetujuan'.",
+   "gambar": "uji/hasil/S1/15-a-sales2-pratinjau.png"
+  },
+  {
+   "no": 7,
+   "peran": "Manajer",
+   "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
+   "aksi": "Buka amandemen kedua. Isi alasan penolakan, lalu klik [[Tolak]].",
+   "isi": "*Catatan keputusan*: Ditolak: harga terlalu jauh di bawah harga PT, tawarkan diskon volume saja",
+   "hasil": "Status 'Ditolak'. Nilai SO-A tetap Rp 5.735.725. Usulan yang ditolak tetap tercatat beserta catatan penolakannya.",
+   "gambar": "uji/hasil/S1/22-a-mgr2-hasil.png"
+  },
+  {
+   "no": 8,
+   "peran": "Admin Sales",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Masuk sebagai Admin Sales. Buka rincian SO-A dan baca panel 'Koreksi & Amandemen'.",
+   "isi": "*Akun*: salesadmin@kainnusantara.id",
+   "hasil": "Dua amandemen: yang pertama 'Diterapkan', yang kedua 'Ditolak', lengkap dengan pengusul dan pemutus.",
+   "gambar": "uji/hasil/S1/25-a-admin-jejak.png"
+  },
+  {
+   "no": 9,
+   "peran": "Admin Sales",
+   "menu": "Rincian SO › Edit / Override SO",
+   "aksi": "Klik [[Edit / Override SO]]. Klik ikon hapus pada baris 2, isi alasan, lalu klik [[Simpan Override]].",
+   "isi": "*Alasan override*: pelanggan membatalkan baris 2 sebelum dikirim",
+   "hasil": "Pesan '… diperbarui (1 perubahan langsung berlaku)'. Baris 2 keluar dari SO, roll-nya kembali bebas di gudang, nilai SO-A Rp 3.040.423 (contoh). Jejak bertambah 'Override SO oleh Admin' (diterapkan otomatis). Buku: tidak ada jurnal.",
+   "gambar": "uji/hasil/S1/27-a-admin-hapus-baris.png"
+  },
+  {
+   "no": 10,
+   "peran": "Admin Sales",
+   "menu": "Rincian SO › Edit / Override SO",
+   "aksi": "Buka rincian SO-B (sudah ada uang muka). Klik [[Edit / Override SO]].",
+   "isi": "—",
+   "hasil": "Kotak kuning 'Dokumen sudah terbit (sudah ada pembayaran masuk) — koreksi lewat amandemen/nota.' Baris tidak bisa dihapus.",
+   "gambar": "uji/hasil/S1/32-b-admin-terkunci.png"
+  },
+  {
+   "no": 11,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Sebagai Sales, buka SO-B, klik [[Ajukan Amandemen]], dan isi jumlah baris 2 dengan 0. Baca pesannya, lalu klik [[Batal]].",
+   "isi": "*Label alasan koreksi*: Perubahan jumlah pesanan · *Jumlah* baris 2: 0",
+   "hasil": "Pesan merah 'Jumlah harus lebih dari nol. Untuk membatalkan baris, gunakan pembatalan pesanan atau retur.' Tombol [[Ajukan Amandemen]] mati. Uang muka tetap di 2-1400 Uang Muka Pelanggan.",
+   "gambar": "uji/hasil/S1/34-b-sales-qty-nol.png"
+  },
+  {
+   "no": 12,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Masuk dengan akun Finance peserta. Buka rincian SO-C. Klik [[Terbitkan Faktur Pajak]].",
+   "isi": "*Akun*: finance.latihNN@kainnusantara.id · SO-C = Kartu Peserta › SO untuk pelunasan penuh",
+   "hasil": "Baris faktur 'KSC/FKT-… Normal · PPN Rp 332.970' (contoh) = PPN Keluaran di jurnal pengiriman. Faktur tidak membuat jurnal.",
+   "gambar": "uji/hasil/S1/38-c-fin-faktur-terbit.png"
+  },
+  {
+   "no": 13,
+   "peran": "Admin Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Sebagai Admin Sales, buka SO-C, klik [[Ajukan Amandemen]], lalu isi diskon susulan.",
+   "isi": "*Label alasan koreksi*: Pemberian diskon tambahan · *Harga satuan*: Rp 25.000 → Rp 23.000 · *Penjelasan tertulis*: diskon susulan karena pengiriman terlambat",
+   "hasil": "Kotak 'Dokumen ini sudah terbit (sudah terbit Faktur Pajak KSC/FKT-…). Angka dokumen asal tidak akan diubah'. Lencana 'Nota Kredit' dan 'Butuh persetujuan Manajer'. Dampak Rp 268.798 (contoh).",
+   "gambar": "uji/hasil/S1/42-c-admin-pratinjau.png"
+  },
+  {
+   "no": 14,
+   "peran": "Admin Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Klik [[Ajukan Amandemen]]. Klik [[Selesai]].",
+   "isi": "—",
+   "hasil": "Kartu hasil 'Menunggu persetujuan Manajer'. Nilai SO-C tidak berubah.",
+   "gambar": "uji/hasil/S1/44-c-admin-hasil.png"
+  },
+  {
+   "no": 15,
+   "peran": "Manajer",
+   "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
+   "aksi": "Sebagai Manajer, buka amandemen SO-C. Isi catatan, lalu klik [[Setujui & Terapkan]].",
+   "isi": "*Catatan keputusan*: Disetujui: kompensasi keterlambatan kirim",
+   "hasil": "Status 'Diterapkan'; rincian menyebut Nota Kredit KSC/CN-… Rp 268.798 (contoh). Buku: jurnal nota kredit Pendapatan (D) + PPN Keluaran (D) / Piutang (K).",
+   "gambar": "uji/hasil/S1/49-c-mgr-hasil.png"
+  },
+  {
+   "no": 16,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Sebagai Finance, buka rincian SO-C. Baca panel 'Koreksi & Amandemen' dan daftar Faktur Pajak.",
+   "isi": "—",
+   "hasil": "'Nota koreksi (1)': KSC/CN-… 'Jurnal Terbit' · 'Selesai' − Rp 268.798, dengan catatan 'Nilai dokumen asal sengaja TIDAK diubah'. Daftar faktur bertambah 'KSC/FKT-… Draf · dokumen retur · PPN Rp 26.638' di atas faktur awal 'Normal'.",
+   "gambar": "uji/hasil/S1/52-c-fin-nota-kredit.png"
+  },
+  {
+   "no": 17,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Cari baris SO-C. Klik ikon dompet [[Terima pembayaran]].",
+   "isi": "—",
+   "hasil": "Baris SO-C 'Belum Lunas' Rp 3.091.172 = Rp 3.359.970 − nota kredit Rp 268.798 (contoh).",
+   "gambar": "uji/hasil/S1/56-c-fin-bayar-baris.png"
+  },
+  {
+   "no": 18,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Biarkan nominal bawaan. Isi nomor referensi, klik [[Simpan kwitansi]], lalu [[Ya, simpan]].",
+   "isi": "*No. referensi*: nomor transfer (contoh TRF-S1C-LATIH65) · rekening BCA Operasional KSC",
+   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp 3.091.172) dicatat …'. SO-C lunas. Buku: 1-1100 Kas Besar / Bank (D) / 1-1200 Piutang Usaha (K) Rp 3.091.172.",
+   "gambar": "uji/hasil/S1/60-c-fin-bayar-tercatat.png"
+  },
+  {
+   "no": 19,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Buka rincian SO-D. Klik [[Terbitkan Faktur Pajak]].",
+   "isi": "SO-D = Kartu Peserta › SO untuk bayar sebagian",
+   "hasil": "Baris faktur 'KSC/FKT-… Normal · PPN Rp 314.435' (contoh).",
+   "gambar": "uji/hasil/S1/64-d-fin-faktur-terbit.png"
+  },
+  {
+   "no": 20,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Sebagai Sales, buka SO-D, klik [[Ajukan Amandemen]], lalu naikkan harga.",
+   "isi": "*Label alasan koreksi*: Koreksi harga · *Harga satuan*: Rp 25.000 → Rp 26.000 · *Penjelasan tertulis*: harga kontrak salah ketik saat pesanan dibuat",
+   "hasil": "Lencana 'Nota Debit' dan 'Langsung diterapkan' (dampak 4%, di bawah ambang 5% dan Rp 5.000.000).",
+   "gambar": "uji/hasil/S1/68-d-sales-pratinjau.png"
+  },
+  {
+   "no": 21,
+   "peran": "Sales",
+   "menu": "Rincian SO › Ajukan Amandemen",
+   "aksi": "Klik [[Ajukan Amandemen]]. Baca kartu hasil, lalu klik [[Selesai]].",
+   "isi": "—",
+   "hasil": "'Diterapkan otomatis' · Dokumen yang dihasilkan 'KSC/DN-… · Nota Debit · Rp 126.917' (contoh). Buku: jurnal Piutang (D) / Pendapatan (K) + PPN Keluaran (K).",
+   "gambar": "uji/hasil/S1/70-d-sales-hasil.png"
+  },
+  {
+   "no": 22,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan",
+   "aksi": "Sebagai Finance, buka rincian SO-D. Baca bagian 'Tagihan tambahan'.",
+   "isi": "—",
+   "hasil": "Tabel Nota Debit · Keterangan · Nilai · Jatuh tempo: KSC/DN-… Rp 126.917, jatuh tempo sama dengan SO. 'Total tagihan Rp 3.299.852' = Rp 3.172.935 + Rp 126.917 (contoh).",
+   "gambar": "uji/hasil/S1/73-d-fin-tagihan-tambahan.png"
+  },
+  {
+   "no": 23,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Cari baris SO-D. Klik [[Terima pembayaran]], isi nomor referensi, klik [[Simpan kwitansi]] lalu [[Ya, simpan]].",
+   "isi": "Nominal bawaan = total tagihan termasuk nota debit · *No. referensi*: nomor transfer",
+   "hasil": "Baris SO-D 'Belum Lunas' Rp 3.299.852; kwitansi sebesar itu tercatat dan SO-D lunas. Buku: 1-1100 (D) / 1-1200 (K) Rp 3.299.852.",
+   "gambar": "uji/hasil/S1/76-d-fin-bayar-baris.png"
+  },
+  {
+   "no": 24,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "aksi": "Ketik nomor SO-C, lalu klik hasilnya.",
+   "isi": "*Cari*: nomor SO-C (contoh KSC/SO-00131)",
+   "hasil": "Daftar relasi memuat surat jalan, faktur pajak, amandemen KSC/AMD-…, nota kredit KSC/CN-… dan jurnalnya, dokumen pajak retur, kwitansi, transaksi kas, dan jurnal penerimaan.",
+   "gambar": "uji/hasil/S1/81-e-fin-jejak.png"
+  }
+ ],
+ "jurnal_per_tahap": [
+  {
+   "tahap": "Amandemen SO belum terbit disetujui (hitung ulang)",
+   "dokumen": "Amandemen (KSC/AMD-…)",
+   "jurnal": "Tidak ada jurnal — nilai SO dan eksposur kredit pelanggan saja yang berubah"
+  },
+  {
+   "tahap": "Amandemen ditolak",
+   "dokumen": "Amandemen berstatus Ditolak",
+   "jurnal": "Tidak ada jurnal, tidak ada perubahan angka"
+  },
+  {
+   "tahap": "Override SO: hapus baris sebelum diambil gudang",
+   "dokumen": "Amandemen otomatis 'Override SO oleh Admin'",
+   "jurnal": "Tidak ada jurnal — roll dilepas, nilai SO dihitung ulang"
+  },
+  {
+   "tahap": "Uang muka masuk sebelum kirim (persiapan SO-B)",
+   "dokumen": "Kwitansi",
+   "jurnal": "1-1100 Kas Besar / Bank (D) · 2-1400 Uang Muka Pelanggan (K)"
+  },
+  {
+   "tahap": "Faktur pajak terbit",
+   "dokumen": "Faktur Pajak (KSC/FKT-…)",
+   "jurnal": "Tidak ada jurnal — PPN sudah dicatat di jurnal pengiriman"
+  },
+  {
+   "tahap": "Diskon susulan sesudah kirim disetujui",
+   "dokumen": "Nota Kredit (KSC/CN-…) + draf dokumen pajak retur",
+   "jurnal": "4-1000 Pendapatan Penjualan (D) + 2-1200 PPN Keluaran (D) · 1-1200 Piutang Usaha (K)"
+  },
+  {
+   "tahap": "Kenaikan harga sesudah kirim",
+   "dokumen": "Nota Debit (KSC/DN-…) = tagihan tambahan",
+   "jurnal": "1-1200 Piutang Usaha (D) · 4-1000 Pendapatan Penjualan (K) + 2-1200 PPN Keluaran (K)"
+  },
+  {
+   "tahap": "Pelunasan sisa / tagihan + tambahan",
+   "dokumen": "Kwitansi (KSC/AR-…)",
+   "jurnal": "1-1100 Kas Besar / Bank (D) · 1-1200 Piutang Usaha (K)"
+  }
+ ],
+ "titik_kontrol": [
+  "Setiap koreksi angka wajib lewat amandemen bernomor dengan label alasan; koreksi besar wajib penjelasan tertulis (mulai Rp 10.000.000).",
+  "Harga di bawah harga PT, atau dampak koreksi (dijumlah dengan koreksi sebelumnya pada pesanan yang sama) mulai 5% / Rp 5.000.000, menunggu Manajer; mulai Rp 50.000.000 menunggu Admin. Pengusul tidak boleh menyetujui usulannya sendiri.",
+  "Dokumen yang sudah terbit tidak diubah: penurunan = Nota Kredit, kenaikan = Nota Debit. Satu pesanan hanya boleh punya satu usulan nota yang menunggu keputusan; total nota kredit tidak boleh melebihi nilai pesanan.",
+  "Override SO hanya sebelum gudang mulai mengambil barang dan sebelum ada uang masuk atau faktur pajak.",
+  "Ambang dan penyetuju adalah pengaturan, bukan angka tetap: Pengaturan › Penjualan (kelompok 'Retur & koreksi dokumen › Koreksi dokumen') dan Aturan Persetujuan jenis amandemen. Diubah Admin, berlaku untuk semua pengguna."
+ ],
+ "cek_buku": [
+  "SO-A (belum terbit): jumlah jurnal untuk SO-A = 0 sesudah tiga amandemen. Nilai SO dihitung ulang: contoh DPP Rp 5.167.320 (114,13 × Rp 24.000 + 121,41 × Rp 20.000) + PPN 11% DPP Rp 568.405 = Rp 5.735.725; sesudah baris 2 dihapus Rp 3.040.423 (= 114,13 × Rp 24.000 + PPN).",
+  "Uang muka SO-B (contoh KSC/JE-00593): 1-1100 Kas Besar / Bank (D) Rp 1.779.935 · 2-1400 Uang Muka Pelanggan (K) Rp 1.779.935 — seimbang; tidak berubah oleh percobaan koreksi.",
+  "Nota kredit SO-C (contoh KSC/CN-00005, jurnal KSC/JE-00612): 4-1000 Pendapatan Penjualan (D) Rp 242.160 + 2-1200 PPN Keluaran (D) Rp 26.638 = 1-1200 Piutang Usaha (K) Rp 268.798 — seimbang. DPP nota = 121,08 yard × Rp 2.000.",
+  "Kwitansi SO-C (contoh KSC/JE-00617): 1-1100 (D) = 1-1200 (K) Rp 3.091.172 = Rp 3.359.970 − Rp 268.798. Saldo 1-1200 untuk SO-C: Rp 3.359.970 − Rp 268.798 − Rp 3.091.172 = 0.",
+  "Nota debit SO-D (contoh KSC/DN-00004, jurnal KSC/JE-00620): 1-1200 Piutang Usaha (D) Rp 126.917 = 4-1000 Pendapatan Penjualan (K) Rp 114.340 + 2-1200 PPN Keluaran (K) Rp 12.577 — seimbang. DPP nota = 114,34 yard × Rp 1.000.",
+  "Kwitansi SO-D (contoh KSC/JE-00622): 1-1100 (D) = 1-1200 (K) Rp 3.299.852 = Rp 3.172.935 + Rp 126.917. Umur piutang pelanggan tidak lagi memuat SO-C dan SO-D.",
+  "PPN keluaran: nota kredit membalik PPN Rp 26.638 dan melahirkan draf dokumen pajak retur dengan PPN yang sama (belum terbit = masih terhitung 'retur tanpa dokumen' di pencocokan PPN). Nota debit menambah PPN Rp 12.577 di buku, sedangkan faktur SO-D tetap Rp 314.435 — selisih Rp 12.577 tampil di pencocokan PPN keluaran."
+ ],
+ "kesalahan_umum": [
+  "Mengira menyetujui amandemen pesanan yang sudah dikirim mengubah total SO. Total SO tetap; koreksinya berdiri sendiri sebagai Nota Kredit atau Nota Debit, dan sisa tagihan = total SO − nota kredit + nota debit.",
+  "Mencari jurnal untuk koreksi pesanan yang belum dikirim. Pesanan belum terbit dihitung ulang tanpa jurnal; jurnal baru lahir saat surat jalan terbit.",
+  "Mencoba menghapus baris lewat amandemen (jumlah 0). Hapus baris dilakukan Admin Sales lewat Edit / Override SO sebelum barang diambil; sesudah ada uang muka, pesanan terkunci dan pilihannya hanya membatalkan pesanan atau retur sesudah kirim.",
+  "Menaikkan harga tanpa memeriksa faktur pajak. Nota debit menambah PPN Keluaran tetapi faktur pajak pesanan tidak ikut berubah — laporkan ke pelatih (lihat catatan)."
+ ],
+ "catatan_pelatih": "Peragakan pada peserta peraga yang segar (pelanggan latihan yang belum pernah dikoreksi). SO-A dan SO-B dibuat pelatih sebelum kelas (uji otomatis membuatnya sendiri: dua baris per roll, ditambah uang muka 30% SO-B lewat kwitansi Finance). Pakai tiga jendela: Sales/Admin Sales, Manajer, dan Finance. Ambang yang berlaku dibaca di rincian amandemen ('Ambang yang berlaku saat usulan dibuat'). Finance tidak punya tab Koreksi & Amandemen; Finance melihat amandemen dan nota per pesanan di rincian SO dan di Jejak Dokumen. Draf dokumen pajak retur dari nota kredit dan PPN tambahan dari nota debit belum punya aturan terbit yang pasti (menunggu konsultan pajak) — jangan menerbitkan atau mengubah faktur di kelas. Membatalkan pesanan yang sudah ber-uang muka dibahas di S3. Nota kredit/debit bisa bersen walau total SO bulat (contoh: SO-C Rp 3.359.970, nota kredit Rp 268.797,60, sisa tagihan Rp 3.091.172,40 tampil Rp 3.091.172) — transfer bulat menyisakan Rp 0,40; lihat K-07.",
+ "uji": {
+  "berkas": "uji/situasi/S1_amandemen_penjualan.js",
+  "peserta_uji": "65 (lulus 20/20 langkah; juga lulus 20/20 di peserta 63; 62 dan 64 dipakai menyusun skrip)"
+ }
+}

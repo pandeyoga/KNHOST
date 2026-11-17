@@ -18,10 +18,10 @@ import {
   CheckCircle2, Link2, Loader2, Scale, ShieldAlert, UserCheck, XCircle,
 } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
-import { can } from "../../../config/roles";
+import { can, roleLabel } from "../../../config/roles";
 import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
-import { amendmentDetail, decideAmendment, errText, statusMeta } from "./amendmentApi";
+import { amendmentDetail, approverLabel, decideAmendment, errText, statusMeta } from "./amendmentApi";
 import { NoteNumber, NoteRecognitionHints, NoteStatusPill } from "./CreditNoteBadges";   // PK-32
 
 // UAT 24 Okt (audit UI tahap 2) — G1-05: jejak dokumen dulu mencetak kode mentah (APPLIED_TO, AMENDS, sales_order).
@@ -185,7 +185,7 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
           </p>
           <PolicyRow label="Wajib disetujui di atas" value={formatCurrency(policy.approval_threshold_amount || 0)} />
           <PolicyRow label="Wajib disetujui di atas (%)" value={`${policy.approval_threshold_pct ?? 0}%`} />
-          <PolicyRow label="Penyetuju standar" value={(policy.approver_role || "—").toUpperCase()} />
+          <PolicyRow label="Penyetuju standar" value={policy.approver_role ? approverLabel(policy.approver_role) : "—"} />
           <PolicyRow label="Naik ke admin di atas" value={formatCurrency(policy.admin_approval_above || 0)} />
           <PolicyRow label="Wajib penjelasan di atas" value={formatCurrency(policy.require_note_above || 0)} />
           <PolicyRow label="Kontrol ganda" value={policy.dual_control ? "Aktif" : "Nonaktif"} />
@@ -236,7 +236,7 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
         {pending && (
           <div data-testid="amd-decision-box" className="rounded-md border border-[#FFE2B8] bg-[#FFF7EC] p-2.5 space-y-2">
             <p className="flex items-center gap-1 text-[10px] font-bold uppercase text-[#9A5B00]">
-              <ShieldAlert size={11} /> Keputusan diperlukan ({amd.approval_permission ? "MANAGER / ADMIN / FINANCE" : (amd.required_role || "manager").toUpperCase()})
+              <ShieldAlert size={11} /> Keputusan diperlukan ({amd.approval_permission ? "Manajer / Admin / Finance" : approverLabel(amd.required_role)})
             </p>
             {dualBlocked && (
               <p data-testid="amd-dual-control-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#9B1C1C]">
@@ -246,13 +246,13 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
             )}
             {!dualBlocked && !roleOk && !amd.approval_permission && (
               <p data-testid="amd-role-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#9B1C1C]">
-                Amandemen ini harus diputus oleh {(amd.required_role || "manager").toUpperCase()}.
-                Peran Anda: {(currentUser?.role || "—").toUpperCase()}.
+                Amandemen ini harus diputus oleh {approverLabel(amd.required_role)}.
+                Peran Anda: {roleLabel(currentUser?.role)}.
               </p>
             )}
             {!permDecide && (
               <p data-testid="amd-noperm-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#6B6B73]">
-                Anda dapat memantau statusnya di sini, tetapi keputusan dilakukan oleh manager/admin.
+                Anda dapat memantau statusnya di sini, tetapi keputusan dilakukan oleh Manajer atau Admin.
               </p>
             )}
             <textarea data-testid="amd-decision-note" rows="2" value={note} onChange={(e) => setNote(e.target.value)}

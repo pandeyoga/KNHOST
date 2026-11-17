@@ -75,6 +75,8 @@ export function OrderDetailPanel({
   // Pelatihan 18 Nov (A1): dulu "Belum ada pengiriman tercatat" tampil selama daftar surat jalan masih dimuat.
   const [shipmentsLoading, setShipmentsLoading] = useState(false);
   const [taxInvoices, setTaxInvoices] = useState([]);
+  // Pelatihan 18 Nov (S1): dulu "Belum ada Faktur Pajak" + [Terbitkan Faktur Pajak] tampil selama daftar faktur dimuat.
+  const [taxLoading, setTaxLoading] = useState(false);
   const [issuingTax, setIssuingTax] = useState(false);
   // TX-T2 (K-32) — pemicu faktur PT pesanan (`tax.pemicu_faktur`): per surat jalan → tombol terbit manual diganti tautan draf.
   const [pemicuFaktur, setPemicuFaktur] = useState("pesanan");
@@ -133,14 +135,17 @@ export function OrderDetailPanel({
       setShipmentsLoading(false);
     }
     if (sel?.id && TAX_ELIGIBLE.includes(sel.status) && can(perms, "tax_invoice", "view")) {
+      setTaxLoading(true);
       axios.get(`${API}/tax-invoices`, { params: { order_id: sel.id } })
         .then((r) => { if (active) setTaxInvoices(Array.isArray(r.data) ? r.data : []); })
-        .catch(() => { if (active) setTaxInvoices([]); });
+        .catch(() => { if (active) setTaxInvoices([]); })
+        .finally(() => { if (active) setTaxLoading(false); });
       axios.get(`${API}/settings/effective`, { params: { entity_id: sel.entity_id } })
         .then((r) => { if (active) setPemicuFaktur(r?.data?.tax?.pemicu_faktur || "pesanan"); })
         .catch(() => { if (active) setPemicuFaktur("pesanan"); });
     } else {
       setTaxInvoices([]);
+      setTaxLoading(false);
     }
     return () => { active = false; };
   }, [sel?.id, sel?.status]);
@@ -594,7 +599,7 @@ export function OrderDetailPanel({
                   Lihat draf faktur ({taxInvoices.filter((f) => f.status === "draf").length})
                 </button>
               )}
-              {pemicuFaktur !== "surat_jalan" && taxInvoices.filter((f) => f.status !== "batal").length === 0 && canIssueTax && (
+              {pemicuFaktur !== "surat_jalan" && !taxLoading && taxInvoices.filter((f) => f.status !== "batal").length === 0 && canIssueTax && (
                 <button
                   data-testid="issue-tax-invoice-btn"
                   disabled={issuingTax}
@@ -650,7 +655,9 @@ export function OrderDetailPanel({
                 ))}
               </div>
             ) : (
-              <p className="text-[10.5px] text-[#6B6B73]">Belum ada Faktur Pajak. Bersifat opsional (pajak tidak wajib).</p>
+              <p className="text-[10.5px] text-[#6B6B73]" data-testid="order-tax-invoice-empty">
+                {taxLoading ? "Memuat faktur pajak…" : "Belum ada Faktur Pajak. Bersifat opsional (pajak tidak wajib)."}
+              </p>
             )}
           </div>
         )}

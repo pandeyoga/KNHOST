@@ -1,0 +1,207 @@
+{
+  "code": "S1",
+  "title": "S1 Amandemen & koreksi penjualan: sebelum terbit, uang muka, nota kredit, nota debit",
+  "ok": true,
+  "at": "2026-11-17T13:29:19.343Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 0,
+      "role": "Pelatih",
+      "action": "Persiapan: SO-C & SO-D terkirim belum dibayar (Kartu Peserta) · SO-A & SO-B baru (2 baris, belum dikirim) · uang muka 30% SO-B",
+      "expect": "Empat SO peserta siap; SO-C & SO-D belum pernah dikoreksi",
+      "ok": true,
+      "ms": 33369,
+      "info": "SO-A KSC/SO-00133 · SO-B KSC/SO-00134 (uang muka Rp 1.779.935) · SO-C KSC/SO-00131 · SO-D KSC/SO-00132"
+    },
+    {
+      "no": 1,
+      "role": "Sales",
+      "action": "Masuk sebagai Sales → Penjualan › Pesanan → cari nomor SO-A → klik barisnya → [Lihat detail & aksi]",
+      "expect": "Rincian SO: panel 'Koreksi & Amandemen' berisi 'Belum ada koreksi pada dokumen ini' dan tombol [Ajukan Amandemen]",
+      "ok": true,
+      "ms": 52012,
+      "info": "KOREKSI & AMANDEMEN 0 Ajukan Amandemen Belum ada koreksi pada dokumen ini. Setiap perubahan angka wajib lewat amandemen bernomor — tidak ada edit senyap."
+    },
+    {
+      "no": 2,
+      "role": "Sales",
+      "action": "[Ajukan Amandemen] → *Label alasan* Negosiasi pelanggan → baris 1 *Harga satuan* Rp 25.000 → Rp 24.000 → isi *Penjelasan tertulis* → baca Dampak Koreksi → [Ajukan Amandemen]",
+      "expect": "Dampak: Nilai sekarang → Setelah koreksi; lencana 'Dihitung ulang' + 'Butuh persetujuan Manajer' (harga di bawah harga PT). Hasil 'Menunggu persetujuan'; nilai SO belum berubah, tidak ada jurnal",
+      "ok": true,
+      "ms": 25670,
+      "info": "KSC/AMD-00017 · DIHITUNG ULANG · BUTUH PERSETUJUAN MANAJER · dampak −Rp 126.684 · Usulan terkirim dan menunggu persetujuan Manajer. Nilai dokumen belum berubah sampai keputusan keluar."
+    },
+    {
+      "no": 3,
+      "role": "Manajer",
+      "action": "Masuk sebagai Manajer → Penjualan › Pesanan › tab Koreksi & Amandemen → cari nomor amandemen → klik barisnya → isi *Catatan keputusan* → [Setujui & Terapkan]",
+      "expect": "Status amandemen 'Diterapkan'. Buku: total SO turun sebesar dampak dan dihitung ulang (DPP + PPN 11% DPP), tidak ada jurnal, eksposur kredit pelanggan ikut turun",
+      "ok": true,
+      "ms": 49025,
+      "info": "KSC/AMD-00017 oleh Dewi Manager · SO Rp 5.862.410 → Rp 5.735.725 · jurnal 0 · eksposur Rp 16.548.496 → Rp 16.421.812"
+    },
+    {
+      "no": 4,
+      "role": "Sales",
+      "action": "Masuk lagi sebagai Sales → rincian SO-A → [Ajukan Amandemen] → *Label alasan* Negosiasi pelanggan → baris 2 *Harga satuan* Rp 20.000 → Rp 16.000 → [Ajukan Amandemen]",
+      "expect": "Penjelasan dampak menyebut 'Dampak …% mencapai ambang 5%' (koreksi dijumlah dengan koreksi sebelumnya) dan harga di bawah harga PT; hasil 'Menunggu persetujuan'",
+      "ok": true,
+      "ms": 98247,
+      "info": "KSC/AMD-00018 · dampak −Rp 539.060 · Dampak 11.36% mencapai ambang 5.0% DENIM TENCEL HITAM A: Harga di bawah batas — perlu persetujuan manajer sebelum berlaku. Rp 16.000/yard berada 20,0% di bawah "
+    },
+    {
+      "no": 5,
+      "role": "Manajer",
+      "action": "Manajer → tab Koreksi & Amandemen → buka amandemen kedua → isi alasan penolakan → [Tolak]",
+      "expect": "Status 'Ditolak'. Buku: total SO tetap (sama dengan sesudah langkah 3), tidak ada jurnal; amandemen yang ditolak tetap tercatat di jejak",
+      "ok": true,
+      "ms": 32878,
+      "info": "KSC/AMD-00018 ditolak Dewi Manager: \"Ditolak: harga terlalu jauh di bawah harga PT, tawarkan diskon volume saja\" · SO tetap Rp 5.735.725"
+    },
+    {
+      "no": 6,
+      "role": "Admin Sales",
+      "action": "Masuk sebagai Admin Sales → rincian SO-A → periksa jejak → [Edit / Override SO] → ikon hapus pada baris 2 → isi *Alasan override* → [Simpan]",
+      "expect": "Jejak: amandemen pertama 'Diterapkan', kedua 'Ditolak'. Pesan '… diperbarui (1 perubahan langsung berlaku)'. Buku: baris 2 keluar, roll-nya kembali bebas, total SO dihitung ulang, jejak 'Override SO oleh Admin' (diterapkan otomatis), tidak ada jurnal",
+      "ok": true,
+      "ms": 19767,
+      "info": "KSC/SO-00133 diperbarui (1 perubahan langsung berlaku) · KSC/AMD-00019 · SO Rp 3.040.423 · roll RL-35783 available"
+    },
+    {
+      "no": 7,
+      "role": "Admin Sales",
+      "action": "Admin Sales → rincian SO-B (sudah ada uang muka) → [Edit / Override SO]",
+      "expect": "Kotak kuning 'Dokumen sudah terbit (sudah ada pembayaran masuk) — koreksi lewat amandemen/nota.' Baris tidak bisa dihapus",
+      "ok": true,
+      "ms": 16853,
+      "info": "Bayar Sebagian sisa Rp 4.153.182 · Dokumen sudah terbit (sudah ada pembayaran masuk) — koreksi lewat amandemen/nota."
+    },
+    {
+      "no": 8,
+      "role": "Sales",
+      "action": "Masuk sebagai Sales → rincian SO-B → [Ajukan Amandemen] → *Jumlah* baris 2 diisi 0 → baca pesan → [Batal]",
+      "expect": "Pesan merah 'Jumlah harus lebih dari nol. Untuk membatalkan baris, gunakan pembatalan pesanan atau retur.'; [Ajukan Amandemen] mati. Buku: uang muka tetap di 2-1400 Uang Muka Pelanggan, SO-B tidak berubah",
+      "ok": true,
+      "ms": 50348,
+      "info": "Jumlah harus lebih dari nol. Untuk membatalkan baris, gunakan pembatalan pesanan atau retur. · SO-B tetap Rp 5.933.117 · uang muka Rp 1.779.935 (KSC/JE-00593 1-1100 D Rp 1.779.935 · 2-1400 K Rp 1.779.935)"
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Masuk dengan akun Finance peserta → rincian SO-C (sudah dikirim, belum dibayar) → [Terbitkan Faktur Pajak]",
+      "expect": "Baris faktur 'KSC/FKT-… Normal · PPN Rp …' = PPN Keluaran pada jurnal pengiriman. Faktur tidak membuat jurnal",
+      "ok": true,
+      "ms": 18984,
+      "info": "KSC/FKT-00012 · DPP Rp 2.774.750 · PPN Rp 332.970"
+    },
+    {
+      "no": 10,
+      "role": "Admin Sales",
+      "action": "Admin Sales → rincian SO-C → [Ajukan Amandemen] → *Label alasan* Pemberian diskon tambahan → *Harga satuan* Rp 25.000 → Rp 23.000 → isi penjelasan → [Ajukan Amandemen]",
+      "expect": "Kotak 'Dokumen sudah terbit (sudah terbit Faktur Pajak …)'; lencana 'Nota Kredit' + 'Butuh persetujuan'; hasil 'Menunggu persetujuan'. Nilai SO tidak pernah diubah",
+      "ok": true,
+      "ms": 42470,
+      "info": "KSC/AMD-00020 · Dokumen ini sudah terbit (sudah terbit Faktur Pajak KSC/FKT-00012). Angka dokumen asal tidak akan diubah — koreksinya di · NOTA KREDIT · dampak −Rp 268.798"
+    },
+    {
+      "no": 11,
+      "role": "Manajer",
+      "action": "Manajer → tab Koreksi & Amandemen → buka amandemen SO-C → isi catatan → [Setujui & Terapkan]",
+      "expect": "Status 'Diterapkan'; rincian amandemen menyebut Nota Kredit KSC/CN-… . Buku: jurnal nota kredit 4-1000 Pendapatan (D) + 2-1200 PPN Keluaran (D) / 1-1200 Piutang (K); sisa piutang SO = total − nota kredit",
+      "ok": true,
+      "ms": 26578,
+      "info": "KSC/CN-00005 · KSC/JE-00612 4-1000 D Rp 242.160 · 2-1200 D Rp 26.638 · 1-1200 K Rp 268.798 · sisa Rp 3.091.172"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Finance → rincian SO-C → baca panel 'Koreksi & Amandemen' dan daftar Faktur Pajak",
+      "expect": "Nota koreksi 'KSC/CN-… Selesai − Rp …' dengan catatan 'Nilai dokumen asal sengaja TIDAK diubah'; daftar faktur: faktur awal 'Normal' + 'Draf · dokumen retur' (PPN = PPN nota kredit)",
+      "ok": true,
+      "ms": 18677,
+      "info": "KOREKSI & AMANDEMEN 1 Ajukan Amandemen KSC/AMD-00020 DITERAPKAN Pemberian diskon tambahan − Rp 268.798 · Nota Kredit Diusulkan Rina Kartika · 17/11/26, 20.25 · diputus Dewi Manager “Latihan 65: diskon · KSC/FKT-00013 draf dokumen retur PPN Rp 26.638"
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Keuangan › Piutang › Penagihan & Penerimaan → baris SO-C → [Terima pembayaran] → nominal bawaan = sisa → isi *No. referensi* → [Simpan kwitansi] → [Ya, simpan]",
+      "expect": "Baris SO-C 'Belum Lunas' = total − nota kredit; kwitansi KSC/AR-… sebesar sisa. Buku: 1-1100 Kas/Bank (D) / 1-1200 Piutang (K) = sisa; piutang SO-C di buku besar kembali nol",
+      "ok": true,
+      "ms": 17499,
+      "info": "Kwitansi KSC/AR-00093 (Rp 3.091.172) dicatat untuk Latihan 65 · Toko Kain Peserta 65. × · KSC/JE-00617 1-1100 D Rp 3.091.172 · 1-1200 K Rp 3.091.172"
+    },
+    {
+      "no": 14,
+      "role": "Finance",
+      "action": "Finance → rincian SO-D (sudah dikirim, belum dibayar) → [Terbitkan Faktur Pajak]",
+      "expect": "Baris faktur 'KSC/FKT-… Normal · PPN Rp …' = PPN SO-D",
+      "ok": true,
+      "ms": 14216,
+      "info": "KSC/FKT-00015 · PPN Rp 314.435"
+    },
+    {
+      "no": 15,
+      "role": "Sales",
+      "action": "Masuk sebagai Sales → rincian SO-D → [Ajukan Amandemen] → *Label alasan* Koreksi harga → *Harga satuan* Rp 25.000 → Rp 26.000 → isi penjelasan → [Ajukan Amandemen]",
+      "expect": "Lencana 'Nota Debit' + 'Langsung diterapkan' (dampak di bawah ambang 5% dan Rp 5 juta); hasil 'Diterapkan otomatis' dengan dokumen KSC/DN-… . Buku: jurnal 1-1200 Piutang (D) / 4-1000 Pendapatan (K) + 2-1200 PPN Keluaran (K)",
+      "ok": true,
+      "ms": 54336,
+      "info": "KSC/AMD-00021 · DITERAPKAN OTOMATIS · DOKUMEN YANG DIHASILKAN KSC/DN-00004 · Nota Debit · Rp 126.917"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Masuk dengan akun Finance peserta → rincian SO-D → baca bagian 'Tagihan tambahan'",
+      "expect": "Tabel Nota Debit · Keterangan · Nilai · Jatuh tempo (= jatuh tempo SO); 'Total tagihan Rp …' = total SO + nota debit. Buku: jurnal nota debit seimbang, piutang SO naik sebesar nota debit",
+      "ok": true,
+      "ms": 15905,
+      "info": "TAGIHAN TAMBAHAN NOTA DEBIT KETERANGAN NILAI JATUH TEMPO KSC/DN-00004 Koreksi harga Rp 126.917 17/12/2026 Tagihan tambahan Rp 126.917 Total tagihan Rp 3.299.852 · KSC/JE-00620 1-1200 D Rp 126.917 · 4-1000 K Rp 114.340 · 2-1200 K Rp 12.577"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Keuangan › Piutang › Penagihan & Penerimaan → baris SO-D → [Terima pembayaran] → nominal bawaan → isi *No. referensi* → [Simpan kwitansi] → [Ya, simpan]",
+      "expect": "Baris SO-D 'Belum Lunas' = total SO + nota debit; kwitansi sebesar itu. Buku: 1-1100 (D) / 1-1200 (K); piutang SO-D kembali nol",
+      "ok": true,
+      "ms": 31617,
+      "info": "Kwitansi KSC/AR-00095 (Rp 3.299.852) dicatat untuk Latihan 65 · Toko Kain Peserta 65. × · KSC/JE-00622 1-1100 D Rp 3.299.852 · 1-1200 K Rp 3.299.852"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Pusat Dokumen › tab Jejak Dokumen → ketik nomor SO-C → klik hasilnya",
+      "expect": "Rantai SO-C memuat amandemen KSC/AMD-…, nota kredit KSC/CN-… dan jurnalnya, surat jalan, kwitansi",
+      "ok": true,
+      "ms": 7190,
+      "info": "KSC/SO-00131 → KSC/AMD-00020 → KSC/CN-00005 → KSC/JE-00612"
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Cek buku akhir: jurnal seimbang; umur piutang pelanggan; PPN keluaran vs dokumen pajak",
+      "expect": "Piutang SO-C & SO-D nol (umur piutang tanpa baris SO-C/SO-D); SO-A belum berpiutang (belum dikirim); PPN: nota kredit membalik PPN (draf dokumen retur), nota debit menambah PPN tanpa dokumen pajak baru",
+      "ok": true,
+      "ms": 821,
+      "info": "umur piutang SO-C/SO-D: 0 · KSC/JE-00612 4-1000 D Rp 242.160 · 2-1200 D Rp 26.638 · 1-1200 K Rp 268.798 | KSC/JE-00620 1-1200 D Rp 126.917 · 4-1000 K Rp 114.340 · 2-1200 K Rp 12.577 · PPN: retur_tanpa_dokumen: buku Rp -26.638 vs dokumen Rp 0 | surat_jalan_tanpa_faktur: buku Rp 327.012 vs dokumen Rp 314.435"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  ],
+  "notes": [
+    "Peserta 65 · Latihan 65 · Toko Kain Peserta 65 · SO-A KSC/SO-00133 DENIM TENCEL TAUPE A 114.13 yard × Rp 25.000 + DENIM TENCEL HITAM A 121.41 yard × Rp 20.000 = Rp 5.862.410 · SO-B KSC/SO-00134 DENIM TENCEL TAUPE A 121.67 yard × Rp 25.000 + DENIM TENCEL HITAM A 115.17 yard × Rp 20.000 = Rp 5.933.117 (uang muka Rp 1.779.935: KSC/JE-00593 1-1100 D Rp 1.779.935 · 2-1400 K Rp 1.779.935) · SO-C KSC/SO-00131 DENIM TENCEL TAUPE A 121.08 yard × Rp 25.000 = Rp 3.359.970 · SO-D KSC/SO-00132 DENIM TENCEL TAUPE A 114.34 yard × Rp 25.000 = Rp 3.172.935",
+    "login manager lambat (page.waitForFunction: Timeout 20000ms exceeded.) — diulang",
+    "A: KSC/AMD-00017 diterapkan — KSC/SO-00133 Rp 5.862.410 → Rp 5.735.725 (DPP Rp 5.167.320 + PPN Rp 568.405) · jurnal 0 · eksposur pesanan terbuka Rp 10.015.591 → Rp 9.888.907",
+    "jendela amandemen tertutup sendiri (percobaan 1: locator.click: Timeout 15000ms exceeded.) — dibuka lagi",
+    "A: KSC/AMD-00019 Override — baris DENIM TENCEL HITAM A dihapus, roll RL-35783 bebas · SO Rp 5.735.725 → Rp 3.040.423 · eksposur pesanan terbuka Rp 7.193.605",
+    "C: KSC/AMD-00020 → KSC/CN-00005 Rp 268.798 (DPP Rp 242.160 + PPN Rp 26.638) · KSC/JE-00612 4-1000 D Rp 242.160 · 2-1200 D Rp 26.638 · 1-1200 K Rp 268.798 · sisa piutang Rp 3.091.172",
+    "D: KSC/AMD-00021 → KSC/DN-00004 Rp 126.917 (DPP Rp 114.340 + PPN Rp 12.577) · KSC/JE-00620 1-1200 D Rp 126.917 · 4-1000 K Rp 114.340 · 2-1200 K Rp 12.577 · total tagihan Rp 3.299.852",
+    "PPN SO-C (nota kredit KSC/CN-00005): retur_tanpa_dokumen: buku Rp -26.638 vs dokumen Rp 0 · PPN SO-D (nota debit KSC/DN-00004): surat_jalan_tanpa_faktur: buku Rp 327.012 vs dokumen Rp 314.435",
+    "RINGKAS S1 peserta 65: A KSC/SO-00133 Rp 3.040.423 (jurnal 0) · B KSC/SO-00134 uang muka Rp 1.779.935 terkunci · C KSC/SO-00131 Rp 3.359.970 − KSC/CN-00005 Rp 268.798 = Rp 3.091.172 (KSC/AR-00093) · D KSC/SO-00132 Rp 3.172.935 + KSC/DN-00004 Rp 126.917 = Rp 3.299.852 (KSC/AR-00095)",
+    "respons 4xx di layar: 400 POST /api/amendments/preview (sales@kainnusantara.id)"
+  ]
+}
