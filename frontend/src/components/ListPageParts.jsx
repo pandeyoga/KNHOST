@@ -2,18 +2,20 @@
  *  yang bisa diklik, bilah daftar (cari · dropdown · jumlah · aksi), tab status lama. */
 import { useEffect, useRef, useState } from "react";
 import { HelpCircle, Search, X } from "lucide-react";
+import { useEscapeClose } from "@/utils/escapeLayers";
 
 /** Ikon "?" — penjelasan dibuka saat diklik, bukan paragraf yang dipajang (pola UI §1.4). */
 export function HelpTip({ text, testId, label = "Penjelasan" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  // Esc lewat tumpukan lapisan bersama (`useEscapeClose`, penjaga verify_escape_layers): bila ? dibuka di dalam pop-up,
+  // Esc menutup catatan ? dulu, bukan pop-up di bawahnya.
+  useEscapeClose(open, () => setOpen(false));
   useEffect(() => {
     if (!open) return undefined;
     const off = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", off);
-    document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
+    return () => document.removeEventListener("mousedown", off);
   }, [open]);
   if (!text) return null;
   return (
