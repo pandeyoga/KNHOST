@@ -119,17 +119,23 @@ async def decide_via_spk(c: Ctx, task_id: str, entity: str) -> None:
     spk = await db.inspections.find_one({"task_id": task_id}, {"_id": 0, "id": 1, "status": 1, "lines": 1})
     if not spk:
         raise RuntimeError(f"SPK penerimaan untuk tugas {task_id} tidak terbentuk")
-    adm, qc = await c.u("whadmin"), await c.u("qc")
-    qc_user = await db.users.find_one({"email": "qc" + MAIL}, {"_id": 0, "id": 1})
+    # UAT 22 Okt — SPK kedatangan = MD Quality saja (warna & handfeel); QC 4-point = SPK tersendiri (tidak wajib).
+    md_only = bool((await db.inspections.find_one({"id": spk["id"]}, {"_id": 0, "md_only": 1}) or {}).get("md_only"))
+    adm = await c.u("whadmin")
+    who = "mdquality" if md_only else "qc"
+    insp, insp_user = await c.u(who), await db.users.find_one({"email": who + MAIL}, {"_id": 0, "id": 1})
     if spk.get("status") == "draft":
-        await adm.post(f"/inspections/{spk['id']}/assign", {"assigned_to": qc_user["id"], "bagian": "QC"}, entity=entity)
-    if spk.get("status") in ("draft", "assigned"):
-        await qc.post(f"/inspections/{spk['id']}/start", {}, entity=entity)
+        await adm.post(f"/inspections/{spk['id']}/assign", {"assigned_to": insp_user["id"],
+                                                            **({} if md_only else {"bagian": "QC"})}, entity=entity)
+    if spk.get("status") in ("draft", "assigned") and not md_only:   # MD Quality mengisi langsung sesudah ditugaskan
+        await insp.post(f"/inspections/{spk['id']}/start", {}, entity=entity)
     for ln in spk.get("lines") or []:
-        await qc.post(f"/inspections/{spk['id']}/lines/{ln['id']}/inspect",
-                      {"part": "qc", "defects": [], "remark": "Inspeksi 4-point bersih (demo)"}, entity=entity)
-    await qc.post(f"/inspections/{spk['id']}/finish", {"decision": "terima", "remark": "Lolos inspeksi 4-point (demo)"},
-                  entity=entity)
+        await insp.post(f"/inspections/{spk['id']}/lines/{ln['id']}/inspect",
+                        {"part": "md_quality" if md_only else "qc", "defects": [],
+                         "remark": "Warna & handfeel sesuai (demo)" if md_only else "Inspeksi 4-point bersih (demo)"},
+                        entity=entity)
+    await insp.post(f"/inspections/{spk['id']}/finish", {"decision": "terima", "remark": "Lolos pemeriksaan kedatangan (demo)"},
+                    entity=entity)
 
 
 async def sc_purchase_full(c: Ctx) -> str:
@@ -265,12 +271,23 @@ async def push_so(c: Ctx, so: Dict[str, Any], entity: str, upto: str, sa_key: st
     if upto == "confirmed":
         return await db.sales_orders.find_one({"id": oid}, {"_id": 0})
     wu = await c.u(wh_key)
+    picked: set = set()
     for t in await db.wms_tasks.find({"order_id": oid, "flow_type": "outbound"}, {"_id": 0}).to_list(50):
         try:
             await wu.post(f"/outbound/tasks/{t['id']}/release", {}, entity=entity)
         except ApiError:
             pass
-        await wu.call("POST", f"/outbound/tasks/{t['id']}/scan-pick", json={}, entity=entity, params={"actual_qty": t.get("quantity")})
+        # FIX-3b — ambil WAJIB memindai roll: pindai roll yang dicadangkan untuk SO ini (produk & gudang tugas), roll utuh.
+        need = float(t.get("quantity") or 0) - float(t.get("picked_qty") or 0)
+        for r in await db.inventory_rolls.find({"reserved_ref.id": oid, "product_id": t.get("product_id"),
+                                                "warehouse_id": t.get("warehouse_id")},
+                                               {"_id": 0, "id": 1, "roll_no": 1, "length_remaining": 1}).to_list(500):
+            if need <= 0.01 or r["id"] in picked:
+                continue
+            await wu.call("POST", f"/outbound/tasks/{t['id']}/scan-pick", json={}, entity=entity,
+                          params={"roll_id": r.get("roll_no") or r["id"]})
+            picked.add(r["id"])
+            need -= float(r.get("length_remaining") or 0)
     if upto != "picked":
         # Roll demo belum bertag RFID → Final Loading Check lewat pengecualian berizin (tercatat audit).
         await mgr.post(f"/outbound/so/{oid}/loading-check/override",
@@ -285,7 +302,7 @@ async def push_so(c: Ctx, so: Dict[str, Any], entity: str, upto: str, sa_key: st
 async def pay_so(c: Ctx, so: Dict[str, Any], entity: str, fraction: float) -> float:
     fin = await c.u("finance")
     total = float(so.get("grand_total") or so.get("total") or 0)
-    amt = round(total * fraction)
+    amt = round(total, 2) if fraction >= 1 else round(total * fraction)   # lunas = sisa persis (total bisa bersen)
     await fin.post("/ar-receipts", {"customer_id": so["customer_id"], "amount": amt, "method": "transfer", "entity_id": entity,
                                     "notes": "Pembayaran pelanggan (demo)", "allocations": [{"order_id": so["id"], "amount": amt}]}, entity=entity)
     return amt
@@ -347,7 +364,7 @@ async def sc_makloon(c: Ctx) -> str:
     pfd_k, pfp_w = await c.prod("DMO-PFD-KNT-001"), await c.prod("DMO-PFP-WVN-001")
     fin_k, fin_p = await first_finished("knit", c.cst), await first_finished("printing", KSC) or await first_finished("printing", c.cst)
     # M1 — benang → tenun → grey: bahan sudah dikirim ke penenun (sedang diproses)
-    m1 = await mgr.post("/makloon-orders", {"mode": "process_only", "material_product_id": yw["id"], "material_qty": 300, "material_unit": "kg",
+    m1 = await mgr.post("/makloon-orders", {"route_reason": "Data acuan: contoh jalur makloon (demo)", "mode": "process_only", "material_product_id": yw["id"], "material_qty": 300, "material_unit": "kg",
                                             "from_warehouse_id": w_wvn, "target_warehouse_id": w_wvn, "entity_id": c.cst,
                                             "steps": [{"process_type": "tenun", "stage_code": "tenun", "makloon_id": tenun["id"],
                                                        "input_product_id": yw["id"], "output_product_id": gw["id"], "input_qty": 300}],
@@ -355,7 +372,7 @@ async def sc_makloon(c: Ctx) -> str:
     await mgr.post(f"/makloon-orders/{m1['id']}/issue", {"step_seq": 1, "from_warehouse_id": w_wvn}, entity=c.cst)
     out.append(f"{m1.get('mko_number')} tenun: bahan di mitra")
     # M2 — benang knit → rajut → grey knit: selesai diterima kembali
-    m2 = await mgr.post("/makloon-orders", {"mode": "process_only", "material_product_id": yk["id"], "material_qty": 250, "material_unit": "kg",
+    m2 = await mgr.post("/makloon-orders", {"route_reason": "Data acuan: contoh jalur makloon (demo)", "mode": "process_only", "material_product_id": yk["id"], "material_qty": 250, "material_unit": "kg",
                                             "from_warehouse_id": w_knt, "target_warehouse_id": w_knt, "entity_id": c.cst,
                                             "steps": [{"process_type": "rajut", "stage_code": "rajut", "makloon_id": rajut["id"],
                                                        "input_product_id": yk["id"], "output_product_id": gk["id"], "input_qty": 250}],
@@ -364,10 +381,10 @@ async def sc_makloon(c: Ctx) -> str:
     rolls = [{"lot": f"RJT-{m2['id'][-5:].upper()}", "length": 24.5, "grade": "A", "dye_lot": ""} for _ in range(10)]
     await (await c.u("warehouse.rancamalang")).post(f"/makloon-orders/{m2['id']}/receive", {
         "step_seq": 1, "actual_output_qty": 245, "output_warehouse_id": w_knt, "supplier_dn": f"SJ-RJT-{m2['id'][-4:]}",
-        "supplier_invoice_no": f"INV-RJT-{m2['id'][-4:]}", "rolls": rolls}, entity=c.cst)
+        "rolls": rolls}, entity=c.cst)   # MP-T4b — nilai/no. faktur jasa diisi Pembelian, bukan gudang
     out.append(f"{m2.get('mko_number')} rajut: diterima 245 kg grey")
     # M3 — grey knit → pre-treatment (PFD) → celup → kain jadi: langkah 1 dikirim
-    m3 = await mgr.post("/makloon-orders", {"mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": gk["id"], "material_qty": 200, "material_unit": "kg",
+    m3 = await mgr.post("/makloon-orders", {"route_reason": "Data acuan: contoh jalur makloon (demo)", "mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": gk["id"], "material_qty": 200, "material_unit": "kg",
                                             "from_warehouse_id": w_knt, "target_warehouse_id": w_knt, "entity_id": c.cst,
                                             "steps": [{"process_type": "pre_treatment", "stage_code": "pfd", "target_use": "dye", "makloon_id": celup["id"],
                                                        "input_product_id": gk["id"], "output_product_id": pfd_k["id"], "input_qty": 200},
@@ -379,7 +396,7 @@ async def sc_makloon(c: Ctx) -> str:
     # M4 — PFP → printing → kain print: SPK dibuat (bahan TERCADANG makloon, belum dikirim)
     if fin_p:
         owner = KSC if KSC in (fin_p.get("entity_ids") or []) else c.cst
-        m4 = await mgr.post("/makloon-orders", {"mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": pfp_w["id"], "material_qty": 500, "material_unit": "yard",
+        m4 = await mgr.post("/makloon-orders", {"route_reason": "Data acuan: contoh jalur makloon (demo)", "mode": "process_only", "purpose": {"kind": "stok"}, "material_product_id": pfp_w["id"], "material_qty": 500, "material_unit": "yard",
                                                 "from_warehouse_id": w_prn if owner == c.cst else await c.wh("WH-JKT"),
                                                 "target_warehouse_id": w_prn if owner == c.cst else await c.wh("WH-JKT"), "entity_id": owner,
                                                 "steps": [{"process_type": "printing", "stage_code": "printing", "makloon_id": prn["id"],

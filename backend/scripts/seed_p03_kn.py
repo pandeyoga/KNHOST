@@ -28,7 +28,7 @@ FLAG = "p03_demo"
 async def run(c: Ctx) -> str:
     so = await make_so(c, "sales.kanda", "Toko Tekstil Pasar Baru", KANDA, "knit", 10, 1)
     so = await push_so(c, so, KANDA, "confirmed", "salesadmin.kanda", "warehouse.soreang")
-    src, dst = await c.wh("SRG-01"), await c.wh("GU-KANDA")
+    src, dst = await c.wh("SRG-01"), await c.wh("RCM-TRANSIT")   # GU-KANDA dinonaktifkan sejak struktur gudang baru
     rolls = await db.inventory_rolls.find({"reserved_ref.id": so["id"], "warehouse_id": src, "status": "reserved"},
                                           {"_id": 0, "id": 1, "product_id": 1, "length_remaining": 1}).to_list(50)
     if not rolls:
@@ -41,12 +41,12 @@ async def run(c: Ctx) -> str:
     wa, mgr = await c.u("whadmin"), await c.u("manager")
     tr = await wa.post("/transfers", {"source_warehouse_id": src, "dest_warehouse_id": dst, "owner_entity_id": KANDA,
                                       "sales_order_id": so["id"], "items": list(items.values()),
-                                      "notes": f"[CONTOH P03] Pemenuhan {so.get('number')} — kirim dari Soreang ke Jakarta"},
+                                      "notes": f"[CONTOH P03] Pemenuhan {so.get('number')} — kirim dari Soreang ke Gudang Transit Rancamalang"},
                        entity=KANDA)
     await mgr.post(f"/transfers/{tr['id']}/approve", {}, entity=KANDA)
     for st in ("picking", "staging", "dispatched"):
         tr = await wa.post(f"/transfers/{tr['id']}/status", {"status": st, "updated_by": wa.user["name"]}, entity=KANDA)
-    return f"{so.get('number')} ({len(rolls)} roll) → {tr.get('code')} SRG-01 → GU-KANDA status {tr.get('status')}"
+    return f"{so.get('number')} ({len(rolls)} roll) → {tr.get('code')} SRG-01 → RCM-TRANSIT status {tr.get('status')}"
 
 
 async def main() -> None:

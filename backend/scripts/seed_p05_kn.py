@@ -55,15 +55,18 @@ async def run(c: Ctx) -> str:
     if pr.get("status") == "pending_approval":
         await mgr.post(f"/purchase-requisitions/{pr_id}/approve", {"notes": "[CONTOH P05]"}, entity=KANDA)
     line = next(i for i in pr["items"] if i.get("fulfillment_mode") == "makloon")
-    grey = await c.prod("DMO-GRY-KNT-001")
+    grey, pfd = await c.prod("DMO-GRY-KNT-001"), await c.prod("DMO-PFD-KNT-001")
     bal = await db.inventory_balances.find_one({"product_id": grey["id"], "owner_entity_id": KANDA,
                                                 "available_qty": {"$gt": 0}}, {"_id": 0, "warehouse_id": 1})
     celup = await c.makloon("PT Celup Warna Dayeuhkolot")
     body = {"mode": "process_only", "material_product_id": grey["id"], "material_qty": 300, "material_unit": "kg",
             "from_warehouse_id": bal["warehouse_id"], "target_warehouse_id": bal["warehouse_id"], "entity_id": KANDA,
             "manual_material_reason": "[CONTOH P05] resep celup artikel belum diisi — qty dari pengalaman mitra",
-            "steps": [{"process_type": "celup", "stage_code": "celup", "makloon_id": celup["id"],
-                       "input_product_id": grey["id"], "output_product_id": line["product_id"], "input_qty": 300}],
+            # MP-T1 — celup wajib berbahan PFD: grey → pre-treatment (PFD) → celup (kain jadi), mitra yang sama.
+            "steps": [{"process_type": "pre_treatment", "stage_code": "pfd", "target_use": "dye", "makloon_id": celup["id"],
+                       "input_product_id": grey["id"], "output_product_id": pfd["id"], "input_qty": 300},
+                      {"process_type": "celup", "stage_code": "celup", "makloon_id": celup["id"],
+                       "input_product_id": pfd["id"], "output_product_id": line["product_id"]}],
             "notes": f"[CONTOH P05] produksi untuk {pr.get('number')} / KANDA/SO-00006"}
     out = await mgr.post(f"/purchase-requisitions/{pr_id}/realize-makloon",
                          {"line_no": line["line_no"], "payload": body}, entity=KANDA)
