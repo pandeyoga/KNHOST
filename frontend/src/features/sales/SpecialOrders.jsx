@@ -16,7 +16,8 @@ import { AlertCircle, CheckCircle2, Clock, Loader2, Package, Plus, Sparkles, X }
 import CreateSpecialOrderForm from "./CreateSpecialOrderForm";
 import SpecialOrderDetail from "./SpecialOrderDetail";
 import { StatusPill, fmtDay, odPhaseOf } from "./SpecialOrderShared";
-import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
+import { SearchBox } from "../../components/ListControls";
+import { ListToolbar, MetricRow, PageHeader } from "../../components/ListPageParts";   // pola UI 16 Nov
 import usePagedRows from "../../hooks/usePagedRows";
 import useViewPreset from "../../hooks/useViewPreset";
 import KNSelect from "../../components/KNSelect";
@@ -171,60 +172,39 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
         <ErrorNotice message={error} onRetry={loadOrders} onDismiss={() => setError(null)} testId="special-order-error" />
       )}
 
-      {/* Header */}
-      <div className="view-header">
-        <div>
-          <h1 className="view-title">
-            <Sparkles size={20} /> Pesanan Khusus (OD)
-          </h1>
-          <p className="view-subtitle">
-            Pesanan khusus untuk produk custom yang belum ada di katalog
-          </p>
-        </div>
-        {canCreate && (
-          <button
-            data-testid="create-special-order-btn"
-            className="primary-button"
-            onClick={() => setView("create")}
-          >
-            <Plus size={14} /> Buat Pesanan Khusus
-          </button>
-        )}
+      {/* Pola UI (04_POLA_UI §2.A — pemilik 16 Nov: konsisten dengan Retur): kepala satu baris (keterangan di ?), kartu
+          angka = saringan cepat, satu bilah daftar (cari · tahap · label · jumlah · + Buat) tepat di atas tabel. Dulu:
+          subjudul, kartu angka pajangan, deret tab status, dan tombol buat di kepala halaman. */}
+      <PageHeader icon={Sparkles} title="Pesanan Khusus (OD)" testId="special-order-header"
+        help="Pesanan khusus untuk produk custom yang belum ada di katalog — mis. kain motif khusus, warna Pantone, atau bordir seragam. Alur: buat OD → persetujuan bila nilainya besar → desain/sample → harga final → produksi → kirim." />
+      <MetricRow testId="special-order-stats" items={[
+        { k: "", label: "Total OD", value: soTotal, icon: Sparkles },
+        { k: "draft", label: "Draf", value: soCnt("draft"), icon: Package },
+        { k: "pending_approval", label: "Menunggu Persetujuan", value: soCnt("pending_approval"), icon: Clock },
+        { k: "in_production", label: "Produksi", value: soCnt("in_production"), icon: Loader2 },
+        { k: "done", label: "Selesai", value: soCnt("done"), icon: CheckCircle2 },
+      ].map(({ k, label, value, icon }) => ({
+        label, value: formatQty(value), icon, testId: `special-order-stat-${k || "all"}`,
+        active: !!k && statusFilter === k,
+        onClick: () => setStatusFilter(k && statusFilter !== k ? k : ""),
+      }))} />
+      <div className="mt-3">
+        <ListToolbar testId="special-order-toolbar" count={`${filteredOrders.length} pesanan`}
+          actions={canCreate && (
+            <button data-testid="create-special-order-btn" className="primary-button" onClick={() => setView("create")}>
+              <Plus size={14} /> Buat Pesanan Khusus
+            </button>
+          )}>
+          <SearchBox value={searchQuery} onChange={setSearchQuery} testId="special-order-search"
+            placeholder="Cari nomor / pelanggan / keterangan…" />
+          <KNSelect data-testid="special-order-status-filter" aria-label="Tahap" className="field !w-auto"
+            value={statusFilter} onValueChange={setStatusFilter}
+            options={statusTabs.map((t) => ({ value: t.key, label: `${t.key ? t.label : "Semua tahap"} (${t.key ? soCnt(t.key) : soTotal})` }))} />
+          <KNSelect data-testid="special-order-origin-filter" className="field !w-auto" value={originFilter}
+            options={[{ value: "", label: "Label: semua" }, { value: "special_order", label: "Pesanan Khusus" }, { value: "redesign", label: "Redesign" }]}
+            onValueChange={setOriginFilter} />
+        </ListToolbar>
       </div>
-
-      {/* Ringkasan */}
-      <div data-testid="special-order-stats" className="grid grid-cols-2 gap-2 sm:grid-cols-5" style={{ marginBottom: 12 }}>
-        {[
-          { label: "Total OD", value: soTotal, icon: Sparkles, hint: "semua status" },
-          { label: "Draf", value: soCnt("draft"), icon: Package },
-          { label: "Menunggu Persetujuan", value: soCnt("pending_approval"), icon: Clock },
-          { label: "Produksi", value: soCnt("in_production"), icon: Loader2 },
-          { label: "Selesai", value: soCnt("done"), icon: CheckCircle2 },
-        ].map(({ label, value, icon: Icon, hint }) => (
-          <div key={label} className="metric-card">
-            <div className="metric-icon"><Icon size={16} /></div>
-            <div className="metric-body">
-              <div className="metric-label">{label}</div>
-              <div className="metric-value tabular-nums">{formatQty(value)}</div>
-              {hint && <div className="metric-hint">{hint}</div>}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Status tabs → baris cari (standar daftar penjualan) */}
-      {/* UAT 24 Okt (audit UI tahap 2) — G2-03: di HP tab status digeser horizontal (dulu patah 4 baris). */}
-      <div className="max-sm:[&_.tab-bar]:flex-nowrap max-sm:[&_.tab-bar]:overflow-x-auto max-sm:[&_.tab-button]:shrink-0">
-        <StatusTabs testIdPrefix="status-tab" value={statusFilter} onChange={setStatusFilter}
-          tabs={statusTabs.map((t) => ({ ...t, count: t.key ? soCnt(t.key) : soTotal }))} />
-      </div>
-      <ListToolbar testId="special-order-toolbar">
-        <SearchBox value={searchQuery} onChange={setSearchQuery} testId="special-order-search"
-          placeholder="Cari nomor / pelanggan / keterangan…" />
-        <KNSelect data-testid="special-order-origin-filter" className="field !w-auto" value={originFilter}
-          options={[{ value: "", label: "Label: semua" }, { value: "special_order", label: "Pesanan Khusus" }, { value: "redesign", label: "Redesign" }]}
-          onValueChange={setOriginFilter} />
-      </ListToolbar>
 
       {/* Loading */}
       {loading ? (

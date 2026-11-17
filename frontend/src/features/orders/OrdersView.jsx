@@ -194,7 +194,9 @@ export default function OrdersView({
             )}
           </ListToolbar>
 
-          <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+          {/* M16/pola UI — kolom kanan hanya bila ada pesanan dipilih; tanpa pilihan tabel memakai lebar penuh (dulu kotak
+              kosong "Pilih pesanan…" 320 px di samping tabel). */}
+          <div className={`grid gap-3 ${sel ? "lg:grid-cols-[1fr_320px]" : ""}`}>
             <section className="section-card min-w-0">
               {/* Audit UI 24 Okt (004) — "Memuat pesanan…" hanya ikut halaman server (bukan muat dasbor global). */}
               <ResponsiveTable testId="orders" columns={COLUMNS} rowKey="id"
@@ -262,14 +264,7 @@ export default function OrdersView({
                   />
                 </DetailPopup>
               </div>
-            ) : (
-              <aside className="section-card hidden lg:flex items-center justify-center min-h-[200px] border-dashed">
-                <div className="text-center p-6">
-                  <FileText size={28} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-[12px] text-[#6B6B73]">Pilih pesanan untuk lihat detail & aksi</p>
-                </div>
-              </aside>
-            )}
+            ) : null}
           </div>
         </>
       )}
