@@ -13,6 +13,7 @@ peserta) **lalu dicocokkan dengan buku** (jurnal seimbang, saldo, status dokumen
 | 2. Alur Ujung ke Ujung | Pesanan sampai Uang Masuk · Pengadaan sampai Bayar · Retur penjualan & pembelian · Karyawan sampai Gaji Dibayar · dari Jurnal sampai Laporan & Tutup Buku — siapa mengerjakan apa, dokumen yang lahir, **jurnal di setiap tahap**, titik kontrol | 2.1–2.5 (A1–A5) |
 | 3. Praktik Finance per Siklus | 3.1 Piutang · 3.2 Hutang · 3.3 Kas & Bank · 3.4 SDM & Gaji · 3.5 Buku Besar & Dokumen | F02–F16, H01–H04 |
 | 4. Manajer | Laporan keuangan · tutup buku | 4.1–4.2 (F17, F18) |
+| 5. Situasi Khusus & Koreksi | Amandemen penjualan (nota kredit/debit) · amandemen PO, terima & tagih sebagian, selisih harga · kirim bertahap, uang muka, batal pesanan, satu transfer banyak tagihan, biaya bank · batal bayar, batal kwitansi, anulir gaji, balik jurnal, reklasifikasi | 5.1–5.4 (S1–S4) |
 
 SDM & penggajian dipegang Finance (keputusan pemilik 17 Nov, K-SDM-01): Finance menyiapkan karyawan, kehadiran, masukan
 gaji, menghitung & memposting proses gaji, membayar dan menyetor; Manajer mengesahkan dan membatalkan.
@@ -30,8 +31,9 @@ gaji, menghitung & memposting proses gaji, membayar dan menyetor; Manajer menges
 | `src/kurikulum.json`, `src/PANDUAN_GAYA.md` | Urutan bagian & aturan bahasa/bentuk materi |
 | `src/skenario/*.json`, `src/alur_e2e/*.json` | Sumber materi (K = konfigurasi, F = praktik, H = SDM, A = alur ujung ke ujung) |
 | `src/bangun.py`, `src/cetak_pdf.js`, `src/ppt/*` | Pembangun manual (HTML/PDF/lembar) dan slide |
-| `uji/` | Uji jalan per materi: `F*.js`, `konfigurasi/K*.js`, `sdm/K09, H*.js`, `e2e/A*.js`; hasil di `uji/hasil/<kode>/hasil.json` + tangkapan layar |
-| `uji/variasi/`, `uji/dokumen/` | Uji variasi isian & hitungan (Lampiran A) dan dokumen cetak + pengaturan naskah (Lampiran B) |
+| `uji/` | Uji jalan per materi: `F*.js`, `konfigurasi/K*.js`, `sdm/K09, H*.js`, `e2e/A*.js`, `situasi/S*.js`; hasil di `uji/hasil/<kode>/hasil.json` + tangkapan layar |
+| `uji/situasi/S1–S4_*.js` | Uji jalan Bagian 5 (situasi khusus & koreksi) di peserta peraga tersendiri |
+| `uji/variasi/`, `uji/dokumen/` | Uji variasi isian & hitungan (Lampiran A), dokumen cetak + pengaturan naskah (Lampiran B), dan V9: bukti setiap klaim di teks materi (`src/variasi_klaim_materi.json`) |
 
 ## Data latihan
 

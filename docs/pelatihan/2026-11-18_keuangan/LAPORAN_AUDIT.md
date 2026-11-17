@@ -156,6 +156,39 @@ dan setiap materi baru dijalankan di layar dengan akun peran, lalu jurnalnya dic
 | C-31 | — | Menyiapkan peserta baru sesudah ada aktivitas kelas gagal: SO ditolak "Qty roll … melebihi panjang bebas" | Skrip data memilih roll yang sebagian panjangnya sudah dipesan | D · `seed_demo_transaksi_kn.py` (roll dengan pesanan sebagian dilewati); peserta 45 tersiapkan lengkap |
 | C-32 | — | Gate: layar Karyawan memutuskan dari nama peran (`admin`) dan memanggil `/users` untuk Finance | Perubahan K-SDM-01 | D · `EmployeesView.jsx` (`can(perms,'user','view')`), `audit_sales_roles_ux.py` (pagar dicatat) · `verify_role_gate_ui` 0 pelanggaran |
 
+## 2d. Bagian 5 — situasi khusus & amandemen, dan bukti setiap klaim teks (17 Nov malam)
+
+Masukan pemilik: "cek juga amandemen dll … end to end flownya dengan berbagai macam situasi … pastikan semua yang anda tulis
+di skenario training, anda harus coba juga lulus sebagai user". Empat situasi baru dijalankan di layar dengan akun peran yang
+benar (materi S1–S4, Bagian 5), dan setiap klaim di teks materi dicari buktinya (V9).
+
+| Materi | Isi yang diuji | Hasil |
+|---|---|---|
+| S1 Amandemen & koreksi penjualan | amandemen SO belum terbit (hitung ulang, persetujuan Manajer, ditolak), hapus baris lewat Override, SO ber-uang muka terkunci, nota kredit (turun harga sesudah terkirim + faktur) & nota debit (naik harga) → pelunasan, Jejak Dokumen & umur piutang | 20/20 |
+| S2 Amandemen & situasi khusus pengadaan | amandemen PO (versi, persetujuan ulang, batal), terima sebagian → tagih sebagian → tutup sisa (GR/IR 0), tagihan selisih harga (persetujuan orang lain), lebih tagih ditahan & dikoreksi | 31/31 |
+| S3 Situasi khusus pesanan sampai uang masuk | kirim bertahap 2 SJ, uang muka 50%, batal SO ber-uang muka → titipan → pengembalian dana, satu transfer untuk beberapa SO, potongan biaya bank di bawah & di atas toleransi | 34/34 |
+| S4 Koreksi & pembatalan | batal bayar tagihan → bayar ulang, batal kwitansi, anulir gaji yang sudah diposting → hitung ulang, balik jurnal + reklasifikasi akun sementara, kas salah kategori yang sudah dicocokkan | 41/41 |
+| V9 Bukti setiap klaim teks | 433 klaim (konsep, cek buku, kesalahan umum, titik kontrol, catatan pelatih) F/K/H/A: 346 terbukti uji lama, 47 dibuktikan baru di layar (61/61), 20 teks dikoreksi, 1 bug, 16 menunggu keputusan pemilik, 3 belum (perilaku kelas / memengaruhi semua pengguna) — `src/variasi_klaim_materi.json` | 61/61 |
+
+| # | Materi | Temuan | Status |
+|---|---|---|---|
+| D-01 | S1 | Layar amandemen menulis kode mentah ("manager", "MANAGER", "debit_note") | D · `amendmentApi.js` (approverLabel, resultDocLabel), `AmendmentImpactCard/ProposeModal/DetailPanel.jsx` · `latihS1Amandemen.test.js` |
+| D-02 | S1 | Rincian pesanan: "Belum ada Faktur Pajak" + tombol terbit selama daftar masih dimuat | D · `OrderDetailPanel.jsx` |
+| D-03 | S2 | Amandemen PO sesudah penerimaan sebagian: PO kembali "Menunggu barang", "Belum Ditagih" basi, tugas karantina ditimpa, **lahir tugas gudang sebesar qty penuh** | D · `routers/purchase_orders.py` · `test_latih_s2_amandemen_po.py` |
+| D-04 | S2 | Baris PO yang sudah diterima terkunci total → aturan V3-PO-02 (turunkan qty tepat ke qty diterima) buntu di layar | D · `POAmendModal.jsx` ([Tutup sisa], [Urungkan]) |
+| D-05 | S2 | Tagihan lebih tagih ditolak tetapi meninggalkan draf tersembunyi yang menahan nomor faktur → tagihan koreksi ditolak 409; pesan/riwayat keliru; layar mengabaikan ambang Rp 50.000 | D · `vendor_bills.py`, `vendor_bill_service.py`, `VendorBillCreateModal.jsx` · `latihS2TagihanAmbang.test.js` |
+| D-06 | S2 | Pembuat tagihan melihat [Setujui] → 403 (kontrol dua orang); draf batal tampil "Sisa" merah; amandemen tercatat "oleh Admin" | D · `VendorBillsView.jsx`, `po_amendment_service.py` |
+| D-07 | S2 | Penerimaan berat: pecah baris roll tidak menghitung ulang berat → "Aktual lebih besar 80%", penerimaan terblokir | D · `GRCatchWeightModal.jsx` |
+| D-08 | S3 | **Batal SO ber-uang muka: uang muka tertinggal di pesanan mati** (2-1400 tetap memegangnya, tidak bisa dikembalikan/dipakai) | D · `ar_receipt_service.py`, `ar_allocation_service.py`, `sales_orders_extra.py`, `inventory_service.py` (juga pesanan kedaluwarsa), `CancelOrderDialog.jsx` · `test_latih_s3_batal_uang_muka.py`, `latihS3BatalUangMuka.test.js` |
+| D-09 | S3 | Bayar tepat uang muka dinilai "Kurang bayar" dan wajib diputus; form Terima pembayaran terisi seluruh sisa SO, bukan uang muka yang ditagih | D · `payment_variance_service.py`, `ar_receipts.py`, `ReceivePaymentModal.jsx` · `latihS3UangMukaForm.test.js` |
+| D-10 | S3 | Penyelesaian Kasus yang memindahkan uang tanpa isian rekening → ditolak bila PT punya >1 rekening (pasti terjadi di kelas karena rekening latihan K04) | D · `finance_case_playbooks.py`, `CasePlaybookWizard.jsx` · `latihS3KasusRekening.test.js` |
+| D-11 | S4 | [Anulir Jurnal] tanpa alasan (melanggar N5) | D · `JournalDetailModal.jsx`, `useJournalActions.js`, `routers/gl.py`, `gl_service.py` · `test_latih_s4_koreksi.py`, `latihS4Koreksi.test.js` |
+| D-12 | S4 | Reklasifikasi akun sementara selalu bertanggal hari ini → saldo Oktober yang dibersihkan awal November tetap menahan tutup buku Oktober | D · `SuspensePanel.jsx`, `schemas_finance.py`, `gl.py`, `gl_service.py` |
+| D-13 | S4 | Pesan & riwayat batal bayar mentah ("payment_void", "via transfer (kas_kecil)"); kwitansi dianulir masih "Kurang Bayar · perlu diputus"; kas bayar gaji "Anulir lewat dokumen lain" | D · `VendorBillsView.jsx`, `VendorBillPayments.jsx`, `ap_payment_service.py`, `ARReceiptsHistory.jsx`, `CashManagementView.jsx` |
+| D-14 | V9 | Finance melihat ikon pengingat & janji bayar di Penagihan → 403 | D · `CollectionWorklist.jsx` · `latihV9TindakLanjutIzin.test.js` |
+| D-15 | V9 | 20 klaim teks keliru (mis. contoh jurnal F04/F18 tidak seimbang, kelebihan ≤ Rp 5.000 tetap jadi titipan, toleransi 3-way match ±5%/Rp 50.000, transfer kas lewat 1-1150, Buka Periode vs Buka Kembali) | D · teks 11 materi dikoreksi |
+| D-16 | — | Insiden uji: skrip `verify_concurrency.py` (dikira statis) memulihkan 21 koleksi Mongo bersama ±25 detik → data pengembangan tidak konsisten | C · verifikasi akhir dimulai dari data yang dipulihkan bersih; jangan jalankan skrip `guardrails/verify_concurrency.py` saat ada uji lain |
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
@@ -201,6 +234,16 @@ dan setiap materi baru dijalankan di layar dengan akun peran, lalu jurnalnya dic
 | K-38 | Retur: refund langsung membukukan pembayaran bank saat Manajer menyimpan, tanpa langkah bayar Finance. Perlu langkah bayar Finance atau orang kedua? |
 | K-39 | Retur: Finance tidak bisa membuka "Retur ke Supplier (Nota Debit)" (hanya melihatnya di kontrabon). Beri akses lihat? Nota debit hanya mengurangi tagihan lewat kontrabon — bila tagihan dibayar langsung (F11), nota debit tetap terbuka. |
 | K-40 | Retur: barang yang dinilai QC "Rusak" masuk stok bernilai nol dan HPP tidak dibalik. Sesuai kebijakan? |
+| K-41 | Nota debit menambah PPN Keluaran di buku tanpa dokumen pajak; faktur pengganti dibentuk dari angka SO asli → rekonsiliasi PPN selisih (contoh Rp 12.577). Perlu faktur pengganti/tambahan? (melengkapi TX-T2 H5 butir 4) |
+| K-42 | Sesudah SO ber-uang muka, satu baris tidak bisa dihapus (Override terkunci, amandemen qty 0 ditolak) — hanya batal seluruh SO. Perlu jalur hapus baris? Turun harga SO ber-uang muka yang belum dikirim menjadi nota kredit tertunda tanpa jurnal — sesuai? |
+| K-43 | Finance tidak punya tab Koreksi & Amandemen / daftar nota kredit-debit untuk akhir bulan, tetapi punya izin mengajukan amandemen. Beri akses lihat? Izin ajukan disengaja? |
+| K-44 | Amandemen PO yang menaikkan harga di bawah Rp 100 juta langsung berlaku tanpa persetujuan (hanya dicek terhadap daftar harga pemasok). Perlu persetujuan? Tutup sisa PO ada dua jalan ("Tutup sisa" lewat persetujuan Admin vs [Tutup PO (Kurang)] langsung) — mana yang baku? |
+| K-45 | PT Sukacita masih memakai penerimaan mode lama (barang kurang wajib eskalasi; sisa PO tanpa tugas). Pindah ke mode Kedatangan (GRN)? Draf tagihan tidak bisa diubah (batal lalu buat baru) — perlu tombol ubah? Penyetuju tagihan selisih harga praktis hanya Admin — siapa seharusnya? |
+| K-46 | Uang muka pesanan yang dibatalkan kini menjadi titipan (tidak hangus). Ada aturan uang muka hangus/biaya batal? Batal SO ber-uang muka bisa tanpa Finance — dipertahankan? Pesanan ber-uang muka bisa kedaluwarsa (reservasi 3 hari) — dikecualikan? |
+| K-47 | Potongan biaya transfer jatuh ke dua akun: ≤ toleransi otomatis ke 6-9100, > toleransi lewat Kasus ke 6-8000. Disatukan? Finance tidak bisa menyelesaikan kasus biaya bank kecil sendiri — dipertahankan? |
+| K-48 | Faktur per pesanan untuk pengiriman bertahap terbit sebesar seluruh SO saat PPN Keluaran di buku baru sebagian. Pakai pemicu per surat jalan, atau tahan faktur sampai terkirim penuh? |
+| K-49 | [Anulir Jurnal] manual menandai jurnal anulir tanpa jurnal pembalik — batasi ke jurnal hari itu/periode berjalan, atau cukup [Balik Jurnal]? Gaji yang sudah dibayar tidak bisa dibatalkan sama sekali (juga bila transfer ditolak bank) — perlu jalur batal bayar gaji / potong kelebihan lewat masukan minus? |
+| K-50 | Bayar tagihan dari Kas Toko (rekening tunai) diterima dengan cara bayar "Transfer" — kunci cara bayar sesuai rekening? Alasan pembatalan kas & kwitansi hanya terbaca di Jejak Audit Admin — tampilkan ke Finance/Manajer? Masukan gaji untuk masa yang proses regulernya sudah diposting tidak pernah terpakai tanpa peringatan — tolak/peringatkan? |
 
 ## 4. Catatan untuk pelatih
 
@@ -253,3 +296,17 @@ dan setiap materi baru dijalankan di layar dengan akun peran, lalu jurnalnya dic
   sahkan masukan satu peserta, minta peserta itu langsung [Hitung gaji], baru peserta berikutnya. Sesudah pelatihan Manajer
   menandai karyawan "Latihan NN · Andi Pratama" keluar (lembur 16 Nov akan masuk proses reguler November).
 - Penggajian kini dibuka di tab Proses Gaji; setoran PPh 21 (F15) di tab **Setoran & Pajak**.
+
+### Tambahan Bagian 5 (situasi khusus & koreksi)
+
+- Bagian 5 diperagakan pelatih dengan akun peran pada peserta peraga tersendiri (uji: 61 S1, 66 S2, 71 S3, 76 S4); satu
+  putaran ±5–7 menit per situasi dan selalu memakai peserta baru.
+- S1: "Finance meninjau nota kredit" hanya untuk nota dari batal item pesanan khusus; nota kredit amandemen terbit saat
+  Manajer setuju. Celah tampilan kecil: di umur piutang nota kredit tampak "terbayar"; daftar faktur pajak baru segar
+  sesudah SO dibuka ulang.
+- S2: PO Rp 101,5 juta hanya untuk memunculkan persetujuan ulang, lalu langsung dibatalkan; eskalasi gudang muncul di Meja
+  Saya Manajer; selisih harga Rp 500.000 di GR/IR jangan dikliring di kelas (akun selisih belum dipetakan, K-26).
+- S3: satu Override RFID cukup untuk dua surat jalan; saat menyelesaikan kasus pengembalian dana pilih BCA Operasional KSC;
+  layar Kasus memuat daftar pelanggan lengkap — tunggu selesai sebelum [Kasus baru].
+- S4: jurnal pembalik dicari dengan nomor jurnal asli ("Pembalik KSC/JE-…: alasan"); saldo akun sementara memuat data contoh
+  Rp 2.000.000 — peserta mereklasifikasi nominalnya sendiri; koreksi gaji susulan pakai komponen "Insentif".
