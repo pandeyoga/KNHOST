@@ -1,0 +1,463 @@
+{
+ "kode": "A3",
+ "modul": "2",
+ "judul": "Retur Penjualan & Retur Pembelian (Nota Kredit · Nota Debit)",
+ "bagian": "A",
+ "tujuan": "Peserta memahami perjalanan barang retur dari pelanggan dan ke pemasok sampai ke buku: siapa memutuskan apa, kapan Nota Kredit dan Nota Debit terbit, ke mana nilainya (potong tagihan, saldo pelanggan, uang kembali, potong hutang), dan bagaimana Finance memeriksanya.",
+ "kapan": "Setiap kali pelanggan mengembalikan barang (komplain mutu, salah kirim) atau perusahaan mengembalikan barang cacat ke pemasok. Finance terlibat saat nilai retur menjadi saldo pelanggan, uang kembali, atau potongan hutang di kontrabon.",
+ "konsep": [
+  "Retur penjualan selalu berangkat dari pesanan yang sudah dikirim (surat jalan) dan diajukan per roll. Persetujuan Manajer di awal hanya berarti 'barang boleh kembali dan diperiksa' — belum ada keputusan uang dan belum ada jurnal.",
+  "Barang yang kembali di-scan terima oleh Gudang, lalu diperiksa QC lewat SPK yang terbit otomatis saat retur disetujui (kondisi, qty aktual, grade). Nilai retur = harga transaksi neto SO asal × qty aktual hasil QC, ditambah PPN dengan rasio PPN SO asal.",
+  "Keputusan uang dibuat Manajer di [[Selesaikan (Pilih Outcome)]] per roll dan menerbitkan SATU Nota Kredit. Pengembalian Dana = uang kembali ke pelanggan (kas keluar dari rekening yang dipilih). Store Credit = nilai menjadi saldo pelanggan yang nanti dipakai Finance untuk memotong tagihan lain. Tukar Barang = saldo khusus untuk pesanan pengganti yang dibuat Admin Sales. Cutloss/Diskon = potongan harga tanpa barang kembali ke stok.",
+  "Aturan 'potong tagihan dulu': bila SO asal belum lunas, nilai Nota Kredit selalu memotong sisa tagihan SO asal lebih dulu (Piutang turun). Hanya sisanya yang menjadi uang kembali atau saldo. Pelanggan yang belum membayar tidak menerima uang tunai.",
+  "Jurnal Nota Kredit membalik penjualan: Pendapatan (D) dan PPN Keluaran (D) di sisi debit; di sisi kredit Piutang (bagian yang memotong tagihan), Kas/Bank (uang kembali), atau Saldo Kredit Pelanggan (saldo). Barang yang kembali ke stok dalam kondisi baik juga membalik HPP: Persediaan (D) / HPP (K) sebesar biaya roll saat dijual.",
+  "Retur pembelian (Nota Debit): Gudang memilih roll dari PO, Manajer menyetujui. Saat disetujui stok keluar, Nota Debit DN-… terbit, dan jurnal Hutang Usaha (D) / Persediaan (K) + PPN Masukan (K) langsung tercatat. Tagihan pemasoknya sendiri belum berubah: Nota Debit baru memotong tagihan saat dipakai sebagai potongan di kontrabon, sehingga Finance membayar nilai bersih (Σ tagihan − Nota Debit)."
+ ],
+ "peran": "Sales · Manajer · Gudang · Kepala Gudang · QC · Admin Sales · Admin · Finance (akun peserta)",
+ "menit": 45,
+ "data_awal": "Kartu Peserta › SO untuk pelunasan (contoh peserta 47: KSC/SO-00077, Rp 3.326.947,50) dan SO bayar sebagian (KSC/SO-00078, Rp 3.346.372,50) milik pelanggan 'Latihan 47 · Toko Kain Peserta 47' — masing-masing satu roll terkirim. SO pertama dilunasi lewat transfer sebelum diretur (seperti F02). Retur pembelian memakai Kartu Peserta › Tagihan kontrabon (contoh peserta 48: KSC/PO-00039 · VB-00038 Rp 1.287.600, satu roll) dan Tagihan dibayar (VB-00037 Rp 1.864.800) pemasok 'Latihan 48 · Pemasok Grey Peserta 48'. Angka di bawah adalah contoh; tiap peserta berbeda.",
+ "alur": [
+  {
+   "peran": "Sales",
+   "label": "Ajukan retur per roll"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui (barang boleh kembali)"
+  },
+  {
+   "peran": "Gudang",
+   "label": "Scan terima barang retur"
+  },
+  {
+   "peran": "QC",
+   "label": "Periksa: kondisi, qty, grade"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Selesaikan per roll → Nota Kredit",
+   "cabang": "Uang kembali · Saldo · Tukar barang · Cutloss/Diskon"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pakai saldo / cek kas keluar"
+  },
+  {
+   "peran": "Gudang · Manajer",
+   "label": "Retur ke pemasok → Nota Debit"
+  },
+  {
+   "peran": "Manajer · Admin",
+   "label": "Kontrabon dipotong Nota Debit"
+  },
+  {
+   "peran": "Finance",
+   "label": "Bayar nilai bersih"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Retur › Retur Pelanggan",
+   "nav_id": "returns-hub",
+   "tab": "returns"
+  },
+  {
+   "menu": "Retur › Retur ke Supplier (Nota Debit)",
+   "nav_id": "returns-hub",
+   "tab": "purchase-returns"
+  },
+  {
+   "menu": "Kualitas › SPK Inspeksi (dibuka dari [[Buka SPK]] di retur)",
+   "nav_id": "quality-hub",
+   "tab": "inspections"
+  },
+  {
+   "menu": "Keuangan › Piutang › Titipan & Saldo Kredit",
+   "nav_id": "ar-aging",
+   "tab": "customer-credit"
+  },
+  {
+   "menu": "Keuangan › Kas & Bank › Transaksi Kas",
+   "nav_id": "cash-bank",
+   "tab": "cash-management"
+  },
+  {
+   "menu": "Keuangan › Hutang › Tagihan · Kontrabon",
+   "nav_id": "accounts-payable",
+   "tab": "contra-bons"
+  },
+  {
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "nav_id": "document-center",
+   "tab": "doc-trace"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Sales",
+   "menu": "Retur › Retur Pelanggan",
+   "aksi": "Klik menu [[Retur]]. Klik [[Buat Retur]].",
+   "isi": "*Akun*: sales@kainnusantara.id · *Kata sandi*: demo12345",
+   "hasil": "Pop-up 'Buat Retur / Barang Sisa' terbuka.",
+   "gambar": "uji/hasil/A3_retur_penjualan/02-A-sales-buat-retur.png"
+  },
+  {
+   "no": 2,
+   "peran": "Sales",
+   "menu": "Pop-up 'Buat Retur / Barang Sisa'",
+   "aksi": "Ketik nomor SO di kotak cari, lalu pilih KSC/SO-00077. Centang roll yang dikembalikan.",
+   "isi": "*Tipe Retur*: Retur (pelanggan kembalikan barang)",
+   "hasil": "Kotak 'Kebijakan' menampilkan *Deadline retur*. Baris roll menampilkan qty terkirim (contoh 119,89 yard) dan isian per roll.",
+   "gambar": "uji/hasil/A3_retur_penjualan/03-A-sales-form-isi.png"
+  },
+  {
+   "no": 3,
+   "peran": "Sales",
+   "menu": "Pop-up 'Buat Retur / Barang Sisa'",
+   "aksi": "Isi alasan dan sebab keluhan. Klik [[Buat Retur]].",
+   "isi": "*Alasan roll ini*: Warna lebih tua dari sampel · *Sebab keluhan*: Warna tidak sesuai · *Catatan*: permintaan pelanggan",
+   "hasil": "Rincian retur SRET-00011 terbuka dengan status *Menunggu Persetujuan*.",
+   "gambar": "uji/hasil/A3_retur_penjualan/05-A-sales-retur-terbit.png"
+  },
+  {
+   "no": 4,
+   "peran": "Manajer",
+   "menu": "Retur › Retur Pelanggan",
+   "aksi": "Cari nomor retur, klik [[Detail →]]. Klik [[Setujui (Manager)]].",
+   "isi": "*Akun*: manager@kainnusantara.id",
+   "hasil": "Status *Disetujui*. Panel 'QC retur · SPK inspeksi per roll' menampilkan SPK KSC/INS-… yang terbit otomatis.",
+   "gambar": "uji/hasil/A3_retur_penjualan/09-A-manajer-disetujui-spk.png"
+  },
+  {
+   "no": 5,
+   "peran": "Sales",
+   "menu": "Rincian retur › panel 'Pengembalian barang'",
+   "aksi": "Pilih cara barang kembali. Klik [[Barang sudah dikirim/dijemput]].",
+   "isi": "*Cara barang kembali*: Diantar sendiri oleh pelanggan",
+   "hasil": "Tahap 'Barang dikirim/dijemput' tercentang.",
+   "gambar": "uji/hasil/A3_retur_penjualan/10-A-sales-barang-dikirim.png"
+  },
+  {
+   "no": 6,
+   "peran": "Gudang",
+   "menu": "Rincian retur › tab Logistik & perjalanan",
+   "aksi": "Isi form scan. Klik [[Catat scan]].",
+   "isi": "*Akun*: warehouse@kainnusantara.id · *Tahap*: Terima di gudang · *Gudang tempat scan*: Jakarta · Gudang Sukacita · *Kode*: nomor roll",
+   "hasil": "Lokasi roll berubah menjadi diterima di Jakarta · Gudang Sukacita.",
+   "gambar": "uji/hasil/A3_retur_penjualan/14-A-gudang-roll-diterima.png"
+  },
+  {
+   "no": 7,
+   "peran": "Kepala Gudang",
+   "menu": "Rincian retur › panel 'QC retur'",
+   "aksi": "Pilih petugas QC. Klik [[Tugaskan]].",
+   "isi": "*Akun*: wh.admin@kainnusantara.id · *Petugas*: Mulyadi",
+   "hasil": "SPK berpetugas Mulyadi.",
+   "gambar": "uji/hasil/A3_retur_penjualan/16-A-kagud-spk-ditugaskan.png"
+  },
+  {
+   "no": 8,
+   "peran": "QC",
+   "menu": "Rincian retur › [[Buka SPK]] (Kualitas › SPK Inspeksi)",
+   "aksi": "Klik [[Buka SPK]]. Klik [[Mulai periksa]].",
+   "isi": "*Akun*: qc@kainnusantara.id",
+   "hasil": "SPK berstatus Sedang diperiksa; baris roll punya tombol [[QC 4-point]].",
+   "gambar": "uji/hasil/A3_retur_penjualan/18-A-qc-mulai.png"
+  },
+  {
+   "no": 9,
+   "peran": "QC",
+   "menu": "Pop-up 'QC · 4-point & ukur'",
+   "aksi": "Klik [[QC 4-point]] pada baris roll. Isi hasil, lalu klik [[Simpan hasil]].",
+   "isi": "*Grade hasil QC*: A · *Kondisi hasil QC*: Baik · *Qty aktual hasil ukur*: sama dengan qty klaim",
+   "hasil": "Kotak oranye menampilkan klaim pelanggan. Hasil roll tersimpan.",
+   "gambar": "uji/hasil/A3_retur_penjualan/20-A-qc-form-hasil.png"
+  },
+  {
+   "no": 10,
+   "peran": "QC",
+   "menu": "Kualitas › SPK Inspeksi",
+   "aksi": "Pilih keputusan akhir. Klik [[Tutup SPK]].",
+   "isi": "*Keputusan akhir*: Diterima",
+   "hasil": "SPK selesai. Retur berstatus *Siap diselesaikan*.",
+   "gambar": "uji/hasil/A3_retur_penjualan/23-A-qc-spk-selesai.png"
+  },
+  {
+   "no": 11,
+   "peran": "Manajer",
+   "menu": "Rincian retur",
+   "aksi": "Klik [[Selesaikan (Pilih Outcome)]]. Pada baris roll pilih outcome.",
+   "isi": "*Outcome*: Store Credit",
+   "hasil": "Pop-up 'Selesaikan Retur … — per roll' menampilkan panel nilai Nota Kredit.",
+   "gambar": "uji/hasil/A3_retur_penjualan/27-A-manajer-selesaikan.png"
+  },
+  {
+   "no": 12,
+   "peran": "Manajer",
+   "menu": "Pop-up 'Selesaikan Retur — per roll'",
+   "aksi": "Buka 'Lihat jurnal yang akan terbentuk'. Isi bukti keputusan.",
+   "isi": "*Bukti keputusan*: ACC Manajer: pelanggan minta nilai retur dijadikan saldo",
+   "hasil": "Nilai Nota Kredit Rp 3.326.948 (DPP Rp 2.997.250 + PPN Rp 329.698). 'Ke mana nilainya': Jadi saldo pelanggan Rp 3.326.948; KSC/SO-00077 sudah lunas — tidak ada tagihan yang dipotong.",
+   "gambar": "uji/hasil/A3_retur_penjualan/28-A-manajer-nilai-jurnal.png"
+  },
+  {
+   "no": 13,
+   "peran": "Manajer",
+   "menu": "Pop-up 'Selesaikan Retur — per roll'",
+   "aksi": "Klik [[Simpan penyelesaian (1 roll)]].",
+   "isi": "",
+   "hasil": "Retur *Selesai: Store Credit*. Panel 'Nota kredit' menampilkan CN-00007 berlencana *Jurnal Terbit*.",
+   "gambar": "uji/hasil/A3_retur_penjualan/31-A-manajer-nota-kredit.png"
+  },
+  {
+   "no": 14,
+   "peran": "Finance",
+   "menu": "Retur › Retur Pelanggan › rincian retur",
+   "aksi": "Buka retur itu. Klik lencana [[Jurnal Terbit]] di panel 'Nota kredit'.",
+   "isi": "*Akun*: finance.latihNN@kainnusantara.id",
+   "hasil": "Pop-up jurnal KSC/JE-00384: Pendapatan Penjualan dan PPN Keluaran di Debit, Saldo Kredit Pelanggan di Kredit, Persediaan (D) / HPP (K). Total Debit = Total Kredit.",
+   "gambar": "uji/hasil/A3_retur_penjualan/35-A-finance-jurnal-nota-kredit.png"
+  },
+  {
+   "no": 15,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Titipan & Saldo Kredit",
+   "aksi": "Cari pelanggan 'Latihan NN' dan buka barisnya. Klik [[Pakai saldo]].",
+   "isi": "",
+   "hasil": "Pop-up 'Pakai Store Credit' menampilkan *Saldo tersedia* dan pesanan piutang terbuka.",
+   "gambar": "uji/hasil/A3_retur_penjualan/38-A-finance-pakai-saldo.png"
+  },
+  {
+   "no": 16,
+   "peran": "Finance",
+   "menu": "Pop-up 'Pakai Store Credit'",
+   "aksi": "Pilih pesanan KSC/SO-00078 dan klik [[Maks]]. Klik [[Pakai Saldo]].",
+   "isi": "*Pesanan piutang tujuan*: KSC/SO-00078 · *Jumlah dipakai*: [[Maks]]",
+   "hasil": "Pesan hijau 'Berhasil dipakai Rp 3.326.948 (SCR-…)'.",
+   "gambar": "uji/hasil/A3_retur_penjualan/40-A-finance-saldo-terpakai.png"
+  },
+  {
+   "no": 17,
+   "peran": "Sales → QC",
+   "menu": "Retur › Retur Pelanggan",
+   "aksi": "Ulangi langkah 1–10 untuk retur kedua atas KSC/SO-00078.",
+   "isi": "*Alasan roll ini*: Kain berlubang di beberapa titik",
+   "hasil": "Retur SRET-00012 berstatus *Siap diselesaikan*.",
+   "gambar": "uji/hasil/A3_retur_penjualan/63-B-qc-spk-selesai.png"
+  },
+  {
+   "no": 18,
+   "peran": "Manajer",
+   "menu": "Pop-up 'Selesaikan Retur — per roll'",
+   "aksi": "Pilih outcome dan isi bukti keputusan. Baca panel nilai.",
+   "isi": "*Outcome*: Pengembalian Dana · *Rekening pengembalian dana*: BCA Operasional KSC (terisi otomatis) · *Bukti keputusan*: ACC Manajer: refund via transfer",
+   "hasil": "'Ke mana nilainya': Potong sisa tagihan KSC/SO-00078 Rp 19.425 · Refund tunai ke pelanggan Rp 3.326.948; total Nota Kredit Rp 3.346.373.",
+   "gambar": "uji/hasil/A3_retur_penjualan/65-B-manajer-nilai-jurnal.png"
+  },
+  {
+   "no": 19,
+   "peran": "Manajer",
+   "menu": "Pop-up 'Selesaikan Retur — per roll'",
+   "aksi": "Klik [[Simpan penyelesaian (1 roll)]].",
+   "isi": "",
+   "hasil": "Retur *Selesai: Pengembalian Dana*; Nota Kredit CN-00008 berlencana *Jurnal Terbit*.",
+   "gambar": "uji/hasil/A3_retur_penjualan/68-B-manajer-nota-kredit.png"
+  },
+  {
+   "no": 20,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Transaksi Kas",
+   "aksi": "Klik tab [[Transaksi Kas]]. Ketik nomor transaksi di kotak cari.",
+   "isi": "*Cari*: KSC/CASH-00050",
+   "hasil": "Baris 'Refund tunai retur SRET-00012/P1 → Latihan NN …', kategori Refund Retur Jual, Kas Besar Sukacita, −Rp 3.326.948.",
+   "gambar": "uji/hasil/A3_retur_penjualan/70-B-finance-kas-refund.png"
+  },
+  {
+   "no": 21,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "aksi": "Ketik KSC/SO-00077. Klik hasilnya.",
+   "isi": "",
+   "hasil": "Rantai dokumen memuat KSC/SO-00077, surat jalan, kwitansi, retur SRET-00011, SPK QC, dan Nota Kredit CN-00007.",
+   "gambar": "uji/hasil/A3_retur_penjualan/72-C-jejak-so-a.png"
+  },
+  {
+   "no": 22,
+   "peran": "Manajer",
+   "menu": "Pop-up 'Selesaikan Retur — per roll' (variasi tukar barang)",
+   "aksi": "Pada retur lain yang sudah QC, pilih outcome Tukar Barang. Klik [[Simpan penyelesaian (1 roll)]].",
+   "isi": "*Outcome*: Tukar Barang · *Bukti keputusan*: ACC Manajer: tukar barang sama artikel & warna",
+   "hasil": "'Ke mana nilainya': Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.475.133. Retur SRET-00014 *Selesai: Store Credit*.",
+   "gambar": "uji/hasil/A3_retur_tukar/25-T-manajer-nilai-jurnal.png"
+  },
+  {
+   "no": 23,
+   "peran": "Admin Sales",
+   "menu": "Rincian retur › tab Kebijakan & keputusan › panel 'Pesanan pengganti'",
+   "aksi": "Periksa *Pengganti (yd)*. Klik [[Buat pesanan pengganti]].",
+   "isi": "*Akun*: salesadmin@kainnusantara.id · *Pengganti (yd)*: sama dengan kewajiban (qty aktual QC)",
+   "hasil": "Ringkasan: 'Pesanan pengganti KSC/SO-00125 · Nilai pengganti Rp 3.475.133 · saldo retur dipakai Rp 3.475.133 · ditagih Rp 0'.",
+   "gambar": "uji/hasil/A3_retur_tukar/32-T-adminsales-pengganti-terbit.png"
+  },
+  {
+   "no": 24,
+   "peran": "Gudang",
+   "menu": "Retur › Retur ke Supplier (Nota Debit)",
+   "aksi": "Klik tab [[Retur ke Supplier (Nota Debit)]]. Klik [[Buat Retur]].",
+   "isi": "*Akun*: warehouse@kainnusantara.id",
+   "hasil": "Pop-up 'Buat Retur ke Supplier' terbuka.",
+   "gambar": "uji/hasil/A3_retur_pembelian/03-gudang-buat-retur.png"
+  },
+  {
+   "no": 25,
+   "peran": "Gudang",
+   "menu": "Pop-up 'Buat Retur ke Supplier'",
+   "aksi": "Pilih pemasok dan PO. Klik [[Pilih roll]], centang roll, klik [[Pakai]].",
+   "isi": "*Supplier*: Latihan NN · Pemasok Grey Peserta NN · *PO Referensi*: KSC/PO-00039",
+   "hasil": "Baris barang terisi qty = panjang roll dan harga = harga PO; isian per roll muncul.",
+   "gambar": "uji/hasil/A3_retur_pembelian/05-gudang-roll-dipilih.png"
+  },
+  {
+   "no": 26,
+   "peran": "Gudang",
+   "menu": "Pop-up 'Buat Retur ke Supplier'",
+   "aksi": "Isi alasan roll dan ringkasan. Klik [[Buat Retur]].",
+   "isi": "*Alasan roll ini*: Warna belang di sepanjang roll · *Ringkasan untuk supplier*: 1 roll cacat warna dari KSC/PO-00039",
+   "hasil": "Pesan hijau 'Retur PRET-00004 dibuat (menunggu persetujuan)'.",
+   "gambar": "uji/hasil/A3_retur_pembelian/08-gudang-retur-terbit.png"
+  },
+  {
+   "no": 27,
+   "peran": "Manajer",
+   "menu": "Retur › Retur ke Supplier (Nota Debit)",
+   "aksi": "Pada baris retur klik [[Setujui]]. Klik [[Setujui retur]].",
+   "isi": "*Akun*: manager@kainnusantara.id",
+   "hasil": "Pesan 'Retur PRET-00004 disetujui. Nota debit: DN-00004'.",
+   "gambar": "uji/hasil/A3_retur_pembelian/11-manajer-nota-debit-terbit.png"
+  },
+  {
+   "no": 28,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Tagihan",
+   "aksi": "Ketik VB-00038 di kotak cari.",
+   "isi": "*Akun*: finance.latihNN@kainnusantara.id",
+   "hasil": "Tagihan VB-00038 masih Rp 1.287.600, status Terposting — Nota Debit belum memotong tagihan.",
+   "gambar": "uji/hasil/A3_retur_pembelian/12-finance-tagihan-belum-terpotong.png"
+  },
+  {
+   "no": 29,
+   "peran": "Manajer",
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "aksi": "Klik [[Kontrabon baru]], pilih pemasok, centang kedua tagihan. Centang *Ajukan langsung*, klik [[Terbitkan kontrabon]].",
+   "isi": "*Supplier*: pemasok peserta · *Faktur*: VB-00037 dan VB-00038",
+   "hasil": "Kontrabon KSC/CB-00008 terbit berisi 2 faktur, status Diajukan.",
+   "gambar": "uji/hasil/A3_retur_pembelian/15-manajer-terbitkan-kontrabon.png"
+  },
+  {
+   "no": 30,
+   "peran": "Manajer",
+   "menu": "Rincian kontrabon › Potongan",
+   "aksi": "Klik [[Tambah potongan]] dan pilih Nota Debit. Klik [[Simpan potongan]].",
+   "isi": "*Jenis*: Retur beli (nota debit) · *Dokumen*: Nota debit DN-00004 · *Nominal*: biarkan",
+   "hasil": "Potongan Rp 1.287.600 tercatat. Nilai bersih Rp 1.864.800.",
+   "gambar": "uji/hasil/A3_retur_pembelian/19-manajer-kontrabon-dengan-potongan.png"
+  },
+  {
+   "no": 31,
+   "peran": "Manajer · Admin",
+   "menu": "Rincian kontrabon",
+   "aksi": "Manajer klik [[Verifikasi 3-way match]]. Admin klik [[Setujui kontrabon]], lalu Manajer [[Jadwalkan pembayaran]].",
+   "isi": "*Rekening rencana*: BCA Operasional KSC",
+   "hasil": "Status berurutan: Terverifikasi → Disetujui → Dijadwalkan bayar.",
+   "gambar": "uji/hasil/A3_retur_pembelian/24-manajer-jadwalkan.png"
+  },
+  {
+   "no": 32,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "aksi": "Buka kontrabon, klik [[Catat pembayaran]]. Klik [[Bayar]], lalu [[Ya, bayar]].",
+   "isi": "",
+   "hasil": "*Sisa* di form = Rp 1.864.800. Sesudah dibayar status *Sudah dibayar*.",
+   "gambar": "uji/hasil/A3_retur_pembelian/26-finance-form-bayar.png"
+  },
+  {
+   "no": 33,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "aksi": "Ketik KSC/PO-00039. Klik hasilnya.",
+   "isi": "",
+   "hasil": "Rantai dokumen memuat KSC/PO-00039, tagihan VB-00038, retur PRET-00004, dan kontrabon KSC/CB-00008.",
+   "gambar": "uji/hasil/A3_retur_pembelian/29-jejak-po.png"
+  }
+ ],
+ "jurnal_per_tahap": [
+  {
+   "tahap": "Penjualan awal — surat jalan terkirim",
+   "dokumen": "Surat jalan (SJ)",
+   "jurnal": "1-1200 Piutang Usaha (D) · 4-1000 Pendapatan Penjualan (K) · 2-1200 PPN Keluaran (K); 5-1000 HPP (D) · 1-1300 Persediaan Barang (K)"
+  },
+  {
+   "tahap": "Retur diajukan, disetujui, barang diterima gudang, QC",
+   "dokumen": "Retur SRET-… · SPK QC",
+   "jurnal": "Tidak ada jurnal — barang masuk karantina retur tanpa nilai sampai diselesaikan"
+  },
+  {
+   "tahap": "Selesai: Store Credit / Tukar Barang (SO asal lunas)",
+   "dokumen": "Nota Kredit CN-…",
+   "jurnal": "4-1000 (D) DPP · 2-1200 (D) PPN / 2-1450 Saldo Kredit Pelanggan (K); 1-1300 Persediaan (D) / 5-1000 HPP (K)"
+  },
+  {
+   "tahap": "Finance memakai saldo untuk tagihan lain / pesanan pengganti",
+   "dokumen": "Pemakaian saldo SCR-…",
+   "jurnal": "2-1450 Saldo Kredit Pelanggan (D) / 1-1200 Piutang Usaha (K)"
+  },
+  {
+   "tahap": "Selesai: Pengembalian Dana",
+   "dokumen": "Nota Kredit CN-… + transaksi kas keluar",
+   "jurnal": "4-1000 (D) · 2-1200 (D) / 1-1200 Piutang (K, bila SO asal masih bersisa) · 1-1100 Kas Besar / Bank (K, uang kembali); 1-1300 (D) / 5-1000 (K)"
+  },
+  {
+   "tahap": "Retur ke pemasok disetujui",
+   "dokumen": "Nota Debit DN-…",
+   "jurnal": "2-1100 Hutang Usaha (D) DPP + PPN / 1-1300 Persediaan Barang (K) DPP · 1-1500 PPN Masukan (K) PPN"
+  },
+  {
+   "tahap": "Nota Debit dipotong di kontrabon",
+   "dokumen": "Kontrabon KSC/CB-…",
+   "jurnal": "Tidak ada jurnal baru — pelunasan non-kas atas tagihan (jurnalnya sudah ada di Nota Debit)"
+  },
+  {
+   "tahap": "Finance membayar kontrabon",
+   "dokumen": "Pembayaran pemasok (kas keluar)",
+   "jurnal": "2-1100 Hutang Usaha (D) / 1-1100 Kas Besar / Bank (K) sebesar nilai bersih"
+  }
+ ],
+ "titik_kontrol": [
+  "Retur hanya bisa dibuat dari barang yang benar-benar terkirim lewat surat jalan, per roll, dan dalam batas waktu kebijakan retur (tampil 'Deadline retur' di form).",
+  "Pembuat retur tidak boleh menyetujui returnya sendiri (Sales mengajukan, Manajer menyetujui); kontrabon disetujui orang kedua (Admin).",
+  "QC wajib selesai sebelum retur bisa diselesaikan; roll yang belum di-scan terima gudang belum bisa diperiksa.",
+  "Pratinjau 'Ke mana nilainya' dan 'Lihat jurnal yang akan terbentuk' wajib dibaca sebelum [[Simpan penyelesaian]] — angkanya sama dengan Nota Kredit yang terbit.",
+  "Nota Debit hanya bisa dipotong sekali; potongan di kontrabon = nilai Nota Debit termasuk PPN.",
+  "Finance mencocokkan saldo pelanggan (Titipan & Saldo Kredit), kas keluar refund (Transaksi Kas), dan sisa tagihan pemasok sesudah kontrabon (Hutang › Tagihan)."
+ ],
+ "cek_buku": [
+  "Nota Kredit Store Credit (contoh CN-00007, jurnal KSC/JE-00384): 4-1000 Pendapatan Penjualan (D) Rp 2.997.250 · 2-1200 PPN Keluaran (D) Rp 329.697,50 / 2-1450 Saldo Kredit Pelanggan (K) Rp 3.326.947,50; 1-1300 Persediaan Barang (D) Rp 2.158.020 / 5-1000 HPP (K) Rp 2.158.020 — seimbang.",
+  "Pemakaian saldo (SCR-…): 2-1450 (D) / 1-1200 Piutang Usaha (K) Rp 3.326.947,50; sisa tagihan KSC/SO-00078 turun sebesar itu.",
+  "Nota Kredit Pengembalian Dana (contoh CN-00008, jurnal KSC/JE-00430): 4-1000 (D) Rp 3.014.750 · 2-1200 (D) Rp 331.622,50 / 1-1200 Piutang (K) Rp 19.425 · 1-1100 Kas Besar / Bank (K) Rp 3.326.947,50; 1-1300 (D) / 5-1000 (K) Rp 2.170.620. Transaksi kas keluar KSC/CASH-00050 Rp 3.326.947,50 di BCA Operasional KSC.",
+  "Nota Debit (contoh DN-00004, jurnal KSC/JE-00491): 2-1100 Hutang Usaha (D) Rp 1.287.600 / 1-1300 Persediaan Barang (K) Rp 1.160.000 · 1-1500 PPN Masukan (K) Rp 127.600.",
+  "Pembayaran kontrabon: 2-1100 Hutang Usaha (D) / 1-1100 Kas Besar / Bank (K) Rp 1.864.800. Total debit Hutang (Nota Debit + bayar) = total kedua tagihan Rp 3.152.400 → hutang pemasok nol."
+ ],
+ "kesalahan_umum": [
+  "Mengira persetujuan Manajer di awal sudah berarti uang kembali — keputusan uang baru terjadi di [[Selesaikan (Pilih Outcome)]] sesudah QC.",
+  "Memilih Pengembalian Dana untuk SO yang belum lunas lalu menunggu kas keluar penuh — sistem memotong sisa tagihan SO asal dulu; uang kembali hanya sisanya.",
+  "QC mengisi kondisi 'Rusak' padahal barang masih layak jual — nilai persediaan (HPP) tidak dibalik dan barang masuk stok tanpa nilai.",
+  "Membayar tagihan pemasok yang diretur secara penuh di luar kontrabon — Nota Debit tetap 'belum dipotong' dan pemasok menerima uang lebih.",
+  "Lupa memakai saldo pelanggan saat menagih SO berikutnya — saldo menumpuk di 2-1450 sementara piutang tetap ditagih."
+ ],
+ "catatan_pelatih": "Peragakan di kelas dengan akun pelatih (Sales, Manajer, Gudang, QC); peserta mengerjakan langkah Finance (Jurnal Terbit, Pakai saldo, cek kas keluar, Bayar kontrabon) dengan akunnya sendiri. Urutan wajib: SO asal dilunasi dulu (supaya Store Credit benar-benar menjadi saldo), retur pertama selesai dan saldonya dipakai sebelum retur kedua — bila SO kedua masih bersisa, Pengembalian Dana memotong sisa itu dulu. Uang kembali tercatat sebagai kas keluar seketika saat Manajer menyimpan penyelesaian; Finance tidak punya langkah 'bayar' tersendiri (lihat pertanyaan pemilik). Akun Finance hanya melihat Retur Pelanggan (tanpa tombol buat/setujui) dan tidak melihat daftar Retur ke Supplier — Nota Debit baru terlihat oleh Finance di rincian kontrabon (potongan). Perbaikan 17 Nov: potongan Nota Debit di kontrabon kini sebesar DPP + PPN (dulu DPP saja, PPN barang retur ikut dibayar ke pemasok); [[Maks]]/[[Pakai Saldo]] memakai nilai bersen (dulu dibulatkan ke rupiah sehingga saldo Rp …,50 ditolak); panel 'Pesanan pengganti' kini tampil untuk Tukar Barang yang diputus per roll (dulu tersembunyi karena tipe retur tetap 'Retur'). Tukar barang diuji terpisah (peserta 48, retur SRET-00014): Manajer memilih outcome Tukar Barang → Admin Sales (salesadmin@) membuka tab [[Kebijakan & keputusan]] › panel 'Pesanan pengganti' → [[Buat pesanan pengganti]] → KSC/SO-00125 (nilai Rp 3.475.132,50, saldo retur dipakai Rp 3.475.132,50, ditagih Rp 0); jurnal saldo dipakai 2-1450 (D) / 1-1200 (K). Pengiriman pesanan pengganti mengikuti A1.",
+ "uji": {
+  "berkas": "uji/e2e/A3_retur_penjualan.js · uji/e2e/A3_retur_pembelian.js · uji/e2e/A3_retur_tukar.js",
+  "peserta_uji": "47 (penjualan) · 48 (pembelian) · 48 (tukar barang)"
+ }
+}

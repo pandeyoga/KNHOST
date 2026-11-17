@@ -60,13 +60,17 @@ export function RedeemModal({ row, onClose, onDone }) {
   }, [row.customer_id]);
 
   const target = orders.find((o) => o.order_id === orderId);
-  const maxRedeem = Math.min(row.balance || 0, target?.outstanding || 0);
+  // A3 retur (pelatihan 18 Nov) — nilai saldo & tagihan bisa bersen (Nota Kredit/SO Rp …,50). Dulu dibulatkan ke rupiah
+  // utuh: [Maks] pada saldo Rp 3.386.332,50 mengisi 3.386.333 → server menolak (melebihi saldo/sisa tagihan), dan Rp 0,50
+  // tidak pernah bisa dipakai. Kini dibulatkan ke sen.
+  const sen = (v) => Math.round((Number(v) || 0) * 100) / 100;
+  const maxRedeem = sen(Math.min(row.balance || 0, target?.outstanding || 0));
 
   const submit = async () => {
     setErr(""); setOk("");
-    const amt = Math.round(parseFloat(amount || "0"));
+    const amt = sen(parseFloat(amount || "0"));
     if (!amt || amt <= 0) { setErr("Masukkan jumlah > 0."); return; }
-    if (amt > (row.balance || 0) + 0.5) { setErr("Melebihi saldo store credit."); return; }
+    if (amt > sen(row.balance) + 0.001) { setErr("Melebihi saldo store credit."); return; }
     setBusy(true);
     try {
       const body = { customer_id: row.customer_id, entity_id: row.entity_id || undefined, amount: amt };
@@ -107,7 +111,7 @@ export function RedeemModal({ row, onClose, onDone }) {
           <label className="text-[11px] font-semibold text-[#6B6B73]">Jumlah dipakai</label>
           <div className="flex items-center gap-2 mt-1">
             <div className="w-full"><MoneyInput testId="sc-redeem-amount" className="field w-full" placeholder="0" value={amount} onChange={setAmount} /></div>
-            <button data-testid="sc-redeem-max" type="button" className="secondary-button py-1.5 px-2 text-[11px] whitespace-nowrap" onClick={() => setAmount(String(Math.round(maxRedeem)))} disabled={maxRedeem <= 0}>Maks</button>
+            <button data-testid="sc-redeem-max" type="button" className="secondary-button py-1.5 px-2 text-[11px] whitespace-nowrap" onClick={() => setAmount(String(maxRedeem))} disabled={maxRedeem <= 0}>Maks</button>
           </div>
           {target && <p className="text-[10.5px] text-[#9A9BA3] mt-1">Maks utk pesanan ini: {formatCurrency(maxRedeem)}</p>}
         </div>

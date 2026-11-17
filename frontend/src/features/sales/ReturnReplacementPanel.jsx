@@ -18,8 +18,14 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
     setPv(r.data);
     setQty(Object.fromEntries(r.data.obligation.map((o) => [o.product_id, o.qty_yard ?? ""])));
   }).catch(() => setPv(null)), [ret.id]);
-  useEffect(() => { if (ret.return_type === "penggantian") load(); }, [load, ret.return_type, ret.updated_at]);
-  if (ret.return_type !== "penggantian" || !pv) return null;
+  // A3 retur (pelatihan 18 Nov) — penyelesaian PER ROLL "Tukar Barang" tidak mengubah tipe retur (tetap "retur"), tetapi
+  // server menandai `exchange_pending` dan menerima pesanan pengganti (`return_replacement_service.create`, jalur per roll).
+  // Dulu panel hanya tampil untuk tipe "penggantian" → Admin Sales tidak punya tombol [Buat pesanan pengganti] walau
+  // antrean Meja Admin Sales "Retur tukar — buat pesanan pengganti" menunjuk retur ini.
+  const perRoll = Object.keys(ret.roll_outcomes || {}).length > 0;
+  const isExchange = ret.return_type === "penggantian" || !!ret.exchange_pending || !!ret.replacement_order_id;
+  useEffect(() => { if (isExchange) load(); }, [load, isExchange, ret.updated_at]);
+  if (!isExchange || !pv) return null;
   const s = pv.summary || {};
   const create = async () => {
     setErr(""); setBusy(true);
@@ -29,7 +35,8 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
       load(); onChanged?.();
     } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
   };
-  const canCreate = !pv.order_id && ret.status === "credit_settled" && canCurrent("order", "create");
+  const canCreate = (perRoll ? !!ret.exchange_pending : (!pv.order_id && ret.status === "credit_settled"))
+    && canCurrent("order", "create");
   return (
     <div className="mb-3 rounded-lg border border-[#EDEEF1] bg-white px-3 py-2.5 space-y-2 text-xs" data-testid="return-replacement-panel">
       <div className="flex items-center gap-2 text-sm font-semibold"><Repeat size={14} className="text-[#0058CC]" /> Pesanan pengganti
@@ -47,7 +54,7 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
                                     onChange={(e) => setQty({ ...qty, [o.product_id]: e.target.value })} /> : "—"}</td>
           </tr>))}</tbody>
       </table>
-      {pv.order_id ? (
+      {pv.order_id && (
         <div className="rounded-md bg-[#F2F7FF] p-2 space-y-0.5" data-testid="replacement-summary">
           <p>Pesanan pengganti: <button type="button" className="font-semibold text-[#0058CC]" data-testid="replacement-order-link"
              onClick={() => onNavigate?.("orders")}>{pv.order_number}</button></p>
@@ -55,9 +62,12 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
           {s.credit_error && <p className="text-[#B45309]">Saldo belum terpakai otomatis: {s.credit_error}</p>}
           <p className="text-[#6B6B73]">{s.rule}</p>
         </div>
-      ) : (
+      )}
+      {(!pv.order_id || canCreate) && (
         <>
-          {ret.status !== "credit_settled" && <p className="text-[#8A4B08]" data-testid="replacement-hint">Selesaikan retur sebagai Store Credit setelah QC; nilainya menjadi saldo untuk pesanan pengganti.</p>}
+          {!canCreate && !pv.order_id && <p className="text-[#8A4B08]" data-testid="replacement-hint">{perRoll
+            ? "Selesaikan roll sebagai Tukar Barang setelah QC; nilainya menjadi saldo untuk pesanan pengganti."
+            : "Selesaikan retur sebagai Store Credit setelah QC; nilainya menjadi saldo untuk pesanan pengganti."}</p>}
           {canCreate && <button type="button" data-testid="replacement-create" disabled={busy} onClick={create} className="primary-button text-xs">Buat pesanan pengganti</button>}
         </>
       )}

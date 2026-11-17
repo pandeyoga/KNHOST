@@ -423,7 +423,10 @@ async def available_credits(supplier_id: str, entity_id: str,
     async for r in db.purchase_returns.find(
             {"supplier_id": supplier_id, "status": "approved",
              "supplier_outcome": "ap_credit", **ent_q}, {"_id": 0}):
-        total = _round(r.get("total_amount"))
+        # A3 retur (pelatihan 18 Nov) — nilai nota debit = DPP + PPN (`grand_total`), sama dengan yang didebit jurnal
+        # retur beli ke Hutang Usaha (KN-B20/IX-16). Dulu `total_amount` (DPP saja): kontrabon membayar PPN barang yang
+        # sudah dikembalikan dan akun hutang pemasok tersisa debit sebesar PPN itu. Retur lama tanpa `grand_total` = DPP.
+        total = _round(r.get("grand_total") if r.get("grand_total") not in (None, "") else r.get("total_amount"))
         spent = _round((used.get(r["id"]) or {}).get("amount"))
         if total - spent <= EPS:
             continue

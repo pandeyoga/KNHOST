@@ -1,0 +1,125 @@
+{
+  "code": "A3_retur_tukar",
+  "title": "A3 Retur penjualan: tukar barang sampai pesanan pengganti",
+  "ok": true,
+  "at": "2026-11-17T10:52:02.705Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": "0",
+      "role": "Persiapan",
+      "action": "Pelanggan melunasi KSC/SO-00079 lewat transfer (kwitansi dicatat akun Finance peserta lewat API — dilatih di F02)",
+      "expect": "KSC/SO-00079 lunas",
+      "ok": true,
+      "ms": 2074,
+      "info": "KSC/SO-00079 dilunasi Rp 3.475.133"
+    },
+    {
+      "no": "T1",
+      "role": "Sales",
+      "action": "Masuk sebagai sales@ → menu [[Retur]] → tab [[Retur Pelanggan]] → [[Buat Retur]]",
+      "expect": "Pop-up 'Buat Retur / Barang Sisa' terbuka",
+      "ok": true,
+      "ms": 15882,
+      "info": ""
+    },
+    {
+      "no": "T2",
+      "role": "Sales",
+      "action": "Cari & pilih pesanan KSC/SO-00079; centang roll yang dikembalikan; isi alasan & sebab keluhan → [[Buat Retur]]",
+      "expect": "Retur SRET-… terbuka dengan status 'Menunggu Persetujuan'",
+      "ok": true,
+      "ms": 6187,
+      "info": "SRET-00014 · 125.23 yard · roll RL-36385"
+    },
+    {
+      "no": "T3",
+      "role": "Manajer",
+      "action": "Masuk sebagai manager@ → Retur › Retur Pelanggan → cari nomor retur → [[Detail →]] → [[Setujui (Manager)]]",
+      "expect": "Status 'Disetujui'; panel 'QC retur · SPK inspeksi per roll' menampilkan SPK KSC/INS-… (lahir otomatis)",
+      "ok": true,
+      "ms": 13518,
+      "info": "SRET-00014 disetujui · SPK KSC/INS-00064"
+    },
+    {
+      "no": "T4",
+      "role": "Sales",
+      "action": "sales@ buka retur → panel 'Pengembalian barang': *Cara barang kembali* = Diantar sendiri oleh pelanggan → [[Barang sudah dikirim/dijemput]]",
+      "expect": "Tahap 'Barang dikirim/dijemput' tercentang; menunggu scan terima gudang",
+      "ok": true,
+      "ms": 26911,
+      "info": ""
+    },
+    {
+      "no": "T5",
+      "role": "Gudang",
+      "action": "warehouse@ buka retur → tab [[Logistik & perjalanan]] → *Tahap* Terima di gudang, *Gudang* Jakarta · Gudang Sukacita, ketik nomor roll → [[Catat scan]]",
+      "expect": "Lokasi roll: diterima di Jakarta · Gudang Sukacita; panel QC: 'Roll diterima gudang 1/1'",
+      "ok": true,
+      "ms": 12120,
+      "info": "roll RL-36385 diterima"
+    },
+    {
+      "no": "T6",
+      "role": "Kepala Gudang",
+      "action": "wh.admin@ buka retur → panel 'QC retur · SPK inspeksi per roll' → pilih petugas QC (Mulyadi) → [[Tugaskan]]",
+      "expect": "Petugas SPK: Mulyadi; status SPK Ditugaskan",
+      "ok": true,
+      "ms": 10707,
+      "info": ""
+    },
+    {
+      "no": "T7",
+      "role": "QC",
+      "action": "qc@ buka retur → [[Buka SPK]] → [[Mulai periksa]] → baris roll [[QC 4-point]]: *Kondisi* Baik, *Qty aktual* = qty klaim, *Grade* A → [[Simpan hasil]] → *Keputusan akhir* Diterima → [[Tutup SPK]]",
+      "expect": "SPK selesai; retur berstatus 'Siap diselesaikan' (hasil per roll: grade A, kondisi Baik)",
+      "ok": true,
+      "ms": 19968,
+      "info": "hasil: [{\"grade\":\"A\",\"kondisi\":\"ok\",\"qty\":125.23}]"
+    },
+    {
+      "no": "T8",
+      "role": "Manajer",
+      "action": "manager@ buka retur → [[Selesaikan (Pilih Outcome)]] → roll RL-36385: *Outcome* Tukar Barang → buka 'Lihat jurnal yang akan terbentuk' → isi *Bukti keputusan* → [[Simpan penyelesaian (1 roll)]]",
+      "expect": "Retur 'Selesai: Store Credit' bertipe Penggantian; Nota Kredit CN-…; pratinjau: 'Jadi saldo pelanggan (termasuk saldo tukar barang)'",
+      "ok": true,
+      "ms": 17309,
+      "info": "pratinjau: Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.475.133 KSC/SO-00079 sudah lunas — tidak ada tagihan yang dipotong. · CN-00010"
+    },
+    {
+      "no": "T9",
+      "role": "Sistem",
+      "action": "Cek buku: Nota Kredit, jurnal retur (pembalikan penjualan, PPN keluaran, persediaan kembali), tagihan & saldo",
+      "expect": "Jurnal sama dengan Store Credit: 4-1000 (D) · 2-1200 (D) / 2-1450 Saldo Kredit Pelanggan (K); 1-1300 (D) / 5-1000 (K)",
+      "ok": true,
+      "ms": 2211,
+      "info": "CN-00010 DPP Rp 3.130.750 + PPN Rp 344.383 = Rp 3.475.132,5 · HPP dibalik Rp 2.254.140 · potong tagihan Rp 0 · refund Rp 0 · saldo Rp 3.475.132,5 · KSC/JE-00492 seimbang D=K=5729273 [4-1000 Pendapatan Penjualan D 3130750 · 2-1200 PPN Keluaran D 344383 · 2-1450 Saldo Kredit Pelanggan (Store Credit) K 3475133 · 1-1300 Persediaan Barang D 2254140 · 5-1000 Harga Pokok Penjualan K 2254140]"
+    },
+    {
+      "no": "T10",
+      "role": "Admin Sales",
+      "action": "salesadmin@ → Retur › Retur Pelanggan → retur ini → tab [[Kebijakan & keputusan]] → panel 'Pesanan pengganti': *Pengganti (yd)* = kewajiban → [[Buat pesanan pengganti]]",
+      "expect": "Ringkasan: 'Pesanan pengganti KSC/SO-… · Nilai pengganti Rp … · saldo retur dipakai Rp … · ditagih Rp 0'",
+      "ok": true,
+      "ms": 13885,
+      "info": "Pesanan pengganti: KSC/SO-00125 Nilai pengganti Rp 3.475.133 · saldo retur dipakai Rp 3.475.133 · ditagih Rp 0 · sisa saldo customer Rp 0 Lebih → selisih ditagih (harga asal); kurang → sisa saldo customer (pakai/refund). · SO pengganti KSC/SO-00125 total Rp 3.475.132,5 · saldo Rp 3.475.132,5 → Rp 0"
+    },
+    {
+      "no": "T11",
+      "role": "Sistem",
+      "action": "Cek buku: saldo retur dipakai untuk pesanan pengganti",
+      "expect": "Jurnal pemakaian saldo: 2-1450 Saldo Kredit Pelanggan (D) / 1-1200 Piutang Usaha (K) sebesar saldo dipakai; pendapatan pesanan pengganti baru diakui saat surat jalannya terbit",
+      "ok": true,
+      "ms": 1681,
+      "info": "KSC/JE-00493 seimbang D=K=3475133 [2-1450 Saldo Kredit Pelanggan (Store Credit) D 3475133 · 1-1200 Piutang Usaha K 3475133]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+  ],
+  "notes": [
+    "Peserta 48: pelanggan Latihan 48 · Toko Kain Peserta 48 · SO KSC/SO-00079 (Rp 3.475.133)"
+  ]
+}
