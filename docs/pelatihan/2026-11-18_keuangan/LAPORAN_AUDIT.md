@@ -113,6 +113,44 @@ dengan transaksi (nomor, tanggal, identitas PT, baris barang, DPP, PPN, total, t
 Akibat saat deploy: dokumen yang SUDAH ditandatangani elektronik dan isinya berubah karena perbaikan di atas akan tercetak
 "belum ditandatangani (versi baru)" — perlu ditandatangani ulang bila dipakai.
 
+## 2c. Penyusunan ulang materi (17 Nov sore): fondasi, alur ujung ke ujung, retur, SDM
+
+Masukan pemilik: materi terasa tidak berurutan, belum ada konfigurasi, bahasa kurang rapi; fondasi dulu (mulai dari Bagan
+Akun), SDM dipegang Finance, dan alur ujung ke ujung (pesanan sampai uang masuk, pengadaan sampai bayar, retur) harus
+dijelaskan dan diuji sebagai pengguna. Materi disusun ulang menjadi 5 bagian (`src/kurikulum.json`, `src/PANDUAN_GAYA.md`)
+dan setiap materi baru dijalankan di layar dengan akun peran, lalu jurnalnya dicocokkan.
+
+| # | Materi | Temuan | Akar masalah | Status |
+|---|---|---|---|---|
+| C-01 | K01 | Ikon hapus di Bagan Akun per PT juga tampil untuk akun Template Global → akun template bukan-baku bisa terhapus dari **semua PT**, tanpa konfirmasi | Ikon tidak membedakan akun khusus PT dan akun template | D · `ChartOfAccounts.jsx` (hanya akun khusus PT, selalu konfirmasi) · `latihK01HapusAkun.test.js` |
+| C-02 | K03 | Manajer tanpa izin audit membuka Riwayat PT → "Belum ada perubahan tercatat" (sebenarnya 403) | Galat akses dibaca sebagai daftar kosong | D · `EntityDetailDrawer.jsx` · `latihK03RiwayatPt.test.js` |
+| C-03 | K04 | Petunjuk di form rekening menunjuk "Pengaturan › Keuangan & Pajak › Cara Bayar" (tidak ada di sana) | Teks lama | D · `BankAccountForm.jsx` (Perusahaan (PT) › Master per PT › Cara Bayar) |
+| C-04 | H01 | **Tambah Karyawan gagal 500** ("Tidak bisa menghubungi server") sesudah akun pengguna baru + server dinyalakan ulang | Pengisi karyawan dari akun (proses awal) memberi kode "jumlah karyawan + 1" di luar deret resmi → deret tertinggal → bentrok indeks unik | D · `hr_service.next_employee_code` (lewati kode terpakai), `bootstrap.py` (pakai deret resmi) · `test_KSDM01_finance_sdm.py`, `test_latih_hr_jabatan.py` |
+| C-05 | H02 | Masukan gaji "8.000.000,00" tersimpan **Rp 800.000.000** | Isian teks biasa | D · `PayComponentsView.jsx` (MoneyInput, opsi `allowNegative`) · `pyt1KomponenMasukan.test.js` |
+| C-06 | H04 | Bayar gaji: tanggal bawaan hari ini walau sebelum tanggal jurnal → ditolak server | Tanpa cek di layar | D · `PayrollPayPanel.jsx` (tombol mati + alasan) · `pyt4BayarGaji.test.js` |
+| C-07 | H04 | Slip gaji PDF menulis "Periode: 2026-10" | Kode masa tidak diformat | D · `hr_payroll_pdf.py` ("Oktober 2026") · `test_KSDM01_slip_masa.py` |
+| C-08 | H01 | Layar Karyawan memanggil `/users` (403 untuk Finance) di setiap muat | Tanpa cek izin | D · `EmployeesView.jsx` · `ksdm01KaryawanFinance.test.js` |
+| C-09 | A1 | Kasir: sesudah Manajer menyetujui izin kredit, tombol tetap "Kredit Tertahan" | Cek kredit tidak dimuat ulang | D · `CheckoutDrawer.jsx`, `CreditGateBox.jsx`, `CheckoutStep3.jsx`, `CreditOverrideRequest.jsx` ([Periksa ulang kredit]) · `a1AlurPesanan.test.js` |
+| C-10 | A1 | Meja Admin Sales: sesudah [Periksa & lepas], Pelacak SO & Keep & Pending basi | Kartu tidak dimuat ulang | D · `SalesAdminDesk.jsx`, `SoTrackerCard.jsx`, `KeepPendingPanel.jsx` · `a1AlurPesanan.test.js` |
+| C-11 | A1 | Barang Keluar: jawaban cari roll yang terlambat mengisi roll lama lagi → [Kirim Pengambilan] bisa ditekan dua kali | Tanpa penjaga balapan permintaan | D · `OutboundScanInterface.jsx` · `a1AlurPesanan.test.js` |
+| C-12 | A1 | Gudang melihat isian & tombol [Override] pemeriksaan muat → 403 | Tombol tidak dijaga `wms.approve` | D · `LoadingCheckPanel.jsx` · `latihA1Gudang.test.js` |
+| C-13 | A1 | Rincian pesanan: "Belum ada pengiriman tercatat" selama surat jalan masih dimuat | Tanpa status memuat | D · `OrderDetailPanel.jsx` ("Memuat pengiriman…") |
+| C-14 | A2 | PR → PO: rencana roll hilang (tugas gudang tanpa "rencana 75 roll", tombol "Buat 75 roll" tidak ada) | Rencana tidak ikut disalin ke PO | D · `pr_sourcing_service.py` · `test_A2_pr_rencana_roll.py` |
+| C-15 | A2 | Setiap tagihan pemasok & PO manual tercatat "dibuat Admin" | Nama pembuat dari isian layar (bawaan skema "Admin") | D · `vendor_bills.py`, `purchase_orders.py` (akun yang masuk); Riwayat tagihan berbahasa Indonesia |
+| C-16 | A2 | Pembuat PO melihat "🔒 —" di antrean persetujuan; status mentah (Converted, Assigned, scheduled_payment, vendor_bill) di Jejak Dokumen | Label | D · `PurchaseApprovalView.jsx`, `docStatus.js`, `DocRefsPanel.jsx` · `a2PengadaanSampaiBayar.test.js` |
+| C-17 | A2 | Keterangan jurnal "Goods Receipt …" dan "Vendor Bill …" | Bahasa campuran | D · `gl_service.py` ("Penerimaan barang …", "Tagihan pemasok …"); jurnal lama tidak diubah |
+| C-18 | A2 | MD Quality membuka layar SPK penerimaan → 403 tanda tangan elektronik | Izin `esign.view` tidak ada | D · `permissions_config.py` (`A2_DEFAULT_PAIRS`) · `test_PRT9_izin_bawaan.py` |
+| C-19 | A3 | **Kontrabon memotong nota debit sebesar DPP saja** (Rp 1.160.000 bukan Rp 1.287.600) → PPN barang yang sudah dikembalikan tetap dibayar ke pemasok, akun hutang tersisa debit | Memakai `total_amount` (DPP), bukan `grand_total` | D · `contra_bon_service.py` · `test_A3_nota_debit_kontrabon.py` |
+| C-20 | A3 | [Maks] / [Pakai Saldo] membulatkan ke rupiah → saldo kredit berakhir ,50 ditolak | Pembulatan di layar | D · `StoreCreditModals.jsx` · `a3PakaiSaldoSen.test.js` |
+| C-21 | A3 | Tukar barang per roll: panel "Pesanan pengganti" tidak tampil → SO pengganti tidak bisa dibuat | Syarat tampil hanya untuk retur per baris | D · `ReturnReplacementPanel.jsx` · `a3TukarPerRoll.test.js` |
+| C-22 | F07 | Keterangan jurnal LPJ "Pertanggungjawaban petty cash …" | Bahasa campuran | D · `gl_service.py` ("Pertanggungjawaban kas kecil …") |
+| C-23 | F18 | Peringatan tutup buku "Penggajian periode ini sudah diposting: Penggajian belum diposting: …" (bertentangan) | Nama butir (pernyataan) digabung dengan pesan masalahnya | D · `ClosingChecklistPanel.jsx` (rincian masalah saja) · `pk43AlurLayar.test.js` |
+| C-24 | F16 | Rincian jurnal non-kas (mis. Pendapatan Kirim, nota kredit saldo) menampilkan [Bukti Kas Keluar] & [Bukti Kas Masuk] | Arah kas kosong dianggap "keduanya" | D · `JournalDetailModal.jsx` (hanya jurnal dengan akun 1-11xx) · `latihBuktiKasTombol.test.js` |
+| C-25 | F05 | Kartu "Rencana aktif" ikut tersaring kotak cari (nomor nota → 0) sedangkan kartu denda tidak | Kartu rencana dihitung dari daftar tersaring | D · `PaymentPlansView.jsx` (kartu = seluruh PT) · `latihRencanaKpi.test.js` |
+| C-26 | F12 | Nominal kartu kontrabon terbelah ("Rp 1.287.60" + "0"); penerimaan barang "tugas 945058 · completed" | `break-words`; id & status mentah | D · `ContraBonParts.jsx` · `latihKontrabonTampil.test.js` |
+| C-27 | F04 | Aturan nominal transfer "dibulatkan ke atas ke Rp 500.000" bisa menghasilkan kelebihan ≤ Rp 5.000 → masuk toleransi, titipan tidak terbentuk | Aturan latihan | D · teks & uji: kelebihan minimal Rp 10.000 |
+| C-28 | — | Label Kartu Peserta berbeda antara manual dan cetakan skrip data latihan | Dua sumber | D · satu daftar (`bangun.py` = `seed_pelatihan_keuangan_kn.py`), dicek saat membangun |
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
@@ -138,10 +176,26 @@ Akibat saat deploy: dokumen yang SUDAH ditandatangani elektronik dan isinya beru
 | K-19 | [Buka Kembali] periode tanpa alasan; alasan satu huruf diterima. Wajib alasan bermakna? |
 | K-20 | PPh 21 susulan memakai tarif 4,5%; menurut TER A (PP 58/2023) 6% (Rp 36.945 vs Rp 260.577 pada contoh) — butir terbuka K-42/PY-03. |
 | K-21 | Cetakan Faktur Pajak bukan format DJP/Coretax; ekspor e-Faktur belum ada; NSFP menerima "ABC-DEF"/"12345". Beri label "salinan internal" + cek 16–17 digit? |
-| K-22 | Nomor Tagihan Supplier "VB-00030" tanpa awalan PT (deret bersama). Dipisah per PT? |
+| K-22 | Nomor Tagihan Supplier "VB-00030" dan Permintaan Pembelian "PR-00003" tanpa awalan PT (deret bersama), berbeda dengan KSC/PO- dan KSC/CB-. Diseragamkan per PT? |
 | K-23 | Naskah memakai `{{rekening_bank}}` tetapi PT Sukacita belum punya rekening bawaan transfer → kosong. Tetapkan rekening bawaan per PT. |
 | K-24 | Tombol cetak lama "Faktur (PPN)"/"Surat Jalan" + editor "Kop & tata letak dasar" hanya memengaruhi jalur lama; tab Desainer PDF hanya Admin walau Manajer punya izin. Pensiunkan jalur lama & buka Desainer untuk Manajer? |
 | K-25 | Nota denda dan rekap setoran PPh/BPJS belum punya cetakan. Perlu? |
+| K-SDM-01 | **Dicatat (keputusan pemilik 17 Nov 2026: "SDM/HR itu dipegang finance juga").** Finance menyiapkan data karyawan, kehadiran, aturan & masukan gaji, menghitung dan memposting proses gaji, membayar, dan menyetor. Manajer mengesahkan masukan, perubahan gaji, dan proses gaji, serta membatalkan (anulir) proses. Hapus karyawan, struktur organisasi, dan pengaturan SDM umum tetap Manajer/Admin. Mohon konfirmasi pembagian ini. |
+| K-26 | Akun "Selisih harga pembelian" dan "Selisih nilai retur beli" belum dipetakan: kliring GR/IR ditolak dan Kesiapan PT kurang "Pemetaan akun". Akun mana yang dipakai? |
+| K-27 | Finance boleh **membaca** Aturan Keuangan & Pajak (izin `settings.view`)? Manajer tidak bisa mengubah "Kelompok umur piutang" (butuh `settings.manage`) — disengaja? |
+| K-28 | Akun yang pernah dipakai di riwayat pemetaan tetap dihitung akun kontrol walau pemetaannya sudah dikembalikan. Disengaja? |
+| K-29 | Data PT Sukacita belum lengkap: alamat terverifikasi, kop & logo, penanda tangan (juga kop slip gaji hanya nama PT). |
+| K-30 | Finance punya izin kelola Cara Bayar (`cash.configure`) tetapi tidak punya menu ke Perusahaan (PT) › Master per PT. Buka menunya atau cabut izinnya? |
+| K-31 | SDM: Finance kini bisa mengubah PTKP, TER, dan BPJS yang berlaku untuk semua PT. Dikunci ke Manajer/Admin? |
+| K-32 | SDM: gaji awal karyawan baru berlaku tanpa persetujuan; risiko karyawan fiktif hanya bertumpu pada pengesahan proses gaji oleh Manajer. Wajib persetujuan? Finance juga bisa menyetujui lembur yang ia ajukan sendiri — diblokir? |
+| K-33 | SDM: bila aturan dua orang penggajian dinyalakan, Finance yang mengajukan proses tidak bisa memposting/membayarnya. Disengaja? |
+| K-34 | Pesanan sampai uang masuk: pendapatan & piutang diakui saat surat jalan terbit dan jatuh tempo dihitung dari tanggal surat jalan. Sesuai kebijakan? [Tandai Diterima (Selesai)] tanpa konfirmasi & bukti terima — perlu? |
+| K-35 | Pengadaan: tagihan yang cocok bersih (3-way match) diposting pembuatnya tanpa orang kedua — disengaja? Batas persetujuan PR Rp 50 juta / PO Rp 100 juta benar? Dua tombol PR → PO ("Konversi ke PO", "Realisasi ke PO") — satu saja? MD Quality cukup memeriksa 1 dari 75 roll? |
+| K-36 | Pembayaran tidak dicek ke saldo bank (BCA bisa minus). Blokir atau peringatan? |
+| K-37 | Finance bisa membatalkan pembayaran tagihan pemasok (izin bayar = izin batal di server). Pembatalan perlu Manajer? |
+| K-38 | Retur: refund langsung membukukan pembayaran bank saat Manajer menyimpan, tanpa langkah bayar Finance. Perlu langkah bayar Finance atau orang kedua? |
+| K-39 | Retur: Finance tidak bisa membuka "Retur ke Supplier (Nota Debit)" (hanya melihatnya di kontrabon). Beri akses lihat? Nota debit hanya mengurangi tagihan lewat kontrabon — bila tagihan dibayar langsung (F11), nota debit tetap terbuka. |
+| K-40 | Retur: barang yang dinilai QC "Rusak" masuk stok bernilai nol dan HPP tidak dibalik. Sesuai kebijakan? |
 
 ## 4. Catatan untuk pelatih
 
@@ -171,3 +225,26 @@ Akibat saat deploy: dokumen yang SUDAH ditandatangani elektronik dan isinya beru
 - Pakai tanggal hari ini (tanggal maju/lampau belum dibatasi, K-16). Bila daftar tetap abu-abu, tekan muat ulang.
 - Setujui sample berbayar hanya sesudah uangnya tampil lunas.
 - Rekonsiliasi tempel: nominal berkoma dibungkus tanda kutip, atau salin langsung dari Excel.
+
+### Tambahan sesudah penyusunan ulang (bagian 1, 2, 3.4)
+
+- **Fondasi (bagian 1) mengubah pengaturan bersama — kembalikan segera sesudah peragaan:** K02 langkah 8–11 (pemetaan
+  Beban administrasi bank khusus Sukacita → kembali ke global; hanya akun beban, jangan akun kontrol), K05 langkah 6–10
+  (kelompok umur piutang → "Ikuti nilai grup"), K08 langkah 3–4 dan 7 (naskah kwitansi khusus Sukacita → "Kembali ke aturan
+  semua PT"). K07 tidak disimpan ([Buang & tutup]). K01 langkah 7–9: Manajer menambah lalu menghapus akun 6-4950.
+  K04: sesudah kelas, nolkan saldo awal dan nonaktifkan "Rekening Latihan NN".
+- **Alur ujung ke ujung (bagian 2) diperagakan pelatih** dengan akun tiap peran (sandi semua `demo12345`) pada peserta
+  peraga tersendiri, bukan dokumen latihan peserta kelas. Pakai dua jendela browser (mis. Sales & Manajer).
+  - A1: pakai pelanggan peraga yang segar (skrip mengatur plafon sendiri); jangan menyetujui izin kredit F06 Rp 50 juta
+    lebih dulu. Pengiriman selalu perlu override Manajer (roll latihan tanpa tag RFID). Cocok mutasi bank skor 75 tanpa
+    kode bayar → cocokkan manual; dengan kode KN-… di berita transfer → otomatis.
+  - A2: satu rantai membayar Rp 116.550.000 dari BCA Operasional KSC (sisa ±Rp 620 juta) → paling banyak 4 rantai; sisanya
+    diperagakan bersama. "PPN 12%" di tagihan = 11% DPP (12% × 11/12). "Roll langsung ke gedung simpan" hanya penempatan
+    rak; pemeriksaan MD Quality tetap.
+  - A3: peringatan oranye "Asal barang tidak terlacak…" di form retur boleh diabaikan. "Nilai" di daftar retur pemasok =
+    DPP, bukan total nota debit. Pengiriman SO pengganti mengikuti A1.
+- **SDM (3.4):** masa gaji latihan = proses **susulan Oktober 2026** per peserta (cerita: karyawan masuk 1 Oktober, terlewat
+  proses reguler → Rapel Rp 8.000.000). Proses susulan menyerap SEMUA masukan yang sudah disahkan dan belum terpakai:
+  sahkan masukan satu peserta, minta peserta itu langsung [Hitung gaji], baru peserta berikutnya. Sesudah pelatihan Manajer
+  menandai karyawan "Latihan NN · Andi Pratama" keluar (lembur 16 Nov akan masuk proses reguler November).
+- Penggajian kini dibuka di tab Proses Gaji; setoran PPh 21 (F15) di tab **Setoran & Pajak**.
