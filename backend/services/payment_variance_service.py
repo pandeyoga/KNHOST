@@ -66,6 +66,7 @@ from core_utils import DEFAULT_ENTITY_ID, new_id, next_doc_number, now_iso, safe
 from db import db
 from services import gl_service
 from services import payment_plan_service as plans
+from services.book_date import tanggal_buku
 from services.config_resolver import resolve
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,16 @@ def classify(delta: float, tolerance: float) -> str:
 
 
 # ── Sisi AR: apa yang "seharusnya dibayar sekarang" ────────────────────────
+def _hari_buku(as_of: Any = "") -> str:
+    """Tanggal buku WIB untuk "jatuh tempo per hari ini". Dulu `now_iso()[:10]` = tanggal UTC: pukul 00.00–07.00 WIB
+    jadwal tagihan (tanggal buku WIB) sudah hari berikutnya sehingga baris uang muka yang jatuh tempo hari ini dinilai
+    "belum jatuh tempo" dan membayar tepat uang muka dinilai kurang bayar (temuan uji S3-L3, 18 Nov 00.37 WIB)."""
+    try:
+        return tanggal_buku(as_of or None)
+    except ValueError:
+        return str(as_of)[:10]
+
+
 async def tagihan_uang_muka(order: Dict[str, Any], as_of: str = "",
                             customer: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """S3 (pelatihan 18 Nov) — pesanan bertermin ber-DP (`payment_terms.dp_percent` > 0) tanpa rencana manual: yang
@@ -223,7 +234,7 @@ async def tagihan_uang_muka(order: Dict[str, Any], as_of: str = "",
         customer = await db.customers.find_one({"id": full.get("customer_id")}, {"_id": 0, "payment_profile": 1}) or {}
     if float((await bss.termin_pesanan(full, customer)).get("dp_percent") or 0) <= 0:
         return None
-    day = str(as_of or now_iso())[:10]
+    day = _hari_buku(as_of)
     rows = ((await bss.lines_for_orders([full], {full.get("customer_id") or "": customer}, per=day)).get(oid)
             or {}).get("rows") or []
     due = [r for r in rows if r.get("due_date") and str(r["due_date"]) <= day and float(r.get("outstanding") or 0) > EPS]
@@ -271,13 +282,13 @@ async def _order_due_now(order: Dict[str, Any], outstanding: float,
         return {"plan_id": "", "plan_number": "", "due_now": min(um["due_now"], outstanding), "basis": "uang_muka",
                 "due_lines": um["due_lines"], "next_due_date": um["next_due_date"]}
     created = parse_dt(order.get("created_at")) or datetime.now(timezone.utc)
-    due = created + timedelta(days=term_days(cust, order))
-    day = str(as_of or now_iso())[:10]
-    is_due = due.date().isoformat() <= day
+    due = (date.fromisoformat(tanggal_buku(created)) + timedelta(days=term_days(cust, order))).isoformat()
+    day = _hari_buku(as_of)
+    is_due = due <= day
     return {"plan_id": "", "plan_number": "",
             "due_now": outstanding if is_due else 0.0,
             "basis": "term" if is_due else "term_not_due",
-            "due_lines": [], "next_due_date": due.date().isoformat()}
+            "due_lines": [], "next_due_date": due}
 
 
 async def _targets(customer_id: str, allocations: Optional[List[Dict[str, Any]]],
@@ -398,7 +409,7 @@ async def pre_assess(customer_id: str, funds: float,
     Dipanggil dari `ar_receipt_service.create_receipt` sebelum alokasi mengubah
     outstanding, sehingga `expected` tidak bisa dikarang dari sisi klien.
     """
-    day = str(as_of or now_iso())[:10]
+    day = _hari_buku(as_of)
     policy = await variance_policy(entity_id, customer_id)
     tg = await _targets(customer_id, allocations, day)
     targets, others = tg["targets"], tg["others"]
