@@ -446,8 +446,9 @@ async def pre_assess(customer_id: str, funds: float,
     else:
         delta, boundary, boundary_label = 0.0, expected, label_harap
     direction = classify(delta, policy["tolerance"])
-    suggested_due = (datetime.now(timezone.utc)
-                     + timedelta(days=int(policy["reschedule_days"]))).date().isoformat()
+    # Usulan jatuh tempo baru dihitung dari hari ini WIB (dulu tanggal UTC: pukul 00.00–07.00 WIB sehari lebih awal).
+    suggested_due = (date.fromisoformat(_hari_buku())
+                     + timedelta(days=int(policy["reschedule_days"]))).isoformat()
     ctx = {"has_plan": any(t.get("plan_id") for t in targets),
            "others_total": others_total, "plan_total": capacity,
            "suggested_due_date": suggested_due}
@@ -914,7 +915,7 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
     target_ids = list(v.get("target_order_ids") or [])
     tg = await _targets(receipt.get("customer_id", ""),
                         [{"order_id": oid} for oid in target_ids] or None,
-                        str(receipt.get("receipt_date") or now_iso())[:10])
+                        _hari_buku(receipt.get("receipt_date") or ""))   # tanggal buku WIB (dulu 10 huruf / UTC)
     targets = tg["targets"]
     # PERIKSA tujuan & saldo — tanpa tulisan (PK-19 FX-05/SL-08: pemeriksa alokasi yang sama dengan kwitansi).
     from services import ar_allocation_service as aas

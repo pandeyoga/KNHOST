@@ -16,12 +16,13 @@ Fungsi `*_violations()` di bawah dipakai `scripts/verify_data_integrity.py`
 (**INV-CASE-01..03**) — sengaja ditaruh dekat mesinnya supaya invarian dan pelaksananya
 tidak pernah bercerita beda.
 """
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from core_utils import now_iso, rupiah
 from db import db
 from services import finance_case_service as svc
+from services.book_date import tanggal_buku
 
 COLL = svc.COLL
 OPEN = list(svc.OPEN_STATUSES)
@@ -70,7 +71,8 @@ async def _has_case(case_type: str, source_id: str) -> bool:
 #  1 · TITIPAN DANA MENGANGGUR → KASUS
 # ═════════════════════════════════════════════════════════════════════════════
 async def aged_holding_lines(days: int) -> List[Dict[str, Any]]:
-    cutoff = (datetime.now(timezone.utc).date() - timedelta(days=int(days or 0)))
+    # Hari ini = tanggal buku WIB (dulu tanggal UTC: pukul 00.00–07.00 WIB titipan yang genap N hari belum terangkat).
+    cutoff = (date.fromisoformat(tanggal_buku()) - timedelta(days=int(days or 0)))
     # PK-25 (D4) — saringan umur di kueri (`stmt_date` ≤ batas; < hari sesudahnya supaya "YYYY-MM-DDTjam" ikut),
     # dibaca berhalaman sampai habis.
     rows = await _semua("bank_statement_lines",
@@ -97,7 +99,7 @@ async def duplicate_receipts(window_days: int) -> List[Dict[str, Any]]:
     # PK-25 (FX-18, D4) — hanya kwitansi tidak-batal ber-`receipt_date` dalam 2 × jendela hari terakhir (saringan di
     # kueri), urut menaik, berhalaman sampai habis. Dulu 5.000 kwitansi TERTUA tanpa saringan: pasangan kembar terbaru
     # tidak pernah terbaca begitu datanya melewati 5.000.
-    batas = (datetime.now(timezone.utc).date() - timedelta(days=2 * int(window_days or 0))).isoformat()
+    batas = (date.fromisoformat(tanggal_buku()) - timedelta(days=2 * int(window_days or 0))).isoformat()
     rows = await _semua("ar_receipts", {"status": {"$ne": "void"}, "receipt_date": {"$gte": batas}},
                         [("receipt_date", 1), ("created_at", 1), ("id", 1)])
     seen: Dict[str, List[Dict[str, Any]]] = {}

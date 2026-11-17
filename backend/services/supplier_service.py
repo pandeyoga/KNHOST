@@ -60,8 +60,14 @@ def payment_due_date(term: Dict[str, Any], anchor_date: str = "") -> str:
     from datetime import timedelta
     if not term:
         return ""
-    base = _parse_dt(anchor_date) if anchor_date else None
-    base = (base or datetime.now(timezone.utc)).date()
+    # Acuan = tanggal buku WIB (tanggal ETA isian apa adanya; kosong = hari ini WIB). Dulu hari ini = tanggal UTC: PO
+    # tanpa ETA yang dibuat pukul 00.00–07.00 WIB jatuh tempo bayarnya sehari lebih awal.
+    from datetime import date as _date
+    from services.book_date import tanggal_buku
+    try:
+        base = _date.fromisoformat(tanggal_buku(anchor_date or None))
+    except ValueError:
+        base = _date.fromisoformat(tanggal_buku())
     return (base + timedelta(days=int(term.get("net_days") or 0))).isoformat()
 
 

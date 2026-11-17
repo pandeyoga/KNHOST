@@ -20,6 +20,7 @@ from services import storage_service as storage
 from services import rnd_sample_service as smp
 from services import rnd_spec_service as spec_svc
 from services import special_order_routing as routing
+from services.book_date import tanggal_buku
 logger = logging.getLogger(__name__)
 
 
@@ -200,7 +201,7 @@ async def _customer_decide(od: Dict[str, Any], payload: Dict[str, Any], actor: D
     note = (payload.get("note") or "").strip()
     if decision in ("revisi", "tolak") and not note:
         raise ODError("Catatan pelanggan wajib diisi untuk revisi / tolak (apa yang kurang).")
-    at = (str(payload.get("decided_at") or "")[:10]) or now_iso()[:10]
+    at = (str(payload.get("decided_at") or "")[:10]) or tanggal_buku()   # hari ini WIB (dulu tanggal UTC)
     obj = decision_object(ready)
     entry = {
         "id": new_id("odcd"), "decision": decision, "note": note, "decided_at": at,

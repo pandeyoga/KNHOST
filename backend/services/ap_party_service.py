@@ -67,6 +67,18 @@ async def _credits(supplier_id: str, entity_id: str) -> Dict[str, Any]:
             "items": [{**x, "entity_id": entity_id} for x in notes + adv]}
 
 
+def _tgl_buku(nilai: Any) -> str:
+    """Tanggal buku WIB tagihan (agen zona waktu 18 Nov): tagihan makloon menyimpan `bill_date = now_iso()` (UTC) —
+    dulu dipotong 10 huruf sehingga tagihan pukul 00.00–07.00 WIB tampil bertanggal kemarin."""
+    if not nilai:
+        return ""
+    from services.book_date import tanggal_buku
+    try:
+        return tanggal_buku(nilai)
+    except ValueError:
+        return str(nilai)[:10]
+
+
 def _bill_row(item: Dict[str, Any], holder: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     from services.vendor_bill_service import AP_AGING_LABELS, ap_aging_bucket
     b, fin = item["bill"], item["fin"]
@@ -75,7 +87,7 @@ def _bill_row(item: Dict[str, Any], holder: Optional[Dict[str, Any]]) -> Dict[st
         "bill_id": b.get("id", ""), "bill_number": b.get("bill_number", ""),
         "supplier_invoice_no": b.get("supplier_invoice_no", ""), "po_id": b.get("po_id") or "",
         "po_number": b.get("po_number", ""), "entity_id": b.get("entity_id", ""),
-        "bill_date": str(b.get("bill_date") or b.get("created_at") or "")[:10],
+        "bill_date": _tgl_buku(b.get("bill_date") or b.get("created_at")),
         "due_date": item["due"] or "", "due_basis": item["basis"], "days_past_due": item["days"],
         "aging_bucket": bucket, "aging_label": AP_AGING_LABELS[bucket],
         "grand_total": fin["grand_total"], "amount_paid": fin["amount_paid"], "outstanding": fin["outstanding"],

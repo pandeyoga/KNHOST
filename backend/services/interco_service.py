@@ -1619,11 +1619,28 @@ _BASIS = {"invoice": ("invoiced_at", "Tanggal tagihan"), "receipt": ("received_a
           "document": ("doc_date", "Tanggal dokumen")}
 
 
+def _tgl_buku_aman(nilai: Any) -> str:
+    """Tanggal buku WIB stempel (kosong/tak dikenal → 10 huruf pertama)."""
+    from services.book_date import tanggal_buku
+    if not nilai:
+        return ""
+    try:
+        return tanggal_buku(nilai)
+    except ValueError:
+        return str(nilai)[:10]
+
+
 def _period_for(day: str, cutoff: int, pay_day: Optional[int]) -> Dict[str, str]:
     """Transaksi s.d. tanggal cutoff → periode bulan itu; setelahnya → bulan berikutnya."""
     import calendar
     from datetime import date as _d
-    d = _d.fromisoformat(day[:10])
+    from services.book_date import tanggal_buku
+    # Tanggal buku WIB: acuan tagihan/terima berupa stempel UTC; dulu 10 huruf pertama → transaksi pukul 00.00–07.00
+    # WIB sehari sesudah cutoff masuk periode bulan ini (jadwal bayar sebulan lebih awal).
+    try:
+        d = _d.fromisoformat(tanggal_buku(day))
+    except ValueError:
+        d = _d.fromisoformat(day[:10])
     y, m = (d.year, d.month) if d.day <= cutoff else ((d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1))
     last = calendar.monthrange(y, m)[1]
     pay = min(int(pay_day), last) if pay_day else last
@@ -1667,7 +1684,8 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
                "payee_entity_id": d["seller_entity_id"], "payee_entity_name": d.get("seller_entity_name", ""),
                "status": d.get("status"), "grand_total": float(d.get("grand_total") or 0), "remaining": remaining,
                "received_at": d.get("received_at") or "", "invoiced_at": d.get("invoiced_at") or "",
-               "doc_date": d.get("doc_date") or (d.get("created_at") or "")[:10], "due_date": d.get("due_date") or "",
+               "doc_date": d.get("doc_date") or (_tgl_buku_aman(d.get("created_at")) or ""),
+               "due_date": d.get("due_date") or "",
                "basis_date": bdate, "period": None, "pay_date": None}
         # PK-43 — `outstanding` (= `remaining`) + `settleable`: status terbuka dan jurnal kedua sisi tidak gagal.
         gagal = d.get("gl_status") == "failed" or d.get("counterpart_id") in cp_gagal

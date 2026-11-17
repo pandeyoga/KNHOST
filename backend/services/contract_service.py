@@ -21,13 +21,14 @@ Prinsip (jangan dilanggar):
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import domain_registry as dr
 from core_utils import new_id, next_doc_number, now_iso, parse_decimal, safe_doc, rupiah
 from db import db
 from services import uom_service
+from services.book_date import tanggal_buku
 from services import uom_rules_service as uomr
 from services.process_recipe_service import safe_eval_formula
 
@@ -106,7 +107,9 @@ async def ensure_defaults(actor: str = "bootstrap") -> bool:
 # 2. CRUD KONTRAK
 # ═══════════════════════════════════════════════════════════════════════════
 def _today() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    """Hari ini = tanggal buku WIB. Dulu tanggal UTC: pukul 00.00–07.00 WIB kontrak yang berakhir kemarin masih
+    dipakai (harga/tarif lama), kontrak yang mulai hari ini belum, dan kontrak baru bertanggal mulai kemarin."""
+    return tanggal_buku()
 
 
 async def next_contract_number(entity_id: str = "") -> str:

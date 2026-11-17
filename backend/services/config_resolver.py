@@ -29,7 +29,7 @@ Perubahan berjadwal diterapkan begitu jatuh tempo oleh `ensure_due_applied()` (d
 penjadwal `config_apply_due`, bukan hanya saat layar Pengaturan dibuka.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import config_registry as registry
@@ -94,17 +94,24 @@ def _dig(doc: Optional[Dict[str, Any]], path: str) -> Any:
     return cur
 
 
+_WIB = timezone(timedelta(hours=7))   # zona jam dinding bisnis (sama dengan `book_date.WIB`)
+
+
 def _iso_now() -> str:
     return now_iso()
 
 
 def _as_dt(value: Any) -> Optional[datetime]:
+    """Waktu ber-zona. Teks TANPA zona ("berlaku sejak" dari pemilih tanggal-jam layar, `YYYY-MM-DDTHH:mm`, atau tanggal
+    saja) = jam dinding WIB, sama dengan yang ditampilkan layar. Dulu dianggap UTC: nilai terjadwal "1 Des 00.00" baru
+    berlaku pukul 07.00 WIB (semua jadwal mundur 7 jam; mis. tarif pajak baru belum dipakai pesanan 00.00–07.00 WIB).
+    Objek `datetime` tanpa zona tetap dianggap UTC (jam sistem)."""
     if isinstance(value, datetime):
         return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
     if isinstance(value, str) and value:
         try:
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            return dt if dt.tzinfo else dt.replace(tzinfo=_WIB)
         except ValueError:
             return None
     return None
@@ -113,6 +120,13 @@ def _as_dt(value: Any) -> Optional[datetime]:
 def _is_due(row: Dict[str, Any], at: datetime) -> bool:
     ef = _as_dt(row.get("effective_from")) or datetime.min.replace(tzinfo=timezone.utc)
     return ef <= at
+
+
+def urutan_baris(row: Dict[str, Any]) -> Tuple[datetime, str]:
+    """Kunci urut baris: SAAT berlaku (bukan teks — teks tanpa zona WIB dan stempel UTC tidak sebanding huruf demi
+    huruf), lalu `created_at`."""
+    return (_as_dt(row.get("effective_from")) or datetime.min.replace(tzinfo=timezone.utc),
+            str(row.get("created_at") or ""))
 
 
 # ── baca lapisan ───────────────────────────────────────────────────────────
@@ -135,7 +149,7 @@ async def _stored_rows(keys: List[str], ctx: Dict[str, Any]) -> Dict[Tuple[str, 
             continue
         out.setdefault((row["key"], row["scope_type"]), []).append(row)
     for rows in out.values():
-        rows.sort(key=lambda r: (str(r.get("effective_from") or ""), str(r.get("created_at") or "")))
+        rows.sort(key=urutan_baris)
     return out
 
 
@@ -337,7 +351,7 @@ async def resolve_keys(keys: List[str], ctx: Optional[Dict[str, Any]] = None,
     ent_id = ctx.get("entity_id") or ""
     if ent_id and ent_id != "all":
         pre[f"legacy:{ent_id}"] = await _legacy_doc(ent_id)
-    when = _as_dt(at) or datetime.now(timezone.utc)   # tanggal tanpa zona = UTC (sama dengan `effective_from`)
+    when = _as_dt(at) or datetime.now(timezone.utc)   # teks tanpa zona = jam WIB (sama dengan `effective_from`)
     return {k: await resolve(k, ctx, at=when, preloaded=pre) for k in keys}
 
 
@@ -752,7 +766,7 @@ async def apply_due_values() -> Dict[str, int]:
     applied = 0
     cur = db[COLL].find({"applied_at": ""}, {"_id": 0})
     pending: List[Dict[str, Any]] = [r async for r in cur if not r.get("cancelled_at") and _is_due(r, now)]
-    pending.sort(key=lambda r: (str(r.get("effective_from")), str(r.get("created_at"))))
+    pending.sort(key=urutan_baris)
     for row in pending:
         entry = registry.get(row["key"])
         if not entry:

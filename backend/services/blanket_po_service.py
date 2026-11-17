@@ -11,7 +11,6 @@ Drawdown dihitung LIVE dari PO anak (po_type='call_off', parent_po_id, status �
 basis GROSS (Σ qty×price) konsisten dgn invarian total_amount. Cache disimpan untuk display.
 Service ini TIDAK membuat PO anak (hindari import siklik); router meng-orkestrasi pembuatan.
 """
-from datetime import date
 from typing import Any, Dict, List, Tuple
 
 from fastapi import HTTPException
@@ -21,13 +20,14 @@ from services import pr_sourcing_service as _pr_sourcing  # P-0 — asal dokumen
 from services import po_board_service as _po_board       # FASE P — papan PO per lini
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
 from request_context import active_entity_or
+from services.book_date import tanggal_buku
 
 EPS = 1e-6
 CALLOFF_EXCLUDE_STATUSES = {"cancelled", "rejected"}
 
 
 def _today_iso() -> str:
-    return date.today().isoformat()
+    return tanggal_buku()   # hari ini WIB (dulu `date.today()` = zona mesin)
 
 
 async def _resolve_supplier(supplier_id: str, supplier_name: str, supplier_contact: str) -> Tuple[str, str, str, str]:

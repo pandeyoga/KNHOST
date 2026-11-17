@@ -14,7 +14,7 @@ import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import KNDatePicker from "../../../components/KNDatePicker";
 import ErrorNotice from "../../../components/ErrorNotice";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
@@ -22,7 +22,6 @@ import { askConfirm } from "../../../services/confirmService";
 import { usePaymentMethods } from "../../../config/paymentMethods";
 import { fmtDate } from "./intercoApi";
 
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Sisa refund satu dokumen penjual — rumus server `refund_due − refund_paid` (dokumen lama tanpa `refund_due`:
  *  max(0, retur + lunas − nilai)). */
@@ -36,7 +35,9 @@ export default function IntercoRefundModal({ entities = [], presetPayerEntityId 
   onClose, onCreated }) {
   const [payer, setPayer] = useState(presetPayerEntityId);
   const [payee, setPayee] = useState(presetPayeeEntityId);
-  const [date, setDate] = useState(() => ymd(new Date()));
+  // 18 Nov — tanggal refund bawaan = hari ini WIB (dulu tanggal zona perangkat: perangkat UTC pukul 00.00–07.00 WIB
+  // menjurnal refund bertanggal kemarin).
+  const [date, setDate] = useState(() => todayWib());
   const [method, setMethod] = useState("transfer");
   const [account, setAccount] = useState("");
   const [accounts, setAccounts] = useState([]);

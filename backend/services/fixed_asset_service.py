@@ -200,7 +200,12 @@ async def _assert_no_open_depreciation(a: Dict[str, Any]) -> None:
 
 # ── Helpers periode (YYYY-MM) ────────────────────────────────────────────────
 def _period_of(date_str: str) -> str:
-    return (date_str or now_iso())[:7]
+    """Periode buku WIB. Dulu `(… or now_iso())[:7]`: tanggal perolehan berstempel UTC / kosong pukul 00.00–07.00 WIB
+    tanggal 1 memulai penyusutan sebulan lebih awal."""
+    try:
+        return tanggal_buku(date_str or None)[:7]
+    except ValueError:
+        return str(date_str)[:7]
 
 
 def _add_months(period: str, n: int) -> str:

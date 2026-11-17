@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 
 from db import db
 from core_utils import now_iso
+from services.book_date import tanggal_buku
 
 EPS = 0.005
 
@@ -206,7 +207,9 @@ async def balance_sheet(as_of: Optional[str] = None,
     """
     amap = await _accounts_map(scope)
     # FN-16 — satu tanggal efektif untuk filter DAN label (default hari ini, bukan tanpa batas).
-    as_of = (as_of or now_iso())[:10]
+    # Hari ini = tanggal buku WIB; dulu `now_iso()[:10]` (tanggal UTC) sehingga neraca tanpa tanggal yang dibuka
+    # pukul 00.00–07.00 WIB tidak memuat jurnal hari itu (tanggal jurnal = tanggal buku WIB).
+    as_of = (as_of or tanggal_buku())[:10]
     agg_main = await _aggregate(scope, {"$lte": _day_end(as_of)})
     comparative = bool(compare_as_of)
     agg_cmp: Dict[str, Dict[str, float]] = (

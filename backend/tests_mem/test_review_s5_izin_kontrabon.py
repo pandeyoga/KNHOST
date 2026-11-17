@@ -59,3 +59,11 @@ async def test_R_S5_03_tanpa_izin_kontrabon_hanya_fakta_dipegang(klien, data, ak
     assert t2["contra_bon"] and not any(t2["contra_bon"].values()), t2["contra_bon"]   # dipegang, tanpa identitas
     assert "KB-RS5" not in r.text and "cbn_rs5" not in r.text
     assert j["totals"]["held"] == 2_000_000.0 and j["totals"]["payable_direct"] == 1_000_000.0
+
+
+def test_tanggal_tagihan_bercap_utc_tampil_tanggal_buku_wib():
+    """Tagihan makloon menyimpan bill_date = cap waktu UTC; Hutang per Pemasok menulis tanggal buku WIB."""
+    from services import ap_party_service as aps
+    assert aps._tgl_buku("2026-11-17T18:30:00+00:00") == "2026-11-18"
+    assert aps._tgl_buku("2026-11-18") == "2026-11-18"
+    assert aps._tgl_buku("") == "" and aps._tgl_buku(None) == ""

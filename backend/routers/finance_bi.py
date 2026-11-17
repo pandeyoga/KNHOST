@@ -3,7 +3,6 @@
 Akses: permission module "accounting" (view). Respons OBJEK telanjang (KN3).
 Ter-scope entitas (mengikuti header X-Entity-Id / param entity_id).
 """
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request, Query
@@ -11,6 +10,7 @@ from fastapi import APIRouter, Request, Query
 from dependencies import require_permission
 from entity_scope import entity_ctx, resolve_list_scope, scope_meta
 from services import finance_bi_service as bi
+from services.book_date import tanggal_buku
 
 router = APIRouter(prefix="/api")
 
@@ -24,7 +24,7 @@ async def finance_bi_dashboard(
     """Dashboard BI Keuangan: tren bulanan, KPI YTD, rasio, perbandingan antar PT."""
     await require_permission(request, "accounting", "view")
     ctx = await entity_ctx(request)
-    y = int(year) if year else datetime.now(timezone.utc).year
+    y = int(year) if year else int(tanggal_buku()[:4])   # tahun berjalan WIB (dulu UTC: 1 Jan 00–07 WIB = tahun lalu)
 
     scope = resolve_list_scope("journal_entries", {}, ctx, entity_id)
 

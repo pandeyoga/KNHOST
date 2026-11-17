@@ -111,7 +111,7 @@ async def daftar_lapisan(key: str, scope_type: str,
     for sid, rows in per_sasaran.items():
         if not sid:
             continue
-        rows.sort(key=lambda r: (str(r.get("effective_from") or ""), str(r.get("created_at") or "")))
+        rows.sort(key=resolver.urutan_baris)
         val, win, _ = resolver._pick_effective(rows, now)
         if val is resolver._MISSING or not win:
             continue

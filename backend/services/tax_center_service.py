@@ -103,7 +103,13 @@ async def _period_omzet(entity_id: Optional[str], period: str) -> float:
     async for so in db.sales_orders.find(
         q, {"_id": 0, "net_subtotal": 1, "total_amount": 1, "grand_total": 1,
             "created_at": 1, "order_date": 1, "status": 1}):
-        d = (so.get("order_date") or so.get("created_at") or "")[:7]
+        # Masa = periode buku WIB. Dulu 7 huruf pertama stempel UTC: pesanan pukul 00.00–07.00 WIB tanggal 1
+        # masuk peredaran bruto (dan PPh final) bulan SEBELUMNYA.
+        raw = so.get("order_date") or so.get("created_at") or ""
+        try:
+            d = masa_dari(raw) if raw else ""
+        except ValueError:
+            d = str(raw)[:7]
         if d != period:
             continue
         if (so.get("status") or "") in _ACTIVE_SO_EXCLUDE:

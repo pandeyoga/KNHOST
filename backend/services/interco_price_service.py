@@ -6,7 +6,7 @@ Satu kontrak = satu barang untuk satu pasangan PT penjual → pembeli (arah berl
 from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import now_iso, parse_decimal
+from core_utils import parse_decimal
 from services import contract_service as cs
 from services import interco_service as ics
 from services import pricelist_service as pls
@@ -57,7 +57,7 @@ async def _seller_stock(seller: str) -> Dict[str, float]:
 
 
 async def _priced_pids(seller: str, buyer: str) -> set:
-    today = now_iso()[:10]
+    today = cs._today()   # hari ini WIB (dulu tanggal UTC)
     pids = set()
     async for c in db.supplier_contracts.find(
             {"entity_id": seller, "partner_kind": "entity", "partner_id": buyer, "status": "active"},

@@ -5,7 +5,7 @@ langsung berlaku dan tercatat sebagai amandemen `auto_applied`. Harga/diskon TID
 langsung berlaku: lahir amandemen menunggu pemegang izin `order.approve_price_edit`.
 Reservasi mengikuti mesin yang ada (lepas sebagian / alokasi FEFO + backorder).
 """
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 from db import db
@@ -17,6 +17,7 @@ from services.tax_config_service import potret_dokumen
 from services.roll_service import (allocate_and_reserve_rolls, allocations_from_reserved_rolls,
                                    pending_cuts, release_order_rolls_partial)
 from services.so_status import stage_fields
+from services.book_date import tanggal_buku
 
 EDITABLE_STATUSES = ("draft", "reserved", "waiting_approval", "approved", "waiting_stock", "confirmed")
 HEADER_LABEL = {"shipping_address_id": "Alamat kirim", "fulfillment_method": "Metode pemenuhan",
@@ -87,7 +88,7 @@ def _check_date(value: str, label: str) -> None:
         d = datetime.fromisoformat(value).date()
     except ValueError as exc:
         raise OverrideError(f"Format {label.lower()} tidak valid (YYYY-MM-DD).") from exc
-    if d < datetime.now(timezone.utc).date():
+    if d.isoformat() < tanggal_buku():   # hari ini WIB (dulu tanggal UTC: pukul 00.00–07.00 WIB kemarin lolos)
         raise OverrideError(f"{label} tidak boleh di masa lalu.")
 
 

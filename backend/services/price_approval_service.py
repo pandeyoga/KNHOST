@@ -62,12 +62,13 @@ def is_active(r: Dict[str, Any], now: Optional[str] = None) -> bool:
     """Aturan harga khusus yang DISETUJUI dan sedang berlaku pada `now`."""
     if (r or {}).get("status") != "approved":
         return False
+    from services.pricelist_service import belum_mulai, sudah_berakhir   # batas tanggal saja = hari WIB
     now = now or now_iso()
     vf = r.get("valid_from") or ""
     vu = r.get("valid_until") or ""
-    if vf and vf > now:
+    if belum_mulai(vf, now):
         return False
-    if vu and vu < now:
+    if sudah_berakhir(vu, now):
         return False
     return True
 
@@ -81,7 +82,8 @@ def decorate(r: Dict[str, Any]) -> Dict[str, Any]:
     r["discount_percent"] = round((normal - req) / normal * 100, 2) if normal > 0 else 0.0
     r["savings_per_unit"] = round(normal - req, 2)
     vu = r.get("valid_until") or ""
-    r["is_expired"] = bool(r.get("status") == "approved" and vu and vu < now_iso())
+    from services.pricelist_service import sudah_berakhir
+    r["is_expired"] = bool(r.get("status") == "approved" and sudah_berakhir(vu, now_iso()))
     src = r.get("source") or SOURCE_SALES
     r["source"] = src
     r["source_label"] = SOURCE_LABEL.get(src, src)

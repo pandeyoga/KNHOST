@@ -1684,7 +1684,9 @@ async def holding_summary(entity_ids: Optional[List[str]] = None,
         q["bank_account_id"] = bank_account_id
     rows = await db.bank_statement_lines.find(q, {"_id": 0}).sort("stmt_date", 1).to_list(5000)
     cfg = await load_cfg((entity_ids or [""])[0] if entity_ids else "")
-    today = datetime.now(timezone.utc).date()
+    # Hari ini = tanggal buku WIB (stmt_date bertanggal WIB). Dulu tanggal UTC: pukul 00.00–07.00 WIB mutasi hari itu
+    # berumur "-1" (dijepit 0) dan titipan yang genap N hari belum ditandai perlu tindakan.
+    today = datetime.fromisoformat(tanggal_buku()).date()
     items, total, overdue = [], 0.0, 0
     for r in rows:
         rem = _round(r.get("holding_remaining", r.get("amount")))

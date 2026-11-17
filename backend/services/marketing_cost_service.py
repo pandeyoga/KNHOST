@@ -14,6 +14,7 @@ from core_utils import new_id, next_doc_number, now_iso
 from db import db
 from services import atomic_claim as _saga
 from services import gl_service as gl
+from services.book_date import tanggal_buku
 
 COLL = "mkt_campaign_costs"
 REF_TYPE = "mkt_campaign_cost"
@@ -59,7 +60,12 @@ async def record_cost(campaign: Dict[str, Any], payload: Dict[str, Any], actor: 
     entity_id = campaign.get("entity_id", "")
     amount = _r(payload.get("amount"))
     desc = (payload.get("description") or "").strip()
-    date = (payload.get("date") or now_iso())[:10]
+    # Tanggal biaya = tanggal buku WIB (kas & jurnal memakainya). Dulu kosong → `now_iso()[:10]` (tanggal UTC): biaya
+    # yang dicatat pukul 00.00–07.00 WIB tanpa tanggal berjurnal kemarin (tanggal 1: ke bulan lalu).
+    try:
+        date = tanggal_buku(payload.get("date") or None)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Tanggal biaya tidak dikenali (YYYY-MM-DD).")
     cash_type = payload.get("cash_type") or "kas_besar"
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Nominal biaya harus lebih dari 0.")

@@ -17,7 +17,7 @@ import { Scale, BookOpen } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import JournalDetailModal from "./JournalDetailModal";
 import { TraceNotice, traceDecision } from "./traceLedger";
 import useJournalActions from "./useJournalActions";
@@ -25,8 +25,9 @@ import useJournalActions from "./useJournalActions";
 const fmtDate = (iso) => formatDate(iso);
 
 // ─── NERACA SALDO TAB ────────────────────────────────────────────────────────
-const pad2 = (n) => String(n).padStart(2, "0");
-const todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+// 18 Nov — "per tanggal" bawaan = hari ini WIB (tanggal buku server). Dulu tanggal zona PERANGKAT: perangkat ber-zona
+// UTC pukul 00.00–07.00 WIB membuka Neraca Saldo per KEMARIN (jurnal hari ini tidak ikut).
+const todayLocal = () => todayWib();
 
 export function TrialBalanceTab({ refreshKey, onError, onDrill, selectedEntity, initialAsOf = "" }) {
   const [tb, setTb] = useState(null);

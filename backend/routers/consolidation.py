@@ -4,7 +4,6 @@ Akses: modul `accounting` (view untuk baca; manage untuk tulis eliminasi).
 Respons OBJEK/ARRAY telanjang (kontrak KN3). Grup = semua entitas dalam cakupan
 baca user (allowed_entity_ids).
 """
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -13,6 +12,7 @@ from pydantic import BaseModel
 from dependencies import require_permission, audit
 from entity_scope import doc_parties, entity_ctx, guard_party, resolve_requested_entity
 from services import consolidation_service as cons
+from services.book_date import tanggal_buku
 
 router = APIRouter(prefix="/api")
 
@@ -46,8 +46,8 @@ async def consolidation_summary(
 ) -> Dict[str, Any]:
     """Matriks Per-PT + Eliminasi + Konsolidasi (Laba-Rugi tahun & Neraca as_of)."""
     await require_permission(request, "accounting", "view")
-    y = int(year) if year else datetime.now(timezone.utc).year
-    ao = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    y = int(year) if year else int(tanggal_buku()[:4])   # tahun berjalan WIB (dulu UTC: 1 Jan 00–07 WIB = tahun lalu)
+    ao = as_of or tanggal_buku()   # hari ini WIB (dulu tanggal UTC: 00.00–07.00 WIB = kemarin)
     ids = await _entity_ids(request)
     return await cons.summary(ids, y, ao)
 
@@ -99,7 +99,7 @@ async def delete_elimination(elim_id: str, request: Request,
 async def ic_candidates(request: Request, as_of: Optional[str] = Query(None)) -> Dict[str, Any]:
     """Auto-deteksi akun intercompany + saldo per-PT + usulan baris eliminasi."""
     await require_permission(request, "accounting", "view")
-    ao = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ao = as_of or tanggal_buku()   # hari ini WIB (dulu tanggal UTC: 00.00–07.00 WIB = kemarin)
     ids = await _entity_ids(request)
     return await cons.ic_candidates(ids, ao)
 
@@ -115,7 +115,7 @@ async def sync_ic_eliminations_from_pairs(
     `auto_generated=True` dan `source_pair_id=<pair_id>`.
     """
     actor = await require_permission(request, "accounting", "manage")
-    ao = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ao = as_of or tanggal_buku()   # hari ini WIB (dulu tanggal UTC: 00.00–07.00 WIB = kemarin)
     result = await cons.sync_ic_eliminations_from_pairs(as_of=ao)
     await audit(actor["name"], "ic_elimination_auto_synced", "ic_elimination", "",
                 {"created": result["created"], "skipped": result["skipped_existing"],
@@ -134,7 +134,7 @@ async def sync_g6_ic_eliminations(
     dihitung dari data bertanggal; bulan yang sudah ditutup di kedua PT tidak ditimpa (berbeda → `stale`).
     """
     actor = await require_permission(request, "accounting", "manage")
-    ao = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ao = as_of or tanggal_buku()   # hari ini WIB (dulu tanggal UTC: 00.00–07.00 WIB = kemarin)
     result = await cons.sync_g6_ic_eliminations(as_of=ao)
     await audit(actor["name"], "g6_ic_elimination_synced", "ic_elimination", "",
                 {"created": result["created"], "skipped": result["skipped_existing"],

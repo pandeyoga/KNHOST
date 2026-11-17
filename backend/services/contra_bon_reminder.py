@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 from core_utils import now_iso, rupiah
 from db import db
 from services import contra_bon_service as cbs
+from services.book_date import tanggal_buku
 from services import notification_service as notif
 
 MODES = ("none", "weekly", "biweekly", "monthly")
@@ -62,7 +63,7 @@ def next_exchange_date(sch: Optional[Dict[str, Any]],
     """Tanggal siklus tukar faktur berikutnya (termasuk HARI INI bila memang harinya)."""
     sch = sch or {}
     mode = str(sch.get("mode") or "none")
-    today = today or date.today()
+    today = today or cbs._hari_ini()   # tanggal buku WIB (dulu `date.today()` = zona mesin)
     if mode in ("weekly", "biweekly"):
         target = int(sch.get("weekday", 1)) % 7
         delta = (target - today.weekday()) % 7
@@ -111,7 +112,9 @@ async def set_schedule(supplier_id: str, payload: Dict[str, Any],
         "day_of_month": min(max(int(payload.get("day_of_month", 25)), 1), 28),
         "pic_name": payload.get("pic_name", ""),
         "notes": payload.get("notes", ""),
-        "anchor_date": payload.get("anchor_date") or now_iso()[:10],
+        # Acuan 14 hari = hari ini WIB (dulu tanggal UTC: diset pukul 00.00–07.00 WIB → acuan kemarin, fase dua
+        # pekanan bisa bergeser sepekan).
+        "anchor_date": payload.get("anchor_date") or tanggal_buku(),
         "updated_by": actor.get("name", ""), "updated_at": now_iso(),
     }
     await db.suppliers.update_one({"id": supplier_id},
@@ -135,7 +138,7 @@ async def schedules(entity_ids: Optional[List[str]] = None,
         q["entity_id"] = {"$in": [entity_id, "all"]}
     elif entity_ids is not None:
         q["entity_id"] = {"$in": list(entity_ids) + ["all"]}
-    today = date.today()
+    today = cbs._hari_ini()   # tanggal buku WIB (dulu `date.today()` = zona mesin)
     rows: List[Dict[str, Any]] = []
     async for sup in db.suppliers.find(q, {"_id": 0}).sort("name", 1):
         sch = sup.get("invoice_exchange") or {"mode": "none"}
@@ -176,7 +179,7 @@ async def schedules(entity_ids: Optional[List[str]] = None,
 async def job_contra_bon_reminder() -> Dict[str, Any]:
     """Pengingat siklus tukar faktur (H-n) + eskalasi kontrabon yang melewati SLA."""
     created = 0
-    today = date.today()
+    today = cbs._hari_ini()   # tanggal buku WIB (dulu `date.today()` = zona mesin)
     pol_global = await cbs.policy("")
     lead = int(pol_global["reminder_days_before"] or 0)
 

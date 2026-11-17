@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
 from core_utils import new_id, now_iso, safe_doc
+from services.book_date import tanggal_buku
 
 PREFIX = "epr"
 
@@ -32,15 +33,47 @@ def _norm_dt(value: Optional[str], end_of_day: bool = False) -> str:
     return v
 
 
+# Penanda batas hari dari isian tanggal saja (`_norm_dt`, `price_approval_service.norm_until`).
+_AWAL_HARI, _AKHIR_HARI = "T00:00:00+00:00", "T23:59:59+00:00"
+
+
+def _hari_buku(now: str) -> str:
+    try:
+        return tanggal_buku(now)
+    except ValueError:
+        return str(now)[:10]
+
+
+def belum_mulai(vf: str, now: str) -> bool:
+    """`valid_from` masih di depan `now`. Isian TANGGAL saja (tersimpan `YYYY-MM-DDT00:00:00+00:00`) = berlaku mulai
+    tanggal itu WIB: dibanding tanggal buku WIB `now`. Dulu dibanding stempel UTC → harga baru baru berlaku pukul
+    07.00 WIB pada tanggal mulainya (pesanan pukul 00.00–07.00 WIB memakai harga lama)."""
+    if not vf:
+        return False
+    if len(vf) == 25 and vf.endswith(_AWAL_HARI):
+        return vf[:10] > _hari_buku(now)
+    return vf > now
+
+
+def sudah_berakhir(vu: str, now: str) -> bool:
+    """`valid_until` sudah lewat pada `now`. Isian TANGGAL saja (`YYYY-MM-DDT23:59:59+00:00`) = berlaku sampai akhir
+    tanggal itu WIB. Dulu dibanding stempel UTC → harga yang berakhir tanggal X masih dipakai sampai 06.59 WIB X+1."""
+    if not vu:
+        return False
+    if len(vu) == 25 and vu.endswith(_AKHIR_HARI):
+        return vu[:10] < _hari_buku(now)
+    return vu < now
+
+
 def effective_status(r: Dict[str, Any], now: Optional[str] = None) -> str:
     now = now or now_iso()
     if r.get("status") == "inactive":
         return "inactive"
     vf = r.get("valid_from") or ""
     vu = r.get("valid_until") or ""
-    if vf and vf > now:
+    if belum_mulai(vf, now):
         return "scheduled"
-    if vu and vu < now:
+    if sudah_berakhir(vu, now):
         return "expired"
     return "current"
 
@@ -61,9 +94,7 @@ def _active_candidates(records: List[Dict[str, Any]], as_of: str) -> List[Dict[s
             continue
         vf = r.get("valid_from") or ""
         vu = r.get("valid_until") or ""
-        if vf and vf > as_of:
-            continue
-        if vu and vu < as_of:
+        if belum_mulai(vf, as_of) or sudah_berakhir(vu, as_of):
             continue
         out.append(r)
     return out

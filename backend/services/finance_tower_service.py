@@ -4,7 +4,6 @@ Satu endpoint agregat untuk dashboard: posisi kas (GL), ringkasan AR & AP + agin
 snapshot Laba-Rugi (MTD & YTD), tren bulanan + rasio (reuse BI), serta daftar
 jatuh tempo teratas. Ter-scope per entitas.
 """
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from db import db
@@ -82,12 +81,14 @@ def _pl_snapshot(stmt: Dict[str, Any]) -> Dict[str, Any]:
 async def finance_tower(scope: Optional[Dict[str, Any]] = None,
                         entity_id: Optional[str] = None,
                         entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-    now = datetime.now(timezone.utc)
-    year = now.year
-    ym = f"{year}-{now.month:02d}"
+    # Hari ini, bulan, dan tahun berjalan = tanggal buku WIB. Dulu jam UTC: pukul 00.00–07.00 WIB jurnal hari itu
+    # tidak ikut MTD/YTD, dan pada tanggal 1 MTD masih bulan LALU (tanggal 1 Januari: YTD masih tahun lalu).
+    from services.book_date import tanggal_buku
+    today = tanggal_buku()
+    year = int(today[:4])
+    ym = today[:7]
     month_start = f"{ym}-01"
     year_start = f"{year}-01-01"
-    today = now.date().isoformat()
 
     cash = await _cash_position(scope)
     mtd = _pl_snapshot(await fs.income_statement(month_start, today, scope))

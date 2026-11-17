@@ -37,6 +37,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core_utils import new_id, next_doc_number, now_iso, safe_doc, rupiah
 from db import db
+from services.book_date import tanggal_buku
 from services.config_resolver import resolve
 
 COLL = "payment_plans"
@@ -146,16 +147,23 @@ async def plan_policy(entity_id: str = "", customer_id: str = "") -> Dict[str, A
 
 # ── Util tanggal ───────────────────────────────────────────────────────────
 def _d(value: Any) -> datetime:
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    txt = str(value or "")[:19]
-    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(txt[: len(fmt) - 2 if "T" in fmt else 10], fmt).replace(
-                tzinfo=timezone.utc)
-        except ValueError:
-            continue
-    return datetime.now(timezone.utc)
+    """Tanggal buku WIB `value` (tengah malam). Dulu 19 huruf pertama dibaca sebagai jam UTC: pesanan yang dibuat
+    pukul 00.00–07.00 WIB (`created_at` masih tanggal UTC kemarin) mendapat jatuh tempo uang muka, cicilan, dan
+    termin SEHARI LEBIH AWAL (denda ikut maju sehari). Nilai yang tidak dikenali → hari ini WIB (dulu: sekarang)."""
+    try:
+        tgl = tanggal_buku(value if value not in (None, "") else None)
+    except ValueError:
+        tgl = tanggal_buku()
+    return datetime.fromisoformat(tgl).replace(tzinfo=timezone.utc)
+
+
+def _hari_buku(today: Optional[str] = None) -> str:
+    """"Hari ini" untuk jatuh tempo = tanggal buku WIB. Dulu `now_iso()[:10]` (tanggal UTC): pukul 00.00–07.00 WIB
+    baris yang jatuh tempo hari ini dinilai belum jatuh tempo dan baris kemarin belum terlambat."""
+    try:
+        return tanggal_buku(today or None)
+    except ValueError:
+        return str(today)[:10]
 
 
 def _add_months(base: datetime, months: int) -> datetime:
@@ -701,7 +709,7 @@ async def recompute_for_doc(doc_type: str, doc_id: str) -> Optional[Dict[str, An
 
 # ── Pembacaan untuk UI & job ──────────────────────────────────────────────
 def overdue_lines(plan: Dict[str, Any], today: Optional[str] = None) -> List[Dict[str, Any]]:
-    day = (today or now_iso())[:10]
+    day = _hari_buku(today)
     out = []
     for line in plan.get("lines") or []:
         if line.get("status") == "paid":
@@ -724,7 +732,7 @@ def due_lines(plan: Dict[str, Any], today: Optional[str] = None) -> List[Dict[st
     Inilah "alokasi jatuh tempo" yang dipakai menghitung selisih pembayaran:
     `delta = uang masuk − Σ sisa baris yang sudah jatuh tempo`.
     """
-    day = (today or now_iso())[:10]
+    day = _hari_buku(today)
     out = []
     for line in plan.get("lines") or []:
         if line.get("status") == "paid":

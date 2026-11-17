@@ -21,6 +21,7 @@ from pymongo.errors import DuplicateKeyError
 from db import db
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
 from services.input_tax_service import normalize_nsfp
+from services.book_date import tanggal_buku
 
 ELIGIBLE_ORDER_STATUSES = {"confirmed", "partially_picked", "picked",
                           "partially_shipped", "shipped", "done"}
@@ -1203,7 +1204,12 @@ async def render_faktur_html(fkt_id: str) -> str:
         judul = "DOKUMEN PAJAK RETUR"
         banner += (f"<div class='banner pengganti'>Atas nota kredit {fkt.get('credit_note_number', '')} · faktur asal "
                    f"{fkt.get('ref_tax_invoice_number', '') or '-'}.</div>")
-    fd = (fkt.get("faktur_date", "") or "")[:10]
+    # Tanggal faktur = tanggal buku WIB. Dulu 10 huruf pertama stempel UTC: faktur yang diterbitkan pukul 00.00–07.00
+    # WIB tercetak bertanggal KEMARIN (masa pajaknya sudah WIB lewat `period_of`).
+    try:
+        fd = tanggal_buku(fkt.get("faktur_date") or fkt.get("created_at") or None)
+    except ValueError:
+        fd = (fkt.get("faktur_date", "") or "")[:10]
     npwp_note = "" if fkt.get("has_customer_npwp") else \
         "<p style='color:#B23B14;font-size:11px'>* NPWP pembeli belum diisi.</p>"
     html = f"""

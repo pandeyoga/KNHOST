@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, rupiah, next_doc_number
+from services.book_date import tanggal_buku
 from services.roll_service import rebuild_balance
 from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services import gl_service
@@ -28,6 +29,15 @@ import domain_registry as _dr        # Fase A · PS-02 — snapshot domain roll
 from services.customer_service import order_payment_method, NON_AR_METHODS
 
 _log = logging.getLogger(__name__)
+
+
+def _tanggal_masa_depan(stamp: str) -> bool:
+    """Tanggal buku WIB `stamp` sesudah hari ini WIB. Dulu `stamp[:10] > now_iso()[:10]` (tanggal UTC): pukul
+    00.00–07.00 WIB tanggal hari ini yang diisi pengguna ditolak "tidak boleh di masa depan"."""
+    try:
+        return tanggal_buku(stamp) > tanggal_buku()
+    except ValueError:
+        return str(stamp)[:10] > tanggal_buku()
 
 
 
@@ -728,7 +738,7 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
 
     field, label = RETURN_MILESTONES[key]
     stamp = str(at or "").strip() or now_iso()
-    if stamp[:10] > now_iso()[:10]:
+    if _tanggal_masa_depan(stamp):
         raise ValueError(
             f"Tanggal “{label}” tidak boleh di masa depan — penanda perjalanan adalah "
             f"catatan kejadian, bukan rencana.")
@@ -785,7 +795,7 @@ async def record_return_shipment(return_id: str, payload: Dict[str, Any], actor:
         raise ValueError("Ekspedisi pelanggan: isi nama ekspedisi & nomor resi supaya gudang bisa melacak barangnya.")
     shipped = bool(payload.get("shipped"))
     when = clean("shipped_at", 40) or (now_iso() if shipped else "")
-    if shipped and when[:10] > now_iso()[:10]:
+    if shipped and _tanggal_masa_depan(when):
         raise ValueError("Tanggal dikirim/dijemput tidak boleh di masa depan — isi jadwal jemput sebagai rencana.")
     rec = {"method": method, "method_label": RETURN_SHIPMENT_METHODS[method], "courier": courier,
            "tracking_no": tracking, "driver": clean("driver"), "vehicle": clean("vehicle", 40),
