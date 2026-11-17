@@ -43,7 +43,10 @@ const OTHER = [
   { key: "documents", label: "Dokumen" },
   { key: "scorecard", label: "Skor" },
 ];
-const CB_PAYABLE = new Set(["approved", "scheduled", "verified"]);
+// S5 (pelatihan 18 Nov) — status kontrabon yang bisa dibayar (pintu PK-05: disetujui · dijadwalkan bayar · terverifikasi bila
+// kebijakan PT tidak mewajibkan persetujuan). Dulu "scheduled" (tidak ada status itu) → kontrabon "Dijadwalkan bayar" —
+// langkah bayar yang sebenarnya — tidak punya tombol Bayar di kartu pemasok.
+const CB_PAYABLE = new Set(["approved", "scheduled_payment", "verified"]);
 const money = (v) => formatCurrency(Number(v || 0));
 const fmtDate = (s) => (s ? formatDate(s) : "—");
 

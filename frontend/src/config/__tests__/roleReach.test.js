@@ -67,13 +67,16 @@ const PYT3_LIBUR = ["hr-holidays"];
 // server (tanpa `permission`) menyembunyikannya (serverAccessReach.test.js); Perangkat RFID tetap khusus admin.
 const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-role-check", "settings-attendance-devices",
   "settings-whatsapp"];
+// S5 (pelatihan keuangan 18 Nov, permintaan pemilik "hutang piutang per pihak") — layar BARU Keuangan › Hutang › Hutang
+// per Pemasok (`vendor_bill.view`; bayar = `vendor_bill.pay`/`contra_bon.pay`): admin, manajer, Finance.
+const S5_HUTANG_PEMASOK = ["ap-by-supplier"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
     ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
-    ...KMT3_LEMBAR],
+    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
     ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
-    ...KMT3_LEMBAR,
+    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
@@ -103,8 +106,13 @@ export const ROLE_REACH_ADDITIONS = {
   finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
     "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides",
     ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN, ...PYT4_SETORAN_FINANCE, ...KMT3_LEMBAR,
-    ...KSDM01_SDM_FINANCE],
+    ...KSDM01_SDM_FINANCE, ...S5_HUTANG_PEMASOK],
 };
+/** K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan jangan
+ *  dipisah") — peran yang jangkauannya BOLEH bertambah sebesar seluruh jangkauan peran lain (dihitung, bukan daftar:
+ *  layar baru Manajer ikut). `ROLE_NAV.finance.inherit = "manager"`. Uji `kfin01FinanceSetaraManajer.test.js` menjaga
+ *  arah sebaliknya (semua layar Manajer sampai untuk Finance). */
+export const ROLE_REACH_SAME_AS = { finance: "manager" };
 /** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
  *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.
  *  · MN-T1 — SDM › Kinerja & Insentif: tab pertama kini Kinerja Sales (urutan tabel MN-T1); KPI Karyawan tetap tab hub.
@@ -113,7 +121,8 @@ export const ROLE_REACH_ADDITIONS = {
 export const ROLE_REACH_RELANDED = {
   admin: { "hr-kpi-hub": "incentive-capaian" },
   manager: { "hr-kpi-hub": "incentive-capaian" },
-  finance: { "cash-bank": "bank-accounts" },
+  // K-FIN-01 — hub yang dulu hanya berisi satu tab Finance kini mendarat di tab pertama Manajer; tab lamanya tetap.
+  finance: { "cash-bank": "bank-accounts", "products-pricing": "md-products", "wms-operations": "operations" },
 };
 /** Pencabutan jangkauan yang SAH (layar yang server-nya menolak peran itu): { peran: ["id", …] } + alasan. */
 // FIX-1 (audit B1b UI-48) — "Meja Saya" untuk Admin Gudang & Admin Sales: server `/desks/me` menolak kedua peran
@@ -177,6 +186,8 @@ describe.each(BUILTIN)("peran %s", (role) => {
   test("tidak ada layar tujuan BARU selain penambahan tercatat", () => {
     const before = new Set(Object.values(baseline.roles[role] || {}).map(aliasTarget));
     const allowed = new Set(ROLE_REACH_ADDITIONS[role] || []);
+    const peer = ROLE_REACH_SAME_AS[role];   // K-FIN-01
+    if (peer) for (const id of universe()) { const t = resolveDeepLinkTarget(id, peer); if (t) allowed.add(t.view); }
     const extra = [];
     for (const id of universe()) {
       const t = resolveDeepLinkTarget(id, role);

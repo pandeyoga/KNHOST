@@ -14,10 +14,16 @@
  * CR-T2 — bagian **Jadwal Tagihan**: baris jadwal tersimpan seluruh pesanan pelanggan (surat jalan, uang muka, baris
  * rencana cicilan, nota debit) dengan kolom Pesanan, Tagihan, Jatuh tempo, Nilai, Dibayar, Sisa, Telat (hari); pesanan dan
  * jurnalnya terbuka lewat Jejak Dokumen (L8). Memuat / galat / kosong ("Tidak ada tagihan terbuka.") dibedakan.
+ * S5 (pelatihan 18 Nov, permintaan pemilik "piutang per pelanggan … aksinya lengkap") — dari satu tempat: **Rekening koran**
+ * (kepala panel; tab yang sama dengan kartu pelanggan `CustomerStatementTab`: tampil, Cetak PDF, Salin pengingat — izin
+ * `ar_receipt.view`/`credit_profile.view`, server `GET /customers/{id}/statement`) dan **Janji bayar** per pesanan (form
+ * tindak lanjut penagihan yang sama dengan Penagihan & Penerimaan `WorklistFollowup`, izin `order.update` =
+ * `POST /customers/{id}/followups`). Terima pembayaran (beberapa pesanan, titipan) tetap form `ReceivePaymentModal`.
  */
 import { useState } from "react";
 import {
   FileText, Loader2, Receipt, X, BadgeDollarSign, Wallet, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Truck,
+  BookOpen, PhoneCall,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
@@ -28,6 +34,8 @@ import { penaltyMeta } from "./payments/paymentApi";
 import { can } from "../../config/roles";
 import { AskKnButton } from "../../components/AskKnButton";
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
+import CustomerStatementTab from "../crm/CustomerStatementTab";   // S5 — rekening koran dari rincian piutang
+import { WorklistFollowup } from "../crm/CollectionWorklist";   // S5 — janji bayar per pesanan
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -41,6 +49,15 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
   const canPay = Boolean(onPay) && can(currentUser?.permissions || {}, "ar_receipt", "create");   // PK-43
   const [open, setOpen] = useState({});   // PK-41 — pesanan yang rincian surat jalannya dibuka
   const toggle = (oid) => setOpen((o) => ({ ...o, [oid]: !o[oid] }));
+  // S5 — rekening koran (izin baca sama dengan server `IZIN_RK`) & janji bayar (izin `order.update`).
+  const perms = currentUser?.permissions || {};
+  const canStatement = can(perms, "ar_receipt", "view") || can(perms, "credit_profile", "view");
+  const canPromise = can(perms, "order", "update");
+  const [showStatement, setShowStatement] = useState(false);
+  const [followFor, setFollowFor] = useState(null);   // baris pesanan yang dicatat janji bayarnya
+  const [followMsg, setFollowMsg] = useState("");
+  const stmtCustomer = { id: customerId, name: detail?.customer_name || "",
+    entity_id: selectedEntity && selectedEntity !== "all" ? selectedEntity : "" };
   const t = detail?.totals || {};
   // M34 — tombol nota denda nonaktif + alasan bila tidak ada estimasi denda yang belum jadi nota.
   const accrueReason = !detail ? "" : (t.denda_undocumented || 0) > 0.01 ? ""
@@ -67,6 +84,12 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
               {/* AG-T3 — "Tanya soal layar ini" (Asisten Keuangan; tampil menurut izin, bukan nama peran). */}
               <AskKnButton type="ar_receipt" id={customerId} label={detail?.customer_name || ""}
                 buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
+              {canStatement && (
+                <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="ar-aging-statement"
+                  aria-pressed={showStatement} onClick={() => setShowStatement((v) => !v)}>
+                  <BookOpen size={13} aria-hidden="true" /> {showStatement ? "Tutup rekening koran" : "Rekening koran"}
+                </button>
+              )}
               {canAccrue && (
                 <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="ar-aging-accrue"
                   disabled={accruing || Boolean(accrueReason)} title={accrueReason || undefined}
@@ -94,6 +117,13 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
         {accrueNotice?.text && (
           <div className={`notice-bar ${accrueNotice.tone}`} role={accrueNotice.tone === "danger" ? "alert" : "status"}
             data-testid="ar-aging-accrue-notice">{accrueNotice.text}</div>
+        )}
+        {followMsg && <div className="notice-bar success" role="status" data-testid="ar-aging-followup-notice">{followMsg}</div>}
+        {canStatement && showStatement && (
+          <div className="rounded-lg border border-kn-divider p-2" data-testid="ar-aging-statement-panel">
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-fs-13 font-bold text-kn-text"><BookOpen size={14} aria-hidden="true" />Rekening koran</h3>
+            <CustomerStatementTab customer={stmtCustomer} currentUser={currentUser} selectedEntity={selectedEntity} />
+          </div>
         )}
         {canAccrue && accrueReason && (
           <p id="ar-aging-accrue-reason" className="text-fs-12 text-kn-neutral" data-testid="ar-aging-accrue-reason">
@@ -125,12 +155,12 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                     <th className="text-right" title="Piutang tercatat (barang sudah dikirim) · nilai pesanan yang belum dikirim">Tercatat · Belum dikirim</th>
                     <th className="text-right">Est. Denda</th>
                     <th>Nota Denda</th>
-                    {canPay && <th className="col-sticky-end"><span className="sr-only">Aksi</span></th>}
+                    {(canPay || canPromise) && <th className="col-sticky-end"><span className="sr-only">Aksi</span></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {detail.items.map((it) => (
-                    <OrderRows key={it.order_id} it={it} open={!!open[it.order_id]} cols={canPay ? 10 : 9}>
+                    <OrderRows key={it.order_id} it={it} open={!!open[it.order_id]} cols={canPay || canPromise ? 10 : 9}>
                     <tr data-testid={`ar-detail-row-${it.order_id}`}>
                       <td className="px-3 py-2 font-semibold text-[#0058CC] whitespace-nowrap">
                         <button type="button" className="icon-button mr-1 align-middle" onClick={() => toggle(it.order_id)}
@@ -180,15 +210,24 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                           </div>
                         )}
                       </td>
-                      {canPay && (
+                      {(canPay || canPromise) && (
                         <td className="col-sticky-end text-right">
-                          {Number(it.outstanding || 0) > 0.005 && (
-                            <EntityGatedButton selectedEntity={selectedEntity} what={PAY_WHAT} hint={false}
-                              aria-describedby="ar-aging-pay-scope-note" data-testid={`ar-aging-pay-${it.order_id}`}
-                              className="secondary-button btn-sm whitespace-nowrap" onClick={() => onPay(it.order_id)}>
-                              Bayar
-                            </EntityGatedButton>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {canPromise && Number(it.outstanding || 0) > 0.005 && (
+                              <button type="button" className="secondary-button btn-sm whitespace-nowrap"
+                                data-testid={`ar-aging-promise-${it.order_id}`} title="Catat janji bayar / tindak lanjut penagihan"
+                                onClick={() => { setFollowMsg(""); setFollowFor(it); }}>
+                                <PhoneCall size={12} aria-hidden="true" /> Janji bayar
+                              </button>
+                            )}
+                            {canPay && Number(it.outstanding || 0) > 0.005 && (
+                              <EntityGatedButton selectedEntity={selectedEntity} what={PAY_WHAT} hint={false}
+                                aria-describedby="ar-aging-pay-scope-note" data-testid={`ar-aging-pay-${it.order_id}`}
+                                className="secondary-button btn-sm whitespace-nowrap" onClick={() => onPay(it.order_id)}>
+                                Bayar
+                              </EntityGatedButton>
+                            )}
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -222,6 +261,13 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
           </>
         )}
       </div>
+      {followFor && (
+        <WorklistFollowup row={{ customer_id: customerId, customer_name: detail?.customer_name || "", order_id: followFor.order_id,
+          order_number: followFor.order_number, outstanding: followFor.outstanding, overdue: followFor.overdue,
+          days_late: followFor.days_late }}
+          onClose={() => setFollowFor(null)}
+          onDone={(m) => { setFollowFor(null); setFollowMsg(m || "Tindak lanjut dicatat."); onRefresh?.(); }} />
+      )}
     </div>
   );
 }

@@ -66,6 +66,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["vendor_bill", "contra_bon", "landed_cost", "input_tax"],
      "nav": ["pembelian", "accounts-payable", "vendor-bills", "contra-bons", "landed-cost",
              "gr-ir",   # PK-28 — tab Hutang › GR/IR (Diterima Belum Ditagih)
+             "ap-by-supplier",   # S5 (pelatihan 18 Nov) — tab Hutang › Hutang per Pemasok (`vendor_bill.view`)
              "keuangan", "akuntansi", "tax-hub", "input-tax",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
              "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — aturan kontrabon
     {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar-PT",   # KP-T9 — istilah PT (dulu "Antar Badan Usaha")
@@ -828,6 +829,9 @@ VIEW_RESOURCE_OVERRIDES["customers-crm"] = ["customer"]
 # PK-28 — tab Hutang › GR/IR dibuka izin `vendor_bill` (GET /api/finance/gr-ir = `vendor_bill.view`), bukan seluruh modul
 # Hutang Supplier & Kontrabon (pemegang izin kontrabon/landed cost saja tidak mendapat tab yang langsung menolak).
 VIEW_RESOURCE_OVERRIDES["gr-ir"] = ["vendor_bill"]
+# S5 (pelatihan 18 Nov) — tab Hutang › Hutang per Pemasok dibuka izin `vendor_bill` (GET /api/vendor-bills/payables/
+# by-supplier = `vendor_bill.view`), alasan sama dengan GR/IR.
+VIEW_RESOURCE_OVERRIDES["ap-by-supplier"] = ["vendor_bill"]
 # PM-T4 — tab Kas & Bank › Titipan Sales dibuka izin `cash_holding` (GET /api/cash-holdings = `cash_holding.view`). Sales
 # memegang `cash_holding.view/create` (titipan & setorannya sendiri): tab yang HANYA milik modul "Kas, Bank & Kasus
 # Keuangan" (Rekening & Saldo, Transaksi Kas, Rekonsiliasi, Kasus, aturan bank, alasan koreksi) tetap dibuka sumber daya

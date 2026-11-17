@@ -92,6 +92,9 @@ export const HUB_TABS = {
     { view: "contra-bons",       label: "Kontrabon",             roles: ["admin", "manager", "warehouse"] },
     // PK-28 (IV-03) — sisa GR/IR per PO + umur + kliring. Finance lewat ROLE_NAV (lihat; kliring butuh accounting.manage).
     { view: "gr-ir",             label: "GR/IR (Diterima Belum Ditagih)", roles: ["admin", "manager"] },
+    // S5 (pelatihan 18 Nov, permintaan pemilik "hutang piutang per pihak") — hutang dikelompokkan per pemasok + bayar
+    // satu/beberapa tagihan (pasangan Piutang › Saldo & Umur). Finance di `roles` langsung (lihat & bayar, K-17).
+    { view: "ap-by-supplier",    label: "Hutang per Pemasok",    roles: ["admin", "manager", "finance"] },
     // MN-T1 — Landed Cost PINDAH ke Pembelian › Pesanan Pembelian (view sama).
   ],
   // L08 LN-080 — menu Retur terpadu: semua arah retur di satu tempat (tiap tab = layar aslinya).

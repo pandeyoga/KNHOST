@@ -160,6 +160,7 @@ export const PAGE_META = {
   // sehingga pengguna kehilangan jejak posisinya (pelajaran penutupan G-8).
   "contra-bons":          { kicker: "Pembelian",      title: "Kontrabon \u00b7 Siklus Tukar Faktur Supplier" },
   "gr-ir":                { kicker: "Keuangan",       title: "GR/IR \u00b7 Barang Diterima Belum Ditagih" },   // PK-28
+  "ap-by-supplier":       { kicker: "Keuangan",       title: "Hutang per Pemasok" },   // S5 (pelatihan 18 Nov)
   // FASE G-6 — antar-PT sebagai jual-beli (bukan pindah gudang).
   "interco-transactions": { kicker: "Pembelian", title: "Transaksi Antar-PT \u00b7 Jual-Beli dalam Grup" },
   // KP-T9 — enam layar baru (bagian layar wadah lama yang dinaikkan menjadi tab hub Pengaturan).

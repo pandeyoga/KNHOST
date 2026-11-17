@@ -34,7 +34,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
   ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
   AmendmentReasonsPanel, IncentiveSetupView, CapaianView, IncentiveSheetsView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
-  CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
+  CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, APBySupplierView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
   AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayrollRemittancesView, PayComponentsView, HolidaysView, LeaveView, OvertimeView,
@@ -403,6 +403,8 @@ export default function AppViewRouter(props) {
       {activeView === "purchase-returns" && <PurchaseReturns currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "vendor-bills" && <VendorBillsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} onOpenDocument={openDocument} />}
       {activeView === "gr-ir" && <GrIrView />}
+      {/* S5 (pelatihan 18 Nov) — Keuangan › Hutang › Hutang per Pemasok (pasangan Piutang › Saldo & Umur). */}
+      {activeView === "ap-by-supplier" && <APBySupplierView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} onOpenDocument={openDocument} />}
       {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} {...focusDocProps} />}

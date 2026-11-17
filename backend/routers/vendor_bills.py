@@ -19,7 +19,7 @@ from services import gl_service
 from services.vendor_bill_service import (
     evaluate_match, bill_financials, next_bill_number, sync_po_billing,
     already_billed_map, build_billing_context, ACTIVE_BILL_STATUSES, ensure_line_ids, po_line_id,
-    returned_unbilled_map, grir_fields,
+    returned_unbilled_map, grir_fields, AP_AGING_KEYS, AP_AGING_LABELS, ap_aging_bucket,
 )
 from request_context import active_entity_or
 
@@ -129,17 +129,43 @@ async def vendor_bill_payables(request: Request, entity_id: str = None) -> Dict[
     }
 
 
-#: PK-41 (RP-07) — kelompok umur hutang (hari lewat jatuh tempo) dan judul kolomnya.
-AP_AGING_KEYS = ("not_due", "1-30", "31-60", "61-90", ">90")
-AP_AGING_LABELS = {"not_due": "Belum jatuh tempo", "1-30": "1–30 hari", "31-60": "31–60 hari",
-                   "61-90": "61–90 hari", ">90": "> 90 hari"}
+# ── Hutang per Pemasok (S5, pelatihan 18 Nov) — STATIC sebelum route /{id} ──────
+
+@router.get("/vendor-bills/payables/by-supplier")
+async def vendor_bill_payables_by_supplier(request: Request, entity_id: str = None) -> Dict[str, Any]:
+    """Keuangan › Hutang › Hutang per Pemasok: satu baris per (pemasok, PT) — jumlah tagihan terbuka, sisa hutang,
+    kelompok umur (sama dengan ringkasan Hutang › Tagihan), jatuh tempo terdekat, tagihan yang dipegang kontrabon, dan
+    potongan belum dipakai (nota debit + uang muka ke pemasok). Logika: `services/ap_party_service.supplier_rows`."""
+    await require_permission(request, "vendor_bill", "view")
+    from services import ap_party_service as aps
+    ctx = await entity_ctx(request)
+    q = resolve_list_scope("vendor_bills", {}, ctx, entity_id)
+    out = await aps.supplier_rows(q)
+    ent_ids = _scope_entity_ids(q)
+    out["combined"] = ent_ids is None or len(ent_ids) != 1
+    return out
 
 
-def ap_aging_bucket(days_past_due: int) -> str:
-    """≤ 0 → belum jatuh tempo; lalu 1–30, 31–60, 61–90, > 90 hari lewat jatuh tempo."""
-    if days_past_due <= 0:
-        return "not_due"
-    return "1-30" if days_past_due <= 30 else "31-60" if days_past_due <= 60 else "61-90" if days_past_due <= 90 else ">90"
+@router.get("/vendor-bills/payables/by-supplier/{supplier_id}")
+async def vendor_bill_payables_supplier_detail(supplier_id: str, request: Request,
+                                               entity_id: str = None) -> Dict[str, Any]:
+    """Rincian hutang satu pemasok: tagihan terbuka (+ kontrabon pemegangnya), kontrabon terbuka (boleh dibayar
+    sekarang atau belum), dan potongan belum dipakai. Kontrabon hanya bagi pemegang `contra_bon.view`."""
+    actor = await require_permission(request, "vendor_bill", "view")
+    from dependencies import has_permission
+    from services import ap_party_service as aps
+    ctx = await entity_ctx(request)
+    q = resolve_list_scope("vendor_bills", {}, ctx, entity_id)
+    ids = _scope_entity_ids(q) or list(ctx.allowed_entity_ids)
+    out = await aps.supplier_detail(supplier_id, ids, {"entity_id": q["entity_id"]} if "entity_id" in q else {},
+                                    with_contra_bons=await has_permission(actor, "contra_bon", "view"))
+    if out is None:
+        raise HTTPException(status_code=404, detail="Pemasok tidak ditemukan")
+    out["combined"] = len(ids) != 1
+    return out
+
+
+#: PK-41 (RP-07) — kelompok umur hutang: definisi di `vendor_bill_service` (dipakai juga Hutang per Pemasok, S5).
 
 
 def _scope_entity_ids(q: Dict[str, Any]) -> Optional[List[str]]:

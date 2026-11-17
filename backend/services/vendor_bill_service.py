@@ -241,6 +241,20 @@ def bill_financials(bill: Dict[str, Any]) -> Dict[str, Any]:
 #: Status tagihan yang berhutang (dibaca ringkasan hutang dan kartu pemasok).
 PAYABLE_BILL_STATUSES = ("posted", "paid")
 
+#: PK-41 (RP-07) — kelompok umur hutang (hari lewat jatuh tempo) dan judul kolomnya. S5 (pelatihan 18 Nov) — dipindah
+#: dari `routers/vendor_bills.py` supaya ringkasan Hutang › Tagihan dan Hutang per Pemasok (`ap_party_service`) memakai
+#: satu definisi.
+AP_AGING_KEYS = ("not_due", "1-30", "31-60", "61-90", ">90")
+AP_AGING_LABELS = {"not_due": "Belum jatuh tempo", "1-30": "1–30 hari", "31-60": "31–60 hari",
+                   "61-90": "61–90 hari", ">90": "> 90 hari"}
+
+
+def ap_aging_bucket(days_past_due: int) -> str:
+    """≤ 0 → belum jatuh tempo; lalu 1–30, 31–60, 61–90, > 90 hari lewat jatuh tempo."""
+    if days_past_due <= 0:
+        return "not_due"
+    return "1-30" if days_past_due <= 30 else "31-60" if days_past_due <= 60 else "61-90" if days_past_due <= 90 else ">90"
+
 
 async def open_payables(scope_q: Dict[str, Any]) -> List[Dict[str, Any]]:
     """PK-41 + MN-T3 (D1) — SATU pembaca tagihan berhutang yang masih bersisa, dipakai ringkasan Hutang › Tagihan

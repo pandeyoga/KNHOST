@@ -50,8 +50,8 @@ describe("U1 — Keuangan 5 entri + Akuntansi & Pajak 5 entri (admin); grup Kas 
 
 describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
-    // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih).
-    ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 3], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
+    // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih). S5 (pelatihan 18 Nov) — + Hutang per Pemasok.
+    ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
     // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian; KM-T5 — − Kinerja Sales, − Komisi Otomatis.
     ["hr-kpi-hub", 4], ["purchase-orders", 7],
   ])("%s = %i tab", (hub, n) => {
@@ -61,7 +61,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("finance-tower")).toEqual(["Perlu Tindakan", "Posisi", "Analisis"]);
     expect(labels("ar-aging")).toEqual(["Saldo & Umur", "Penagihan & Penerimaan", "Rencana & Denda",
       "Titipan & Saldo Kredit", "Kredit & Plafon", "Kasus"]);
-    expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)"]);   // PK-28
+    expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)",   // PK-28
+      "Hutang per Pemasok"]);   // S5 (pelatihan 18 Nov)
     // PM-T4 — + Titipan Sales (setoran titipan tunai sales).
     expect(labels("cash-bank")).toEqual(["Rekening & Saldo", "Transaksi Kas", "Rekonsiliasi", "Kas Kecil", "Titipan Sales"]);
     expect(labels("closing")).toEqual(["Daftar Periksa & Tutup", "Buka Periode", "Posting Gagal"]);
@@ -149,18 +150,18 @@ describe("U6 — alamat lama tetap mendarat (admin)", () => {
 });
 
 describe("U7–U10 — menu per peran", () => {
-  test("U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 3, Kas & Bank 5, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran)", () => {
+  // K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan jangan
+  // dipisah") — menu Keuangan, Akuntansi & Pajak, dan Pengaturan › Keuangan & Pajak Finance = Manajer (dulu: Beranda 3,
+  // Piutang 6, Hutang 3, Kas & Bank 5, Antar-PT; Buku Besar 2 + Faktur Keluaran; Pemetaan Akun saja).
+  test("U7 Finance (K-FIN-01 = Manajer): Keuangan, Akuntansi & Pajak, Pengaturan › Keuangan & Pajak", () => {
+    const mgr = menu("manager");
     const m = menu("finance");
-    expect(m.keuangan).toEqual({
-      "finance-tower": ["finance-desk", "finance-tower", "bi-finance"],
-      "ar-aging": ["ar-aging", "collection-worklist", "payment-plans", "customer-credit", "credit-overrides", "finance-cases"],
-      "accounts-payable": ["vendor-bills", "contra-bons", "gr-ir"],   // PK-28 — GR/IR: lihat (vendor_bill.view)
-      "cash-bank": ["bank-accounts", "cash-management", "bank-reconciliation", "petty-cash", "cash-holdings"],   // PM-T4
-      "interco-transactions": [],
-    });
-    expect(m.akuntansi).toEqual({ ledger: ["general-ledger", "chart-of-accounts"], "tax-hub": ["tax-invoices"] });
-    ["closing", "fin-reports", "fixed-assets"].forEach((id) => expect(m.akuntansi[id]).toBeUndefined());
-    expect(m["settings-hub"]["settings-finance"]).toEqual(["gl-account-mappings"]);   // IA-06
+    expect(m.keuangan).toEqual(mgr.keuangan);
+    expect(m.akuntansi).toEqual(mgr.akuntansi);
+    expect(m["settings-hub"]["settings-finance"]).toEqual(mgr["settings-hub"]["settings-finance"]);
+    expect(m.keuangan["cash-bank"]).toEqual(expect.arrayContaining(["bank-accounts", "cash-holdings"]));
+    expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
+    expect(m["settings-hub"]["settings-finance"]).toContain("gl-account-mappings");   // IA-06
   });
   test("U8 Sales: Keuangan hanya Piutang (Penagihan, Kasus) + Kas & Bank (Kas Kecil); SDM tidak tampil (KM-T5)", () => {
     const m = menu("sales");

@@ -194,13 +194,20 @@ async def _plan_vendor_bill(bill: Dict[str, Any], amount: Optional[float], paid_
             "precondition": {"status": "posted"}}
 
 
+def cb_payable_statuses(pol: Dict[str, Any]) -> Tuple[str, ...]:
+    """Status kontrabon yang boleh dibayar menurut kebijakan PT (`contra_bon_service.policy`). S5 (pelatihan 18 Nov) —
+    satu definisi untuk pintu bayar ini dan Hutang per Pemasok (`ap_party_service`), yang menyalakan tombol Bayar."""
+    if pol.get("block_pay_before_approval"):
+        return ("approved", "scheduled_payment")
+    return ("verified", "approved", "scheduled_payment")
+
+
 async def _plan_contra_bon(cb: Dict[str, Any], amount: Optional[float], paid_at: str, bank_account_id: str,
                            method: str, iid: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     from services import contra_bon_service as cbs
     from services.bank_service import account_cash_type
     pol = await cbs.policy(cb.get("entity_id", ""))
-    allowed = ("approved", "scheduled_payment") if pol["block_pay_before_approval"] \
-        else ("verified", "approved", "scheduled_payment")
+    allowed = cb_payable_statuses(pol)
     if cb["status"] not in allowed:
         raise ApPaymentError(
             f"Kontrabon berstatus '{cbs.STATUS_LABEL.get(cb['status'], cb['status'])}' belum bisa dibayar. "

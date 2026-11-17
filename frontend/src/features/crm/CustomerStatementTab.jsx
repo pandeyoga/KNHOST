@@ -23,6 +23,11 @@ import { openTrace } from "../documents/trace/traceDeepLink";
 import { copyText } from "../finance/creditDeskParts";
 
 const awalBulan = (tgl) => `${tgl.slice(0, 8)}01`;
+/** S5 (pelatihan 18 Nov) — nama berkas PDF hanya huruf/angka/tanda hubung. Dulu nama pelanggan dipakai apa adanya
+ *  ("rekening-koran-latihan-91-·-toko-…pdf"): peramban menolak nama ber-"·" dan menyimpan berkas sebagai "download" tanpa
+ *  ".pdf" (terjadi saat kartu/rincian piutang tidak membawa kode pelanggan). */
+export const namaBerkas = (s) => String(s || "").normalize("NFKD").replace(/[^\w-]+/g, "-").replace(/-+/g, "-")
+  .replace(/^-|-$/g, "").toLowerCase() || "pelanggan";
 const Money = ({ v }) => <span className="whitespace-nowrap tabular-nums">{formatCurrency(v)}</span>;
 
 function StatementTable({ part, from, to, testId }) {
@@ -105,7 +110,7 @@ export default function CustomerStatementTab({ customer, currentUser, selectedEn
       const url = URL.createObjectURL(r.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rekening-koran-${(customer.code || customer.name || "pelanggan").replace(/\s+/g, "-").toLowerCase()}-${from}-${to}.pdf`;
+      a.download = `rekening-koran-${namaBerkas(customer.code || customer.name)}-${from}-${to}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       setNotice("PDF rekening koran sudah diunduh.");
