@@ -3,16 +3,17 @@
  "lingkup": "konsep · cek_buku · kesalahan_umum · titik_kontrol · catatan_pelatih semua materi F01–F18, K01–K09, H01–H04, A1–A5 (S1–S4 dikerjakan agen lain). Nasihat umum tidak dimasukkan.",
  "ringkasan": {
   "klaim": 433,
-  "terbukti — uji lama": 317,
+  "langkah_uji_V9": 61,
+  "langkah_uji_V9_lulus": 61,
+  "terbukti — uji lama": 310,
   "perlu keputusan pemilik": 16,
-  "terbukti — uji V9": 47,
+  "terbukti — uji V9": 39,
   "diperbaiki teks": 20,
+  "diganti K-FIN-01": 15,
   "terbukti — cek buku/izin": 4,
   "diperbaiki aplikasi + teks": 1,
   "terbukti — uji unit": 25,
-  "belum dibuktikan": 3,
-  "langkah_uji_V9": 61,
-  "langkah_uji_V9_lulus": 61
+  "belum dibuktikan": 3
  },
  "klaim": [
   {
@@ -591,10 +592,11 @@
    "kode": "F05",
    "bagian": "kesalahan_umum.0",
    "klaim": "Finance tidak punya [Susun Jadwal]; rencana baru disusun Admin Penjualan/Manajer",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-umur langkah 2 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F05",
@@ -668,11 +670,12 @@
    "kode": "F06",
    "bagian": "konsep.2",
    "klaim": "Finance hanya membaca antrean kredit; Manajer memutus",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/F06_kredit_plafon.js · langkah 1 (lulus)",
     "uji/e2e/A1_order_to_cash.js · langkah 8 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F06",
@@ -698,10 +701,11 @@
    "kode": "F06",
    "bagian": "kesalahan_umum.0",
    "klaim": "Finance tidak punya tombol Setujui",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/F06_kredit_plafon.js · langkah 1 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F06",
@@ -852,11 +856,11 @@
    "kode": "F07",
    "bagian": "catatan_pelatih",
    "klaim": "Finance tidak bisa menyetujui PD maupun LPJ",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 4 (lulus)"
    ],
-   "catatan": "LPJ di layar (V9). PD: izin Finance tanpa 'setujui' (server); jenjang Pimpinan & Bagian Keuangan = Admin (K-13)."
+   "catatan": "LPJ di layar (V9). PD: izin Finance tanpa 'setujui' (server); jenjang Pimpinan & Bagian Keuangan = Admin (K-13). 18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F07",
@@ -1328,12 +1332,12 @@
    "kode": "F11",
    "bagian": "catatan_pelatih",
    "klaim": "Finance melihat & membayar; membuat & membatalkan tagihan wewenang Manajer",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 1 (lulus)",
     "uji/F11_bayar_tagihan.js · langkah 3 (lulus)"
    ],
-   "catatan": "B-08."
+   "catatan": "B-08. 18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F11",
@@ -1418,10 +1422,11 @@
    "kode": "F12",
    "bagian": "kesalahan_umum.0",
    "klaim": "Finance tidak punya [Kontrabon baru]",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/F12_kontrabon.js · langkah 1 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F12",
@@ -1759,10 +1764,11 @@
    "kode": "F15",
    "bagian": "catatan_pelatih",
    "klaim": "Membatalkan setoran butuh izin Manajer",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 10 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F15",
@@ -1888,12 +1894,12 @@
    "kode": "F16",
    "bagian": "catatan_pelatih",
    "klaim": "Finance hanya izin lihat; tombol tulis disembunyikan",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/F16_buku_besar_jejak.js · langkah 1, 7 (lulus)",
     "jest latihBukuBesarIzin.test.js"
    ],
-   "catatan": "B-02."
+   "catatan": "B-02. 18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "F16",
@@ -2360,10 +2366,11 @@
    "kode": "H03",
    "bagian": "kesalahan_umum.3",
    "klaim": "Anulir proses yang diposting hanya Manajer",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "H04",
@@ -2473,10 +2480,11 @@
    "kode": "K01",
    "bagian": "konsep.4",
    "klaim": "Finance hanya melihat; Manajer/Admin kelola; akun baru untuk PT terpilih",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/konfigurasi/K01_bagan_akun.js · langkah 5, 6 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "K01",
@@ -2509,10 +2517,11 @@
    "kode": "K01",
    "bagian": "kesalahan_umum.1",
    "klaim": "Finance tidak punya tombol Tambah Akun",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/konfigurasi/K01_bagan_akun.js · langkah 5 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "K01",
@@ -2846,10 +2855,11 @@
    "kode": "K05",
    "bagian": "konsep.4",
    "klaim": "Finance tidak membuka layar Aturan Keuangan & Pajak",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 4 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "K05",
@@ -2891,10 +2901,11 @@
    "kode": "K05",
    "bagian": "kesalahan_umum.3",
    "klaim": "Finance hanya melihat Pemetaan Akun di Keuangan & Pajak",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 4 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "K05",
@@ -3941,10 +3952,11 @@
    "kode": "A4",
    "bagian": "titik_kontrol.2",
    "klaim": "Finance tidak bisa mengesahkan proses gaji",
-   "hasil": "terbukti — uji lama",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/sdm/H03_proses_gaji.js · langkah 4 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "A4",
@@ -3970,11 +3982,12 @@
    "kode": "A4",
    "bagian": "titik_kontrol.5",
    "klaim": "Anulir hanya Manajer; gaji dibayar dikoreksi lewat susulan",
-   "hasil": "terbukti — uji V9",
+   "hasil": "diganti K-FIN-01",
    "bukti": [
     "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)",
     "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 8 (lulus)"
-   ]
+   ],
+   "catatan": "18 Nov: klaim berbasis nama peran tidak berlaku lagi — peran bawaan Finance memegang izin Manajer (K-FIN-01) dan teks materi kini menyebut IZIN yang dibutuhkan (peran bisa kustom). Bukti: uji jalan 18 Nov mencatat tombol yang kini tampil (catatan \"K-FIN-01: …\" di hasil skrip), uji/variasi/V10."
   },
   {
    "kode": "A4",
