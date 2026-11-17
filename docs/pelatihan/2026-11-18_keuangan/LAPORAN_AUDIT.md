@@ -223,6 +223,36 @@ per pemasok dan bayar beberapa tagihan sekaligus — dibangun.
 | D-29 | S4 | Rincian jurnal manual yang sudah dibalik masih menampilkan [Anulir Jurnal] (server menolak sesudah diklik) | D · `JournalDetailModal.jsx` · `latihS4AnulirSudahDibalik.test.js` |
 | C-34 | — | Masih UTC tetapi hanya tampilan/notifikasi (belum diubah): kunci dedupe notifikasi harian, penghitung eskalasi/WA/RFID/ringkasan, lencana hutang jatuh tempo di Meja, saringan PO terlambat, tanggal QC, cetakan gudang lama, nama berkas ekspor. Daftar rinci di laporan agen zona waktu | C |
 
+## 2f. Perburuan cacat 18 Nov dini hari (00.40–07.00 WIB)
+
+Permintaan pemilik: "lakukan apa yang anda bisa lakukan cari kesalahan sebisa mungkin dari semua konteks ini flow dan lain lain".
+Pengakuan: pengecekan sebelumnya membuktikan bahwa langkah yang ditulis berjalan (459/459), tetapi tidak MEMBURU kesalahan —
+jam 00.00–07.00 WIB, peran kustom, mode lintas PT, klik ganda, dan dua pengguna bersamaan belum pernah diuji, dan materi
+ditulis berorientasi nama peran ("Finance tidak bisa …") padahal wewenang = izin (02_STANDAR §3). Malam ini enam alur
+perburuan berjalan paralel: zona waktu, ulasan kode malam ini, peran kustom, uji jalan adversarial, kegagalan jest lama,
+merah lama di gate.
+
+### Peran kustom × alur keuangan (5 peran UJI-KUSTOM, 28 pintu API, 7 skenario layar)
+
+Server memutus menurut izin di semua 28 pintu yang diuji (tidak ada yang meloloskan tanpa izin). Cacatnya di layar dan
+sisa gerbang nama peran:
+
+| # | Temuan | Status |
+|---|---|---|
+| A-03 | [Setujui kontrabon] tampil bagi pemegang `contra_bon.approve` yang tidak tercantum di Aturan Persetujuan → 403 | D · `ContraBonDetailPanel.jsx` (can-decide) · `agAKontrabonSetujuKustom.test.js` |
+| A-05/06/07 | Pemegang lihat-saja melihat [Tutup Buku], tombol tulis Rekonsiliasi, [Kasus baru]/[Pindai] → 403; Kasus kosong bila `/customers` 403 | D · `ClosingView`, `BankReconciliationView`, `ReconLinesTable`, `ReconHoldingPanel`, `FinanceCasesView` · `agAKeuanganLihatSaja.test.js` |
+| A-08 | [Pratinjau]/[Unduh PDF]/[Kirim WA] tampil tanpa izin dokumen → "Gagal mengunduh PDF"; Dokumen Terkait bilah merah 403 (juga md, sample_admin, md_quality, qc bawaan) | D · `DocumentActionsBar`, `DocRefsPanel` · `agADokumenIzin.test.js` |
+| A-11 | Selisih bayar menulis id peran mentah ("WAJIB MANAGER"); hapus sisa/refund ditawarkan ke peran yang ditolak Aturan Persetujuan | D · `PaymentVarianceDialog` · `agASelisihBayarWewenang.test.js` |
+| A-01/02 | **Bebaskan/ubah denda dan selesaikan kasus di atas ambang masih diputus NAMA PERAN** (`payment.penalty_waive_approver_role`, `role_in`): dua peran berizin identik berperilaku beda; pesannya memuat id "manager" | Pesan diperbaiki (label peran); gerbang TERBUKA — usul jenis Aturan Persetujuan baru (`penalty_waive`, `finance_case_above_cap`) + migrasi pengaturan; tidak dipasang malam ini (berisiko menjelang kelas, bukan alur krusial) · xfail ketat KU-01 |
+| A-04 | Pesan "diputus oleh …" mencantumkan peran yang tidak memegang izin setujui | Terbuka · usul saring `who` dengan indeks izin peran (`approval_policy_service.py:448`) |
+| A-09 | Peran dengan izin "terima pembayaran" saja tidak punya layar untuk menerima uang (Saldo & Umur butuh `accounting.view`/`penalty.issue`; Penagihan & Penerimaan butuh modul Pesanan) | Terbuka · keputusan pemilik |
+| A-10 | Tab tampil per MODUL padahal endpoint butuh sumber daya tertentu (Beranda Keuangan, Rencana & Denda, Faktur Keluaran/Masukan) → 403 | Terbuka · usul `VIEW_RESOURCE_OVERRIDES` per tab |
+| A-12 | K-FIN-01: peran kustom ber-dasar Finance otomatis lintas PT dan lolos gerbang "manager" | Terbuka · keputusan pemilik (K-53) |
+| A-13…16 | PO tidak termuat di Tagihan tanpa `purchase_order.view`; approve kontrabon memetakan semua galat ke 403; pesan 403 Saldo & Umur menyebut modul yang sudah dipegang; "Rincian & bayar" bagi lihat-saja | Terbuka (rendah) |
+
+Data uji: pengguna `uji.kustom1–5@` dinonaktifkan; peran UJI-KUSTOM dibiarkan (dipakai jejak audit) — hapus R4 "Manajer
+Tanpa Setuju" bila mengganggu pesan Aturan Persetujuan.
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
