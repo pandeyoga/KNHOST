@@ -46,7 +46,7 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 | M23 | Retur kacau | selesai (pilot) |
 | M24 | Chip saringan → dropdown | sebagian: lini (semua layar), Retur, Pengaturan; SPK Inspeksi, Barang Masuk/Keluar antre |
 | M43 | Semua menu Pengaturan | sebagian: Ketegasan & semua kelompok pengaturan (pilot); Hak akses (matriks tanpa gulir), Aturan Persetujuan, Kontrol dua orang antre |
-| M3 | Tanya KN layar penuh, riwayat bisa disembunyikan | antre |
+| M3 | Tanya KN layar penuh, riwayat bisa disembunyikan | selesai: satu bidang kerja setinggi layar (tanpa kartu-kartu), panel laporan & riwayat bisa disembunyikan (diingat per peramban), strip aturan jadi baris tipis |
 | M8, M32 | Kartu angka relevan & bisa diklik (Portal, Beranda Keuangan) | M8 selesai: "Jml Tersedia" & "Gudang" dihapus dari beranda; M32 dikerjakan (gelombang Keuangan) |
 | M14, M15 | Lini masa vertikal Pesanan Khusus | selesai: satu lini masa vertikal (✓/●/○, tanggal & pelaku, "berjalan sejak … (n hari)", dokumen tahap dilebur dari Rantai dokumen, aksi hanya di tahap berjalan, tahap selesai dilipat bila > 3) |
 | M17 | Tab status Pesanan → dropdown | selesai: dropdown "Tahap" (jumlah · nilai) di bilah daftar; kepala kartu ganda dihapus |

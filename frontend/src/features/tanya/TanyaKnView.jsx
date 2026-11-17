@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { toast } from "../../hooks/use-toast";
 import { entityFullById, entityShortById } from "../../utils/entityLabel";
 import { PENDING_KEY, PRESETS as ASK_PRESETS } from "../../components/AskKnButton";
@@ -77,7 +77,10 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const compact = useIsMobile(900);
   const lastEntry = chat.thread[chat.thread.length - 1];
   const sideRef = useRef(null);
-  useFillHeight(sideRef, 16, `${!!catalog}|${compact}`);
+  // M3 (pemilik 16 Nov) — panel kiri (laporan · riwayat chat · jadwal …) bisa disembunyikan; pilihan diingat per peramban.
+  const [sideOpen, setSideOpen] = useState(() => { try { return localStorage.getItem("kn_tanya_side") !== "0"; } catch { return true; } });
+  const toggleSide = () => setSideOpen((v) => { try { localStorage.setItem("kn_tanya_side", v ? "0" : "1"); } catch { /* abaikan */ } return !v; });
+  useFillHeight(sideRef, 16, `${!!catalog}|${compact}|${sideOpen}`);
   useEffect(() => {
     document.body.classList.add("tanya-open");
     return () => document.body.classList.remove("tanya-open");
@@ -240,11 +243,17 @@ export default function TanyaKnView({ selectedEntity, entities }) {
       </div>
     );
   }
+  // M3 — tampilan PENUH: satu bidang kerja setinggi layar (bukan kartu-kartu terpisah); panel kiri bisa disembunyikan.
   return (
-    <div className="tanya-page" data-testid="tanya-kn-page">
+    <div className="tanya-page full" data-testid="tanya-kn-page">
       <TanyaRulesStrip status={status} />
-      <div className="tanya-layout">
-        <aside ref={sideRef} className="tanya-side section-card">{tabBar}{side}</aside>
+      <div className={`tanya-layout${sideOpen ? "" : " side-hidden"}`} data-testid="tanya-layout">
+        <button type="button" className="icon-button tanya-side-toggle" onClick={toggleSide} data-testid="tanya-side-toggle"
+          aria-expanded={sideOpen} aria-label={sideOpen ? "Sembunyikan panel laporan & riwayat" : "Tampilkan panel laporan & riwayat"}
+          title={sideOpen ? "Sembunyikan panel laporan & riwayat" : "Tampilkan panel laporan & riwayat"}>
+          {sideOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+        </button>
+        {sideOpen && <aside ref={sideRef} className="tanya-side" data-testid="tanya-side">{tabBar}{side}</aside>}
         <main className="tanya-main">{view === "cost" ? <TanyaCostView />
           : view === "actions" ? <div className="section-card section-pad"><TanyaActions key={`${actionsBox.box}-${actionsBox.nonce}`} refreshKey={selectedEntity} initialBox={actionsBox.box} /></div>
             : chatMain}</main>

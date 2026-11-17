@@ -24,7 +24,14 @@ jest.mock("../../services/confirmService", () => ({
   __esModule: true, askConfirm: jest.fn(async () => true), askReason: jest.fn(async () => "alasan uji"),
   askText: jest.fn(async () => null), askChoice: jest.fn(async () => null), default: {},
 }));
+// M3 — modul Tanya KN memakai pustaka markdown berformat ESM; di jsdom cukup diganti tiruan ringan.
+jest.mock("../tanya/TanyaMarkdown", () => ({ __esModule: true, default: () => null, TanyaMarkdown: () => null }));
+jest.mock("../tanya/TanyaAnswer", () => ({ TanyaAnswer: () => null }));
+jest.mock("../tanya/TanyaThread", () => ({ TanyaThread: () => null }));
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
+if (!window.matchMedia) {
+  window.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+}
 
 const q = (host, id) => host.querySelector(`[data-testid="${id}"]`);
 let mounted = [];
@@ -139,5 +146,22 @@ describe("M21 + M42", () => {
     expect(mockGet.mock.calls[0][1].params.q).toBe("");
     expect(q(host, "trace-recent-label")).not.toBeNull();
     expect(q(host, "trace-result-d1")).not.toBeNull();
+  });
+});
+
+// M3 — Tanya KN layar penuh: panel laporan & riwayat bisa disembunyikan dan pilihan diingat.
+describe("M3 — Tanya KN", () => {
+  test("tombol sembunyikan panel menutup panel samping & mengingatnya", async () => {
+    const TanyaKnView = jest.requireActual("../tanya/TanyaKnView").default;
+    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/ai/status")
+      ? { chat_enabled: false, narrative_ai: false, budget: {} }
+      : url.endsWith("/ai/templates") ? { groups: [], templates: [], period_presets: [] } : [] }));
+    try { localStorage.removeItem("kn_tanya_side"); } catch { /* jsdom */ }
+    const host = await mount(<TanyaKnView selectedEntity="ent_ksc" entities={[]} />);
+    await act(async () => {});
+    expect(q(host, "tanya-side")).not.toBeNull();
+    await act(async () => { q(host, "tanya-side-toggle").click(); });
+    expect(q(host, "tanya-side")).toBeNull();
+    expect(localStorage.getItem("kn_tanya_side")).toBe("0");
   });
 });
