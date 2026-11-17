@@ -112,6 +112,13 @@ TANPA_DATA_SENDIRI = {
 #: Nilainya = ALAMAT PAGARNYA. Kalau pagar itu hilang, baris di sini menjadi salah dan
 #: audit kembali berbunyi.
 TERGATED_DI_KODE = {
+    # 18 Nov (gate pohon akhir, K-FIN-01): dua panel yang digerbang IZIN di kode — terlihat pada Manajer & Finance.
+    ("md-categories", "/admin/integrations/whatsapp"):
+        "features/admin/AdminView.jsx — tab 'integrations' (WhatsAppConnectionPanel) hanya bila can(integration.manage)",
+    ("md-products", "/master-governance/batches"):
+        "features/catalog/MasterDataTools.jsx — alat 'governance' hanya bila canUpdate (product.update = izin server)",
+    ("md-products", "/master-governance/preview"):
+        "features/catalog/MasterDataTools.jsx — alat 'governance' hanya bila canUpdate (product.update = izin server)",
     ("customers-crm", "/incentive-rates"):
         "features/crm/CrmView.jsx — tab 'rates' hanya dirender bila isManager",
     ("customers-crm", "/sales/leaderboard"):

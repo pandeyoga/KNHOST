@@ -18,7 +18,7 @@ Status: **D** = diperbaiki (berkas · uji) · **K** = perlu keputusan pemilik ·
 | Uji variasi isian & hitungan (`uji/variasi/` V1–V8) | 164 kasus (lihat §2a) |
 | Jest penuh (pohon akhir) | **1.780/1.780 lulus · 0 gagal** (9 kegagalan "lama" diselesaikan: 7 uji usang, 2 bug nyata — §2f) |
 | Backend `tests_mem` penuh (pohon akhir) | **2.566 lulus · 0 gagal** (2 skip, 3 xfail) |
-| Gate `--ci` (pohon akhir) | _menunggu — diisi sesudah gate selesai_ |
+| Gate `--ci` (pohon akhir) | keluar 1 (merah lama tersisa) · dibanding garis dasar `2026-11-17_latih_keuangan3_gate_ci.log` per pelanggaran: **hilang** audit_doc_refs 1 dan audit_entity_isolation 2 (diperbaiki malam ini); satu-satunya "baru" = 2 panel milik Manajer (md-categories → integrasi WhatsApp, md-products → tata kelola master) yang kini ikut tampil di Finance karena K-FIN-01 — keduanya sudah digerbang izin di kode (temuan palsu pemeriksa statik) dan didaftarkan di `TERGATED_DI_KODE`; audit peran diulang: **Finance 0 panel mati**, Manajer 4 → 2 (panel harga internal antar-PT, lama). Log: `docs/blueprint/garis-dasar-gate/2026-11-18_latih_keuangan4_gate_ci.log`. Catatan: putaran gate pertama malam ini tidak sah (dijalankan tanpa venv proyek → pemeriksa gagal impor) dan dibuang |
 
 ## 1. Data acuan & data demo
 
