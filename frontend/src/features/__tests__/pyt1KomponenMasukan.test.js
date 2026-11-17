@@ -160,3 +160,30 @@ describe("Komponen & Masukan", () => {
     expect(mockPost).not.toHaveBeenCalled();
   });
 });
+
+// K-SDM-01 (audit pelatihan 18 Nov) — nominal masukan gaji: dulu kotak teks membuang semua selain angka, sehingga
+// "8.000.000,00" tersimpan Rp 800.000.000 (100×). Kini isian rupiah baku `MoneyInput`.
+describe("K-SDM-01 — nominal masukan gaji ditulis cara orang Indonesia", () => {
+  const ketik = async (el, v) => {
+    const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+    await act(async () => { set.call(el, v); el.dispatchEvent(new Event("input", { bubbles: true })); });
+    await settle();
+  };
+  test("\"8.000.000,00\" terbaca Rp 8.000.000 (bukan 800 juta); minus penyesuaian tidak bermerah", async () => {
+    api({ items: [] });
+    const { host } = await mount(<PayComponentsView />);
+    await click(q(host, "payinput-add"));
+    const amt = q(document.body, "payinput-form-amount");
+    expect(amt).toBeTruthy();
+    await ketik(amt, "8.000.000,00");
+    expect(q(document.body, "payinput-form-amount-preview").textContent).toMatch(/^Rp\s?8\.000\.000 · Rupiah bulat/);
+    await ketik(amt, "-250.000");
+    expect(q(document.body, "payinput-form-amount-preview").textContent).toMatch(/250\.000/);
+    expect(amt.className).not.toMatch(/D14343/);
+  });
+  test("sen ditolak: rupiah bulat", () => {
+    expect(galatMasukan({ employee_id: "e", component_code: "RAPEL", pay_period: "2026-11", amount: "8000000.5", reason: "x" }))
+      .toMatch(/rupiah bulat/);
+    expect(galatMasukan({ employee_id: "e", component_code: "RAPEL", pay_period: "2026-11", amount: "8000000", reason: "x" })).toBe("");
+  });
+});

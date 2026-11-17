@@ -298,8 +298,16 @@ async def test_PYT4_U8_gaji_bersih_negatif_409(klien, db, siap):
 
 
 # ── U9 — Finance: antrean, rekening, setoran; bukan data karyawan ───────────────────────────────────────────────────
-async def test_PYT4_U9_finance_bayar_tanpa_data_karyawan(klien, db, siap):
-    h = siap["fin"]
+# K-SDM-01 (pemilik 17 Nov 2026: "SDM/HR itu dipegang finance juga") — Finance BAWAAN kini juga memegang izin SDM
+# (`permissions_config.KSDM01_DEFAULT_PAIRS`). Bagian "bukan data karyawan" PY-T4 tetap berlaku untuk pemegang
+# `payroll.pay` SAJA (mis. peran kasir kustom): diuji dengan peran itu; Finance bawaan membuka proses & karyawan.
+async def test_PYT4_U9_finance_bayar_tanpa_data_karyawan(klien, db, siap, akun, sesi, peran_tanpa_acuan):
+    r = await klien.get("/api/hr/payroll/runs/prun_pyt4_u3", headers=siap["fin"])
+    assert r.status_code == 200, r.text   # K-SDM-01 — Finance bawaan: hr.view
+    r = await klien.get("/api/hr/employees", headers=siap["fin"])
+    assert r.status_code == 200, r.text
+    kasir = await peran_tanpa_acuan({"payroll": ["pay"]}, label="Kasir gaji")
+    h = await sesi(await akun(kasir, entitas=(KANDA,)), entitas=KANDA)
     r = await klien.get("/api/hr/payroll/pay-queue", headers=h)
     assert r.status_code == 200, r.text
     q = r.json()
@@ -445,14 +453,20 @@ async def test_PYT4_U15_manajer_kosong_dan_sopir_ditolak(klien, db, siap, akun, 
 
 
 # ── U9b (tambahan) — izin bayar gaji tidak membuka menu SDM lain (menu peran bawaan tetap bertambah dari izin, PR-T6) ──
+# K-SDM-01 — Finance bawaan kini memegang izin SDM, jadi "izin bayar saja" diuji pada izin Finance tanpa `hr` dan
+# dengan `payroll` = bayar saja (bentuk PY-T4).
 async def test_PYT4_U9b_menu_finance_hanya_setoran_dan_pajak(klien, siap):
     from access_modules import apply_levels, nav_allowed_for_perms
     from permissions_config import DEFAULT_PERMISSIONS
-    dasar = set(nav_allowed_for_perms(DEFAULT_PERMISSIONS["finance"]))
+    bayar_saja = {k: v for k, v in DEFAULT_PERMISSIONS["finance"].items() if k != "hr"}
+    bayar_saja["payroll"] = ["pay"]
+    dasar = set(nav_allowed_for_perms(bayar_saja))
     assert {"hr-payroll-hub", "hr-payroll-remittances"} <= dasar
     assert not dasar & {"hr-people", "hr-employees", "hr-payroll-runs", "hr-pay-components", "settings-hr"}
-    tambah = set(nav_allowed_for_perms(apply_levels(DEFAULT_PERMISSIONS["finance"], {"hr": "view"}))) - dasar
+    tambah = set(nav_allowed_for_perms(apply_levels(bayar_saja, {"hr": "view"}))) - dasar
     assert {"hr-people", "hr-employees", "hr-payroll-runs", "settings-hr"} <= tambah
+    sdm = set(nav_allowed_for_perms(DEFAULT_PERMISSIONS["finance"]))   # K-SDM-01 — bawaan Finance
+    assert {"hr-people", "hr-employees", "hr-payroll-runs", "hr-pay-components", "settings-hr", "settings-cfg-hr"} <= sdm
     r = await klien.get("/api/auth/me", headers=siap["fin"])
     assert r.status_code == 200, r.text
     me = r.json()

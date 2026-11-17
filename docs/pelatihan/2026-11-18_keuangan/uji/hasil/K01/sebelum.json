@@ -1,0 +1,464 @@
+[
+  {
+    "code": "1-0000",
+    "name": "ASET",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1000",
+    "name": "Aset Lancar",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1100",
+    "name": "Kas Besar / Bank",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1110",
+    "name": "Kas Kecil",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1150",
+    "name": "Kas & Bank Transit (Dana Dalam Perjalanan)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1200",
+    "name": "Piutang Usaha",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1250",
+    "name": "Piutang Antar-Perusahaan (IC-AR)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1260",
+    "name": "Piutang Klaim Mitra (Makloon)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1270",
+    "name": "Piutang Denda Pelanggan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1280",
+    "name": "Piutang Titipan Karyawan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1300",
+    "name": "Persediaan Barang",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1310",
+    "name": "Persediaan Dalam Perjalanan (Antar-PT)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1350",
+    "name": "Persediaan Dalam Proses (Makloon/WIP)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1400",
+    "name": "Uang Muka & Biaya Dibayar Dimuka",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1500",
+    "name": "PPN Masukan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-1900",
+    "name": "Aset Lancar Lainnya",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2000",
+    "name": "Aset Tetap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2100",
+    "name": "Peralatan & Mesin",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2200",
+    "name": "Kendaraan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2300",
+    "name": "Inventaris & Perabot Kantor",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2400",
+    "name": "Bangunan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-2900",
+    "name": "Akumulasi Penyusutan Aset Tetap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "1-9999",
+    "name": "Akun Sementara (Suspense)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-0000",
+    "name": "KEWAJIBAN",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1000",
+    "name": "Kewajiban Lancar",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1100",
+    "name": "Hutang Usaha",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1150",
+    "name": "Hutang Belum Ditagih (GR/IR)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1200",
+    "name": "PPN Keluaran",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1250",
+    "name": "Utang Antar-Perusahaan (IC-AP)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1300",
+    "name": "Hutang Pajak Lainnya",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1400",
+    "name": "Uang Muka Pelanggan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1450",
+    "name": "Saldo Kredit Pelanggan (Store Credit)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1500",
+    "name": "Hutang Insentif Penjualan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1600",
+    "name": "Hutang Gaji",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1650",
+    "name": "Hutang Reimburse Karyawan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1700",
+    "name": "Hutang BPJS",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1800",
+    "name": "Hutang PPh 21",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1900",
+    "name": "Kewajiban Lancar Lainnya",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "2-1950",
+    "name": "Titipan Dana Belum Teridentifikasi",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "3-0000",
+    "name": "EKUITAS",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "3-1000",
+    "name": "Modal Disetor",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "3-2000",
+    "name": "Laba Ditahan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "3-2900",
+    "name": "Ekuitas Saldo Awal",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "3-3000",
+    "name": "Laba Tahun Berjalan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-0000",
+    "name": "PENDAPATAN",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-1000",
+    "name": "Pendapatan Penjualan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-9000",
+    "name": "Pendapatan Lain-lain",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-9100",
+    "name": "Laba Pelepasan Aset Tetap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-9200",
+    "name": "Pendapatan Klaim Makloon",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "4-9300",
+    "name": "Pendapatan Denda Keterlambatan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-0000",
+    "name": "BEBAN POKOK",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-1000",
+    "name": "Harga Pokok Penjualan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-1100",
+    "name": "Overhead Produksi Diserap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-1200",
+    "name": "Beban Jasa Makloon Tak Terserap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-9000",
+    "name": "Beban Angkut Pembelian",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "5-9500",
+    "name": "Beban Kerugian/Penghapusan Persediaan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-0000",
+    "name": "BEBAN OPERASIONAL",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-1000",
+    "name": "Beban Gaji",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-1100",
+    "name": "Beban BPJS (Perusahaan)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-2000",
+    "name": "Beban Sewa",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-3000",
+    "name": "Beban Utilitas",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4000",
+    "name": "Beban Operasional Lainnya",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4100",
+    "name": "Beban ATK & Perlengkapan Kantor",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4200",
+    "name": "Beban Konsumsi & Entertainment",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4300",
+    "name": "Beban Cetak, Fotokopi & Materai",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4400",
+    "name": "Beban Utilitas Kantor",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4500",
+    "name": "Beban Kirim Dokumen & Ekspedisi",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4600",
+    "name": "Beban Transportasi & BBM",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4700",
+    "name": "Beban Pemasaran & Promosi",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-4900",
+    "name": "Beban Petty Cash Lainnya",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-5000",
+    "name": "Beban Insentif Penjualan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-6000",
+    "name": "Beban Penyusutan Aset Tetap",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-7000",
+    "name": "Beban Sample & Pengembangan (R&D)",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-8000",
+    "name": "Beban Administrasi Bank",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-9000",
+    "name": "Beban Lain-lain",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-9100",
+    "name": "Beban Selisih Pembayaran Pelanggan",
+    "is_active": true,
+    "entity_id": null
+  },
+  {
+    "code": "6-9500",
+    "name": "Rugi Pelepasan Aset Tetap",
+    "is_active": true,
+    "entity_id": null
+  }
+]

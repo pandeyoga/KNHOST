@@ -117,6 +117,7 @@ KARTU = [
     ("a_dasar:tagihan_kontrabon", "Tagihan untuk kontrabon", "F12"),
     ("d_hutang:sample_berbayar", "Pesanan sample berbayar", "F14"),
     ("d_hutang:gaji_susulan", "Gaji susulan", "F15"),
+    ("f_sdm:karyawan_baru", "Karyawan baru", "K09 · H01 · H02 · H03 · H04"),
     ("e_buku:so_jejak", "SO lunas untuk penelusuran", "F16"),
 ]
 

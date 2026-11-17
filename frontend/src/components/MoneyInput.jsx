@@ -20,7 +20,7 @@ import { heldMoney, isMoneyDraft, moneyText } from "../utils/parseMoney";
  * Bila pemanggil mengubah nilainya sendiri (dibatasi maksimum, diisi ulang), kotak menampilkan nilai pemanggil.
  */
 export default function MoneyInput({ value, onChange, className = "field", testId, hint, showPreview = true,
-  invalid = false, min: _min, suffix: _suffix, ...rest }) {
+  invalid = false, allowNegative = false, min: _min, suffix: _suffix, ...rest }) {
   const held = value === null || value === undefined ? "" : String(value);
   // `src` = nilai kanonik yang terakhir dikirim untuk `draft`. Selama pemanggil memegang nilai itu, teks ketikan
   // ditampilkan; begitu pemanggil memegang nilai lain, nilai pemanggil yang tampil.
@@ -33,7 +33,8 @@ export default function MoneyInput({ value, onChange, className = "field", testI
     ? (Number.isInteger(n) ? formatCurrency(n) : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR",
       minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n))
     : "";
-  const bad = invalid || (!Number.isNaN(n) && n < 0);
+  // `allowNegative` — nominal penyesuaian (mis. masukan gaji minus) sah: tanpa bingkai merah.
+  const bad = invalid || (!allowNegative && !Number.isNaN(n) && n < 0);
   return (
     <div className="grid gap-0.5">
       <div className="relative">

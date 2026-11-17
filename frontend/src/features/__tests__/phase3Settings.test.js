@@ -80,7 +80,9 @@ describe("P16-K1 → KP-T9 — menu Pengaturan sembilan hub", () => {
     expect(menu("warehouse_admin")).toEqual({ "settings-warehouse": ["settings-receiving-ocr", "grade-master"] });
     expect(menu("sales_admin")).toEqual({ "settings-sales": ["return-policies"], "settings-warehouse": ["grade-master"] });
     // MN-T1 (IA-06) — tab Pemetaan Akun mencantumkan Finance (izin gl_mapping view/update), kini terjangkau lewat ROLE_NAV.
-    expect(menu("finance")).toEqual({ "settings-finance": ["gl-account-mappings"] });
+    // K-SDM-01 (pemilik 17 Nov 2026) — Finance + Pengaturan › SDM: Aturan SDM & Penggajian, Shift & Lokasi Absen, Kalender Libur.
+    expect(menu("finance")).toEqual({ "settings-finance": ["gl-account-mappings"],
+      "settings-hr": ["settings-cfg-hr", "hr-attendance-setup", "hr-holidays"] });
     ["sales", "md", "designer", "driver"].forEach((r) => expect(menu(r)).toBeNull());
   });
 

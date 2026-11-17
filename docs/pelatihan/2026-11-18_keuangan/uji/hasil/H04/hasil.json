@@ -1,0 +1,79 @@
+{
+  "code": "H04",
+  "title": "Bayar gaji & slip",
+  "ok": true,
+  "at": "2026-11-17T10:49:13.831Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Login → SDM › Penggajian › Proses Gaji → pilih proses Anda (Diposting) → [[Bayar]]",
+      "expect": "Pop-up \"Bayar gaji\": rekening berperuntukan Gaji, tanggal bayar, ringkasan \"Total bersih Rp … untuk 1 karyawan\"",
+      "ok": true,
+      "ms": 7262,
+      "info": "BCA Operasional KSC · BCA · 7415595554 · Total bersih Rp 7.920.000 untuk 1 karyawan Satu kas keluar sebesar total bersih; transfer per karyawan mengikuti Daftar transfer."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Klik [[Bayar gaji]] → konfirmasi [[Bayar gaji]]",
+      "expect": "Status Dibayar; Daftar transfer terbuka: \"Dibayar … dari BCA Operasional KSC\", baris Andi Pratama · BCA · nomor rekening · gaji bersih",
+      "ok": true,
+      "ms": 1956,
+      "info": "\"Rp 7.920.000 dari BCA Operasional KSC · Sukacita Textile. Total bersih Rp 7.920.000 untuk 1 karyawan. Kas keluar dan jurnal (hutang gaji berkurang, kas berkurang) dibuat bertanggal 17 Nov 2026.\" · Dibayar 17 Nov 2026 dari BCA Operasional KSC (BCA 7415595554). · Daftar transfer KSC/PAY-00021 · Oktober 2026 Dibayar 17 Nov 2026 dari BCA Operasional KSC (BCA 7415595554). Unduh Excel NO. NAMA PENERIMA BANK NOMOR REKENING NOMINAL SLIP 1 Andi Pratama Latihan 54 · A"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik [[Unduh Excel]] di Daftar transfer, lalu tutup (×)",
+      "expect": "Berkas Excel daftar transfer (untuk unggah ke internet banking) terunduh",
+      "ok": true,
+      "ms": 332,
+      "info": "transfer-gaji-prun_ed0695492d95.xlsx (5267 bita)"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Cek buku: jurnal bayar gaji",
+      "expect": "2-1600 Hutang Gaji (D) = 1-1100 Kas Besar / Bank (K) = gaji bersih — seimbang; kas keluar dari BCA Operasional KSC",
+      "ok": true,
+      "ms": 841,
+      "info": "KSC/JE-00485 seimbang D=K=7920000 [2-1600 Hutang Gaji D 7920000 · 1-1100 Kas Besar / Bank K 7920000] · Dibayar 17 Nov 2026 dari BCA Operasional KSC · 1 penerima. Daftar transfer Lihat jurnal"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Klik [[Cari slip]] → ketik nama karyawan → klik barisnya → [[Unduh / Lihat PDF]]",
+      "expect": "Slip gaji PDF berkop PT Sukacita Textile: nama, masa Oktober 2026, Rapel, PPh 21, gaji bersih",
+      "ok": true,
+      "ms": 1910,
+      "info": "KSC/SLIP-00031 · PDF 2435 bita · SLIP GAJI Sukacita Textile No. KSC/SLIP-00031 Latihan 54 · Andi Pratama Periode: Oktober 2026 · PTKP: K1 · TER-B · Proses susulan Bank: BCA 8800000054 a.n. Andi Pratama PENERIMAAN Rapel gaji Oktober (karyawan baru) Rp 8."
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Tab [[Setoran & Pajak]] → *Masa gaji* Oktober 2026",
+      "expect": "Kartu PPh 21 Oktober: Kewajiban memuat PPh 21 proses Anda (Rp 80.000); Sisa = Kewajiban − Sudah disetor",
+      "ok": true,
+      "ms": 4503,
+      "info": "PPh 21 Masih Ada Sisa Kewajiban Rp 2.635.475 Sudah disetor Rp 80.000 Sisa Rp 2.555.475"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Lanjutan F15: [[Catat Setoran]] → *Jenis* PPh 21 · *Masa* Oktober 2026 · *Nominal* 80.000 · *Rekening* BCA Operasional KSC · *Nomor bukti setor* NTPN-SDM-54 → [[Catat Setoran]] → konfirmasi",
+      "expect": "Pesan \"Setoran KSC/STR-… tercatat: PPh 21 Rp …\"; jurnal 2-1800 Hutang PPh 21 (D) = Bank (K)",
+      "ok": true,
+      "ms": 4704,
+      "info": "\"Setoran PPh 21 masa Oktober 2026 sebesar Rp 80.000 untuk Sukacita Textile. Kas keluar dan jurnal (hutang berkurang, kas berkurang) dibuat.\" → Setoran KSC/STR-00002 tercatat: PPh 21 Rp 80.000. × · KSC/JE-00486 seimbang D=K=80000 [2-1800 Hutang PPh 21 D 80000 · 1-1100 Kas Besar / Bank K 80000]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 54 · KSC/PAY-00021 (susulan 2026-10) · bersih Rp 7.920.000 · PPh 21 Rp 80.000 · status posted"
+  ]
+}

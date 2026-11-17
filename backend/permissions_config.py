@@ -1086,3 +1086,31 @@ for _role, _mods in KMT3_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# K-SDM-01 (keputusan pemilik 17 Nov 2026: "SDM/HR itu dipegang finance juga") — Finance mengerjakan SDM & penggajian:
+# data karyawan (lihat, tambah, ubah, data pribadi/gaji), kehadiran (presensi, cuti, lembur, kalender libur, shift),
+# komponen & aturan gaji (`hr.manage_payroll`), dan MENYIAPKAN serta MEMPOSTING proses gaji (`payroll.create`,
+# `payroll.post`) di samping membayar & menyetor (`payroll.pay`, PY-T4). Pemisahan tugas tetap: MENGESAHKAN dan
+# MEMBATALKAN gaji (`payroll.approve`, `payroll.void` — termasuk sahkan masukan gaji & perubahan kompensasi), menonaktifkan
+# karyawan (`hr.delete`), struktur organisasi (`hr.manage_org`), dan pengaturan SDM umum (`hr.manage_settings`) tetap
+# Manajer/Admin. Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules`
+# (`defaults_applied`, PR-T9) — pencabutan Admin sesudahnya bertahan; peran kustom ber-dasar Finance mengikuti bila modul
+# SDM-nya belum diubah (selain itu "Ikuti peran dasar").
+# ═══════════════════════════════════════════════════════════════════════════
+KSDM01_DEFAULT_PAIRS = {
+    "finance": {"hr": ("view", "create", "update", "view_pii", "manage_attendance", "manage_payroll"),
+                "payroll": ("create", "post", "pay")},
+}
+for _role, _mods in KSDM01_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# A2 (pelatihan 18 Nov) — MD Quality membuka layar SPK penerimaan; panel tanda tangan elektronik memanggil
+# `GET /esign/signatures/…` (izin `esign.view`) dan ditolak 403 (layar tetap jalan, tetapi galat tercatat). Hanya lihat.
+A2_DEFAULT_PAIRS = {"md_quality": {"esign": ("view",)}}
+for _role, _mods in A2_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

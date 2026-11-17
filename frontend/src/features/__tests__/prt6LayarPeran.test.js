@@ -227,13 +227,14 @@ test("'Menu & tab yang tampil': id grup sidebar/hub tidak tampil sebagai centang
 });
 
 test("menu peran bawaan bertambah dari nav.add server (tidak diwariskan ke peran kustom)", () => {
-  expect(roleCanSee(["admin", "manager"], "finance", "hr-people")).toBe(false);
-  registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: ["hrd", "hr-people"], remove: [] } },
+  // K-SDM-01 — Karyawan kini menu bawaan Finance; contoh menu tambahan = Struktur Organisasi (tetap Admin/Manajer).
+  expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(false);
+  registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: ["hrd", "hr-org-units"], remove: [] } },
     { id: "cr_fin", label: "Fin", custom: true, base_role: "finance", nav: { add: [], remove: [] } }]);
-  expect(roleCanSee(["admin", "manager"], "finance", "hr-people")).toBe(true);
-  expect(roleCanSee(["admin", "manager"], "cr_fin", "hr-people")).toBe(false);
+  expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(true);
+  expect(roleCanSee(["admin", "manager"], "cr_fin", "hr-org-units")).toBe(false);
   registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: [], remove: [] } }]);
-  expect(roleCanSee(["admin", "manager"], "finance", "hr-people")).toBe(false);
+  expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(false);
 });
 
 test("formulir akun: tanpa peran awal ('Pilih peran…', wajib); kalimat lintas PT dari server; label peran dasar", async () => {

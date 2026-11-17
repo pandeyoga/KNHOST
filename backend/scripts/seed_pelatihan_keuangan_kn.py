@@ -61,6 +61,7 @@ LABEL = {   # sama persis dengan label Kartu Peserta di manual pelatihan (docs/p
     "c_kas:kwitansi_transfer": "Kwitansi transfer", "a_dasar:tagihan_bayar": "Tagihan pemasok untuk dibayar",
     "a_dasar:tagihan_kontrabon": "Tagihan untuk kontrabon", "d_hutang:sample_berbayar": "Pesanan sample berbayar",
     "d_hutang:gaji_susulan": "Gaji susulan", "e_buku:so_jejak": "SO lunas untuk penelusuran",
+    "f_sdm:karyawan_baru": "Karyawan baru",   # K-SDM-01 — isian K09, H01–H04
 }
 
 

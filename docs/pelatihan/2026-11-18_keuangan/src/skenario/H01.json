@@ -1,0 +1,114 @@
+{
+ "kode": "H01",
+ "modul": "3.4",
+ "judul": "Data karyawan baru",
+ "bagian": "A",
+ "tujuan": "Peserta bisa mendaftarkan karyawan baru lengkap dengan NIK, tanggal masuk, NPWP, status PTKP, rekening bank, gaji pokok, dan tunjangan, lalu memeriksa riwayat kompensasinya.",
+ "kapan": "Saat ada karyawan baru, sebelum proses gaji pertamanya.",
+ "konsep": [
+  "Status PTKP menentukan kategori tarif PPh 21; rekening bank dipakai daftar transfer saat gaji dibayar.",
+  "Gaji pokok dan tunjangan disimpan sebagai riwayat kompensasi bertanggal berlaku (mulai tanggal masuk). Perubahan sesudahnya diajukan dan disahkan Manajer."
+ ],
+ "peran": "Finance (akun peserta)",
+ "menit": 15,
+ "data_awal": "Kartu Peserta › Karyawan baru: nama \"Latihan NN · Andi Pratama\", NIK, NPWP, rekening BCA, gaji pokok Rp 7.500.000, tunjangan transport Rp 500.000, tanggal masuk 1 Oktober 2026.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Tambah Karyawan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Isi pribadi & kepegawaian"
+  },
+  {
+   "peran": "Finance",
+   "label": "Isi NPWP & PTKP"
+  },
+  {
+   "peran": "Finance",
+   "label": "Isi rekening & gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Simpan & cek kompensasi"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "SDM › Karyawan",
+   "nav_id": "hr-people",
+   "tab": "hr-employees"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "SDM › Karyawan",
+   "aksi": "Buka SDM › [[Karyawan]]. Klik [[Tambah Karyawan]].",
+   "isi": "",
+   "hasil": "Form \"Tambah Karyawan\" dengan empat bagian: Data Pribadi, Kepegawaian, Pajak & Statutory, Bank & Komponen Gaji.",
+   "gambar": "uji/hasil/H01/01-daftar-karyawan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Tambah Karyawan",
+   "aksi": "Isi Data Pribadi dan Kepegawaian.",
+   "isi": "*Nama Lengkap*: Latihan NN · Andi Pratama · *NIK*: dari Kartu Peserta · *Status Kepegawaian*: Tetap · *Tanggal Masuk*: 1 Okt 2026 · *PT*: Sukacita",
+   "hasil": "Isian terisi. PT terkunci ke PT Anda.",
+   "gambar": "uji/hasil/H01/02-data-pribadi-kepegawaian.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Tambah Karyawan › Pajak & Statutory",
+   "aksi": "Isi NPWP. Pilih Status PTKP.",
+   "isi": "*NPWP*: dari Kartu Peserta · *Status PTKP*: K1 (kawin, satu tanggungan)",
+   "hasil": "PTKP K1 tampil. K1 = kategori TER B.",
+   "gambar": "uji/hasil/H01/03-pajak-ptkp.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Tambah Karyawan › Bank & Komponen Gaji",
+   "aksi": "Isi rekening dan gaji pokok. Klik [[+]] di Tunjangan, lalu isi tunjangan.",
+   "isi": "*Nama Bank*: BCA · *No. Rekening*: dari Kartu Peserta · *Atas Nama*: Andi Pratama · *Gaji Pokok*: 7.500.000 · Tunjangan: Tunjangan transport 500.000",
+   "hasil": "Pratinjau di bawah kotak gaji: Rp 7.500.000. Pratinjau tunjangan: Rp 500.000.",
+   "gambar": "uji/hasil/H01/04-bank-gaji.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Tambah Karyawan",
+   "aksi": "Klik [[Buat Karyawan]].",
+   "isi": "",
+   "hasil": "Pesan \"Karyawan baru dibuat.\" Baris EMP-… tampil dengan gaji pokok Rp 7.500.000 dan status Aktif.",
+   "gambar": "uji/hasil/H01/05-karyawan-tersimpan.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "SDM › Karyawan",
+   "aksi": "Klik ikon grafik (Karyawan 360°) pada baris itu. Gulir ke Riwayat Kompensasi.",
+   "isi": "",
+   "hasil": "Kompensasi berlaku 1 Okt 2026: gaji pokok Rp 7.500.000 dan tunjangan transport Rp 500.000, status Disahkan. Penugasan PT Sukacita mulai tanggal yang sama.",
+   "gambar": "uji/hasil/H01/06-riwayat-kompensasi.png"
+  }
+ ],
+ "cek_buku": [
+  "Data karyawan tidak membuat jurnal. Jurnal baru lahir saat proses gaji diposting (H03)."
+ ],
+ "kesalahan_umum": [
+  "Memilih TK1 padahal maksudnya K1. PPh 21 menjadi kategori A, bukan B.",
+  "Tanggal masuk dikosongkan. Kompensasi lalu berlaku sejak hari ini, bukan sejak tanggal masuk.",
+  "Nomor rekening diketik dengan spasi atau titik. Ketik angka saja.",
+  "Mencoba mengubah gaji pokok lewat Ubah karyawan. Perubahan gaji diajukan di Riwayat Kompensasi dan disahkan Manajer."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Gaji pokok karyawan BARU langsung berlaku (disahkan otomatis) tanpa persetujuan Manajer; perubahan gaji sesudahnya wajib disahkan Manajer. Karena Finance kini juga menyiapkan, memposting, dan membayar gaji, satu-satunya kontrol atas karyawan fiktif adalah pengesahan proses gaji oleh Manajer — minta Manajer membaca daftar slip saat mengesahkan. Untuk pemilik: perlukah gaji awal karyawan baru disahkan Manajer? Sesudah pelatihan, karyawan \"Latihan NN · …\" ditandai keluar oleh Manajer (izin hapus karyawan) supaya tidak ikut proses gaji reguler November.",
+ "uji": {
+  "berkas": "uji/sdm/H01_karyawan_baru.js",
+  "peserta_uji": "54"
+ }
+}

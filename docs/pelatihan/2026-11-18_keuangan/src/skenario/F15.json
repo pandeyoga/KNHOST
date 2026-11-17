@@ -51,8 +51,8 @@
   {
    "no": 1,
    "peran": "Finance",
-   "menu": "SDM › Penggajian",
-   "aksi": "Buka SDM › [[Penggajian]].",
+   "menu": "SDM › Penggajian › Setoran & Pajak",
+   "aksi": "Buka SDM › [[Penggajian]], lalu klik tab [[Setoran & Pajak]].",
    "isi": "",
    "hasil": "Bagian 'Gaji siap dibayar' memuat penggajian yang sudah diposting, termasuk proses Anda: nomor, Oktober 2026, Susulan, 1 karyawan, total bersih, serta tombol [[Daftar transfer]] dan [[Bayar]].",
    "gambar": "uji/hasil/F15/01-gaji-siap-dibayar.png"

@@ -120,14 +120,18 @@ async def test_PRT6_U5_menu_tambahan_peran_bawaan_kosong_saat_pasang(klien, kepa
 
 
 async def test_PRT6_U6_menu_peran_bawaan_bertambah_dari_izin(klien, kepala_admin):
-    r = await klien.patch("/api/access/roles/finance", headers=kepala_admin, json={"levels": {"hr": "view"}})
+    # K-SDM-01 (pemilik 17 Nov 2026) — Finance bawaan kini memegang izin SDM (Karyawan bukan lagi menu tambahan);
+    # contoh menu tambahan kini Admin Sales yang diberi akses SDM.
+    r = await klien.patch("/api/access/roles/sales_admin", headers=kepala_admin, json={"levels": {"hr": "view"}})
     assert r.status_code == 200, r.text
     try:
-        add = (await _roles_publik(klien, kepala_admin))["finance"]["nav"]["add"]
-        # MN-T1 — `hrd` sudah dibuka modul Pesanan untuk Finance (`order.view`; Kinerja Sales) → bukan tambahan.
+        add = (await _roles_publik(klien, kepala_admin))["sales_admin"]["nav"]["add"]
+        # KM-T3 — `hrd` sudah dibuka modul Kinerja & Insentif untuk Admin Sales (Lembar Insentif) → bukan tambahan.
         assert "hr-people" in add and "hrd" not in add, add
+        fin = (await _roles_publik(klien, kepala_admin))["finance"]["nav"]["add"]
+        assert "hr-people" not in fin, fin   # K-SDM-01 — sudah menu bawaan Finance
     finally:
-        assert (await klien.post("/api/access/roles/finance/reset", headers=kepala_admin)).status_code == 200
+        assert (await klien.post("/api/access/roles/sales_admin/reset", headers=kepala_admin)).status_code == 200
 
 
 # ── Peran dasar & lintas PT ───────────────────────────────────────────────────────────────────────────────────────

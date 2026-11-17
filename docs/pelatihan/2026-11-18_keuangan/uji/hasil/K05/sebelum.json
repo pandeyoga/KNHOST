@@ -1,0 +1,169 @@
+{
+  "system_settings": [
+    {
+      "id": "set_5af7b8c26c5d",
+      "pembayaran": {
+        "sales_terima_tunai": "titipan"
+      },
+      "scope": "ent_ksc"
+    },
+    {
+      "allocation": {
+        "allow_intercompany": true,
+        "allow_partial": true,
+        "dye_lot_strict": false,
+        "location_pref": "single_warehouse",
+        "lot_mode": "prefer_single",
+        "lot_selection": "fifo",
+        "makloon_reserve_mode": "block",
+        "mode": "auto",
+        "priority_order": [
+          "owner",
+          "lot",
+          "location",
+          "roll_efficiency"
+        ],
+        "roll_pick_sales": true
+      },
+      "approval": {
+        "extra_levels": {
+          "purchase_order": [
+            {
+              "label": "Direksi",
+              "min_amount": 500000000,
+              "role": "admin"
+            }
+          ]
+        }
+      },
+      "ar": {
+        "aging_buckets": [
+          30,
+          60,
+          90
+        ],
+        "denda_rate_pct_per_month": 2,
+        "grace_days": 0
+      },
+      "commission": {
+        "default_margin_cap_pct": 50,
+        "discount_factor": 0.5,
+        "discount_mechanic": "tier_factor",
+        "discount_potong_rp": 0,
+        "discount_threshold": 10,
+        "discount_threshold_type": "pct",
+        "incentive_unit": "meter",
+        "strategy": "per_sku"
+      },
+      "finance": {
+        "base_currency": "IDR",
+        "default_payment_term_code": "NET30",
+        "fiscal_year_end_month": 12
+      },
+      "id": "set_64d34df03b92",
+      "interco_payment": {
+        "allow_netting": false,
+        "basis": "",
+        "cutoff_day": 0,
+        "payment_day": 0,
+        "reminder_days": 3,
+        "require_full_payment": true
+      },
+      "inventory": {
+        "default_uom": "meter",
+        "intercompany_transfer_required": true,
+        "min_cut_qty": 0.5,
+        "reorder": {
+          "safety_days": 7,
+          "velocity_window_days": 90
+        },
+        "stock_analytics": {
+          "best_seller_pct": 20,
+          "new_sku_age_days": 90,
+          "slow_moving_pct": 20,
+          "velocity_window_days": 90
+        }
+      },
+      "purchasing": {
+        "allow_item_discount": true,
+        "allow_order_discount": true,
+        "bill_price_tolerance_percent": 5,
+        "bill_qty_tolerance_percent": 0,
+        "price_deviation_approval_percent": 10,
+        "qc_on_receipt": true,
+        "receive_tolerance_percent": 2,
+        "require_supplier_master": false,
+        "restock_source_unknown": "block"
+      },
+      "qc": {
+        "four_point_enabled": true,
+        "grade_thresholds": {
+          "a_max": 20,
+          "b_max": 40
+        }
+      },
+      "returns": {
+        "bill_first": true,
+        "customer_window_days": 21,
+        "supplier_reminder_days": 3,
+        "supplier_window_days": 21
+      },
+      "role_home": {
+        "admin": "admin",
+        "manager": "reports",
+        "sales": "sales",
+        "warehouse": "operations"
+      },
+      "sales": {
+        "allow_item_discount": false,
+        "allow_order_discount": false,
+        "allow_partial_shipment": true,
+        "quotation_enabled": false,
+        "require_so_validation": false
+      },
+      "scope": "global",
+      "tax": {
+        "dpp_nilai_lain": true,
+        "efaktur_enabled": true,
+        "pph_items": [
+          {
+            "basis": "payroll",
+            "code": "pph21",
+            "enabled": true,
+            "name": "PPh 21 — Karyawan",
+            "rate": 0
+          },
+          {
+            "basis": "manual",
+            "code": "pph23",
+            "enabled": true,
+            "name": "PPh 23 — Jasa/Sewa",
+            "rate": 2
+          },
+          {
+            "basis": "omzet",
+            "code": "pph_final_pp23",
+            "enabled": false,
+            "name": "PPh Final UMKM (PP23)",
+            "rate": 0.5
+          }
+        ],
+        "ppn_mode": "excluded",
+        "ppn_rate": 12
+      },
+      "ui": {
+        "coming_soon_collapsed": true,
+        "show_coming_soon": true
+      },
+      "wms": {
+        "location_scope_enforced": true
+      }
+    }
+  ],
+  "nilai": [
+    30,
+    60,
+    90
+  ],
+  "sumber": "Aturan grup"
+}

@@ -1,0 +1,199 @@
+{
+ "kode": "A4",
+ "modul": "2",
+ "judul": "Karyawan sampai Gaji Dibayar (hire to pay)",
+ "bagian": "A",
+ "tujuan": "Peserta melihat seluruh daur gaji dari karyawan baru sampai PPh 21 disetor, siapa mengerjakan tiap tahap, dan jurnal yang lahir di tiap tahap.",
+ "kapan": "Setiap bulan: data karyawan dan masukan sebelum tutup masa gaji, proses gaji akhir bulan, bayar pada tanggal gajian, setor BPJS paling lambat tanggal 10 dan PPh 21 paling lambat tanggal 15 bulan berikutnya.",
+ "konsep": [
+  "Konfigurasi (K09) → data karyawan (H01) → masukan & kehadiran (H02) → proses gaji (H03) → bayar & slip (H04) → setor pajak dan BPJS (F15).",
+  "Pemisahan tugas (K-SDM-01): Finance menyiapkan data, menghitung, memposting, membayar, dan menyetor. Manajer mengesahkan masukan, perubahan gaji, dan proses gaji, serta membatalkan proses yang diposting.",
+  "Jurnal hanya lahir di tiga titik: posting proses gaji (mengakui beban dan hutang), bayar gaji (hutang gaji lunas), dan setoran (hutang BPJS/PPh 21 lunas).",
+  "Proses reguler (sekali per PT per masa) menghitung gaji pokok, tunjangan, lembur, absensi, BPJS, dan PPh 21. Proses susulan dan THR hanya memuat masukan yang disahkan, plus PPh 21.",
+  "Tanggal buku jurnal gaji = akhir masa gaji. Gaji baru bisa dibayar mulai tanggal itu."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (pelatih)",
+ "menit": 20,
+ "data_awal": "Gambaran besar; praktiknya di K09, H01–H04, dan F15. Contoh angka: proses reguler Oktober 2026 PT Sukacita (KSC/PAY-00001, 6 karyawan) dan proses susulan peserta (karyawan baru, Rapel Rp 8.000.000).",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Konfigurasi gaji (K09)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Karyawan baru (H01)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Masukan & lembur (H02)"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Sahkan masukan & lembur"
+  },
+  {
+   "peran": "Finance",
+   "label": "Hitung & ajukan (H03)"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Sahkan proses gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Posting jurnal gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Bayar & slip (H04)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Setor PPh 21/BPJS (F15)"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › SDM",
+   "nav_id": "settings-hr",
+   "tab": "settings-cfg-hr"
+  },
+  {
+   "menu": "SDM › Karyawan",
+   "nav_id": "hr-people",
+   "tab": "hr-employees"
+  },
+  {
+   "menu": "SDM › Kehadiran",
+   "nav_id": "hr-attendance-hub",
+   "tab": "hr-overtime"
+  },
+  {
+   "menu": "SDM › Penggajian",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-payroll-runs"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Pengaturan › SDM",
+   "aksi": "Periksa aturan gaji, komponen, shift, dan kalender libur (K09).",
+   "isi": "",
+   "hasil": "Aturan BPJS, PTKP, TER, komponen gaji, shift, dan libur siap dibaca proses gaji.",
+   "gambar": "uji/hasil/K09/01-aturan-bpjs.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "SDM › Karyawan",
+   "aksi": "Daftarkan karyawan baru (H01).",
+   "isi": "",
+   "hasil": "Karyawan aktif dengan PTKP, NPWP, rekening, dan kompensasi bertanggal berlaku.",
+   "gambar": "uji/hasil/H01/05-karyawan-tersimpan.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "aksi": "Catat masukan gaji dan ajukan lembur (H02).",
+   "isi": "",
+   "hasil": "Masukan menunggu disahkan; lembur menunggu disetujui.",
+   "gambar": "uji/hasil/H02/03-masukan-menunggu.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Hitung proses gaji dan ajukan; Manajer mengesahkan; Finance memposting (H03).",
+   "isi": "",
+   "hasil": "Proses Diposting dengan jurnal gaji bertanggal akhir masa.",
+   "gambar": "uji/hasil/H03/10-diposting.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Bayar gaji, unduh daftar transfer dan slip (H04).",
+   "isi": "",
+   "hasil": "Proses Dibayar; daftar transfer dan slip PDF tersedia.",
+   "gambar": "uji/hasil/H04/04-daftar-transfer.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Setoran & Pajak",
+   "aksi": "Setor PPh 21 dan BPJS masa itu (F15, H04 langkah 6).",
+   "isi": "",
+   "hasil": "Sisa kewajiban turun sebesar setoran; riwayat setoran bertambah.",
+   "gambar": "uji/hasil/ksdm01/F15/10-setoran-tercatat.png"
+  }
+ ],
+ "jurnal_per_tahap": [
+  {
+   "tahap": "Konfigurasi, karyawan baru, masukan, lembur",
+   "dokumen": "—",
+   "jurnal": "Tidak ada jurnal"
+  },
+  {
+   "tahap": "Proses gaji susulan diposting",
+   "dokumen": "Proses gaji (PAY)",
+   "jurnal": "6-1000 Beban Gaji (D) · 2-1600 Hutang Gaji (K) · 2-1800 Hutang PPh 21 (K)"
+  },
+  {
+   "tahap": "Proses gaji reguler diposting",
+   "dokumen": "Proses gaji (PAY)",
+   "jurnal": "6-1000 Beban Gaji (D) · 6-1100 Beban BPJS (Perusahaan) (D) · 2-1600 Hutang Gaji (K) · 2-1700 Hutang BPJS (K) · 2-1800 Hutang PPh 21 (K) — contoh KSC/PAY-00001 Oktober: D 45.300.000 + 4.543.612 = K 42.256.444 + 6.256.458 + 1.330.710"
+  },
+  {
+   "tahap": "Insentif penjualan ikut gaji",
+   "dokumen": "Proses gaji (PAY)",
+   "jurnal": "6-5000 Beban Insentif Penjualan (D) · 2-1500 Hutang Insentif Penjualan (K) saat diakui; saat diposting di gaji: 2-1500 (D) · 2-1600/2-1800 (K)"
+  },
+  {
+   "tahap": "Gaji dibayar",
+   "dokumen": "Kas keluar (CASH)",
+   "jurnal": "2-1600 Hutang Gaji (D) · 1-1100 Kas Besar / Bank (K)"
+  },
+  {
+   "tahap": "Setoran PPh 21",
+   "dokumen": "Setoran (STR)",
+   "jurnal": "2-1800 Hutang PPh 21 (D) · 1-1100 Kas Besar / Bank (K)"
+  },
+  {
+   "tahap": "Setoran BPJS",
+   "dokumen": "Setoran (STR)",
+   "jurnal": "2-1700 Hutang BPJS (D) · 1-1100 Kas Besar / Bank (K)"
+  },
+  {
+   "tahap": "Proses diposting dianulir (Manajer, sebelum dibayar)",
+   "dokumen": "Proses gaji (PAY)",
+   "jurnal": "Jurnal pembalik dari jurnal gaji, bertanggal sama"
+  }
+ ],
+ "titik_kontrol": [
+  "Manajer mengesahkan masukan gaji (bonus, rapel, THR) sebelum dihitung",
+  "Manajer mengesahkan perubahan gaji dan penugasan karyawan",
+  "Manajer mengesahkan proses gaji; Finance tidak bisa mengesahkan",
+  "Kontrol dua orang (Pengaturan › Persetujuan › Kontrol dua orang, bawaan mati): bila dinyalakan untuk proses gaji, pengaju proses tidak boleh mengesahkan, memposting, atau membayarnya",
+  "Bayar hanya dari rekening berperuntukan Gaji, tidak sebelum tanggal jurnal gaji",
+  "Anulir proses yang diposting hanya Manajer; gaji yang dibayar dikoreksi lewat proses susulan",
+  "Setoran tidak boleh melebihi sisa kewajiban masa itu"
+ ],
+ "cek_buku": [
+  "Sesudah satu daur selesai: 2-1600 Hutang Gaji, 2-1700 Hutang BPJS, dan 2-1800 Hutang PPh 21 dari masa itu bersaldo nol; 6-1000 dan 6-1100 menyimpan beban masa gaji.",
+  "Contoh peserta 54: KSC/JE-00484 (gaji, 31 Okt 2026) · KSC/JE-00485 (bayar) · KSC/JE-00486 (setoran PPh 21)."
+ ],
+ "kesalahan_umum": [
+  "Mengira slip gaji bisa diketik. Slip selalu hasil hitung proses gaji dari data dan aturan.",
+  "Membayar sebelum proses diposting. Antrean Gaji siap dibayar hanya memuat proses Diposting.",
+  "Lupa menyetor BPJS dan PPh 21 bulan berikutnya: kartu Setoran & Pajak menandai sisa kewajiban."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Gambar langkah 6 dari uji F15 peserta 55 sesudah perubahan izin (Finance kini membuka hub Penggajian di tab Proses Gaji, lalu tab Setoran & Pajak). Angka contoh jurnal reguler dari data acuan KSC/PAY-00001.",
+ "uji": {
+  "berkas": "uji/sdm/K09_konfigurasi_sdm.js · uji/sdm/H01_karyawan_baru.js … H04_bayar_gaji_slip.js · uji/F15_setoran_gaji.js",
+  "peserta_uji": "54 (K09, H01–H04) · 55 (F15)"
+ }
+}

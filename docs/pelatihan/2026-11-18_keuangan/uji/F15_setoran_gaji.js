@@ -21,9 +21,11 @@ const { REK_BCA, pilih, jurnalDari, cekJurnal, tungguTeks, menu, sorot, lepas, k
   let runPaid = null;
   let setor = null;
 
-  await r.step(1, "Finance", "Login akun Finance peserta → SDM › Penggajian (tab Setoran & Pajak)", `"Gaji siap dibayar" memuat proses ${run0.number} (Susulan · Oktober 2026 · 1 karyawan · ${rp(net)})`, async () => {
+  await r.step(1, "Finance", "Login akun Finance peserta → SDM › Penggajian → tab [[Setoran & Pajak]]", `"Gaji siap dibayar" memuat proses ${run0.number} (Susulan · Oktober 2026 · 1 karyawan · ${rp(net)})`, async () => {
     await r.login(akunPeserta(no));
     await menu(r, "hrd", "hr-payroll-hub");
+    // K-SDM-01 (17 Nov) — Finance kini juga memegang SDM: hub Penggajian dibuka di tab Proses Gaji → pilih tab Setoran & Pajak.
+    if (await r.tid("hub-tab-hr-payroll-remittances").count()) await r.tid("hub-tab-hr-payroll-remittances").click();
     await r.tid("pay-queue").waitFor();
     const row = r.tid(`pay-queue-row-${g.proses_gaji_id}`);
     await row.waitFor({ timeout: 15000 });
@@ -113,7 +115,9 @@ const { REK_BCA, pilih, jurnalDari, cekJurnal, tungguTeks, menu, sorot, lepas, k
     await r.tid("remit-form-amount").fill(String(pph).replace(".", ","));   // koma desimal (PPh 21 bisa bersen)
     const accSel = r.tid("remit-form-account-select");
     if (await accSel.count()) {
-      const t = await accSel.innerText().catch(() => "");
+      // Daftar rekening dimuat menyusul (satu rekening bank → kotak terkunci berisi rekening itu): tunggu teksnya dulu.
+      let t = "";
+      for (let i = 0; i < 20 && !t.trim(); i += 1) { t = await accSel.innerText().catch(() => ""); if (!t.trim()) await r.page.waitForTimeout(250); }
       if (!t.includes(REK_BCA)) await pilih(r, "remit-form-account-select", REK_BCA);
     }
     await r.tid("remit-form-ref").fill(ntpn);

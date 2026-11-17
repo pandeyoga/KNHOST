@@ -1,0 +1,97 @@
+{
+ "kode": "H02",
+ "modul": "3.4",
+ "judul": "Masukan gaji & lembur",
+ "bagian": "A",
+ "tujuan": "Peserta bisa mencatat masukan gaji (Rapel) untuk karyawan dan mengajukan lembur, serta tahu kapan masing-masing masuk proses gaji.",
+ "kapan": "Sebelum proses gaji dihitung: bonus, insentif, rapel, THR lewat masukan gaji; lembur dan absensi lewat Kehadiran.",
+ "konsep": [
+  "Masukan gaji ikut dihitung sesudah disahkan Manajer. Proses susulan memuat semua masukan yang disahkan dan belum terpakai di masa itu.",
+  "Lembur yang disetujui dihitung di proses gaji REGULER bulan lemburnya: jam × upah per jam (gaji pokok + tunjangan dasar lembur ÷ 173) × pengali. Proses susulan tidak menghitung lembur dan absensi."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (pelatih)",
+ "menit": 15,
+ "data_awal": "Karyawan baru dari H01. Masa gaji latihan Oktober 2026: karyawan masuk 1 Oktober dan terlewat proses reguler Oktober, jadi gaji Oktobernya dibayar sebagai Rapel Rp 8.000.000.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Catat masukan Rapel"
+  },
+  {
+   "peran": "Finance",
+   "label": "Ajukan lembur"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui lembur"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Sahkan masukan (di H03)"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-pay-components"
+  },
+  {
+   "menu": "SDM › Kehadiran › Lembur",
+   "nav_id": "hr-attendance-hub",
+   "tab": "hr-overtime"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "aksi": "Buka tab [[Komponen & Masukan]]. Di bagian Masukan, klik [[Tambah masukan]].",
+   "isi": "",
+   "hasil": "Pop-up \"Tambah masukan gaji\" untuk Sukacita Textile.",
+   "gambar": "uji/hasil/H02/01-tambah-masukan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Tambah masukan gaji",
+   "aksi": "Isi form. Klik [[Simpan masukan]].",
+   "isi": "*Karyawan*: Latihan NN · Andi Pratama · *Komponen*: Rapel (Pendapatan) · *Periode bayar*: Oktober 2026 · *Nominal*: 8.000.000 · *Keterangan*: Rapel gaji Oktober (karyawan baru) · *Alasan*: Masuk 1 Okt 2026, terlewat proses reguler Oktober",
+   "hasil": "Pratinjau nominal Rp 8.000.000. Pesan \"Masukan … Rp 8.000.000 dicatat, menunggu disahkan.\" Status Menunggu Disahkan. Tombol Sahkan tidak tampil untuk Finance.",
+   "gambar": "uji/hasil/H02/03-masukan-menunggu.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "SDM › Kehadiran › Lembur",
+   "aksi": "Buka SDM › [[Kehadiran]], tab Lembur. Klik [[Ajukan untuk Karyawan]], isi form, lalu klik [[Ajukan]].",
+   "isi": "*Karyawan*: Latihan NN · Andi Pratama · *Tanggal*: 16 Nov 2026 · *Jam*: 2 · *Alasan*: Tutup buku akhir bulan",
+   "hasil": "Pesan \"Pengajuan lembur dibuat.\" Baris lembur berstatus Menunggu.",
+   "gambar": "uji/hasil/H02/05-lembur-diajukan.png"
+  },
+  {
+   "no": 4,
+   "peran": "Manajer",
+   "menu": "SDM › Kehadiran › Lembur",
+   "aksi": "Klik [[Setujui]] pada lembur peserta. Klik [[Setujui]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Pesan \"Lembur disetujui & masuk perhitungan gaji.\" Lembur ini dibayar di proses gaji reguler November.",
+   "gambar": "uji/hasil/H02/06-konfirmasi-setujui-lembur.png"
+  }
+ ],
+ "cek_buku": [
+  "Masukan gaji dan lembur tidak membuat jurnal. Jurnalnya lahir saat proses gaji diposting (H03)."
+ ],
+ "kesalahan_umum": [
+  "Periode bayar dibiarkan bulan berjalan (November). Proses susulan Oktober tidak memuatnya.",
+  "Nominal ditulis \"8.000.000,00\": baca pratinjau di bawah kotak; harus Rp 8.000.000. Sen ditolak (rupiah bulat).",
+  "Menunggu masukan disahkan lama sebelum menghitung proses. Masukan yang disahkan ikut proses susulan siapa pun yang menghitung lebih dulu.",
+  "Mengira lembur ikut proses susulan. Lembur hanya dihitung di proses reguler."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Perbaikan 17 Nov: kotak Nominal masukan kini isian rupiah baku; dulu \"8.000.000,00\" tersimpan Rp 800.000.000 tanpa peringatan. Finance memegang izin kehadiran, jadi secara sistem ia juga BISA menyetujui lembur yang ia ajukan sendiri; dalam latihan persetujuan dilakukan Manajer. Untuk pemilik: perlukah lembur yang diajukan seseorang tidak boleh disetujui orang yang sama?",
+ "uji": {
+  "berkas": "uji/sdm/H02_masukan_gaji.js",
+  "peserta_uji": "54"
+ }
+}

@@ -6,11 +6,11 @@
 //    {account_id, paid_date}; sesudah bayar daftar transfer (tombol "Unduh Excel") terbuka.
 //  · Daftar transfer: 6 kolom, baris tunai bertanda "Tanpa rekening — bayar tunai" (ikon + teks), kaki "Total … · 3 penerima".
 //  · Setoran BPJS dan PPh 21: tombol Batalkan hanya untuk pemegang `payroll.void` (alasan wajib, kirim ber-kunci); rekap
-//    setahun 12 masa per jenis; menu Finance: hub Penggajian hanya tab Setoran & Pajak.
+//    setahun 12 masa per jenis; menu Finance: hub Penggajian hanya tab Setoran & Pajak (K-SDM-01: bila izin SDM dicabut).
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import PayrollRemittancesView from "../hr/PayrollRemittancesView";
-import { alasanTidakBisaBayar, konfirmasiBayar, ringkasBayar, TEKS_PILIH_PT, TEKS_TANPA_REKENING_GAJI } from "../hr/PayrollPayPanel";
+import { alasanDialogBayar, alasanTidakBisaBayar, konfirmasiBayar, ringkasBayar, TEKS_PILIH_PT, TEKS_TANPA_REKENING_GAJI } from "../hr/PayrollPayPanel";
 import { kakiTransfer, TEKS_TUNAI } from "../hr/TransferListPanel";
 import { AppNavProvider } from "../../context/AppNavContext";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
@@ -113,6 +113,17 @@ afterEach(() => {
 
 describe("Gaji siap dibayar", () => {
   beforeEach(() => setAccessContext(FINANCE));
+  // K-SDM-01 — "hari ini" cerita uji = 2 Des 2026 (sama dengan uji backend PY-T4): gaji November (jurnal 30 Nov) baru boleh
+  // dibayar mulai 30 Nov; dulu uji ini bergantung pada jam mesin dan kebetulan lulus karena tombol tidak memeriksa tanggal.
+  const RealDate = Date;
+  beforeEach(() => {
+    const t = new RealDate("2026-12-02T03:00:00Z").getTime();
+    global.Date = class extends RealDate {
+      constructor(...a) { super(...(a.length ? a : [t])); }
+      static now() { return t; }
+    };
+  });
+  afterEach(() => { global.Date = RealDate; });
 
   test("kolom antrean; Bayar membuka pop-up berekening gaji; konfirmasi menyebut nominal, rekening, PT", async () => {
     api();
@@ -229,9 +240,38 @@ describe("Setoran BPJS dan PPh 21", () => {
     expect(q(host, "remit-void-strm_1")).toBeNull();
   });
 
-  test("menu Finance: hub Penggajian hanya tab Setoran & Pajak", () => {
-    setAccessContext({ ...FINANCE, view_resources: builtin.view_resources, hidden_views: [], view_actions: builtin.view_actions });
+  test("menu Finance hanya berizin bayar (payroll.pay, tanpa hr.*): hub Penggajian hanya tab Setoran & Pajak", () => {
+    // K-SDM-01 (pemilik 17 Nov 2026) — Finance bawaan kini juga memegang izin SDM (tiga tab, lihat
+    // config/__tests__/ksdm01MenuSdmFinance.test.js); bila Admin mencabutnya, yang tersisa tetap tab bayar & setor.
+    const kasir = { ...builtin.permissions.finance, payroll: ["pay"] };
+    delete kasir.hr;
+    setAccessContext({ role: "finance", permissions: kasir, view_resources: builtin.view_resources, hidden_views: [],
+      view_actions: builtin.view_actions });
     expect(hubTabsForRole("hr-payroll-hub", "finance").map((t) => [t.view, t.label]))
       .toEqual([["hr-payroll-remittances", "Setoran & Pajak"]]);
+  });
+  test("K-SDM-01 — menu Finance bawaan: Proses Gaji, Setoran & Pajak, Komponen & Masukan", () => {
+    setAccessContext({ ...FINANCE, view_resources: builtin.view_resources, hidden_views: [], view_actions: builtin.view_actions });
+    expect(hubTabsForRole("hr-payroll-hub", "finance").map((t) => [t.view, t.label]))
+      .toEqual([["hr-payroll-runs", "Proses Gaji"], ["hr-payroll-remittances", "Setoran & Pajak"],
+        ["hr-pay-components", "Komponen & Masukan"]]);
+  });
+});
+
+// K-SDM-01 (audit pelatihan 18 Nov) — gaji masa November (jurnal 30 Nov) dibuka 17 Nov: bawaan tanggal bayar = hari ini, dulu
+// tombol "Bayar gaji" hidup dan server baru menolak sesudah konfirmasi. Kini tombol mati dengan alasan tertulis.
+describe("K-SDM-01 — pop-up Bayar gaji: tanggal bayar sebelum tanggal jurnal gaji", () => {
+  const dasar = { canWrite: true, adaRekening: true, pilih: { id: "r1" }, minTgl: "2026-11-30" };
+  test("sebelum tanggal jurnal → alasan tertulis; pada/sesudah → boleh", () => {
+    expect(alasanDialogBayar({ ...dasar, tgl: "2026-11-17" })).toMatch(/^Tanggal bayar tidak boleh sebelum .*30.*2026 \(tanggal jurnal gaji\)/);
+    expect(alasanDialogBayar({ ...dasar, tgl: "2026-11-30" })).toBe("");
+    expect(alasanDialogBayar({ ...dasar, tgl: "2026-12-01" })).toBe("");
+    expect(alasanDialogBayar({ ...dasar, tgl: "2026-11-17", minTgl: "" })).toBe("");
+  });
+  test("urutan alasan lama tetap", () => {
+    expect(alasanDialogBayar({ ...dasar, canWrite: false, tgl: "2026-11-30" })).toBe(TEKS_PILIH_PT);
+    expect(alasanDialogBayar({ ...dasar, adaRekening: false, tgl: "2026-11-30" })).toBe(TEKS_TANPA_REKENING_GAJI);
+    expect(alasanDialogBayar({ ...dasar, pilih: undefined, tgl: "2026-11-30" })).toBe("Pilih rekening pembayaran gaji.");
+    expect(alasanDialogBayar({ ...dasar, tgl: "" })).toBe("Isi tanggal bayar.");
   });
 });

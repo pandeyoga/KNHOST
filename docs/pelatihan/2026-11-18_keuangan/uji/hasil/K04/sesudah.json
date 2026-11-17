@@ -1,0 +1,11 @@
+{
+  "aktif": 2,
+  "efek_bersih": {
+    "3-2900": 0,
+    "1-1100": 0
+  },
+  "nonaktif": {
+    "opening_balance": 0,
+    "is_active": false
+  }
+}

@@ -1,0 +1,173 @@
+{
+ "kode": "K05",
+ "modul": "1",
+ "judul": "Aturan Keuangan & Pajak — membaca, mengubah, mengembalikan",
+ "bagian": "A",
+ "tujuan": "Peserta tahu aturan keuangan mana yang mengatur pekerjaannya (PPN & DPP nilai lain, syarat bayar, denda, toleransi selisih bayar, nomor referensi kwitansi, titipan sales, kas kecil, cara bayar), dari mana nilainya berasal, dan melihat sendiri bahwa satu perubahan aturan langsung mengubah layar tanpa mengubah transaksi.",
+ "kapan": "Saat angka di layar tidak sesuai harapan (mis. selisih kecil ditutup otomatis, denda muncul, kolom umur piutang berbeda) — tanyakan dulu aturan mana yang berlaku sebelum mengira ada kesalahan.",
+ "konsep": [
+  "Nilai aturan bisnis disimpan sebagai pengaturan, bukan tertanam di program. Setiap baris menunjukkan nilai yang berlaku dan asalnya: Bawaan sistem → Aturan grup (semua PT) → Khusus PT. Nilai yang paling khusus yang dipakai.",
+  "Pajak: Tarif PPN 12 % dengan DPP nilai lain 11/12, jadi PPN efektif 11 % dari harga jual (contoh: DPP Rp 1.680.000 → PPN Rp 184.800).",
+  "Pembayaran pelanggan: syarat bayar bawaan NET30; bunga denda 2 % per bulan dengan masa tenggang; selisih bayar sampai Rp 5.000 dianggap lunas; nomor referensi kwitansi bisa diwajibkan; tunai yang diterima sales di Sukacita dicatat sebagai titipan sampai disetor. Kas kecil: LPJ bisa diwajibkan berlampiran bukti. Daftar cara bayar ada di Pengaturan › Perusahaan (PT) › Master per PT › Cara Bayar.",
+  "Mengubah aturan berlaku seketika untuk perhitungan berikutnya dan tercatat di riwayat (siapa, kapan, alasan). Aturan berisiko tinggi wajib beralasan. 'Ikuti nilai grup' mencabut nilai khusus PT sehingga PT kembali memakai aturan grup.",
+  "Yang boleh mengubah ditentukan izin per aturan: aturan umum butuh izin kelola pengaturan (bawaan Admin); sebagian aturan pajak/akuntansi, kas, dan kredit bisa diubah pemegang izin modul itu. Finance tidak membuka layar ini; Finance melihat akibatnya di layar kerja."
+ ],
+ "peran": "Admin (pelatih) · Finance (akun peserta)",
+ "menit": 25,
+ "data_awal": "Aturan Keuangan & Pajak PT Sukacita apa adanya. Piutang › Saldo & Umur Sukacita (data latihan). Aturan yang diubah lalu dikembalikan: 'Kelompok umur piutang (hari)' khusus Sukacita, dari 30 · 60 · 90 menjadi 15 · 30 · 60.",
+ "alur": [
+  {
+   "peran": "Admin",
+   "label": "Baca aturan pajak & pembayaran"
+  },
+  {
+   "peran": "Finance",
+   "label": "Lihat kolom umur piutang"
+  },
+  {
+   "peran": "Admin",
+   "label": "Ubah kelompok umur Sukacita"
+  },
+  {
+   "peran": "Finance",
+   "label": "Kolom umur ikut berubah"
+  },
+  {
+   "peran": "Admin",
+   "label": "Ikuti nilai grup (kembalikan)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Kolom umur kembali"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak",
+   "nav_id": "settings-finance",
+   "tab": "settings-cfg-finance"
+  },
+  {
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "nav_id": "ar-aging",
+   "tab": "ar-aging"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Admin",
+   "menu": "Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak",
+   "aksi": "Pelatih masuk sebagai Admin dengan PT Sukacita di bilah atas. Buka Pengaturan › Keuangan & Pajak.",
+   "isi": "*Berlaku untuk*: Satu PT · Sukacita Textile",
+   "hasil": "Tulisan 'Anda sedang mengubah nilai khusus Sukacita. PT lain tidak terpengaruh.' Tiga kelompok: Pembayaran pelanggan (43), Pajak, pembukuan & antar-PT (41), Bank & uang yang nyangkut (27). Tiap baris: nama aturan, nilai, asal nilai, dan tingkat risiko.",
+   "gambar": "uji/hasil/K05/01-aturan-keuangan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pajak, pembukuan & antar-PT",
+   "aksi": "Klik kelompok [[Pajak, pembukuan & antar-PT]]. Ketik 'PPN' di kotak cari, lalu buka baris 'Tarif PPN'.",
+   "isi": "*Cari di kelompok ini*: PPN",
+   "hasil": "Tarif PPN 12 %, Pakai DPP nilai lain Ya / Aktif (faktor 11/12 → PPN efektif 11 %). Baris terbuka menampilkan penjelasan, contoh, dan siapa yang boleh mengubah.",
+   "gambar": "uji/hasil/K05/02-tarif-ppn.png"
+  },
+  {
+   "no": 3,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pajak, pembukuan & antar-PT",
+   "aksi": "Ganti isi kotak cari menjadi 'LPJ'.",
+   "isi": "*Cari di kelompok ini*: LPJ",
+   "hasil": "Aturan kas kecil 'LPJ kas kecil wajib berlampiran bukti': Tidak / Mati, asal Bawaan sistem.",
+   "gambar": "uji/hasil/K05/03-kas-kecil-lpj.png"
+  },
+  {
+   "no": 4,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pembayaran pelanggan",
+   "aksi": "Kosongkan kotak cari. Klik kelompok [[Pembayaran pelanggan]] dan baca bagian Syarat bayar, Kwitansi pelanggan, Denda telat bayar, Selisih bayar.",
+   "isi": "",
+   "hasil": "Syarat bayar bawaan pesanan baru NET30 (Aturan grup) · Wajibkan nomor referensi di kwitansi Tidak / Mati · Tunai yang diterima sales dicatat sebagai 'Titipan di tangan sales sampai disetor' (Khusus Sukacita) · Bunga denda keterlambatan 2 % / bulan · Masa tenggang 0 hari · Selisih bayar yang dianggap lunas Rp 5.000.",
+   "gambar": "uji/hasil/K05/04-pembayaran-pelanggan.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "aksi": "Masuk dengan akun peserta. Klik menu [[Piutang]] dan baca judul kolom tabel 'Piutang per Pelanggan'.",
+   "isi": "",
+   "hasil": "Kolom umur: Belum jatuh tempo · 1–30 hari · 31–60 hari · 61–90 hari · > 90 hari.",
+   "gambar": "uji/hasil/K05/06-umur-piutang-awal.png"
+  },
+  {
+   "no": 6,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pembayaran pelanggan",
+   "aksi": "Pelatih membuka baris 'Kelompok umur piutang (hari)'. Ganti batasnya menjadi 15 · 30 · 60.",
+   "isi": "*Batas*: 30 → 15, 60 → 30, 90 → 60",
+   "hasil": "Kotak kuning: 'Akan berubah: 30 · 60 · 90 → 15 · 30 · 60 untuk Sukacita' dan 'Hanya Sukacita yang terpengaruh — PT lain tidak berubah.'",
+   "gambar": "uji/hasil/K05/07-ubah-kelompok-umur.png"
+  },
+  {
+   "no": 7,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pembayaran pelanggan",
+   "aksi": "Isi alasan. Klik [[Simpan]].",
+   "isi": "*Alasan perubahan*: Peragaan pelatihan — dikembalikan sesudah demo",
+   "hasil": "Lencana asal berubah menjadi 'Khusus Sukacita'; nilai grup tetap 30 · 60 · 90.",
+   "gambar": "uji/hasil/K05/08-kelompok-umur-tersimpan.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "aksi": "Muat ulang layar Piutang (ikon muat ulang).",
+   "isi": "",
+   "hasil": "Kolom umur langsung berubah: Belum jatuh tempo · 1–15 hari · 16–30 hari · 31–60 hari · > 60 hari. Tidak ada transaksi yang diubah — hanya cara mengelompokkan umur.",
+   "gambar": "uji/hasil/K05/09-umur-piutang-sesudah-ubah.png"
+  },
+  {
+   "no": 9,
+   "peran": "Admin",
+   "menu": "Aturan Keuangan & Pajak › Pembayaran pelanggan",
+   "aksi": "Pelatih membuka lagi baris 'Kelompok umur piutang (hari)'. Klik [[Ikuti nilai grup]].",
+   "isi": "",
+   "hasil": "Muncul konfirmasi \"'Kelompok umur piutang (hari)' untuk Sukacita kembali mengikuti nilai grup (30 · 60 · 90). Nilai khusus Sukacita (15 · 30 · 60) dicabut.\" dengan kolom Alasan.",
+   "gambar": "uji/hasil/K05/10-ikuti-nilai-grup.png"
+  },
+  {
+   "no": 10,
+   "peran": "Admin",
+   "menu": "Konfirmasi Ikuti nilai grup",
+   "aksi": "Isi alasan. Klik [[Ikuti nilai grup]].",
+   "isi": "*Alasan*: Selesai peragaan pelatihan",
+   "hasil": "Nilai kembali 30 · 60 · 90 berasal 'Aturan grup'.",
+   "gambar": "uji/hasil/K05/11-konfirmasi-ikuti-grup.png"
+  },
+  {
+   "no": 11,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "aksi": "Muat ulang layar Piutang.",
+   "isi": "",
+   "hasil": "Kolom kembali: Belum jatuh tempo · 1–30 · 31–60 · 61–90 · > 90 hari.",
+   "gambar": "uji/hasil/K05/13-umur-piutang-kembali.png"
+  }
+ ],
+ "cek_buku": [
+  "Pengaturan sesudah peragaan sama persis dengan sebelumnya (nilai grup dan nilai Sukacita); perubahan dan pengembaliannya tercatat di Riwayat perubahan.",
+  "Saldo piutang per pelanggan tidak berubah — hanya pembagian kolom umurnya.",
+  "Contoh PPN: DPP Rp 1.680.000 × 11/12 × 12 % = Rp 184.800 (sama dengan PPN tagihan pemasok di F11)."
+ ],
+ "kesalahan_umum": [
+  "Mengubah aturan dengan *Berlaku untuk* 'Semua PT' padahal maksudnya satu PT — semua PT tanpa nilai sendiri ikut berubah.",
+  "Mengira 'Pakai nilai bawaan sistem' sama dengan 'Ikuti nilai grup': yang pertama menulis nilai bawaan sebagai nilai khusus PT, yang kedua mencabut nilai khusus PT.",
+  "Lupa mengisi alasan pada aturan berisiko tinggi — tombol Simpan tidak aktif.",
+  "Menganggap Finance bisa melihat layar ini: Finance hanya melihat Pengaturan › Keuangan & Pajak › Pemetaan Akun; aturan dibaca bersama pelatih."
+ ],
+ "catatan_pelatih": "Seluruh perubahan aturan diperagakan pelatih dengan akun Admin (Manajer hanya bisa membaca aturan umum; mengubah 'Kelompok umur piutang' butuh izin kelola pengaturan). Ubah hanya untuk Sukacita dan kembalikan dengan 'Ikuti nilai grup' sebelum lanjut — pengaturan dipakai semua peserta. Selama ± 1 menit kolom umur di layar Piutang semua peserta ikut berubah; itu justru bagian demo. Jangan peragakan perubahan PPN atau toleransi selisih bayar di kelas (berisiko tinggi dan memengaruhi pembayaran yang sedang dicatat peserta lain).",
+ "uji": {
+  "berkas": "uji/konfigurasi/K05_aturan_keuangan_pajak.js",
+  "peserta_uji": "11"
+ }
+}

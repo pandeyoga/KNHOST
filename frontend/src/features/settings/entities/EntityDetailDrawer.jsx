@@ -25,6 +25,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import LocationFields, { locationSummary } from "../../../components/LocationFields";
 import { formatDateId } from "../../../components/KNDatePicker";
 import { auditActionInfo } from "../../../config/auditLabels";
+import { can } from "../../../config/roles";
 import { askConfirm } from "../../../services/confirmService";
 import { getEntity, patchEntity, getReadiness, getEntityAudit, errText, cancelTaxStatus, fiscalYearText,
   NPWP_MESSAGE, npwpValid, profileSettingItems, sourceText, TAX_STATUS_LABEL } from "./entityApi";
@@ -60,6 +61,16 @@ const GROUP_KEYS = ["is_group", "ownership_pct"];   // KP-T1 — bagian Grup & k
 const FORM_KEYS = [...EDITABLE.map(([k]) => k), ...LOC_KEYS, ...GROUP_KEYS];
 const OWNERSHIP_MESSAGE = "Persen kepemilikan harus lebih dari 0 dan paling banyak 100.";
 
+/** Pelatihan 18 Nov (K03) — riwayat badan usaha butuh izin `audit.view`. Tanpa izin itu drawer dulu tetap memanggil
+ * riwayat (403 di konsol) lalu menulis "Belum ada perubahan tercatat" — menyesatkan bagi Manajer. Sesi tanpa data izin
+ * (komponen lama) = perilaku lama; server tetap menegakkan. */
+export function izinAuditSesi() {
+  let u = null;
+  try { u = JSON.parse(localStorage.getItem("kn_user") || "null"); } catch { u = null; }
+  if (!u || !u.permissions) return true;
+  return can(u.permissions, "audit", "view");
+}
+
 function fmtTime(iso) {
   if (!iso) return "—";
   try {
@@ -73,6 +84,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
   const [entity, setEntity] = useState(null);
   const [readiness, setReadiness] = useState(null);
   const [audit, setAudit] = useState([]);
+  const [auditDenied, setAuditDenied] = useState(false);
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -92,7 +104,10 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
         ? String(e?.[k] ?? "") : (e?.[k] ?? "")])));
       setError("");
       // Riwayat audit boleh gagal (mis. peran tanpa izin audit) tanpa merusak layar.
-      getEntityAudit(entityId).then(setAudit).catch(() => setAudit([]));
+      if (izinAuditSesi()) {
+        getEntityAudit(entityId).then((rows) => { setAudit(rows); setAuditDenied(false); })
+          .catch((err) => { setAudit([]); setAuditDenied(err?.response?.status === 403); });
+      } else { setAudit([]); setAuditDenied(true); }
       // KP-T1 — tanpa akses baca pengaturan: nilai tetap tampil (dari jawaban PT), tombol Ubah disembunyikan.
       profileSettingItems(entityId).then(setProfile).catch(() => setProfile(null));
     } catch (e) {
@@ -458,7 +473,11 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                     <History size={14} className="text-[#0058CC]" />
                     <p className="kicker !mb-0">Riwayat perubahan</p>
                   </div>
-                  {audit.length === 0 ? (
+                  {auditDenied ? (
+                    <p className="text-fs-12 text-kn-text-2" data-testid="entity-detail-audit-denied">
+                      Riwayat perubahan hanya bisa dibaca pemegang akses Riwayat Audit.
+                    </p>
+                  ) : audit.length === 0 ? (
                     <p className="text-[11px] text-[#8E8E93]" data-testid="entity-detail-audit-empty">
                       Belum ada perubahan tercatat untuk badan usaha ini.
                     </p>

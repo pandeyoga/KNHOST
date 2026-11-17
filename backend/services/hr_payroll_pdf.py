@@ -96,6 +96,15 @@ def payslip_pdf_rows(slip: Dict[str, Any]) -> List[Tuple[str, str, float]]:
     return rows
 
 
+def _masa(period: str) -> str:
+    """K-SDM-01 (audit pelatihan 18 Nov) — slip dibaca karyawan: "Oktober 2026", bukan kode "2026-10"."""
+    try:
+        from services.periodic_posting import label_periode
+        return label_periode(period)
+    except Exception:  # noqa: BLE001 — periode lama/tak sah tetap tercetak apa adanya
+        return str(period or "")
+
+
 def payslip_pdf_bytes(slip: Dict[str, Any], entity_name: str = "Kain Nusantara") -> bytes:
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -123,7 +132,7 @@ def payslip_pdf_bytes(slip: Dict[str, Any], entity_name: str = "Kain Nusantara")
     c.setFont("Helvetica", 9)
     c.setFillColor(GRAY)
     jenis = {"thr": "  ·  Proses THR", "susulan": "  ·  Proses susulan"}.get(slip.get("run_type") or "", "")
-    c.drawString(x0, y - 13, f"Periode: {slip.get('period', '')}   ·   PTKP: {slip.get('ptkp_status', '')}   ·   "
+    c.drawString(x0, y - 13, f"Periode: {_masa(slip.get('period', ''))}   ·   PTKP: {slip.get('ptkp_status', '')}   ·   "
                              f"TER-{slip.get('ter_category', '')}{jenis}")
     bank = slip.get("bank", {}) or {}
     if bank.get("acc_no"):

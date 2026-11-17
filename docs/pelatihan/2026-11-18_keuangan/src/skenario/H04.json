@@ -1,0 +1,122 @@
+{
+ "kode": "H04",
+ "modul": "3.4",
+ "judul": "Bayar gaji & slip gaji",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membayar proses gaji yang sudah diposting dari rekening gaji, mengunduh daftar transfer, mencetak slip gaji PDF, dan melanjutkan ke setoran PPh 21.",
+ "kapan": "Tanggal gajian, sesudah proses gaji diposting; setoran pajak paling lambat tanggal 15 bulan berikutnya.",
+ "konsep": [
+  "Bayar gaji = satu kas keluar sebesar total gaji bersih dari rekening berperuntukan Gaji. Transfer per karyawan mengikuti daftar transfer (rekening dari data karyawan H01).",
+  "Tanggal bayar tidak boleh sebelum tanggal buku jurnal gaji (akhir masa). Gaji yang sudah dibayar tidak bisa dianulir; koreksinya lewat proses susulan.",
+  "Hutang PPh 21 dari gaji yang diposting menjadi kewajiban masa itu dan disetor lewat Setoran & Pajak (F15)."
+ ],
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Proses gaji susulan Oktober 2026 dari H03 (Diposting): 1 karyawan, gaji bersih Rp 7.920.000, PPh 21 Rp 80.000.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Bayar dari rekening gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Unduh daftar transfer"
+  },
+  {
+   "peran": "Finance",
+   "label": "Unduh slip gaji PDF"
+  },
+  {
+   "peran": "Finance",
+   "label": "Setor PPh 21 (F15)"
+  },
+  {
+   "peran": "Buku",
+   "label": "Hutang (D) / Bank (K)"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-payroll-runs"
+  },
+  {
+   "menu": "SDM › Penggajian › Setoran & Pajak",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-payroll-remittances"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Pilih proses Anda (Diposting). Klik [[Bayar]].",
+   "isi": "*Rekening pembayaran*: BCA Operasional KSC · *Tanggal bayar*: hari ini",
+   "hasil": "Pop-up \"Bayar gaji\": hanya rekening bertanda Gaji; ringkasan \"Total bersih Rp 7.920.000 untuk 1 karyawan\".",
+   "gambar": "uji/hasil/H04/02-form-bayar.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Bayar gaji",
+   "aksi": "Klik [[Bayar gaji]], lalu [[Bayar gaji]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Status Dibayar. Daftar transfer terbuka: \"Dibayar … dari BCA Operasional KSC\", baris Andi Pratama · BCA · nomor rekening · Rp 7.920.000.",
+   "gambar": "uji/hasil/H04/04-daftar-transfer.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Daftar transfer",
+   "aksi": "Klik [[Unduh Excel]]. Tutup daftar transfer (×).",
+   "isi": "",
+   "hasil": "Berkas Excel daftar transfer terunduh, siap diunggah ke internet banking.",
+   "gambar": "uji/hasil/H04/05-dibayar.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Proses Gaji › Cari slip",
+   "aksi": "Klik [[Buka pencarian]] di Cari slip. Ketik nama karyawan. Klik barisnya, lalu klik [[Unduh / Lihat PDF]].",
+   "isi": "",
+   "hasil": "Slip gaji PDF: nama PT Sukacita Textile, nomor slip, nama karyawan, periode Oktober 2026, PTKP K1, rekening, Rapel Rp 8.000.000, PPh 21 Rp 80.000, gaji bersih Rp 7.920.000.",
+   "gambar": "uji/hasil/H04/07-slip-pdf.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Setoran & Pajak",
+   "aksi": "Buka tab [[Setoran & Pajak]]. Pilih *Masa gaji* Oktober 2026.",
+   "isi": "",
+   "hasil": "Kartu PPh 21 Oktober: Kewajiban memuat PPh 21 proses Anda; Sudah disetor; Sisa.",
+   "gambar": "uji/hasil/H04/08-kewajiban-oktober.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Setoran & Pajak",
+   "aksi": "Klik [[Catat Setoran]], isi form, lalu klik [[Catat Setoran]] dan konfirmasi (langkah F15).",
+   "isi": "*Jenis*: PPh 21 · *Masa*: Oktober 2026 · *Nominal*: 80.000 · *Rekening*: BCA Operasional KSC · *Nomor bukti setor*: NTPN-SDM-NN",
+   "hasil": "Pesan \"Setoran KSC/STR-… tercatat: PPh 21 Rp 80.000.\" Sisa PPh 21 turun Rp 80.000.",
+   "gambar": "uji/hasil/H04/11-setoran-tercatat.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal bayar gaji: 2-1600 Hutang Gaji (D) = 1-1100 Kas Besar / Bank (K) = Rp 7.920.000 — seimbang; satu kas keluar dari BCA Operasional KSC bertanggal bayar.",
+  "Jurnal setoran PPh 21: 2-1800 Hutang PPh 21 (D) = 1-1100 Kas Besar / Bank (K) = Rp 80.000 — seimbang.",
+  "Sesudah bayar dan setor, saldo 2-1600 dan 2-1800 dari proses ini nol."
+ ],
+ "kesalahan_umum": [
+  "Membayar proses reguler KSC/PAY-00001 atau proses peserta lain. Bayar hanya proses Anda.",
+  "Tanggal bayar sebelum tanggal buku jurnal gaji: tombol Bayar gaji mati dengan alasan tertulis.",
+  "Slip PDF terbuka di tab baru dan tertutup pemblokir pop-up: izinkan pop-up untuk alamat aplikasi.",
+  "Menyetor PPh 21 masa November padahal gajinya masa Oktober."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Perbaikan 17 Nov: (1) pop-up Bayar gaji kini mematikan tombol bila tanggal bayar sebelum tanggal jurnal gaji — dulu ditolak server sesudah konfirmasi; (2) slip PDF menulis masa \"Oktober 2026\", dulu \"2026-10\". Kop slip baru berisi nama PT (tanpa alamat, NPWP, logo) — untuk pemilik: perlukah kop lengkap seperti faktur? Setoran BPJS reguler dan sisa PPh 21 tetap peragaan pelatih (F15).",
+ "uji": {
+  "berkas": "uji/sdm/H04_bayar_gaji_slip.js",
+  "peserta_uji": "54"
+ }
+}

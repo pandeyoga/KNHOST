@@ -1,0 +1,143 @@
+{
+ "kode": "K09",
+ "modul": "1",
+ "judul": "Konfigurasi SDM & Gaji",
+ "bagian": "A",
+ "tujuan": "Peserta tahu di mana aturan gaji disimpan dan bagaimana aturan itu masuk ke proses gaji: komponen gaji, PTKP dan kategori tarif PPh 21, tarif BPJS, tabel TER, shift, dan kalender libur.",
+ "kapan": "Sebelum menggaji pertama kali, saat pemerintah mengubah tarif BPJS, PTKP, atau TER, dan tiap awal tahun saat kalender libur diisi.",
+ "konsep": [
+  "Proses gaji tidak memakai angka yang diketik di slip. Proses gaji membaca data karyawan (gaji pokok, tunjangan, status PTKP), komponen gaji PT, aturan di Pengaturan › SDM, lembur yang disetujui, kehadiran, dan masukan gaji yang disahkan.",
+  "Komponen gaji = baris slip. Gaji Pokok dan Tunjangan tetap tiap bulan. Lembur dihitung per jam. Rapel, Insentif, dan THR diisi lewat masukan gaji. BPJS dan PPh 21 dihitung menurut undang-undang. Potongan tidak hadir dan terlambat berasal dari kehadiran.",
+  "PPh 21 bulanan memakai tarif efektif (TER). Status PTKP karyawan menentukan kategorinya: TK0, TK1, K0 = A; TK2, TK3, K1, K2 = B; K3 = C. Tabel TER memetakan penghasilan bruto sebulan ke tarif.",
+  "Tarif BPJS (Kesehatan, JHT, Jaminan Pensiun, JKK, JKM) dan batas atas upahnya dipakai proses gaji reguler. Proses THR dan proses susulan tidak menghitung BPJS.",
+  "Aturan bertanda \"Satu nilai untuk seluruh grup\" berlaku untuk semua PT. Mengubahnya berisiko tinggi. Dalam latihan kita hanya membaca; perubahan aman hanya di kalender libur bulan yang belum digaji."
+ ],
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Tidak perlu data khusus. Tanggal libur latihan ada di Kartu Peserta › Karyawan baru (contoh peserta 54: 19 Desember 2026).",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Baca aturan BPJS & PPh 21"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca komponen gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca shift kerja"
+  },
+  {
+   "peran": "Finance",
+   "label": "Tambah hari libur latihan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Hapus lagi (kembalikan)"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › SDM › Aturan SDM & Penggajian",
+   "nav_id": "settings-hr",
+   "tab": "settings-cfg-hr"
+  },
+  {
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-pay-components"
+  },
+  {
+   "menu": "Pengaturan › SDM › Shift & Lokasi Absen",
+   "nav_id": "settings-hr",
+   "tab": "hr-attendance-setup"
+  },
+  {
+   "menu": "Pengaturan › SDM › Kalender Libur",
+   "nav_id": "settings-hr",
+   "tab": "hr-holidays"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Pengaturan › SDM › Aturan SDM & Penggajian",
+   "aksi": "Buka grup Pengaturan › [[SDM]].",
+   "isi": "",
+   "hasil": "Tab Aturan SDM & Penggajian terbuka. Bagian BPJS menampilkan tarif: BPJS Kesehatan karyawan 1 %, perusahaan 4 %, JHT karyawan 2 %, perusahaan 3,7 %. Bilah atas menulis berapa pengaturan yang boleh Anda ubah.",
+   "gambar": "uji/hasil/K09/01-aturan-bpjs.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Aturan SDM & Penggajian › PPh 21",
+   "aksi": "Klik kartu \"PTKP setahun per status\". Klik kartu \"Kategori tarif per status PTKP\".",
+   "isi": "",
+   "hasil": "Tabel PTKP setahun per status (TK0 Rp 54.000.000 … K3 Rp 72.000.000) dan kategori tarif: K1 = kategori B. Jangan mengubah isinya.",
+   "gambar": "uji/hasil/K09/02-ptkp-dan-kategori-ter.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Aturan SDM & Penggajian › PPh 21",
+   "aksi": "Klik kartu \"Tarif efektif PPh 21 bulanan\".",
+   "isi": "",
+   "hasil": "Tabel TER: kategori, batas atas bruto sebulan, tarif (%). Proses gaji membaca tabel yang berlaku pada akhir masa gajinya.",
+   "gambar": "uji/hasil/K09/03-tabel-ter.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "aksi": "Buka SDM › [[Penggajian]]. Klik tab [[Komponen & Masukan]].",
+   "isi": "",
+   "hasil": "Tabel komponen gaji PT Sukacita: Gaji Pokok, Tunjangan, Lembur (per jam), Komisi, Insentif, THR, Rapel (masukan), BPJS dan PPh 21 (undang-undang), potongan tidak hadir dan terlambat (kehadiran), tanggungan perusahaan.",
+   "gambar": "uji/hasil/K09/04-komponen-gaji.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Pengaturan › SDM › Shift & Lokasi Absen",
+   "aksi": "Kembali ke Pengaturan › SDM. Klik tab [[Shift & Lokasi Absen]].",
+   "isi": "",
+   "hasil": "Shift Reguler 08:00–17:00, toleransi terlambat 10 menit, Senin–Jumat. Jam shift menjadi dasar terlambat dan lembur dari absensi.",
+   "gambar": "uji/hasil/K09/05-shift-kerja.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Pengaturan › SDM › Kalender Libur",
+   "aksi": "Klik tab [[Kalender Libur]]. Klik [[Tambah hari libur]], isi form, lalu klik [[Simpan]].",
+   "isi": "*Tanggal*: tanggal libur latihan di Kartu Peserta (contoh 19 Des 2026) · *Jenis*: Perusahaan · *Nama*: Libur latihan NN",
+   "hasil": "Pesan \"Hari libur … ditambahkan untuk Sukacita Textile.\" Baris baru tampil di tabel 2026.",
+   "gambar": "uji/hasil/K09/07-hari-libur-ditambah.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Pengaturan › SDM › Kalender Libur",
+   "aksi": "Kembalikan perubahan. Klik [[Hapus]] pada baris itu, lalu klik [[Hapus]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Konfirmasi menjelaskan akibatnya: proses gaji yang dihitung ulang memperlakukan tanggal itu sebagai hari biasa. Pesan \"Hari libur … dihapus.\" Kalender kembali seperti semula.",
+   "gambar": "uji/hasil/K09/08-konfirmasi-hapus-libur.png"
+  }
+ ],
+ "cek_buku": [
+  "Konfigurasi tidak membuat jurnal.",
+  "Akun yang nanti diisi proses gaji: 6-1000 Beban Gaji, 6-1100 Beban BPJS (Perusahaan), 2-1600 Hutang Gaji, 2-1700 Hutang BPJS, 2-1800 Hutang PPh 21; insentif penjualan lewat 2-1500 Hutang Insentif Penjualan.",
+  "Potongan tidak hadir, terlambat, dan cuti tanpa gaji memakai akun 6-1000 (mengurangi beban gaji)."
+ ],
+ "kesalahan_umum": [
+  "Mengubah tabel PTKP, TER, atau tarif BPJS saat latihan. Nilainya satu untuk seluruh grup, jadi semua PT ikut berubah.",
+  "Menambah hari libur di bulan yang sudah digaji. Proses yang dihitung ulang sesudahnya berubah angkanya.",
+  "Lupa menghapus hari libur latihan.",
+  "Membaca TK1 sebagai K1. Status PTKP dipilih persis: K1 = kawin, satu tanggungan."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Sejak keputusan itu Finance memegang izin mengatur aturan gaji (36 pengaturan Gaji & SDM, termasuk tabel PTKP/TER dan tarif BPJS yang berlaku untuk seluruh grup PT). Peragakan sebagai bacaan saja. Untuk pemilik: apakah aturan bersama grup (PTKP, TER, BPJS) boleh diubah Finance satu PT, atau dikunci ke Manajer/Admin? Kalender libur dan shift diubah lewat izin kehadiran (Finance juga memegangnya).",
+ "uji": {
+  "berkas": "uji/sdm/K09_konfigurasi_sdm.js",
+  "peserta_uji": "54"
+ }
+}

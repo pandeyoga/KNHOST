@@ -1,0 +1,88 @@
+{
+  "code": "K01",
+  "title": "Bagan Akun (COA)",
+  "ok": true,
+  "at": "2026-11-17T10:41:17.411Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Masuk dengan akun peserta, buka Akuntansi & Pajak › Buku Besar, klik tab [[Bagan Akun]]",
+      "expect": "Judul 'Bagan Akun · Sukacita'; kartu Total akun sama dengan jumlah akun; lima kelompok Aset · Kewajiban · Ekuitas · Pendapatan · Beban",
+      "ok": true,
+      "ms": 8795,
+      "info": "Bagan Akun · Sukacita · total 77 · detail AKUN DETAIL (BISA DIPOSTING) 68"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Baca awalan kode tiap kelompok dan kolom 'Jenis · Saldo Normal'",
+      "expect": "1- Aset & 5-/6- Beban bersaldo normal Debit; 2- Kewajiban, 3- Ekuitas, 4- Pendapatan bersaldo normal Kredit; baris KELOMPOK (huruf besar) = induk, baris Detail = bisa dijurnal",
+      "ok": true,
+      "ms": 194,
+      "info": "asset 23 (1-, Debit) · liability 16 (2-, Kredit) · equity 5 (3-, Kredit) · income 6 (4-, Kredit) · expense 27 (5-/6-, Debit)"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Pilih *Semua tipe* → [[Kewajiban]]",
+      "expect": "Hanya kelompok Kewajiban (kode 2-…) yang tampil, semua bersaldo normal Kredit",
+      "ok": true,
+      "ms": 2171,
+      "info": "16 akun kewajiban"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Ketik 'piutang usaha' di kotak cari → klik ikon riwayat (jam) pada baris 1-1200",
+      "expect": "Baris 1-1200 berlencana 'Akun kontrol'; rincian: Jenis Aset, Induk 1-1000, Saldo normal Debit, Detail (dapat dijurnal), Akun sistem Ya",
+      "ok": true,
+      "ms": 16089,
+      "info": "KODE 1-1200 NAMA Piutang Usaha JENIS Aset INDUK 1-1000 SALDO NORMAL Debit DETAIL/KELOMPOK Detail (dapat dijurnal) STATUS Aktif LAPISAN Template global DILIHAT SEBAGAI Sukacita AKUN SISTEM Ya · kontrol: piutang usaha"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Periksa tombol di bilah daftar dan baris akun",
+      "expect": "Tidak ada tombol [[Tambah Akun]], ikon ubah, atau ikon hapus — Finance hanya melihat; server pun menolak (403)",
+      "ok": true,
+      "ms": 15722,
+      "info": "Tambah/ubah/hapus tidak tampil · API tambah akun → 403"
+    },
+    {
+      "no": 6,
+      "role": "Manajer (pelatih)",
+      "action": "Masuk sebagai Manajer, PT Sukacita → Bagan Akun → [[Tambah Akun]]: Kode 6-4950, Nama 'Beban Latihan Pelatihan 11', Tipe Beban, Induk 6-0000, Jenis Detail → [[Simpan Akun]]",
+      "expect": "Pop-up 'Akun akan dibuat khusus untuk PT Sukacita.'; sesudah simpan baris 6-4950 tampil di kelompok Beban berlencana 'khusus PT'",
+      "ok": true,
+      "ms": 22609,
+      "info": "6-4950 Beban Latihan Pelatihan 11 · PT ent_ksc · saldo normal debit · tidak ada di Template Global"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Muat ulang Bagan Akun peserta (ikon muat ulang) dan cari 6-4950",
+      "expect": "Akun baru langsung tampil juga di layar Finance (satu bagan untuk PT Sukacita)",
+      "ok": true,
+      "ms": 77,
+      "info": "bagan Sukacita kini 78 akun"
+    },
+    {
+      "no": 8,
+      "role": "Manajer (pelatih)",
+      "action": "Klik ikon hapus (tempat sampah) pada baris 6-4950 → [[Hapus akun]] di konfirmasi",
+      "expect": "Konfirmasi menyebut 'PT lain tidak terpengaruh'; akun hilang; bagan akun sama persis dengan sebelum latihan",
+      "ok": true,
+      "ms": 2612,
+      "info": "gl_accounts 77 baris = sebelum uji"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 11 · bagan Sukacita 77 akun (gl_accounts 77 baris)"
+  ]
+}

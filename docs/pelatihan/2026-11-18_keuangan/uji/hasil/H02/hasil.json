@@ -1,0 +1,52 @@
+{
+  "code": "H02",
+  "title": "Masukan gaji & lembur",
+  "ok": true,
+  "at": "2026-11-17T10:47:54.166Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Login → SDM › Penggajian › tab [[Komponen & Masukan]] → bagian Masukan → [[Tambah masukan]]",
+      "expect": "Pop-up \"Tambah masukan gaji\" (Sukacita): Karyawan · Komponen · Periode bayar · Nominal · Keterangan · Alasan",
+      "ok": true,
+      "ms": 7959,
+      "info": "Tambah masukan gaji"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Isi: *Karyawan* Latihan 54 · Andi Pratama · *Komponen* Rapel (Pendapatan) · *Periode bayar* Oktober 2026 · *Nominal* 8.000.000 · *Keterangan* Rapel gaji Oktober (karyawan baru) · *Alasan* Masuk 2026-10-01, terlewat proses reguler Oktober → [[Simpan masukan]]",
+      "expect": "Pesan \"Masukan … Rp 8.000.000 dicatat, menunggu disahkan.\"; baris baru status Menunggu disahkan; Finance tidak melihat tombol Sahkan",
+      "ok": true,
+      "ms": 5981,
+      "info": " · status Menunggu Disahkan · Mengesahkan atau membatalkan masukan butuh izin mengesahkan gaji."
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "SDM › [[Kehadiran]] › tab Lembur → [[Ajukan lembur]] → *Karyawan* Latihan 54 · Andi Pratama · *Tanggal* 16 Nov 2026 · *Jam* 2 · *Alasan* Tutup buku akhir bulan → [[Ajukan]]",
+      "expect": "Pesan \"Pengajuan lembur dibuat.\"; baris lembur status Menunggu",
+      "ok": true,
+      "ms": 5135,
+      "info": "Pengajuan lembur dibuat. tutup · 2 jam 2026-11-16 · status pending"
+    },
+    {
+      "no": 4,
+      "role": "Manajer",
+      "action": "Login Manajer → SDM › Kehadiran › Lembur → [[Setujui]] pada lembur peserta → konfirmasi [[Setujui]]",
+      "expect": "Pesan \"Lembur disetujui & masuk perhitungan gaji.\" — dibayar di proses gaji REGULER November (jam × upah per jam × pengali)",
+      "ok": true,
+      "ms": 12937,
+      "info": "konfirmasi \"16 Nov 2026 · 2 jam. Lembur yang disetujui masuk perhitungan gaji.\" → Lembur disetujui & masuk perhitungan gaji. tutup · {\"status\":\"approved\"}"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 54 · EMP-00058 Latihan 54 · Andi Pratama · Rapel Rp 8.000.000 masa Oktober 2026 · lembur 2 jam 2026-11-16"
+  ]
+}

@@ -283,6 +283,15 @@ export const ROLE_NAV = {
       "accounts-payable", "vendor-bills", "contra-bons", "gr-ir",
       "collection-worklist", "customer-credit", "credit-overrides", "bi-finance",
       "settings-hub", "settings-finance", "gl-account-mappings",
+      // K-SDM-01 (pemilik 17 Nov 2026: "SDM/HR itu dipegang finance juga") — SDM › Karyawan, Kehadiran (Presensi, Cuti &
+      // Izin, Lembur), Penggajian (Proses Gaji, Komponen & Masukan; Setoran & Pajak sudah PY-T4) + Pengaturan › SDM
+      // (Aturan SDM & Penggajian, Shift & Lokasi Absen, Kalender Libur). Izin bawaan `hr.view/create/update/view_pii/
+      // manage_attendance/manage_payroll` + `payroll.create/post` (`permissions_config.KSDM01_DEFAULT_PAIRS`). Struktur
+      // organisasi, lacak lapangan, mesin absen, dan KPI karyawan tetap Admin/Manajer.
+      "hr-people", "hr-employees",
+      "hr-attendance-hub", "hr-attendance", "hr-leave", "hr-overtime",
+      "hr-payroll-runs", "hr-pay-components",
+      "settings-hr", "settings-cfg-hr", "hr-attendance-setup", "hr-holidays",
     ],
     remove: [],
   },

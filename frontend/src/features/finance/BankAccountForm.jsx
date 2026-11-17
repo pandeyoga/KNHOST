@@ -184,7 +184,7 @@ export default function BankAccountForm({ open, account = null, entityId = "", e
         <CheckList items={PURPOSES} value={form.purposes} onChange={(v) => set({ purposes: v })} testId="bank-form-purpose" />
       </FormSection>
       <FormSection number={3} title="Cara bayar" testId="bank-form-sec-pay"
-        subtitle="Daftar dari Pengaturan › Keuangan & Pajak › Cara Bayar.">
+        subtitle="Daftar dari Pengaturan › Perusahaan (PT) › Master per PT › Cara Bayar.">
         <div className="grid gap-3">
           <div>
             <p className="field-label">Cara bayar yang dilayani</p>

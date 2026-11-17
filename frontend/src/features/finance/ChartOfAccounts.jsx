@@ -33,6 +33,7 @@ import {
 } from "./ChartOfAccountsParts";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyDelete, moneyPatch } from "../../utils/moneyRequest";
+import { askConfirm } from "../../services/confirmService";
 
 // Dropdown bilah daftar selebar isinya (bukan selebar layar) — sama dengan contoh pola (Retur Pelanggan).
 const SELECT_CLS = "!h-auto !w-auto min-w-[150px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13";
@@ -134,8 +135,23 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
     return { g, count: rows.length };
   }, [accounts, filterType, q, kind, scopeEntityId]);
 
+  // Pelatihan 18 Nov (K01) — hapus akun dulu tanpa konfirmasi (sekali klik ikon sampah = akun hilang), dan di bagan PT
+  // tombolnya juga tampil untuk akun warisan Template Global: klik → server diminta menghapus akun TEMPLATE (semua PT;
+  // akun baku ditolak 400). Kini tombol hanya untuk baris milik lingkup yang dibuka (bagan PT: baris "khusus PT";
+  // Template Global: akun bukan baku) dan ada konfirmasi yang menyebut akibatnya.
   const removeAccount = async (acc) => {
     if (deletingCode) return;
+    const milikPt = Boolean(acc.entity_id);
+    const ok = await askConfirm({
+      title: `Hapus akun ${acc.code} · ${acc.name}?`,
+      message: milikPt
+        ? `Akun ini dihapus dari bagan ${scopeLabel}. PT lain tidak terpengaruh. Akun yang sudah dipakai jurnal atau `
+          + "Pemetaan Akun tidak bisa dihapus — nonaktifkan saja."
+        : "Akun ini dihapus dari Template Global, jadi hilang dari bagan SEMUA PT. Akun yang sudah dipakai jurnal atau "
+          + "Pemetaan Akun tidak bisa dihapus — nonaktifkan saja.",
+      confirmLabel: "Hapus akun", danger: true, testId: "coa-delete-confirm",
+    });
+    if (!ok) return;
     setError(""); setDeletingCode(acc.code);
     try {
       // Kalau kita di scope PT dan akun yg dihapus punya entity_id = scope → hapus override.
@@ -309,7 +325,7 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
                               <div className="inline-flex items-center gap-1">
                                 <button data-testid={`coa-detail-${a.code}`} className="icon-button" onClick={() => setDetailAcc(a)} aria-label="Detail akun" title="Detail & riwayat perubahan"><History size={13} /></button>
                                 {bolehUbah && <button data-testid={`coa-edit-${a.code}`} className="icon-button" onClick={() => setEditAcc(a)} aria-label="Ubah"><Pencil size={13} /></button>}
-                                {bolehUbah && (!a.system || scopeEntityId) && (
+                                {bolehUbah && (scopeEntityId ? isOverride : !a.system) && (
                                   <button data-testid={`coa-delete-${a.code}`} className="icon-button text-[#C0392B]" onClick={() => removeAccount(a)} disabled={deletingCode === a.code} aria-label="Hapus"><Trash2 size={13} /></button>
                                 )}
                               </div>

@@ -1,0 +1,124 @@
+{
+ "kode": "K01",
+ "modul": "1",
+ "judul": "Bagan Akun (COA)",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membaca Bagan Akun PT Sukacita: kelompok akun, saldo normal, akun induk dan akun detail, akun sistem dan akun kontrol, serta tahu siapa yang boleh menambah akun.",
+ "kapan": "Sebelum mencatat transaksi apa pun, dan setiap kali bertanya \"transaksi ini masuk ke akun apa?\". Bagan Akun adalah daftar semua tempat uang dicatat di buku besar.",
+ "konsep": [
+  "Kode akun diawali angka kelompoknya: 1 Aset (harta), 2 Kewajiban (utang), 3 Ekuitas (modal), 4 Pendapatan, 5 Harga pokok penjualan (HPP) dan beban pokok, 6 Beban operasional. Di layar, kelompok 5 dan 6 sama-sama tampil di bawah judul Beban.",
+  "Saldo normal: Aset dan Beban bertambah di sisi Debit; Kewajiban, Ekuitas, dan Pendapatan bertambah di sisi Kredit. Setiap jurnal selalu seimbang: jumlah Debit = jumlah Kredit.",
+  "Akun induk (baris berhuruf besar, mis. ASET LANCAR) hanya mengelompokkan dan tidak bisa dijurnal. Akun detail (mis. Kas Besar / Bank) adalah tempat jurnal ditulis.",
+  "Akun sistem adalah akun bawaan yang dipakai pencatatan otomatis, jadi tidak bisa dihapus. Akun kontrol (mis. Piutang Usaha, Hutang Usaha, Persediaan) hanya berubah lewat dokumennya — kwitansi, tagihan, penerimaan barang — bukan lewat jurnal manual.",
+  "Finance hanya melihat Bagan Akun. Menambah, mengubah, atau mematikan akun dikerjakan pemegang izin kelola akuntansi (bawaan: Manajer dan Admin). Akun baru dibuat untuk PT yang sedang dipilih di bilah atas; PT lain tidak terpengaruh."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (pelatih)",
+ "menit": 20,
+ "data_awal": "Bagan Akun PT Sukacita (77 akun pada data latihan). Tidak perlu dokumen dari Kartu Peserta.",
+ "alur": [
+  {"peran": "Finance", "label": "Buka Bagan Akun"},
+  {"peran": "Finance", "label": "Baca kelompok & saldo normal"},
+  {"peran": "Finance", "label": "Saring tipe, buka rincian akun"},
+  {"peran": "Manajer", "label": "Tambah akun khusus Sukacita", "cabang": "Hanya pemegang izin kelola akuntansi"},
+  {"peran": "Manajer", "label": "Hapus akun latihan"}
+ ],
+ "navigasi": [
+  {"menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun", "nav_id": "ledger", "tab": "chart-of-accounts"}
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Buku Besar",
+   "aksi": "Masuk dengan akun peserta. Klik menu [[Buku Besar]] di grup AKUNTANSI & PAJAK.",
+   "isi": "",
+   "hasil": "Terbuka Buku Besar pada tab 'Jurnal'. Di atasnya ada dua tab: [[Jurnal]] dan [[Bagan Akun]].",
+   "gambar": "uji/hasil/K01/01-menu-buku-besar.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Buku Besar",
+   "aksi": "Klik tab [[Bagan Akun]].",
+   "isi": "",
+   "hasil": "Judul 'Bagan Akun · Sukacita'. Empat kartu: Total akun (contoh 77), Akun detail (bisa diposting), Khusus Sukacita, Tidak dipakai Sukacita. Di bawahnya lima kelompok: ASET, KEWAJIBAN, EKUITAS, PENDAPATAN, BEBAN.",
+   "gambar": "uji/hasil/K01/03-bagan-akun-sukacita.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Bagan Akun",
+   "aksi": "Baca kolom Kode dan kolom 'Jenis · Saldo Normal' di setiap kelompok.",
+   "isi": "",
+   "hasil": "Kode Aset diawali 1-, Kewajiban 2-, Ekuitas 3-, Pendapatan 4-, Beban 5- dan 6-. Aset dan Beban tertulis 'Debit'; Kewajiban, Ekuitas, Pendapatan tertulis 'Kredit'. Baris 1-1000 ASET LANCAR tertulis 'Kelompok · Debit' (induk); baris 1-1100 Kas Besar / Bank tertulis 'Detail · Debit' (anak).",
+   "gambar": "uji/hasil/K01/04-induk-dan-anak.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Bagan Akun",
+   "aksi": "Pilih [[Kewajiban]] di daftar tipe. Sesudah membaca, kembalikan ke [[Semua tipe]].",
+   "isi": "*Tipe akun*: Kewajiban",
+   "hasil": "Hanya akun berkode 2- yang tampil (contoh 16 akun), semuanya bersaldo normal Kredit: Hutang Usaha, Hutang Belum Ditagih (GR/IR), PPN Keluaran, Uang Muka Pelanggan, Titipan Dana Belum Teridentifikasi, dan lain-lain.",
+   "gambar": "uji/hasil/K01/05-saring-kewajiban.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Bagan Akun",
+   "aksi": "Ketik 'piutang usaha' di kotak cari. Klik ikon jam pada baris 1-1200.",
+   "isi": "*Cari kode / nama akun*: piutang usaha",
+   "hasil": "Baris 1-1200 Piutang Usaha berlencana 'global' dan 'Akun kontrol'. Pop-up rincian: Jenis Aset, Induk 1-1000, Saldo normal Debit, 'Detail (dapat dijurnal)', Lapisan Template global, Akun sistem Ya.",
+   "gambar": "uji/hasil/K01/07-rincian-1-1200.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Bagan Akun",
+   "aksi": "Tutup pop-up. Kosongkan kotak cari dan perhatikan bilah tombol di atas daftar.",
+   "isi": "",
+   "hasil": "Tidak ada tombol [[Tambah Akun]], ikon ubah, atau ikon hapus. Tombol 'Dipakai Sukacita' tampil tetapi tidak bisa diklik. Finance hanya melihat Bagan Akun.",
+   "gambar": "uji/hasil/K01/08-finance-hanya-lihat.png"
+  },
+  {
+   "no": 7,
+   "peran": "Manajer",
+   "menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun",
+   "aksi": "Pelatih masuk sebagai Manajer dengan PT Sukacita di bilah atas. Klik [[Tambah Akun]].",
+   "isi": "",
+   "hasil": "Pop-up 'Tambah Akun' bertulisan 'Akun akan dibuat khusus untuk PT Sukacita.'",
+   "gambar": "uji/hasil/K01/09-manajer-tambah-akun.png"
+  },
+  {
+   "no": 8,
+   "peran": "Manajer",
+   "menu": "Pop-up Tambah Akun",
+   "aksi": "Isi form. Klik [[Simpan Akun]].",
+   "isi": "*Kode Akun*: 6-4950 · *Nama Akun*: Beban Latihan Pelatihan · *Tipe*: Beban · *Akun Induk*: 6-0000 BEBAN OPERASIONAL · *Jenis Akun*: Detail",
+   "hasil": "Baris 6-4950 muncul di kelompok BEBAN dengan lencana 'khusus PT' dan saldo normal Debit. Akun ini tidak masuk Template Global, jadi PT lain tidak melihatnya. Peserta yang memuat ulang Bagan Akun juga melihat akun baru ini.",
+   "gambar": "uji/hasil/K01/11-akun-baru-khusus-pt.png"
+  },
+  {
+   "no": 9,
+   "peran": "Manajer",
+   "menu": "Bagan Akun",
+   "aksi": "Klik ikon tempat sampah pada baris 6-4950. Baca konfirmasinya, lalu klik [[Hapus akun]].",
+   "isi": "",
+   "hasil": "Konfirmasi: 'Akun ini dihapus dari bagan Sukacita. PT lain tidak terpengaruh. Akun yang sudah dipakai jurnal atau Pemetaan Akun tidak bisa dihapus — nonaktifkan saja.' Sesudahnya baris 6-4950 hilang dan Total akun kembali seperti semula.",
+   "gambar": "uji/hasil/K01/13-konfirmasi-hapus.png"
+  }
+ ],
+ "cek_buku": [
+  "Total akun di kartu = jumlah akun di daftar Bagan Akun Sukacita (contoh 77).",
+  "Setiap akun detail punya akun induk yang ada (mis. 1-1200 Piutang Usaha → 1-1000 ASET LANCAR → 1-0000 ASET).",
+  "Akun latihan 6-4950 hanya ada di bagan Sukacita selama peragaan, lalu terhapus; Bagan Akun sesudah latihan sama persis dengan sebelumnya."
+ ],
+ "kesalahan_umum": [
+  "Mengira semua akun kelompok 5 adalah HPP: 5-1000 Harga Pokok Penjualan memang HPP, tetapi 5-9000 Beban Angkut Pembelian dan 5-9500 Beban Penghapusan Persediaan juga ada di kelompok 5 (beban pokok).",
+  "Mencari tombol Tambah Akun dengan akun Finance — tombol itu memang tidak ada; minta Manajer bila butuh akun baru.",
+  "Menambah akun saat bilah atas memilih 'Semua PT': akun masuk Template Global dan dipakai semua PT. Pilih satu PT dulu bila akun hanya untuk PT itu.",
+  "Menghapus akun yang sudah dipakai: sistem menolak. Akun yang tidak dipakai lagi dinonaktifkan, bukan dihapus."
+ ],
+ "catatan_pelatih": "Langkah 7–9 diperagakan pelatih (akun Manajer); peserta cukup menonton dan memuat ulang Bagan Akun mereka. Jangan biarkan peserta menambah akun di bagan bersama. Kalau akun latihan sudah dipakai jurnal, akun itu tidak bisa dihapus — pakai kode yang belum ada (6-4950) dan hapus segera sesudah peragaan. Sejak perbaikan 17 Nov, ikon hapus di bagan satu PT hanya muncul pada akun 'khusus PT' (dulu juga muncul pada akun warisan Template Global) dan selalu didahului konfirmasi. Hubungkan ke K02: akun yang dipakai setiap transaksi ditentukan Pemetaan Akun.",
+ "uji": {"berkas": "uji/konfigurasi/K01_bagan_akun.js", "peserta_uji": "11"}
+}

@@ -1,0 +1,192 @@
+{
+ "kode": "K06",
+ "modul": "1",
+ "judul": "Termin & plafon kredit pelanggan, termin pemasok",
+ "bagian": "A",
+ "tujuan": "Peserta tahu di mana plafon kredit dan termin bayar pelanggan diatur, bisa mengajukan perubahannya, tahu bahwa Manajer yang menyetujui, dan tahu di mana termin pemasok ditetapkan.",
+ "kapan": "Saat pelanggan minta tempo lebih panjang atau plafon lebih besar, saat pesanan tertahan karena kredit, dan saat memeriksa jatuh tempo tagihan pemasok.",
+ "konsep": [
+  "Profil kredit disimpan per pelanggan per PT: jenis plafon (ikut plafon bawaan PT, plafon khusus, atau tanpa batas), termin yang diizinkan, termin bawaan, tahan pesanan bila telat lebih dari sekian hari, dan status kredit. Tiap nilai menunjukkan asalnya: 'Ikut PT' atau 'Khusus'.",
+  "Perubahan profil kredit selalu lewat pengajuan: Finance (atau Sales/Admin Sales) mengajukan dengan alasan, pemegang izin persetujuan kredit (bawaan Manajer) menyetujui atau menolak. Satu pelanggan hanya boleh punya satu pengajuan terbuka per PT.",
+  "Plafon dipakai saat pesanan dibuat: eksposur (piutang + pesanan belum dikirim + giro belum cair − titipan) dibandingkan plafon. Termin di luar daftar yang diizinkan ditolak saat pesanan dibuat.",
+  "Daftar termin (CASH, NET7, NET14, NET30, DP50, Bertahap 3x, CBD, NET60, NET90) adalah master per PT di Pengaturan › Perusahaan (PT) › Master per PT › Syarat Pembayaran. Termin pemasok ditetapkan di data pemasok dan menentukan jatuh tempo tagihan pemasok."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (pelatih)",
+ "menit": 20,
+ "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' dan pemasok 'Latihan NN · Pemasok Grey Peserta NN' (Kartu Peserta). Saat pelanggan latihan dibuat, sudah ada pengajuan plafon Rp 300.000.000 yang menunggu keputusan.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Baca profil kredit pelanggan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pengajuan plafon menunggu"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui di Kredit & Plafon",
+   "cabang": "Tolak → catatan wajib"
+  },
+  {
+   "peran": "Finance",
+   "label": "Ajukan termin yang diizinkan"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui di kartu pelanggan"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Baca master termin & termin pemasok"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Penjualan › Pelanggan › CRM & Pelanggan › Kredit",
+   "nav_id": "customers-crm",
+   "tab": "customers-crm"
+  },
+  {
+   "menu": "Keuangan › Piutang › Kredit & Plafon",
+   "nav_id": "ar-aging",
+   "tab": "credit-overrides"
+  },
+  {
+   "menu": "Pengaturan › Perusahaan (PT) › Master per PT",
+   "nav_id": "settings-company",
+   "tab": "entity-masters"
+  },
+  {
+   "menu": "Pembelian › Master Pembelian › Pemasok (Supplier)",
+   "nav_id": "master-pembelian",
+   "tab": "suppliers"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Penjualan › Pelanggan",
+   "aksi": "Masuk dengan akun peserta. Buka menu [[Pelanggan]] dan ketik 'Latihan NN' di kotak cari.",
+   "isi": "*Cari*: Latihan NN",
+   "hasil": "Satu baris: 'Latihan NN · Toko Kain Peserta NN' dengan kolom Piutang / Limit dan status kredit.",
+   "gambar": "uji/hasil/K06/01-cari-pelanggan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Penjualan › Pelanggan",
+   "aksi": "Klik baris pelanggan Anda. Klik bagian [[Kredit]].",
+   "isi": "",
+   "hasil": "Profil kredit Sukacita: Plafon kredit, Berlaku sampai, Termin yang diizinkan ('Semua termin aktif PT'), Termin bawaan, Tahan pesanan bila telat lebih dari 14 hari, Status kredit Normal — masing-masing berlencana 'Ikut PT' atau 'Khusus'.",
+   "gambar": "uji/hasil/K06/02-profil-kredit.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Kartu pelanggan › Kredit",
+   "aksi": "Baca kotak 'Menunggu keputusan' di bawah profil kredit.",
+   "isi": "",
+   "hasil": "Kotak 'Menunggu keputusan' berisi pengajuan KSC/PKR-… 'Jenis plafon → khusus, Plafon kredit → Rp 300.000.000' (contoh) dengan pengaju dan alasannya (pada data latihan baru: 'Plafon diusulkan saat pelanggan dibuat'). Tombol [[Ajukan perubahan]] mati dengan tulisan 'Masih ada pengajuan yang menunggu keputusan — putuskan atau batalkan dulu.' Finance tidak punya tombol Setujui.",
+   "gambar": "uji/hasil/K06/05-menunggu-keputusan.png"
+  },
+  {
+   "no": 4,
+   "peran": "Manajer",
+   "menu": "Keuangan › Piutang › Kredit & Plafon",
+   "aksi": "Pelatih masuk sebagai Manajer. Buka tab [[Kredit & Plafon]] dan ketik 'Latihan NN' di kotak cari.",
+   "isi": "*Cari pelanggan, nomor pesanan, atau nota…*: Latihan NN",
+   "hasil": "Antrean 'Menunggu keputusan' memuat baris 'Ubah Profil' pelanggan latihan: plafon yang diusulkan, pengaju, alasan, tombol [[Setujui]] dan [[Tolak]].",
+   "gambar": "uji/hasil/K06/06-manajer-setujui.png"
+  },
+  {
+   "no": 5,
+   "peran": "Manajer",
+   "menu": "Keuangan › Piutang › Kredit & Plafon",
+   "aksi": "Klik [[Setujui]] pada baris itu.",
+   "isi": "",
+   "hasil": "Pop-up 'Setujui pengajuan profil kredit' menyebut pelanggan, PT, dan plafon, dengan kolom catatan keputusan (opsional).",
+   "gambar": "uji/hasil/K06/07-konfirmasi-setujui.png"
+  },
+  {
+   "no": 6,
+   "peran": "Manajer",
+   "menu": "Pop-up Setujui",
+   "aksi": "Klik [[Setujui]] di pop-up.",
+   "isi": "",
+   "hasil": "Baris hilang dari antrean. Di kartu pelanggan peserta, Plafon kredit kini sesuai pengajuan (contoh Rp 300.000.000) berlencana 'Khusus'.",
+   "gambar": "uji/hasil/K06/08-plafon-berlaku.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Kartu pelanggan › Kredit",
+   "aksi": "Kembali ke kartu pelanggan Anda (bagian Kredit). Klik [[Ajukan perubahan]].",
+   "isi": "",
+   "hasil": "Form 'Ajukan perubahan kredit' dengan bagian 1 Plafon kredit, 2 Termin pembayaran, 3 Tahan pesanan & status, 4 Aturan denda, 5 Dasar pengajuan.",
+   "gambar": "uji/hasil/K06/09-ajukan-termin.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Form Ajukan perubahan kredit",
+   "aksi": "Isi bagian 2 Termin pembayaran dan alasan. Klik [[Ajukan]].",
+   "isi": "*Termin*: centang Kredit NET 14 Hari dan Kredit NET 30 Hari · *Termin bawaan*: Kredit NET 30 Hari · *Alasan pengajuan*: Pelanggan latihan hanya boleh tempo 14 atau 30 hari",
+   "hasil": "Bagian termin menulis 'Termin di luar daftar ditolak saat pesanan dibuat. Termin bawaan belum dipakai saat pesanan dibuat.' Sesudah diajukan muncul kotak 'Menunggu keputusan' berisi Termin yang diizinkan dan Termin bawaan.",
+   "gambar": "uji/hasil/K06/10-form-termin.png"
+  },
+  {
+   "no": 9,
+   "peran": "Manajer",
+   "menu": "Penjualan › Pelanggan › Kredit",
+   "aksi": "Pelatih membuka kartu pelanggan latihan sebagai Manajer (bagian Kredit). Klik [[Setujui]] di kotak 'Menunggu keputusan'.",
+   "isi": "",
+   "hasil": "Konfirmasi 'Setujui perubahan kredit?' meringkas termin yang diizinkan dan termin bawaan baru.",
+   "gambar": "uji/hasil/K06/11-manajer-setujui-di-kartu.png"
+  },
+  {
+   "no": 10,
+   "peran": "Manajer",
+   "menu": "Konfirmasi Setujui",
+   "aksi": "Klik [[Setujui]].",
+   "isi": "",
+   "hasil": "Profil kredit: Termin yang diizinkan Kredit NET 14 Hari, Kredit NET 30 Hari (Khusus) · Termin bawaan Kredit NET 30 Hari. Riwayat perubahan kredit mencatat pengaju dan penyetuju.",
+   "gambar": "uji/hasil/K06/12-termin-berlaku.png"
+  },
+  {
+   "no": 11,
+   "peran": "Manajer",
+   "menu": "Pengaturan › Perusahaan (PT) › Master per PT",
+   "aksi": "Pelatih membuka tab [[Master per PT]] dan klik kelompok [[Syarat Pembayaran]].",
+   "isi": "",
+   "hasil": "Daftar syarat bayar Sukacita: Tunai / POS, Kredit NET 7/14/30 Hari, DP 50% + Pelunasan, Bertahap 3x, CBD — Bayar Sebelum Kirim, Tempo 2 Bulan (NET 60), Tempo 3 Bulan (NET 90), lengkap dengan jumlah hari dan asalnya (Global / khusus PT).",
+   "gambar": "uji/hasil/K06/13-master-syarat-bayar.png"
+  },
+  {
+   "no": 12,
+   "peran": "Manajer",
+   "menu": "Pembelian › Master Pembelian › Pemasok (Supplier)",
+   "aksi": "Pelatih membuka daftar Pemasok dan mencari 'Latihan NN'. Klik ikon rincian pemasok latihan.",
+   "isi": "*Cari*: Latihan NN",
+   "hasil": "Rincian pemasok memuat termin bayar NET30 (Kredit NET 30 Hari): tagihan pemasok ini jatuh tempo 30 hari sesudah tanggal tagihan.",
+   "gambar": "uji/hasil/K06/15-rincian-pemasok-termin.png"
+  }
+ ],
+ "cek_buku": [
+  "Profil kredit pelanggan latihan di Sukacita: plafon khusus Rp 300.000.000, termin yang diizinkan NET14 & NET30, termin bawaan NET30 — sama dengan isi pengajuan yang disetujui.",
+  "Setiap pengajuan tercatat dengan nomor KSC/PKR-…, pengaju, alasan, penyetuju, dan waktu keputusan.",
+  "Aturan kredit PT (plafon bawaan, pemeriksaan kredit, tahan pesanan bila telat) tidak berubah — yang berubah hanya profil pelanggan latihan."
+ ],
+ "kesalahan_umum": [
+  "Mencari tombol ubah plafon di form Ubah pelanggan — plafon dan termin hanya bisa diubah lewat [[Ajukan perubahan]] di bagian Kredit.",
+  "Mengajukan perubahan kedua sebelum yang pertama diputus — tombolnya mati; minta pemutus memutuskan atau batalkan pengajuan lama.",
+  "Mengira 'Termin bawaan' langsung terpakai di pesanan: layar menulis 'belum dipakai saat pesanan dibuat'; yang dijaga sistem adalah daftar termin yang diizinkan.",
+  "Tidak mencentang termin apa pun lalu mengira pelanggan tidak boleh kredit: kosong berarti semua termin aktif PT boleh."
+ ],
+ "catatan_pelatih": "Pengajuan plafon Rp 300.000.000 sudah dibuat saat data latihan disiapkan, jadi peserta langsung melihat kotak 'Menunggu keputusan' (bila sudah diputus, peserta mengajukan plafon sendiri lewat [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini). Persetujuan (langkah 4–6 dan 9–10) serta langkah 11–12 diperagakan pelatih dengan akun Manajer. Finance tidak punya menu Master per PT dan Pemasok, jadi bagian termin pemasok cukup ditunjukkan. Jalankan K06 sebelum F06 (Kredit & Plafon) agar antrean F06 sudah dikenal peserta.",
+ "uji": {
+  "berkas": "uji/konfigurasi/K06_termin_plafon.js",
+  "peserta_uji": "11"
+ }
+}

@@ -1,0 +1,125 @@
+{
+ "kode": "H03",
+ "modul": "3.4",
+ "judul": "Proses gaji (siapkan, sahkan, posting)",
+ "bagian": "A",
+ "tujuan": "Peserta bisa menghitung proses gaji susulan, mengajukannya, dan memposting jurnal gaji sesudah Manajer mengesahkan, lalu membuktikan jurnal Beban Gaji, Hutang Gaji, dan Hutang PPh 21.",
+ "kapan": "Akhir masa gaji (proses reguler semua karyawan) atau kapan pun ada kekurangan bayar (proses susulan).",
+ "konsep": [
+  "Pemisahan tugas: Finance menghitung, mengajukan, dan memposting. Manajer mengesahkan masukan dan proses gaji, serta satu-satunya yang boleh membatalkan proses yang sudah diposting.",
+  "Satu PT hanya punya satu proses reguler per masa. Kekurangan bayar sesudahnya dibayar lewat proses susulan, yang hanya memuat masukan yang disahkan dan tidak menghitung BPJS.",
+  "PPh 21 dihitung gabungan sebulan: bruto semua proses karyawan itu dalam masa yang sama × tarif TER kategorinya."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (pelatih)",
+ "menit": 25,
+ "data_awal": "Masukan Rapel Rp 8.000.000 dari H02 (menunggu disahkan). Masa Oktober 2026 (tanggal buku jurnal 31 Okt 2026).",
+ "alur": [
+  {
+   "peran": "Manajer",
+   "label": "Sahkan masukan Rapel"
+  },
+  {
+   "peran": "Finance",
+   "label": "Hitung proses susulan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Ajukan"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Sahkan proses gaji"
+  },
+  {
+   "peran": "Finance",
+   "label": "Posting jurnal gaji"
+  },
+  {
+   "peran": "Buku",
+   "label": "Beban Gaji / Hutang Gaji, PPh 21"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-pay-components"
+  },
+  {
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "nav_id": "hr-payroll-hub",
+   "tab": "hr-payroll-runs"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Manajer",
+   "menu": "SDM › Penggajian › Komponen & Masukan",
+   "aksi": "Pilih *Periode bayar* Oktober 2026. Klik [[Sahkan]] pada masukan peserta, lalu [[Sahkan]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Konfirmasi menyebut nominal, karyawan, periode bayar, dan PT. Pesan \"Masukan … disahkan.\" Status Disahkan.",
+   "gambar": "uji/hasil/H03/01-konfirmasi-sahkan-masukan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Segera sesudah masukan disahkan, buka tab [[Proses Gaji]]. Pilih PT, periode, dan jenis. Klik [[Hitung gaji Oktober 2026]].",
+   "isi": "*PT*: Sukacita Textile · *Periode*: Oktober 2026 · *Jenis proses*: Susulan",
+   "hasil": "Pesan \"Penggajian KSC/PAY-… (Susulan) siap (1 karyawan).\" Status Draf.",
+   "gambar": "uji/hasil/H03/03-hitung-susulan.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Proses Gaji › rincian",
+   "aksi": "Klik nama karyawan di tabel slip.",
+   "isi": "",
+   "hasil": "Pendapatan Rapel Rp 8.000.000. Potongan PPh 21 Rp 80.000 (TER B 1,00 %). Tanggungan perusahaan kosong (proses susulan tanpa BPJS). Gaji bersih Rp 7.920.000.",
+   "gambar": "uji/hasil/H03/04-rincian-slip.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Proses Gaji › rincian",
+   "aksi": "Klik [[Ajukan]].",
+   "isi": "",
+   "hasil": "Status Diajukan. Finance tidak melihat tombol Sahkan: \"Mengesahkan penggajian butuh izin mengesahkan gaji.\"",
+   "gambar": "uji/hasil/H03/06-diajukan.png"
+  },
+  {
+   "no": 5,
+   "peran": "Manajer",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Pilih proses peserta. Klik [[Sahkan]], lalu [[Sahkan]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Konfirmasi: \"Oktober 2026 · proses Susulan · 1 karyawan · gaji bersih Rp 7.920.000 · Sukacita Textile.\" Status Disahkan.",
+   "gambar": "uji/hasil/H03/07-konfirmasi-sahkan.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "SDM › Penggajian › Proses Gaji",
+   "aksi": "Pilih proses Anda. Klik [[Posting Jurnal]], lalu [[Posting]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Status Diposting. \"Jurnal gaji: KSC/JE-… · tanggal buku 31 Okt 2026.\" Proses masuk antrean Gaji siap dibayar.",
+   "gambar": "uji/hasil/H03/10-diposting.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal gaji: 6-1000 Beban Gaji (D) Rp 8.000.000 · 2-1600 Hutang Gaji (K) Rp 7.920.000 · 2-1800 Hutang PPh 21 (K) Rp 80.000 — seimbang, bertanggal 31 Okt 2026 (akhir masa gaji).",
+  "Proses reguler menambah 6-1100 Beban BPJS (Perusahaan) (D) dan 2-1700 Hutang BPJS (K) (lihat A4)."
+ ],
+ "kesalahan_umum": [
+  "Proses memuat lebih dari satu karyawan: ada masukan peserta lain yang sudah disahkan. Klik [[Batalkan]] (draf), minta pelatih menyelesaikan masukan lain, lalu hitung lagi.",
+  "Memilih jenis Reguler. Proses reguler Oktober sudah ada dan memuat semua karyawan; layar membuka proses itu, bukan membuat baru.",
+  "\"Tidak ada masukan yang belum terpakai untuk Oktober 2026\": masukan belum disahkan atau periodenya salah.",
+  "Mencari tombol Anulir. Membatalkan proses yang sudah diposting hanya Manajer."
+ ],
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Keputusan penyelenggaraan: tiap peserta memakai proses SUSULAN masa Oktober 2026 untuk karyawan barunya. Alasannya: proses reguler per PT per masa hanya satu (Oktober sudah dipakai F15; November adalah penggajian nyata akhir bulan), dan gaji masa November bertanggal buku 30 Nov sehingga belum bisa dibayar pada hari pelatihan. Proses susulan memuat SEMUA masukan disahkan yang belum terpakai: sahkan masukan satu peserta, minta peserta itu langsung [[Hitung gaji]], baru sahkan masukan peserta berikutnya. Peragaan proses reguler (BPJS, lembur, absensi) memakai proses reguler Oktober yang sudah diposting (KSC/PAY-00001) — buka rinciannya saja.",
+ "uji": {
+  "berkas": "uji/sdm/H03_proses_gaji.js",
+  "peserta_uji": "54"
+ }
+}

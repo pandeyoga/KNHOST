@@ -1,0 +1,88 @@
+{
+  "code": "K02",
+  "title": "Pemetaan Akun",
+  "ok": true,
+  "at": "2026-11-17T10:41:56.908Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Buka Pengaturan › Keuangan & Pajak (tab Pemetaan Akun)",
+      "expect": "Kartu 'Kebutuhan akun', 'Belum diatur', 'Diubah dari bawaan', 'Khusus PT ini'; kalimat 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'",
+      "ok": true,
+      "ms": 8593,
+      "info": "tab terlihat: (satu layar) · kebutuhan 60 · BELUM DIATUR 2 Klik untuk menyaring"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Pilih *Berlaku untuk* [[Sukacita]] → *Modul* [[Penjualan]] → klik baris 'Piutang usaha'",
+      "expect": "Piutang usaha 1-1200, Pendapatan penjualan 4-1000, PPN keluaran 2-1200 bersumber 'Bawaan'; rincian 'Contoh jurnal (Rp 100.000)': Dr Piutang / Cr Pendapatan",
+      "ok": true,
+      "ms": 2732,
+      "info": "Contoh jurnal (Rp 100.000) Dr Piutang 100.000 Cr Pendapatan 100.000 Akun ini tampil di sisi yang sesuai kebutuhan \"Piutang usaha\". Fitur pemakai: Penjualan, Kwitansi AR, Aging Jenis akun diizinkan: Aset Akun bawaan: 1-12"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Ganti *Modul* ke [[Pembelian]], lalu [[Persediaan]], lalu [[Kas & Bank]]",
+      "expect": "Hutang usaha 2-1100 · GR/IR 2-1150 · PPN masukan 1-1500 · Selisih harga pembelian 'Belum dipilih'; Persediaan 1-1300 · HPP 5-1000; Kas besar 1-1100 · Titipan dana 2-1950",
+      "ok": true,
+      "ms": 3073,
+      "info": "Hutang usaha: 2-1100 · Barang diterima belum ditagih (GR/IR): 2-1150 · PPN masukan: 1-1500 · Selisih harga pembelian: Belum dipilih · Persediaan barang: 1-1300 · Harga pokok penjualan: 5-1000 · Kas besar / bank utama: 1-1100 · Titipan dana belum teridentifikasi: 2-1950"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Pilih *Modul* [[Semua modul]] → klik kartu [[Belum diatur]]",
+      "expect": "Hanya kebutuhan tanpa akun yang tampil (Selisih harga pembelian, Selisih nilai retur beli) — keputusan pemilik; klik kartu lagi untuk menampilkan semua",
+      "ok": true,
+      "ms": 1321,
+      "info": "Selisih harga pembelian · Selisih nilai retur beli"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Cek buku: buka Akuntansi & Pajak › Buku Besar, ketik nomor surat jalan terakhir Sukacita di cari, klik jurnal 'Pendapatan Kirim'",
+      "expect": "Baris jurnal memakai akun yang sama dengan pemetaan: Piutang 1-1200 (D) · Pendapatan 4-1000 (K) · PPN keluaran 2-1200 (K) — seimbang",
+      "ok": true,
+      "ms": 4795,
+      "info": "KSC/JE-00431 seimbang D=K=2673324 [1-1200 Piutang Usaha D 2673324 · 4-1000 Pendapatan Penjualan K 2408400 · 2-1200 PPN Keluaran K 264924] · tagihan KSC/JE-00414: 2-1150, 1-1500, 2-1100"
+    },
+    {
+      "no": 6,
+      "role": "Pelatih (akun Finance)",
+      "action": "Pengaturan › Keuangan & Pajak › Pemetaan Akun · *Berlaku untuk* Sukacita · *Modul* Kas & Bank → baris 'Beban administrasi bank' [[Atur PT]] → *Akun* 6-9000 Beban Lain-lain · *Alasan* → [[Simpan]]",
+      "expect": "Dialog menulis 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'; sesudah simpan baris berakun 6-9000 bersumber 'Khusus PT', kartu 'Khusus PT ini' = 1",
+      "ok": true,
+      "ms": 14133,
+      "info": "Sukacita: 6-9000 Beban Lain-lain (entity) · Global tetap 6-8000"
+    },
+    {
+      "no": 7,
+      "role": "Pelatih (akun Finance)",
+      "action": "Klik ikon riwayat (jam) pada baris yang sama",
+      "expect": "Riwayat menulis siapa, kapan, dari 6-8000 ke 6-9000, dan alasannya",
+      "ok": true,
+      "ms": 1028,
+      "info": "Riwayat perubahan akun · Beban administrasi bank 6-8000 → 6-9000 Sri Mulyani · 17 Nov 2026, 17.41 WIB · khusus PT “Peragaan pelatihan K02 — dikembalikan sesudah demo” 6-9000 → 6-8000 (dikembalikan) Sr"
+    },
+    {
+      "no": 8,
+      "role": "Pelatih (akun Finance)",
+      "action": "[[Atur PT]] lagi → *Alasan* → [[Kembali ke global]]",
+      "expect": "Baris kembali 6-8000 Beban Administrasi Bank bersumber 'Bawaan'; pemetaan tersimpan sama persis dengan sebelum peragaan",
+      "ok": true,
+      "ms": 1573,
+      "info": "kas_bank.beban_bank = 6-8000 (default); gl_account_mappings 0 baris = sebelum"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Pemetaan Sukacita: 60 kebutuhan · belum diatur 2 · baris tersimpan 0"
+  ]
+}

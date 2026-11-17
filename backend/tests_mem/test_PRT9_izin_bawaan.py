@@ -151,6 +151,15 @@ for _r in ("admin", "md"):
 # MP-T4a (K-66) — "Teruskan kain ke mitra berikut" (Admin, Manajer, MD). MD sudah melihat Order Makloon sebelumnya.
 for _r in ("admin", "manager", "md"):
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("makloon_order", set()).add("forward")
+# K-SDM-01 (pemilik 17 Nov 2026: "SDM/HR itu dipegang finance juga") — Finance: `hr.view/create/update/view_pii/
+# manage_attendance/manage_payroll` + `payroll.create/post` (`permissions_config.KSDM01_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.KSDM01_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# A2 (pelatihan 18 Nov) — MD Quality: `esign.view` (panel tanda tangan di layar SPK penerimaan; dulu 403).
+for _r, _tambah in _pc.A2_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)

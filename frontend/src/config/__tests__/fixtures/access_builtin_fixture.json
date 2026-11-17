@@ -802,6 +802,14 @@
    "goods_receipt": [
     "view"
    ],
+   "hr": [
+    "view",
+    "create",
+    "update",
+    "view_pii",
+    "manage_attendance",
+    "manage_payroll"
+   ],
    "incentive": [
     "view",
     "prepare"
@@ -840,7 +848,9 @@
     "decide"
    ],
    "payroll": [
-    "pay"
+    "pay",
+    "create",
+    "post"
    ],
    "penalty": [
     "view",
@@ -1654,6 +1664,9 @@
    "document": [
     "view",
     "print"
+   ],
+   "esign": [
+    "view"
    ],
    "field_visibility": [
     "grade",

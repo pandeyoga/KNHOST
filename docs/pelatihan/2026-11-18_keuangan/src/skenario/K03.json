@@ -1,0 +1,148 @@
+{
+ "kode": "K03",
+ "modul": "1",
+ "judul": "Profil PT, tahun buku & periode",
+ "bagian": "A",
+ "tujuan": "Peserta tahu dari mana identitas PT di dokumen berasal (nama, alamat, NPWP, status PKP, kode dokumen), kapan tahun buku PT berakhir, dan cara membaca periode yang masih terbuka atau sudah ditutup.",
+ "kapan": "Saat pelanggan atau kantor pajak menanyakan identitas di faktur/kwitansi, saat mencatat transaksi di awal atau akhir bulan, dan sebelum tutup buku.",
+ "konsep": [
+  "Profil PT adalah sumber tunggal identitas: nama legal, alamat, kota, dan NPWP yang tercetak di kop setiap dokumen (faktur, kwitansi, tagihan). Bila kop salah, perbaiki Profil PT, bukan dokumennya.",
+  "Status pajak PKP (Pengusaha Kena Pajak) menentukan apakah PT memungut PPN. Kode dokumen (mis. KSC) menjadi awalan semua nomor dokumen PT dan terkunci begitu PT sudah punya dokumen bernomor.",
+  "Tahun buku Sukacita: Januari–Desember (Bulan tutup tahun buku = 12, mengikuti pengaturan grup) dengan mata uang pembukuan IDR.",
+  "Periode dibuka per bulan. Selama belum ditutup, transaksi boleh bertanggal di periode itu. Sesudah ditutup (Modul 4 — Tutup Buku), dokumen bertanggal di periode itu terkunci; membukanya lagi butuh usul dan persetujuan."
+ ],
+ "peran": "Manajer (pelatih) · Finance (akun peserta)",
+ "menit": 15,
+ "data_awal": "Profil PT Sukacita Textile (NPWP 01.234.567.8-901.000, PKP, kode KSC) dan satu pesanan penjualan Sukacita yang sudah terkirim (nomor dari pelatih, contoh KSC/SO-00072). Tidak ada pengaturan yang diubah.",
+ "alur": [
+  {
+   "peran": "Manajer",
+   "label": "Buka Profil PT"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Baca rincian & kesiapan PT"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cetak faktur, cocokkan kop"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Baca bulan tutup tahun buku"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Baca periode di Tutup Buku",
+   "cabang": "Menutup periode = Modul 4"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › Perusahaan (PT) › Profil PT",
+   "nav_id": "settings-company",
+   "tab": "settings-pt-profile"
+  },
+  {
+   "menu": "Pengaturan › Perusahaan (PT) › Kesiapan PT",
+   "nav_id": "settings-company",
+   "tab": "settings-pt-readiness"
+  },
+  {
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "nav_id": "document-center",
+   "tab": "documents"
+  },
+  {
+   "menu": "Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak",
+   "nav_id": "settings-finance",
+   "tab": "settings-cfg-finance"
+  },
+  {
+   "menu": "Akuntansi & Pajak › Tutup Buku",
+   "nav_id": "closing",
+   "tab": "closing"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Manajer",
+   "menu": "Pengaturan › Perusahaan (PT) › Profil PT",
+   "aksi": "Pelatih membuka Pengaturan › Perusahaan (PT). Baca baris Sukacita Textile di Daftar PT.",
+   "isi": "",
+   "hasil": "Baris Sukacita Textile: Jenis PT, Kode dokumen KSC (contoh KSC/SO-00001), Pajak PKP, Mata uang IDR, jumlah pengguna dan gudang, Kesiapan '75% siap · kurang: Alamat lengkap, Pemetaan akun, Kop surat & logo, Penanda tangan'.",
+   "gambar": "uji/hasil/K03/01-daftar-pt.png"
+  },
+  {
+   "no": 2,
+   "peran": "Manajer",
+   "menu": "Profil PT",
+   "aksi": "Klik baris Sukacita Textile.",
+   "isi": "",
+   "hasil": "Rincian PT: Nama legal Sukacita Textile, Alamat Jl. Soekarno Hatta No. 100, NPWP 01.234.567.8-901.000, bagian Pajak 'Status: PKP (memungut PPN)', bagian Tahun buku & mata uang 'Tahun buku: Januari–Desember (mengikuti pengaturan grup)', kode dokumen KSC terkunci.",
+   "gambar": "uji/hasil/K03/03-rincian-pt-tahun-buku.png"
+  },
+  {
+   "no": 3,
+   "peran": "Manajer",
+   "menu": "Pengaturan › Perusahaan (PT) › Kesiapan PT",
+   "aksi": "Tutup rincian. Klik tab [[Kesiapan PT]].",
+   "isi": "",
+   "hasil": "Daftar 'Lengkapi PT' (contoh 16 butir). Butir yang belum lengkap: Alamat lengkap, Pemetaan akun (2 pemetaan akun belum dipilih — lihat K02), Kop surat & logo, Penanda tangan. Tiap butir punya tautan ke layar perbaikannya.",
+   "gambar": "uji/hasil/K03/05-kesiapan-pt.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "aksi": "Masuk dengan akun peserta. Buka Pusat Dokumen › Cetak PDF & Label.",
+   "isi": "*Jenis dokumen*: Faktur Komersial · *Cari*: KSC/SO-… (nomor dari pelatih)",
+   "hasil": "Baris faktur pesanan itu tampil dengan ikon [[Unduh PDF]].",
+   "gambar": "uji/hasil/K03/06-pusat-dokumen-faktur.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "aksi": "Klik ikon [[Unduh PDF]] lalu buka berkasnya.",
+   "isi": "",
+   "hasil": "Kop faktur: 'Sukacita Textile — Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000', persis seperti Profil PT. Nomor faktur berawalan KSC/INV-.",
+   "gambar": "uji/hasil/K03/faktur-kop-1.png"
+  },
+  {
+   "no": 6,
+   "peran": "Manajer",
+   "menu": "Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak",
+   "aksi": "Pelatih klik kelompok [[Pajak, pembukuan & antar-PT]], ketik 'tahun buku' di kotak cari, lalu buka baris 'Bulan tutup tahun buku'.",
+   "isi": "*Cari di kelompok ini*: tahun buku",
+   "hasil": "Bulan tutup tahun buku = 12 (Desember), asal 'Aturan grup'. Penjelasan baris terbuka. Manajer hanya bisa membaca; mengubahnya butuh izin kelola pengaturan.",
+   "gambar": "uji/hasil/K03/07-bulan-tutup-tahun-buku.png"
+  },
+  {
+   "no": 7,
+   "peran": "Manajer",
+   "menu": "Akuntansi & Pajak › Tutup Buku",
+   "aksi": "Pelatih membuka Akuntansi & Pajak › Tutup Buku.",
+   "isi": "",
+   "hasil": "Kartu 'Periode tertutup' (contoh 0) dan Riwayat Tutup Buku Sukacita kosong: semua periode masih terbuka untuk transaksi. Cara menutup dan membuka periode dipelajari di Modul 4.",
+   "gambar": "uji/hasil/K03/08-tutup-buku-periode.png"
+  }
+ ],
+ "cek_buku": [
+  "Kop faktur = Profil PT: nama, alamat, kota, NPWP sama persis.",
+  "Pengaturan 'Bulan tutup tahun buku' = 12, 'Mata uang pembukuan' = IDR, 'Periode tertutup mengunci dokumen' = Ya.",
+  "Jumlah periode tertutup Sukacita di layar = jumlah di buku (contoh 0). Tidak ada pengaturan atau profil PT yang berubah selama skenario."
+ ],
+ "kesalahan_umum": [
+  "Mengetik ulang NPWP atau alamat di catatan dokumen karena kop salah — yang benar memperbaiki Profil PT (Admin).",
+  "Mengira kode dokumen bisa diganti kapan saja: sesudah PT punya dokumen bernomor, kode terkunci supaya nomor lama tetap sah.",
+  "Mencatat transaksi bertanggal di periode yang sudah ditutup: sistem menolak. Tanyakan Manajer apakah periode perlu dibuka kembali.",
+  "Menganggap tahun buku selalu Januari–Desember untuk semua PT: nilainya bisa diatur khusus per PT; lihat bagian Tahun buku di rincian PT."
+ ],
+ "catatan_pelatih": "Finance tidak punya menu Pengaturan › Perusahaan (PT), Aturan Keuangan & Pajak, maupun Tutup Buku; langkah 1–3, 6, 7 diperagakan pelatih dengan akun Manajer, peserta mengerjakan langkah 4–5. Butir Kesiapan PT yang kurang (alamat lengkap, kop surat & logo, penanda tangan, pemetaan akun) adalah data PT nyata yang perlu dilengkapi pemilik — jangan diisi saat kelas. Hubungkan ke Modul 4 (F18 Tutup Buku). Rincian PT yang dibuka Manajer kini menulis 'Riwayat perubahan hanya bisa dibaca pemegang akses Riwayat Audit.' (dulu 'Belum ada perubahan tercatat' walau riwayatnya ada).",
+ "uji": {
+  "berkas": "uji/konfigurasi/K03_profil_pt_periode.js",
+  "peserta_uji": "11"
+ }
+}

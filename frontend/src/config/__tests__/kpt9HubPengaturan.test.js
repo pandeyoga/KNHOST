@@ -132,6 +132,7 @@ test("U4 — 44 alamat (31 tab lama, 4 hub hilang, 5 alias, 4 hub) mendarat di l
 // ── U5 — jangkauan tab Pengaturan per peran bawaan = potret awal (id baru dipetakan ke wadah lamanya) ───────────────
 // Potret dibuat pada HEAD a742da9 sebelum unit ini (bukti/KP-T9/potret_jangkauan_awal.json); sama dengan & tanpa izin
 // server. Finance melihat Pemetaan Akun sejak MN-T1 (IA-06). PY-T3 — + `hr-holidays` (tab BARU Kalender Libur: admin, manajer).
+// K-SDM-01 (pemilik 17 Nov 2026) — Finance + Pengaturan › SDM: Aturan SDM & Penggajian, Shift & Lokasi Absen, Kalender Libur.
 const POTRET = {
   admin: ["admin", "amendment-reasons", "approval-rules", "bank-recon-rules", "client-dataset-import", "domain-registry",
     "entities-access", "entity-masters", "expense-categories", "gl-account-mappings", "grade-master", "hr-attendance-setup",
@@ -146,7 +147,7 @@ const POTRET = {
     "settings-cfg-purchasing", "settings-cfg-rnd", "settings-cfg-sales", "settings-cfg-system", "settings-cfg-warehouse",
     "settings-config", "settings-devices", "settings-doc-numbering", "settings-dual-control", "settings-receiving-ocr"],
   sales_admin: ["grade-master", "return-policies"],
-  finance: ["gl-account-mappings"],
+  finance: ["gl-account-mappings", "hr-attendance-setup", "hr-holidays", "settings-cfg-hr"],
   warehouse_admin: ["grade-master", "settings-receiving-ocr"],
 };
 /** id tab baru → id wadah lama (layar yang dulu memuatnya). */

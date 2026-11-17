@@ -62,6 +62,21 @@ export function alasanTidakBisaBayar({ canWrite, canPay, adaRekening }) {
   return "";
 }
 
+/** Alasan tombol "Bayar gaji" di pop-up mati (ditulis, bukan tooltip); "" = boleh.
+ *  K-SDM-01 (audit pelatihan 18 Nov) — tanggal bayar sebelum tanggal jurnal gaji (akhir masa) dulu baru ditolak server
+ *  SESUDAH konfirmasi ("Tanggal bayar tidak boleh sebelum 2026-11-30."), padahal bawaan isian = hari ini; kini tombol mati
+ *  dengan alasan yang sama sebelum konfirmasi. */
+export function alasanDialogBayar({ canWrite, adaRekening, pilih, tgl, minTgl }) {
+  if (!canWrite) return TEKS_PILIH_PT;
+  if (!adaRekening) return TEKS_TANPA_REKENING_GAJI;
+  if (!pilih) return "Pilih rekening pembayaran gaji.";
+  if (!tgl) return "Isi tanggal bayar.";
+  if (minTgl && String(tgl) < String(minTgl)) {
+    return `Tanggal bayar tidak boleh sebelum ${formatDate(minTgl)} (tanggal jurnal gaji). Gaji masa ini baru bisa dibayar mulai tanggal itu.`;
+  }
+  return "";
+}
+
 /** Pop-up Bayar gaji. `run` = {id, number, period, entity_id, net, employees, journal_date?}. */
 export function PayDialog({ run, open, onClose, onPaid, pt }) {
   const { canWrite } = useEntityScope();
@@ -94,8 +109,7 @@ export function PayDialog({ run, open, onClose, onPaid, pt }) {
   const pilih = accs.find((a) => a.id === acc);
   const net = info?.total ?? run.net;
   const minTgl = run.journal_date ? String(run.journal_date).slice(0, 10) : "";
-  const alasan = state !== "ready" ? "" : !canWrite ? TEKS_PILIH_PT : accs.length === 0 ? TEKS_TANPA_REKENING_GAJI
-    : !pilih ? "Pilih rekening pembayaran gaji." : !tgl ? "Isi tanggal bayar." : "";
+  const alasan = state !== "ready" ? "" : alasanDialogBayar({ canWrite, adaRekening: accs.length > 0, pilih, tgl, minTgl });
 
   const kirim = async () => {
     if (alasan || !pilih) { setErr(alasan); return; }

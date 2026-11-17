@@ -25,6 +25,7 @@ import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov �
 import FormModal from "../../components/FormModal";
 import KNPager from "../../components/KNPager";
 import KNSelect from "../../components/KNSelect";
+import MoneyInput from "../../components/MoneyInput";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
@@ -453,8 +454,11 @@ export default function PayComponentsView() {
             <div><label className="field-label">Periode bayar <span className="req">*</span></label>
               <KNSelect data-testid="payinput-form-period" value={inpForm.pay_period} className="field" onValueChange={(v) => ubahInp({ pay_period: v })} options={monthOpts} /></div>
             <div><label className="field-label">Nominal (Rp) <span className="req">*</span></label>
-              <input data-testid="payinput-form-amount" className="field" inputMode="numeric" value={inpForm.amount} onChange={(e) => ubahInp({ amount: e.target.value.replace(/[^\d-]/g, "") })} />
-              <p className="text-fs-12 text-kn-text-2 mt-1">Rupiah bulat; negatif untuk penyesuaian.</p></div>
+              {/* K-SDM-01 (audit pelatihan 18 Nov) — dulu kotak teks yang membuang semua selain angka: "8.000.000,00" tersimpan
+                  Rp 800.000.000 (100×) tanpa peringatan. Kini isian rupiah baku (koma desimal + pratinjau); sen ditolak
+                  `galatMasukan` (rupiah bulat), minus tetap boleh untuk penyesuaian. */}
+              <MoneyInput testId="payinput-form-amount" className="field" allowNegative value={inpForm.amount}
+                onChange={(v) => ubahInp({ amount: v })} hint="Rupiah bulat; negatif untuk penyesuaian." /></div>
             <div className="sm:col-span-2"><label className="field-label">Keterangan di slip</label>
               <input data-testid="payinput-form-label" className="field" value={inpForm.label} onChange={(e) => ubahInp({ label: e.target.value })} placeholder="Contoh: Bonus proyek Oktober" /></div>
             <div className="sm:col-span-2"><label className="field-label">Alasan <span className="req">*</span></label>

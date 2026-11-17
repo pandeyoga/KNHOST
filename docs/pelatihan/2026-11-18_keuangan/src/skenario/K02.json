@@ -1,0 +1,174 @@
+{
+ "kode": "K02",
+ "modul": "1",
+ "judul": "Pemetaan Akun — dokumen mana masuk ke akun mana",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membaca Pemetaan Akun (penjualan, piutang, PPN keluaran dan masukan, kas/bank, hutang, persediaan, HPP, beban, titipan, GR/IR, selisih), mencocokkannya dengan jurnal yang benar-benar terbit, dan tahu akibat bila pemetaan diubah.",
+ "kapan": "Saat bertanya mengapa sebuah dokumen menjurnal ke akun tertentu, saat menyiapkan PT baru, atau sebelum meminta perubahan akun pembukuan.",
+ "konsep": [
+  "Setiap dokumen membuat jurnal lewat pemetaan: surat jalan → Piutang (D) / Pendapatan + PPN keluaran (K); tagihan pemasok → GR/IR + PPN masukan (D) / Hutang (K); penerimaan barang → Persediaan (D) / GR/IR (K); kwitansi → Kas/Bank (D) / Piutang (K). Peserta tidak memilih akun di setiap transaksi.",
+  "Satu baris pemetaan = satu kebutuhan akun (mis. 'Piutang usaha') yang dipakai beberapa fitur. Sumber nilainya berlapis: Bawaan sistem → Global (semua PT) → Khusus PT. Lapisan yang lebih khusus menang.",
+  "GR/IR (Barang diterima belum ditagih) adalah akun penampung: bertambah saat barang diterima, berkurang saat tagihan pemasok terposting. Titipan dana menampung uang masuk yang belum jelas pemiliknya. Akun selisih menampung beda kecil (selisih bayar pelanggan, selisih harga pembelian).",
+  "Mengubah pemetaan hanya berlaku untuk jurnal BARU; jurnal lama tidak diposting ulang. Setiap perubahan wajib beralasan dan tercatat di riwayat.",
+  "Finance boleh mengubah pemetaan (bersama Admin); Manajer hanya melihat. Karena berlaku untuk semua orang di PT itu, perubahan dikerjakan pelatih/petugas yang ditunjuk, bukan saat latihan bersama."
+ ],
+ "peran": "Finance (akun peserta) · Finance pelatih (peragaan ubah pemetaan)",
+ "menit": 25,
+ "data_awal": "Pemetaan Akun PT Sukacita (contoh 60 kebutuhan, 2 belum diatur) dan jurnal pendapatan kirim terakhir Sukacita. Tidak perlu dokumen dari Kartu Peserta.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Buka Pemetaan Akun"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca pemetaan per modul"
+  },
+  {
+   "peran": "Finance",
+   "label": "Saring 'Belum diatur'"
+  },
+  {
+   "peran": "Buku",
+   "label": "Jurnal kirim = pemetaan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pelatih ubah akun khusus PT",
+   "cabang": "Hanya jurnal baru yang terpengaruh"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pelatih kembalikan ke global"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › Keuangan & Pajak › Pemetaan Akun",
+   "nav_id": "settings-finance",
+   "tab": "gl-account-mappings"
+  },
+  {
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "nav_id": "ledger",
+   "tab": "general-ledger"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Pengaturan › Keuangan & Pajak",
+   "aksi": "Masuk dengan akun peserta. Klik grup PENGATURAN, lalu klik [[Keuangan & Pajak]].",
+   "isi": "",
+   "hasil": "Terbuka 'Pemetaan Akun'. Kartu: Kebutuhan akun (contoh 60), Belum diatur (contoh 2), Diubah dari bawaan, Khusus PT ini. Kotak biru: 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'",
+   "gambar": "uji/hasil/K02/02-pemetaan-akun.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Pilih lingkup dan modul. Klik baris 'Piutang usaha'.",
+   "isi": "*Berlaku untuk*: Sukacita · *Modul*: Penjualan",
+   "hasil": "Piutang usaha 1-1200, Pendapatan penjualan 4-1000, PPN keluaran 2-1200, semuanya bersumber 'Bawaan' dan berstatus 'Lengkap'. Rincian baris: 'Contoh jurnal (Rp 100.000): Dr Piutang · Cr Pendapatan', fitur pemakai, jenis akun yang diizinkan, akun bawaan.",
+   "gambar": "uji/hasil/K02/03-penjualan-piutang.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Ganti *Modul* ke Pembelian. Baca baris Hutang usaha, GR/IR, PPN masukan, Selisih harga pembelian.",
+   "isi": "*Modul*: Pembelian",
+   "hasil": "Hutang usaha 2-1100 · Barang diterima belum ditagih (GR/IR) 2-1150 · PPN masukan 1-1500 · Selisih harga pembelian 'Belum dipilih' (status merah 'Belum diatur').",
+   "gambar": "uji/hasil/K02/04-pembelian-selisih-belum-dipilih.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Ganti *Modul* ke Persediaan, lalu ke Kas & Bank.",
+   "isi": "*Modul*: Persediaan, lalu Kas & Bank",
+   "hasil": "Persediaan barang 1-1300 dan Harga pokok penjualan 5-1000. Di Kas & Bank: Kas besar / bank utama 1-1100, Kas kecil 1-1110, Beban administrasi bank 6-8000, Titipan dana belum teridentifikasi 2-1950.",
+   "gambar": "uji/hasil/K02/05-kas-bank.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Pilih *Modul* Semua modul. Klik kartu [[Belum diatur]].",
+   "isi": "",
+   "hasil": "Hanya dua kebutuhan yang tampil: 'Selisih harga pembelian' dan 'Selisih nilai retur beli'. Akun keduanya belum dipilih pemilik. Klik kartu itu lagi untuk menampilkan semua baris.",
+   "gambar": "uji/hasil/K02/06-belum-diatur.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "aksi": "Buka menu [[Buku Besar]]. Ketik nomor surat jalan dari pelatih di kotak cari.",
+   "isi": "*Cari nomor jurnal / keterangan…*: KSC/SJ-… (contoh KSC/SJ-00072)",
+   "hasil": "Baris jurnal 'Pendapatan Kirim' surat jalan itu tampil di daftar jurnal.",
+   "gambar": "uji/hasil/K02/08-cari-jurnal-kirim.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Buku Besar › Jurnal",
+   "aksi": "Klik baris jurnal 'Pendapatan Kirim'.",
+   "isi": "",
+   "hasil": "Rincian jurnal: 1-1200 Piutang Usaha (D), 4-1000 Pendapatan Penjualan (K), 2-1200 PPN Keluaran (K), Total Debit = Total Kredit. Akunnya sama persis dengan pemetaan di langkah 2.",
+   "gambar": "uji/hasil/K02/09-jurnal-sesuai-pemetaan.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Pengaturan › Keuangan & Pajak › Pemetaan Akun",
+   "aksi": "Pelatih (akun Finance pelatih) klik [[Atur PT]] pada baris 'Beban administrasi bank'.",
+   "isi": "*Berlaku untuk*: Sukacita · *Modul*: Kas & Bank",
+   "hasil": "Pop-up 'Ubah akun · Beban administrasi bank': 'Berlaku untuk: Sukacita', pilihan hanya akun beban yang aktif, kolom alasan wajib, dan peringatan kuning 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'",
+   "gambar": "uji/hasil/K02/11-dialog-ubah-akun.png"
+  },
+  {
+   "no": 9,
+   "peran": "Finance",
+   "menu": "Pop-up Ubah akun",
+   "aksi": "Pelatih memilih akun, mengisi alasan, lalu klik [[Simpan]].",
+   "isi": "*Akun*: 6-9000 · Beban Lain-lain · *Alasan perubahan*: Peragaan pelatihan — dikembalikan sesudah demo",
+   "hasil": "Baris berubah menjadi 6-9000 · Beban Lain-lain bersumber 'Khusus PT'; kartu 'Khusus PT ini' = 1. Bila *Berlaku untuk* diganti Global, baris yang sama tetap 6-8000 (PT lain tidak berubah).",
+   "gambar": "uji/hasil/K02/12-pemetaan-khusus-pt.png"
+  },
+  {
+   "no": 10,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Pelatih klik ikon jam pada baris yang sama.",
+   "isi": "",
+   "hasil": "Riwayat: '6-8000 → 6-9000', nama pengubah, tanggal-jam, 'khusus PT', dan alasannya.",
+   "gambar": "uji/hasil/K02/13-riwayat-pemetaan.png"
+  },
+  {
+   "no": 11,
+   "peran": "Finance",
+   "menu": "Pemetaan Akun",
+   "aksi": "Pelatih klik [[Atur PT]] lagi, isi alasan, lalu klik [[Kembali ke global]].",
+   "isi": "*Alasan perubahan*: Selesai peragaan pelatihan",
+   "hasil": "Baris kembali 6-8000 · Beban Administrasi Bank bersumber 'Bawaan'; kartu 'Khusus PT ini' kembali 0.",
+   "gambar": "uji/hasil/K02/15-pemetaan-kembali.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal pendapatan kirim (contoh KSC/JE-00263): 1-1200 Piutang Usaha (D) Rp 3.494.280 · 4-1000 Pendapatan Penjualan (K) Rp 3.148.000 · 2-1200 PPN Keluaran (K) Rp 346.280 — seimbang, akun = pemetaan Penjualan.",
+  "Jurnal tagihan pemasok terakhir Sukacita memakai 2-1150 GR/IR (D) + 1-1500 PPN Masukan (D) / 2-1100 Hutang Usaha (K) — akun = pemetaan Pembelian.",
+  "Sesudah peragaan, pemetaan tersimpan Sukacita sama persis dengan sebelum latihan; yang tersisa hanya dua baris riwayat (ubah dan kembali)."
+ ],
+ "kesalahan_umum": [
+  "Mengira mengubah pemetaan memperbaiki jurnal lama: jurnal lama tetap memakai akun lama. Koreksi jurnal lama dikerjakan lewat jurnal penyesuaian oleh pemegang izin akuntansi.",
+  "Mengubah pemetaan dengan *Berlaku untuk* Global padahal maksudnya hanya satu PT — semua PT tanpa pemetaan sendiri ikut berubah.",
+  "Membiarkan 'Belum diatur': selama 'Selisih harga pembelian' belum dipilih, kliring GR/IR ditolak dengan pesan 'Akun \"Selisih harga pembelian\" belum diatur untuk PT ini.' dan selisih harga tagihan tetap tertinggal di GR/IR. Laporkan ke Manajer agar pemilik memilih akunnya.",
+  "Memperagakan perubahan pada akun kontrol (Piutang, Hutang, Persediaan): riwayat pemetaan membuat akun pengganti ikut dihitung sebagai akun kontrol walau sudah dikembalikan. Peragakan hanya pada akun beban seperti Beban administrasi bank."
+ ],
+ "catatan_pelatih": "Langkah 8–11 diperagakan pelatih dengan akun Finance pelatih (Finance memang boleh mengubah pemetaan; Manajer hanya melihat). Peserta jangan menyimpan perubahan — pemetaan berlaku untuk semua orang di Sukacita. Selama peragaan (± 1 menit) jurnal biaya administrasi bank yang terbit memakai 6-9000; kembalikan segera. Dua kebutuhan 'Belum diatur' (Selisih harga pembelian, Selisih nilai retur beli) adalah keputusan pemilik dan juga membuat Kesiapan PT Sukacita kurang 'Pemetaan akun' (lihat K03). Pita kuning di Hutang › GR/IR berasal dari kebutuhan yang sama.",
+ "uji": {
+  "berkas": "uji/konfigurasi/K02_pemetaan_akun.js",
+  "peserta_uji": "11"
+ }
+}

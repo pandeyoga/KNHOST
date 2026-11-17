@@ -53,8 +53,19 @@ async def next_employee_code(entity_id: str = "") -> str:
     sama; deret pertama disemai dari kode `EMP-` tertinggi yang ada. `entity_id` = PT karyawan (dipakai bila grup
     menjadikan deret ini per PT di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen)."""
     from core_utils import next_doc_number
-    return await next_doc_number("hr_employees", "code", "EMP-", width=5, entity_id=entity_id or None,
-                                 scheme="shared", kind="emp")
+    # K-SDM-01 (audit pelatihan 18 Nov) — kode yang SUDAH dipakai dilewati. Pengisi karyawan dari akun di proses awal
+    # (`bootstrap.seed_hr_foundation` langkah 3–4) memberi kode "jumlah karyawan + 1" di luar deret ini, sehingga deret
+    # tertinggal dan "Tambah Karyawan" pertama sesudah akun baru + server dinyalakan ulang gagal 500 (indeks unik
+    # `uq_code`) — layar menulis "Tidak bisa menghubungi server". Tiap putaran menghabiskan satu nomor deret.
+    for _ in range(_EMP_CODE_MAX_SKIP):
+        code = await next_doc_number("hr_employees", "code", "EMP-", width=5, entity_id=entity_id or None,
+                                     scheme="shared", kind="emp")
+        if not await db.hr_employees.find_one({"code": code}, {"_id": 1}):
+            return code
+    return code
+
+
+_EMP_CODE_MAX_SKIP = 500   # batas aman lompatan kode terpakai (jumlah karyawan yang diisi di luar deret)
 
 
 def redact_employee_pii(doc: Dict[str, Any]) -> Dict[str, Any]:

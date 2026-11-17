@@ -1,0 +1,135 @@
+{
+ "kode": "K08",
+ "modul": "1",
+ "judul": "Nomor & naskah dokumen — penomoran per PT dan Desainer PDF",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membaca format nomor dokumen keuangan per PT, memahami bahwa teks cetakan diatur di Desainer PDF, dan melihat sendiri teks baru tercetak di kwitansi lalu hilang lagi sesudah dikembalikan.",
+ "kapan": "Saat pelanggan menanyakan arti nomor dokumen, saat nomor berikutnya tidak sesuai dugaan, atau saat PT ingin menambah kalimat tetap di kwitansi/faktur (mis. petunjuk transfer).",
+ "konsep": [
+  "Setiap jenis dokumen punya format nomor sendiri per PT: awalan PT + kode jenis + nomor urut, mis. KSC/AR-00043 untuk kwitansi (penerimaan piutang) Sukacita. Nomor diberikan sistem saat dokumen dibuat; nomor yang sudah terpakai tidak dipakai ulang.",
+  "Beberapa nomor terkunci karena diturunkan dari dokumen lain: nomor Faktur Komersial mengikuti nomor pesanan (KSC/SO-00072 → KSC/INV-00072).",
+  "Teks cetakan (judul, teks pembuka, teks penutup, footer, tanda tangan) diatur di Template Dokumen › Desainer PDF per jenis dokumen. Lapisannya: aturan semua PT, lalu aturan khusus satu PT yang hanya boleh mengubah naskah, tempat, tanda tangan, dan tanda air.",
+  "Token seperti {{nomor}}, {{pihak}}, {{grand_total}} diisi otomatis saat dicetak. Perubahan naskah berlaku pada cetakan berikutnya, termasuk cetak ulang dokumen lama; isi transaksi tidak berubah.",
+  "Penomoran dibaca pemegang izin lihat pengaturan dan diubah pemegang izin kelola pengaturan. Desainer PDF hanya untuk Admin. Finance mencetak dokumen di Pusat Dokumen."
+ ],
+ "peran": "Admin (pelatih) · Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Kwitansi Sukacita terakhir (nomor dari pelatih, contoh KSC/AR-00042). Naskah yang ditambahkan lalu dikembalikan: teks penutup Kwitansi Penerimaan khusus Sukacita 'Simpan kwitansi {{nomor}} ini sebagai bukti pembayaran yang sah.'",
+ "alur": [
+  {
+   "peran": "Admin",
+   "label": "Baca penomoran dokumen keuangan"
+  },
+  {
+   "peran": "Admin",
+   "label": "Tambah teks penutup kwitansi",
+   "cabang": "Hanya Sukacita; PT lain tidak berubah"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cetak kwitansi, teks tercetak"
+  },
+  {
+   "peran": "Admin",
+   "label": "Kembali ke aturan semua PT"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen",
+   "nav_id": "settings-documents",
+   "tab": "settings-doc-numbering"
+  },
+  {
+   "menu": "Pengaturan › Dokumen & Notifikasi › Template Dokumen › Desainer PDF",
+   "nav_id": "settings-documents",
+   "tab": "pdf-templates"
+  },
+  {
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "nav_id": "document-center",
+   "tab": "documents"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Admin",
+   "menu": "Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen",
+   "aksi": "Pelatih membuka tab [[Penomoran Dokumen]] dengan PT Sukacita di bilah atas. Baca kelompok Keuangan.",
+   "isi": "",
+   "hasil": "Baris 'Penerimaan piutang': contoh nomor berikutnya KSC/AR-000xx, awalan AR-, lebar angka 5, tanpa sisipan tanggal, tidak pernah mulai lagi dari 1, deret per PT, sumber Bawaan. Baris lain: transaksi kas & bank (KSC/CASH-…), jurnal, kontrabon, faktur pajak. Faktur Komersial: 'Tidak bisa diubah: dipakai bersama atau diturunkan dari dokumen lain.'",
+   "gambar": "uji/hasil/K08/01-penomoran-keuangan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Admin",
+   "menu": "Penomoran Dokumen",
+   "aksi": "Klik [[Ubah]] pada baris Penerimaan piutang. Baca pratinjau, lalu klik [[Batal]].",
+   "isi": "",
+   "hasil": "Pop-up 'Ubah format nomor · Penerimaan piutang' berisi awalan, lebar angka, sisipan tanggal, mulai lagi dari 1, deret, dan 'Tiga nomor berikutnya' (contoh KSC/AR-00043 · KSC/AR-00044 · KSC/AR-00045). Ditutup tanpa menyimpan.",
+   "gambar": "uji/hasil/K08/02-ubah-format-nomor.png"
+  },
+  {
+   "no": 3,
+   "peran": "Admin",
+   "menu": "Pengaturan › Dokumen & Notifikasi › Template Dokumen › Desainer PDF",
+   "aksi": "Klik tab [[Template Dokumen]], lalu tab [[Desainer PDF]].",
+   "isi": "*Jenis Dokumen*: Kwitansi Penerimaan · *PT*: Sukacita Textile · *Berlaku untuk*: Hanya Sukacita Textile",
+   "hasil": "Tulisan 'Aturan khusus Sukacita Textile: hanya naskah, tempat & tanggal, tanda tangan, dan tanda air.' Pratinjau kwitansi Sukacita di kanan; bagian [[Naskah]] berisi Teks pembuka dan Teks penutup dengan daftar token.",
+   "gambar": "uji/hasil/K08/04-naskah-penutup.png"
+  },
+  {
+   "no": 4,
+   "peran": "Admin",
+   "menu": "Desainer PDF › Naskah",
+   "aksi": "Isi *Teks penutup*. Klik [[Simpan Template]].",
+   "isi": "*Teks penutup*: Simpan kwitansi {{nomor}} ini sebagai bukti pembayaran yang sah.",
+   "hasil": "Pesan hijau 'Aturan khusus Sukacita Textile tersimpan — PT lain tidak berubah.' Pratinjau memuat kalimat itu dengan nomor kwitansi terisi.",
+   "gambar": "uji/hasil/K08/05-naskah-tersimpan.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "aksi": "Masuk dengan akun peserta. Buka Pusat Dokumen › Cetak PDF & Label.",
+   "isi": "*Jenis dokumen*: Kwitansi Penerimaan · *Cari*: KSC/AR-… (nomor dari pelatih)",
+   "hasil": "Baris kwitansi itu tampil dengan ikon [[Unduh PDF]].",
+   "gambar": "uji/hasil/K08/06-pusat-dokumen-kwitansi.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Cetak PDF & Label",
+   "aksi": "Klik ikon [[Unduh PDF]] lalu buka berkasnya.",
+   "isi": "",
+   "hasil": "Kwitansi memuat kalimat 'Simpan kwitansi KSC/AR-… ini sebagai bukti pembayaran yang sah.' — token {{nomor}} terisi nomor kwitansi itu.",
+   "gambar": "uji/hasil/K08/01-kwitansi-dengan-naskah-1.png"
+  },
+  {
+   "no": 7,
+   "peran": "Admin",
+   "menu": "Desainer PDF",
+   "aksi": "Pelatih kembali ke Desainer PDF (Kwitansi Penerimaan · Hanya Sukacita Textile). Klik [[Kembali ke aturan semua PT]], lalu [[Kembalikan]] di konfirmasi.",
+   "isi": "",
+   "hasil": "Konfirmasi: naskah, tempat, tanda tangan, dan tanda air khusus Sukacita dibuang; PT lain dan dokumen yang sudah terbit tidak berubah. Pesan 'Sukacita kembali mengikuti aturan semua PT.' Cetak ulang kwitansi yang sama tidak lagi memuat kalimat itu.",
+   "gambar": "uji/hasil/K08/07-kembali-ke-semua-pt.png"
+  }
+ ],
+ "cek_buku": [
+  "Nomor kwitansi berikutnya (contoh KSC/AR-00043) lebih besar dari nomor kwitansi terakhir Sukacita (contoh KSC/AR-00042).",
+  "Selama peragaan, kwitansi tercetak dengan teks penutup bertoken terisi; sesudah dikembalikan, kwitansi tercetak sama persis dengan sebelum peragaan (selain stempel waktu 'Dicetak').",
+  "Format nomor dan naskah tersimpan sesudah latihan sama persis dengan sebelumnya; jumlah dan isi kwitansi tidak berubah."
+ ],
+ "kesalahan_umum": [
+  "Menyimpan naskah dengan *Berlaku untuk* 'Semua PT' padahal maksudnya hanya Sukacita — kwitansi semua PT ikut berubah.",
+  "Salah ketik token (mis. {{nomer}}): saat mengetik muncul peringatan kuning token tidak dikenal, dan Simpan ditolak dengan daftar token yang sah.",
+  "Mengubah format nomor di tengah tahun tanpa keputusan pemilik — nomor baru tidak lagi berurutan dengan nomor lama di arsip.",
+  "Mengubah 'Kop & tata letak dasar' untuk mengganti teks kwitansi: kop dasar hanya dipakai tombol cetak lama; PDF dari Pusat Dokumen diatur di Desainer PDF."
+ ],
+ "catatan_pelatih": "Langkah 1–4 dan 7 diperagakan pelatih dengan akun Admin (tab Desainer PDF khusus Admin; Manajer boleh menyimpan lewat izin naskah tetapi tidak melihat tabnya — lihat laporan D3). Peserta hanya mencetak (langkah 5–6). Jangan mengubah format nomor di kelas. Kembalikan naskah segera — cetakan kwitansi Sukacita semua peserta ikut berubah selama naskah khusus aktif. Uji lebih lengkap tentang naskah (token salah, lapisan PT, kop dasar) ada di uji dokumen D3.",
+ "uji": {
+  "berkas": "uji/konfigurasi/K08_nomor_naskah_dokumen.js",
+  "peserta_uji": "11"
+ }
+}

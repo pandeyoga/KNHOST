@@ -96,7 +96,10 @@ describe("Buku Besar › Jurnal", () => {
 
 describe("Bagan Akun", () => {
   const AKUN = [{ code: "1-1200", name: "Piutang Usaha", type: "asset", is_postable: true, normal_balance: "debit",
-    is_active: true, entity_active: true, is_control: true }];
+    is_active: true, entity_active: true, is_control: true },
+  // K01 — ikon hapus di bagan PT hanya untuk akun khusus PT itu (akun warisan template tidak bisa dihapus dari sini).
+  { code: "6-4950", name: "Beban Latihan", type: "expense", is_postable: true, normal_balance: "debit", is_active: true,
+    entity_id: "ent_ksc" }];
   test.each([[FINANCE, false], [MANAGER, true]])("%o → tambah/ubah/hapus tampil %s", async (u, tampil) => {
     routeGet({ "/gl/accounts": AKUN });
     const host = await mount(<ChartOfAccounts entities={[{ id: "ent_ksc", short_name: "Sukacita" }]} currentUser={u}
@@ -104,7 +107,8 @@ describe("Bagan Akun", () => {
     expect(q(host, "coa-row-1-1200")).not.toBeNull();
     expect(!!q(host, "coa-add-toggle")).toBe(tampil);
     expect(!!q(host, "coa-edit-1-1200")).toBe(tampil);
-    expect(!!q(host, "coa-delete-1-1200")).toBe(tampil);
+    expect(!!q(host, "coa-delete-6-4950")).toBe(tampil);
+    expect(q(host, "coa-delete-1-1200")).toBeNull();               // warisan Template Global: tidak dihapus dari bagan PT
     expect(q(host, "coa-detail-1-1200")).not.toBeNull();          // riwayat akun tetap bisa dibaca
     const t = q(host, "coa-toggle-entity-active-1-1200");
     if (t) expect(t.disabled).toBe(!tampil);

@@ -1,0 +1,156 @@
+{
+ "kode": "K07",
+ "modul": "1",
+ "judul": "Hak akses peran & aturan persetujuan",
+ "bagian": "A",
+ "tujuan": "Peserta memahami bahwa apa yang bisa dilihat dan dikerjakan Finance ditentukan izin per modul pada peran Finance, tahu cara Admin memberi atau mencabut izin, dan bisa membaca aturan persetujuan yang menyentuh pekerjaan keuangan.",
+ "kapan": "Saat tombol yang diharapkan tidak tampil atau layar menolak dengan pesan 'belum punya akses', dan saat bertanya siapa yang harus menyetujui sebuah dokumen.",
+ "konsep": [
+  "Wewenang ditentukan izin, bukan nama peran. Peran Finance berisi daftar modul dengan tingkat: Tidak ada, Lihat saja, Semua aksi, atau Sebagian (aksi tertentu saja). Menu dan tombol di layar mengikuti izin itu.",
+  "Contoh izin bawaan Finance: Akuntansi & Tutup Buku = lihat saja (Bagan Akun dan Jurnal tanpa tombol tulis); Pemetaan Akun = lihat & ubah; Kas & Bank = termasuk kelola rekening; Hutang = lihat & bayar; Pusat Pengaturan = tidak ada. Izin SDM & Penggajian untuk Finance sedang ditambahkan (keputusan pemilik 17 Nov).",
+  "Admin memberi izin di Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses: pilih tingkat per modul, klik Simpan, baca ringkasan perubahan, lalu konfirmasi. Peran bawaan dipakai semua akun berperan itu, jadi perubahan berlaku untuk semua orang Finance sekaligus.",
+  "Aturan Persetujuan menentukan dokumen mana yang butuh persetujuan, mulai nominal berapa, dan oleh siapa. Contoh Sukacita: pesanan pembelian mulai Rp 100.000.000 butuh persetujuan, dan di atas Rp 500.000.000 ditambah jenjang Direksi. 'Coba nilai' menunjukkan siapa yang harus menyetujui tanpa membuat dokumen.",
+  "Kontrol dua orang: pengaju tidak boleh memutuskan pengajuannya sendiri bila aturan PT memintanya (mis. perubahan rekening, uang muka di atas batas)."
+ ],
+ "peran": "Admin (pelatih) · Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Peran bawaan Finance dan Aturan Persetujuan PT Sukacita apa adanya. Tidak ada yang disimpan: peragaan memberi izin dibatalkan sebelum tersimpan.",
+ "alur": [
+  {
+   "peran": "Admin",
+   "label": "Buka peran Finance"
+  },
+  {
+   "peran": "Admin",
+   "label": "Baca izin modul keuangan"
+  },
+  {
+   "peran": "Admin",
+   "label": "Peragakan beri izin, batalkan",
+   "cabang": "Simpan = berlaku untuk semua akun Finance"
+  },
+  {
+   "peran": "Admin",
+   "label": "Baca aturan persetujuan"
+  },
+  {
+   "peran": "Admin",
+   "label": "Coba nilai PO Rp 600 juta"
+  },
+  {
+   "peran": "Finance",
+   "label": "Menu mengikuti izin"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses",
+   "nav_id": "settings-access",
+   "tab": "permission-matrix"
+  },
+  {
+   "menu": "Pengaturan › Persetujuan › Aturan Persetujuan",
+   "nav_id": "settings-approval",
+   "tab": "approval-rules"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Admin",
+   "menu": "Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses",
+   "aksi": "Pelatih masuk sebagai Admin dan membuka tab [[Peran & Hak Akses]]. Baca kartu Finance.",
+   "isi": "",
+   "hasil": "Kartu Finance: 'Bawaan', jumlah akun (contoh 30 — termasuk akun latihan), dan hitungan modul (contoh 2 semua aksi · 13 sebagian · 11 lihat · 15 tidak ada).",
+   "gambar": "uji/hasil/K07/01-kartu-peran-finance.png"
+  },
+  {
+   "no": 2,
+   "peran": "Admin",
+   "menu": "Peran & Hak Akses",
+   "aksi": "Klik kartu [[Finance]]. Gulir ke modul keuangan.",
+   "isi": "",
+   "hasil": "Editor peran: tiap modul punya pilihan Tidak ada · Lihat saja · Semua aksi. Uang Masuk, Piutang & Faktur Pajak; Kas, Bank & Kasus Keuangan; Hutang Supplier & Kontrabon; Kas Kecil; Akuntansi & Tutup Buku tertulis 'Sebagian (n dari m aksi)'. Pusat Pengaturan: Tidak ada.",
+   "gambar": "uji/hasil/K07/02-editor-peran-finance.png"
+  },
+  {
+   "no": 3,
+   "peran": "Admin",
+   "menu": "Editor peran Finance",
+   "aksi": "Pada baris 'Akuntansi & Tutup Buku' klik ikon atur rinci.",
+   "isi": "",
+   "hasil": "Rincian aksi per halaman: Finance hanya punya aksi lihat (dan beberapa aksi kecil). Membuat jurnal, menutup buku, dan mengubah Bagan Akun tidak dicentang — sebab itu tombol-tombol itu tidak tampil di layar Finance (lihat K01).",
+   "gambar": "uji/hasil/K07/03-rinci-akuntansi.png"
+  },
+  {
+   "no": 4,
+   "peran": "Admin",
+   "menu": "Editor peran Finance",
+   "aksi": "Peragaan: pada 'Akuntansi & Tutup Buku' klik [[Semua aksi]]. Klik [[Simpan]].",
+   "isi": "",
+   "hasil": "Baris ditandai berubah. Pop-up 'Periksa sebelum menyimpan' menulis bahwa semua akun berperan Finance akan langsung mengikuti hak baru, lalu daftar perubahannya (Akuntansi & Tutup Buku: Sebagian → Semua aksi).",
+   "gambar": "uji/hasil/K07/04-pilih-semua-aksi.png"
+  },
+  {
+   "no": 5,
+   "peran": "Admin",
+   "menu": "Pop-up Periksa sebelum menyimpan",
+   "aksi": "Klik [[Periksa lagi]], lalu [[Batal]] di editor.",
+   "isi": "",
+   "hasil": "Muncul pertanyaan apakah perubahan yang belum disimpan dibuang.",
+   "gambar": "uji/hasil/K07/05-ringkasan-perubahan.png"
+  },
+  {
+   "no": 6,
+   "peran": "Admin",
+   "menu": "Pertanyaan buang perubahan",
+   "aksi": "Klik [[Buang & tutup]].",
+   "isi": "",
+   "hasil": "Editor tertutup tanpa menyimpan. Izin peran Finance tetap seperti semula.",
+   "gambar": "uji/hasil/K07/06-buang-perubahan.png"
+  },
+  {
+   "no": 7,
+   "peran": "Admin",
+   "menu": "Pengaturan › Persetujuan › Aturan Persetujuan",
+   "aksi": "Buka Pengaturan › Persetujuan. Baca kelompok Keuangan dan Pembelian, lalu buka kartu Tagihan pemasok.",
+   "isi": "",
+   "hasil": "Kartu per jenis dokumen dengan ringkasan aturan dan asalnya, mis. Pesanan Pembelian 'mulai Rp 100.000.000 · 2 jenjang: Persetujuan → Direksi', Tagihan pemasok 'Admin, Manajer', Uang muka (panjar) '3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan', lalu Selisih bayar, Izin kredit, Buka periode. Kartu yang dibuka menampilkan jenjang, nominal, dan pemutus.",
+   "gambar": "uji/hasil/K07/07-aturan-tagihan-pemasok.png"
+  },
+  {
+   "no": 8,
+   "peran": "Admin",
+   "menu": "Aturan Persetujuan › Coba nilai",
+   "aksi": "Di 'Coba nilai' pilih [[Pesanan pembelian]], ketik nominal, lalu klik [[Coba]].",
+   "isi": "*Nominal*: 600.000.000",
+   "hasil": "Hasil 'Pesanan Pembelian · Rp 600.000.000': Jenjang 1 — Persetujuan: Admin, Manajer · Jenjang 2 — Direksi: Admin. Tidak ada dokumen yang dibuat.",
+   "gambar": "uji/hasil/K07/08-coba-nilai-po.png"
+  },
+  {
+   "no": 9,
+   "peran": "Finance",
+   "menu": "Menu samping › Pengaturan",
+   "aksi": "Masuk dengan akun peserta. Klik grup PENGATURAN di menu samping.",
+   "isi": "",
+   "hasil": "Hanya [[Keuangan & Pajak]] (dan SDM bila izin SDM sudah aktif) yang tampil. Pengguna & Hak Akses, Persetujuan, Perusahaan (PT), dan Dokumen & Notifikasi tidak tampil karena Finance tidak punya izinnya.",
+   "gambar": "uji/hasil/K07/09-menu-pengaturan-finance.png"
+  }
+ ],
+ "cek_buku": [
+  "Izin peran Finance, kebijakan persetujuan, dan aturan persetujuan sesudah skenario sama persis dengan sebelumnya; tidak ada catatan simpan izin di riwayat audit.",
+  "Izin akuntansi sesi peserta = lihat saja; izin Pemetaan Akun = lihat & ubah; izin kas = lihat, catat, kelola rekening.",
+  "Coba nilai PO Rp 600.000.000 memberi dua jenjang (Persetujuan: Admin, Manajer · Direksi: Admin) sesuai aturan PT Sukacita."
+ ],
+ "kesalahan_umum": [
+  "Meminta 'ganti peran jadi Manajer' padahal yang dibutuhkan satu aksi — lebih aman Admin memberi satu izin itu (atau membuat peran kustom hasil gandaan Finance).",
+  "Menyimpan perubahan pada peran bawaan saat mencoba-coba: semua akun Finance langsung berubah. Gunakan [[Buang & tutup]] bila hanya melihat.",
+  "Mengira penyetuju ditentukan nama jabatan di dokumen: penyetuju ditentukan Aturan Persetujuan PT dan izin persetujuan di peran.",
+  "Melapor 'tombol hilang' tanpa menyebut layarnya: sebut menu, tombol, dan pesan yang muncul supaya Admin bisa memeriksa izinnya di Cek Peran."
+ ],
+ "catatan_pelatih": "Seluruh skenario selain langkah 9 diperagakan pelatih dengan akun Admin; peserta tidak punya menu ini. Jangan menyimpan perubahan peran bawaan — peran Finance dipakai semua akun peserta dan pengguna nyata. Izin SDM & Penggajian untuk Finance sedang ditambahkan (keputusan pemilik 17 Nov): bila hitungan modul di kartu Finance berbeda dengan gambar, itu wajar; tunjukkan baris 'SDM & Penggajian' di editor. Jumlah akun Finance termasuk akun latihan peserta.",
+ "uji": {
+  "berkas": "uji/konfigurasi/K07_hak_akses_persetujuan.js",
+  "peserta_uji": "11"
+ }
+}

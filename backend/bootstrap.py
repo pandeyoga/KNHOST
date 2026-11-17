@@ -1417,7 +1417,9 @@ async def seed_hr_foundation() -> None:
     linked = set()
     async for e in db.hr_employees.find({"user_id": {"$nin": ["", None]}}, {"_id": 0, "user_id": 1}):
         linked.add(e["user_id"])
-    code_n = await db.hr_employees.count_documents({})
+    # K-SDM-01 (pelatihan 18 Nov) — kode dari deret resmi (`next_employee_code`), bukan "jumlah karyawan + 1": kode di
+    # luar deret membuat deret tertinggal sehingga "Tambah Karyawan" berikutnya bentrok indeks unik (500).
+    from services.hr_service import next_employee_code
     new_emps = []
     for u in await db.users.find({"status": "active"}, {"_id": 0}).to_list(500):
         if u["id"] in linked:
@@ -1427,9 +1429,8 @@ async def seed_hr_foundation() -> None:
         dept_id, pos_id = f"orgu_{eid}_{dkey}", f"orgu_{eid}_{dkey}_{pkey}"
         if not await db.hr_org_units.find_one({"id": dept_id}, {"_id": 0, "id": 1}):
             dept_id, pos_id = "", ""
-        code_n += 1
         new_emps.append({
-            "id": new_id("emp"), "code": f"EMP-{code_n:05d}", "name": u.get("name", ""),
+            "id": new_id("emp"), "code": await next_employee_code(eid), "name": u.get("name", ""),
             "nik": "", "user_id": u["id"], "dob": "", "gender": "", "phone": "",
             "email": u.get("email", ""), "address": "", "department_id": dept_id,
             "position_id": pos_id, "employment_type": "tetap", "join_date": "2023-01-15",
@@ -1457,9 +1458,8 @@ async def seed_hr_foundation() -> None:
             ]
             extras = []
             for s in base:
-                code_n += 1
                 extras.append({
-                    "id": new_id("emp"), "code": f"EMP-{code_n:05d}", "name": s["name"],
+                    "id": new_id("emp"), "code": await next_employee_code(eid), "name": s["name"],
                     "nik": "", "user_id": "", "dob": "", "gender": "L", "phone": s["phone"],
                     "email": "", "address": "", "department_id": dept_id,
                     "position_id": f"orgu_{eid}_gudang_staf_gudang", "employment_type": s["type"],

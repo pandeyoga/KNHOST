@@ -1,0 +1,80 @@
+{
+  "code": "H03",
+  "title": "Proses gaji susulan",
+  "ok": true,
+  "at": "2026-11-17T10:48:49.378Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Manajer",
+      "action": "Login Manajer → SDM › Penggajian › Komponen & Masukan → *Periode bayar* Oktober 2026 → [[Sahkan]] pada masukan peserta → konfirmasi [[Sahkan]]",
+      "expect": "Pesan \"Masukan … disahkan.\"; status Disahkan — siap dimuat proses gaji",
+      "ok": true,
+      "ms": 17439,
+      "info": "Disahkan oleh Dewi Manager · masukan lain menunggu: 0"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Login Finance → SDM › Penggajian › Proses Gaji → *PT* Sukacita · *Periode* Oktober 2026 · *Jenis* Susulan → [[Hitung gaji]]",
+      "expect": "Pesan \"Penggajian KSC/PAY-… (Susulan) siap (1 karyawan).\"; status Draf; slip karyawan baru: Rapel Rp 8.000.000, PPh 21 TER B",
+      "ok": true,
+      "ms": 7936,
+      "info": "Penggajian KSC/PAY-00021 (Susulan) siap (1 karyawan). × · KSC/PAY-00021 bruto Rp 8.000.000 · PPh 21 Rp 80.000 · bersih Rp 7.920.000"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik nama karyawan di tabel slip untuk membuka rinciannya",
+      "expect": "Pendapatan: Rapel Rp 8.000.000 · Potongan: PPh 21 (TER B) · Gaji bersih; tanpa BPJS (proses susulan)",
+      "ok": true,
+      "ms": 1075,
+      "info": "KSC/SLIP-00031 · TER B 1.00% · PPh 21 Rp 80.000 · bersih Rp 7.920.000 · Pendapatan Rapel gaji Oktober (karyawan baru) Rp 8.000.000 Potongan PPh 21 Rp 80.000 Tanggungan perusahaan —"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Klik [[Ajukan]]",
+      "expect": "Status Diajukan; Finance tidak melihat tombol Sahkan (izin mengesahkan = Manajer)",
+      "ok": true,
+      "ms": 1266,
+      "info": "status pending_approval · Mengesahkan penggajian butuh izin mengesahkan gaji."
+    },
+    {
+      "no": 5,
+      "role": "Manajer",
+      "action": "Login Manajer → SDM › Penggajian › Proses Gaji → pilih proses peserta → [[Sahkan]] → konfirmasi [[Sahkan]]",
+      "expect": "Konfirmasi menyebut periode, jenis Susulan, 1 karyawan, gaji bersih, PT; status Disahkan",
+      "ok": true,
+      "ms": 15891,
+      "info": "\"Oktober 2026 · proses Susulan · 1 karyawan · gaji bersih Rp 7.920.000 · Sukacita Textile. Setelah disahkan, penggajian ini tidak bisa diubah. Bila ada koreksi, batalkan lalu hitung lagi.\" · approved oleh Dewi Manager"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Login Finance → Proses Gaji → pilih proses Anda → [[Posting Jurnal]] → konfirmasi [[Posting]]",
+      "expect": "Status Diposting; \"Jurnal gaji KSC/JE-… · tanggal buku 31 Okt 2026\"; proses masuk antrean \"Gaji siap dibayar\"",
+      "ok": true,
+      "ms": 8493,
+      "info": "\"Oktober 2026 · proses Susulan · 1 karyawan · gaji bersih Rp 7.920.000 · Sukacita Textile. Jurnal beban gaji & utang gaji dibuat di buku besar, bertanggal akhir periode gajinya.\" · Jurnal gaji: KSC/JE-00484 · tanggal buku 31 Okt 2026"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Cek buku: jurnal gaji proses Anda",
+      "expect": "6-1000 Beban Gaji (D) Rp 8.000.000 = 2-1600 Hutang Gaji (K) gaji bersih + 2-1800 Hutang PPh 21 (K) — seimbang, tanggal 31 Okt 2026 (akhir masa gaji)",
+      "ok": true,
+      "ms": 568,
+      "info": "KSC/JE-00484 seimbang D=K=8000000 [6-1000 Beban Gaji D 8000000 · 2-1600 Hutang Gaji K 7920000 · 2-1800 Hutang PPh 21 K 80000] · tanggal 2026-10-31"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 54 · EMP-00058 Latihan 54 · Andi Pratama · masukan Rapel gaji Oktober (karyawan baru) Rp 8.000.000 (pending)",
+    "konfirmasi: Rapel gaji Oktober (karyawan baru) untuk Latihan 54 · Andi Pratama · periode bayar Oktober 2026 · Sukacita Textile. Sesudah disahkan, masukan ini ikut dihitung di proses gaji periode itu."
+  ]
+}

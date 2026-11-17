@@ -1,0 +1,124 @@
+{
+ "kode": "K04",
+ "modul": "1",
+ "judul": "Rekening kas & bank — membuat rekening dengan saldo awal",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membuat rekening bank PT dengan saldo awal, memahami jurnal saldo awal yang lahir, dan menemukan rekening itu di Kas & Bank.",
+ "kapan": "Saat PT membuka rekening baru, memindahkan saldo dari sistem lama, atau menambah kas tunai baru (mis. kas cabang).",
+ "konsep": [
+  "Rekening adalah rincian di bawah akun buku besar: semua rekening bank memakai akun 1-1100 Kas Besar / Bank, kas tunai memakai 1-1110 Kas Kecil. Saldo per rekening dilihat di Kas & Bank, saldo akunnya di Buku Besar.",
+  "Saldo awal langsung dijurnal: Kas Besar / Bank (D) · 3-2900 Ekuitas Saldo Awal (K). Karena itu kartu 'Kas & Bank (buku besar)' ikut naik.",
+  "'Dipakai untuk' menentukan di layar mana rekening ditawarkan: Penerimaan pelanggan, Pembayaran pemasok, Gaji, Operasional. Rekening yang hanya dicentang Operasional tidak muncul di pilihan rekening kwitansi pelanggan.",
+  "Rekening tidak dihapus. Bila tidak dipakai lagi, rekening dinonaktifkan; koreksi saldo awal membuat jurnal penyesuaian, bukan mengubah angka diam-diam.",
+  "Finance boleh membuat dan mengubah rekening (izin kelola rekening kas & bank). Perubahan peka (nomor rekening, atas nama, peruntukan) bisa diatur agar butuh persetujuan orang kedua."
+ ],
+ "peran": "Finance (akun peserta) · Pelatih (pembersihan sesudah kelas)",
+ "menit": 15,
+ "data_awal": "PT Sukacita dengan rekening BCA Operasional KSC dan kas tunai. Peserta membuat 'Rekening Latihan NN' (NN = nomor peserta) dengan saldo awal Rp 1.000.000.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Buka Rekening & Saldo"
+  },
+  {
+   "peran": "Finance",
+   "label": "Tambah rekening bersaldo awal"
+  },
+  {
+   "peran": "Buku",
+   "label": "Bank (D) / Saldo Awal (K)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cek jurnal & kartu rekening"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pelatih nonaktifkan rekening latihan"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+   "nav_id": "cash-bank",
+   "tab": "bank-accounts"
+  },
+  {
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "nav_id": "ledger",
+   "tab": "general-ledger"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank",
+   "aksi": "Masuk dengan akun peserta. Klik menu [[Kas & Bank]] di grup KEUANGAN.",
+   "isi": "",
+   "hasil": "Tab 'Rekening & Saldo': lima kartu (Kas & Bank (buku besar), Total Saldo Rekening, Saldo Bank, Saldo Kas, Mutasi Belum Dicocokkan), lalu kartu tiap rekening Sukacita dan tombol [[Tambah Akun]].",
+   "gambar": "uji/hasil/K04/02-rekening-dan-saldo.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Kas & Bank › Rekening & Saldo",
+   "aksi": "Klik [[Tambah Akun]]. Isi bagian 1 Identitas rekening.",
+   "isi": "*Nama akun*: Rekening Latihan NN · *Jenis*: Rekening bank · *Nama bank*: Bank Mandiri · *No. rekening*: 13000000NN (contoh) · *Atas nama*: Sukacita Textile · *Saldo awal*: 1.000.000",
+   "hasil": "Form 'Tambah Akun Kas / Bank — Rekening bank atau kas tunai milik Sukacita.' Di bawah saldo awal tertulis 'Rp 1.000.000'.",
+   "gambar": "uji/hasil/K04/03-form-tambah-rekening.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Form Tambah Akun Kas / Bank",
+   "aksi": "Di bagian 2 *Dipakai untuk* biarkan hanya Operasional yang dicentang. Klik [[Simpan Akun]].",
+   "isi": "*Dipakai untuk*: hapus centang Penerimaan pelanggan, Pembayaran pemasok, Gaji · biarkan Operasional · bagian 3 Cara bayar: biarkan",
+   "hasil": "Pesan 'Akun kas/bank ditambahkan.' Kartu baru 'Rekening Latihan NN · Bank Mandiri · 13000000NN · a.n. Sukacita Textile' bersaldo Rp 1.000.000. Kartu Total Saldo Rekening dan Kas & Bank (buku besar) ikut naik.",
+   "gambar": "uji/hasil/K04/05-rekening-baru.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "aksi": "Buka menu [[Buku Besar]]. Ketik 'Rekening Latihan NN' di kotak cari.",
+   "isi": "*Cari nomor jurnal / keterangan…*: Rekening Latihan NN",
+   "hasil": "Satu baris jurnal 'Saldo awal rekening Rekening Latihan NN' tampil.",
+   "gambar": "uji/hasil/K04/07-cari-jurnal-saldo-awal.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Buku Besar › Jurnal",
+   "aksi": "Klik baris jurnal itu.",
+   "isi": "",
+   "hasil": "Rincian jurnal oleh system: 1-1100 Kas Besar / Bank (D) Rp 1.000.000 · 3-2900 Ekuitas Saldo Awal (K) Rp 1.000.000, Total seimbang.",
+   "gambar": "uji/hasil/K04/08-jurnal-saldo-awal.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+   "aksi": "Kembali ke Kas & Bank. Klik kartu Rekening Latihan NN.",
+   "isi": "",
+   "hasil": "Pop-up mutasi: 'Saldo Rp 1.000.000', 'Belum ada transaksi pada akun ini.' Rekening ini tidak muncul di pilihan rekening kwitansi pelanggan karena hanya dipakai untuk Operasional.",
+   "gambar": "uji/hasil/K04/10-mutasi-rekening-baru.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal saldo awal (sumber: rekening): 1-1100 Kas Besar / Bank (D) Rp 1.000.000 · 3-2900 Ekuitas Saldo Awal (K) Rp 1.000.000 — seimbang.",
+  "Saldo kartu rekening = saldo awal + mutasi tertaut = Rp 1.000.000; Total Saldo Rekening = jumlah saldo semua rekening Sukacita.",
+  "Pembersihan pelatih: jurnal penyesuaian 3-2900 Ekuitas Saldo Awal (D) Rp 1.000.000 · 1-1100 Kas Besar / Bank (K) Rp 1.000.000; rekening latihan nonaktif; efek bersih rekening latihan di buku = Rp 0."
+ ],
+ "kesalahan_umum": [
+  "Mencentang semua 'Dipakai untuk' pada rekening latihan — rekening ikut ditawarkan di kwitansi pelanggan dan pembayaran pemasok sehingga peserta lain bisa salah pilih.",
+  "Mencentang 'Jadikan bawaan penerimaan' — rekening bawaan lama untuk cara bayar itu otomatis dilepas dan pindah ke rekening latihan.",
+  "Mengira saldo awal bisa diubah lewat [[Ubah rekening]]: form ubah tidak memuat saldo awal; koreksi saldo awal dikerjakan dengan jurnal penyesuaian oleh pemegang izin akuntansi.",
+  "Mencari jurnal saldo awal di akun bernama rekening — semua rekening bank memakai akun 1-1100; rinciannya per rekening ada di Kas & Bank."
+ ],
+ "catatan_pelatih": "Setiap peserta membuat rekeningnya sendiri (nama berisi nomor peserta) dengan saldo awal Rp 1.000.000 — Ekuitas Saldo Awal dan Kas & Bank Sukacita naik selama kelas. Sesudah kelas pelatih membersihkan tiap rekening latihan: saldo awal dinolkan (membuat jurnal penyesuaian) lalu rekening dinonaktifkan (uji jalan K04 langkah 6 melakukannya otomatis). Form [[Ubah rekening]] tidak memuat saldo awal, jadi penolan dikerjakan pelatih dengan cara yang sama. Petunjuk bagian 3 form kini benar: daftar Cara Bayar ada di Pengaturan › Perusahaan (PT) › Master per PT › Cara Bayar (dulu tertulis Keuangan & Pajak). Finance belum punya menu ke Master per PT walau izinnya ada — lihat laporan audit.",
+ "uji": {
+  "berkas": "uji/konfigurasi/K04_rekening_kas_bank.js",
+  "peserta_uji": "11"
+ }
+}
