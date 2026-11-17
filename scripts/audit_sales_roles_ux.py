@@ -130,6 +130,8 @@ TERGATED_DI_KODE = {
         "features/orders/OrderDetailPanel.jsx — dipagari can(perms,'wms','view')",
     ("orders", "/tax-invoices"):
         "features/orders/OrderDetailPanel.jsx — dipagari can(perms,'tax_invoice','view')",
+    ("hr-employees", "/users"):
+        "features/hr/EmployeesView.jsx — dipagari can(perms,'user','view') (K-SDM-01: Finance membuka Karyawan)",
     # Modul API bersama dua meja kerja: satu berkas dipakai dua layar, masing-masing
     # hanya dibuka perannya sendiri → berlaku di layar mana pun yang mengimpornya.
     ("*", "/finance/desk"):

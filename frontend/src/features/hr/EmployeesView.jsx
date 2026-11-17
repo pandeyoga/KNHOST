@@ -70,7 +70,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
         axios.get(`${API}/entities`).catch(() => ({ data: [] })),
         // K-SDM-01 — Finance kini membuka Karyawan tanpa izin akun pengguna: daftar akun (untuk "Tautkan ke Akun
         // Pengguna") hanya diminta bila berizin `user.view` (dulu 403 di setiap muat).
-        can(currentUser?.permissions, "user", "view") || currentUser?.role === "admin"
+        can(currentUser?.permissions, "user", "view")
           ? axios.get(`${API}/users`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
         axios.get(`${API}/hr/settings`).catch(() => ({ data: {} })),
         axios.get(`${API}/hr/summary`, { params }).catch(() => ({ data: null })),
