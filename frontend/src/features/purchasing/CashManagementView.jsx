@@ -83,6 +83,9 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
   const [error, setError] = useState("");
+  // Pelatihan 18 Nov (S4): galat MUAT terpisah dari galat AKSI. Dulu muat ulang ringkasan yang selesai belakangan
+  // menghapus `error` → pesan penolakan anulir ("sudah dicocokkan — lepaskan dulu") hilang sebelum terbaca.
+  const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_besar
   const [search, setSearch] = useState("");
@@ -127,9 +130,9 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
       ]);
       setSummary(sRes.data || { kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
       setEntities(Array.isArray(eRes.data) ? eRes.data : []);
-      setError("");
+      setLoadError("");
     } catch (e) {
-      setError(apiErrorText(e, "Gagal memuat data kas."));
+      setLoadError(apiErrorText(e, "Gagal memuat data kas."));
       // PK-16 (RP-04) — saldo dari permintaan sebelumnya tidak boleh tertinggal di layar.
       setSummary({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
     }
@@ -218,7 +221,8 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   return (
     <div data-testid="cash-management-view">
       {notice && <div className="notice-bar success" data-testid="cash-notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={13} /></button></div>}
-      <ErrorNotice message={error} onRetry={reloadAll} onDismiss={() => setError("")} testId="cash-error" />
+      <ErrorNotice message={error} onDismiss={() => setError("")} testId="cash-error" />
+      <ErrorNotice message={loadError} onRetry={reloadAll} onDismiss={() => setLoadError("")} testId="cash-load-error" />
       <FocusNotice {...fokus} testId="cash-focus-notice" />
       <EntityScopeBanner meta={summary.scope_meta} />
 
