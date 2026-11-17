@@ -8,7 +8,7 @@
  "konsep": [
   "Plafon kredit adalah batas piutang yang boleh dimiliki satu pelanggan. Izin kredit adalah tambahan batas sementara yang diajukan Sales.",
   "Eksposur = piutang barang terkirim + pesanan belum dikirim + giro belum cair − titipan. Angka ini dibandingkan dengan plafon.",
-  "Finance hanya membaca antrean kredit. Menyetujui atau menolak adalah wewenang Manajer.",
+  "Antrean kredit dibaca semua pemegang izin lihat; memutus butuh izin Setujui. Menyetujui atau menolak butuh izin Izin Kredit › Setujui.",
   "Skenario ini tidak membuat jurnal: plafon dan izin kredit tidak mengubah buku besar."
  ],
  "peran": "Finance (akun peserta)",
@@ -30,7 +30,7 @@
   {
    "peran": "Manajer",
    "label": "Setujui / tolak",
-   "cabang": "Finance tidak punya tombol Setujui"
+   "cabang": "Diputus pemegang izin Izin Kredit › Setujui"
   },
   {
    "peran": "Finance",
@@ -114,7 +114,7 @@
    "menu": "Kredit & Plafon › Riwayat",
    "aksi": "Baca daftar izin kredit (Menunggu · Disetujui · Ditolak · Semua).",
    "isi": "",
-   "hasil": "Kolom Pelanggan · Lingkup ('Pelanggan ini') · Nominal · Sisa · Berlaku sampai · Alasan · Pemohon · Status · Keputusan. Izin Anda berstatus 'Menunggu'; Finance hanya bisa membaca.",
+   "hasil": "Kolom Pelanggan · Lingkup ('Pelanggan ini') · Nominal · Sisa · Berlaku sampai · Alasan · Pemohon · Status · Keputusan. Izin berstatus 'Menunggu'; tombol Setujui/Tolak tampil bagi pemegang izin Izin Kredit › Setujui yang bukan pengajunya.",
    "gambar": "uji/hasil/F06/08-riwayat-kredit.png"
   }
  ],
@@ -124,7 +124,7 @@
   "Izin kredit tetap 'Menunggu' sampai Manajer memutus"
  ],
  "kesalahan_umum": [
-  "Mencari tombol Setujui. Finance hanya memantau; keputusan ada di Manajer.",
+  "Mencari tombol Setujui. Keputusan ada di pemegang izin Izin Kredit › Setujui (peran bawaan Finance memegangnya sejak K-FIN-01); di latihan diputus Manajer.",
   "Membaca 'PLAFON tanpa batas' sebagai plafon disetujui. Artinya plafon belum diatur atau belum disetujui.",
   "Mencari izin berlingkup pelanggan dengan nomor SO. Cari dengan nama pelanggan.",
   "Ingin mencatat janji bayar dengan akun Finance. Janji bayar dicatat Sales atau Admin Sales lewat ikon telepon di Penagihan & Penerimaan; akun Finance belum punya izinnya (pertanyaan untuk pemilik)."

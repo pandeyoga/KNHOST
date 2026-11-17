@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › SO untuk pelunasan penuh: SO yang sudah dikirim dan belum dibayar, pelanggan 'Latihan NN · Toko Kain Peserta NN', termin 30 hari (contoh: KSC/SO-00004, Rp 3.374.123). Uang masuk ke rekening BCA Operasional KSC · BCA 7415595554.",
+ "data_awal": "Kartu Peserta › SO untuk pelunasan penuh: SO yang sudah dikirim dan belum dibayar, pelanggan 'Latihan NN · Toko Kain Peserta NN', termin 30 hari (contoh: KSC/SO-00102, Rp 3.233.430). Uang masuk ke rekening BCA Operasional KSC · BCA 7415595554.",
  "alur": [
   {
    "peran": "Sales",
@@ -91,7 +91,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Cari baris SO Anda. Klik ikon dompet (Terima pembayaran) di kolom Aksi.",
    "isi": "",
-   "hasil": "Baris SO menunjukkan Belum Lunas, Jatuh Tempo, dan Telat '30h Lagi' (contoh: Rp 3.374.123, 17 Des 2026). Di kolom Aksi tampil ikon dompet (Terima pembayaran). Ikon pengingat dan janji bayar hanya untuk Sales/Admin Sales.",
+   "hasil": "Baris SO menunjukkan Belum Lunas, Jatuh Tempo, dan Telat '30h Lagi' (contoh: Rp 3.233.430, 17 Des 2026). Di kolom Aksi tampil ikon dompet (Terima pembayaran). Ikon pengingat dan janji bayar hanya untuk Sales/Admin Sales.",
    "gambar": "uji/hasil/F02/04-penagihan-baris-so.png"
   },
   {
@@ -150,7 +150,7 @@
   }
  ],
  "cek_buku": [
-  "Jurnal kwitansi (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.374.123 · 1-1200 Piutang Usaha (K) Rp 3.374.123 — seimbang, nilai = total SO",
+  "Jurnal kwitansi (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.233.430 · 1-1200 Piutang Usaha (K) Rp 3.233.430 — seimbang, nilai = total SO",
   "SO berstatus Lunas; sisa tagihan Rp 0; tidak ada sisa titipan",
   "Kas masuk tercatat di rekening BCA Operasional KSC dan dipakai lagi di rekonsiliasi bank (F10)"
  ],
@@ -163,6 +163,6 @@
  "catatan_pelatih": "Kerjakan F02 sebelum F03 dan F04. Bila total SO berakhiran ,50 rupiah, pelanggan tidak bisa mentransfer pecahan itu: mutasi bank dibulatkan, sedangkan kwitansi tercatat ,50 — selisih Rp 0,50 muncul saat rekonsiliasi (pertanyaan untuk pemilik). Form tidak menolak bila nominal mutasi diketik di kotak alokasi; angkanya dibatasi ke sisa tagihan. Label 'Jurnal Terbit' kini bisa diklik untuk membuka jurnal (perbaikan 17 Nov).",
  "uji": {
   "berkas": "uji/F02_pelunasan_penuh.js",
-  "peserta_uji": "01"
+  "peserta_uji": "04"
  }
 }

@@ -2,7 +2,7 @@
   "code": "K03",
   "title": "Profil PT, tahun buku & periode",
   "ok": true,
-  "at": "2026-11-17T13:56:47.753Z",
+  "at": "2026-11-17T17:51:38.673Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Buka Pengaturan › Perusahaan (PT) › tab [[Profil PT]]",
       "expect": "Daftar PT: baris Sukacita Textile — Jenis PT, Kode dokumen KSC (contoh KSC/SO-00001), Pajak PKP, Mata uang IDR, Kesiapan …% dan butir yang kurang",
       "ok": true,
-      "ms": 10318,
-      "info": "Sukacita Textile Sukacita · Bandung PT KSCKSC/SO-00001 PKP IDR 24 6 75% siap · kurang: Alamat lengkap, Pemetaan akun, Kop surat & logo, Penanda tangan Aktif"
+      "ms": 14602,
+      "info": "Sukacita Textile Sukacita · Bandung PT KSCKSC/SO-00001 PKP IDR 25 6 75% siap · kurang: Alamat lengkap, Pemetaan akun, Kop surat & logo, Penanda tangan Aktif"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Klik baris Sukacita Textile",
       "expect": "Rincian PT: Nama legal, NPWP 01.234.567.8-901.000, alamat & kota, status pajak PKP (memungut PPN), 'Tahun buku: Januari–Desember (mengikuti pengaturan grup)', kode dokumen KSC terkunci",
       "ok": true,
-      "ms": 1418,
+      "ms": 2869,
       "info": "NPWP 01.234.567.8-901.000 · Jl. Soekarno Hatta No. 100 · pajak: Status: PKP (memungut PPN) · Tahun buku: Januari–Desember (mengikuti pengaturan grup) · kode dokumen terkunci"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Klik tab [[Kesiapan PT]]",
       "expect": "Daftar periksa kelengkapan PT; butir yang belum lengkap (mis. Pemetaan akun, Kop surat & logo, Penanda tangan) ditulis dengan tautan perbaikannya",
       "ok": true,
-      "ms": 1242,
+      "ms": 2175,
       "info": "16 butir · belum lengkap: 2. Alamat lengkap Alamat, kota, atau | 10. Pemetaan akun 2 pemetaan akun | 15. Kop surat & logo Dokumen | 16. Penanda tangan Belum ada nama"
     },
     {
@@ -38,7 +38,7 @@
       "action": "Masuk dengan akun peserta → Pusat Dokumen › Cetak PDF & Label: jenis [[Faktur Komersial]], cari nomor SO dari pelatih, klik ikon [[Unduh PDF]]",
       "expect": "Kop faktur memuat nama PT, alamat, kota dan NPWP persis seperti Profil PT; nomor faktur berawalan KSC/",
       "ok": true,
-      "ms": 7781,
+      "ms": 15768,
       "info": "kop: Sukacita Textile Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000 "
     },
     {
@@ -47,7 +47,7 @@
       "action": "Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak → chip [[Pajak, pembukuan & antar-PT]] → ketik 'tahun buku' di kotak cari → buka baris 'Bulan tutup tahun buku'",
       "expect": "Bulan tutup tahun buku = 12 (Desember) dan Mata uang pembukuan = IDR — berlaku untuk semua PT kecuali diatur khusus; Manajer hanya membaca (mengubah butuh izin kelola pengaturan)",
       "ok": true,
-      "ms": 19535,
+      "ms": 18375,
       "info": "tahun buku berakhir Desember (Aturan grup) · mata uang IDR · periode tertutup mengunci dokumen: true"
     },
     {
@@ -56,7 +56,7 @@
       "action": "Buka Akuntansi & Pajak › Tutup Buku",
       "expect": "Kartu periode tertutup dan Riwayat Tutup Buku Sukacita: periode yang belum ditutup masih terbuka untuk transaksi (menutup periode = Modul 4)",
       "ok": true,
-      "ms": 4749,
+      "ms": 5427,
       "info": "kartu: PERIODE TERTUTUP 0 · DB periode tertutup Sukacita 0 · Riwayat kosong (semua periode terbuka)"
     },
     {
@@ -65,15 +65,13 @@
       "action": "Pastikan tidak ada pengaturan yang berubah",
       "expect": "Pengaturan global & Sukacita sama dengan sebelum skenario",
       "ok": true,
-      "ms": 1050,
+      "ms": 1293,
       "info": "system_settings & profil PT tidak berubah"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
-    "PT Sukacita Textile · NPWP 01.234.567.8-901.000 · kode KSC · faktur pembanding KSC/SO-00051"
+    "PT Sukacita Textile · NPWP 01.234.567.8-901.000 · kode KSC · faktur pembanding KSC/SO-00053"
   ]
 }

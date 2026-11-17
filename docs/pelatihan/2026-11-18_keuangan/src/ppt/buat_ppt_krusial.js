@@ -231,12 +231,12 @@ ALUR.forEach((a, i) => {
 });
 
 s = pres.addSlide({ masterName: "ISI", sectionTitle: SECP });
-s.addText("Akses Finance & siapa mengerjakan apa", { placeholder: "title" });
-kartuTeks(s, { x: 0.6, y: 1.35, w: 4.6, h: 5.4, judul: "Akses Finance (17 Nov 2026)", fill: HEX.amberSoft, color: HEX.amber, name: "kj-akses",
-  isi: [K.catatan_akses], size: 15 });
-s.addTable([[head("Peran"), head("Tugas di aplikasi")]].concat(D.peran.map(([p, t]) => [
-  { text: p, options: { bold: true, color: roleColor(p) } }, { text: t, options: { color: HEX.navy } }])),
-{ ...TBL, x: 5.45, y: 1.35, w: 7.25, colW: [1.9, 5.35], fontSize: 11.5, margin: [0.04, 0.08, 0.04, 0.08] });
+s.addText("Wewenang = izin, bukan nama peran", { placeholder: "title" });
+kartuTeks(s, { x: 0.6, y: 1.35, w: 4.6, h: 5.4, judul: "Peran bisa kustom", fill: HEX.amberSoft, color: HEX.amber, name: "kj-akses",
+  isi: [K.catatan_akses], size: 13 });
+s.addTable([[head("Aksi di alur krusial"), head("Izin yang dibutuhkan (Modul › aksi)")]].concat(K.izin.map(([a, z]) => [
+  { text: a, options: { bold: true, color: HEX.navy } }, { text: z, options: { color: HEX.navy } }])),
+{ ...TBL, x: 5.45, y: 1.35, w: 7.25, colW: [3.0, 4.25], fontSize: 11, margin: [0.03, 0.08, 0.03, 0.08] });
 
 s = pres.addSlide({ masterName: "ISI", sectionTitle: SECP });
 s.addText("Alur uang — di mana tiap alur terjadi", { placeholder: "title" });

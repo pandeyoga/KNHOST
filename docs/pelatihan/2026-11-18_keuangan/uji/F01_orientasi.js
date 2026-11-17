@@ -32,17 +32,19 @@ const TAHUN = new Date().getFullYear();
       });
 
     await r.step(2, "Finance", "Baca bilah atas: kotak PT, bilah Lokasi, lonceng, tombol Tanya KN",
-      "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah (terkunci: akun ini hanya PT Sukacita). Bilah 'Lokasi: Semua lokasi' + tulisan oranye 'Lokasi kerja belum diatur' (abaikan — tidak berpengaruh ke keuangan)",
+      "Kotak PT bertuliskan 'Sukacita · Finance'. Sejak K-FIN-01 akun Finance lintas PT seperti Manajer, jadi kotak PT bisa dibuka — di latihan tetap bekerja di PT Sukacita. Bilah 'Lokasi: Semua lokasi' + tulisan oranye 'Lokasi kerja belum diatur' (abaikan — tidak berpengaruh ke keuangan)",
       async () => {
-        const pt = await r.text("entity-switcher-locked");
+        const kotak = (await r.tid("entity-switcher-locked").count()) ? "entity-switcher-locked" : "entity-switcher";
+        const pt = await r.text(kotak);
         assert(/Sukacita/.test(pt) && /Finance/.test(pt), `kotak PT: ${pt}`);
-        assert(!(await r.tid("entity-switcher").count()), "pemilih PT bisa dibuka — akun latihan mestinya terkunci 1 PT");
         const me = await fin.get("/auth/me");
         const u = me.user || me;
-        assert(JSON.stringify(u.allowed_entity_ids) === JSON.stringify([KSC]), `PT diizinkan: ${u.allowed_entity_ids}`);
+        const ctx = u.entity_context || {};
+        assert(ctx.active_entity_id === KSC || u.home_entity_id === KSC, `PT aktif: ${ctx.active_entity_id || u.home_entity_id}`);
+        r.note(`K-FIN-01: kotak PT ${kotak === "entity-switcher" ? "bisa dibuka" : "terkunci"} · PT terjangkau ${(ctx.allowed_entity_ids || u.allowed_entity_ids || []).length}`);
         const lok = await r.text("location-scope-bar");
         const unset = await r.tid("location-scope-bar-unset").count();
-        await potret(r, "bilah-atas", [r.tid("entity-switcher-locked"), r.tid("location-scope-bar-unset")], { locator: r.page.locator("header").first() });
+        await potret(r, "bilah-atas", [r.tid(kotak), r.tid("location-scope-bar-unset")], { locator: r.page.locator("header").first() });
         r.note(`TEMUAN F01-a: bilah Lokasi tampil untuk Finance ('${lok}'${unset ? " + 'Lokasi kerja belum diatur'" : ""}) karena izin product.view/logistics.view — tidak relevan bagi kasir, membingungkan`);
         return `PT: ${pt} · ${lok}${unset ? " · peringatan 'Lokasi kerja belum diatur'" : ""}`;
       });
@@ -187,7 +189,7 @@ const TAHUN = new Date().getFullYear();
           const jml = vals.reduce((s, [, v]) => s + v, 0);
           const rev = uang(await r.text("tower-kpi-rev-ytd-value"));
           const net = uang(await r.text("tower-kpi-net-ytd-value"));
-          const lr = labaRugiDb(`${TAHUN}-01-01`, new Date().toISOString().slice(0, 10));
+          const lr = labaRugiDb(`${TAHUN}-01-01`, new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10));
           const ok = vals.length >= 2 && dekat(jml, kas, 2) && dekat(rev, lr.revenue) && dekat(net, lr.net);
           return { ok, info: `${vals.map(([c, v]) => `${c} ${rp(v)}`).join(" + ")} = ${rp(jml)} · pendapatan YTD ${rp(rev)} (jurnal ${rp(lr.revenue)}) · laba bersih ${rp(net)} (jurnal ${rp(lr.net)})` };
         }, { muatUlang: async () => { await r.tid("tower-refresh").click(); await r.idle(1200); } });

@@ -7,7 +7,7 @@
  "kapan": "Setiap bulan: data karyawan dan masukan sebelum tutup masa gaji, proses gaji akhir bulan, bayar pada tanggal gajian, setor BPJS paling lambat tanggal 10 dan PPh 21 paling lambat tanggal 15 bulan berikutnya.",
  "konsep": [
   "Konfigurasi (K09) → data karyawan (H01) → masukan & kehadiran (H02) → proses gaji (H03) → bayar & slip (H04) → setor pajak dan BPJS (F15).",
-  "Pemisahan tugas (K-SDM-01): Finance menyiapkan data, menghitung, memposting, membayar, dan menyetor. Manajer mengesahkan masukan, perubahan gaji, dan proses gaji, serta membatalkan proses yang diposting.",
+  "Pembagian tugas mengikuti izin (K-SDM-01, K-FIN-01): menyiapkan, menghitung, memposting, membayar, menyetor = izin Proses Penggajian › Buat · Posting · Bayar; mengesahkan & membatalkan = Proses Penggajian › Setujui · Batalkan. Peran bawaan Finance kini memegang keduanya. Supaya tetap ada orang kedua, pengesahan dikerjakan Manajer atau Finance lain — nyalakan aturan dua orang untuk proses gaji di Pengaturan › Persetujuan.",
   "Jurnal hanya lahir di tiga titik: posting proses gaji (mengakui beban dan hutang), bayar gaji (hutang gaji lunas), dan setoran (hutang BPJS/PPh 21 lunas).",
   "Proses reguler (sekali per PT per masa) menghitung gaji pokok, tunjangan, lembur, absensi, BPJS, dan PPh 21. Proses susulan dan THR hanya memuat masukan yang disahkan, plus PPh 21.",
   "Tanggal buku jurnal gaji = akhir masa gaji. Gaji baru bisa dibayar mulai tanggal itu."
@@ -176,10 +176,10 @@
  "titik_kontrol": [
   "Manajer mengesahkan masukan gaji (bonus, rapel, THR) sebelum dihitung",
   "Manajer mengesahkan perubahan gaji dan penugasan karyawan",
-  "Manajer mengesahkan proses gaji; Finance tidak bisa mengesahkan",
+  "Proses gaji disahkan orang kedua (Manajer atau Finance lain) — aturan dua orang menolak pengaju mengesahkan sendiri",
   "Kontrol dua orang (Pengaturan › Persetujuan › Kontrol dua orang, bawaan mati): bila dinyalakan untuk proses gaji, pengaju proses tidak boleh mengesahkan, memposting, atau membayarnya",
   "Bayar hanya dari rekening berperuntukan Gaji, tidak sebelum tanggal jurnal gaji",
-  "Anulir proses yang diposting hanya Manajer; gaji yang dibayar dikoreksi lewat proses susulan",
+  "Anulir proses yang diposting butuh izin Proses Penggajian › Batalkan; gaji yang dibayar dikoreksi lewat proses susulan",
   "Setoran tidak boleh melebihi sisa kewajiban masa itu"
  ],
  "cek_buku": [
@@ -191,7 +191,7 @@
   "Membayar sebelum proses diposting. Antrean Gaji siap dibayar hanya memuat proses Diposting.",
   "Lupa menyetor BPJS dan PPh 21 bulan berikutnya: kartu Setoran & Pajak menandai sisa kewajiban."
  ],
- "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Gambar langkah 6 dari uji F15 peserta 55 sesudah perubahan izin (Finance kini membuka hub Penggajian di tab Proses Gaji, lalu tab Setoran & Pajak). Angka contoh jurnal reguler dari data acuan KSC/PAY-00001.",
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Sejak K-FIN-01 (17 Nov) peran bawaan Finance juga memegang izin mengesahkan dan membatalkan (Proses Penggajian › Setujui · Batalkan); yang menentukan adalah izin di peran, bukan nama peran. Di latihan pengesahan tetap diperagakan Manajer sebagai orang kedua. Gambar langkah 6 dari uji F15 peserta 55 sesudah perubahan izin (Finance kini membuka hub Penggajian di tab Proses Gaji, lalu tab Setoran & Pajak). Angka contoh jurnal reguler dari data acuan KSC/PAY-00001.",
  "uji": {
   "berkas": "uji/sdm/K09_konfigurasi_sdm.js · uji/sdm/H01_karyawan_baru.js … H04_bayar_gaji_slip.js · uji/F15_setoran_gaji.js",
   "peserta_uji": "01 (K09, H01–H04, F15)"

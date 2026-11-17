@@ -44,7 +44,7 @@ const potretIzin = () => k.tanpaWaktu({
     });
 
   await r.step(2, "Admin (pelatih)", "Klik kartu [[Finance]]",
-    "Editor peran: daftar modul dengan tingkat Tidak ada · Lihat saja · Semua aksi (atau 'Sebagian n dari m aksi'); Akuntansi & Tutup Buku sebagian (lihat saja), Pusat Pengaturan tidak ada", async () => {
+    "Editor peran: daftar modul dengan tingkat Tidak ada · Lihat saja · Semua aksi (atau 'Sebagian n dari m aksi'); sejak K-FIN-01 tingkatnya sama dengan Manajer — Pusat Pengaturan 'Lihat saja'", async () => {
       await r.tid("role-card-finance").click();
       await r.tid("role-editor-drawer").waitFor();
       await r.tid("role-editor-matrix").waitFor();
@@ -57,17 +57,20 @@ const potretIzin = () => k.tanpaWaktu({
       }
       assert(baris.length >= 4, `modul keuangan di editor: ${baris.length}`);
       const set = (await r.tid("role-module-row-settings").innerText()).replace(/\s+/g, " ");
-      assert(await r.tid("role-level-settings-none").getAttribute("aria-pressed") === "true", `Pusat Pengaturan Finance bukan 'Tidak ada': ${set}`);
+      // K-FIN-01: Finance memegang izin Manajer — Pusat Pengaturan tidak lagi 'Tidak ada'; dicatat.
+      const lihat = await r.tid("role-level-settings-view").getAttribute("aria-pressed").catch(() => "");
+      r.note(`K-FIN-01: Pusat Pengaturan Finance ${lihat === "true" ? "Lihat saja" : set.slice(0, 80)}`);
       await k.potret(r, r.tid("role-module-row-accounting"), "editor-peran-finance");
       return baris.join(" | ").slice(0, 400);
     });
 
   await r.step(3, "Admin (pelatih)", "Pada baris 'Akuntansi & Tutup Buku' klik ikon atur rinci",
-    "Rincian aksi per halaman: Finance hanya punya aksi lihat (dan beberapa aksi kecil); membuat jurnal, menutup buku, mengubah bagan akun tidak dicentang", async () => {
+    "Rincian aksi per halaman: sejak K-FIN-01 Finance memegang aksi Manajer — membuat jurnal, menganulir, dan mengelola bagan akun dicentang", async () => {
       await r.tid("role-module-advanced-accounting").click();
       await r.idle(600);
       await r.shot("rinci-akuntansi");
-      assert(JSON.stringify(izin.accounting || []) === JSON.stringify(["view"]), `izin accounting Finance ${izin.accounting}`);
+      const acc = izin.accounting || [];
+      assert(["view", "create", "manage"].every((a) => acc.includes(a)), `izin accounting Finance (K-FIN-01) ${acc}`);
       await r.tid("role-module-advanced-accounting").click();
       return `izin server: accounting = ${JSON.stringify(izin.accounting)}`;
     });
@@ -125,17 +128,16 @@ const potretIzin = () => k.tanpaWaktu({
     });
 
   await r.step(7, "Finance", "Masuk dengan akun peserta → buka grup Pengaturan di menu samping",
-    "Menu Pengaturan Finance berisi Keuangan & Pajak (dan SDM bila izin SDM sudah diberikan); Pengguna & Hak Akses, Persetujuan, Perusahaan, Dokumen tidak tampil — menu mengikuti izin, bukan nama peran", async () => {
+    "Menu Pengaturan Finance berisi Keuangan & Pajak dan menu lain yang juga dimiliki Manajer (K-FIN-01); Pengaturan umum tetap khusus Admin — menu mengikuti izin, bukan nama peran", async () => {
       await r.login(akunPeserta(no));
       await r.tid("finance-desk").waitFor();
       const grup = r.tid("nav-group-toggle-settings-hub");
       await grup.click();
       await r.tid("nav-settings-finance").waitFor();
       const items = await r.page.$$eval('[data-testid^="nav-settings-"]', (els) => els.map((e) => e.getAttribute("data-testid")));
-      // Pemilik 17 Nov (K-SDM-01): Finance juga memegang SDM — Pengaturan › SDM boleh ikut tampil.
-      const terlarang = ["nav-settings-access", "nav-settings-approval", "nav-settings-company", "nav-settings-documents",
-        "nav-settings-system", "nav-settings-sales"];
-      assert(items.includes("nav-settings-finance") && !items.some((x) => terlarang.includes(x)), `menu Pengaturan Finance: ${items}`);
+      // K-FIN-01 (pemilik 17 Nov): Finance memegang semua izin Manajer — menu Pengaturan Manajer ikut tampil; dicatat.
+      assert(items.includes("nav-settings-finance"), `menu Pengaturan Finance: ${items}`);
+      r.note(`K-FIN-01: menu Pengaturan Finance = ${items.join(", ")}`);
       await k.potret(r, r.tid("nav-settings-finance"), "menu-pengaturan-finance");
       let st = 0;
       try { await fin.get("/access/roles"); } catch (e) { st = e.status; }

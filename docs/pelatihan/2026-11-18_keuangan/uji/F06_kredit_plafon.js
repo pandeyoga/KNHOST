@@ -33,7 +33,7 @@ async function tungguSaring(r, q) {
     const profil = mongo(`return db.credit_profile_requests.findOne({customer_id:"${cust.id}",status:"diajukan"},{_id:0,id:1})`);
 
     await r.step(1, "Finance", "Masuk → Keuangan › Piutang › Kredit & Plafon; antrean 'Menunggu keputusan', cari 'Latihan NN'",
-      `Baris 'Izin kredit' ${rp(izin.nominal)} (pengaju Ayu Marketing)${profil ? " dan 'Ubah Profil' Rp 300.000.000" : ""}; tidak ada tombol Setujui/Tolak`,
+      `Baris 'Izin kredit' ${rp(izin.nominal)} (pengaju Ayu Marketing)${profil ? " dan 'Ubah Profil' Rp 300.000.000" : ""}; Finance juga melihat tombol Setujui/Tolak (K-FIN-01) — keputusan di latihan ini diperagakan Manajer`,
       async () => {
         await r.login(akunPeserta(NO));
         await bukaMenu(r, "ar-aging", "credit-overrides", { nama: "menu-kredit" });
@@ -49,7 +49,7 @@ async function tungguSaring(r, q) {
           const tp = (await r.tid(`credit-desk-row-${profil.id}`).innerText()).replace(/\s+/g, " ");
           assert(/Ubah Profil/i.test(tp) && /300\.000\.000/.test(tp), `baris profil: ${tp}`);
         }
-        assert(await r.page.locator('[data-testid^="credit-desk-approve-"]').count() === 0, "Finance melihat tombol Setujui");
+        await r.kfin(r.page.locator('[data-testid^="credit-desk-approve-"]'), "tombol Setujui izin kredit");
         await sorot(row);
         await klikSorot(r, r.tid(`credit-desk-open-${izin.izin_id}`), "antrean-menunggu-keputusan");
         await lepas(row);

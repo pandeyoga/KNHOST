@@ -2,52 +2,56 @@ Sukacita Textile
 Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
 
 
-                                                                                                                 FAKTUR
-                                                                      No. KSC/INV-00051 · 17 Nov 2026 · LUNAS
+                                                                                                                   FAKTUR
+                                                             No. KSC/INV-00053 · 18 Nov 2026 · BELUM DIBAYAR
 
              REFERENSI DOKUMEN
-             Merujuk: PICK-CB065C · KSC/SJ-00052 · KSC/AR-00026
-             Menurunkan Tugas Pengambilan PICK-CB065C · Menurunkan Surat Jalan / Pengiriman KSC/
-             SJ-00052 · Dilunasi oleh Kwitansi Pelanggan KSC/AR-00026
+             Merujuk: PICK-535552 · KSC/SJ-00054
+             Menurunkan Tugas Pengambilan PICK-535552 · Menurunkan Surat Jalan / Pengiriman KSC/
+             SJ-00054
              Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
 
 
-DARI                                                                                                         TAGIHAN KEPADA
-Sukacita Textile                                                             Latihan 76 · Toko Kain Peserta 76
-Jl. Soekarno Hatta No. 100, Bandung                          Jl. Latihan Keuangan No. 76, Bandung, Kota Bandung
-No. Pesanan          KSC/SO-00051                              Termin Bayar         Kredit NET 30 Hari
+DARI                                                                                                           TAGIHAN KEPADA
+Sukacita Textile                                                              Latihan 72 · Toko Kain Peserta 72
+Jl. Soekarno Hatta No. 100, Bandung                           Jl. Latihan Keuangan No. 72, Bandung, Kota Bandung
+No. Pesanan          KSC/SO-00053                               Termin Bayar           Kredit NET 30 Hari
 Penjualan
-Jatuh Tempo          Lunas                                     Status Bayar         Lunas
-Dicetak              17 Nov 2026
+Jatuh Tempo          18 Des 2026                                Status Bayar           Belum dibayar
+Dicetak              18 Nov 2026
 
- NO    SKU                                PRODUK             ROLL         JUMLAH        HARGA          DISC        SUBTOTAL
+ NO    SKU                                    PRODUK             ROLL      JUMLAH         HARGA          DISC        SUBTOTAL
 
-       KNWVN0015-L-TAUX-                  DENIM TENCEL
-   1                                                             1    122,03 yard   Rp 25.000               0%   Rp 3.050.750
-       XA-XX-XX                           TAUPE A
+       KNWVN0015-L-TAUX-XA-                   DENIM TENCEL
+   1                                                                 1    125 yard    Rp 25.000               0%   Rp 3.125.000
+       XX-XX                                  TAUPE A
 
-                                                                  DPP (harga sebelum PPN)                         Rp 3.050.750
-                                                                  DPP nilai lain (11/12)                     Rp 2.796.520,83
-                                                                  PPN 12% × DPP nilai lain                       Rp 335.582,50
+                                                                  DPP (harga sebelum PPN)                          Rp 3.125.000
+                                                                  DPP nilai lain (11/12)                       Rp 2.864.583,33
+                                                                  PPN 12% × DPP nilai lain                           Rp 343.750
 
-                                                                     Total (termasuk                  Rp 3.386.332,50
-                                                                     PPN)
-                                                                  Sudah dibayar                              Rp 3.386.332,50
-                                                                  Sisa tagihan                                            Rp 0
-Terbilang: Tiga juta tiga ratus delapan puluh enam ribu tiga ratus tiga puluh dua rupiah lima puluh
-sen
+                                                                    Total (termasuk PPN)                      Rp 3.468.750
+                                                                  Sudah dibayar                                             Rp 0
+                                                                  Sisa tagihan                                     Rp 3.468.750
+Terbilang: Tiga juta empat ratus enam puluh delapan ribu tujuh ratus lima puluh rupiah
+Jatuh Tempo & Sisa Tagihan
 
+ TAGIHAN                                      JATUH TEMPO                NILAI       SUDAH DIBAYAR                         SISA
 
-                     Hormat Kami                                                      Diterima
-
-
+ Surat jalan KSC/SJ-00054                     18 Des 2026      Rp 3.468.750                          Rp 0          Rp 3.468.750
 
 
-                      ( ................. )                                         ( ................. )
-                          Finance                                                      Customer
+
+                     Hormat Kami                                                        Diterima
 
 
 
 
-                                                                                                                       Hal. 1 / 1
+                      ( ................. )                                           ( ................. )
+                          Finance                                                        Customer
+
+
+
+
+                                                                                                                         Hal. 1 / 1
 

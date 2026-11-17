@@ -88,7 +88,7 @@
    "menu": "Kartu pelanggan › Kredit",
    "aksi": "Baca kotak 'Menunggu keputusan' di bawah profil kredit.",
    "isi": "",
-   "hasil": "Kotak 'Menunggu keputusan' berisi pengajuan KSC/PKR-… 'Jenis plafon → khusus, Plafon kredit → Rp 300.000.000' (contoh) dengan pengaju dan alasannya (pada data latihan baru: 'Plafon diusulkan saat pelanggan dibuat'). Tombol [[Ajukan perubahan]] mati dengan tulisan 'Masih ada pengajuan yang menunggu keputusan — putuskan atau batalkan dulu.' Finance tidak punya tombol Setujui.",
+   "hasil": "Kotak 'Menunggu keputusan' berisi pengajuan KSC/PKR-… 'Jenis plafon → khusus, Plafon kredit → Rp 300.000.000' (contoh) dengan pengaju dan alasannya (pada data latihan baru: 'Plafon diusulkan saat pelanggan dibuat'). Tombol [[Ajukan perubahan]] mati dengan tulisan 'Masih ada pengajuan yang menunggu keputusan — putuskan atau batalkan dulu.' Tombol [[Setujui]] tampil bagi pemegang izin Profil Kredit Pelanggan › Setujui (peran bawaan Finance sejak K-FIN-01); di latihan keputusan diperagakan Manajer.",
    "gambar": "uji/hasil/K06/03-menunggu-keputusan.png"
   },
   {
@@ -184,7 +184,7 @@
   "Mengira 'Termin bawaan' langsung terpakai di pesanan: layar menulis 'belum dipakai saat pesanan dibuat'; yang dijaga sistem adalah daftar termin yang diizinkan.",
   "Tidak mencentang termin apa pun lalu mengira pelanggan tidak boleh kredit: kosong berarti semua termin aktif PT boleh."
  ],
- "catatan_pelatih": "Pengajuan plafon Rp 300.000.000 sudah dibuat saat data latihan disiapkan, jadi peserta langsung melihat kotak 'Menunggu keputusan' (bila sudah diputus, peserta mengajukan plafon sendiri lewat [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini). Persetujuan (langkah 4–6 dan 9–10) serta langkah 11–12 diperagakan pelatih dengan akun Manajer. Finance tidak punya menu Master per PT dan Pemasok, jadi bagian termin pemasok cukup ditunjukkan. Jalankan K06 sebelum F06 (Kredit & Plafon) agar antrean F06 sudah dikenal peserta.",
+ "catatan_pelatih": "Pengajuan plafon Rp 300.000.000 sudah dibuat saat data latihan disiapkan, jadi peserta langsung melihat kotak 'Menunggu keputusan' (bila sudah diputus, peserta mengajukan plafon sendiri lewat [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini). Persetujuan (langkah 4–6 dan 9–10) serta langkah 11–12 diperagakan pelatih dengan akun Manajer. Bagian termin pemasok cukup ditunjukkan. Jalankan K06 sebelum F06 (Kredit & Plafon) agar antrean F06 sudah dikenal peserta.",
  "uji": {
   "berkas": "uji/konfigurasi/K06_termin_plafon.js",
   "peserta_uji": "01"

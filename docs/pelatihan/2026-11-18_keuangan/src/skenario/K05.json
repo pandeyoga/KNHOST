@@ -10,7 +10,7 @@
   "Pajak: Tarif PPN 12 % dengan DPP nilai lain 11/12, jadi PPN efektif 11 % dari harga jual (contoh: DPP Rp 1.680.000 → PPN Rp 184.800).",
   "Pembayaran pelanggan: syarat bayar bawaan NET30; bunga denda 2 % per bulan dengan masa tenggang; selisih bayar sampai Rp 5.000 dianggap lunas; nomor referensi kwitansi bisa diwajibkan; tunai yang diterima sales di Sukacita dicatat sebagai titipan sampai disetor. Kas kecil: LPJ bisa diwajibkan berlampiran bukti. Daftar cara bayar ada di Pengaturan › Perusahaan (PT) › Master per PT › Cara Bayar.",
   "Mengubah aturan berlaku seketika untuk perhitungan berikutnya dan tercatat di riwayat (siapa, kapan, alasan). Aturan berisiko tinggi wajib beralasan. 'Ikuti nilai grup' mencabut nilai khusus PT sehingga PT kembali memakai aturan grup.",
-  "Yang boleh mengubah ditentukan izin per aturan: aturan umum butuh izin kelola pengaturan (bawaan Admin); sebagian aturan pajak/akuntansi, kas, dan kredit bisa diubah pemegang izin modul itu. Finance tidak membuka layar ini; Finance melihat akibatnya di layar kerja."
+  "Yang boleh mengubah ditentukan izin per aturan: aturan umum butuh izin kelola pengaturan (bawaan Admin); sebagian aturan pajak/akuntansi, kas, dan kredit bisa diubah pemegang izin modul itu. Layar ini terbuka bagi pemegang izin lihat pengaturan (peran bawaan Finance sejak K-FIN-01); aturan umum hanya bisa diubah pemegang izin kelola pengaturan."
  ],
  "peran": "Admin (pelatih) · Finance (akun peserta)",
  "menit": 25,
@@ -163,7 +163,7 @@
   "Mengubah aturan dengan *Berlaku untuk* 'Semua PT' padahal maksudnya satu PT — semua PT tanpa nilai sendiri ikut berubah.",
   "Mengira 'Pakai nilai bawaan sistem' sama dengan 'Ikuti nilai grup': yang pertama menulis nilai bawaan sebagai nilai khusus PT, yang kedua mencabut nilai khusus PT.",
   "Lupa mengisi alasan pada aturan berisiko tinggi — tombol Simpan tidak aktif.",
-  "Menganggap Finance bisa melihat layar ini: Finance hanya melihat Pengaturan › Keuangan & Pajak › Pemetaan Akun; aturan dibaca bersama pelatih."
+  "Mengubah aturan saat kelas: aturan berlaku untuk semua orang di PT itu. Peserta membaca aturan bersama pelatih; yang mengubah hanya pelatih, lalu langsung dikembalikan."
  ],
  "catatan_pelatih": "Seluruh perubahan aturan diperagakan pelatih dengan akun Admin (Manajer hanya bisa membaca aturan umum; mengubah 'Kelompok umur piutang' butuh izin kelola pengaturan). Ubah hanya untuk Sukacita dan kembalikan dengan 'Ikuti nilai grup' sebelum lanjut — pengaturan dipakai semua peserta. Selama ± 1 menit kolom umur di layar Piutang semua peserta ikut berubah; itu justru bagian demo. Jangan peragakan perubahan PPN atau toleransi selisih bayar di kelas (berisiko tinggi dan memengaruhi pembayaran yang sedang dicatat peserta lain).",
  "uji": {

@@ -2,7 +2,7 @@
   "code": "F11",
   "title": "Bayar tagihan supplier",
   "ok": true,
-  "at": "2026-11-17T14:17:19.965Z",
+  "at": "2026-11-17T18:15:03.314Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Login dengan akun Finance peserta, buka Keuangan › Hutang",
       "expect": "Tab Tagihan tampil: kartu umur hutang + daftar tagihan PT Sukacita",
       "ok": true,
-      "ms": 5512,
+      "ms": 6398,
       "info": "Total hutang TOTAL HUTANG (AP) Rp 22.066.800 belum dibayar"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Ketik \"Latihan 01\" di kotak cari",
       "expect": "Hanya tagihan pemasok peserta yang tampil; tagihan bayar berstatus Terposting dengan Sisa = Total",
       "ok": true,
-      "ms": 1354,
+      "ms": 1368,
       "info": "2 tagihan pemasok Latihan 01: VB-00002 Latihan 01 · Pemasok Grey Peserta 01 Sukacita KSC/PO-00002 · 1 item Rp 1.864.800 Rp 1.864.800 Cocok Terposting INV-LTH01-0464D Baya"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Klik [[Detail →]] pada tagihan bayar",
       "expect": "Rincian: Terposting · Match Bersih, \"3-way match bersih: qty & harga sesuai PO/penerimaan\" (Pesan = Terima = Tagih, Harga PO = Harga Bill), Dokumen Terkait: PO & jurnal; di kaki hanya tombol [[Bayar]]",
       "ok": true,
-      "ms": 1150,
+      "ms": 1069,
       "info": "baris: Grey Woven Katun Poplin DMO-GRY-WVN-001 120 120 120 Rp 14.000 Rp 14.000 Rp 1.680.000 · PPN PPN MASUKAN Rp 184.800"
     },
     {
@@ -38,7 +38,7 @@
       "action": "Klik [[Bayar]] → pilih *Rekening sumber* BCA Operasional KSC",
       "expect": "Form Bayar pemasok: Sisa hutang = total tagihan, Nominal terisi penuh, Cara bayar Transfer",
       "ok": true,
-      "ms": 1391,
+      "ms": 1066,
       "info": "nominal 1864800 · cara Transfer bank · PT PT: Sukacita"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Klik [[Bayar]] lalu [[Ya, bayar]] pada konfirmasi",
       "expect": "Konfirmasi menyebut nominal, pemasok, rekening & PT; sesudahnya rincian berstatus Lunas, Sisa Hutang Rp 0",
       "ok": true,
-      "ms": 1715,
+      "ms": 1886,
       "info": "konfirmasi: \"Bayar Rp 1.864.800 ke Latihan 01 · Pemasok Grey Peserta 01 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · DB paid · kas KSC/CASH-00037"
     },
     {
@@ -56,8 +56,8 @@
       "action": "Cek buku: jurnal pembayaran",
       "expect": "Hutang Usaha (D) / Bank BCA Operasional (K) sebesar total tagihan, seimbang",
       "ok": true,
-      "ms": 1624,
-      "info": "KSC/JE-00216 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · kas KSC/CASH-00037 dari BCA Operasional KSC"
+      "ms": 1651,
+      "info": "KSC/JE-00219 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · kas KSC/CASH-00037 dari BCA Operasional KSC"
     },
     {
       "no": 7,
@@ -65,15 +65,14 @@
       "action": "Tutup rincian, buka tab [[GR/IR (Diterima Belum Ditagih)]], cari nomor PO, centang *Tampilkan yang sudah nol*",
       "expect": "Baris PO: Nilai diterima = Sudah ditagih (DPP), Sisa GR/IR Rp 0",
       "ok": true,
-      "ms": 17271,
-      "info": "KSC/PO-00002 Latihan 01 · Pemasok Grey Peserta 01 Selesai Rp 1.680.000 Rp 1.680.000 Rp 0 Rp 0 Rp 0 0 —"
+      "ms": 16886,
+      "info": "KSC/PO-00002 Latihan 01 · Pemasok Grey Peserta 01 Selesai Rp 1.680.000 Rp 1.680.000 Rp 0 Rp 0 Rp 0 1 Sisa sudah nol"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
-    "Peserta 01 · VB-00002 · PO KSC/PO-00002 · total Rp 1.864.800 · status awal posted"
+    "Peserta 01 · VB-00002 · PO KSC/PO-00002 · total Rp 1.864.800 · status awal posted",
+    "K-FIN-01: tombol Batalkan tagihan tampil untuk Finance"
   ]
 }

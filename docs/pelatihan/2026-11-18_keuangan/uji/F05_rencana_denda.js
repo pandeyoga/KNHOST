@@ -8,6 +8,17 @@ const { bersihkanHasil } = require("./piutang_lib");
 const NO = peserta("02");
 const r2 = (v) => Math.round(Number(v || 0) * 100) / 100;
 
+/** Tunggu sampai teks locator memenuhi syarat (data dimuat async; saat mesin sibuk "Memuat…" bisa beberapa detik). */
+async function tungguTeks(loc, syarat, ms = 25000) {
+  const t0 = Date.now(); let t = "";
+  while (Date.now() - t0 < ms) {
+    t = (await loc.innerText().catch(() => "")).replace(/\s+/g, " ");
+    if (syarat(t)) return t;
+    await new Promise((res) => setTimeout(res, 500));
+  }
+  return t;
+}
+
 (async () => {
   bersihkanHasil("F05");
   const r = await new Run("F05", "Rencana pembayaran (cicilan) & denda keterlambatan").start();
@@ -17,7 +28,7 @@ const r2 = (v) => Math.round(Number(v || 0) * 100) / 100;
     assert(k && k.so_id, `Kartu peserta ${NO} belum punya b_piutang:cicilan — jalankan seed … --hanya b_piutang:`);
     const plan = mongo(`return db.payment_plans.findOne({id:"${k.rencana_id}"},{_id:0})`);
     const l1 = plan.lines[0];
-    const hariTelat = Math.round((Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(l1.due_date)) / 86400000);
+    const hariTelat = Math.round((Date.parse(new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)) - Date.parse(l1.due_date)) / 86400000);   // hari WIB
     const sisa1 = r2(l1.amount - (l1.paid_amount || 0));
     const dendaHarap = r2(sisa1 * 0.02 * (hariTelat / 30));          // aturan bawaan: 2 %/bulan, tenggang 0, dasar = cicilan
     r.note(`Peserta ${NO} · ${k.pelanggan} · ${k.so} · ${k.rencana} · cicilan 1 ${sisa1} telat ${hariTelat} hari → denda ${dendaHarap}`);
@@ -52,8 +63,7 @@ const r2 = (v) => Math.round(Number(v || 0) * 100) / 100;
         await klikSorot(r, r.tid("so-open-full-detail"), "lihat-detail-pesanan");
         const panel = r.tid("so-payment-panel");
         await panel.waitFor({ timeout: 20000 });
-        await r.idle(1200);
-        const t = (await panel.innerText()).replace(/\s+/g, " ");
+        const t = await tungguTeks(panel, (x) => /1 baris telat/.test(x) && x.includes("Cicilan 1"));   // "Memuat jadwal…" dulu
         assert(/1 baris telat/.test(t) && t.includes("Cicilan 1"), `panel jadwal: ${t.slice(0, 300)}`);
         assert(await r.tid("sop-accrue").count() === 1 && await r.tid("sop-edit").count() === 1, "tombol Hitung Denda/Ubah Jadwal tidak ada");
         await sorot(panel);
@@ -84,8 +94,7 @@ const r2 = (v) => Math.round(Number(v || 0) * 100) / 100;
       `Cicilan 1 'Telat ${hariTelat} hari'; est. denda ${rp(dendaHarap)} belum jadi nota; tombol [Buat Nota Denda] aktif`, async () => {
         const m = r.tid("ar-aging-detail-modal");
         await m.waitFor();
-        await r.idle(1200);
-        const t = (await m.innerText()).replace(/\s+/g, " ");
+        const t = await tungguTeks(m, (x) => x.includes("Cicilan 1") && x.includes(rp(dendaHarap).replace("Rp ", "")));
         assert(t.includes("Cicilan 1") && t.includes(rp(dendaHarap).replace("Rp ", "")), `rincian: ${t.slice(0, 400)}`);
         assert(!(await r.tid("ar-aging-accrue").isDisabled()), "tombol Buat Nota Denda mati");
         await klikSorot(r, r.tid("ar-aging-accrue"), "umur-rincian-sebelum-nota");

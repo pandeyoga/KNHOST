@@ -59,9 +59,9 @@
    "no": 1,
    "peran": "Finance",
    "menu": "Pengaturan › Keuangan & Pajak",
-   "aksi": "Masuk dengan akun peserta. Klik grup PENGATURAN, lalu klik [[Keuangan & Pajak]].",
+   "aksi": "Masuk dengan akun peserta. Klik grup PENGATURAN, lalu [[Keuangan & Pajak]], lalu tab [[Pemetaan Akun]].",
    "isi": "",
-   "hasil": "Terbuka 'Pemetaan Akun'. Kartu: Kebutuhan akun (contoh 60), Belum diatur (contoh 2), Diubah dari bawaan, Khusus PT ini. Kotak biru: 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'",
+   "hasil": "Tab 'Pemetaan Akun' terbuka (tab lain — Aturan Keuangan & Pajak, Kategori Beban, Bank — tampil menurut izin peran Anda). Kartu: Kebutuhan akun (contoh 60), Belum diatur (contoh 2), Diubah dari bawaan, Khusus PT ini. Kotak biru: 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'",
    "gambar": "uji/hasil/K02/02-pemetaan-akun.png"
   },
   {
@@ -156,7 +156,7 @@
   }
  ],
  "cek_buku": [
-  "Jurnal pendapatan kirim (contoh KSC/JE-00188): 1-1200 Piutang Usaha (D) Rp 3.277.553 · 4-1000 Pendapatan Penjualan (K) Rp 2.952.750 · 2-1200 PPN Keluaran (K) Rp 324.803 — seimbang, akun = pemetaan Penjualan.",
+  "Jurnal pendapatan kirim (contoh KSC/JE-00411): 1-1200 Piutang Usaha (D) Rp 3.277.553 · 4-1000 Pendapatan Penjualan (K) Rp 2.952.750 · 2-1200 PPN Keluaran (K) Rp 324.803 — seimbang, akun = pemetaan Penjualan.",
   "Jurnal tagihan pemasok terakhir Sukacita memakai 2-1150 GR/IR (D) + 1-1500 PPN Masukan (D) / 2-1100 Hutang Usaha (K) — akun = pemetaan Pembelian.",
   "Sesudah peragaan, pemetaan tersimpan Sukacita sama persis dengan sebelum latihan; yang tersisa hanya dua baris riwayat (ubah dan kembali)."
  ],

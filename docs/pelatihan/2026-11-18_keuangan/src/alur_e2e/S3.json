@@ -14,7 +14,7 @@
  ],
  "peran": "Sales · Admin Sales · Gudang · Manajer · Finance (akun peserta)",
  "menit": 60,
- "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30) dengan tiga SO terkirim belum dibayar: Kartu Peserta › SO untuk pelunasan penuh (contoh KSC/SO-00058 Rp 3.283.935), Kartu Peserta › SO untuk bayar sebagian (contoh KSC/SO-00059 Rp 3.292.260), dan satu SO terkirim tambahan yang disiapkan pelatih (contoh KSC/SO-00066 Rp 2.684.202). Produk DENIM TENCEL HITAM A Rp 20.000/yard, dijual per roll dari gudang Jakarta. Rekening penerimaan: BCA Operasional KSC. Akun peran: sales@, salesadmin@, warehouse@, manager@ (sandi demo12345) dan akun Finance peserta. Angka di bawah adalah contoh putaran uji peserta 72.",
+ "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30) dengan tiga SO terkirim belum dibayar: Kartu Peserta › SO untuk pelunasan penuh (contoh KSC/SO-00052 Rp 3.438.503), Kartu Peserta › SO untuk bayar sebagian (contoh KSC/SO-00053 Rp 3.468.750), dan satu SO terkirim tambahan yang disiapkan pelatih (contoh KSC/SO-00066 Rp 2.684.202). Produk DENIM TENCEL HITAM A Rp 20.000/yard, dijual per roll dari gudang Jakarta. Rekening penerimaan: BCA Operasional KSC. Akun peran: sales@, salesadmin@, warehouse@, manager@ (sandi demo12345) dan akun Finance peserta. Angka di bawah adalah contoh putaran uji peserta 72.",
  "alur": [
   {
    "peran": "Gudang",
@@ -211,7 +211,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Klik ikon dompet [[Terima pembayaran]] pada baris SO. Periksa alokasi = total SO, isi No. referensi, klik [[Simpan kwitansi]], lalu [[Ya, simpan]].",
    "isi": "*Alokasi*: Rp 5.300.916 (contoh, dua surat jalan) · *No. referensi*: nomor transfer",
-   "hasil": "Jendela konfirmasi menyebut nominal Rp 5.300.916, pelanggan, rekening BCA, dan PT. Sesudah [[Ya, simpan]]: 'Kwitansi KSC/AR-00043 (Rp 5.300.916) dicatat'. Satu kwitansi melunasi kedua surat jalan; piutang SO Rp 0 (contoh).",
+   "hasil": "Jendela konfirmasi menyebut nominal Rp 5.300.916, pelanggan, rekening BCA, dan PT. Sesudah [[Ya, simpan]]: 'Kwitansi KSC/AR-00041 (Rp 5.300.916) dicatat'. Satu kwitansi melunasi kedua surat jalan; piutang SO Rp 0 (contoh).",
    "gambar": "uji/hasil/S3/25-a-bayar-konfirmasi.png"
   },
   {
@@ -265,7 +265,7 @@
    "menu": "Penagihan & Penerimaan › Terima pembayaran",
    "aksi": "Klik ikon dompet [[Terima pembayaran]]. Baca baris 'Ditagih sekarang (uang muka)'. Isi No. referensi, klik [[Simpan kwitansi]], lalu [[Ya, simpan]].",
    "isi": "*Alokasi*: Rp 1.290.597 (terisi sendiri = uang muka) · *No. referensi*: nomor transfer",
-   "hasil": "Petunjuk 'Nominal sesuai tagihan — tidak ada selisih'. Kwitansi KSC/AR-00044 tersimpan. Buku: 1-1100 Kas Besar / Bank (D) Rp 1.290.597 · 2-1400 Uang Muka Pelanggan (K) Rp 1.290.597 — belum ada piutang dan pendapatan.",
+   "hasil": "Petunjuk 'Nominal sesuai tagihan — tidak ada selisih'. Kwitansi KSC/AR-00042 tersimpan. Buku: 1-1100 Kas Besar / Bank (D) Rp 1.290.597 · 2-1400 Uang Muka Pelanggan (K) Rp 1.290.597 — belum ada piutang dan pendapatan.",
    "gambar": "uji/hasil/S3/37-b-form-dp.png"
   },
   {
@@ -355,7 +355,7 @@
    "menu": "Keuangan › Piutang › Kasus",
    "aksi": "Manajer membuka kasus, klik [[Selesaikan lewat playbook]], pilih 'Kembalikan dari uang muka pelanggan', pilih rekening, pilih alasan, lalu [[Jalankan & selesaikan]].",
    "isi": "*Rekening kas/bank*: BCA Operasional KSC · *Nominal*: terisi dari kasus · *Alasan*: Pelanggan minta dana dikembalikan",
-   "hasil": "Kasus selesai. Buku: kas keluar KSC/CASH-00065; 2-1400 Uang Muka Pelanggan (D) Rp 1.394.271 · 1-1100 Kas Besar / Bank (K) Rp 1.394.271. Titipan pelanggan kembali Rp 0.",
+   "hasil": "Kasus selesai. Buku: kas keluar KSC/CASH-00056; 2-1400 Uang Muka Pelanggan (D) Rp 1.394.271 · 1-1100 Kas Besar / Bank (K) Rp 1.394.271. Titipan pelanggan kembali Rp 0.",
    "gambar": "uji/hasil/S3/61-c-kasus-selesaikan.png"
   },
   {
@@ -363,7 +363,7 @@
    "peran": "Finance",
    "menu": "Penagihan & Penerimaan › Terima pembayaran",
    "aksi": "Situasi D — satu transfer untuk beberapa tagihan. Klik ikon dompet pada SO tertua, pilih [[Tertua dulu]], isi Nominal diterima sesuai mutasi bank dan No. referensi.",
-   "isi": "*Nominal diterima*: Rp 4.283.935 (contoh: SO pertama penuh + Rp 1.000.000)",
+   "isi": "*Nominal diterima*: Rp 4.438.503 (contoh: SO pertama penuh, tampil Rp 3.438.503, + Rp 1.000.000)",
    "hasil": "Petunjuk kuning 'Kurang bayar … dari sisa tagihan pesanan tujuan' karena pelanggan punya tiga tagihan terbuka.",
    "gambar": "uji/hasil/S3/65-d-form.png"
   },
@@ -373,7 +373,7 @@
    "menu": "Terima pembayaran › Selisih Pembayaran",
    "aksi": "Klik [[Simpan kwitansi]]. Di jendela 'Selisih Pembayaran · Kurang bayar' pilih 'Sisa tetap jadi piutang', alasan 'Bayar sebagian (disepakati)', lalu simpan dan [[Ya, simpan]].",
    "isi": "*Keputusan*: Sisa tetap jadi piutang · *Alasan*: Bayar sebagian (disepakati)",
-   "hasil": "Satu kwitansi KSC/AR-00047 dengan dua alokasi: KSC/SO-00058 lunas, KSC/SO-00059 dibayar Rp 1.000.000, SO ketiga tetap. Buku: 1-1100 Kas Besar / Bank (D) Rp 4.283.935 · 1-1200 Piutang Usaha (K) Rp 4.283.935.",
+   "hasil": "Satu kwitansi KSC/AR-00045 dengan dua alokasi: KSC/SO-00052 lunas, KSC/SO-00053 dibayar Rp 1.000.000,50 (layar membulatkan menjadi Rp 1.000.001, karena SO pertama bernilai Rp 3.438.502,50 — lihat K-07), SO ketiga tetap. Buku: 1-1100 Kas Besar / Bank (D) Rp 4.438.503 · 1-1200 Piutang Usaha (K) Rp 4.438.503.",
    "gambar": "uji/hasil/S3/67-d-selisih.png"
   },
   {
@@ -382,7 +382,7 @@
    "menu": "Keuangan › Piutang › Saldo & Umur",
    "aksi": "Buka Saldo & Umur, cari pelanggan, klik barisnya.",
    "isi": "",
-   "hasil": "SO pertama tidak tampil lagi; KSC/SO-00059 sisa Rp 2.292.260; SO ketiga utuh — keduanya 'Belum jatuh tempo'.",
+   "hasil": "SO pertama tidak tampil lagi; KSC/SO-00053 sisa Rp 2.468.750; SO ketiga utuh — keduanya 'Belum jatuh tempo'.",
    "gambar": "uji/hasil/S3/70-d-umur-rincian.png"
   },
   {
@@ -390,7 +390,7 @@
    "peran": "Finance",
    "menu": "Penagihan & Penerimaan › Terima pembayaran",
    "aksi": "Situasi E — transfer dipotong biaya bank. Pelanggan melunasi sisa, tetapi yang masuk kurang Rp 6.500. Klik ikon dompet pada SO, ganti alokasi menjadi nominal yang benar-benar masuk.",
-   "isi": "*Alokasi*: Rp 2.285.760 (sisa Rp 2.292.260 − Rp 6.500, contoh)",
+   "isi": "*Alokasi*: Rp 2.462.250 (sisa Rp 2.468.750 − Rp 6.500, contoh)",
    "hasil": "Petunjuk kuning 'Kurang bayar Rp 6.500' — di atas toleransi Rp 5.000, jadi harus diputus.",
    "gambar": "uji/hasil/S3/72-e-form-bank.png"
   },
@@ -400,7 +400,7 @@
    "menu": "Terima pembayaran › Selisih Pembayaran",
    "aksi": "Klik [[Simpan kwitansi]]. Pilih 'Sisa tetap jadi piutang', alasan 'Dipotong biaya bank', isi catatan, lalu simpan dan [[Ya, simpan]].",
    "isi": "*Keputusan*: Sisa tetap jadi piutang · *Alasan*: Dipotong biaya bank",
-   "hasil": "Kwitansi tersimpan; sisa SO Rp 6.500. Buku: 1-1100 Kas Besar / Bank (D) Rp 2.285.760 · 1-1200 Piutang Usaha (K) Rp 2.285.760.",
+   "hasil": "Kwitansi tersimpan; sisa SO Rp 6.500. Buku: 1-1100 Kas Besar / Bank (D) Rp 2.462.250 · 1-1200 Piutang Usaha (K) Rp 2.462.250.",
    "gambar": "uji/hasil/S3/74-e-bank-selisih.png"
   },
   {
@@ -458,12 +458,12 @@
   },
   {
    "tahap": "A · Satu kwitansi untuk dua surat jalan",
-   "dokumen": "KSC/AR-00043",
+   "dokumen": "KSC/AR-00041",
    "jurnal": "1-1100 Kas Besar / Bank (D) Rp 5.300.916 · 1-1200 Piutang Usaha (K) Rp 5.300.916"
   },
   {
    "tahap": "B · Uang muka diterima (sebelum kirim)",
-   "dokumen": "KSC/AR-00044",
+   "dokumen": "KSC/AR-00042",
    "jurnal": "1-1100 Kas Besar / Bank (D) Rp 1.290.597 · 2-1400 Uang Muka Pelanggan (K) Rp 1.290.597"
   },
   {
@@ -478,12 +478,12 @@
   },
   {
    "tahap": "B · Pelunasan sisa",
-   "dokumen": "KSC/AR-00045",
+   "dokumen": "KSC/AR-00043",
    "jurnal": "1-1100 Kas Besar / Bank (D) Rp 1.290.597 · 1-1200 Piutang Usaha (K) Rp 1.290.597"
   },
   {
    "tahap": "C · Uang muka diterima",
-   "dokumen": "KSC/AR-00046",
+   "dokumen": "KSC/AR-00044",
    "jurnal": "1-1100 Kas Besar / Bank (D) Rp 1.394.271 · 2-1400 Uang Muka Pelanggan (K) Rp 1.394.271"
   },
   {
@@ -493,18 +493,18 @@
   },
   {
    "tahap": "C · Titipan dikembalikan (Kasus)",
-   "dokumen": "KSC/CASE-00001 → KSC/CASH-00065",
+   "dokumen": "KSC/CASE-00001 → KSC/CASH-00056",
    "jurnal": "2-1400 Uang Muka Pelanggan (D) Rp 1.394.271 · 1-1100 Kas Besar / Bank (K) Rp 1.394.271"
   },
   {
    "tahap": "D · Satu transfer untuk dua SO",
-   "dokumen": "KSC/AR-00047",
-   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 4.283.935 · 1-1200 Piutang Usaha (K) Rp 4.283.935"
+   "dokumen": "KSC/AR-00045",
+   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 4.438.503 · 1-1200 Piutang Usaha (K) Rp 4.438.503"
   },
   {
    "tahap": "E · Transfer kurang Rp 6.500 (di atas toleransi)",
-   "dokumen": "KSC/AR-00048",
-   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 2.285.760 · 1-1200 Piutang Usaha (K) Rp 2.285.760"
+   "dokumen": "KSC/AR-00046",
+   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 2.462.250 · 1-1200 Piutang Usaha (K) Rp 2.462.250"
   },
   {
    "tahap": "E · Kasus biaya bank",
@@ -513,7 +513,7 @@
   },
   {
    "tahap": "E · Transfer kurang Rp 2.500 (di bawah toleransi)",
-   "dokumen": "KSC/AR-00049 + keputusan otomatis KSC/SLB-00029",
+   "dokumen": "KSC/AR-00047 + keputusan otomatis KSC/SLB-00005",
    "jurnal": "1-1100 Kas Besar / Bank (D) Rp 2.681.702 · 1-1200 Piutang Usaha (K) Rp 2.681.702 | 6-9100 Beban Selisih Pembayaran Pelanggan (D) Rp 2.500 · 1-1200 Piutang Usaha (K) Rp 2.500"
   }
  ],
@@ -539,7 +539,7 @@
   "Memilih 'Hapus sisa kurang bayar' untuk potongan biaya bank. Itu dibebankan ke Beban Selisih Pembayaran dan butuh Manajer; potongan biaya bank dicatat lewat Kasus biaya bank ke Beban Administrasi Bank.",
   "Menyimpan transfer gabungan dengan [[Atur sendiri]] hanya ke satu SO. Untuk satu transfer beberapa tagihan pakai [[Tertua dulu]] atau isi alokasi tiap SO."
  ],
- "catatan_pelatih": "Peragakan pada peserta peraga yang segar (pelanggan latihan dengan dua SO terkirim dari Kartu Peserta). SO ketiga dibuat pelatih sebelum kelas (uji otomatis membuatnya lewat endpoint resmi). Pakai beberapa jendela: Sales/Admin Sales, Gudang, Manajer, Finance. Roll latihan tidak bertag RFID, jadi setiap pengiriman butuh Override Manajer (satu Override untuk kedua surat jalan situasi A). Toleransi selisih bayar Rp 5.000 adalah pengaturan PT (Pusat Pengaturan › Uang Masuk & Piutang) — jangan diubah di kelas. Kasus diselesaikan Manajer: Finance hanya melapor. Layar Kasus memuat daftar pelanggan lengkap; tunggu sampai layar selesai dimuat sebelum [[Kasus baru]] (bila 'Jenis kasus' kosong, tutup lalu buka lagi). Saat menyelesaikan pengembalian titipan, pilih rekening BCA Operasional KSC (rekening latihan K04 yang masih aktif ikut tampil). Perbaikan 17 Nov dari uji ini: SO batal yang sudah ber-uang muka kini memindahkan uang mukanya ke titipan (dulu tertinggal di pesanan mati); membayar tepat uang muka tidak lagi dinilai 'Kurang bayar'; form Terima pembayaran mengisi uang muka yang ditagih (dulu seluruh sisa SO); penyelesaian Kasus yang memindahkan uang kini punya isian rekening.",
+ "catatan_pelatih": "Peragakan pada peserta peraga yang segar (pelanggan latihan dengan dua SO terkirim dari Kartu Peserta). SO ketiga dibuat pelatih sebelum kelas (uji otomatis membuatnya lewat endpoint resmi). Pakai beberapa jendela: Sales/Admin Sales, Gudang, Manajer, Finance. Roll latihan tidak bertag RFID, jadi setiap pengiriman butuh Override Manajer (satu Override untuk kedua surat jalan situasi A). Toleransi selisih bayar Rp 5.000 adalah pengaturan PT (Pusat Pengaturan › Uang Masuk & Piutang) — jangan diubah di kelas. Kasus diselesaikan pemegang izin penyelesaian kasus keuangan (di latihan: Manajer); pembuat kasus melapor. Layar Kasus memuat daftar pelanggan lengkap; tunggu sampai layar selesai dimuat sebelum [[Kasus baru]] (bila 'Jenis kasus' kosong, tutup lalu buka lagi). Saat menyelesaikan pengembalian titipan, pilih rekening BCA Operasional KSC (rekening latihan K04 yang masih aktif ikut tampil). Perbaikan 17 Nov dari uji ini: SO batal yang sudah ber-uang muka kini memindahkan uang mukanya ke titipan (dulu tertinggal di pesanan mati); membayar tepat uang muka tidak lagi dinilai 'Kurang bayar'; form Terima pembayaran mengisi uang muka yang ditagih (dulu seluruh sisa SO); penyelesaian Kasus yang memindahkan uang kini punya isian rekening.",
  "uji": {
   "berkas": "uji/situasi/S3_situasi_penjualan.js",
   "peserta_uji": "72 (peserta peraga)"

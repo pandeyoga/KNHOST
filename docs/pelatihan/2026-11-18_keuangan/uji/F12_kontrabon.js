@@ -30,14 +30,14 @@ const KSC = "&entity=ent_ksc";
     await r.idle(500);
   };
 
-  await r.step(1, "Finance", "Login akun Finance peserta, buka Keuangan › Hutang › tab [[Kontrabon]]", "Daftar kontrabon tampil; TIDAK ada tombol [[Kontrabon baru]] (Finance hanya melihat & membayar)", async () => {
+  await r.step(1, "Finance", "Login akun Finance peserta, buka Keuangan › Hutang › tab [[Kontrabon]]", "Daftar kontrabon tampil; Finance juga melihat tombol [[Kontrabon baru]] (K-FIN-01) — di latihan ini kontrabon dibuat Manajer", async () => {
     await r.login(akunPeserta(no));
     await r.tid("nav-accounts-payable").click();
     await r.tid("vendor-bills-view").waitFor();
     await klikPotret(r, r.tid("hub-tab-contra-bons"), "tab-kontrabon");
     await r.tid("contra-bons-view").waitFor();
     await r.idle(800);
-    assert(await r.tid("cb-new").count() === 0, "Finance melihat tombol Kontrabon baru");
+    await r.kfin(r.tid("cb-new"), "tombol Kontrabon baru");
     await r.shot("finance-kontrabon");
     return `kpi menunggu ${await r.text("cb-kpi-waiting")} · dijadwalkan ${await r.text("cb-kpi-scheduled")}`;
   });

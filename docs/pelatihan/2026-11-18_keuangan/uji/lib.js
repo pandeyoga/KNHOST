@@ -131,6 +131,14 @@ class Run {
 
   note(s) { this.notes.push(s); console.log("  · " + s); }
 
+  // K-FIN-01 (pemilik 17 Nov): Finance setara Manajer — tombol yang dulu disembunyikan dari Finance kini tampil. Dicatat
+  // (tampil / tidak tampil), tidak menggagalkan langkah; bukti layar K-FIN-01 ada di uji/variasi/V10.
+  async kfin(loc, label) {
+    const n = await loc.count();
+    this.note(`K-FIN-01: ${label} ${n ? "tampil" : "tidak tampil"} untuk Finance`);
+    return n > 0;
+  }
+
   async finish() {
     const ok = this.steps.length > 0 && this.steps.every((s) => s.ok) && this.httpErr.length === 0;
     const out = { code: this.code, title: this.title, ok, at: new Date().toISOString(), base: BASE,

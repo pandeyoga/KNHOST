@@ -444,9 +444,9 @@
   "Setiap mutasi bank masuk ditautkan ke transaksi kas yang sudah ada, sehingga saldo buku = rekening koran."
  ],
  "cek_buku": [
-  "Jurnal Pendapatan Kirim (contoh KSC/JE-00193): 1-1200 Piutang Usaha (D) Rp 2.615.160 = 4-1000 Pendapatan Penjualan (K) Rp 2.356.000 + 2-1200 PPN Keluaran (K) Rp 259.160 — seimbang.",
-  "Jurnal HPP Kirim (contoh KSC/JE-00194): 5-1000 Harga Pokok Penjualan (D) Rp 1.696.320 · 1-1300 Persediaan Barang (K) Rp 1.696.320 — seimbang. Laba kotor pesanan = Rp 2.356.000 − Rp 1.696.320 = Rp 659.680.",
-  "Jurnal kwitansi (contoh KSC/JE-00195): 1-1100 Kas Besar / Bank (D) Rp 2.615.160 · 1-1200 Piutang Usaha (K) Rp 2.615.160. Piutang SO: debit saat kirim − kredit saat bayar = Rp 0.",
+  "Jurnal Pendapatan Kirim (contoh KSC/JE-00197): 1-1200 Piutang Usaha (D) Rp 2.615.160 = 4-1000 Pendapatan Penjualan (K) Rp 2.356.000 + 2-1200 PPN Keluaran (K) Rp 259.160 — seimbang.",
+  "Jurnal HPP Kirim (contoh KSC/JE-00198): 5-1000 Harga Pokok Penjualan (D) Rp 1.696.320 · 1-1300 Persediaan Barang (K) Rp 1.696.320 — seimbang. Laba kotor pesanan = Rp 2.356.000 − Rp 1.696.320 = Rp 659.680.",
+  "Jurnal kwitansi (contoh KSC/JE-00199): 1-1100 Kas Besar / Bank (D) Rp 2.615.160 · 1-1200 Piutang Usaha (K) Rp 2.615.160. Piutang SO: debit saat kirim − kredit saat bayar = Rp 0.",
   "Faktur pajak dan pencocokan bank tidak membuat jurnal. PPN faktur = PPN Keluaran di jurnal pengiriman = Rp 259.160 (DPP nilai lain Rp 2.159.667).",
   "Nilai SO = faktur = kwitansi = transaksi kas = mutasi bank = Rp 2.615.160 (contoh peserta 21)."
  ],

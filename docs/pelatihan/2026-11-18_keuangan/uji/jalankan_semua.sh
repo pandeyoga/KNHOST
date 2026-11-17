@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Jalankan SEMUA materi pelatihan berurutan mengikuti kurikulum (src/kurikulum.json), seperti di kelas:
-#   Bagian 0 Pengantar → 1 Fondasi & Konfigurasi → 2 Alur ujung ke ujung → 3 Praktik per siklus → 4 Manajer,
+#   Bagian 0 Pengantar → 1 Fondasi & Konfigurasi → 2 Alur ujung ke ujung → 3 Praktik per siklus → 4 Manajer →
+#   5 Situasi khusus & koreksi (S1–S5),
 # lalu potret navigasi. Setiap skrip login lewat LAYAR dengan akun peran dan mencocokkan buku (jurnal, saldo, status).
 #
 #   KN_PESERTA=01 bash docs/pelatihan/2026-11-18_keuangan/uji/jalankan_semua.sh
@@ -12,7 +13,7 @@
 #   KN_PESERTA_A3J  peserta peraga retur penjualan (bawaan 41) · KN_PESERTA_A3B retur pembelian (42) ·
 #   KN_PESERTA_A3T  tukar barang (43) — alur 2 diperagakan pelatih dengan akun tiap peran, jadi dokumennya terpisah
 #                   dari dokumen latihan peserta kelas.
-#   KN_PESERTA_S1…S4  situasi khusus bagian 5 (bawaan 61, 66, 72, 76; peserta peraga tersendiri). S2: akun + pemasok
+#   KN_PESERTA_S1…S5  situasi khusus bagian 5 (bawaan 61, 66, 72, 76, 91; peserta peraga tersendiri). S2: akun + pemasok
 #                   saja; S3: hanya --hanya a_dasar:akun, a_dasar:mitra, a_dasar:so_ (dua SO terkirim BELUM dibayar).
 # Data: backend/scripts/seed_pelatihan_keuangan_kn.py --mulai NN --peserta NN untuk peserta kelas, A1, A3*;
 #       --hanya a_dasar:akun lalu --hanya a_dasar:mitra untuk A2. Peserta yang sudah dipakai tidak bisa diulang.
@@ -23,7 +24,7 @@ cd "$(dirname "$0")"
 export KN_PESERTA="${KN_PESERTA:-01}"
 A1="${KN_PESERTA_A1:-21}"; A2="${KN_PESERTA_A2:-31}"
 A3J="${KN_PESERTA_A3J:-41}"; A3B="${KN_PESERTA_A3B:-42}"; A3T="${KN_PESERTA_A3T:-43}"
-S1="${KN_PESERTA_S1:-61}"; S2="${KN_PESERTA_S2:-66}"; S3="${KN_PESERTA_S3:-72}"; S4="${KN_PESERTA_S4:-76}"
+S1="${KN_PESERTA_S1:-61}"; S2="${KN_PESERTA_S2:-66}"; S3="${KN_PESERTA_S3:-72}"; S4="${KN_PESERTA_S4:-76}"; S5="${KN_PESERTA_S5:-91}"
 
 # berkas[@peserta] — urutan = kurikulum
 URUT=(
@@ -51,7 +52,7 @@ URUT=(
   F17_laporan_keuangan F18_tutup_buku
   # 5 · Situasi khusus & koreksi (peraga; peserta tersendiri)
   "situasi/S1_amandemen_penjualan@$S1" "situasi/S2_amandemen_pembelian@$S2"
-  "situasi/S3_situasi_penjualan@$S3" "situasi/S4_koreksi_pembatalan@$S4"
+  "situasi/S3_situasi_penjualan@$S3" "situasi/S4_koreksi_pembatalan@$S4" "situasi/S5_per_pihak@$S5"
 )
 
 pilih() {   # true bila skrip termasuk KN_HANYA (kosong = semua)

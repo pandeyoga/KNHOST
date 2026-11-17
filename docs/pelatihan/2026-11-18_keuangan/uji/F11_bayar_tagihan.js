@@ -58,8 +58,8 @@ const { REK_BCA, pilih, setuju, jurnalDari, cekJurnal, tungguTeks, sorot, lepas,
     assert(num(await r.text("vb-fin-outstanding")) === Math.round(total), "Sisa Hutang ≠ total");
     const panel = (await r.tid("vendor-bill-detail-panel").innerText()).replace(/\s+/g, " ");
     assert(panel.includes(tg.po), `PO ${tg.po} tidak disebut di rincian`);
-    // Finance (lihat & bayar, K-17) tidak membatalkan tagihan — tombol Batalkan hanya untuk `vendor_bill.update`.
-    assert(await r.tid("vb-action-cancel-posted").count() === 0, "Finance melihat tombol Batalkan tagihan");
+    // K-FIN-01: Finance setara Manajer — tombol Batalkan tagihan (`vendor_bill.update`) kini juga tampil untuk Finance.
+    await r.kfin(r.tid("vb-action-cancel-posted"), "tombol Batalkan tagihan");
     await r.tid("vb-action-pay").waitFor();
     await sorot(r.tid("vb-action-pay"));
     await r.shot("rincian-3way");

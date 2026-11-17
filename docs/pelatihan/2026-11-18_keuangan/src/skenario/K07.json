@@ -7,7 +7,7 @@
  "kapan": "Saat tombol yang diharapkan tidak tampil atau layar menolak dengan pesan 'belum punya akses', dan saat bertanya siapa yang harus menyetujui sebuah dokumen.",
  "konsep": [
   "Wewenang ditentukan izin, bukan nama peran. Peran Finance berisi daftar modul dengan tingkat: Tidak ada, Lihat saja, Semua aksi, atau Sebagian (aksi tertentu saja). Menu dan tombol di layar mengikuti izin itu.",
-  "Contoh izin bawaan Finance: Akuntansi & Tutup Buku = lihat saja (Bagan Akun dan Jurnal tanpa tombol tulis); Pemetaan Akun = lihat & ubah; Kas & Bank = termasuk kelola rekening; Hutang = lihat & bayar; Pusat Pengaturan = tidak ada. SDM & Penggajian = menyiapkan data, menghitung, memposting, dan membayar gaji (keputusan pemilik 17 Nov).",
+  "Peran bisa kustom: tombol di layar mengikuti IZIN yang dicentang di peran, bukan nama perannya. Contoh peran bawaan Finance (K-FIN-01, keputusan pemilik 17 Nov): semua izin Manajer, ditambah Pemetaan Akun (ubah) dan Harga Internal antar-PT. Pengaturan umum, Pengguna & Hak Akses tetap khusus Admin. Kontrol dua orang tetap berlaku per pengguna: pembuat dokumen tidak bisa menyetujui dokumennya sendiri.",
   "Admin memberi izin di Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses: pilih tingkat per modul, klik Simpan, baca ringkasan perubahan, lalu konfirmasi. Peran bawaan dipakai semua akun berperan itu, jadi perubahan berlaku untuk semua orang Finance sekaligus.",
   "Aturan Persetujuan menentukan dokumen mana yang butuh persetujuan, mulai nominal berapa, dan oleh siapa. Contoh Sukacita: pesanan pembelian mulai Rp 100.000.000 butuh persetujuan, dan di atas Rp 500.000.000 ditambah jenjang Direksi. 'Coba nilai' menunjukkan siapa yang harus menyetujui tanpa membuat dokumen.",
   "Kontrol dua orang: pengaju tidak boleh memutuskan pengajuannya sendiri bila aturan PT memintanya (mis. perubahan rekening, uang muka di atas batas)."
@@ -70,7 +70,7 @@
    "menu": "Peran & Hak Akses",
    "aksi": "Klik kartu [[Finance]]. Gulir ke modul keuangan.",
    "isi": "",
-   "hasil": "Editor peran: tiap modul punya pilihan Tidak ada · Lihat saja · Semua aksi. Uang Masuk, Piutang & Faktur Pajak; Kas, Bank & Kasus Keuangan; Hutang Supplier & Kontrabon; Kas Kecil; Akuntansi & Tutup Buku tertulis 'Sebagian (n dari m aksi)'. Pusat Pengaturan: Tidak ada.",
+   "hasil": "Editor peran: tiap modul punya pilihan Tidak ada · Lihat saja · Semua aksi. Uang Masuk, Piutang & Faktur Pajak; Kas, Bank & Kasus Keuangan; Hutang Supplier & Kontrabon; Kas Kecil; Akuntansi & Tutup Buku tertulis 'Sebagian (n dari m aksi)'. Pusat Pengaturan: Lihat saja. Sejak K-FIN-01 tingkat tiap modul Finance sama dengan Manajer.",
    "gambar": "uji/hasil/K07/02-editor-peran-finance.png"
   },
   {
@@ -79,7 +79,7 @@
    "menu": "Editor peran Finance",
    "aksi": "Pada baris 'Akuntansi & Tutup Buku' klik ikon atur rinci.",
    "isi": "",
-   "hasil": "Rincian aksi per halaman: Finance hanya punya aksi lihat (dan beberapa aksi kecil). Membuat jurnal, menutup buku, dan mengubah Bagan Akun tidak dicentang — sebab itu tombol-tombol itu tidak tampil di layar Finance (lihat K01).",
+   "hasil": "Rincian aksi per halaman: sejak K-FIN-01 Finance memegang aksi Manajer — membuat jurnal, menganulir, dan mengelola Bagan Akun dicentang; sebab itu tombol-tombol itu tampil di layar Finance (lihat K01). Yang belum dicentang (mis. buka kembali periode) tetap khusus Admin.",
    "gambar": "uji/hasil/K07/03-rinci-akuntansi.png"
   },
   {
@@ -115,7 +115,7 @@
    "menu": "Pengaturan › Persetujuan › Aturan Persetujuan",
    "aksi": "Buka Pengaturan › Persetujuan. Baca kelompok Keuangan dan Pembelian, lalu buka kartu Tagihan pemasok.",
    "isi": "",
-   "hasil": "Kartu per jenis dokumen dengan ringkasan aturan dan asalnya, mis. Pesanan Pembelian 'mulai Rp 100.000.000 · 2 jenjang: Persetujuan → Direksi', Tagihan pemasok 'Admin, Manajer', Uang muka (panjar) '3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan', lalu Selisih bayar, Izin kredit, Buka periode. Kartu yang dibuka menampilkan jenjang, nominal, dan pemutus.",
+   "hasil": "Kartu per jenis dokumen dengan ringkasan aturan dan asalnya, mis. Pesanan Pembelian 'mulai Rp 100.000.000 · 2 jenjang: Persetujuan → Direksi', Tagihan pemasok 'Admin, Manajer, Finance', Uang muka (panjar) '3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan', lalu Selisih bayar, Izin kredit, Buka periode. Kartu yang dibuka menampilkan jenjang, nominal, dan pemutus.",
    "gambar": "uji/hasil/K07/07-aturan-tagihan-pemasok.png"
   },
   {
@@ -133,7 +133,7 @@
    "menu": "Menu samping › Pengaturan",
    "aksi": "Masuk dengan akun peserta. Klik grup PENGATURAN di menu samping.",
    "isi": "",
-   "hasil": "Hanya [[Keuangan & Pajak]] (dan SDM bila izin SDM sudah aktif) yang tampil. Pengguna & Hak Akses, Persetujuan, Perusahaan (PT), dan Dokumen & Notifikasi tidak tampil karena Finance tidak punya izinnya.",
+   "hasil": "[[Keuangan & Pajak]] tampil, bersama menu Pengaturan lain yang juga dimiliki Manajer (menu mengikuti izin peran; peran bawaan Finance sejak K-FIN-01 memegang izin Manajer). Pengaturan umum dan Pengguna & Hak Akses tetap khusus Admin.",
    "gambar": "uji/hasil/K07/09-menu-pengaturan-finance.png"
   }
  ],

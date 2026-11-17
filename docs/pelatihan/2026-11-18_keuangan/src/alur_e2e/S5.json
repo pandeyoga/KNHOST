@@ -1,0 +1,302 @@
+{
+ "kode": "S5",
+ "modul": "5",
+ "judul": "Hutang & Piutang per Pihak",
+ "bagian": "A",
+ "tujuan": "Peserta bisa melihat semua hutang satu pemasok dan semua piutang satu pelanggan di satu tempat, lalu membayar beberapa tagihan pemasok sekaligus, menerima pembayaran untuk beberapa SO sekaligus, mencatat janji bayar, dan mencetak rekening koran pelanggan.",
+ "kapan": "Saat pemasok meminta pelunasan semua tagihannya dalam satu transfer, saat pelanggan mentransfer untuk beberapa SO sekaligus, saat menagih per pelanggan, dan saat pelanggan meminta rekening koran.",
+ "konsep": [
+  "Hutang dan piutang tetap dicatat per dokumen (tagihan pemasok per PO, piutang per SO dan surat jalan). Layar per pihak hanya mengelompokkan dokumen itu per pemasok atau per pelanggan; angkanya sama dengan Hutang › Tagihan dan Piutang › Penagihan & Penerimaan.",
+  "Satu baris = satu pemasok di satu PT. Kolom umur menghitung hari lewat jatuh tempo: Belum jatuh tempo, 1–30, 31–60, 61–90, dan lebih dari 90 hari. Kolom Potongan = nota debit retur beli dan uang muka ke pemasok yang belum dipotong lewat kontrabon.",
+  "Bayar beberapa tagihan sekaligus = satu form dan satu konfirmasi, tetapi tiap tagihan tetap dicatat sebagai pembayaran sendiri: satu kas keluar dan satu jurnal per tagihan. Jejak per tagihan tetap jelas dan klik ganda tidak membuat pembayaran kedua.",
+  "Tagihan yang sedang dipegang kontrabon tidak bisa dibayar langsung. Layar menulis \"Bayar lewat kontrabon …\"; bayar kontrabonnya bila statusnya sudah boleh dibayar.",
+  "Di sisi piutang, satu kwitansi bisa dialokasikan ke beberapa SO (Atur sendiri). Rekening koran pelanggan dibaca dari jurnal akun piutang, jadi saldo akhirnya sama dengan buku besar."
+ ],
+ "peran": "Finance (akun peserta) · Manajer (janji bayar)",
+ "menit": 40,
+ "data_awal": "Kartu Peserta › Tagihan pemasok untuk dibayar dan Tagihan untuk kontrabon (dua tagihan terposting untuk pemasok \"Latihan NN · Pemasok Grey Peserta NN\", contoh peserta 91: VB-00016 Rp 1.864.800 dan VB-00017 Rp 1.287.600), serta SO untuk pelunasan penuh dan SO untuk bayar sebagian (dua SO terkirim untuk pelanggan \"Latihan NN · Toko Kain Peserta NN\", contoh: KSC/SO-00046 Rp 3.325.282,50 dan KSC/SO-00047 Rp 3.231.765). Situasi ini memakai dokumen yang sama dengan praktik F02, F03, F11, dan F12 — jalankan di peserta peraga, atau sesudah praktik itu tidak dipakai lagi. Angka di bawah adalah contoh; tiap peserta berbeda.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Buka hutang per pemasok"
+  },
+  {
+   "peran": "Finance",
+   "label": "Rincian pemasok: tagihan & potongan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Centang tagihan, bayar sekaligus",
+   "cabang": "Tagihan di kontrabon: bayar lewat kontrabon"
+  },
+  {
+   "peran": "Finance",
+   "label": "Buka piutang per pelanggan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Rekening koran & cetak PDF"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Catat janji bayar"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terima pembayaran beberapa SO"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Hutang › Hutang per Pemasok",
+   "nav_id": "accounts-payable",
+   "tab": "ap-by-supplier",
+   "peran": "Finance"
+  },
+  {
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "nav_id": "ar-aging",
+   "tab": "ar-aging",
+   "peran": "Finance · Manajer"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Hutang per Pemasok",
+   "aksi": "Situasi A — hutang per pemasok. Masuk dengan akun Finance Anda. Buka Keuangan › Hutang, lalu klik tab [[Hutang per Pemasok]].",
+   "isi": "*Email*: finance.latihNN@kainnusantara.id",
+   "hasil": "Satu baris per pemasok dengan kolom umur, Sisa hutang, Jatuh tempo terdekat, dan Potongan. Di atasnya empat kartu angka: Total hutang, Lewat jatuh tempo, Lewat lebih dari 60 hari, Potongan belum dipakai. Klik kartu untuk menyaring daftar.",
+   "gambar": "uji/hasil/S5/02-a-menu-tab.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Hutang per Pemasok",
+   "aksi": "Ketik nama pemasok Anda di kotak cari.",
+   "isi": "*Kotak cari*: Latihan NN",
+   "hasil": "Baris \"Latihan NN · Pemasok Grey Peserta NN\": PT Sukacita · 2 tagihan, Sisa hutang Rp 3.152.400 (contoh), semuanya di kolom Belum jatuh tempo, jatuh tempo terdekat 17 Des 2026.",
+   "gambar": "uji/hasil/S5/03-a-baris-pemasok.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Hutang per Pemasok › Rincian",
+   "aksi": "Klik [[Rincian & bayar]] di baris pemasok.",
+   "isi": "",
+   "hasil": "Jendela rincian pemasok: kartu Sisa hutang, Lewat jatuh tempo, Bisa dibayar langsung, Lewat kontrabon; tabel dua tagihan (nomor, faktur pemasok, PO, jatuh tempo, umur, sisa) dengan kotak centang dan [[Bayar]]; bagian Kontrabon terbuka dan Potongan belum dipakai. Nama pemasok di judul membuka kartu pemasok.",
+   "gambar": "uji/hasil/S5/05-a-rincian-pemasok.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Hutang per Pemasok › Rincian",
+   "aksi": "Centang kotak di kepala tabel untuk memilih semua tagihan. Klik [[Bayar terpilih]].",
+   "isi": "",
+   "hasil": "Sebelum diklik, tombol menjadi \"Bayar terpilih (2) · Rp 3.152.400\" (contoh). Form \"Bayar beberapa tagihan\" terbuka.",
+   "gambar": "uji/hasil/S5/06-a-bayar-terpilih.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Rincian › Bayar beberapa tagihan",
+   "aksi": "Pilih rekening sumber dan isi catatan. Periksa nominal tiap tagihan.",
+   "isi": "*Rekening sumber*: BCA Operasional KSC · *Tanggal bayar*: hari ini · *Cara bayar*: Transfer bank · *Catatan*: TRF-S5-LATIHNN · *Nominal dibayar*: terisi sisa tiap tagihan (contoh Rp 1.864.800 dan Rp 1.287.600)",
+   "hasil": "Total dibayar Rp 3.152.400 (contoh). Tombol [[Bayar 2 tagihan · Rp 3.152.400]] aktif. Nominal boleh dikurangi (bayar sebagian); lebih dari sisa ditolak dengan alasan tertulis.",
+   "gambar": "uji/hasil/S5/07-a-form-bayar-banyak.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Rincian › Bayar beberapa tagihan",
+   "aksi": "Klik [[Bayar 2 tagihan]]. Baca konfirmasi, lalu klik [[Ya, bayar]].",
+   "isi": "",
+   "hasil": "Konfirmasi: \"Bayar 2 tagihan senilai Rp 3.152.400 ke Latihan NN · Pemasok Grey Peserta NN dari BCA Operasional KSC … untuk Sukacita? Tiap tagihan dicatat sebagai pembayaran sendiri (satu kas keluar dan satu jurnal per tagihan).\"",
+   "gambar": "uji/hasil/S5/08-a-konfirmasi.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Rincian › Bayar beberapa tagihan",
+   "aksi": "Baca hasil per tagihan.",
+   "isi": "",
+   "hasil": "Tiap tagihan: Dibayar, Sisa Rp 0, Hasil \"Lunas\". Ringkasan \"2 tagihan dibayar, total Rp 3.152.400.\" Bila satu tagihan gagal, yang lain tetap dibayar dan tombol menjadi [[Ulangi … yang gagal]].",
+   "gambar": "uji/hasil/S5/09-a-hasil-bayar.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Hutang per Pemasok › Rincian",
+   "aksi": "Klik [[Tutup]]. Baca rincian pemasok.",
+   "isi": "",
+   "hasil": "Pesan \"2 tagihan dibayar, total Rp 3.152.400.\" Sisa hutang Rp 0 dan \"Tidak ada tagihan terbuka.\" Sesudah rincian ditutup, pemasok Anda tidak muncul lagi di daftar.",
+   "gambar": "uji/hasil/S5/10-a-rincian-lunas.png"
+  },
+  {
+   "no": 9,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Hutang per Pemasok",
+   "aksi": "Kosongkan kotak cari. Klik [[Unduh]] di bilah daftar.",
+   "isi": "",
+   "hasil": "Berkas rekap \"hutang-per-pemasok_semua_….csv\" terunduh. Kolom: Pemasok, PT, Tagihan terbuka, kolom umur, Sisa hutang, Jatuh tempo terdekat, Uang muka ke pemasok, Nota debit belum dipotong. Buka di Excel.",
+   "gambar": "uji/hasil/S5/11-a-unduh.png"
+  },
+  {
+   "no": 10,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "aksi": "Situasi B — piutang per pelanggan. Buka Keuangan › Piutang › tab [[Saldo & Umur]]. Cari pelanggan Anda.",
+   "isi": "*Kotak cari*: Latihan NN · Toko Kain Peserta",
+   "hasil": "Baris \"Latihan NN · Toko Kain Peserta NN\": Belum Lunas Rp 6.557.048 (contoh, dua SO terkirim; layar membulatkan Rp 6.557.047,50), kolom Belum jatuh tempo, tombol [[Terima]].",
+   "gambar": "uji/hasil/S5/14-b-baris-pelanggan.png"
+  },
+  {
+   "no": 11,
+   "peran": "Finance",
+   "menu": "Piutang › Saldo & Umur › Rincian",
+   "aksi": "Klik baris pelanggan.",
+   "isi": "",
+   "hasil": "Rincian piutang: dua pesanan dengan jatuh tempo, umur, dan sisa; Jadwal Tagihan per surat jalan; Nota Denda. Di kepala: [[Rekening koran]], [[Buat Nota Denda]], [[Terima pembayaran]]. Per pesanan: [[Bayar]], dan [[Janji bayar]] bila akun Anda memegang izin tindak lanjut penagihan.",
+   "gambar": "uji/hasil/S5/15-b-rincian-pelanggan.png"
+  },
+  {
+   "no": 12,
+   "peran": "Finance",
+   "menu": "Piutang › Rincian › Rekening koran",
+   "aksi": "Klik [[Rekening koran]].",
+   "isi": "*Dari*: tanggal 1 bulan ini · *Sampai*: hari ini (ubah lalu klik [[Tampilkan]] bila perlu)",
+   "hasil": "Bagian Rekening koran terbuka di rincian: Saldo awal, surat jalan (kolom Tagihan), kwitansi (kolom Pembayaran / Kredit), Saldo akhir. Saldo akhir = piutang tercatat pelanggan, contoh Rp 6.557.048.",
+   "gambar": "uji/hasil/S5/17-b-rekening-koran.png"
+  },
+  {
+   "no": 13,
+   "peran": "Finance",
+   "menu": "Piutang › Rincian › Rekening koran",
+   "aksi": "Klik [[Cetak PDF]].",
+   "isi": "",
+   "hasil": "Berkas \"rekening-koran-latihan-NN-toko-kain-peserta-NN-….pdf\" berkop PT terunduh. Pesan \"PDF rekening koran sudah diunduh.\" Kirim berkas ini ke pelanggan bila diminta.",
+   "gambar": "uji/hasil/S5/18-b-pdf-terunduh.png"
+  },
+  {
+   "no": 14,
+   "peran": "Manajer",
+   "menu": "Keuangan › Piutang › Saldo & Umur",
+   "aksi": "Pelanggan menelepon dan berjanji mentransfer. Masuk sebagai Manajer (manager@), PT Sukacita. Buka rincian pelanggan yang sama. Pada SO kedua klik [[Janji bayar]].",
+   "isi": "",
+   "hasil": "Form \"Tindak Lanjut Penagihan\" terbuka dengan nomor pesanan dan sisa tagihannya.",
+   "gambar": "uji/hasil/S5/19-b-tombol-janji.png"
+  },
+  {
+   "no": 15,
+   "peran": "Manajer",
+   "menu": "Rincian › Tindak Lanjut Penagihan",
+   "aksi": "Isi catatan dan hasil janji. Klik [[Simpan]].",
+   "isi": "*Catatan*: Janji transfer 2 SO · *Hasil*: Dijanjikan bayar · *Tanggal janji*: hari ini · *Nominal janji*: terisi sisa SO ini; untuk satu transfer dua SO ketik jumlah keduanya, contoh Rp 6.557.047,50",
+   "hasil": "Pesan \"Tindak lanjut untuk Latihan NN · Toko Kain Peserta NN dicatat.\" di rincian. Janji dicatat pada satu pesanan (yang tombolnya diklik) dan tampil di kartu pelanggan › Tindak Lanjut. Tidak ada jurnal.",
+   "gambar": "uji/hasil/S5/20-b-form-janji.png"
+  },
+  {
+   "no": 16,
+   "peran": "Finance",
+   "menu": "Piutang › Saldo & Umur › Rincian",
+   "aksi": "Transfer pelanggan masuk. Masuk lagi dengan akun Finance, buka rincian pelanggan, klik [[Terima pembayaran]].",
+   "isi": "",
+   "hasil": "Form \"Terima pembayaran\": PT Sukacita, pelanggan terisi, daftar tagihan terbuka kedua SO, pilihan alokasi Tertua dulu / Atur sendiri, dan Pakai titipan bila pelanggan punya titipan.",
+   "gambar": "uji/hasil/S5/22-b-tombol-terima.png"
+  },
+  {
+   "no": 17,
+   "peran": "Finance",
+   "menu": "Rincian › Terima pembayaran",
+   "aksi": "Klik [[Atur sendiri]]. Isi alokasi tiap SO sebesar sisanya. Isi rekening dan nomor referensi.",
+   "isi": "*Alokasi*: KSC/SO-00046 Rp 3.325.282,50 · KSC/SO-00047 Rp 3.231.765 (contoh) · *Rekening penerima*: BCA Operasional KSC (terisi sendiri bila hanya satu rekening penerimaan) · *No. referensi*: TRF-S5-PLG-LATIHNN",
+   "hasil": "Nominal diterima = jumlah alokasi, contoh Rp 6.557.048 (layar membulatkan; tersimpan Rp 6.557.047,50). Tidak ada petunjuk selisih.",
+   "gambar": "uji/hasil/S5/23-b-form-terima.png"
+  },
+  {
+   "no": 18,
+   "peran": "Finance",
+   "menu": "Rincian › Terima pembayaran",
+   "aksi": "Klik [[Simpan kwitansi]]. Baca konfirmasi, lalu klik [[Ya, simpan]].",
+   "isi": "",
+   "hasil": "Konfirmasi \"Catat penerimaan Rp 6.557.048 dari Latihan NN · Toko Kain Peserta NN ke BCA Operasional KSC … untuk Sukacita?\" Sesudahnya pesan \"Kwitansi KSC/AR-… dicatat untuk Latihan NN · Toko Kain Peserta NN.\"",
+   "gambar": "uji/hasil/S5/24-b-konfirmasi-terima.png"
+  },
+  {
+   "no": 19,
+   "peran": "Finance",
+   "menu": "Piutang › Saldo & Umur › Rincian",
+   "aksi": "Baca rincian pelanggan.",
+   "isi": "",
+   "hasil": "Pesan kwitansi tampil di rincian dan \"Tidak ada pesanan terbuka.\" — kedua SO lunas dalam satu kwitansi.",
+   "gambar": "uji/hasil/S5/25-b-rincian-lunas.png"
+  },
+  {
+   "no": 20,
+   "peran": "Finance",
+   "menu": "Piutang › Rincian › Rekening koran",
+   "aksi": "Klik [[Rekening koran]] lagi, lalu [[Tampilkan]].",
+   "isi": "",
+   "hasil": "Baris baru kwitansi di kolom Pembayaran / Kredit sebesar Rp 6.557.048 (contoh). Saldo akhir Rp 0.",
+   "gambar": "uji/hasil/S5/26-b-rekening-koran-lunas.png"
+  }
+ ],
+ "jurnal_per_tahap": [
+  {
+   "tahap": "A. Bayar tagihan pertama (bagian dari Bayar beberapa tagihan)",
+   "dokumen": "VB-00016 · kas KSC/CASH-00068 · KSC/JE-00299",
+   "jurnal": "2-1100 Hutang Usaha (D) · 1-1100 Kas Besar / Bank (K) Rp 1.864.800"
+  },
+  {
+   "tahap": "A. Bayar tagihan kedua (konfirmasi yang sama)",
+   "dokumen": "VB-00017 · kas KSC/CASH-00069 · KSC/JE-00300",
+   "jurnal": "2-1100 Hutang Usaha (D) · 1-1100 Kas Besar / Bank (K) Rp 1.287.600"
+  },
+  {
+   "tahap": "A. Unduh rekap hutang per pemasok",
+   "dokumen": "Berkas CSV",
+   "jurnal": "— (laporan, tanpa jurnal)"
+  },
+  {
+   "tahap": "B. Rekening koran & cetak PDF",
+   "dokumen": "PDF rekening koran",
+   "jurnal": "— (dibaca dari jurnal akun 1-1200 Piutang Usaha)"
+  },
+  {
+   "tahap": "B. Janji bayar (Manajer)",
+   "dokumen": "Tindak lanjut penagihan",
+   "jurnal": "— (catatan penagihan, tanpa jurnal)"
+  },
+  {
+   "tahap": "B. Terima pembayaran dua SO",
+   "dokumen": "KSC/AR-00050 · kas KSC/CASH-00070 · KSC/JE-00301",
+   "jurnal": "1-1100 Kas Besar / Bank (D) · 1-1200 Piutang Usaha (K) Rp 6.557.047,50"
+  }
+ ],
+ "titik_kontrol": [
+  "Satu konfirmasi untuk beberapa tagihan menyebut total, pemasok, rekening, dan PT; tiap tagihan tetap satu pembayaran, satu kas keluar, dan satu jurnal sendiri.",
+  "Klik ganda atau jaringan putus tidak membuat pembayaran kedua: tiap tagihan dikirim dengan tanda pengenal sendiri, dan [[Ulangi … yang gagal]] memakai tanda yang sama sehingga server tidak mencatatnya dua kali.",
+  "Tagihan yang dipegang kontrabon tidak bisa dicentang atau dibayar langsung; kontrabon dibayar sesudah statusnya boleh dibayar (bawaan: disetujui atau dijadwalkan bayar).",
+  "Mode Semua PT hanya untuk melihat: satu baris per pemasok per PT, tidak dijumlah lintas PT; tombol bayar mati dengan alasan \"Pilih satu PT untuk mencatat pembayaran.\"",
+  "Nominal bayar per tagihan tidak boleh melebihi sisanya; kurang bayar receh di dalam toleransi selisih ditutup otomatis dan disebut sebelum disimpan.",
+  "Janji bayar hanya dicatat pemegang izin tindak lanjut penagihan (izin ubah pesanan) — lihat catatan pelatih."
+ ],
+ "cek_buku": [
+  "A (contoh peserta 91): KSC/JE-00299 2-1100 Hutang Usaha (D) / 1-1100 Kas Besar / Bank (K) Rp 1.864.800 dan KSC/JE-00300 2-1100 (D) / 1-1100 (K) Rp 1.287.600 — dua jurnal seimbang, dua kas keluar dari BCA Operasional KSC (KSC/CASH-00068, KSC/CASH-00069); VB-00016 dan VB-00017 Lunas, sisa Rp 0.",
+  "A: angka di Hutang per Pemasok = angka ringkasan Hutang › Tagihan (total hutang dan kelompok umur dibaca dari tagihan yang sama).",
+  "B: KSC/AR-00050 satu kwitansi, dua alokasi (KSC/SO-00046 Rp 3.325.282,50 · KSC/SO-00047 Rp 3.231.765); KSC/JE-00301 1-1100 Kas Besar / Bank (D) / 1-1200 Piutang Usaha (K) Rp 6.557.047,50 — seimbang; sisa kedua SO Rp 0; rekening koran saldo akhir Rp 0.",
+  "B: janji bayar tersimpan sebagai tindak lanjut (Dijanjikan bayar, tanggal & nominal janji, nama pencatat); tidak ada jurnal."
+ ],
+ "kesalahan_umum": [
+  "Membayar tagihan satu per satu dari Hutang › Tagihan lalu lupa satu tagihan — buka Hutang per Pemasok, rincian pemasok menunjukkan semua sisa tagihannya.",
+  "Mencentang tagihan yang dipegang kontrabon — tidak bisa; bayar lewat kontrabonnya supaya potongan (nota debit, uang muka) ikut diterapkan.",
+  "Memilih \"Tertua dulu\" untuk transfer yang ditujukan ke SO tertentu — pakai \"Atur sendiri\" dan isi alokasi per SO sesuai keterangan transfer.",
+  "Membaca rekening koran di mode Semua PT — rekening koran selalu per satu PT; pilih PT di kepala aplikasi."
+ ],
+ "catatan_pelatih": "Situasi ini memakai dokumen yang sama dengan praktik F02/F03 (dua SO) dan F11/F12 (dua tagihan): jalankan di peserta peraga, atau sesudah praktik itu selesai dengan peserta baru. Satu peserta satu rantai — tagihan dan SO yang sudah dibayar tidak bisa diulang. Saldo BCA Operasional KSC terbatas: bagian A mengeluarkan Rp 3.152.400 per peserta. Tombol [[Janji bayar]] tampil menurut izin tindak lanjut penagihan (izin ubah pesanan: Sales, Admin Sales, Manajer); di uji jalan Manajer mencatatnya. Bila akun Finance memegang izin itu (akses Finance disamakan dengan Manajer), Finance mencatat janji sendiri dari layar yang sama. Layar membulatkan rupiah (Rp 6.557.048) sementara buku menyimpan sen (Rp 6.557.047,50) — pertanyaan pemilik K-07. Rincian pemasok dan kartu pemasok (nama pemasok = tautan) menampilkan angka yang sama; kartu juga memuat riwayat pembayaran.",
+ "uji": {
+  "berkas": "uji/situasi/S5_per_pihak.js",
+  "peserta_uji": "91 (peserta peraga)"
+ }
+}

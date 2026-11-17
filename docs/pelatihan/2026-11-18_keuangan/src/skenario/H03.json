@@ -85,7 +85,7 @@
    "menu": "Proses Gaji › rincian",
    "aksi": "Klik [[Ajukan]].",
    "isi": "",
-   "hasil": "Status Diajukan. Finance tidak melihat tombol Sahkan: \"Mengesahkan penggajian butuh izin mengesahkan gaji.\"",
+   "hasil": "Status Diajukan. Tombol [[Sahkan]] tampil bagi pemegang izin Proses Penggajian › Setujui (peran bawaan Finance sejak K-FIN-01); di latihan pengesahan diperagakan Manajer sebagai orang kedua.",
    "gambar": "uji/hasil/H03/06-diajukan.png"
   },
   {
@@ -115,9 +115,9 @@
   "Proses memuat lebih dari satu karyawan: ada masukan peserta lain yang sudah disahkan. Klik [[Batalkan]] (draf), minta pelatih menyelesaikan masukan lain, lalu hitung lagi.",
   "Memilih jenis Reguler. Proses reguler Oktober sudah ada dan memuat semua karyawan; layar membuka proses itu, bukan membuat baru.",
   "\"Tidak ada masukan yang belum terpakai untuk Oktober 2026\": masukan belum disahkan atau periodenya salah.",
-  "Mencari tombol Anulir. Membatalkan proses yang sudah diposting hanya Manajer."
+  "Mencari tombol Anulir. Membatalkan proses yang sudah diposting butuh izin Proses Penggajian › Batalkan."
  ],
- "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Keputusan penyelenggaraan: tiap peserta memakai proses SUSULAN masa Oktober 2026 untuk karyawan barunya. Alasannya: proses reguler per PT per masa hanya satu (Oktober sudah dipakai F15; November adalah penggajian nyata akhir bulan), dan gaji masa November bertanggal buku 30 Nov sehingga belum bisa dibayar pada hari pelatihan. Proses susulan memuat SEMUA masukan disahkan yang belum terpakai: sahkan masukan satu peserta, minta peserta itu langsung [[Hitung gaji]], baru sahkan masukan peserta berikutnya. Peragaan proses reguler (BPJS, lembur, absensi) memakai proses reguler Oktober yang sudah diposting (KSC/PAY-00001) — buka rinciannya saja.",
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Sejak K-FIN-01 (17 Nov) peran bawaan Finance juga memegang izin mengesahkan dan membatalkan (Proses Penggajian › Setujui · Batalkan); yang menentukan adalah izin di peran, bukan nama peran. Di latihan pengesahan tetap diperagakan Manajer sebagai orang kedua. Keputusan penyelenggaraan: tiap peserta memakai proses SUSULAN masa Oktober 2026 untuk karyawan barunya. Alasannya: proses reguler per PT per masa hanya satu (Oktober sudah dipakai F15; November adalah penggajian nyata akhir bulan), dan gaji masa November bertanggal buku 30 Nov sehingga belum bisa dibayar pada hari pelatihan. Proses susulan memuat SEMUA masukan disahkan yang belum terpakai: sahkan masukan satu peserta, minta peserta itu langsung [[Hitung gaji]], baru sahkan masukan peserta berikutnya. Peragaan proses reguler (BPJS, lembur, absensi) memakai proses reguler Oktober yang sudah diposting (KSC/PAY-00001) — buka rinciannya saja.",
  "uji": {
   "berkas": "uji/sdm/H03_proses_gaji.js",
   "peserta_uji": "01"

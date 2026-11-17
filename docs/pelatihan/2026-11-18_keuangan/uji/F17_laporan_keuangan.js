@@ -5,9 +5,9 @@
 const { Run, assert, mongo, rp } = require("./lib");
 const { KSC, potret, bersihkanGambar, menu, labaRugiDb, neracaDb, saldoAkun, uang, cocokBerulang, dekat, BULAN, pilih } = require("./buku_lib");
 
-const now = new Date();
-const TAHUN = now.getFullYear();
-const BLN = now.getMonth() + 1;
+const now = new Date(Date.now() + 7 * 3600e3);   // tanggal buku WIB (server memakai WIB; mesin uji UTC)
+const TAHUN = now.getUTCFullYear();
+const BLN = now.getUTCMonth() + 1;
 const AWAL_BULAN = `${TAHUN}-${String(BLN).padStart(2, "0")}-01`;
 const HARI_INI = now.toISOString().slice(0, 10);
 const AKHIR_BULAN = new Date(Date.UTC(TAHUN, BLN, 0)).toISOString().slice(0, 10);

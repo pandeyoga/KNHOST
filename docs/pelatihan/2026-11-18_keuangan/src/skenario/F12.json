@@ -150,7 +150,7 @@
   "Membuat, memverifikasi, menyetujui, dan menjadwalkan kontrabon tidak membuat jurnal"
  ],
  "kesalahan_umum": [
-  "Finance mencari tombol [[Kontrabon baru]]. Kontrabon dibuat Manajer; Finance hanya melihat dan membayar.",
+  "Membuat kontrabon lalu mencoba menyetujuinya sendiri — kontrabon diputus orang lain (kontrol dua orang). Membuat kontrabon butuh izin Kontrabon › Buat (peran bawaan Finance memegangnya sejak K-FIN-01).",
   "Manajer menyetujui kontrabon buatannya sendiri. Ditolak; harus orang lain (di data latihan: Admin).",
   "Finance tidak menemukan tombol bayar pada kontrabon 'Disetujui'. Kontrabon harus 'Dijadwalkan bayar' dulu.",
   "Lupa keluar dari akun Manajer atau Admin sebelum langkah Finance. Pembayaran tercatat atas nama orang lain."

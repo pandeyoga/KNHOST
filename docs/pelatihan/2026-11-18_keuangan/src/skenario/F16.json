@@ -21,7 +21,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Buka Akuntansi & Pajak › Buku Besar (tab Jurnal). Baca empat kartu atas.",
    "isi": "",
-   "hasil": "Kartu TOTAL JURNAL, TOTAL DEBIT, TOTAL KREDIT, dan STATUS BUKU 'Seimbang' (hijau). Tidak ada tombol [[Jurnal Baru]] atau [[Sinkronkan]] untuk Finance.",
+   "hasil": "Kartu TOTAL JURNAL, TOTAL DEBIT, TOTAL KREDIT, dan STATUS BUKU 'Seimbang' (hijau). Tombol [[Jurnal Baru]] dan [[Sinkronkan]] tampil bila peran Anda memegang izin Akuntansi & Buku Besar › Buat (peran bawaan Finance memegangnya sejak K-FIN-01); di latihan ini hanya membaca.",
    "gambar": "uji/hasil/F16/01-buku-besar-jurnal.png"
   },
   {
@@ -39,7 +39,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Klik baris jurnal itu. Baca, lalu klik [[Tutup]].",
    "isi": "",
-   "hasil": "Rincian jurnal: 1-1100 Kas Besar / Bank di kolom DEBIT dan 1-1200 Piutang Usaha di kolom KREDIT dengan nilai sama, serta dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'. Tidak ada tombol [[Balik Jurnal]] atau [[Anulir Jurnal]] untuk Finance.",
+   "hasil": "Rincian jurnal: 1-1100 Kas Besar / Bank di kolom DEBIT dan 1-1200 Piutang Usaha di kolom KREDIT dengan nilai sama, serta dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'. Tombol [[Balik Jurnal]] tampil bagi pemegang izin Akuntansi & Buku Besar › Batalkan (void), tetapi jurnal otomatis ini dikoreksi lewat dokumen sumbernya (batalkan kwitansinya), bukan dibalik di Buku Besar.",
    "gambar": "uji/hasil/F16/03-rincian-jurnal-penerimaan.png"
   },
   {
@@ -75,7 +75,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun",
    "aksi": "Klik tab [[Bagan Akun]]. Ketik 'piutang' di kotak cari.",
    "isi": "*Cari kode / nama akun…*: piutang",
-   "hasil": "Akun 1-1200 Piutang Usaha berlabel 'global', 'Akun kontrol', 'Dipakai Sukacita', dan 'Detail · Debit'. Tidak ada tombol [[Tambah Akun]] maupun ikon ubah dan hapus; ikon jam membuka riwayat akun.",
+   "hasil": "Akun 1-1200 Piutang Usaha berlabel 'global', 'Akun kontrol', 'Dipakai Sukacita', dan 'Detail · Debit'. Ikon jam membuka riwayat akun. [[Tambah Akun]] dan ikon ubah tampil bagi pemegang izin Akuntansi & Buku Besar › Kelola — di latihan ini hanya membaca.",
    "gambar": "uji/hasil/F16/08-bagan-akun-piutang.png"
   },
   {
@@ -109,7 +109,7 @@
   "Tidak menggeser 'Rantai dokumen' ke kanan, sehingga kwitansi, kas, dan jurnal dikira tidak ada. Lihat juga 'Daftar relasi' di bawahnya.",
   "Lupa mengosongkan kotak cari sebelum pindah tab. Daftar tetap tersaring."
  ],
- "catatan_pelatih": "Data skenario dibuat skrip data latihan: SO tersendiri yang dilunasi akun Finance peserta, sehingga F16 tidak bergantung pada urutan F02. Finance hanya punya izin lihat akuntansi: tombol tulis (Jurnal Baru, Sinkronkan, Balik/Anulir, Tambah/Ubah/Hapus akun) disembunyikan. 'Akun kontrol' berarti saldonya hanya berubah lewat dokumen, bukan lewat jurnal manual. Simpul jurnal di Jejak Dokumen kini menampilkan nilai jurnal (dulu kosong). Jurnal kas yang dibuat sebelum 17 Nov masih berketerangan 'Kas in · …' (seperti di tangkapan layar); data yang disiapkan ulang memakai 'Kas masuk · …'.",
+ "catatan_pelatih": "Data skenario dibuat skrip data latihan: SO tersendiri yang dilunasi akun Finance peserta, sehingga F16 tidak bergantung pada urutan F02. Tombol tulis (Jurnal Baru, Sinkronkan, Balik/Anulir, Tambah/Ubah/Hapus akun) hanya tampil bagi pemegang izin Akuntansi & Buku Besar › Buat · Batalkan · Kelola; peran tanpa izin itu hanya melihat. 'Akun kontrol' berarti saldonya hanya berubah lewat dokumen, bukan lewat jurnal manual. Simpul jurnal di Jejak Dokumen kini menampilkan nilai jurnal (dulu kosong). Jurnal kas yang dibuat sebelum 17 Nov masih berketerangan 'Kas in · …' (seperti di tangkapan layar); data yang disiapkan ulang memakai 'Kas masuk · …'.",
  "uji": {
   "berkas": "uji/F16_buku_besar_jejak.js",
   "peserta_uji": "01"

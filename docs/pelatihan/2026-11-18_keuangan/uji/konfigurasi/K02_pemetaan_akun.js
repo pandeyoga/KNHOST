@@ -27,12 +27,20 @@ const petaPemetaan = () => k.tanpaWaktu(mongo(`return db.gl_account_mappings.fin
   k.simpanJson(r, "sebelum.json", sebelum);
   r.note(`Pemetaan Sukacita: ${peta.summary.total} kebutuhan · belum diatur ${peta.summary.unset} · baris tersimpan ${sebelum.length}`);
 
-  await r.step(1, "Finance", "Buka Pengaturan › Keuangan & Pajak (tab Pemetaan Akun)",
+  await r.step(1, "Finance", "Buka Pengaturan › Keuangan & Pajak → tab [[Pemetaan Akun]]",
     "Kartu 'Kebutuhan akun', 'Belum diatur', 'Diubah dari bawaan', 'Khusus PT ini'; kalimat 'Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.'", async () => {
       await r.login(akunPeserta(no));
       await r.tid("finance-desk").waitFor();
       await k.menuPotret(r, "settings-hub", "settings-finance", "menu-pengaturan-keuangan");
+      // K-FIN-01: Finance kini memegang semua tab Keuangan & Pajak seperti Manajer — hub terbuka di tab pertama (Aturan),
+      // jadi tab Pemetaan Akun diklik (dulu satu-satunya tab Finance).
+      await r.tid("hub-tab-gl-account-mappings").click();
       await r.tid("gl-mapping-view").waitFor();
+      // tunggu daftar selesai dimuat (kartu bernilai 0 selama "Memuat…")
+      await r.page.waitForFunction(() => {
+        const el = document.querySelector('[data-testid="glmap-kpi-total"]');
+        return el && el.innerText.replace(/\D/g, "") !== "0";
+      }, null, { timeout: 20000 }).catch(() => {});
       await r.idle(800);
       const tabs = await r.page.$$eval('[data-testid^="hub-tab-"]', (els) => els.map((e) => e.innerText.trim()));
       const total = (await r.text("glmap-kpi-total")).replace(/\D/g, "");

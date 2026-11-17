@@ -16,8 +16,11 @@ const s = require("./sdm_lib");
     await s.masuk(r, akunPeserta(no));
     await s.menu(r, "settings-hub", "settings-hr");
     await r.tid("cfg-section-bpjs").waitFor({ timeout: 20000 });
-    const scope = await r.text("cfg-read-scope");
-    assert(/Gaji & SDM/.test(scope), `cakupan baca: ${scope}`);
+    // K-FIN-01: Finance kini memegang izin Manajer — kotak "yang bisa Anda ubah" bisa tidak tampil (semua bisa diubah).
+    await r.idle(800);
+    const adaScope = await r.tid("cfg-read-scope").count();
+    const scope = adaScope ? await r.text("cfg-read-scope") : "semua aturan di halaman ini bisa diubah";
+    r.note(`K-FIN-01: cakupan ubah Finance di Pengaturan › SDM — ${scope.slice(0, 160)}`);
     const kes = await r.text("cfg-compact-value-hr.bpjs.kes_rate_employee");
     const kesPt = await r.text("cfg-compact-value-hr.bpjs.kes_rate_employer");
     const jht = await r.text("cfg-compact-value-hr.bpjs.jht_rate_employee");

@@ -128,7 +128,7 @@
   {
    "no": "5",
    "judul": "Situasi Khusus & Koreksi",
-   "ringkas": "Amandemen penjualan dan pembelian, pengiriman sebagian, uang muka, pembatalan, serta koreksi pembayaran, kwitansi, gaji, dan jurnal.",
+   "ringkas": "Amandemen penjualan dan pembelian, pengiriman sebagian, uang muka, pembatalan, koreksi pembayaran, kwitansi, gaji, dan jurnal, serta hutang & piutang per pemasok dan pelanggan.",
    "intro": [
     "Di pekerjaan nyata, dokumen sering berubah sesudah dibuat: harga dikoreksi, barang dikirim bertahap, pesanan dibatalkan, atau pembayaran salah rekening.",
     "Aturannya sama di semua situasi: angka yang sudah terbit tidak diubah diam-diam. Koreksi dibuat sebagai dokumen baru (amandemen, nota kredit/debit, jurnal pembalik) yang punya alasan, penyetuju, dan jejak.",
@@ -138,7 +138,8 @@
     "S1",
     "S2",
     "S3",
-    "S4"
+    "S4",
+    "S5"
    ]
   }
  ],
@@ -165,11 +166,11 @@
   ],
   [
    "Finance",
-   "Mencatat uang masuk dan keluar, faktur pajak, rekonsiliasi bank, kas kecil, SDM & penggajian, memeriksa jurnal."
+   "Semua yang dikerjakan Manajer (K-FIN-01, keputusan pemilik 17 Nov), ditambah pekerjaan harian: mencatat uang masuk dan keluar, faktur pajak, rekonsiliasi bank, kas kecil, SDM & penggajian, hutang & piutang per pemasok dan pelanggan, memeriksa jurnal."
   ],
   [
    "Manajer",
-   "Menyetujui kredit, harga, pembelian, dan gaji; membaca laporan; menutup buku."
+   "Menyetujui kredit, harga, pembelian, dan gaji; membaca laporan; menutup buku. Finance memegang izin yang sama; dokumen tetap disetujui orang selain pembuatnya."
   ],
   [
    "Admin",

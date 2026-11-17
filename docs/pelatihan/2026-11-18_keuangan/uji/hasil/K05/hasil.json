@@ -2,7 +2,7 @@
   "code": "K05",
   "title": "Aturan keuangan & pajak",
   "ok": true,
-  "at": "2026-11-17T13:58:36.340Z",
+  "at": "2026-11-17T17:53:53.130Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Buka Pengaturan › Keuangan & Pajak (tab Aturan Keuangan & Pajak); *Berlaku untuk* Satu PT · Sukacita Textile",
       "expect": "Tiga kelompok: Pembayaran pelanggan · Pajak, pembukuan & antar-PT · Bank & uang yang nyangkut; tiap baris: nama aturan, nilai, asal nilai (Bawaan sistem / Aturan grup / Khusus Sukacita) dan tingkat risiko",
       "ok": true,
-      "ms": 21114,
+      "ms": 24923,
       "info": "Pembayaran pelanggan 43 Pajak, pembukuan & antar-PT 41 Bank & uang yang nyangkut 27"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Klik kelompok [[Pajak, pembukuan & antar-PT]] → ketik 'PPN' di kotak cari → buka baris 'Tarif PPN'",
       "expect": "Tarif PPN 12 %, Pakai DPP nilai lain Ya (faktor 11/12 → PPN efektif 11 % dari harga jual), Cara menghitung PPN dari harga; penjelasan dan contoh tampil saat baris dibuka",
       "ok": true,
-      "ms": 2421,
+      "ms": 2542,
       "info": "Tarif PPN: 12 % (API 12) · Pakai DPP nilai lain: Ya / Aktif (API true) · efektif 11.00 %"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Ganti isi cari menjadi 'LPJ'",
       "expect": "Kas kecil: 'LPJ kas kecil wajib berlampiran bukti' — nilai sekarang dan asalnya",
       "ok": true,
-      "ms": 1075,
+      "ms": 1084,
       "info": "LPJ kas kecil wajib berlampiran bukti: Tidak / Mati · Bawaan sistem"
     },
     {
@@ -38,7 +38,7 @@
       "action": "Kosongkan cari → klik kelompok [[Pembayaran pelanggan]] → baca bagian Syarat bayar, Kwitansi pelanggan, Denda telat bayar, Selisih bayar",
       "expect": "Syarat bayar bawaan NET30 · Wajibkan nomor referensi di kwitansi · Tunai yang diterima sales dicatat sebagai titipan (Khusus Sukacita) · Bunga denda 2 %/bulan, masa tenggang · Selisih bayar yang dianggap lunas Rp 5.000",
       "ok": true,
-      "ms": 1658,
+      "ms": 1781,
       "info": "Syarat bayar bawaan pesanan baru = NET30 · Kredit NET 30 Hari [Aturan grup] · Bunga denda keterlambatan = 2 % / bulan [Aturan grup] · Masa tenggang sebelum denda = 0 hari [Aturan grup] · Selisih bayar yang dianggap lunas = Rp 5.000 [Bawaan sistem] · Wajibkan nomor referensi di kwitansi = Tidak / Mati [Bawaan sistem] · Tunai yang diterima sales dicatat sebagai = Titipan di tangan sales sampai disetor [Khusus PT]"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Masuk dengan akun peserta → Keuangan › Piutang (tab Saldo & Umur) → baca judul kolom umur",
       "expect": "Kolom: Belum jatuh tempo · 1–30 hari · 31–60 hari · 61–90 hari · > 90 hari (mengikuti aturan 'Kelompok umur piutang' 30 · 60 · 90)",
       "ok": true,
-      "ms": 4804,
+      "ms": 5317,
       "info": "Belum jatuh tempo · 1–30 hari · 31–60 hari · 61–90 hari · > 90 hari"
     },
     {
@@ -56,7 +56,7 @@
       "action": "Kembali ke Aturan Keuangan & Pajak (Satu PT · Sukacita) → buka baris 'Kelompok umur piutang (hari)' → ubah batas menjadi 15 · 30 · 60 → isi alasan → [[Simpan]]",
       "expect": "Kotak 'Akan berubah: 30 · 60 · 90 → 15 · 30 · 60 untuk Sukacita' dan 'Hanya Sukacita yang terpengaruh — PT lain tidak berubah.'; sesudah simpan lencana asal berubah menjadi 'Khusus Sukacita'",
       "ok": true,
-      "ms": 20653,
+      "ms": 20914,
       "info": "Akan berubah: 30 · 60 · 90 → 15 · 30 · 60 untuk Sukacita Hanya Sukacita yang terpengaruh — PT lain tidak berubah. Jadwalkan berlaku sejak… · asal: Khusus Sukacita · nilai grup tetap [30,60,90]"
     },
     {
@@ -65,7 +65,7 @@
       "action": "Muat ulang Piutang › Saldo & Umur (ikon muat ulang)",
       "expect": "Judul kolom langsung mengikuti aturan baru: 1–15 hari · 16–30 hari · 31–60 hari · > 60 hari — tanpa mengubah satu transaksi pun",
       "ok": true,
-      "ms": 6428,
+      "ms": 7602,
       "info": "Belum jatuh tempo · 1–15 hari · 16–30 hari · 31–60 hari · > 60 hari"
     },
     {
@@ -74,7 +74,7 @@
       "action": "Buka lagi baris 'Kelompok umur piutang (hari)' → klik [[Ikuti nilai grup]] → isi *Alasan* → [[Ikuti nilai grup]]",
       "expect": "Nilai kembali 30 · 60 · 90 berasal 'Aturan grup'; pengaturan tersimpan sama persis dengan sebelum peragaan",
       "ok": true,
-      "ms": 22263,
+      "ms": 20920,
       "info": "ar.aging_buckets = [30,60,90] (Aturan grup); system_settings global & Sukacita = sebelum"
     },
     {
@@ -83,14 +83,12 @@
       "action": "Muat ulang Piutang › Saldo & Umur",
       "expect": "Kolom kembali: Belum jatuh tempo · 1–30 · 31–60 · 61–90 · > 90 hari",
       "ok": true,
-      "ms": 6463,
+      "ms": 8069,
       "info": "Belum jatuh tempo · 1–30 hari · 31–60 hari · 61–90 hari · > 90 hari"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
     "Sebelum: ar.aging_buckets Sukacita = [30,60,90] (Aturan grup)",
     "Konfirmasi: 'Kelompok umur piutang (hari)' untuk Sukacita kembali mengikuti nilai grup (30 · 60 · 90). Nilai khusus Sukacita (15 · 30 · 60) dicabut."

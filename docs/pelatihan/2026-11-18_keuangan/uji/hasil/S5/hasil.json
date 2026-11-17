@@ -1,0 +1,194 @@
+{
+  "code": "S5",
+  "title": "Hutang & Piutang per Pihak",
+  "ok": true,
+  "at": "2026-11-17T18:44:39.941Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Masuk dengan akun Finance Anda. Buka Keuangan › Hutang, lalu tab [[Hutang per Pemasok]]",
+      "expect": "Satu baris per pemasok: kolom umur (Belum jatuh tempo, 1–30, 31–60, 61–90, > 90 hari), Sisa hutang, Jatuh tempo terdekat, Potongan; kartu angka Total hutang · Lewat jatuh tempo · Lewat lebih dari 60 hari · Potongan belum dipakai",
+      "ok": true,
+      "ms": 9197,
+      "info": "kartu Total hutang: TOTAL HUTANG Rp 37.851.000 8 pemasok · 15 tagihan"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Ketik \"Latihan 91\" di kotak cari",
+      "expect": "Baris \"Latihan 91 · Pemasok Grey Peserta 91\": PT Sukacita · 2 tagihan, Sisa hutang Rp 3.152.400 (contoh), umur Belum jatuh tempo",
+      "ok": true,
+      "ms": 685,
+      "info": "Latihan 91 · Pemasok Grey Peserta 91 PT Sukacita · 2 tagihan Rp 3.152.400 — — — — Rp 3.152.400 17 Des 2026 — Rincian & bayar"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik [[Rincian & bayar]] di baris pemasok",
+      "expect": "Jendela rincian: nama pemasok (tautan kartu), PT Sukacita, kartu Sisa hutang Rp 3.152.400 · Lewat jatuh tempo · Bisa dibayar langsung · Lewat kontrabon; tabel dua tagihan (nomor tagihan, faktur pemasok, PO, jatuh tempo, umur, sisa) dengan kotak centang & [[Bayar]]; bagian Kontrabon terbuka dan Potongan belum dipakai",
+      "ok": true,
+      "ms": 1086,
+      "info": "SISA HUTANG Rp 3.152.400 2 tagihan · 2 tagihan"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Centang kotak di kepala tabel (pilih semua tagihan yang bisa dibayar langsung), lalu klik [[Bayar terpilih]]",
+      "expect": "Tombol berubah menjadi \"Bayar terpilih (2) · Rp 3.152.400\"; form \"Bayar beberapa tagihan\" terbuka: PT Sukacita, Rekening sumber, Tanggal bayar, Cara bayar, Catatan, dan tabel nominal per tagihan yang terisi sisa",
+      "ok": true,
+      "ms": 965,
+      "info": "Bayar terpilih (2) · Rp 3.152.400"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Pilih *Rekening sumber* BCA Operasional KSC. *Cara bayar* Transfer. *Catatan* \"TRF-S5-LATIH91\". Periksa nominal tiap tagihan",
+      "expect": "Nominal = sisa tiap tagihan (Rp 1.864.800 dan Rp 1.287.600, contoh); Total dibayar Rp 3.152.400; tombol [[Bayar 2 tagihan · Rp 3.152.400]] aktif",
+      "ok": true,
+      "ms": 2323,
+      "info": "Rp 3.152.400 · Bayar 2 tagihan · Rp 3.152.400"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Klik [[Bayar 2 tagihan]], baca konfirmasi, lalu klik [[Ya, bayar]]",
+      "expect": "Konfirmasi: \"Bayar 2 tagihan senilai Rp 3.152.400 ke Latihan 91 · Pemasok Grey Peserta 91 dari BCA Operasional KSC … untuk Sukacita? Tiap tagihan dicatat sebagai pembayaran sendiri …\"; hasil per tagihan \"Lunas\", ringkasan \"2 tagihan dibayar, total Rp 3.152.400\"",
+      "ok": true,
+      "ms": 2301,
+      "info": "Bayar 2 tagihan senilai Rp 3.152.400 ke Latihan 91 · Pemasok Grey Peserta 91 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita? Tiap tagihan dicatat sebagai pembayaran sendiri (satu kas keluar dan satu jurnal per tagihan). → 2 tagihan dibayar, total Rp 3.152.400."
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Cek buku: tiap tagihan satu pembayaran, satu kas keluar, satu jurnal",
+      "expect": "Per tagihan: 2-1100 Hutang Usaha (D) · 1-1100 Kas Besar / Bank (K) sebesar nominalnya (Rp 1.864.800 dan Rp 1.287.600, contoh); kedua tagihan Lunas, sisa Rp 0; kas keluar dari BCA Operasional KSC",
+      "ok": true,
+      "ms": 4233,
+      "info": "VB-00016 KSC/CASH-00068 KSC/JE-00299: 2-1100 Hutang Usaha (D) Rp 1.864.800 · 1-1100 Kas Besar / Bank (K) Rp 1.864.800 | VB-00017 KSC/CASH-00069 KSC/JE-00300: 2-1100 Hutang Usaha (D) Rp 1.287.600 · 1-1100 Kas Besar / Bank (K) Rp 1.287.600"
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Tutup form ([[Tutup]]). Baca rincian pemasok dan daftar Hutang per Pemasok",
+      "expect": "Rincian: \"Tidak ada tagihan terbuka.\", Sisa hutang Rp 0; daftar: pemasok peserta tidak muncul lagi (hutangnya lunas)",
+      "ok": true,
+      "ms": 16304,
+      "info": "SISA HUTANG Rp 0 0 tagihan ·"
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Hapus kata cari. Klik [[Unduh]] di bilah daftar",
+      "expect": "Berkas CSV \"hutang-per-pemasok_semua_….csv\" terunduh: kolom Pemasok; PT; Tagihan terbuka; umur; Sisa hutang; Jatuh tempo terdekat; Uang muka; Nota debit (dibuka di Excel)",
+      "ok": true,
+      "ms": 761,
+      "info": "hutang-per-pemasok_semua_20261118-0144.csv · 7 baris"
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "Buka Keuangan › Piutang › tab [[Saldo & Umur]]. Ketik \"Latihan 91 · Toko Kain Peserta\" di kotak cari",
+      "expect": "Baris pelanggan \"Latihan 91 · Toko Kain Peserta 91\": Belum Lunas Rp 6.557.048 (contoh, dua SO terkirim), kolom umur Belum jatuh tempo, tombol [[Terima]]",
+      "ok": true,
+      "ms": 3921,
+      "info": "Latihan 91 · Toko Kain Peserta 91 Ayu Marketing Sehat Rp 6.557.048 — — — — Rp 6.557.048 — Terima"
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Klik baris pelanggan",
+      "expect": "Rincian piutang: dua pesanan (KSC/SO-00046 dan KSC/SO-00047, contoh) dengan jatuh tempo, umur, sisa; tombol kepala [[Rekening koran]] dan [[Terima pembayaran]]; per pesanan [[Bayar]]",
+      "ok": true,
+      "ms": 1218,
+      "info": "Belum lunas Rp 6.557.048 (tercatat Rp 6.557.048 · belum dikirim Rp 0)"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Klik [[Rekening koran]]",
+      "expect": "Bagian Rekening koran terbuka di rincian: Dari (tanggal 1 bulan ini) – Sampai (hari ini), baris Saldo awal, surat jalan (Tagihan), Saldo akhir = piutang tercatat Rp 6.557.048 (contoh); tombol [[Cetak PDF]] dan [[Salin pengingat]] bila izin ada",
+      "ok": true,
+      "ms": 1646,
+      "info": "18 Nov 2026 Saldo akhir Rp 6.557.048 · server saldo akhir Rp 6.557.048"
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Klik [[Cetak PDF]]",
+      "expect": "Berkas \"rekening-koran-….pdf\" terunduh (berkop PT); pesan \"PDF rekening koran sudah diunduh.\"",
+      "ok": true,
+      "ms": 1020,
+      "info": "rekening-koran-latihan-91-toko-kain-peserta-91-2026-11-01-2026-11-18.pdf · 15829 byte"
+    },
+    {
+      "no": 14,
+      "role": "Manajer",
+      "action": "Pelanggan menjanjikan transfer. Masuk sebagai Manajer (manager@), PT Sukacita. Buka Saldo & Umur, cari pelanggan, klik barisnya. Pada KSC/SO-00047 klik [[Janji bayar]]",
+      "expect": "Form \"Tindak Lanjut Penagihan\": Catatan, Hasil, (bila \"Dijanjikan bayar\") Tanggal janji & Nominal janji",
+      "ok": true,
+      "ms": 9340,
+      "info": "form tindak lanjut terbuka"
+    },
+    {
+      "no": 15,
+      "role": "Manajer",
+      "action": "Isi *Catatan* \"Janji transfer 2 SO — S5 latihan 91\", *Hasil* Dijanjikan bayar, *Tanggal janji* hari ini, *Nominal janji* Rp 6.557.048. Klik [[Simpan]]",
+      "expect": "Pesan \"Tindak lanjut untuk … dicatat.\" di rincian; janji tercatat di kartu pelanggan › Tindak Lanjut",
+      "ok": true,
+      "ms": 3171,
+      "info": "Tindak lanjut untuk Latihan 91 · Toko Kain Peserta 91 dicatat. · janji 2026-11-18 Rp 6.557.048 oleh Dewi Manager"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Transfer pelanggan masuk. Masuk lagi dengan akun Finance, buka rincian pelanggan (Saldo & Umur → klik baris), klik [[Terima pembayaran]]",
+      "expect": "Form \"Terima pembayaran\": PT Sukacita, pelanggan terisi, daftar tagihan terbuka kedua SO, pilihan alokasi Tertua dulu / Atur sendiri",
+      "ok": true,
+      "ms": 8767,
+      "info": "Pelanggan: Latihan 91 · Toko Kain Peserta 91"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Klik [[Atur sendiri]]. Isi alokasi KSC/SO-00046 = Rp 3.325.283 dan KSC/SO-00047 = Rp 3.231.765 (sisa masing-masing, contoh). *Rekening penerima* BCA Operasional KSC, *No. referensi* \"TRF-S5-PLG-LATIH91\"",
+      "expect": "Nominal diterima = jumlah alokasi Rp 6.557.048; tidak ada petunjuk selisih",
+      "ok": true,
+      "ms": 1522,
+      "info": "Rp 6.557.048"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Klik [[Simpan kwitansi]], baca konfirmasi, klik [[Ya, simpan]]",
+      "expect": "Konfirmasi \"Catat penerimaan Rp 6.557.048 dari Latihan 91 · Toko Kain Peserta 91 ke BCA Operasional KSC … untuk Sukacita?\"; pesan kwitansi di rincian; kedua SO hilang dari rincian (\"Tidak ada pesanan terbuka.\")",
+      "ok": true,
+      "ms": 2415,
+      "info": "Catat penerimaan Rp 6.557.048 dari Latihan 91 · Toko Kain Peserta 91 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? → Kwitansi KSC/AR-00050 (Rp 6.557.048) dicatat untuk Latihan 91 · Toko Kain Peserta 91."
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Cek buku: satu kwitansi dengan dua alokasi, satu kas masuk, satu jurnal",
+      "expect": "1-1100 Kas Besar / Bank (D) Rp 6.557.048 · 1-1200 Piutang Usaha (K) Rp 6.557.048 (contoh); sisa KSC/SO-00046 dan KSC/SO-00047 Rp 0",
+      "ok": true,
+      "ms": 3562,
+      "info": "KSC/AR-00050 · KSC/JE-00301: 1-1100 Kas Besar / Bank (D) Rp 6.557.048 · 1-1200 Piutang Usaha (K) Rp 6.557.048"
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Klik [[Rekening koran]] lagi di rincian pelanggan",
+      "expect": "Baris baru kwitansi (Pembayaran / Kredit) Rp 6.557.048; Saldo akhir Rp 0",
+      "ok": true,
+      "ms": 1794,
+      "info": "18 Nov 2026 Saldo akhir Rp 0"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 91 (finance.latih91, Peserta Keuangan 91) · bagian AB"
+  ]
+}

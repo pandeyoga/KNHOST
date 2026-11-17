@@ -2,7 +2,7 @@
   "code": "K08",
   "title": "Nomor & naskah dokumen",
   "ok": true,
-  "at": "2026-11-17T14:01:12.964Z",
+  "at": "2026-11-17T17:56:40.084Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Buka Pengaturan › Dokumen & Notifikasi › tab [[Penomoran Dokumen]] (lapisan Sukacita) → baca kelompok Keuangan",
       "expect": "Tiap jenis dokumen: contoh nomor berikutnya (mis. KSC/AR-000xx untuk Kwitansi), awalan, lebar angka, sisipan tanggal, mulai lagi dari 1, deret, sumber; Faktur Komersial terkunci (nomornya mengikuti pesanan)",
       "ok": true,
-      "ms": 10996,
-      "info": "berikutnya KSC/AR-00027 (terakhir KSC/AR-00026) · faktur: Tidak bisa diubah: dipakai bersama atau diturunkan dari dokumen lain. · Penerimaan piutang KSC/AR-00027 AR- 5 Tanpa sisipan Tidak pernah Per PT Bawaan U | Transaksi kas dan bank KSC/CASH-00026 CASH- 5 Tanpa sisipan Tidak pernah Per PT  | Jurnal KSC/JE-00193 JE- 5 Tanpa sisipan Tidak pernah Per PT Bawaan Ubah | Kontrabon KSC/CB-00001 CB- 5 Tanpa sisipan Tidak pernah Per PT Bawaan Ubah | Faktur pajak keluaran KSC/FKT-00001 FKT- 5 Tanpa sisipan Tidak pernah Per PT Baw"
+      "ms": 12574,
+      "info": "berikutnya KSC/AR-00027 (terakhir KSC/AR-00026) · faktur: Tidak bisa diubah: dipakai bersama atau diturunkan dari dokumen lain. · Penerimaan piutang KSC/AR-00027 AR- 5 Tanpa sisipan Tidak pernah Per PT Bawaan U | Transaksi kas dan bank KSC/CASH-00026 CASH- 5 Tanpa sisipan Tidak pernah Per PT  | Jurnal KSC/JE-00197 JE- 5 Tanpa sisipan Tidak pernah Per PT Bawaan Ubah | Kontrabon KSC/CB-00001 CB- 5 Tanpa sisipan Tidak pernah Per PT Bawaan Ubah | Faktur pajak keluaran KSC/FKT-00001 FKT- 5 Tanpa sisipan Tidak pernah Per PT Baw"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Klik [[Ubah]] pada baris Kwitansi → baca pratinjau → [[Batal]]",
       "expect": "Pop-up 'Ubah format nomor · Kwitansi' menampilkan awalan, lebar angka, sisipan tanggal, mulai lagi dari 1 dan pratinjau nomor; ditutup tanpa menyimpan (mengubah format di tengah tahun = keputusan pemilik)",
       "ok": true,
-      "ms": 1013,
+      "ms": 1117,
       "info": "TIGA NOMOR BERIKUTNYA KSC/AR-00027 · KSC/AR-00028 · KSC/AR-00029"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Tab [[Template Dokumen]] → [[Desainer PDF]] → *Jenis Dokumen* Kwitansi · *PT* Sukacita Textile · *Berlaku untuk* Hanya Sukacita Textile → bagian [[Naskah]] → *Teks penutup* → [[Simpan Template]]",
       "expect": "Pesan 'Aturan khusus Sukacita Textile tersimpan — PT lain tidak berubah.'; pratinjau memuat teks penutup dengan nomor kwitansi terisi",
       "ok": true,
-      "ms": 7009,
+      "ms": 7412,
       "info": "Aturan khusus Sukacita Textile tersimpan — PT lain tidak berubah."
     },
     {
@@ -38,7 +38,7 @@
       "action": "Masuk dengan akun peserta → Pusat Dokumen › Cetak PDF & Label: jenis [[Kwitansi]], cari KSC/AR-00026, klik ikon [[Unduh PDF]]",
       "expect": "Kwitansi memuat kalimat 'Simpan kwitansi KSC/AR-00026 ini sebagai bukti pembayaran yang sah.' — token {{nomor}} terisi nomor kwitansi",
       "ok": true,
-      "ms": 8035,
+      "ms": 10336,
       "info": "Simpan kwitansi KSC/AR-00026 ini sebagai bukti pembayaran yang sah."
     },
     {
@@ -47,14 +47,12 @@
       "action": "Kembali ke Desainer PDF (Kwitansi · Hanya Sukacita) → klik [[Kembali ke aturan semua PT]] → [[Kembalikan]]",
       "expect": "Pesan 'Sukacita kembali mengikuti aturan semua PT.'; naskah & format nomor tersimpan sama persis dengan sebelum peragaan; kwitansi tercetak sama dengan sebelum (selain stempel 'Dicetak')",
       "ok": true,
-      "ms": 16663,
+      "ms": 16964,
       "info": "pdf_templates 0 baris = sebelum · kwitansi KSC/AR-00026 identik dengan sebelum"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
     "Kwitansi pembanding KSC/AR-00026 · pdf_templates 0 baris · format nomor 0 baris"
   ]

@@ -149,7 +149,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Klik tab [[Penagihan & Penerimaan]]. Pada baris SO baru, klik ikon dompet (Terima pembayaran).",
    "isi": "",
-   "hasil": "Baris SO baru tampil (contoh: KSC/SO-00055, Rp 3.468.750). Di form muncul kotak hijau 'Pakai titipan (tersedia Rp …)'.",
+   "hasil": "Baris SO baru tampil (contoh: KSC/SO-00057, Rp 3.424.905). Di form muncul kotak hijau 'Pakai titipan (tersedia Rp …)'.",
    "gambar": "uji/hasil/F04/09-penagihan-so-berikut.png"
   },
   {
@@ -183,7 +183,7 @@
  "cek_buku": [
   "Kwitansi lebih bayar (contoh): 1-1100 Kas Besar / Bank (D) Rp 2.000.000 · 1-1200 Piutang Usaha (K) Rp 1.954.710 · 2-1400 Uang Muka Pelanggan (K) Rp 45.290 — seimbang",
   "Saldo titipan pelanggan = kolom Deposit di Titipan & Saldo Kredit; keputusan 'deposit' tidak menambah jurnal",
-  "Kwitansi pakai titipan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.423.460 · 2-1400 Uang Muka Pelanggan (D) Rp 45.290 · 1-1200 Piutang Usaha (K) Rp 3.468.750 — seimbang; titipan kembali Rp 0"
+  "Kwitansi pakai titipan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.379.615 · 2-1400 Uang Muka Pelanggan (D) Rp 45.290 · 1-1200 Piutang Usaha (K) Rp 3.424.905 — seimbang; titipan kembali Rp 0"
  ],
  "kesalahan_umum": [
   "Tetap di [[Atur sendiri]] saat uang lebih. Nominal tidak bisa melebihi sisa SO; pilih [[Tertua dulu]].",

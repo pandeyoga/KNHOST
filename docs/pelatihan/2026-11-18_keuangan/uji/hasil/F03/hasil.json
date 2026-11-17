@@ -2,7 +2,7 @@
   "code": "F03",
   "title": "Pembayaran sebagian & umur piutang",
   "ok": true,
-  "at": "2026-11-17T14:14:35.800Z",
+  "at": "2026-11-17T18:11:34.089Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Masuk → Keuangan › Piutang › tab Penagihan & Penerimaan, cari baris SO kedua",
       "expect": "Baris KSC/SO-00005: Belum Lunas Rp 3.257.850",
       "ok": true,
-      "ms": 5852,
-      "info": "Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00005 Rp 3.257.850 17 Des 2026 30h Lagi"
+      "ms": 6548,
+      "info": "Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00005 Rp 3.257.850 17 Des 2026 29h Lagi"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Klik ikon dompet [Terima pembayaran]; ganti angka di kotak alokasi SO menjadi 1303140 (40 %), isi No. referensi",
       "expect": "Petunjuk kuning: 'Kurang bayar Rp … dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp …) — akan diminta keputusan saat disimpan'",
       "ok": true,
-      "ms": 1811,
+      "ms": 1799,
       "info": "Kurang bayar Rp 1.954.710 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 3.257.850) — akan diminta keputusan saat disimpan. Putuskan"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Klik [Simpan kwitansi] → jendela 'Selisih Pembayaran · Kurang bayar' → pilih 'Sisa tetap jadi piutang', alasan 'Bayar sebagian (disepakati)', isi catatan",
       "expect": "Kalimat 'Dibayar Rp …, seharusnya Rp … Kurang Rp … — mau bagaimana?'; 'Sisa tetap jadi piutang' DISARANKAN",
       "ok": true,
-      "ms": 17104,
+      "ms": 17369,
       "info": "Dibayar Rp 1.303.140, seharusnya Rp 3.257.850 (sisa tagihan pesanan tujuan, belum jatuh tempo). Kurang Rp 1.954.710 — mau bagaimana?"
     },
     {
@@ -38,8 +38,8 @@
       "action": "Konfirmasi [Ya, simpan]",
       "expect": "Pesan 'Kwitansi … dicatat … Selisih diputus: Bayar sebagian (disepakati) (SLB-…)'; baris SO tetap ada dengan sisa baru",
       "ok": true,
-      "ms": 3175,
-      "info": "Kwitansi KSC/AR-00031 (Rp 1.303.140) dicatat untuk Latihan 01 · Toko Kain Peserta 01. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00024). × · baris: Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00005 Rp 1.954.710 17 Des 2026 30h Lagi"
+      "ms": 3320,
+      "info": "Kwitansi KSC/AR-00031 (Rp 1.303.140) dicatat untuk Latihan 01 · Toko Kain Peserta 01. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00001). × · baris: Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00005 Rp 1.954.710 17 Des 2026 29h Lagi"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Cek buku: kwitansi, sisa SO, jurnal, keputusan selisih",
       "expect": "Sisa KSC/SO-00005 = Rp 1.954.710 · status bayar Sebagian · jurnal Kas/Bank (D) = Piutang (K) = Rp 1.303.140",
       "ok": true,
-      "ms": 2813,
-      "info": "KSC/AR-00031 · KSC/JE-00209 · keputusan KSC/SLB-00024"
+      "ms": 2817,
+      "info": "KSC/AR-00031 · KSC/JE-00213 · keputusan KSC/SLB-00001"
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "Klik tab Saldo & Umur → cari 'Latihan NN'",
       "expect": "Baris pelanggan: Belum Lunas Rp 1.954.710, kolom 'Belum jatuh tempo' terisi, status kredit 'Sehat'",
       "ok": true,
-      "ms": 1915,
+      "ms": 2083,
       "info": "Latihan 01 · Toko Kain Peserta 01 Ayu Marketing Sehat Rp 1.954.710 — — — — Rp 1.954.710 — Terima"
     },
     {
@@ -65,16 +65,14 @@
       "action": "(Baris diklik) → rincian piutang per pesanan",
       "expect": "Rincian: KSC/SO-00005 Terbayar Rp 1.303.140, Belum Lunas Rp 1.954.710, umur 'Belum Jatuh Tempo'; Jadwal Tagihan menunjukkan sisa",
       "ok": true,
-      "ms": 1022,
-      "info": "Latihan 01 · Toko Kain Peserta 01 Belum lunas Rp 1.954.710 (tercatat Rp 1.954.710 · belum dikirim Rp 0) Tanya soal layar ini Buat Nota Denda Terima pembayaran Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang. PESANAN JATUH TEMPO UMUR TOTAL TERBAYAR BELUM LUNAS "
+      "ms": 988,
+      "info": "Latihan 01 · Toko Kain Peserta 01 Belum lunas Rp 1.954.710 (tercatat Rp 1.954.710 · belum dikirim Rp 0) Tanya soal layar ini Rekening koran Buat Nota Denda Terima pembayaran Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang. PESANAN JATUH TEMPO UMUR TOTAL TERBAY"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
     "Peserta 01 · KSC/SO-00005 · total 3257850 · bayar 40% = 1303140 · sisa harus 1954710",
-    "detail aging: {\"customer_id\":\"cust_9848b645412d\",\"customer_name\":\"Latihan 01 · Toko Kain Peserta 01\",\"as_of\":\"2026-11-17\",\"credit_limit\":300000000,\"deposit_balance\":0,\"config\":{\"denda_rate_pct_per_month\":2,\"grace_d"
+    "detail aging: {\"customer_id\":\"cust_9848b645412d\",\"customer_name\":\"Latihan 01 · Toko Kain Peserta 01\",\"as_of\":\"2026-11-18\",\"credit_limit\":300000000,\"deposit_balance\":0,\"config\":{\"denda_rate_pct_per_month\":2,\"grace_d"
   ]
 }

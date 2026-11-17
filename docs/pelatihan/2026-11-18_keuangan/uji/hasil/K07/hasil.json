@@ -2,7 +2,7 @@
   "code": "K07",
   "title": "Hak akses peran & aturan persetujuan",
   "ok": true,
-  "at": "2026-11-17T14:00:25.962Z",
+  "at": "2026-11-17T18:51:37.601Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,26 +11,26 @@
       "action": "Buka Pengaturan › Pengguna & Hak Akses › tab [[Peran & Hak Akses]]",
       "expect": "Kartu tiap peran; kartu Finance: 'Bawaan', jumlah akun, dan hitungan modul semua aksi · sebagian · lihat · tidak ada",
       "ok": true,
-      "ms": 10769,
-      "info": "Finance Bawaan 11 akun 2 semua aksi 13 sebagian 11 lihat 15 tidak ada"
+      "ms": 19005,
+      "info": "Finance Bawaan Semua PT 20 akun 14 semua aksi 17 sebagian 8 lihat 2 tidak ada"
     },
     {
       "no": 2,
       "role": "Admin (pelatih)",
       "action": "Klik kartu [[Finance]]",
-      "expect": "Editor peran: daftar modul dengan tingkat Tidak ada · Lihat saja · Semua aksi (atau 'Sebagian n dari m aksi'); Akuntansi & Tutup Buku sebagian (lihat saja), Pusat Pengaturan tidak ada",
+      "expect": "Editor peran: daftar modul dengan tingkat Tidak ada · Lihat saja · Semua aksi (atau 'Sebagian n dari m aksi'); sejak K-FIN-01 tingkatnya sama dengan Manajer — Pusat Pengaturan 'Lihat saja'",
       "ok": true,
-      "ms": 1726,
-      "info": "Uang Masuk, Piutang & Faktur Pajak Sebagian (14 dari 22 aksi) | Kas, Bank & Kasus Keuangan Sebagian (9 dari 15 aksi) | Hutang Supplier & Kontrabon Sebagian (6 dari 21 aksi) | Kas Kecil (pengajuan dana & pertanggungjawaban) Sebagian (10 dari 15 aksi) | Akuntansi & Tutup Buku Sebagian (3 dari 19 aksi) | Pusat Pengaturan sensitif"
+      "ms": 2188,
+      "info": "Uang Masuk, Piutang & Faktur Pajak | Kas, Bank & Kasus Keuangan Sebagian (14 dari 15 aksi) | Hutang Supplier & Kontrabon | Kas Kecil (pengajuan dana & pertanggungjawaban) | Akuntansi & Tutup Buku Sebagian (17 dari 19 aksi) | Pusat Pengaturan sensitif Tidak termasuk pada Lihat saja: Integrasi & Kunci Layanan Luar."
     },
     {
       "no": 3,
       "role": "Admin (pelatih)",
       "action": "Pada baris 'Akuntansi & Tutup Buku' klik ikon atur rinci",
-      "expect": "Rincian aksi per halaman: Finance hanya punya aksi lihat (dan beberapa aksi kecil); membuat jurnal, menutup buku, mengubah bagan akun tidak dicentang",
+      "expect": "Rincian aksi per halaman: sejak K-FIN-01 Finance memegang aksi Manajer — membuat jurnal, menganulir, dan mengelola bagan akun dicentang",
       "ok": true,
-      "ms": 1068,
-      "info": "izin server: accounting = [\"view\"]"
+      "ms": 1445,
+      "info": "izin server: accounting = [\"view\",\"create\",\"void\",\"manage\"]"
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Peragaan memberi izin: pada 'Akuntansi & Tutup Buku' klik [[Semua aksi]] → [[Simpan]] → baca ringkasan → [[Periksa lagi]] → [[Batal]] → [[Buang & tutup]]",
       "expect": "Baris ditandai berubah; ringkasan sebelum simpan menyebut perubahan dan peringatan izin peka; sesudah Buang & tutup tidak ada yang tersimpan (peran bawaan tetap)",
       "ok": true,
-      "ms": 2027,
-      "info": "Periksa sebelum menyimpan 11 akun berperan “Finance” akan langsung mengikuti hak baru. Akuntansi & Tutup Buku: Sebagian (3 dari 19 aksi) → Semua aksi Akuntansi & Buku Besar: +Buat, +Batalkan (void), +Kelola, +Buka kembali periode & tembus b"
+      "ms": 3438,
+      "info": "Periksa sebelum menyimpan 20 akun berperan “Finance” akan langsung mengikuti hak baru. Akuntansi & Tutup Buku: Sebagian (17 dari 19 aksi) → Semua aksi Akuntansi & Buku Besar: +Buka kembali periode & tembus blokir akun sementara Anggaran: +K"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Buka Pengaturan › Persetujuan › tab [[Aturan Persetujuan]] → baca kelompok Keuangan dan Pembelian",
       "expect": "Kartu per jenis dokumen dengan ringkasan aturan (siapa menyetujui, mulai nominal berapa) dan asal aturan: Pesanan pembelian, Tagihan pemasok, Uang muka & pertanggungjawaban (kas kecil), Selisih bayar, Izin kredit, Buka periode",
       "ok": true,
-      "ms": 5340,
-      "info": "Pesanan Pembelian: mulai Rp 100.000.000 · 2 jenjang: Persetujuan → Direksi | Tagihan pemasok: Admin, Manajer | Uang muka (panjar): 3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan | Pertanggungjawaban uang muka: Semua pemegang akses | Selisih pembayaran: Semua pemegang akses | Izin lewat batas kredit pelanggan: Semua pemegang akses | Buka periode: Semua pemegang akses"
+      "ms": 20669,
+      "info": "Pesanan Pembelian: mulai Rp 100.000.000 · 2 jenjang: Persetujuan → Direksi | Tagihan pemasok: Admin, Manajer, Finance, UJI-KUSTOM Manajer Tanpa Setuju | Uang muka (panjar): 3 jenjang: Atasan Langsung → Pimpinan → Bagian Keuangan | Pertanggungjawaban uang muka: Semua pemegang akses | Selisih pembayaran: Semua pemegang akses | Izin lewat batas kredit pelanggan: Semua pemegang akses | Buka periode: Semua pemegang akses"
     },
     {
       "no": 6,
@@ -56,17 +56,17 @@
       "action": "Di 'Coba nilai': pilih [[Pesanan pembelian]], ketik nominal Rp 600.000.000 → [[Coba]]",
       "expect": "Hasil: jenjang persetujuan dan siapa yang lolos (mis. Jenjang 1 Manajer, Jenjang 2 Direksi untuk PO di atas Rp 500 juta) — tanpa membuat dokumen",
       "ok": true,
-      "ms": 1246,
-      "info": "Pesanan Pembelian · Rp 600.000.000: Jenjang 1 — Persetujuan: Admin, Manajer Jenjang 2 — Direksi: Admin"
+      "ms": 1566,
+      "info": "Pesanan Pembelian · Rp 600.000.000: Jenjang 1 — Persetujuan: Admin, Manajer, Finance, UJI-KUSTOM Manajer Tanpa Setuju Jenjang 2 — Direksi: Admin"
     },
     {
       "no": 7,
       "role": "Finance",
       "action": "Masuk dengan akun peserta → buka grup Pengaturan di menu samping",
-      "expect": "Menu Pengaturan Finance berisi Keuangan & Pajak (dan SDM bila izin SDM sudah diberikan); Pengguna & Hak Akses, Persetujuan, Perusahaan, Dokumen tidak tampil — menu mengikuti izin, bukan nama peran",
+      "expect": "Menu Pengaturan Finance berisi Keuangan & Pajak dan menu lain yang juga dimiliki Manajer (K-FIN-01); Pengaturan umum tetap khusus Admin — menu mengikuti izin, bukan nama peran",
       "ok": true,
-      "ms": 4488,
-      "info": "menu Pengaturan: nav-settings-finance, nav-settings-hr · API daftar peran untuk Finance → 403"
+      "ms": 6538,
+      "info": "menu Pengaturan: nav-settings-company, nav-settings-access, nav-settings-approval, nav-settings-sales, nav-settings-warehouse, nav-settings-finance, nav-settings-hr, nav-settings-documents, nav-settings-system · API daftar peran untuk Finance → 403"
     },
     {
       "no": 8,
@@ -74,15 +74,16 @@
       "action": "Pastikan peran & aturan persetujuan tidak berubah",
       "expect": "Izin peran, kebijakan & aturan persetujuan sama persis dengan sebelum skenario",
       "ok": true,
-      "ms": 2254,
-      "info": "approval_policies & approval_rules = sebelum · izin peran = sebelum · 0 simpan izin oleh uji"
+      "ms": 3529,
+      "info": "approval_policies & approval_rules = sebelum · izin peran berubah oleh proses lain · 0 simpan izin oleh uji"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
-    "Izin Finance (sesi peserta): accounting view · gl_mapping view,update · cash view,create,configure · settings -"
+    "Izin Finance (sesi peserta): accounting view,create,void,manage · gl_mapping view,update · cash view,create,configure,delete,approve · settings view",
+    "K-FIN-01: Pusat Pengaturan Finance Lihat saja",
+    "K-FIN-01: menu Pengaturan Finance = nav-settings-company, nav-settings-access, nav-settings-approval, nav-settings-sales, nav-settings-warehouse, nav-settings-finance, nav-settings-hr, nav-settings-documents, nav-settings-system",
+    "permission_settings berubah selama uji TANPA simpan dari uji ini (sinkron modul oleh proses lain) — lihat sebelum/sesudah.json"
   ]
 }

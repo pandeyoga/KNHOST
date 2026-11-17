@@ -14,7 +14,7 @@
  ],
  "peran": "Sales · Admin Sales · Manajer · Finance (akun peserta)",
  "menit": 40,
- "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30). Empat pesanan: SO-A dan SO-B baru, masing-masing 2 baris (contoh DENIM TENCEL TAUPE A Rp 25.000/yard dan DENIM TENCEL HITAM A Rp 20.000/yard, 1 roll per baris, belum dikirim); SO-B sudah menerima uang muka 30% (contoh Rp 1.788.576). SO-C = Kartu Peserta › SO untuk pelunasan penuh dan SO-D = Kartu Peserta › SO untuk bayar sebagian (keduanya sudah dikirim, belum dibayar). Akun peran: sales@, salesadmin@, manager@ (sandi demo12345) dan akun Finance peserta.",
+ "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30). Empat pesanan: SO-A dan SO-B baru, masing-masing 2 baris (contoh DENIM TENCEL TAUPE A Rp 25.000/yard dan DENIM TENCEL HITAM A Rp 20.000/yard, 1 roll per baris, belum dikirim); SO-B sudah menerima uang muka 30% (contoh Rp 1.746.618). SO-C = Kartu Peserta › SO untuk pelunasan penuh dan SO-D = Kartu Peserta › SO untuk bayar sebagian (keduanya sudah dikirim, belum dibayar). Akun peran: sales@, salesadmin@, manager@ (sandi demo12345) dan akun Finance peserta.",
  "alur": [
   {
    "peran": "Sales",
@@ -90,7 +90,7 @@
    "peran": "Sales",
    "menu": "Penjualan › Pesanan",
    "aksi": "Masuk sebagai Sales. Cari nomor SO-A, klik barisnya, lalu klik [[Lihat detail & aksi]].",
-   "isi": "*Akun*: sales@kainnusantara.id · *Cari*: nomor SO-A (contoh KSC/SO-00056)",
+   "isi": "*Akun*: sales@kainnusantara.id · *Cari*: nomor SO-A (contoh KSC/SO-00063)",
    "hasil": "Rincian SO terbuka. Panel 'Koreksi & Amandemen' berisi 'Belum ada koreksi pada dokumen ini' dan tombol [[Ajukan Amandemen]].",
    "gambar": "uji/hasil/S1/03-a-sales-panel-koreksi.png"
   },
@@ -100,7 +100,7 @@
    "menu": "Rincian SO › Ajukan Amandemen",
    "aksi": "Klik [[Ajukan Amandemen]]. Pilih label alasan dan ubah harga baris 1.",
    "isi": "*Label alasan koreksi*: Negosiasi pelanggan · *Harga satuan* baris 1: Rp 25.000 → Rp 24.000 · *Penjelasan tertulis*: kronologi singkat",
-   "hasil": "Kotak Dampak Koreksi: Nilai sekarang Rp 6.035.847 → Setelah koreksi Rp 5.901.781, dampak Rp 134.066 (contoh). Lencana 'Dihitung ulang' dan 'Butuh persetujuan Manajer', karena harga Rp 24.000 di bawah harga PT Rp 25.000.",
+   "hasil": "Kotak Dampak Koreksi: Nilai sekarang Rp 6.051.387 → Setelah koreksi Rp 5.916.700, dampak Rp 134.687 (contoh). Lencana 'Dihitung ulang' dan 'Butuh persetujuan Manajer', karena harga Rp 24.000 di bawah harga PT Rp 25.000.",
    "gambar": "uji/hasil/S1/05-a-sales-pratinjau.png"
   },
   {
@@ -127,7 +127,7 @@
    "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
    "aksi": "Isi catatan keputusan. Klik [[Setujui & Terapkan]].",
    "isi": "*Catatan keputusan*: Disetujui: pelanggan tetap, volume 2 roll",
-   "hasil": "Status 'Diterapkan'. Nilai SO-A kini Rp 5.901.781 (DPP Rp 5.167.320 + PPN Rp 568.405, contoh). Buku: tidak ada jurnal. Eksposur kredit pelanggan (pesanan terbuka) turun Rp 134.066.",
+   "hasil": "Status 'Diterapkan'. Nilai SO-A kini Rp 5.916.700 (DPP Rp 5.167.320 + PPN Rp 568.405, contoh). Buku: tidak ada jurnal. Eksposur kredit pelanggan (pesanan terbuka) turun Rp 134.687.",
    "gambar": "uji/hasil/S1/12-a-mgr-hasil.png"
   },
   {
@@ -145,7 +145,7 @@
    "menu": "Penjualan › Pesanan › Koreksi & Amandemen",
    "aksi": "Buka amandemen kedua. Isi alasan penolakan, lalu klik [[Tolak]].",
    "isi": "*Catatan keputusan*: Ditolak: harga terlalu jauh di bawah harga PT, tawarkan diskon volume saja",
-   "hasil": "Status 'Ditolak'. Nilai SO-A tetap Rp 5.901.781. Usulan yang ditolak tetap tercatat beserta catatan penolakannya.",
+   "hasil": "Status 'Ditolak'. Nilai SO-A tetap Rp 5.916.700. Usulan yang ditolak tetap tercatat beserta catatan penolakannya.",
    "gambar": "uji/hasil/S1/21-a-mgr2-hasil.png"
   },
   {
@@ -163,7 +163,7 @@
    "menu": "Rincian SO › Edit / Override SO",
    "aksi": "Klik [[Edit / Override SO]]. Klik ikon hapus pada baris 2, isi alasan, lalu klik [[Simpan Override]].",
    "isi": "*Alasan override*: pelanggan membatalkan baris 2 sebelum dikirim",
-   "hasil": "Pesan '… diperbarui (1 perubahan langsung berlaku)'. Baris 2 keluar dari SO, roll-nya kembali bebas di gudang, nilai SO-A Rp 3.217.579 (contoh). Jejak bertambah 'Override SO oleh Admin' (diterapkan otomatis). Buku: tidak ada jurnal.",
+   "hasil": "Pesan '… diperbarui (1 perubahan langsung berlaku)'. Baris 2 keluar dari SO, roll-nya kembali bebas di gudang, nilai SO-A Rp 3.232.498 (contoh). Jejak bertambah 'Override SO oleh Admin' (diterapkan otomatis). Buku: tidak ada jurnal.",
    "gambar": "uji/hasil/S1/26-a-admin-hapus-baris.png"
   },
   {
@@ -352,12 +352,12 @@
   "Ambang dan penyetuju adalah pengaturan, bukan angka tetap: Pengaturan › Penjualan (kelompok 'Retur & koreksi dokumen › Koreksi dokumen') dan Aturan Persetujuan jenis amandemen. Diubah Admin, berlaku untuk semua pengguna."
  ],
  "cek_buku": [
-  "SO-A (belum terbit): jumlah jurnal untuk SO-A = 0 sesudah tiga amandemen. Nilai SO dihitung ulang: contoh DPP Rp 5.167.320 (114,13 × Rp 24.000 + 121,41 × Rp 20.000) + PPN 11% DPP Rp 568.405 = Rp 5.901.781; sesudah baris 2 dihapus Rp 3.217.579 (= 114,13 × Rp 24.000 + PPN).",
-  "Uang muka SO-B (contoh KSC/JE-00229): 1-1100 Kas Besar / Bank (D) Rp 1.788.576 · 2-1400 Uang Muka Pelanggan (K) Rp 1.788.576 — seimbang; tidak berubah oleh percobaan koreksi.",
-  "Nota kredit SO-C (contoh KSC/CN-00004, jurnal KSC/JE-00230): 4-1000 Pendapatan Penjualan (D) Rp 241.380 + 2-1200 PPN Keluaran (D) Rp 26.552 = 1-1200 Piutang Usaha (K) Rp 267.932 — seimbang. DPP nota = 121,08 yard × Rp 2.000.",
-  "Kwitansi SO-C (contoh KSC/JE-00231): 1-1100 (D) = 1-1200 (K) Rp 3.081.216 = Rp 3.359.970 − Rp 267.932. Saldo 1-1200 untuk SO-C: Rp 3.359.970 − Rp 267.932 − Rp 3.081.216 = 0.",
-  "Nota debit SO-D (contoh KSC/DN-00001, jurnal KSC/JE-00232): 1-1200 Piutang Usaha (D) Rp 136.241 = 4-1000 Pendapatan Penjualan (K) Rp 122.740 + 2-1200 PPN Keluaran (K) Rp 13.501 — seimbang. DPP nota = 114,34 yard × Rp 1.000.",
-  "Kwitansi SO-D (contoh KSC/JE-00233): 1-1100 (D) = 1-1200 (K) Rp 3.542.276 = Rp 3.172.935 + Rp 136.241. Umur piutang pelanggan tidak lagi memuat SO-C dan SO-D.",
+  "SO-A (belum terbit): jumlah jurnal untuk SO-A = 0 sesudah tiga amandemen. Nilai SO dihitung ulang: contoh DPP Rp 5.167.320 (114,13 × Rp 24.000 + 121,41 × Rp 20.000) + PPN 11% DPP Rp 568.405 = Rp 5.916.700; sesudah baris 2 dihapus Rp 3.232.498 (= 114,13 × Rp 24.000 + PPN).",
+  "Uang muka SO-B (contoh KSC/JE-00252): 1-1100 Kas Besar / Bank (D) Rp 1.746.618 · 2-1400 Uang Muka Pelanggan (K) Rp 1.746.618 — seimbang; tidak berubah oleh percobaan koreksi.",
+  "Nota kredit SO-C (contoh KSC/CN-00004, jurnal KSC/JE-00253): 4-1000 Pendapatan Penjualan (D) Rp 241.380 + 2-1200 PPN Keluaran (D) Rp 26.552 = 1-1200 Piutang Usaha (K) Rp 267.932 — seimbang. DPP nota = 121,08 yard × Rp 2.000.",
+  "Kwitansi SO-C (contoh KSC/JE-00254): 1-1100 (D) = 1-1200 (K) Rp 3.081.216 = Rp 3.359.970 − Rp 267.932. Saldo 1-1200 untuk SO-C: Rp 3.359.970 − Rp 267.932 − Rp 3.081.216 = 0.",
+  "Nota debit SO-D (contoh KSC/DN-00001, jurnal KSC/JE-00255): 1-1200 Piutang Usaha (D) Rp 136.241 = 4-1000 Pendapatan Penjualan (K) Rp 122.740 + 2-1200 PPN Keluaran (K) Rp 13.501 — seimbang. DPP nota = 114,34 yard × Rp 1.000.",
+  "Kwitansi SO-D (contoh KSC/JE-00256): 1-1100 (D) = 1-1200 (K) Rp 3.542.276 = Rp 3.172.935 + Rp 136.241. Umur piutang pelanggan tidak lagi memuat SO-C dan SO-D.",
   "PPN keluaran: nota kredit membalik PPN Rp 26.552 dan melahirkan draf dokumen pajak retur dengan PPN yang sama (belum terbit = masih terhitung 'retur tanpa dokumen' di pencocokan PPN). Nota debit menambah PPN Rp 13.501 di buku, sedangkan faktur SO-D tetap Rp 337.535 — selisih Rp 13.501 tampil di pencocokan PPN keluaran."
  ],
  "kesalahan_umum": [
@@ -366,7 +366,7 @@
   "Mencoba menghapus baris lewat amandemen (jumlah 0). Hapus baris dilakukan Admin Sales lewat Edit / Override SO sebelum barang diambil; sesudah ada uang muka, pesanan terkunci dan pilihannya hanya membatalkan pesanan atau retur sesudah kirim.",
   "Menaikkan harga tanpa memeriksa faktur pajak. Nota debit menambah PPN Keluaran tetapi faktur pajak pesanan tidak ikut berubah — laporkan ke pelatih (lihat catatan)."
  ],
- "catatan_pelatih": "Peragakan pada peserta peraga yang segar (pelanggan latihan yang belum pernah dikoreksi). SO-A dan SO-B dibuat pelatih sebelum kelas (uji otomatis membuatnya sendiri: dua baris per roll, ditambah uang muka 30% SO-B lewat kwitansi Finance). Pakai tiga jendela: Sales/Admin Sales, Manajer, dan Finance. Ambang yang berlaku dibaca di rincian amandemen ('Ambang yang berlaku saat usulan dibuat'). Finance tidak punya tab Koreksi & Amandemen; Finance melihat amandemen dan nota per pesanan di rincian SO dan di Jejak Dokumen. Draf dokumen pajak retur dari nota kredit dan PPN tambahan dari nota debit belum punya aturan terbit yang pasti (menunggu konsultan pajak) — jangan menerbitkan atau mengubah faktur di kelas. Membatalkan pesanan yang sudah ber-uang muka dibahas di S3. Nota kredit/debit bisa bersen walau total SO bulat (contoh: SO-C Rp 3.359.970, nota kredit Rp 268.797,60, sisa tagihan Rp 3.081.216,40 tampil Rp 3.081.216) — transfer bulat menyisakan Rp 0,40; lihat K-07.",
+ "catatan_pelatih": "Peragakan pada peserta peraga yang segar (pelanggan latihan yang belum pernah dikoreksi). SO-A dan SO-B dibuat pelatih sebelum kelas (uji otomatis membuatnya sendiri: dua baris per roll, ditambah uang muka 30% SO-B lewat kwitansi Finance). Pakai tiga jendela: Sales/Admin Sales, Manajer, dan Finance. Ambang yang berlaku dibaca di rincian amandemen ('Ambang yang berlaku saat usulan dibuat'). Sejak K-FIN-01 Finance juga membuka tab Koreksi & Amandemen seperti Manajer; amandemen dan nota per pesanan juga terlihat di rincian SO dan di Jejak Dokumen. Draf dokumen pajak retur dari nota kredit dan PPN tambahan dari nota debit belum punya aturan terbit yang pasti (menunggu konsultan pajak) — jangan menerbitkan atau mengubah faktur di kelas. Membatalkan pesanan yang sudah ber-uang muka dibahas di S3. Nota kredit/debit bisa bersen walau total SO bulat (contoh: SO-C Rp 3.359.970, nota kredit Rp 268.797,60, sisa tagihan Rp 3.081.216,40 tampil Rp 3.081.216) — transfer bulat menyisakan Rp 0,40; lihat K-07.",
  "uji": {
   "berkas": "uji/situasi/S1_amandemen_penjualan.js",
   "peserta_uji": "61 (peserta peraga)"

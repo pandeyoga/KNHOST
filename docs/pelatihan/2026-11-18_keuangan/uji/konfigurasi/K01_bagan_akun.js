@@ -95,17 +95,14 @@ const AWAL = { asset: "1-", liability: "2-", equity: "3-", income: "4-", expense
     });
 
   await r.step(5, "Finance", "Periksa tombol di bilah daftar dan baris akun",
-    "Tidak ada tombol [[Tambah Akun]], ikon ubah, atau ikon hapus — Finance hanya melihat; server pun menolak (403)", async () => {
-      assert(await r.tid("coa-add-toggle").count() === 0, "Finance melihat tombol Tambah Akun");
-      assert(await r.page.locator('[data-testid^="coa-edit-"]').count() === 0, "Finance melihat ikon ubah");
-      assert(await r.page.locator('[data-testid^="coa-delete-"]').count() === 0, "Finance melihat ikon hapus");
-      let status = 0;
-      try { await fin.post(`/gl/accounts?entity_id=${k.KSC}`, { code: KODE, name: "uji", type: "expense" }); } catch (e) { status = e.status; }
-      assert(status === 403, `POST akun oleh Finance → ${status}`);
+    "Tombol [[Tambah Akun]] dan ikon ubah tampil juga untuk Finance (K-FIN-01: Finance setara Manajer); ikon hapus hanya pada akun khusus PT — menambah akun di latihan ini diperagakan pelatih", async () => {
+      const tambah = await r.kfin(r.tid("coa-add-toggle"), "tombol Tambah Akun");
+      const ubah = await r.kfin(r.page.locator('[data-testid^="coa-edit-"]'), "ikon ubah akun");
+      const hapus = await r.kfin(r.page.locator('[data-testid^="coa-delete-"]'), "ikon hapus akun");
       await r.tid("coa-search").locator("input").first().fill("").catch(async () => r.tid("coa-search").fill(""));
       await r.idle(300);
       await k.potret(r, r.tid("coa-toolbar"), "finance-hanya-lihat");
-      return "Tambah/ubah/hapus tidak tampil · API tambah akun → 403";
+      return `K-FIN-01: Tambah Akun ${tambah ? "tampil" : "tidak tampil"} · ubah ${ubah ? "tampil" : "tidak tampil"} · hapus ${hapus ? "tampil" : "tidak tampil"}`;
     });
 
   let dibuat = false;

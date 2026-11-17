@@ -1,7 +1,7 @@
 {
  "judul": "Flow Krusial Keuangan",
  "subjudul": "Piutang · Hutang · per Pelanggan & Pemasok · Kas & Bank · Koreksi · Tutup bulan",
- "catatan_akses": "Mulai 17 Nov 2026 akun Finance memiliki akses yang sama dengan Manajer (keputusan pemilik K-FIN-01). Langkah yang di manual lengkap ditulis 'Manajer' kini juga bisa dikerjakan Finance. Kontrol dua orang tetap: pembuat dokumen tidak bisa menyetujui dokumennya sendiri.",
+ "catatan_akses": "Yang bisa Anda kerjakan ditentukan IZIN pada peran akun Anda, bukan nama perannya. Peran bisa kustom: Admin mengatur izin di Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses. Tombol yang tidak tampil berarti izinnya tidak ada di peran Anda — minta Admin. Peran bawaan Finance saat ini memegang izin yang sama dengan Manajer (K-FIN-01), termasuk berpindah PT. Kontrol dua orang tetap: pembuat dokumen tidak bisa menyetujui dokumennya sendiri. Selama latihan tetap di PT Sukacita.",
  "rutinitas": [
   [
    "Pagi",
@@ -168,5 +168,51 @@
     ]
    ]
   }
+ ],
+ "izin": [
+  [
+   "Terima pembayaran (kwitansi)",
+   "Kwitansi / Uang Masuk (AR) › Buat"
+  ],
+  [
+   "Batalkan kwitansi",
+   "Kwitansi / Uang Masuk (AR) › Batalkan (void)"
+  ],
+  [
+   "Janji bayar pelanggan",
+   "Pesanan Penjualan (SO) › Ubah"
+  ],
+  [
+   "Bayar tagihan pemasok (satu / beberapa)",
+   "Tagihan Supplier › Bayar"
+  ],
+  [
+   "Setujui tagihan selisih harga",
+   "Tagihan Supplier › Setujui"
+  ],
+  [
+   "Buat · setujui · bayar kontrabon",
+   "Kontrabon › Buat · Setujui · Bayar"
+  ],
+  [
+   "Rekonsiliasi bank, catat biaya bank",
+   "Kas & Bank › Buat"
+  ],
+  [
+   "Jurnal manual · balik · anulir jurnal",
+   "Akuntansi & Buku Besar › Buat · Batalkan (void)"
+  ],
+  [
+   "Tutup buku",
+   "Akuntansi & Buku Besar › Kelola"
+  ],
+  [
+   "Buka kembali periode",
+   "Akuntansi & Buku Besar › Buka kembali"
+  ],
+  [
+   "Setujui izin kredit",
+   "Izin Kredit › Setujui"
+  ]
  ]
 }

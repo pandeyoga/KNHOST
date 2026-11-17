@@ -29,7 +29,7 @@ const s = require("./sdm_lib");
     return await r.text("payinput-form-title");
   });
 
-  await r.step(2, "Finance", `Isi: *Karyawan* ${d.nama} · *Komponen* Rapel (Pendapatan) · *Periode bayar* ${s.MASA_LABEL} · *Nominal* 8.000.000 · *Keterangan* ${label} · *Alasan* ${alasan} → [[Simpan masukan]]`, "Pesan \"Masukan … Rp 8.000.000 dicatat, menunggu disahkan.\"; baris baru status Menunggu disahkan; Finance tidak melihat tombol Sahkan", async () => {
+  await r.step(2, "Finance", `Isi: *Karyawan* ${d.nama} · *Komponen* Rapel (Pendapatan) · *Periode bayar* ${s.MASA_LABEL} · *Nominal* 8.000.000 · *Keterangan* ${label} · *Alasan* ${alasan} → [[Simpan masukan]]`, "Pesan \"Masukan … Rp 8.000.000 dicatat, menunggu disahkan.\"; baris baru status Menunggu disahkan; Finance juga melihat tombol Sahkan (K-FIN-01) — pengesahan di latihan ini diperagakan Manajer", async () => {
     await s.pilih(r, "payinput-form-emp", d.nama);
     await s.pilih(r, "payinput-form-comp", "Rapel");
     await s.pilihPersis(r, "payinput-form-period", s.MASA_LABEL);
@@ -49,7 +49,7 @@ const s = require("./sdm_lib");
       `DB masukan: ${JSON.stringify(inp && { s: inp.status, a: inp.amount, c: inp.component_code })}`);
     await s.pilih(r, "payinput-period", s.MASA_LABEL);
     await r.tid(`payinput-row-${inp.id}`).waitFor({ timeout: 10000 });
-    assert(!(await r.tid(`payinput-approve-${inp.id}`).count()), "Finance melihat tombol Sahkan masukan");
+    await r.kfin(r.tid(`payinput-approve-${inp.id}`), "tombol Sahkan masukan");
     const st = await r.text(`payinput-status-${inp.id}`);
     await s.sorot(r.tid(`payinput-row-${inp.id}`));
     await r.shot("masukan-menunggu", { full: true });

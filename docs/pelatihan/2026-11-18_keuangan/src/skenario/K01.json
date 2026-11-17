@@ -10,7 +10,7 @@
   "Saldo normal: Aset dan Beban bertambah di sisi Debit; Kewajiban, Ekuitas, dan Pendapatan bertambah di sisi Kredit. Setiap jurnal selalu seimbang: jumlah Debit = jumlah Kredit.",
   "Akun induk (baris berhuruf besar, mis. ASET LANCAR) hanya mengelompokkan dan tidak bisa dijurnal. Akun detail (mis. Kas Besar / Bank) adalah tempat jurnal ditulis.",
   "Akun sistem adalah akun bawaan yang dipakai pencatatan otomatis, jadi tidak bisa dihapus. Akun kontrol (mis. Piutang Usaha, Hutang Usaha, Persediaan) hanya berubah lewat dokumennya — kwitansi, tagihan, penerimaan barang — bukan lewat jurnal manual.",
-  "Finance hanya melihat Bagan Akun. Menambah, mengubah, atau mematikan akun dikerjakan pemegang izin kelola akuntansi (bawaan: Manajer dan Admin). Akun baru dibuat untuk PT yang sedang dipilih di bilah atas; PT lain tidak terpengaruh."
+  "Menambah, mengubah, atau mematikan akun dikerjakan pemegang izin Akuntansi & Buku Besar › Kelola (di peran bawaan: Admin, Manajer, dan sejak K-FIN-01 Finance; peran kustom mengikuti izin yang dicentang Admin). Akun baru dibuat untuk PT yang sedang dipilih di bilah atas; PT lain tidak terpengaruh."
  ],
  "peran": "Finance (akun peserta) · Manajer (pelatih)",
  "menit": 20,
@@ -97,7 +97,7 @@
    "menu": "Bagan Akun",
    "aksi": "Tutup pop-up. Kosongkan kotak cari dan perhatikan bilah tombol di atas daftar.",
    "isi": "",
-   "hasil": "Tidak ada tombol [[Tambah Akun]], ikon ubah, atau ikon hapus. Tombol 'Dipakai Sukacita' tampil tetapi tidak bisa diklik. Finance hanya melihat Bagan Akun.",
+   "hasil": "Tombol [[Tambah Akun]] dan ikon ubah tampil karena peran Anda memegang izin Akuntansi & Buku Besar › Kelola (peran bawaan Finance sejak K-FIN-01); ikon hapus hanya muncul pada akun khusus PT (lihat langkah 8). Di kelas jangan menambah atau mengubah akun — bagan akun berlaku untuk semua orang; penambahan akun diperagakan pelatih (langkah 6).",
    "gambar": "uji/hasil/K01/08-finance-hanya-lihat.png"
   },
   {
@@ -135,7 +135,7 @@
  ],
  "kesalahan_umum": [
   "Mengira semua akun kelompok 5 adalah HPP: 5-1000 Harga Pokok Penjualan memang HPP, tetapi 5-9000 Beban Angkut Pembelian dan 5-9500 Beban Penghapusan Persediaan juga ada di kelompok 5 (beban pokok).",
-  "Mencari tombol Tambah Akun dengan akun Finance — tombol itu memang tidak ada; minta Manajer bila butuh akun baru.",
+  "Menambah akun baru saat mencoba-coba — bagan akun dipakai semua orang di PT itu; akun yang salah dibuat harus dimatikan, tidak bisa dihapus bila sudah dipakai.",
   "Menambah akun saat bilah atas memilih 'Semua PT': akun masuk Template Global dan dipakai semua PT. Pilih satu PT dulu bila akun hanya untuk PT itu.",
   "Menghapus akun yang sudah dipakai: sistem menolak. Akun yang tidak dipakai lagi dinonaktifkan, bukan dihapus."
  ],

@@ -359,11 +359,11 @@ async function bukaTagihan(r, bill) {
     });
 
   if (langkah(6)) await r.step(6, "Finance", `Login akun peserta (${FINANCE}) → Pembelian › Pesanan Pembelian → cari PO-1 → klik baris → gulir ke Riwayat Amandemen → buka v3 dan v2`,
-    `Lencana v3; Riwayat Amandemen: v3 "Tambahan pesanan untuk stok cabang" (Qty ${P1.qty.toLocaleString("id-ID")} → ${P1.qty3.toLocaleString("id-ID")}, Grand Total), v2 "Konfirmasi harga…" (Harga ${HARGA.toLocaleString("id-ID")} → ${P1.harga2.toLocaleString("id-ID")}); Finance tidak punya tombol revisi/batal; belum ada jurnal`, async () => {
+    `Lencana v3; Riwayat Amandemen: v3 "Tambahan pesanan untuk stok cabang" (Qty ${P1.qty.toLocaleString("id-ID")} → ${P1.qty3.toLocaleString("id-ID")}, Grand Total), v2 "Konfirmasi harga…" (Harga ${HARGA.toLocaleString("id-ID")} → ${P1.harga2.toLocaleString("id-ID")}); Finance juga melihat tombol revisi/batal (K-FIN-01); belum ada jurnal`, async () => {
       await r.login(FINANCE);
       await bukaPo(r, K.po1);
       assert(/v3/.test(await r.text("po-version-badge")), "lencana versi bukan v3");
-      assert(await r.tid("amend-po-button").count() === 0 && await r.tid("cancel-po-button").count() === 0, "Finance melihat tombol revisi/batal");
+      await r.kfin(r.tid("amend-po-button"), "tombol revisi PO"); await r.kfin(r.tid("cancel-po-button"), "tombol batal PO");
       const hist = r.tid("po-version-history");
       await hist.waitFor();
       const isi = async (v) => {   // riwayat = akordeon: satu versi terbuka sekaligus

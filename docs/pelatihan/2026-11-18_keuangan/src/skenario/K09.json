@@ -135,7 +135,7 @@
   "Lupa menghapus hari libur latihan.",
   "Membaca TK1 sebagai K1. Status PTKP dipilih persis: K1 = kawin, satu tanggungan."
  ],
- "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Sejak keputusan itu Finance memegang izin mengatur aturan gaji (36 pengaturan Gaji & SDM, termasuk tabel PTKP/TER dan tarif BPJS yang berlaku untuk seluruh grup PT). Peragakan sebagai bacaan saja. Untuk pemilik: apakah aturan bersama grup (PTKP, TER, BPJS) boleh diubah Finance satu PT, atau dikunci ke Manajer/Admin? Kalender libur dan shift diubah lewat izin kehadiran (Finance juga memegangnya).",
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Sejak K-FIN-01 (17 Nov) peran bawaan Finance juga memegang izin mengesahkan dan membatalkan (Proses Penggajian › Setujui · Batalkan); yang menentukan adalah izin di peran, bukan nama peran. Di latihan pengesahan tetap diperagakan Manajer sebagai orang kedua. Sejak keputusan itu Finance memegang izin mengatur aturan gaji (36 pengaturan Gaji & SDM, termasuk tabel PTKP/TER dan tarif BPJS yang berlaku untuk seluruh grup PT). Peragakan sebagai bacaan saja. Untuk pemilik: apakah aturan bersama grup (PTKP, TER, BPJS) boleh diubah Finance satu PT, atau dikunci ke Manajer/Admin? Kalender libur dan shift diubah lewat izin kehadiran (Finance juga memegangnya).",
  "uji": {
   "berkas": "uji/sdm/K09_konfigurasi_sdm.js",
   "peserta_uji": "01"

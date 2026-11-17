@@ -2,7 +2,7 @@
   "code": "K06",
   "title": "Termin & plafon kredit",
   "ok": true,
-  "at": "2026-11-17T13:59:54.496Z",
+  "at": "2026-11-17T17:55:14.593Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,16 +11,16 @@
       "action": "Masuk dengan akun peserta → Penjualan › CRM & Pelanggan → cari 'Latihan 01' → klik pelanggan Anda → bagian [[Kredit]]",
       "expect": "Profil kredit Sukacita: Jenis plafon/Plafon kredit, Termin yang diizinkan, Termin bawaan, Tahan pesanan bila telat lebih dari (hari), Status kredit — tiap nilai berlencana asal (bawaan PT / khusus pelanggan)",
       "ok": true,
-      "ms": 10849,
+      "ms": 12256,
       "info": "Plafon kredit Tanpa batas Ikut PT Berlaku sampai — Ikut PT Termin yang diizinkan Semua termin aktif PT Ikut PT Termin bawaan — Ikut PT belum dipakai saat pesanan dibuat Tahan pesanan bila telat lebih dari 14 hari Ikut PT Status kredit Normal Ikut PT"
     },
     {
       "no": 2,
       "role": "Finance",
       "action": "Bila belum ada pengajuan menunggu: klik [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini · *Plafon kredit* Rp 300.000.000 · *Alasan* → [[Ajukan]]. Bila sudah ada (usulan saat pelanggan dibuat): baca kotak 'Menunggu keputusan'",
-      "expect": "Kotak 'Menunggu keputusan' memuat perubahan Plafon kredit → Rp 300.000.000; tombol [[Ajukan perubahan]] mati ('Masih ada pengajuan yang menunggu keputusan'); Finance tidak punya tombol Setujui",
+      "expect": "Kotak 'Menunggu keputusan' memuat perubahan Plafon kredit → Rp 300.000.000; tombol [[Ajukan perubahan]] mati ('Masih ada pengajuan yang menunggu keputusan'); Finance juga melihat tombol Setujui (K-FIN-01) — keputusan di latihan ini diperagakan Manajer",
       "ok": true,
-      "ms": 241,
+      "ms": 247,
       "info": "KSC/PKR-00002 oleh Budi Santoso: Jenis plafon → khusus, Plafon kredit → 300000000"
     },
     {
@@ -29,8 +29,8 @@
       "action": "Masuk sebagai Manajer → Keuangan › Piutang › tab [[Kredit & Plafon]] → ketik 'Latihan 01' di kotak cari → baris 'Ubah Profil' pelanggan latihan → [[Setujui]] → [[Setujui]]",
       "expect": "Antrean 'Menunggu keputusan' memuat baris Ubah Profil (pengaju, isi perubahan, alasan); konfirmasi menyebut pelanggan & PT; sesudah disetujui baris hilang dari antrean",
       "ok": true,
-      "ms": 12535,
-      "info": "Ubah Profil Latihan 01 · Toko Kain Peserta 01 Buka kartu pelanggan Rp 300.000.000 Budi Santoso hari ini Jenis plafon: khusus · Plafon kredit: Rp 300.000.000 · P · konfirmasi: Setujui pengajuan profil kredit Latihan 01 · Toko Kain Peserta 01 · Sukacita · Rp 300.000.000 CATATAN KEPUTUSAN Batal Se · status disetujui oleh Dewi Manager"
+      "ms": 12971,
+      "info": "Ubah Profil Latihan 01 · Toko Kain Peserta 01 Buka kartu pelanggan Rp 300.000.000 Budi Santoso 1 hari Jenis plafon: khusus · Plafon kredit: Rp 300.000.000 · Pla · konfirmasi: Setujui pengajuan profil kredit Latihan 01 · Toko Kain Peserta 01 · Sukacita · Rp 300.000.000 CATATAN KEPUTUSAN Batal Se · status disetujui oleh Dewi Manager"
     },
     {
       "no": 4,
@@ -38,7 +38,7 @@
       "action": "Kembali ke kartu pelanggan Anda → bagian [[Kredit]] (muat ulang)",
       "expect": "Plafon kredit berubah sesuai pengajuan dan berlencana 'khusus pelanggan'; riwayat perubahan kredit mencatat pengaju & penyetuju",
       "ok": true,
-      "ms": 24099,
+      "ms": 25471,
       "info": "plafon Rp 300.000.000 (khusus)"
     },
     {
@@ -47,8 +47,8 @@
       "action": "Klik [[Ajukan perubahan]] → bagian Termin pembayaran: centang NET14 & NET30 · *Termin bawaan* Kredit NET 30 Hari · *Alasan* → [[Ajukan]]",
       "expect": "Form menulis 'Termin di luar daftar ditolak saat pesanan dibuat'; sesudah diajukan muncul kotak 'Menunggu keputusan' berisi Termin yang diizinkan & Termin bawaan",
       "ok": true,
-      "ms": 1849,
-      "info": "KSC/PKR-00028: Termin yang diizinkan → [\"NET14\",\"NET30\"], Termin bawaan → \"NET30\""
+      "ms": 2163,
+      "info": "KSC/PKR-00029: Termin yang diizinkan → [\"NET14\",\"NET30\"], Termin bawaan → \"NET30\""
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "Masuk sebagai Manajer → CRM & Pelanggan → pelanggan latihan → bagian [[Kredit]] → [[Setujui]] di kotak 'Menunggu keputusan' → [[Setujui]]",
       "expect": "Termin yang diizinkan & termin bawaan langsung berlaku untuk pesanan baru pelanggan ini di Sukacita",
       "ok": true,
-      "ms": 14371,
+      "ms": 13765,
       "info": "termin diizinkan NET14, NET30 · bawaan NET30"
     },
     {
@@ -65,7 +65,7 @@
       "action": "Pengaturan › Perusahaan (PT) › tab [[Master per PT]] → kelompok [[Syarat Pembayaran]]",
       "expect": "Daftar syarat bayar (CASH, NET7, NET14, NET30, DP50, Bertahap 3x, CBD, NET60, NET90) dengan jumlah hari; asal Global atau khusus PT",
       "ok": true,
-      "ms": 4659,
+      "ms": 4622,
       "info": "9 syarat bayar: CASH, NET7, NET14, NET30, DP50, INST3, CBD, NET60, NET90"
     },
     {
@@ -74,7 +74,7 @@
       "action": "Pembelian › Master Pembelian › Pemasok → cari 'Latihan 01' → klik ikon rincian pada pemasok latihan",
       "expect": "Rincian pemasok memuat termin bayar (contoh NET30 = jatuh tempo tagihan 30 hari sesudah tanggal tagihan)",
       "ok": true,
-      "ms": 6058,
+      "ms": 6397,
       "info": "Latihan 01 · Pemasok Grey Peserta 01: termin NET30 (Kredit NET 30 Hari, 30 hari)"
     },
     {
@@ -83,15 +83,14 @@
       "action": "Pastikan pengaturan bersama tidak berubah",
       "expect": "Aturan kredit PT (plafon bawaan, periksa kredit, blokir telat) sama dengan sebelum skenario — yang berubah hanya profil pelanggan latihan",
       "ok": true,
-      "ms": 492,
+      "ms": 505,
       "info": "system_settings global & Sukacita tidak berubah"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
-    "Pelanggan Latihan 01 · Toko Kain Peserta 01 · plafon Rp 0 (ikut_pt) · pengajuan terbuka KSC/PKR-00002 · termin sasaran NET14,NET30"
+    "Pelanggan Latihan 01 · Toko Kain Peserta 01 · plafon Rp 0 (ikut_pt) · pengajuan terbuka KSC/PKR-00002 · termin sasaran NET14,NET30",
+    "K-FIN-01: tombol Setujui perubahan profil kredit tampil untuk Finance"
   ]
 }

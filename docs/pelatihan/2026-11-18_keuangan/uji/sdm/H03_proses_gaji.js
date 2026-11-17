@@ -72,12 +72,12 @@ const s = require("./sdm_lib");
     return `${slip.number} · TER ${slip.ter_category} ${(Number(slip.pph21_rate) * 100).toFixed(2)}% · PPh 21 ${rp(slip.pph21)} · bersih ${rp(slip.net)} · ${t.slice(0, 160)}`;
   });
 
-  await r.step(4, "Finance", "Klik [[Ajukan]]", "Status Diajukan; Finance tidak melihat tombol Sahkan (izin mengesahkan = Manajer)", async () => {
+  await r.step(4, "Finance", "Klik [[Ajukan]]", "Status Diajukan; Finance juga melihat tombol Sahkan (K-FIN-01) — pengesahan di latihan ini diperagakan Manajer (orang kedua)", async () => {
     await s.klikPotret(r, r.tid("payroll-submit"), "ajukan", { locator: r.tid("payroll-actions") });
     await s.tungguTeks(r, "payroll-notice", /Ajukan berhasil/);
     const st = mongo(`return db.hr_payroll_runs.findOne({id:"${run.id}"},{_id:0,status:1})`).status;
     assert(st === "pending_approval", `status ${st}`);
-    assert(!(await r.tid("payroll-approve").count()), "Finance melihat tombol Sahkan");
+    await r.kfin(r.tid("payroll-approve"), "tombol Sahkan proses gaji");
     await r.shot("diajukan", { locator: r.tid("payroll-run-detail") });
     return `status ${st} · ${await r.text("payroll-actions").catch(() => "")}`;
   });

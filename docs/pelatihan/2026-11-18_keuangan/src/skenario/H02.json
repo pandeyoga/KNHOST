@@ -89,7 +89,7 @@
   "Menunggu masukan disahkan lama sebelum menghitung proses. Masukan yang disahkan ikut proses susulan siapa pun yang menghitung lebih dulu.",
   "Mengira lembur ikut proses susulan. Lembur hanya dihitung di proses reguler."
  ],
- "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Perbaikan 17 Nov: kotak Nominal masukan kini isian rupiah baku; dulu \"8.000.000,00\" tersimpan Rp 800.000.000 tanpa peringatan. Finance memegang izin kehadiran, jadi secara sistem ia juga BISA menyetujui lembur yang ia ajukan sendiri; dalam latihan persetujuan dilakukan Manajer. Untuk pemilik: perlukah lembur yang diajukan seseorang tidak boleh disetujui orang yang sama?",
+ "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Sejak K-FIN-01 (17 Nov) peran bawaan Finance juga memegang izin mengesahkan dan membatalkan (Proses Penggajian › Setujui · Batalkan); yang menentukan adalah izin di peran, bukan nama peran. Di latihan pengesahan tetap diperagakan Manajer sebagai orang kedua. Perbaikan 17 Nov: kotak Nominal masukan kini isian rupiah baku; dulu \"8.000.000,00\" tersimpan Rp 800.000.000 tanpa peringatan. Finance memegang izin kehadiran, jadi secara sistem ia juga BISA menyetujui lembur yang ia ajukan sendiri; dalam latihan persetujuan dilakukan Manajer. Untuk pemilik: perlukah lembur yang diajukan seseorang tidak boleh disetujui orang yang sama?",
  "uji": {
   "berkas": "uji/sdm/H02_masukan_gaji.js",
   "peserta_uji": "01"

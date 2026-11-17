@@ -759,16 +759,23 @@
         },
         "finance": {
           "accounting": [
-            "view"
+            "view",
+            "create",
+            "void",
+            "manage"
           ],
           "ai": [
             "view",
-            "view_stock_value"
+            "view_stock_value",
+            "view_margin",
+            "manage"
           ],
           "ai_finance": [
             "view",
             "create",
-            "pay"
+            "pay",
+            "post",
+            "approve"
           ],
           "ai_template": [
             "daily_brief",
@@ -777,66 +784,147 @@
             "ap_due",
             "cash_position",
             "pnl_month",
-            "stock_value_wh"
+            "stock_value_wh",
+            "sales_today_vs_yesterday",
+            "receiving_today",
+            "dispatch_today",
+            "pending_approvals",
+            "top_products",
+            "top_customers",
+            "sales_ranking",
+            "target_vs_actual",
+            "sales_trend_12m",
+            "sales_by_line",
+            "sales_by_city",
+            "why_sales_changed",
+            "new_customers",
+            "inactive_customers",
+            "discounts",
+            "returns",
+            "margin_by_product",
+            "low_stock",
+            "slow_stock",
+            "stock_by_dyelot",
+            "po_overdue",
+            "incoming_week",
+            "supplier_performance",
+            "makloon_status",
+            "weekly_executive",
+            "entity_comparison",
+            "hr_today"
           ],
           "approval": [
             "view"
           ],
           "ar_receipt": [
             "view",
-            "create"
+            "create",
+            "void"
+          ],
+          "budget": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "cash": [
             "view",
             "create",
-            "configure"
+            "configure",
+            "delete",
+            "approve"
           ],
           "cash_advance": [
             "view",
             "create",
             "update",
             "submit",
-            "disburse"
+            "disburse",
+            "approve",
+            "reject"
           ],
           "cash_holding": [
             "view",
-            "approve"
+            "approve",
+            "create"
           ],
           "cash_settlement": [
             "view",
             "create",
             "update",
             "submit",
-            "pay"
+            "pay",
+            "approve",
+            "reject",
+            "manage"
+          ],
+          "color": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "approve"
           ],
           "contra_bon": [
             "view",
-            "pay"
+            "pay",
+            "create",
+            "update",
+            "verify",
+            "approve"
+          ],
+          "costing": [
+            "view"
           ],
           "credit_override": [
-            "view"
+            "view",
+            "approve",
+            "create"
           ],
           "credit_profile": [
             "view",
-            "update"
+            "update",
+            "approve"
           ],
           "customer": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "export"
           ],
           "data_export": [
             "view",
             "export"
           ],
           "design_ownership": [
-            "view"
+            "view",
+            "claim",
+            "decide"
+          ],
+          "design_request": [
+            "view",
+            "create",
+            "update",
+            "assign",
+            "deliver",
+            "decide",
+            "cancel",
+            "report",
+            "release_hold",
+            "paper_check"
           ],
           "document": [
             "view",
-            "print"
+            "print",
+            "create"
           ],
           "document_delivery": [
             "view",
-            "send"
+            "send",
+            "manage"
+          ],
+          "entity": [
+            "view"
           ],
           "esign": [
             "view",
@@ -849,17 +937,33 @@
           ],
           "finance_amendment": [
             "propose",
-            "review_credit_note"
+            "review_credit_note",
+            "approve"
           ],
           "finance_case": [
             "view",
-            "create"
+            "create",
+            "resolve"
+          ],
+          "fixed_asset": [
+            "view",
+            "create",
+            "update",
+            "run",
+            "dispose"
           ],
           "gl_mapping": [
             "view",
             "update"
           ],
           "goods_receipt": [
+            "view",
+            "review",
+            "close",
+            "approve",
+            "configure"
+          ],
+          "grade_master": [
             "view"
           ],
           "hr": [
@@ -868,14 +972,44 @@
             "update",
             "view_pii",
             "manage_attendance",
-            "manage_payroll"
+            "manage_payroll",
+            "delete",
+            "manage_org"
           ],
           "incentive": [
             "view",
-            "prepare"
+            "prepare",
+            "configure",
+            "view_margin",
+            "approve"
+          ],
+          "input_tax": [
+            "view",
+            "create",
+            "cancel"
+          ],
+          "inspection": [
+            "view",
+            "create",
+            "assign",
+            "inspect",
+            "decide",
+            "reopen",
+            "release"
           ],
           "interco": [
-            "view"
+            "view",
+            "create",
+            "approve",
+            "ship",
+            "receive",
+            "invoice",
+            "cancel",
+            "settle",
+            "return",
+            "tax",
+            "decide_rolls",
+            "override_terms"
           ],
           "interco_finance": [
             "view"
@@ -884,24 +1018,103 @@
             "view",
             "set"
           ],
+          "internal_request": [
+            "view",
+            "create",
+            "cancel",
+            "reject",
+            "convert"
+          ],
           "inventory": [
-            "approve_value"
+            "approve_value",
+            "view",
+            "cycle_count",
+            "approve_count",
+            "update",
+            "pegging",
+            "configure"
+          ],
+          "label": [
+            "view",
+            "generate"
+          ],
+          "landed_cost": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "pay"
           ],
           "logistics": [
             "view"
           ],
-          "od_fulfillment": [
+          "makloon": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "configure"
+          ],
+          "makloon_order": [
+            "view",
+            "create",
+            "issue",
+            "receive",
+            "cancel",
+            "claim",
+            "claim_approve",
+            "forward",
+            "record_loss",
+            "approve_loss"
+          ],
+          "manager_home": [
             "view"
+          ],
+          "marketing": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "delete"
+          ],
+          "md_quality": [
+            "view",
+            "decide"
+          ],
+          "od_fulfillment": [
+            "view",
+            "choose_route",
+            "override_default",
+            "realize",
+            "cancel"
+          ],
+          "od_pricing": [
+            "view_cost",
+            "set_price",
+            "lock"
           ],
           "order": [
             "view",
             "approve_price_edit",
             "release_unpaid",
-            "view_sales_kpi"
+            "view_sales_kpi",
+            "create",
+            "update",
+            "approve",
+            "confirm",
+            "deliver",
+            "verify",
+            "exact_cut",
+            "override",
+            "cancel",
+            "tax_override"
           ],
           "payment_plan": [
             "view",
-            "update"
+            "update",
+            "create",
+            "void"
           ],
           "payment_variance": [
             "view",
@@ -910,56 +1123,224 @@
           "payroll": [
             "pay",
             "create",
-            "post"
+            "post",
+            "approve",
+            "void"
+          ],
+          "pdf_template": [
+            "view",
+            "manage"
           ],
           "penalty": [
             "view",
-            "issue"
+            "issue",
+            "waive",
+            "adjust",
+            "pay"
+          ],
+          "period": [
+            "unlock",
+            "backdate"
+          ],
+          "price_approval": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
           ],
           "pricelist": [
-            "view"
+            "view",
+            "manage"
+          ],
+          "process_recipe": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "product": [
-            "view"
+            "view",
+            "export"
+          ],
+          "product_route": [
+            "update"
+          ],
+          "production": [
+            "view",
+            "manage_bom",
+            "create",
+            "release",
+            "complete",
+            "cancel"
           ],
           "purchase_order": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_requisition": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "decide_rolls"
+          ],
+          "qc": [
+            "view",
+            "release"
           ],
           "repair_order": [
-            "view"
+            "view",
+            "create",
+            "send",
+            "receive",
+            "cancel"
           ],
           "reports": [
             "view"
           ],
+          "rfq": [
+            "view",
+            "create",
+            "update",
+            "award"
+          ],
+          "rnd": [
+            "view",
+            "create",
+            "submit",
+            "assess",
+            "decide",
+            "manage",
+            "hold",
+            "pic_decide",
+            "override_fail",
+            "manage_org",
+            "report",
+            "extend_rounds"
+          ],
+          "sales_force": [
+            "view",
+            "update",
+            "delete",
+            "post",
+            "assign"
+          ],
           "sales_return": [
             "view",
             "decide_compensation",
-            "post_logistics"
+            "post_logistics",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "policy",
+            "record_cutloss",
+            "split_cutloss",
+            "decide_rolls",
+            "treat_cutloss"
           ],
           "sample_order": [
             "view",
-            "approve_payment"
+            "approve_payment",
+            "create",
+            "confirm",
+            "cancel",
+            "cutting_config",
+            "cutting_receive"
+          ],
+          "scheduler": [
+            "view",
+            "run"
+          ],
+          "settings": [
+            "view"
           ],
           "supplier": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_contract": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_item": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "import"
+          ],
+          "system_tools": [
+            "view",
+            "update"
           ],
           "tax_invoice": [
             "view",
             "create",
             "update",
-            "replace"
+            "replace",
+            "cancel"
           ],
           "template": [
             "view"
           ],
+          "transfer": [
+            "view",
+            "create",
+            "approve",
+            "reject"
+          ],
           "uom": [
             "view"
+          ],
+          "user": [
+            "view"
+          ],
+          "vehicle_log": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "vendor_bill": [
             "view",
             "approve",
             "reject",
-            "pay"
+            "pay",
+            "create",
+            "update"
+          ],
+          "warehouse": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "wms": [
+            "view",
+            "create",
+            "update",
+            "scan",
+            "dispatch",
+            "print",
+            "approve",
+            "untagged_override"
           ]
         },
         "manager": {
@@ -3260,6 +3641,1232 @@
             "untagged_override"
           ]
         },
+        "cr_uji_kustom_hutang_bayar": {
+          "contra_bon": [
+            "view",
+            "pay"
+          ],
+          "vendor_bill": [
+            "view",
+            "pay"
+          ]
+        },
+        "cr_uji_kustom_keuangan_liha": {
+          "accounting": [
+            "view"
+          ],
+          "ar_receipt": [
+            "view"
+          ],
+          "budget": [
+            "view"
+          ],
+          "cash": [
+            "view"
+          ],
+          "cash_advance": [
+            "view"
+          ],
+          "cash_holding": [
+            "view"
+          ],
+          "cash_settlement": [
+            "view"
+          ],
+          "contra_bon": [
+            "view"
+          ],
+          "credit_profile": [
+            "view"
+          ],
+          "finance_case": [
+            "view"
+          ],
+          "fixed_asset": [
+            "view"
+          ],
+          "gl_mapping": [
+            "view"
+          ],
+          "input_tax": [
+            "view"
+          ],
+          "landed_cost": [
+            "view"
+          ],
+          "payment_plan": [
+            "view"
+          ],
+          "payment_variance": [
+            "view"
+          ],
+          "penalty": [
+            "view"
+          ],
+          "tax_invoice": [
+            "view"
+          ],
+          "vendor_bill": [
+            "view"
+          ]
+        },
+        "cr_uji_kustom_manajer_tanpa": {
+          "accounting": [
+            "view",
+            "create",
+            "manage"
+          ],
+          "ai": [
+            "view",
+            "view_margin",
+            "view_stock_value",
+            "manage"
+          ],
+          "ai_finance": [
+            "view",
+            "create",
+            "pay",
+            "post",
+            "approve"
+          ],
+          "ai_template": [
+            "daily_brief",
+            "sales_today_vs_yesterday",
+            "receiving_today",
+            "dispatch_today",
+            "pending_approvals",
+            "top_products",
+            "top_customers",
+            "sales_ranking",
+            "target_vs_actual",
+            "sales_trend_12m",
+            "sales_by_line",
+            "sales_by_city",
+            "why_sales_changed",
+            "new_customers",
+            "inactive_customers",
+            "discounts",
+            "returns",
+            "margin_by_product",
+            "ar_due",
+            "collections_week",
+            "ap_due",
+            "cash_position",
+            "pnl_month",
+            "low_stock",
+            "slow_stock",
+            "stock_value_wh",
+            "stock_by_dyelot",
+            "po_overdue",
+            "incoming_week",
+            "supplier_performance",
+            "makloon_status",
+            "weekly_executive",
+            "entity_comparison",
+            "hr_today"
+          ],
+          "approval": [
+            "view"
+          ],
+          "ar_receipt": [
+            "view",
+            "create"
+          ],
+          "budget": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "cash": [
+            "view",
+            "create",
+            "delete",
+            "configure"
+          ],
+          "cash_advance": [
+            "view",
+            "create",
+            "update",
+            "submit",
+            "disburse"
+          ],
+          "cash_holding": [
+            "view",
+            "create"
+          ],
+          "cash_settlement": [
+            "view",
+            "create",
+            "update",
+            "submit",
+            "manage",
+            "pay"
+          ],
+          "color": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "approve"
+          ],
+          "contra_bon": [
+            "view",
+            "create",
+            "update",
+            "verify",
+            "pay"
+          ],
+          "costing": [
+            "view"
+          ],
+          "credit_override": [
+            "approve",
+            "view",
+            "create"
+          ],
+          "credit_profile": [
+            "view",
+            "update"
+          ],
+          "customer": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "data_export": [
+            "view",
+            "export"
+          ],
+          "design_ownership": [
+            "view",
+            "claim",
+            "decide"
+          ],
+          "design_request": [
+            "view",
+            "create",
+            "update",
+            "assign",
+            "deliver",
+            "decide",
+            "cancel",
+            "report",
+            "release_hold",
+            "paper_check"
+          ],
+          "document": [
+            "view",
+            "create",
+            "print"
+          ],
+          "document_delivery": [
+            "view",
+            "send",
+            "manage"
+          ],
+          "entity": [
+            "view"
+          ],
+          "esign": [
+            "view",
+            "sign"
+          ],
+          "field_visibility": [
+            "grade",
+            "lot",
+            "origin"
+          ],
+          "finance_amendment": [
+            "propose",
+            "review_credit_note"
+          ],
+          "finance_case": [
+            "view",
+            "create",
+            "resolve"
+          ],
+          "fixed_asset": [
+            "view",
+            "create",
+            "update",
+            "run",
+            "dispose"
+          ],
+          "gl_mapping": [
+            "view"
+          ],
+          "goods_receipt": [
+            "view",
+            "review",
+            "close",
+            "approve",
+            "configure"
+          ],
+          "grade_master": [
+            "view"
+          ],
+          "hr": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "view_pii",
+            "manage_org",
+            "manage_attendance",
+            "manage_payroll"
+          ],
+          "incentive": [
+            "view",
+            "configure",
+            "view_margin",
+            "prepare",
+            "approve"
+          ],
+          "input_tax": [
+            "view",
+            "create",
+            "cancel"
+          ],
+          "inspection": [
+            "view",
+            "create",
+            "assign",
+            "inspect",
+            "decide",
+            "reopen",
+            "release"
+          ],
+          "interco": [
+            "view",
+            "create",
+            "approve",
+            "ship",
+            "receive",
+            "invoice",
+            "cancel",
+            "settle",
+            "return",
+            "tax",
+            "decide_rolls",
+            "override_terms"
+          ],
+          "interco_finance": [
+            "view"
+          ],
+          "internal_request": [
+            "view",
+            "create",
+            "cancel",
+            "reject",
+            "convert"
+          ],
+          "inventory": [
+            "view",
+            "update",
+            "cycle_count",
+            "approve_count",
+            "approve_value",
+            "pegging",
+            "configure"
+          ],
+          "label": [
+            "view",
+            "generate"
+          ],
+          "landed_cost": [
+            "view",
+            "create",
+            "update",
+            "pay"
+          ],
+          "logistics": [
+            "view"
+          ],
+          "makloon": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "configure"
+          ],
+          "makloon_order": [
+            "view",
+            "create",
+            "issue",
+            "receive",
+            "cancel",
+            "claim",
+            "claim_approve",
+            "forward",
+            "record_loss",
+            "approve_loss"
+          ],
+          "manager_home": [
+            "view"
+          ],
+          "marketing": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "delete"
+          ],
+          "md_quality": [
+            "view",
+            "decide"
+          ],
+          "od_fulfillment": [
+            "view",
+            "choose_route",
+            "override_default",
+            "realize",
+            "cancel"
+          ],
+          "od_pricing": [
+            "view_cost",
+            "set_price",
+            "lock"
+          ],
+          "order": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "confirm",
+            "deliver",
+            "verify",
+            "exact_cut",
+            "override",
+            "cancel",
+            "approve_price_edit",
+            "release_unpaid",
+            "tax_override",
+            "view_sales_kpi"
+          ],
+          "payment_plan": [
+            "view",
+            "create",
+            "update"
+          ],
+          "payment_variance": [
+            "view",
+            "decide"
+          ],
+          "payroll": [
+            "create",
+            "approve",
+            "post",
+            "void",
+            "pay"
+          ],
+          "pdf_template": [
+            "view",
+            "manage"
+          ],
+          "penalty": [
+            "view",
+            "issue",
+            "waive",
+            "adjust",
+            "pay"
+          ],
+          "period": [
+            "unlock",
+            "backdate"
+          ],
+          "price_approval": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "pricelist": [
+            "view",
+            "manage"
+          ],
+          "process_recipe": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "product": [
+            "view",
+            "export"
+          ],
+          "product_route": [
+            "update"
+          ],
+          "production": [
+            "view",
+            "manage_bom",
+            "create",
+            "release",
+            "complete",
+            "cancel"
+          ],
+          "purchase_order": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_requisition": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "decide_rolls"
+          ],
+          "qc": [
+            "view",
+            "release"
+          ],
+          "repair_order": [
+            "view",
+            "create",
+            "send",
+            "receive",
+            "cancel"
+          ],
+          "reports": [
+            "view"
+          ],
+          "rfq": [
+            "view",
+            "create",
+            "update",
+            "award"
+          ],
+          "rnd": [
+            "view",
+            "create",
+            "submit",
+            "assess",
+            "decide",
+            "manage",
+            "hold",
+            "pic_decide",
+            "override_fail",
+            "manage_org",
+            "report",
+            "extend_rounds"
+          ],
+          "sales_force": [
+            "view",
+            "update",
+            "delete",
+            "post",
+            "assign"
+          ],
+          "sales_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "policy",
+            "record_cutloss",
+            "decide_compensation",
+            "post_logistics",
+            "split_cutloss",
+            "decide_rolls",
+            "treat_cutloss"
+          ],
+          "sample_order": [
+            "view",
+            "create",
+            "approve_payment",
+            "confirm",
+            "cancel",
+            "cutting_config",
+            "cutting_receive"
+          ],
+          "scheduler": [
+            "view",
+            "run"
+          ],
+          "settings": [
+            "view"
+          ],
+          "supplier": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_contract": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_item": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "import"
+          ],
+          "system_tools": [
+            "view",
+            "update"
+          ],
+          "tax_invoice": [
+            "view",
+            "create",
+            "update",
+            "replace",
+            "cancel"
+          ],
+          "template": [
+            "view"
+          ],
+          "transfer": [
+            "view",
+            "create",
+            "approve",
+            "reject"
+          ],
+          "uom": [
+            "view"
+          ],
+          "user": [
+            "view"
+          ],
+          "vehicle_log": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "vendor_bill": [
+            "view",
+            "create",
+            "update",
+            "pay"
+          ],
+          "warehouse": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "wms": [
+            "view",
+            "create",
+            "update",
+            "scan",
+            "dispatch",
+            "print",
+            "approve",
+            "untagged_override"
+          ]
+        },
+        "cr_uji_kustom_piutang_terim": {
+          "ar_receipt": [
+            "view",
+            "create"
+          ]
+        },
+        "cr_uji_kustom_salinan_finan": {
+          "accounting": [
+            "view",
+            "create",
+            "void",
+            "manage"
+          ],
+          "ai": [
+            "view",
+            "view_margin",
+            "view_stock_value",
+            "manage"
+          ],
+          "ai_finance": [
+            "view",
+            "create",
+            "pay",
+            "post",
+            "approve"
+          ],
+          "ai_template": [
+            "daily_brief",
+            "sales_today_vs_yesterday",
+            "receiving_today",
+            "dispatch_today",
+            "pending_approvals",
+            "top_products",
+            "top_customers",
+            "sales_ranking",
+            "target_vs_actual",
+            "sales_trend_12m",
+            "sales_by_line",
+            "sales_by_city",
+            "why_sales_changed",
+            "new_customers",
+            "inactive_customers",
+            "discounts",
+            "returns",
+            "margin_by_product",
+            "ar_due",
+            "collections_week",
+            "ap_due",
+            "cash_position",
+            "pnl_month",
+            "low_stock",
+            "slow_stock",
+            "stock_value_wh",
+            "stock_by_dyelot",
+            "po_overdue",
+            "incoming_week",
+            "supplier_performance",
+            "makloon_status",
+            "weekly_executive",
+            "entity_comparison",
+            "hr_today"
+          ],
+          "approval": [
+            "view"
+          ],
+          "ar_receipt": [
+            "view",
+            "create",
+            "void"
+          ],
+          "budget": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "cash": [
+            "view",
+            "create",
+            "delete",
+            "configure",
+            "approve"
+          ],
+          "cash_advance": [
+            "view",
+            "create",
+            "update",
+            "submit",
+            "approve",
+            "reject",
+            "disburse"
+          ],
+          "cash_holding": [
+            "view",
+            "create",
+            "approve"
+          ],
+          "cash_settlement": [
+            "view",
+            "create",
+            "update",
+            "submit",
+            "approve",
+            "reject",
+            "manage",
+            "pay"
+          ],
+          "color": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "approve"
+          ],
+          "contra_bon": [
+            "view",
+            "create",
+            "update",
+            "verify",
+            "approve",
+            "pay"
+          ],
+          "costing": [
+            "view"
+          ],
+          "credit_override": [
+            "approve",
+            "view",
+            "create"
+          ],
+          "credit_profile": [
+            "view",
+            "update",
+            "approve"
+          ],
+          "customer": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "data_export": [
+            "view",
+            "export"
+          ],
+          "design_ownership": [
+            "view",
+            "claim",
+            "decide"
+          ],
+          "design_request": [
+            "view",
+            "create",
+            "update",
+            "assign",
+            "deliver",
+            "decide",
+            "cancel",
+            "report",
+            "release_hold",
+            "paper_check"
+          ],
+          "document": [
+            "view",
+            "create",
+            "print"
+          ],
+          "document_delivery": [
+            "view",
+            "send",
+            "manage"
+          ],
+          "entity": [
+            "view"
+          ],
+          "esign": [
+            "view",
+            "sign"
+          ],
+          "field_visibility": [
+            "grade",
+            "lot",
+            "origin"
+          ],
+          "finance_amendment": [
+            "propose",
+            "approve",
+            "review_credit_note"
+          ],
+          "finance_case": [
+            "view",
+            "create",
+            "resolve"
+          ],
+          "fixed_asset": [
+            "view",
+            "create",
+            "update",
+            "run",
+            "dispose"
+          ],
+          "gl_mapping": [
+            "view",
+            "update"
+          ],
+          "goods_receipt": [
+            "view",
+            "review",
+            "close",
+            "approve",
+            "configure"
+          ],
+          "grade_master": [
+            "view"
+          ],
+          "hr": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "view_pii",
+            "manage_org",
+            "manage_attendance",
+            "manage_payroll"
+          ],
+          "incentive": [
+            "view",
+            "configure",
+            "view_margin",
+            "prepare",
+            "approve"
+          ],
+          "input_tax": [
+            "view",
+            "create",
+            "cancel"
+          ],
+          "inspection": [
+            "view",
+            "create",
+            "assign",
+            "inspect",
+            "decide",
+            "reopen",
+            "release"
+          ],
+          "interco": [
+            "view",
+            "create",
+            "approve",
+            "ship",
+            "receive",
+            "invoice",
+            "cancel",
+            "settle",
+            "return",
+            "tax",
+            "decide_rolls",
+            "override_terms"
+          ],
+          "interco_finance": [
+            "view"
+          ],
+          "interco_price": [
+            "view",
+            "set"
+          ],
+          "internal_request": [
+            "view",
+            "create",
+            "cancel",
+            "reject",
+            "convert"
+          ],
+          "inventory": [
+            "view",
+            "update",
+            "cycle_count",
+            "approve_count",
+            "approve_value",
+            "pegging",
+            "configure"
+          ],
+          "label": [
+            "view",
+            "generate"
+          ],
+          "landed_cost": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "pay"
+          ],
+          "logistics": [
+            "view"
+          ],
+          "makloon": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "configure"
+          ],
+          "makloon_order": [
+            "view",
+            "create",
+            "issue",
+            "receive",
+            "cancel",
+            "claim",
+            "claim_approve",
+            "forward",
+            "record_loss",
+            "approve_loss"
+          ],
+          "manager_home": [
+            "view"
+          ],
+          "marketing": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "delete"
+          ],
+          "md_quality": [
+            "view",
+            "decide"
+          ],
+          "od_fulfillment": [
+            "view",
+            "choose_route",
+            "override_default",
+            "realize",
+            "cancel"
+          ],
+          "od_pricing": [
+            "view_cost",
+            "set_price",
+            "lock"
+          ],
+          "order": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "confirm",
+            "deliver",
+            "verify",
+            "exact_cut",
+            "override",
+            "cancel",
+            "approve_price_edit",
+            "release_unpaid",
+            "tax_override",
+            "view_sales_kpi"
+          ],
+          "payment_plan": [
+            "view",
+            "create",
+            "update",
+            "void"
+          ],
+          "payment_variance": [
+            "view",
+            "decide"
+          ],
+          "payroll": [
+            "create",
+            "approve",
+            "post",
+            "void",
+            "pay"
+          ],
+          "pdf_template": [
+            "view",
+            "manage"
+          ],
+          "penalty": [
+            "view",
+            "issue",
+            "waive",
+            "adjust",
+            "pay"
+          ],
+          "period": [
+            "unlock",
+            "backdate"
+          ],
+          "price_approval": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "pricelist": [
+            "view",
+            "manage"
+          ],
+          "process_recipe": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "product": [
+            "view",
+            "export"
+          ],
+          "product_route": [
+            "update"
+          ],
+          "production": [
+            "view",
+            "manage_bom",
+            "create",
+            "release",
+            "complete",
+            "cancel"
+          ],
+          "purchase_order": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_requisition": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "decide_rolls"
+          ],
+          "qc": [
+            "view",
+            "release"
+          ],
+          "repair_order": [
+            "view",
+            "create",
+            "send",
+            "receive",
+            "cancel"
+          ],
+          "reports": [
+            "view"
+          ],
+          "rfq": [
+            "view",
+            "create",
+            "update",
+            "award"
+          ],
+          "rnd": [
+            "view",
+            "create",
+            "submit",
+            "assess",
+            "decide",
+            "manage",
+            "hold",
+            "pic_decide",
+            "override_fail",
+            "manage_org",
+            "report",
+            "extend_rounds"
+          ],
+          "sales_force": [
+            "view",
+            "update",
+            "delete",
+            "post",
+            "assign"
+          ],
+          "sales_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "policy",
+            "record_cutloss",
+            "decide_compensation",
+            "post_logistics",
+            "split_cutloss",
+            "decide_rolls",
+            "treat_cutloss"
+          ],
+          "sample_order": [
+            "view",
+            "create",
+            "approve_payment",
+            "confirm",
+            "cancel",
+            "cutting_config",
+            "cutting_receive"
+          ],
+          "scheduler": [
+            "view",
+            "run"
+          ],
+          "settings": [
+            "view"
+          ],
+          "supplier": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_contract": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_item": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "import"
+          ],
+          "system_tools": [
+            "view",
+            "update"
+          ],
+          "tax_invoice": [
+            "view",
+            "create",
+            "update",
+            "replace",
+            "cancel"
+          ],
+          "template": [
+            "view"
+          ],
+          "transfer": [
+            "view",
+            "create",
+            "approve",
+            "reject"
+          ],
+          "uom": [
+            "view"
+          ],
+          "user": [
+            "view"
+          ],
+          "vehicle_log": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "vendor_bill": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "pay"
+          ],
+          "warehouse": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "wms": [
+            "view",
+            "create",
+            "update",
+            "scan",
+            "dispatch",
+            "print",
+            "approve",
+            "untagged_override"
+          ]
+        },
         "designer": {
           "color": [
             "view"
@@ -3307,16 +4914,23 @@
         },
         "finance": {
           "accounting": [
-            "view"
+            "view",
+            "create",
+            "void",
+            "manage"
           ],
           "ai": [
             "view",
-            "view_stock_value"
+            "view_stock_value",
+            "view_margin",
+            "manage"
           ],
           "ai_finance": [
             "view",
             "create",
-            "pay"
+            "pay",
+            "post",
+            "approve"
           ],
           "ai_template": [
             "daily_brief",
@@ -3325,66 +4939,147 @@
             "ap_due",
             "cash_position",
             "pnl_month",
-            "stock_value_wh"
+            "stock_value_wh",
+            "sales_today_vs_yesterday",
+            "receiving_today",
+            "dispatch_today",
+            "pending_approvals",
+            "top_products",
+            "top_customers",
+            "sales_ranking",
+            "target_vs_actual",
+            "sales_trend_12m",
+            "sales_by_line",
+            "sales_by_city",
+            "why_sales_changed",
+            "new_customers",
+            "inactive_customers",
+            "discounts",
+            "returns",
+            "margin_by_product",
+            "low_stock",
+            "slow_stock",
+            "stock_by_dyelot",
+            "po_overdue",
+            "incoming_week",
+            "supplier_performance",
+            "makloon_status",
+            "weekly_executive",
+            "entity_comparison",
+            "hr_today"
           ],
           "approval": [
             "view"
           ],
           "ar_receipt": [
             "view",
-            "create"
+            "create",
+            "void"
+          ],
+          "budget": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "cash": [
             "view",
             "create",
-            "configure"
+            "configure",
+            "delete",
+            "approve"
           ],
           "cash_advance": [
             "view",
             "create",
             "update",
             "submit",
-            "disburse"
+            "disburse",
+            "approve",
+            "reject"
           ],
           "cash_holding": [
             "view",
-            "approve"
+            "approve",
+            "create"
           ],
           "cash_settlement": [
             "view",
             "create",
             "update",
             "submit",
-            "pay"
+            "pay",
+            "approve",
+            "reject",
+            "manage"
+          ],
+          "color": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "approve"
           ],
           "contra_bon": [
             "view",
-            "pay"
+            "pay",
+            "create",
+            "update",
+            "verify",
+            "approve"
+          ],
+          "costing": [
+            "view"
           ],
           "credit_override": [
-            "view"
+            "view",
+            "approve",
+            "create"
           ],
           "credit_profile": [
             "view",
-            "update"
+            "update",
+            "approve"
           ],
           "customer": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "export"
           ],
           "data_export": [
             "view",
             "export"
           ],
           "design_ownership": [
-            "view"
+            "view",
+            "claim",
+            "decide"
+          ],
+          "design_request": [
+            "view",
+            "create",
+            "update",
+            "assign",
+            "deliver",
+            "decide",
+            "cancel",
+            "report",
+            "release_hold",
+            "paper_check"
           ],
           "document": [
             "view",
-            "print"
+            "print",
+            "create"
           ],
           "document_delivery": [
             "view",
-            "send"
+            "send",
+            "manage"
+          ],
+          "entity": [
+            "view"
           ],
           "esign": [
             "view",
@@ -3397,17 +5092,33 @@
           ],
           "finance_amendment": [
             "propose",
-            "review_credit_note"
+            "review_credit_note",
+            "approve"
           ],
           "finance_case": [
             "view",
-            "create"
+            "create",
+            "resolve"
+          ],
+          "fixed_asset": [
+            "view",
+            "create",
+            "update",
+            "run",
+            "dispose"
           ],
           "gl_mapping": [
             "view",
             "update"
           ],
           "goods_receipt": [
+            "view",
+            "review",
+            "close",
+            "approve",
+            "configure"
+          ],
+          "grade_master": [
             "view"
           ],
           "hr": [
@@ -3416,14 +5127,44 @@
             "update",
             "view_pii",
             "manage_attendance",
-            "manage_payroll"
+            "manage_payroll",
+            "delete",
+            "manage_org"
           ],
           "incentive": [
             "view",
-            "prepare"
+            "prepare",
+            "configure",
+            "view_margin",
+            "approve"
+          ],
+          "input_tax": [
+            "view",
+            "create",
+            "cancel"
+          ],
+          "inspection": [
+            "view",
+            "create",
+            "assign",
+            "inspect",
+            "decide",
+            "reopen",
+            "release"
           ],
           "interco": [
-            "view"
+            "view",
+            "create",
+            "approve",
+            "ship",
+            "receive",
+            "invoice",
+            "cancel",
+            "settle",
+            "return",
+            "tax",
+            "decide_rolls",
+            "override_terms"
           ],
           "interco_finance": [
             "view"
@@ -3432,24 +5173,103 @@
             "view",
             "set"
           ],
+          "internal_request": [
+            "view",
+            "create",
+            "cancel",
+            "reject",
+            "convert"
+          ],
           "inventory": [
-            "approve_value"
+            "approve_value",
+            "view",
+            "cycle_count",
+            "approve_count",
+            "update",
+            "pegging",
+            "configure"
+          ],
+          "label": [
+            "view",
+            "generate"
+          ],
+          "landed_cost": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "pay"
           ],
           "logistics": [
             "view"
           ],
-          "od_fulfillment": [
+          "makloon": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "configure"
+          ],
+          "makloon_order": [
+            "view",
+            "create",
+            "issue",
+            "receive",
+            "cancel",
+            "claim",
+            "claim_approve",
+            "forward",
+            "record_loss",
+            "approve_loss"
+          ],
+          "manager_home": [
             "view"
+          ],
+          "marketing": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "delete"
+          ],
+          "md_quality": [
+            "view",
+            "decide"
+          ],
+          "od_fulfillment": [
+            "view",
+            "choose_route",
+            "override_default",
+            "realize",
+            "cancel"
+          ],
+          "od_pricing": [
+            "view_cost",
+            "set_price",
+            "lock"
           ],
           "order": [
             "view",
             "approve_price_edit",
             "release_unpaid",
-            "view_sales_kpi"
+            "view_sales_kpi",
+            "create",
+            "update",
+            "approve",
+            "confirm",
+            "deliver",
+            "verify",
+            "exact_cut",
+            "override",
+            "cancel",
+            "tax_override"
           ],
           "payment_plan": [
             "view",
-            "update"
+            "update",
+            "create",
+            "void"
           ],
           "payment_variance": [
             "view",
@@ -3458,56 +5278,224 @@
           "payroll": [
             "pay",
             "create",
-            "post"
+            "post",
+            "approve",
+            "void"
+          ],
+          "pdf_template": [
+            "view",
+            "manage"
           ],
           "penalty": [
             "view",
-            "issue"
+            "issue",
+            "waive",
+            "adjust",
+            "pay"
+          ],
+          "period": [
+            "unlock",
+            "backdate"
+          ],
+          "price_approval": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
           ],
           "pricelist": [
-            "view"
+            "view",
+            "manage"
+          ],
+          "process_recipe": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "product": [
-            "view"
+            "view",
+            "export"
+          ],
+          "product_route": [
+            "update"
+          ],
+          "production": [
+            "view",
+            "manage_bom",
+            "create",
+            "release",
+            "complete",
+            "cancel"
           ],
           "purchase_order": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_requisition": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject"
+          ],
+          "purchase_return": [
+            "view",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "decide_rolls"
+          ],
+          "qc": [
+            "view",
+            "release"
           ],
           "repair_order": [
-            "view"
+            "view",
+            "create",
+            "send",
+            "receive",
+            "cancel"
           ],
           "reports": [
             "view"
           ],
+          "rfq": [
+            "view",
+            "create",
+            "update",
+            "award"
+          ],
+          "rnd": [
+            "view",
+            "create",
+            "submit",
+            "assess",
+            "decide",
+            "manage",
+            "hold",
+            "pic_decide",
+            "override_fail",
+            "manage_org",
+            "report",
+            "extend_rounds"
+          ],
+          "sales_force": [
+            "view",
+            "update",
+            "delete",
+            "post",
+            "assign"
+          ],
           "sales_return": [
             "view",
             "decide_compensation",
-            "post_logistics"
+            "post_logistics",
+            "create",
+            "update",
+            "approve",
+            "reject",
+            "policy",
+            "record_cutloss",
+            "split_cutloss",
+            "decide_rolls",
+            "treat_cutloss"
           ],
           "sample_order": [
             "view",
-            "approve_payment"
+            "approve_payment",
+            "create",
+            "confirm",
+            "cancel",
+            "cutting_config",
+            "cutting_receive"
+          ],
+          "scheduler": [
+            "view",
+            "run"
+          ],
+          "settings": [
+            "view"
           ],
           "supplier": [
-            "view"
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_contract": [
+            "view",
+            "create",
+            "update",
+            "delete"
+          ],
+          "supplier_item": [
+            "view",
+            "create",
+            "update",
+            "delete",
+            "import"
+          ],
+          "system_tools": [
+            "view",
+            "update"
           ],
           "tax_invoice": [
             "view",
             "create",
             "update",
-            "replace"
+            "replace",
+            "cancel"
           ],
           "template": [
             "view"
           ],
+          "transfer": [
+            "view",
+            "create",
+            "approve",
+            "reject"
+          ],
           "uom": [
             "view"
+          ],
+          "user": [
+            "view"
+          ],
+          "vehicle_log": [
+            "view",
+            "create",
+            "update",
+            "delete"
           ],
           "vendor_bill": [
             "view",
             "approve",
             "reject",
-            "pay"
+            "pay",
+            "create",
+            "update"
+          ],
+          "warehouse": [
+            "view",
+            "create",
+            "update",
+            "export"
+          ],
+          "wms": [
+            "view",
+            "create",
+            "update",
+            "scan",
+            "dispatch",
+            "print",
+            "approve",
+            "untagged_override"
           ]
         },
         "manager": {
@@ -5176,7 +7164,8 @@
         "rescope:warehouse:order",
         "rescope:admin:approval",
         "rescope:manager:approval"
-      ]
+      ],
+      "version": 5
     }
   ]
 }

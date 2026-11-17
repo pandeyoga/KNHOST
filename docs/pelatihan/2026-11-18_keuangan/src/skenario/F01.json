@@ -30,7 +30,7 @@
    "menu": "Bilah atas",
    "aksi": "Perhatikan kotak PT, bilah Lokasi, lonceng, dan tombol muat ulang.",
    "isi": "",
-   "hasil": "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah: akun Anda terkunci di PT Sukacita. Bilah 'Lokasi: Semua lokasi' boleh diabaikan karena hanya untuk stok dan gudang.",
+   "hasil": "Kotak PT bertuliskan 'Sukacita · Finance'. Kotak PT bisa dibuka bila peran Anda lintas PT (peran bawaan Finance sejak K-FIN-01) — selama latihan tetap di PT Sukacita. Bilah 'Lokasi: Semua lokasi' boleh diabaikan karena hanya untuk stok dan gudang.",
    "gambar": "uji/hasil/F01/02-bilah-atas.png"
   },
   {

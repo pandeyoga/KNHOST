@@ -2,7 +2,7 @@
   "code": "F01",
   "title": "Orientasi Finance — Beranda Keuangan, bilah atas, profil",
   "ok": true,
-  "at": "2026-11-17T13:54:31.954Z",
+  "at": "2026-11-17T17:48:07.099Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,17 +11,17 @@
       "action": "Masuk dengan akun peserta (email + sandi di Kartu Peserta) → [Masuk]",
       "expect": "Langsung mendarat di Keuangan › Beranda Keuangan, tab 'Perlu Tindakan'; tiga tab: Perlu Tindakan · Posisi · Analisis",
       "ok": true,
-      "ms": 4264,
+      "ms": 5490,
       "info": "finance.latih01@kainnusantara.id → ?view=finance-desk&entity=ent_ksc"
     },
     {
       "no": 2,
       "role": "Finance",
       "action": "Baca bilah atas: kotak PT, bilah Lokasi, lonceng, tombol Tanya KN",
-      "expect": "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah (terkunci: akun ini hanya PT Sukacita). Bilah 'Lokasi: Semua lokasi' + tulisan oranye 'Lokasi kerja belum diatur' (abaikan — tidak berpengaruh ke keuangan)",
+      "expect": "Kotak PT bertuliskan 'Sukacita · Finance'. Sejak K-FIN-01 akun Finance lintas PT seperti Manajer, jadi kotak PT bisa dibuka — di latihan tetap bekerja di PT Sukacita. Bilah 'Lokasi: Semua lokasi' + tulisan oranye 'Lokasi kerja belum diatur' (abaikan — tidak berpengaruh ke keuangan)",
       "ok": true,
-      "ms": 149,
-      "info": "PT: Sukacita · Finance · Lokasi: Semua lokasi — lokasi kerja belum diatur"
+      "ms": 168,
+      "info": "PT: Sukacita · Finance · Lokasi: Semua lokasi — lokasi kerja belum diatur Lokasi kerja belum diatur · peringatan 'Lokasi kerja belum diatur'"
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "Perlu Tindakan: baca kepala tiap kartu (judul · jumlah · 'tertua …' · NILAI)",
       "expect": "Kartu 'Faktur pajak perlu terbit', 'Uang masuk perlu dicatat' (dan 'Selisih bayar perlu diputus' bila ada) — angka jumlah sama dengan isi antrean",
       "ok": true,
-      "ms": 224,
-      "info": "faktur_pajak=51 · uang_masuk=25 · selisih_bayar=1 · ringkasan '93 dokumen · 5 kelompok'"
+      "ms": 237,
+      "info": "faktur_pajak=53 · uang_masuk=27 · selisih_bayar=1 · ringkasan '97 dokumen · 5 kelompok'"
     },
     {
       "no": 4,
@@ -38,7 +38,7 @@
       "action": "Kartu 'Uang masuk perlu dicatat': ketik nama pelanggan Anda di kotak *Cari* (mis. 'Toko Kain Peserta 01')",
       "expect": "Hanya dua baris milik Anda: KSC/SO-00004 dan KSC/SO-00005 (Latihan 01 · Toko Kain Peserta 01), masing-masing bertombol [Terima pembayaran]",
       "ok": true,
-      "ms": 5203,
+      "ms": 4970,
       "info": "KSC/SO-00004 Rp 3.374.123 · KSC/SO-00005 Rp 3.257.850"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Klik [Terima pembayaran] pada KSC/SO-00004 → lihat formnya → [Batal] (JANGAN simpan — dicatat di F02)",
       "expect": "Form 'Terima pembayaran' terbuka dengan nama pelanggan Anda; tombol [Batal] menutup tanpa mencatat apa pun",
       "ok": true,
-      "ms": 2497,
+      "ms": 2456,
       "info": "Pelanggan: Latihan 01 · Toko Kain Peserta 01"
     },
     {
@@ -56,8 +56,8 @@
       "action": "Kartu 'Faktur pajak perlu terbit': klik [Berikutnya ›] di bawah kartu (halaman 2)",
       "expect": "Keterangan berubah menjadi 'Menampilkan 6–10 dari … baris' dan 'Hal 2 / …'; 5 baris per halaman. JANGAN klik [Terbitkan] (langsung menerbitkan faktur pajak)",
       "ok": true,
-      "ms": 548,
-      "info": "Menampilkan 6–10 dari 51 baris · Hal 2 / 11"
+      "ms": 613,
+      "info": "Menampilkan 6–10 dari 53 baris · Hal 2 / 11"
     },
     {
       "no": 7,
@@ -65,7 +65,7 @@
       "action": "Kartu 'Selisih bayar perlu diputus' (bila tampil): baca baris kwitansi, nilai selisih, tombol [Putuskan]",
       "expect": "Baris kwitansi menunjukkan arah selisih (kurang/lebih bayar) dan NILAI selisihnya; tombol [Putuskan] aktif (bukan 'Memproses…')",
       "ok": true,
-      "ms": 667,
+      "ms": 651,
       "info": "KSC/AR-00002 Rp 14.427.691 under"
     },
     {
@@ -74,8 +74,8 @@
       "action": "Klik tab [Posisi]: baca empat kartu POSISI KAS · PIUTANG (AR) · HUTANG (AP) · MODAL KERJA BERSIH",
       "expect": "Posisi Kas = saldo buku besar akun kas & bank; Piutang 'tercatat' = saldo akun Piutang Usaha; Hutang = saldo Hutang Usaha; Modal kerja = Kas + piutang tercatat − hutang",
       "ok": true,
-      "ms": 2657,
-      "info": "kas Rp 963.848.033 (GL Rp 963.848.033) · piutang Rp 97.242.316 [tercatat Rp 94.069.359 · belum dikirim Rp 3.172.957] (GL 1-1200 Rp 94.069.359) · hutang Rp 25.219.200 (GL 2-1100 Rp 25.219.200) · modal kerja Rp 1.032.698.191"
+      "ms": 2824,
+      "info": "kas Rp 963.848.033 (GL Rp 963.848.033) · piutang Rp 104.149.568 [tercatat Rp 100.976.611 · belum dikirim Rp 3.172.957] (GL 1-1200 Rp 100.976.611) · hutang Rp 25.219.200 (GL 2-1100 Rp 25.219.200) · modal kerja Rp 1.039.605.444"
     },
     {
       "no": 9,
@@ -83,8 +83,8 @@
       "action": "Gulir ke 'Rincian Kas per Akun (GL)' dan kartu Laba-Rugi YTD",
       "expect": "Rincian per akun (1-1100 Kas Besar / Bank, 1-1110 Kas Kecil) dijumlah = Posisi Kas. Pendapatan & Laba Bersih YTD = jurnal tahun berjalan",
       "ok": true,
-      "ms": 681,
-      "info": "1-1100 Rp 930.698.033 + 1-1110 Rp 33.150.000 = Rp 963.848.033 · pendapatan YTD Rp 181.815.350 (jurnal Rp 181.815.350) · laba bersih Rp -8.391.314 (jurnal Rp -8.391.314)"
+      "ms": 635,
+      "info": "1-1100 Rp 930.698.033 + 1-1110 Rp 33.150.000 = Rp 963.848.033 · pendapatan YTD Rp 127.821.350 (jurnal Rp 127.821.350) · laba bersih Rp -23.529.634 (jurnal Rp -23.529.634)"
     },
     {
       "no": 10,
@@ -92,8 +92,8 @@
       "action": "Klik tab [Analisis]: tren bulanan, rasio keuangan, tabel per PT",
       "expect": "Baris 'Sukacita' di tabel: Pendapatan · Beban · Laba Bersih · Marjin — Pendapatan & Laba Bersih sama dengan kartu Laba-Rugi YTD di tab Posisi",
       "ok": true,
-      "ms": 2421,
-      "info": "SukacitaRp 181.815.350 Rp 190.206.664 -Rp 8.391.314 -4,6% · jurnal: pendapatan Rp 181.815.350, beban Rp 190.206.664, laba Rp -8.391.314"
+      "ms": 2404,
+      "info": "SukacitaRp 188.038.100 Rp 194.707.044 -Rp 6.668.944 -3,5% · jurnal: pendapatan Rp 188.038.100, beban Rp 194.707.044, laba Rp -6.668.944"
     },
     {
       "no": 11,
@@ -101,7 +101,7 @@
       "action": "Menu samping bawah: [Profil Saya]",
       "expect": "Kartu profil karyawan Anda (nama 'Peserta Keuangan 01', nomor EMP-…, absen hari ini, cuti & lembur). Ganti sandi TIDAK ada di aplikasi — bila lupa sandi, minta Admin mereset (Pengaturan › Pengguna & Hak Akses)",
       "ok": true,
-      "ms": 1900,
+      "ms": 1878,
       "info": "tertaut · P Peserta Keuangan 01 EMP-00024 · Akunting Sukacita Absen Hari Ini Shift Reguler · 08:00–17:00 MASUK — KELUAR — Clock In Cuti & Lembur Saya "
     },
     {
@@ -110,16 +110,15 @@
       "action": "Klik [Tanya KN] (menu samping) → pilih contoh 'Posisi kas & bank'",
       "expect": "Jawaban berisi tabel/angka posisi kas & bank hari ini; total sama dengan Posisi Kas di Beranda Keuangan. Kotak 'CHAT AI: Menunggu kunci penyedia model' = chat bebas belum aktif, contoh laporan tetap jalan",
       "ok": true,
-      "ms": 3074,
+      "ms": 3147,
       "info": "Menunggu kunci penyedia model · 4 angka; total GL kas Rp 963.848.033 ADA di jawaban"
     }
   ],
   "http_5xx": [],
-  "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
-  ],
+  "console_errors": [],
   "notes": [
-    "TEMUAN F01-a: bilah Lokasi tampil untuk Finance ('Lokasi: Semua lokasi — lokasi kerja belum diatur') karena izin product.view/logistics.view — tidak relevan bagi kasir, membingungkan",
+    "K-FIN-01: kotak PT bisa dibuka · PT terjangkau 3",
+    "TEMUAN F01-a: bilah Lokasi tampil untuk Finance ('Lokasi: Semua lokasi — lokasi kerja belum diatur Lokasi kerja belum diatur' + 'Lokasi kerja belum diatur') karena izin product.view/logistics.view — tidak relevan bagi kasir, membingungkan",
     "TEMUAN F01-b: tidak ada fitur ganti sandi sendiri (tak ada layar maupun endpoint /auth/…)"
   ]
 }

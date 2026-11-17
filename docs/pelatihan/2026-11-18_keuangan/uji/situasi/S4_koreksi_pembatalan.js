@@ -266,14 +266,14 @@ async function masukManajer(r) {
       });
 
     await r.step(8, "Finance", `Rekening koran BCA menunjukkan transfer ${rp(benar)}, bukan ${rp(salah)}. Di Riwayat Pembayaran (AR) ketik nomor kwitansi`,
-      "Baris kwitansi tampil dengan nominal salah; Finance TIDAK melihat ikon Batalkan (membatalkan kwitansi = izin Manajer) — minta Manajer membatalkan", async () => {
+      "Baris kwitansi tampil dengan nominal salah; Finance juga melihat ikon Batalkan (K-FIN-01) — di peragaan ini Manajer membatalkan sebagai orang kedua yang memeriksa bukti", async () => {
         const je = pl.jurnalKwitansi(rc);
         pl.cekJurnalSeimbang(je, [["1-1100", "D", salah], ["1-1200", "K", salah]]);
         await r.tid("ar-history-search").fill(rc.number);
         const row = r.tid(`ar-history-row-${rc.id}`);
         await row.waitFor();
         await r.idle(500);
-        assert(!(await r.tid(`ar-history-void-${rc.id}`).count()), "Finance melihat tombol Batalkan kwitansi");
+        await r.kfin(r.tid(`ar-history-void-${rc.id}`), "ikon Batalkan kwitansi");
         await pl.sorot(row);
         await r.shot("b-finance-tanpa-batalkan");
         await pl.lepas(row);
@@ -701,15 +701,15 @@ async function masukManajer(r) {
       });
 
     await r.step(28, "Finance", `Login Finance → Buku Besar › Jurnal → cari "Latihan ${NO}" → klik jurnal yang salah`,
-      "Finance melihat semua jurnal itu; rincian jurnal salah bertuliskan \"Sudah dibalik oleh KSC/JE-… · <alasan>\"; tidak ada tombol Jurnal Baru, Anulir, atau Balik (Finance hanya melihat)", async () => {
+      "Finance melihat semua jurnal itu; rincian jurnal salah bertuliskan \"Sudah dibalik oleh KSC/JE-… · <alasan>\"; jurnal yang sudah dibalik tidak bisa dibalik lagi", async () => {
         await s.masuk(r, me);
         await bukaJurnal();
-        assert(!(await r.tid("gl-new-journal").count()), "Finance melihat Jurnal Baru");
+        await r.kfin(r.tid("gl-new-journal"), "tombol Jurnal Baru");
         await r.tid(`gl-journal-row-${je1.id}`).click();
         await r.tid("gl-journal-detail").waitFor();
         const note = await kb.teks(r, "gl-journal-reversed-note");
         assert(note.includes(jeRev.number) && /Salah akun/.test(note), `catatan: ${note}`);
-        assert(!(await r.tid("gl-journal-reverse").count()) && !(await r.tid("gl-journal-void").count()), "Finance melihat tombol Balik/Anulir");
+        await r.kfin(r.tid("gl-journal-reverse"), "tombol Balik pada jurnal yang sudah dibalik"); await r.kfin(r.tid("gl-journal-void"), "tombol Anulir pada jurnal yang sudah dibalik");
         await hl.sorot(r.tid("gl-journal-reversed-note"));
         await r.shot("d-finance-lihat-dibalik", { locator: r.tid("gl-journal-detail") });
         await hl.lepas(r.tid("gl-journal-reversed-note"));

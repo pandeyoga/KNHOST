@@ -48,7 +48,7 @@ const PLAFON = 300000000;
     });
 
   await r.step(2, "Finance", "Bila belum ada pengajuan menunggu: klik [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini · *Plafon kredit* Rp 300.000.000 · *Alasan* → [[Ajukan]]. Bila sudah ada (usulan saat pelanggan dibuat): baca kotak 'Menunggu keputusan'",
-    "Kotak 'Menunggu keputusan' memuat perubahan Plafon kredit → Rp 300.000.000; tombol [[Ajukan perubahan]] mati ('Masih ada pengajuan yang menunggu keputusan'); Finance tidak punya tombol Setujui", async () => {
+    "Kotak 'Menunggu keputusan' memuat perubahan Plafon kredit → Rp 300.000.000; tombol [[Ajukan perubahan]] mati ('Masih ada pengajuan yang menunggu keputusan'); Finance juga melihat tombol Setujui (K-FIN-01) — keputusan di latihan ini diperagakan Manajer", async () => {
       let p = await profil();
       const sudahKhusus = p.effective.limit_mode === "khusus" && Number(p.effective.credit_limit) === PLAFON;
       if (!p.pending_request) {
@@ -66,7 +66,7 @@ const PLAFON = 300000000;
       const ch = (p.pending_request.label_changes || []).map((c) => `${c.label} → ${c.to}`).join(", ");
       assert(/Plafon kredit/.test(ch), `pengajuan tanpa plafon: ${ch}`);
       assert(await r.tid("customer-credit-request").isDisabled(), "tombol Ajukan perubahan tidak mati");
-      assert(await r.tid("customer-credit-approve").count() === 0, "Finance melihat tombol Setujui");
+      await r.kfin(r.tid("customer-credit-approve"), "tombol Setujui perubahan profil kredit");
       await k.potret(r, r.tid("customer-credit-pending"), "menunggu-keputusan");
       return `${p.pending_request.number} oleh ${p.pending_request.requested_by}: ${ch}`;
     });
