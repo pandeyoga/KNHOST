@@ -2,7 +2,7 @@
   "code": "F13",
   "title": "Faktur Pajak Keluaran",
   "ok": true,
-  "at": "2026-11-17T11:30:03.170Z",
+  "at": "2026-11-17T14:16:31.384Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Login akun Finance peserta → Meja Finance (Beranda). Pada kartu [[Faktur pajak perlu terbit]] ketik nomor SO di kotak cari",
       "expect": "Baris SO peserta tampil dengan nama pelanggan, PPN, nilai = total SO, tombol [[Terbitkan]]",
       "ok": true,
-      "ms": 4083,
+      "ms": 4327,
       "info": "KSC/SO-00004 Latihan 01 · Toko Kain Peserta 01 Selesai PPN 334.372 menunggu < 1 hari · masuk 17 Nov, 18.07 Rp 3.374.123 Terbitkan"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Klik [[Terbitkan]] pada baris SO itu",
       "expect": "Bilah hijau \"Faktur Pajak FKT-… diterbitkan untuk KSC/SO-…\"; baris hilang dari kartu",
       "ok": true,
-      "ms": 1784,
+      "ms": 1682,
       "info": "Faktur Pajak KSC/FKT-00002 diterbitkan untuk KSC/SO-00004. × · kode 04 · DPP nilai lain Rp 2.786.438 · PPN Rp 334.373"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Buka Akuntansi & Pajak › Pajak (tab Faktur Keluaran), cari nomor SO",
       "expect": "Baris FKT-… status Normal, NSFP \"belum diisi\", DPP · PPN · Total sama dengan SO; lencana \"Data pajak belum lengkap\" (pelanggan latihan tanpa NPWP/NIK)",
       "ok": true,
-      "ms": 1161,
+      "ms": 1118,
       "info": "KSC/FKT-00002 Normal NSFP belum diisi KSC/SO-00004 Latihan 01 · Toko Kain Peserta 01 tanpa NPWP/NIK Data Pajak Belum Lengkap DPP Rp 3.039.750 nilai lain (11/12) Rp 2.786.438 PPN Rp 334.373 Total Rp 3.374.123 "
     },
     {
@@ -38,7 +38,7 @@
       "action": "Klik ikon [[#]] (Isi NSFP resmi) → *Nomor Seri Faktur Pajak*: 0100261118000001 · *Kode Transaksi*: biarkan → [[Konfirmasi]]",
       "expect": "Pop-up tertutup; kolom NSFP berisi nomor yang diketik",
       "ok": true,
-      "ms": 1449,
+      "ms": 1306,
       "info": "NSFP 0100261118000001 · kode 04 · status normal"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Klik ikon [[i]] (Rincian faktur & aturan pajak)",
       "expect": "Rincian: aturan pajak yang dipakai (tarif 12%, DPP nilai lain 11/12) dan data pembeli — daftar yang belum lengkap",
       "ok": true,
-      "ms": 374,
+      "ms": 518,
       "info": "ATURAN PAJAK SAAT TERBIT Tarif PPN 12% DPP nilai lain 11/12 Pembulatan per dokumen, dua angka di belakang koma Harga belum termasuk PPN Aturan berlaku pada 17 Nov 2026 Mengubah pengaturan pajak sesuda | PEMBELI MENURUT DATA PAJAK Identitas tanpa NPWP/NIK Nama Latihan 01 · Toko Kain Peserta 01 Alamat Jl. Latihan Keuangan No. 1, Bandung, Kota Bandung Status PKP B"
     },
     {
@@ -56,7 +56,7 @@
       "action": "Cek buku: faktur pajak tidak membuat jurnal; PPN keluaran sudah dijurnal saat pengiriman",
       "expect": "Σ kredit akun PPN Keluaran pada jurnal pengiriman SO = PPN faktur; piutang & status bayar SO tidak berubah",
       "ok": true,
-      "ms": 1596,
+      "ms": 1519,
       "info": "jurnal faktur: 0 · PPN keluaran di buku KSC/JE-00022 2-1200 PPN Keluaran K 334373 · SO done/paid"
     }
   ],

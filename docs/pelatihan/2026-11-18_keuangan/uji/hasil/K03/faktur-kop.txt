@@ -3,19 +3,19 @@ Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
 
 
                                                                                                                  FAKTUR
-                                                                      No. KSC/INV-00033 · 17 Nov 2026 · LUNAS
+                                                                      No. KSC/INV-00051 · 17 Nov 2026 · LUNAS
 
              REFERENSI DOKUMEN
-             Merujuk: PICK-52E5EE · KSC/SJ-00034 · KSC/AR-00017
-             Menurunkan Tugas Pengambilan PICK-52E5EE · Menurunkan Surat Jalan / Pengiriman KSC/
-             SJ-00034 · Dilunasi oleh Kwitansi Pelanggan KSC/AR-00017
+             Merujuk: PICK-CB065C · KSC/SJ-00052 · KSC/AR-00026
+             Menurunkan Tugas Pengambilan PICK-CB065C · Menurunkan Surat Jalan / Pengiriman KSC/
+             SJ-00052 · Dilunasi oleh Kwitansi Pelanggan KSC/AR-00026
              Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
 
 
 DARI                                                                                                         TAGIHAN KEPADA
-Sukacita Textile                                                             Latihan 43 · Toko Kain Peserta 43
-Jl. Soekarno Hatta No. 100, Bandung                          Jl. Latihan Keuangan No. 43, Bandung, Kota Bandung
-No. Pesanan          KSC/SO-00033                              Termin Bayar         Kredit NET 30 Hari
+Sukacita Textile                                                             Latihan 76 · Toko Kain Peserta 76
+Jl. Soekarno Hatta No. 100, Bandung                          Jl. Latihan Keuangan No. 76, Bandung, Kota Bandung
+No. Pesanan          KSC/SO-00051                              Termin Bayar         Kredit NET 30 Hari
 Penjualan
 Jatuh Tempo          Lunas                                     Status Bayar         Lunas
 Dicetak              17 Nov 2026
@@ -23,18 +23,19 @@ Dicetak              17 Nov 2026
  NO    SKU                                PRODUK             ROLL         JUMLAH        HARGA          DISC        SUBTOTAL
 
        KNWVN0015-L-TAUX-                  DENIM TENCEL
-   1                                                             1    118,11 yard   Rp 25.000               0%   Rp 2.952.750
+   1                                                             1    122,03 yard   Rp 25.000               0%   Rp 3.050.750
        XA-XX-XX                           TAUPE A
 
-                                                                  DPP (harga sebelum PPN)                         Rp 2.952.750
-                                                                  DPP nilai lain (11/12)                     Rp 2.706.687,50
-                                                                  PPN 12% × DPP nilai lain                       Rp 324.802,50
+                                                                  DPP (harga sebelum PPN)                         Rp 3.050.750
+                                                                  DPP nilai lain (11/12)                     Rp 2.796.520,83
+                                                                  PPN 12% × DPP nilai lain                       Rp 335.582,50
 
-                                                                     Total (termasuk                  Rp 3.277.552,50
+                                                                     Total (termasuk                  Rp 3.386.332,50
                                                                      PPN)
-                                                                  Sudah dibayar                              Rp 3.277.552,50
+                                                                  Sudah dibayar                              Rp 3.386.332,50
                                                                   Sisa tagihan                                            Rp 0
-Terbilang: Tiga juta dua ratus tujuh puluh tujuh ribu lima ratus lima puluh dua rupiah lima puluh sen
+Terbilang: Tiga juta tiga ratus delapan puluh enam ribu tiga ratus tiga puluh dua rupiah lima puluh
+sen
 
 
                      Hormat Kami                                                      Diterima

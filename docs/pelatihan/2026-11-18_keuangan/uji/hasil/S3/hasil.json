@@ -2,7 +2,7 @@
   "code": "S3",
   "title": "Situasi khusus pesanan sampai uang masuk",
   "ok": true,
-  "at": "2026-11-17T13:33:29.206Z",
+  "at": "2026-11-17T14:47:37.423Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Persiapan: pelanggan latihan segar dengan tiga SO terkirim belum dibayar + produk ber-stok",
       "expect": "SO-1 dan SO-2 (data latihan), SO-3 (dibuat lewat endpoint resmi) terkirim, belum dibayar; titipan pelanggan Rp 0",
       "ok": true,
-      "ms": 11023,
-      "info": "SO-1 KSC/SO-00135 Rp 3.402.983 · SO-2 KSC/SO-00136 Rp 3.359.693 · SO-3 KSC/SO-00138 Rp 2.695.302 · DENIM TENCEL HITAM A"
+      "ms": 8261,
+      "info": "SO-1 KSC/SO-00058 Rp 3.283.935 · SO-2 KSC/SO-00059 Rp 3.292.260 · SO-3 KSC/SO-00066 Rp 2.684.202 · DENIM TENCEL HITAM A"
     },
     {
       "no": 1,
@@ -20,8 +20,8 @@
       "action": "POS: pelanggan latihan → produk → [Beli per Roll] centang 2 roll → Checkout (NET 30, Transfer bank) → nyalakan [Minta Faktur Pajak] → [Buat Sales Order]",
       "expect": "SO baru 2 roll 'Dipesan'; dua roll dicadangkan. Buku: belum ada jurnal",
       "ok": true,
-      "ms": 39365,
-      "info": "KSC/SO-00139 dibuat (Dipesan · Siap disahkan) · PPN 510.818. Grand total Rp 5.154.618. · subtotal Rp 4.643.800"
+      "ms": 21952,
+      "info": "KSC/SO-00067 dibuat (Dipesan · Siap disahkan) · PPN 525.316. Grand total Rp 5.300.916. · subtotal Rp 4.775.600"
     },
     {
       "no": 2,
@@ -29,8 +29,8 @@
       "action": "Meja Admin Sales → Pelacak SO: cari SO → [Periksa & lepas] → isi catatan → [Periksa & lepas ke gudang]",
       "expect": "Pesan 'diperiksa & dilepas ke gudang'; tugas ambil gudang lahir untuk 2 roll",
       "ok": true,
-      "ms": 8096,
-      "info": "KSC/SO-00139 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. × · tugas 232.19"
+      "ms": 6126,
+      "info": "KSC/SO-00067 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. × · tugas 238.78"
     },
     {
       "no": 3,
@@ -38,8 +38,8 @@
       "action": "Barang Keluar → tugas SO → pindai roll PERTAMA saja → [Kirim Pengambilan]",
       "expect": "Progres 1 dari 2 roll (50%); panel kirim 'Siap dikirim' = panjang roll pertama",
       "ok": true,
-      "ms": 11994,
-      "info": "terambil 114.51/232.19 · status picking"
+      "ms": 9403,
+      "info": "terambil 120.42/238.78 · status picking"
     },
     {
       "no": 4,
@@ -47,7 +47,7 @@
       "action": "Operasi Gudang › Barang Keluar → tugas SO → Pemeriksaan Muat Akhir: isi alasan → [Override]",
       "expect": "Kotak oranye 'OVERRIDE …' — berlaku untuk roll pesanan ini yang sudah dicadangkan (kedua roll)",
       "ok": true,
-      "ms": 22901,
+      "ms": 9953,
       "info": "OVERRIDE oleh Dewi Manager: Roll latihan belum bertag RFID, muatan dicek manual oleh supervisor — berlaku untuk 2 roll saat ini."
     },
     {
@@ -56,8 +56,8 @@
       "action": "Tugas SO → [Kirim Semua (panjang roll 1)] → [Kirim Sekarang]",
       "expect": "Notifikasi 'Barang terkirim · KSC/SJ-…'; panel 'Terkirim Sebagian'. Buku: jurnal pendapatan & HPP sebesar roll pertama saja",
       "ok": true,
-      "ms": 14495,
-      "info": "KSC/SJ-00126 · KSC/JE-00609 1-1200 D Rp 2.542.122 · 4-1000 K Rp 2.290.200 · 2-1200 K Rp 251.922 · KSC/JE-00610 5-1000 D Rp 1.648.944 · 1-1300 K Rp 1.648.944"
+      "ms": 12106,
+      "info": "KSC/SJ-00064 · KSC/JE-00284 1-1200 D Rp 2.673.324 · 4-1000 K Rp 2.408.400 · 2-1200 K Rp 264.924 · KSC/JE-00285 5-1000 D Rp 1.734.048 · 1-1300 K Rp 1.734.048"
     },
     {
       "no": 6,
@@ -65,8 +65,8 @@
       "action": "Keuangan › Piutang › Penagihan & Penerimaan → baris SO; lalu tab Saldo & Umur → pelanggan → rincian",
       "expect": "Baris SO: Belum Lunas = piutang surat jalan pertama saja (bukan total SO); rincian: tercatat = SJ1, 'belum dikirim' = sisa",
       "ok": true,
-      "ms": 12344,
-      "info": "penagihan: Latihan 74 · Toko Kain Peserta 74 Ayu Marketing KSC/SO-00139 Rp 2.542.122 17 Des 2026 30h Lagi · rincian: KSC/SO-00139 17 Des 2026 Belum Jatuh Tempo Rp 5.154.618 Rp 0 Rp 5.154.618 Rp 2.542.122 · Rp 2.612.496 — — Bayar · belum dikirim Rp 2.612.496"
+      "ms": 8294,
+      "info": "penagihan: Latihan 72 · Toko Kain Peserta 72 Ayu Marketing KSC/SO-00067 Rp 2.673.324 17 Des 2026 30h Lagi · rincian: KSC/SO-00067 17 Des 2026 Belum Jatuh Tempo Rp 5.300.916 Rp 0 Rp 5.300.916 Rp 2.673.324 · Rp 2.627.592 — — Bayar · belum dikirim Rp 2.627.592"
     },
     {
       "no": 7,
@@ -74,8 +74,8 @@
       "action": "Esok harinya: tugas SO → pindai roll KEDUA → [Kirim Pengambilan] → [Kirim Semua] → [Kirim Sekarang]",
       "expect": "Surat jalan kedua terbit; panel 'Terkirim Penuh!'. Buku: jurnal pendapatan kedua = sisa (total SO − SJ1), HPP roll kedua",
       "ok": true,
-      "ms": 18519,
-      "info": "KSC/SJ-00127 · KSC/JE-00613 1-1200 D Rp 2.612.496 · 4-1000 K Rp 2.353.600 · 2-1200 K Rp 258.896 · KSC/JE-00614 5-1000 D Rp 1.694.592 · 1-1300 K Rp 1.694.592"
+      "ms": 14342,
+      "info": "KSC/SJ-00065 · KSC/JE-00286 1-1200 D Rp 2.627.592 · 4-1000 K Rp 2.367.200 · 2-1200 K Rp 260.392 · KSC/JE-00287 5-1000 D Rp 1.704.384 · 1-1300 K Rp 1.704.384"
     },
     {
       "no": 8,
@@ -83,8 +83,8 @@
       "action": "Beranda Keuangan › Perlu Tindakan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
       "expect": "Satu faktur untuk seluruh pesanan (aturan PT: per pesanan); PPN faktur = PPN keluaran SJ1 + SJ2; faktur tanpa jurnal",
       "ok": true,
-      "ms": 11535,
-      "info": "Faktur Pajak KSC/FKT-00014 diterbitkan untuk KSC/SO-00139. × · PPN Rp 510.818 = Rp 251.922 + Rp 258.896"
+      "ms": 6156,
+      "info": "Faktur Pajak KSC/FKT-00006 diterbitkan untuk KSC/SO-00067. × · PPN Rp 525.316 = Rp 264.924 + Rp 260.392"
     },
     {
       "no": 9,
@@ -92,8 +92,8 @@
       "action": "Penagihan & Penerimaan → ikon dompet pada baris SO → alokasi = total SO (dua surat jalan) → isi No. referensi → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "Satu kwitansi melunasi kedua surat jalan. Buku: Kas Besar / Bank (D) = Piutang Usaha (K) = total SO; piutang SO = 0",
       "ok": true,
-      "ms": 11269,
-      "info": "Kwitansi KSC/AR-00092 (Rp 5.154.618) dicatat untuk Latihan 74 · Toko Kain Peserta 74. × · KSC/JE-00616 1-1100 D Rp 5.154.618 · 1-1200 K Rp 5.154.618 · piutang SO Rp 0"
+      "ms": 8996,
+      "info": "Kwitansi KSC/AR-00043 (Rp 5.300.916) dicatat untuk Latihan 72 · Toko Kain Peserta 72. × · KSC/JE-00288 1-1100 D Rp 5.300.916 · 1-1200 K Rp 5.300.916 · piutang SO Rp 0"
     },
     {
       "no": 10,
@@ -101,8 +101,8 @@
       "action": "Pusat Dokumen › Jejak Dokumen → ketik nomor SO → klik hasilnya",
       "expect": "Rantai: SO → dua surat jalan → jurnal pendapatan & HPP masing-masing; faktur pajak; kwitansi → kas → jurnal penerimaan",
       "ok": true,
-      "ms": 4454,
-      "info": "KSC/SO-00139 · KSC/SJ-00126 · KSC/SJ-00127 · KSC/JE-00609 · KSC/JE-00613 · KSC/JE-00610 · KSC/JE-00614 · KSC/AR-00092 · KSC/FKT-00014"
+      "ms": 3395,
+      "info": "KSC/SO-00067 · KSC/SJ-00064 · KSC/SJ-00065 · KSC/JE-00284 · KSC/JE-00286 · KSC/JE-00285 · KSC/JE-00287 · KSC/AR-00043 · KSC/FKT-00006"
     },
     {
       "no": 11,
@@ -110,8 +110,8 @@
       "action": "POS: pelanggan latihan → 1 roll → Checkout: termin 'DP 50% + Pelunasan', Transfer bank → [Buat Sales Order]",
       "expect": "SO baru bertermin DP 50%. Buku: belum ada jurnal",
       "ok": true,
-      "ms": 39633,
-      "info": "KSC/SO-00140 dibuat (Dipesan · Siap disahkan) · PPN 275.594. Grand total Rp 2.780.994."
+      "ms": 19078,
+      "info": "KSC/SO-00068 dibuat (Dipesan · Siap disahkan) · PPN 255.794. Grand total Rp 2.581.194."
     },
     {
       "no": 12,
@@ -119,8 +119,8 @@
       "action": "Meja Admin Sales → Pelacak SO → [Periksa & lepas] → [Periksa & lepas ke gudang]",
       "expect": "SO dilepas ke gudang; tagihan uang muka lahir (jatuh tempo hari ini)",
       "ok": true,
-      "ms": 10015,
-      "info": "KSC/SO-00140 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. ×"
+      "ms": 6109,
+      "info": "KSC/SO-00068 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. ×"
     },
     {
       "no": 13,
@@ -128,8 +128,8 @@
       "action": "Barang Keluar → tugas SO → pindai roll → [Kirim Pengambilan]",
       "expect": "Panel merah 'Tertahan — belum dibayar sesuai termin: wajib dibayar Rp … (50%) sebelum kirim · sudah dibayar Rp 0'; tombol kirim mati",
       "ok": true,
-      "ms": 12991,
-      "info": "Tertahan — belum dibayar sesuai termin Termin DP 50% + Pelunasan: wajib dibayar Rp 1.390.497 (50%) sebelum kirim · sudah dibayar Rp 0 · kurang Rp 1.390.497 Catat pembayaran di Uang Masuk, atau pemegang izin “Kirim tanpa lunas” memberi pengecualian dengan alasan."
+      "ms": 9212,
+      "info": "Tertahan — belum dibayar sesuai termin Termin DP 50% + Pelunasan: wajib dibayar Rp 1.290.597 (50%) sebelum kirim · sudah dibayar Rp 0 · kurang Rp 1.290.597 Catat pembayaran di Uang Masuk, atau pemegang izin “Kirim tanpa lunas” memberi pengecualian dengan alasan."
     },
     {
       "no": 14,
@@ -137,8 +137,8 @@
       "action": "Penagihan & Penerimaan → baris SO (Belum Lunas = uang muka) → ikon dompet → alokasi = nominal uang muka → No. referensi → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "Kwitansi uang muka. Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan 2-1400 (K) — belum ada piutang & pendapatan",
       "ok": true,
-      "ms": 18619,
-      "info": "Kwitansi KSC/AR-00094 (Rp 1.390.497) dicatat untuk Latihan 74 · Toko Kain Peserta 74. × · KSC/JE-00621 1-1100 D Rp 1.390.497 · 2-1400 K Rp 1.390.497 · petunjuk: Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan."
+      "ms": 16235,
+      "info": "Kwitansi KSC/AR-00044 (Rp 1.290.597) dicatat untuk Latihan 72 · Toko Kain Peserta 72. × · KSC/JE-00289 1-1100 D Rp 1.290.597 · 2-1400 K Rp 1.290.597 · petunjuk: Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan."
     },
     {
       "no": 15,
@@ -146,8 +146,8 @@
       "action": "Keuangan › Piutang › Titipan & Saldo Kredit → cari pelanggan",
       "expect": "Kolom 'Uang muka' = DP (kewajiban sampai barang dikirim)",
       "ok": true,
-      "ms": 1712,
-      "info": "Latihan 74 · Toko Kain Peserta 74 Rp 1.390.497 Rp 0 Rp 0 Rp 1.390.497 < 1 hari"
+      "ms": 1983,
+      "info": "Latihan 72 · Toko Kain Peserta 72 Rp 1.290.597 Rp 0 Rp 0 Rp 1.290.597 < 1 hari"
     },
     {
       "no": 16,
@@ -155,8 +155,8 @@
       "action": "Barang Keluar → tugas SO → Pemeriksaan Muat Akhir → [Override]",
       "expect": "Kotak 'OVERRIDE …'; panel bayar kini 'Boleh kirim — termin terpenuhi'",
       "ok": true,
-      "ms": 31820,
-      "info": "OVERRIDE oleh Dewi Manager: Roll latihan belum bertag RFID, muatan dicek manual oleh supervisor — berlaku untuk 1 roll saat ini. · Boleh kirim — termin terpenuhi Termin DP 50% + Pelunasan: wajib dibayar Rp 1.390.497 (50%) sebelum kirim · sudah dibayar Rp 1.390.497"
+      "ms": 9580,
+      "info": "OVERRIDE oleh Dewi Manager: Roll latihan belum bertag RFID, muatan dicek manual oleh supervisor — berlaku untuk 1 roll saat ini. · Boleh kirim — termin terpenuhi Termin DP 50% + Pelunasan: wajib dibayar Rp 1.290.597 (50%) sebelum kirim · sudah dibayar Rp 1.290.597"
     },
     {
       "no": 17,
@@ -164,8 +164,8 @@
       "action": "Tugas SO → [Kirim Semua] → [Kirim Sekarang]",
       "expect": "Surat jalan terbit. Buku: pendapatan (Piutang D total = Pendapatan K + PPN K), HPP, dan reklas uang muka (Uang Muka Pelanggan D / Piutang K = DP)",
       "ok": true,
-      "ms": 18153,
-      "info": "KSC/SJ-00128 · KSC/JE-00623 1-1200 D Rp 2.780.994 · 4-1000 K Rp 2.505.400 · 2-1200 K Rp 275.594 · reklas KSC/JE-00625 2-1400 D Rp 1.390.497 · 1-1200 K Rp 1.390.497"
+      "ms": 15945,
+      "info": "KSC/SJ-00066 · KSC/JE-00290 1-1200 D Rp 2.581.194 · 4-1000 K Rp 2.325.400 · 2-1200 K Rp 255.794 · reklas KSC/JE-00292 2-1400 D Rp 1.290.597 · 1-1200 K Rp 1.290.597"
     },
     {
       "no": 18,
@@ -173,8 +173,8 @@
       "action": "Penagihan & Penerimaan → baris SO (sisa 50%) → ikon dompet → alokasi = sisa → No. referensi → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "SO lunas. Buku: Kas Besar / Bank (D) = Piutang Usaha (K) = sisa; uang muka pesanan Rp 0; piutang SO Rp 0",
       "ok": true,
-      "ms": 14921,
-      "info": "Kwitansi KSC/AR-00096 (Rp 1.390.497) dicatat untuk Latihan 74 · Toko Kain Peserta 74. × · KSC/JE-00626 1-1100 D Rp 1.390.497 · 1-1200 K Rp 1.390.497 · piutang SO Rp 0 · uang muka SO Rp 0"
+      "ms": 12163,
+      "info": "Kwitansi KSC/AR-00045 (Rp 1.290.597) dicatat untuk Latihan 72 · Toko Kain Peserta 72. × · KSC/JE-00293 1-1100 D Rp 1.290.597 · 1-1200 K Rp 1.290.597 · piutang SO Rp 0 · uang muka SO Rp 0"
     },
     {
       "no": 19,
@@ -182,8 +182,8 @@
       "action": "POS: pelanggan latihan → 1 roll → Checkout: termin 'DP 50% + Pelunasan' → [Buat Sales Order]",
       "expect": "SO baru bertermin DP 50%; roll dicadangkan",
       "ok": true,
-      "ms": 24320,
-      "info": "KSC/SO-00141 dibuat (Dipesan · Siap disahkan) · PPN 266.464. Grand total Rp 2.688.864."
+      "ms": 19432,
+      "info": "KSC/SO-00069 dibuat (Dipesan · Siap disahkan) · PPN 276.342. Grand total Rp 2.788.542."
     },
     {
       "no": 20,
@@ -191,8 +191,8 @@
       "action": "Meja Admin Sales → [Periksa & lepas] → [Periksa & lepas ke gudang]",
       "expect": "SO dilepas ke gudang",
       "ok": true,
-      "ms": 6669,
-      "info": "KSC/SO-00141 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. ×"
+      "ms": 5886,
+      "info": "KSC/SO-00069 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. ×"
     },
     {
       "no": 21,
@@ -200,8 +200,8 @@
       "action": "Penagihan & Penerimaan → baris SO → ikon dompet → alokasi = uang muka → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan (K) = DP",
       "ok": true,
-      "ms": 11898,
-      "info": "Kwitansi KSC/AR-00097 (Rp 1.344.432) dicatat untuk Latihan 74 · Toko Kain Peserta 74. × · KSC/JE-00627 1-1100 D Rp 1.344.432 · 2-1400 K Rp 1.344.432"
+      "ms": 10861,
+      "info": "Kwitansi KSC/AR-00046 (Rp 1.394.271) dicatat untuk Latihan 72 · Toko Kain Peserta 72. × · KSC/JE-00294 1-1100 D Rp 1.394.271 · 2-1400 K Rp 1.394.271"
     },
     {
       "no": 22,
@@ -209,8 +209,8 @@
       "action": "Penjualan › Pesanan → cari SO → [Lihat detail & aksi] → [Batal] → baca catatan kuning → isi alasan → [Ya, Batalkan SO]",
       "expect": "Catatan 'Pesanan ini sudah dibayar Rp … uang itu menjadi titipan pelanggan'; pesan '… dibatalkan, stok dilepas. Uang muka Rp … menjadi titipan pelanggan.' Buku: tanpa jurnal baru; roll kembali bebas",
       "ok": true,
-      "ms": 15131,
-      "info": "KSC/SO-00141 dibatalkan, stok dilepas. Uang muka Rp 1.344.432 menjadi titipan pelanggan. · roll available · tugas cancelled"
+      "ms": 12726,
+      "info": "KSC/SO-00069 dibatalkan, stok dilepas. Uang muka Rp 1.394.271 menjadi titipan pelanggan. · roll available · tugas cancelled"
     },
     {
       "no": 23,
@@ -218,8 +218,8 @@
       "action": "Keuangan › Piutang › Titipan & Saldo Kredit → cari pelanggan",
       "expect": "Kolom 'Uang muka' Rp 0, kolom 'Titipan' = DP pesanan batal",
       "ok": true,
-      "ms": 7878,
-      "info": "Latihan 74 · Toko Kain Peserta 74 Rp 0 Rp 1.344.432 Rp 0 Rp 1.344.432 —"
+      "ms": 5484,
+      "info": "Latihan 72 · Toko Kain Peserta 72 Rp 0 Rp 1.394.271 Rp 0 Rp 1.394.271 —"
     },
     {
       "no": 24,
@@ -227,8 +227,8 @@
       "action": "Keuangan › Piutang › Kasus → [Kasus baru]: jenis 'Pengembalian dana ke pelanggan', pelanggan, nominal = titipan, cerita → [Buat kasus]",
       "expect": "Kasus baru berstatus terbuka (Finance melapor; uang keluar diselesaikan Manajer)",
       "ok": true,
-      "ms": 8421,
-      "info": "KSC/CASE-00004 · open · Rp 1.344.432"
+      "ms": 6967,
+      "info": "KSC/CASE-00001 · open · Rp 1.394.271"
     },
     {
       "no": 25,
@@ -236,8 +236,8 @@
       "action": "Kasus → buka kasus → [Selesaikan lewat playbook] → 'Kembalikan dari uang muka pelanggan' → nominal & alasan → [Jalankan & selesaikan]",
       "expect": "Kasus selesai. Buku: transaksi kas keluar BCA; Uang Muka Pelanggan (D) = Kas Besar / Bank (K) = DP; titipan pelanggan Rp 0",
       "ok": true,
-      "ms": 21211,
-      "info": "KSC/CASE-00004 resolved · KSC/CASH-00138 · KSC/JE-00629 2-1400 D Rp 1.344.432 · 1-1100 K Rp 1.344.432 · 2-1400 DP batal Rp 0"
+      "ms": 15008,
+      "info": "KSC/CASE-00001 resolved · KSC/CASH-00065 · KSC/JE-00295 2-1400 D Rp 1.394.271 · 1-1100 K Rp 1.394.271 · 2-1400 DP batal Rp 0"
     },
     {
       "no": 26,
@@ -245,8 +245,8 @@
       "action": "Penagihan & Penerimaan → ikon dompet pada SO-1 → pilih [Tertua dulu] → *Nominal diterima* = SO-1 penuh + Rp 1.000.000 → No. referensi → [Simpan kwitansi]",
       "expect": "Petunjuk 'Kurang bayar … dari sisa tagihan pesanan tujuan' (tiga tagihan terbuka)",
       "ok": true,
-      "ms": 10094,
-      "info": "Kurang bayar Rp 5.054.994 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 9.457.977) — akan diminta keputusan saat disimpan. Putuskan"
+      "ms": 7974,
+      "info": "Kurang bayar Rp 4.976.462 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 9.260.397) — akan diminta keputusan saat disimpan. Putuskan"
     },
     {
       "no": 27,
@@ -254,8 +254,8 @@
       "action": "Jendela 'Selisih Pembayaran · Kurang bayar' → 'Sisa tetap jadi piutang', alasan 'Bayar sebagian (disepakati)' → simpan → [Ya, simpan]",
       "expect": "Satu kwitansi dua alokasi: SO-1 lunas, SO-2 dibayar Rp 1.000.000, SO-3 utuh. Buku: Bank (D) = Piutang (K) = uang masuk",
       "ok": true,
-      "ms": 9676,
-      "info": "Kwitansi KSC/AR-00098 (Rp 4.402.983) dicatat untuk Latihan 74 · Toko Kain Peserta 74. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00021). × · KSC/JE-00630 1-1100 D Rp 4.402.983 · 1-1200 K Rp 4.402.983 · sisa SO-2 Rp 2.359.692"
+      "ms": 6883,
+      "info": "Kwitansi KSC/AR-00047 (Rp 4.283.935) dicatat untuk Latihan 72 · Toko Kain Peserta 72. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00027). × · KSC/JE-00296 1-1100 D Rp 4.283.935 · 1-1200 K Rp 4.283.935 · sisa SO-2 Rp 2.292.260"
     },
     {
       "no": 28,
@@ -263,8 +263,8 @@
       "action": "Tab Saldo & Umur → cari pelanggan → klik baris → rincian per pesanan",
       "expect": "SO-1 tidak ada lagi; SO-2 sisa (dibayar sebagian); SO-3 utuh — keduanya 'Belum jatuh tempo'",
       "ok": true,
-      "ms": 2807,
-      "info": "Latihan 74 · Toko Kain Peserta 74 Ayu Marketing Sehat Rp 5.054.994 — — — — Rp 5.054.994 — Terima · SO-2: KSC/SO-00136 17 Des 2026 Belum Jatuh Tempo Rp 3.359.693 Rp 1.000.001 Rp 2.359.692 Rp 2.359.692 · Rp 0 — — Bayar"
+      "ms": 1853,
+      "info": "Latihan 72 · Toko Kain Peserta 72 Ayu Marketing Sehat Rp 4.976.462 — — — — Rp 4.976.462 — Terima · SO-2: KSC/SO-00059 17 Des 2026 Belum Jatuh Tempo Rp 3.292.260 Rp 1.000.000 Rp 2.292.260 Rp 2.292.260 · Rp 0 — — Bayar"
     },
     {
       "no": 29,
@@ -272,8 +272,8 @@
       "action": "Penagihan & Penerimaan → SO-2 → ikon dompet → alokasi = sisa − Rp 6.500 (yang benar-benar masuk) → [Simpan kwitansi] → 'Sisa tetap jadi piutang', alasan 'Dipotong biaya bank' → [Ya, simpan]",
       "expect": "Petunjuk 'Kurang bayar Rp 6.500' (di atas toleransi Rp 5.000) → keputusan wajib; SO-2 sisa Rp 6.500. Buku: Bank (D) = Piutang (K) = uang masuk",
       "ok": true,
-      "ms": 18973,
-      "info": "Kwitansi KSC/AR-00099 (Rp 2.353.192) dicatat untuk Latihan 74 · Toko Kain Peserta 74. Selisih diputus: Dipotong biaya bank (KSC/SLB-00022). × · KSC/JE-00632 1-1100 D Rp 2.353.192 · 1-1200 K Rp 2.353.192"
+      "ms": 13951,
+      "info": "Kwitansi KSC/AR-00048 (Rp 2.285.760) dicatat untuk Latihan 72 · Toko Kain Peserta 72. Selisih diputus: Dipotong biaya bank (KSC/SLB-00028). × · KSC/JE-00297 1-1100 D Rp 2.285.760 · 1-1200 K Rp 2.285.760"
     },
     {
       "no": 30,
@@ -281,8 +281,8 @@
       "action": "Kasus → [Kasus baru]: jenis 'Nominal kurang karena biaya bank', pelanggan, nominal Rp 6.500, cerita → [Buat kasus]",
       "expect": "Kasus biaya bank terbuka",
       "ok": true,
-      "ms": 11680,
-      "info": "KSC/CASE-00005 · open"
+      "ms": 6517,
+      "info": "KSC/CASE-00002 · open"
     },
     {
       "no": 31,
@@ -290,8 +290,8 @@
       "action": "Kasus → buka kasus → [Selesaikan lewat playbook] → 'Bebankan selisih ke biaya bank' → pilih SO-2, nominal → alasan → [Jalankan & selesaikan]",
       "expect": "Kasus selesai; SO-2 lunas. Buku: Beban Administrasi Bank 6-8000 (D) = Piutang Usaha (K) = Rp 6.500",
       "ok": true,
-      "ms": 23386,
-      "info": "KSC/CASE-00005 resolved · KSC/JE-00633 6-8000 D Rp 6.500 · 1-1200 K Rp 6.500"
+      "ms": 13984,
+      "info": "KSC/CASE-00002 resolved · KSC/JE-00298 6-8000 D Rp 6.500 · 1-1200 K Rp 6.500"
     },
     {
       "no": 32,
@@ -299,8 +299,8 @@
       "action": "Penagihan & Penerimaan → SO-3 → ikon dompet → alokasi = total − Rp 2.500 → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "Petunjuk 'masih dalam toleransi' — tanpa jendela keputusan; SO-3 lunas. Buku: Bank (D) = Piutang (K) = uang masuk; Beban Selisih Pembayaran 6-9100 (D) = Piutang (K) = Rp 2.500",
       "ok": true,
-      "ms": 19752,
-      "info": "Selisih Rp 2.500 masih di dalam toleransi Rp 5.000 — diselesaikan otomatis sebagai pembulatan (tetap tercatat). · Kwitansi KSC/AR-00100 (Rp 2.692.802) dicatat untuk Latihan 74 · Toko Kain Peserta 74. Selisih diputus: Pembulatan / biaya transfer (KSC/SLB-00023). × · KSC/JE-00634 1-1100 D Rp 2.692.802 · 1-1200 K Rp 2.692.802 · KSC/JE-00635 6-9100 D Rp 2.500 · 1-1200 K Rp 2.500"
+      "ms": 16259,
+      "info": "Selisih Rp 2.500 masih di dalam toleransi Rp 5.000 — diselesaikan otomatis sebagai pembulatan (tetap tercatat). · Kwitansi KSC/AR-00049 (Rp 2.681.702) dicatat untuk Latihan 72 · Toko Kain Peserta 72. Selisih diputus: Pembulatan / biaya transfer (KSC/SLB-00029). × · KSC/JE-00299 1-1100 D Rp 2.681.702 · 1-1200 K Rp 2.681.702 · KSC/JE-00300 6-9100 D Rp 2.500 · 1-1200 K Rp 2.500"
     },
     {
       "no": 33,
@@ -308,8 +308,8 @@
       "action": "Cek buku akhir: piutang tiap SO = 0, uang muka & titipan pelanggan = 0, jurnal seimbang, PPN keluaran = faktur; Saldo & Umur pelanggan tanpa tagihan",
       "expect": "Semua SO situasi lunas (SO batal: terbayar 0); 2-1400 pelanggan net 0; layar Saldo & Umur tidak menampilkan piutang pelanggan",
       "ok": true,
-      "ms": 37126,
-      "info": "KSC/SO-00139 lunas · KSC/SO-00140 lunas · KSC/SO-00135 lunas · KSC/SO-00136 lunas · KSC/SO-00138 lunas · KSC/SO-00141 batal · terbayar 0 · 2-1400 pelanggan Rp 0 (4 jurnal) · PPN faktur Rp 510.818 = PPN keluaran 2 SJ · pelanggan tidak lagi tampil di Saldo & Umur"
+      "ms": 28521,
+      "info": "KSC/SO-00067 lunas · KSC/SO-00068 lunas · KSC/SO-00058 lunas · KSC/SO-00059 lunas · KSC/SO-00066 lunas · KSC/SO-00069 batal · terbayar 0 · 2-1400 pelanggan Rp 0 (4 jurnal) · PPN faktur Rp 525.316 = PPN keluaran 2 SJ · pelanggan tidak lagi tampil di Saldo & Umur"
     }
   ],
   "http_5xx": [],
@@ -317,14 +317,14 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 74 · Latihan 74 · Toko Kain Peserta 74 · produk DENIM TENCEL HITAM A Rp 20.000/yard (520 roll bebas) · SO-1 KSC/SO-00135 Rp 3.402.983 · SO-2 KSC/SO-00136 Rp 3.359.693 · SO-3 KSC/SO-00138 Rp 2.695.302",
-    "A · KSC/SO-00139: 2 roll (RL-35785 114.51, RL-35786 117.68) · DPP Rp 4.643.800 · PPN Rp 510.818 · total Rp 5.154.618",
-    "A · SJ1 KSC/SJ-00126 114.51 yard (49%) · KSC/JE-00609 1-1200 D Rp 2.542.122 · 4-1000 K Rp 2.290.200 · 2-1200 K Rp 251.922 | KSC/JE-00610 5-1000 D Rp 1.648.944 · 1-1300 K Rp 1.648.944",
-    "A · SJ2 KSC/SJ-00127 · KSC/JE-00613 1-1200 D Rp 2.612.496 · 4-1000 K Rp 2.353.600 · 2-1200 K Rp 258.896 | KSC/JE-00614 5-1000 D Rp 1.694.592 · 1-1300 K Rp 1.694.592 · Σ piutang Rp 5.154.618 = total SO",
-    "B · KSC/SO-00140: total Rp 2.780.994 · DP 50% Rp 1.390.497",
-    "B · KSC/SJ-00128 · KSC/JE-00623 1-1200 D Rp 2.780.994 · 4-1000 K Rp 2.505.400 · 2-1200 K Rp 275.594 | KSC/JE-00624 5-1000 D Rp 1.803.888 · 1-1300 K Rp 1.803.888 | reklas KSC/JE-00625 2-1400 D Rp 1.390.497 · 1-1200 K Rp 1.390.497",
-    "C · KSC/SO-00141: total Rp 2.688.864 · DP Rp 1.344.432 · roll RL-35788",
-    "C · KSC/SO-00141 batal · uang muka Rp 1.344.432 → titipan pelanggan Rp 1.344.432 · tanpa jurnal baru",
-    "RINGKAS S3 peserta 74: KSC/SO-00139 lunas · KSC/SO-00140 lunas · KSC/SO-00135 lunas · KSC/SO-00136 lunas · KSC/SO-00138 lunas · KSC/SO-00141 batal · terbayar 0 · 2-1400 pelanggan Rp 0 (4 jurnal) · PPN faktur Rp 510.818 = PPN keluaran 2 SJ · pelanggan tidak lagi tampil di Saldo & Umur"
+    "Peserta 72 · Latihan 72 · Toko Kain Peserta 72 · produk DENIM TENCEL HITAM A Rp 20.000/yard (534 roll bebas) · SO-1 KSC/SO-00058 Rp 3.283.935 · SO-2 KSC/SO-00059 Rp 3.292.260 · SO-3 KSC/SO-00066 Rp 2.684.202",
+    "A · KSC/SO-00067: 2 roll (RL-35771 120.42, RL-35772 118.36) · DPP Rp 4.775.600 · PPN Rp 525.316 · total Rp 5.300.916",
+    "A · SJ1 KSC/SJ-00064 120.42 yard (50%) · KSC/JE-00284 1-1200 D Rp 2.673.324 · 4-1000 K Rp 2.408.400 · 2-1200 K Rp 264.924 | KSC/JE-00285 5-1000 D Rp 1.734.048 · 1-1300 K Rp 1.734.048",
+    "A · SJ2 KSC/SJ-00065 · KSC/JE-00286 1-1200 D Rp 2.627.592 · 4-1000 K Rp 2.367.200 · 2-1200 K Rp 260.392 | KSC/JE-00287 5-1000 D Rp 1.704.384 · 1-1300 K Rp 1.704.384 · Σ piutang Rp 5.300.916 = total SO",
+    "B · KSC/SO-00068: total Rp 2.581.194 · DP 50% Rp 1.290.597",
+    "B · KSC/SJ-00066 · KSC/JE-00290 1-1200 D Rp 2.581.194 · 4-1000 K Rp 2.325.400 · 2-1200 K Rp 255.794 | KSC/JE-00291 5-1000 D Rp 1.674.288 · 1-1300 K Rp 1.674.288 | reklas KSC/JE-00292 2-1400 D Rp 1.290.597 · 1-1200 K Rp 1.290.597",
+    "C · KSC/SO-00069: total Rp 2.788.542 · DP Rp 1.394.271 · roll RL-35774",
+    "C · KSC/SO-00069 batal · uang muka Rp 1.394.271 → titipan pelanggan Rp 1.394.271 · tanpa jurnal baru",
+    "RINGKAS S3 peserta 72: KSC/SO-00067 lunas · KSC/SO-00068 lunas · KSC/SO-00058 lunas · KSC/SO-00059 lunas · KSC/SO-00066 lunas · KSC/SO-00069 batal · terbayar 0 · 2-1400 pelanggan Rp 0 (4 jurnal) · PPN faktur Rp 525.316 = PPN keluaran 2 SJ · pelanggan tidak lagi tampil di Saldo & Umur"
   ]
 }

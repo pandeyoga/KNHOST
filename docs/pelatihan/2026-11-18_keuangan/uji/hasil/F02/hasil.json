@@ -2,7 +2,7 @@
   "code": "F02",
   "title": "Terima pelunasan penuh — transfer bank",
   "ok": true,
-  "at": "2026-11-17T11:27:35.156Z",
+  "at": "2026-11-17T14:13:59.552Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Masuk dengan akun peserta → Perlu Tindakan · kartu 'Uang masuk perlu dicatat'",
       "expect": "Kartu 'Uang masuk perlu dicatat' tampil di Perlu Tindakan",
       "ok": true,
-      "ms": 4173,
+      "ms": 4110,
       "info": "finance.latih01@kainnusantara.id"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Keuangan › Piutang › tab Penagihan & Penerimaan — cari baris SO",
       "expect": "Baris KSC/SO-00004: Belum Lunas Rp 3.374.123, jatuh tempo ±30 hari lagi",
       "ok": true,
-      "ms": 2217,
+      "ms": 2294,
       "info": "Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00004 Rp 3.374.123 17 Des 2026 30h Lagi"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Klik ikon dompet [Terima pembayaran] pada baris SO",
       "expect": "Form 'Terima pembayaran' terbuka: alokasi 'Atur sendiri' terisi sisa SO, rekening BCA Operasional KSC terkunci",
       "ok": true,
-      "ms": 2070,
+      "ms": 1798,
       "info": "alokasi 3374122.5 · REKENING PENERIMA BCA Operasional KSC · BCA 7415595554 Satu-satunya rekening penerimaan PT ini untuk cara bayar ini."
     },
     {
@@ -38,7 +38,7 @@
       "action": "Ketik nominal sesuai mutasi bank (rupiah bulat) di kotak alokasi SO, isi No. referensi, klik [Simpan kwitansi]",
       "expect": "Kotak alokasi tetap = sisa tagihan persis (tidak bisa melebihi); 'Nominal sesuai tagihan — tidak ada selisih'",
       "ok": true,
-      "ms": 1941,
+      "ms": 1911,
       "info": "ketik 3374123 → tersimpan 3374122.5 · Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan."
     },
     {
@@ -47,8 +47,8 @@
       "action": "Periksa kalimat konfirmasi → klik [Ya, simpan]",
       "expect": "Konfirmasi 'Catat penerimaan Rp … dari Latihan NN … ke BCA Operasional KSC … untuk Sukacita?'; lalu pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat …' dan baris SO hilang",
       "ok": true,
-      "ms": 3002,
-      "info": "Catat penerimaan Rp 3.374.123 dari Latihan 01 · Toko Kain Peserta 01 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? → Kwitansi KSC/AR-00021 (Rp 3.374.123) dicatat untuk Latihan 01 · Toko Kain Peserta 01. ×"
+      "ms": 2949,
+      "info": "Catat penerimaan Rp 3.374.123 dari Latihan 01 · Toko Kain Peserta 01 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? → Kwitansi KSC/AR-00030 (Rp 3.374.123) dicatat untuk Latihan 01 · Toko Kain Peserta 01. ×"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Cek buku: SO lunas, piutang 0",
       "expect": "KSC/SO-00004: status bayar Lunas, sisa Rp 0",
       "ok": true,
-      "ms": 2117,
-      "info": "KSC/AR-00021 · status bayar paid"
+      "ms": 2142,
+      "info": "KSC/AR-00030 · status bayar paid"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Di Riwayat Pembayaran (AR) cari nomor kwitansi, klik label [Jurnal Terbit]",
       "expect": "Jurnal terbuka: 1-1100 Kas Besar / Bank (Debit) dan 1-1200 Piutang Usaha (Kredit) sama besar = nominal kwitansi",
       "ok": true,
-      "ms": 3319,
-      "info": "KSC/JE-00145: 1-1100 D3374122.5 K0 · 1-1200 D0 K3374122.5"
+      "ms": 3393,
+      "info": "KSC/JE-00208: 1-1100 D3374122.5 K0 · 1-1200 D0 K3374122.5"
     }
   ],
   "http_5xx": [],

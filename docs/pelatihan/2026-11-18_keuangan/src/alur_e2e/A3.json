@@ -117,7 +117,7 @@
    "menu": "Pop-up 'Buat Retur / Barang Sisa'",
    "aksi": "Isi alasan dan sebab keluhan. Klik [[Buat Retur]].",
    "isi": "*Alasan roll ini*: Warna lebih tua dari sampel · *Sebab keluhan*: Warna tidak sesuai · *Catatan*: permintaan pelanggan",
-   "hasil": "Rincian retur SRET-00001 terbuka dengan status *Menunggu Persetujuan*.",
+   "hasil": "Rincian retur SRET-00004 terbuka dengan status *Menunggu Persetujuan*.",
    "gambar": "uji/hasil/A3_retur_penjualan/05-A-sales-retur-terbit.png"
   },
   {
@@ -216,7 +216,7 @@
    "menu": "Retur › Retur Pelanggan › rincian retur",
    "aksi": "Buka retur itu. Klik lencana [[Jurnal Terbit]] di panel 'Nota kredit'.",
    "isi": "*Akun*: finance.latihNN@kainnusantara.id",
-   "hasil": "Pop-up jurnal KSC/JE-00137: Pendapatan Penjualan dan PPN Keluaran di Debit, Saldo Kredit Pelanggan di Kredit, Persediaan (D) / HPP (K). Total Debit = Total Kredit.",
+   "hasil": "Pop-up jurnal KSC/JE-00200: Pendapatan Penjualan dan PPN Keluaran di Debit, Saldo Kredit Pelanggan di Kredit, Persediaan (D) / HPP (K). Total Debit = Total Kredit.",
    "gambar": "uji/hasil/A3_retur_penjualan/32-A-finance-jurnal-nota-kredit.png"
   },
   {
@@ -243,7 +243,7 @@
    "menu": "Retur › Retur Pelanggan",
    "aksi": "Ulangi langkah 1–10 untuk retur kedua atas KSC/SO-00017.",
    "isi": "*Alasan roll ini*: Kain berlubang di beberapa titik",
-   "hasil": "Retur SRET-00002 berstatus *Siap diselesaikan*.",
+   "hasil": "Retur SRET-00005 berstatus *Siap diselesaikan*.",
    "gambar": "uji/hasil/A3_retur_penjualan/60-B-qc-spk-selesai.png"
   },
   {
@@ -269,8 +269,8 @@
    "peran": "Finance",
    "menu": "Keuangan › Kas & Bank › Transaksi Kas",
    "aksi": "Klik tab [[Transaksi Kas]]. Ketik nomor transaksi di kotak cari.",
-   "isi": "*Cari*: KSC/CASH-00023",
-   "hasil": "Baris 'Refund tunai retur SRET-00002/P1 → Latihan NN …', kategori Refund Retur Jual, Kas Besar Sukacita, −Rp 3.440.168.",
+   "isi": "*Cari*: KSC/CASH-00029",
+   "hasil": "Baris 'Refund tunai retur SRET-00005/P1 → Latihan NN …', kategori Refund Retur Jual, Kas Besar Sukacita, −Rp 3.440.168.",
    "gambar": "uji/hasil/A3_retur_penjualan/67-B-finance-kas-refund.png"
   },
   {
@@ -279,7 +279,7 @@
    "menu": "Pusat Dokumen › Jejak Dokumen",
    "aksi": "Ketik KSC/SO-00016. Klik hasilnya.",
    "isi": "",
-   "hasil": "Rantai dokumen memuat KSC/SO-00016, surat jalan, kwitansi, retur SRET-00001, SPK QC, dan Nota Kredit CN-00001.",
+   "hasil": "Rantai dokumen memuat KSC/SO-00016, surat jalan, kwitansi, retur SRET-00004, SPK QC, dan Nota Kredit CN-00001.",
    "gambar": "uji/hasil/A3_retur_penjualan/69-C-jejak-so-a.png"
   },
   {
@@ -288,7 +288,7 @@
    "menu": "Pop-up 'Selesaikan Retur — per roll' (variasi tukar barang)",
    "aksi": "Pada retur lain yang sudah QC, pilih outcome Tukar Barang. Klik [[Simpan penyelesaian (1 roll)]].",
    "isi": "*Outcome*: Tukar Barang · *Bukti keputusan*: ACC Manajer: tukar barang sama artikel & warna",
-   "hasil": "'Ke mana nilainya': Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.349.148. Retur SRET-00003 *Selesai: Store Credit*.",
+   "hasil": "'Ke mana nilainya': Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.349.148. Retur SRET-00006 *Selesai: Store Credit*.",
    "gambar": "uji/hasil/A3_retur_tukar/25-T-manajer-nilai-jurnal.png"
   },
   {
@@ -297,7 +297,7 @@
    "menu": "Rincian retur › tab Kebijakan & keputusan › panel 'Pesanan pengganti'",
    "aksi": "Periksa *Pengganti (yd)*. Klik [[Buat pesanan pengganti]].",
    "isi": "*Akun*: salesadmin@kainnusantara.id · *Pengganti (yd)*: sama dengan kewajiban (qty aktual QC)",
-   "hasil": "Ringkasan: 'Pesanan pengganti KSC/SO-00036 · Nilai pengganti Rp 3.349.148 · saldo retur dipakai Rp 3.349.148 · ditagih Rp 0'.",
+   "hasil": "Ringkasan: 'Pesanan pengganti KSC/SO-00054 · Nilai pengganti Rp 3.349.148 · saldo retur dipakai Rp 3.349.148 · ditagih Rp 0'.",
    "gambar": "uji/hasil/A3_retur_tukar/32-T-adminsales-pengganti-terbit.png"
   },
   {
@@ -442,10 +442,10 @@
   "Finance mencocokkan saldo pelanggan (Titipan & Saldo Kredit), kas keluar refund (Transaksi Kas), dan sisa tagihan pemasok sesudah kontrabon (Hutang › Tagihan)."
  ],
  "cek_buku": [
-  "Nota Kredit Store Credit (contoh CN-00001, jurnal KSC/JE-00137): 4-1000 Pendapatan Penjualan (D) Rp 3.099.250 · 2-1200 PPN Keluaran (D) Rp 340.917,50 / 2-1450 Saldo Kredit Pelanggan (K) Rp 3.440.167,50; 1-1300 Persediaan Barang (D) Rp 2.231.460 / 5-1000 HPP (K) Rp 2.231.460 — seimbang.",
+  "Nota Kredit Store Credit (contoh CN-00001, jurnal KSC/JE-00200): 4-1000 Pendapatan Penjualan (D) Rp 3.099.250 · 2-1200 PPN Keluaran (D) Rp 340.917,50 / 2-1450 Saldo Kredit Pelanggan (K) Rp 3.440.167,50; 1-1300 Persediaan Barang (D) Rp 2.231.460 / 5-1000 HPP (K) Rp 2.231.460 — seimbang.",
   "Pemakaian saldo (SCR-…): 2-1450 (D) / 1-1200 Piutang Usaha (K) Rp 3.440.167,50; sisa tagihan KSC/SO-00017 turun sebesar itu.",
-  "Nota Kredit Pengembalian Dana (contoh CN-00002, jurnal KSC/JE-00139): 4-1000 (D) Rp 3.138.750 · 2-1200 (D) Rp 345.262,50 / 1-1200 Piutang (K) Rp 43.845 · 1-1100 Kas Besar / Bank (K) Rp 3.440.167,50; 1-1300 (D) / 5-1000 (K) Rp 2.259.900. Transaksi kas keluar KSC/CASH-00023 Rp 3.440.167,50 di BCA Operasional KSC.",
-  "Nota Debit (contoh DN-00001, jurnal KSC/JE-00140): 2-1100 Hutang Usaha (D) Rp 1.287.600 / 1-1300 Persediaan Barang (K) Rp 1.160.000 · 1-1500 PPN Masukan (K) Rp 127.600.",
+  "Nota Kredit Pengembalian Dana (contoh CN-00002, jurnal KSC/JE-00202): 4-1000 (D) Rp 3.138.750 · 2-1200 (D) Rp 345.262,50 / 1-1200 Piutang (K) Rp 43.845 · 1-1100 Kas Besar / Bank (K) Rp 3.440.167,50; 1-1300 (D) / 5-1000 (K) Rp 2.259.900. Transaksi kas keluar KSC/CASH-00029 Rp 3.440.167,50 di BCA Operasional KSC.",
+  "Nota Debit (contoh DN-00001, jurnal KSC/JE-00203): 2-1100 Hutang Usaha (D) Rp 1.287.600 / 1-1300 Persediaan Barang (K) Rp 1.160.000 · 1-1500 PPN Masukan (K) Rp 127.600.",
   "Pembayaran kontrabon: 2-1100 Hutang Usaha (D) / 1-1100 Kas Besar / Bank (K) Rp 1.864.800. Total debit Hutang (Nota Debit + bayar) = total kedua tagihan Rp 3.152.400 → hutang pemasok nol."
  ],
  "kesalahan_umum": [
@@ -455,7 +455,7 @@
   "Membayar tagihan pemasok yang diretur secara penuh di luar kontrabon — Nota Debit tetap 'belum dipotong' dan pemasok menerima uang lebih.",
   "Lupa memakai saldo pelanggan saat menagih SO berikutnya — saldo menumpuk di 2-1450 sementara piutang tetap ditagih."
  ],
- "catatan_pelatih": "Peragakan di kelas dengan akun pelatih (Sales, Manajer, Gudang, QC); peserta mengerjakan langkah Finance (Jurnal Terbit, Pakai saldo, cek kas keluar, Bayar kontrabon) dengan akunnya sendiri. Urutan wajib: SO asal dilunasi dulu (supaya Store Credit benar-benar menjadi saldo), retur pertama selesai dan saldonya dipakai sebelum retur kedua — bila SO kedua masih bersisa, Pengembalian Dana memotong sisa itu dulu. Uang kembali tercatat sebagai kas keluar seketika saat Manajer menyimpan penyelesaian; Finance tidak punya langkah 'bayar' tersendiri (lihat pertanyaan pemilik). Akun Finance hanya melihat Retur Pelanggan (tanpa tombol buat/setujui) dan tidak melihat daftar Retur ke Supplier — Nota Debit baru terlihat oleh Finance di rincian kontrabon (potongan). Perbaikan 17 Nov: potongan Nota Debit di kontrabon kini sebesar DPP + PPN (dulu DPP saja, PPN barang retur ikut dibayar ke pemasok); [[Maks]]/[[Pakai Saldo]] memakai nilai bersen (dulu dibulatkan ke rupiah sehingga saldo Rp …,50 ditolak); panel 'Pesanan pengganti' kini tampil untuk Tukar Barang yang diputus per roll (dulu tersembunyi karena tipe retur tetap 'Retur'). Tukar barang diuji terpisah (peserta 43, retur SRET-00003): Manajer memilih outcome Tukar Barang → Admin Sales (salesadmin@) membuka tab [[Kebijakan & keputusan]] › panel 'Pesanan pengganti' → [[Buat pesanan pengganti]] → KSC/SO-00036 (nilai Rp 3.349.147,50, saldo retur dipakai Rp 3.349.147,50, ditagih Rp 0); jurnal saldo dipakai 2-1450 (D) / 1-1200 (K). Pengiriman pesanan pengganti mengikuti A1.",
+ "catatan_pelatih": "Peragakan di kelas dengan akun pelatih (Sales, Manajer, Gudang, QC); peserta mengerjakan langkah Finance (Jurnal Terbit, Pakai saldo, cek kas keluar, Bayar kontrabon) dengan akunnya sendiri. Urutan wajib: SO asal dilunasi dulu (supaya Store Credit benar-benar menjadi saldo), retur pertama selesai dan saldonya dipakai sebelum retur kedua — bila SO kedua masih bersisa, Pengembalian Dana memotong sisa itu dulu. Uang kembali tercatat sebagai kas keluar seketika saat Manajer menyimpan penyelesaian; Finance tidak punya langkah 'bayar' tersendiri (lihat pertanyaan pemilik). Akun Finance hanya melihat Retur Pelanggan (tanpa tombol buat/setujui) dan tidak melihat daftar Retur ke Supplier — Nota Debit baru terlihat oleh Finance di rincian kontrabon (potongan). Perbaikan 17 Nov: potongan Nota Debit di kontrabon kini sebesar DPP + PPN (dulu DPP saja, PPN barang retur ikut dibayar ke pemasok); [[Maks]]/[[Pakai Saldo]] memakai nilai bersen (dulu dibulatkan ke rupiah sehingga saldo Rp …,50 ditolak); panel 'Pesanan pengganti' kini tampil untuk Tukar Barang yang diputus per roll (dulu tersembunyi karena tipe retur tetap 'Retur'). Tukar barang diuji terpisah (peserta 43, retur SRET-00006): Manajer memilih outcome Tukar Barang → Admin Sales (salesadmin@) membuka tab [[Kebijakan & keputusan]] › panel 'Pesanan pengganti' → [[Buat pesanan pengganti]] → KSC/SO-00054 (nilai Rp 3.349.147,50, saldo retur dipakai Rp 3.349.147,50, ditagih Rp 0); jurnal saldo dipakai 2-1450 (D) / 1-1200 (K). Pengiriman pesanan pengganti mengikuti A1.",
  "uji": {
   "berkas": "uji/e2e/A3_retur_penjualan.js · uji/e2e/A3_retur_pembelian.js · uji/e2e/A3_retur_tukar.js",
   "peserta_uji": "41 (penjualan) · 42 (pembelian) · 43 (tukar barang) — peserta peraga"

@@ -2,7 +2,7 @@
   "code": "K09",
   "title": "Konfigurasi SDM & Gaji",
   "ok": true,
-  "at": "2026-11-17T11:15:35.478Z",
+  "at": "2026-11-17T14:01:31.269Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Login → Pengaturan › SDM › Aturan SDM & Penggajian",
       "expect": "Kelompok \"Gaji & SDM\": BPJS, PPh 21, Lembur, Prorata; Finance boleh mengubah (izin aturan gaji)",
       "ok": true,
-      "ms": 4532,
+      "ms": 4729,
       "info": "Anda hanya melihat pengaturan Gaji & SDM, Pembayaran pelanggan, Bank & uang yang nyangkut — yaitu aturan yang termasuk wewenang peran Anda. Yang bisa Anda ubah  · BPJS Kes karyawan 1 %, perusahaan 4 % · JHT karyawan 2 %"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Buka kartu \"PTKP setahun per status\" dan \"Kategori tarif per status PTKP\"",
       "expect": "Tabel PTKP (TK/0 … K/3) dan kategori TER A/B/C per status — K/1 = kategori B",
       "ok": true,
-      "ms": 1475,
+      "ms": 1586,
       "info": "TK0 54000000 TK1 58500000 TK2 63000000 TK3 67500000 K0 58500000 K1 63000000 K2 67500000 K3 72000000 | TK0 A TK1 A K0 A TK2 B TK3 B K1 B K2 B K3 C"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Buka kartu \"Tarif efektif PPh 21 bulanan\" (tabel TER)",
       "expect": "Tabel TER per kategori: batas bruto sebulan → tarif; proses gaji membaca tabel yang berlaku per tanggal",
       "ok": true,
-      "ms": 1126,
+      "ms": 1190,
       "info": "Tarif efektif PPh 21 bulanan Bawaan sistem Risiko tinggi NILAI BERLAKU SEKARANG 125 baris Satu nilai untuk seluruh grup — tidak dibedakan per PT. Mengubah di sini berlaku untuk semua PT. KATEGORI BATAS ATAS BRUTO SEBULAN (KOSONG = TANPA BATAS) TARIF (%) A A A "
     },
     {
@@ -38,7 +38,7 @@
       "action": "SDM › Penggajian › tab Komponen & Masukan",
       "expect": "Daftar komponen gaji PT: Gaji Pokok, Tunjangan, Lembur (per jam), Rapel/Insentif (masukan), BPJS & PPh 21 (undang-undang), potongan absensi",
       "ok": true,
-      "ms": 2129,
+      "ms": 2203,
       "info": "8 komponen inti tampil · Rapel: RAPEL Rapel Bawaan Pendapatan Masukan Ya — Bawaan Aktif Ubah"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Pengaturan › SDM › tab Shift & Lokasi Absen",
       "expect": "Shift kerja PT (jam masuk/pulang, toleransi telat) — dasar hitung telat & lembur dari absensi",
       "ok": true,
-      "ms": 1567,
+      "ms": 1167,
       "info": "Sukacita Shift Reguler 08:00–17:00 · toleransi 10 mnt · Sen,Sel,Rab,Kam,Jum"
     },
     {
@@ -56,7 +56,7 @@
       "action": "Tab Kalender Libur → [[Tambah hari libur]] → *Tanggal* 2026-12-11 · *Jenis* Perusahaan · *Nama* Libur latihan 01 → [[Simpan]]",
       "expect": "Pesan \"Hari libur … ditambahkan untuk Sukacita…\"; baris baru di tabel 2026",
       "ok": true,
-      "ms": 4760,
+      "ms": 4997,
       "info": "Hari libur 11 Des 2026 (Libur latihan 01) ditambahkan untuk Sukacita Textile. × · 2026-12-11 perusahaan"
     },
     {
@@ -65,7 +65,7 @@
       "action": "Kembalikan: klik [[Hapus]] pada baris itu → konfirmasi [[Hapus]]",
       "expect": "Pesan \"Hari libur … dihapus\"; baris hilang — kalender kembali seperti semula",
       "ok": true,
-      "ms": 1321,
+      "ms": 1333,
       "info": "konfirmasi \"Hapus 11 Des 2026 (Libur latihan 01) dari kalender libur Sukacita Textile? Proses gaji yang dihitung ulang sesudahnya memperlakukan tanggal itu sebagai hari biasa.\" · tersisa 0"
     }
   ],

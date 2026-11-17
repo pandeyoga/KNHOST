@@ -2,7 +2,7 @@
   "code": "F05",
   "title": "Rencana pembayaran (cicilan) & denda keterlambatan",
   "ok": true,
-  "at": "2026-11-17T11:29:17.745Z",
+  "at": "2026-11-17T14:15:46.033Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Masuk → Keuangan › Piutang › Rencana & Denda › tab Jadwal Pembayaran, cari 'Latihan NN'",
       "expect": "Baris KSC/RPB-00001: KSC/SO-00006, mode 'Bebas / campuran', nilai Rp 3.359.693, berikutnya 2026-10-28 · Rp 1.679.846, tanda '1 telat'",
       "ok": true,
-      "ms": 6797,
+      "ms": 7792,
       "info": "KSC/RPB-00001 KSC/SO-00006 Sukacita Latihan 01 · Toko Kain Cicilan 01 Bebas / campuran Rp 3.359.693 Rp 0 2026-10-28 · Rp 1.679.8461 telat Aktif "
     },
     {
@@ -20,7 +20,7 @@
       "action": "Klik ikon [Buka pesanan] di baris rencana → [Lihat detail & aksi] → panel 'Jadwal Pembayaran & Denda'",
       "expect": "Cicilan 1 berstatus terbuka & lewat jatuh tempo ('1 baris telat'); tombol [Hitung Denda] dan [Ubah Jadwal] tersedia",
       "ok": true,
-      "ms": 3980,
+      "ms": 3878,
       "info": "JADWAL PEMBAYARAN & DENDA KSC/RPB-00001 Terima pembayaran Hitung Denda Ubah Jadwal Bebas / campuran Terbayar Rp 0 dari Rp 3.359.693 · berikutnya 2026-10-28 Rp 1.679.846 1 baris telat TAHAP JATUH TEMPO NOMINAL TERBAYAR STATUS Cicilan 1 (50%) 2026-10-2"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Tutup detail pesanan (×) → Keuangan › Piutang › tab Saldo & Umur → cari 'Cicilan NN' → klik barisnya",
       "expect": "Baris pelanggan: 'telat 20 hr', kolom 1–30 hari Rp 1.679.846, Denda Rp 22.398 'est. — belum jadi nota'",
       "ok": true,
-      "ms": 3045,
+      "ms": 3126,
       "info": "Latihan 01 · Toko Kain Cicilan 01 Ayu Marketing · telat 20 hr Terblokir Rp 1.679.847 Rp 1.679.846 — — — Rp 3.359.693 Rp 22.398 est. — belum jadi nota Buat Nota Terima"
     },
     {
@@ -38,7 +38,7 @@
       "action": "Rincian pelanggan: baca Jadwal Tagihan & est. denda → klik [Buat Nota Denda]",
       "expect": "Cicilan 1 'Telat 20 hari'; est. denda Rp 22.398 belum jadi nota; tombol [Buat Nota Denda] aktif",
       "ok": true,
-      "ms": 1658,
+      "ms": 1525,
       "info": "Latihan 01 · Toko Kain Cicilan 01 Belum lunas Rp 3.359.693 (tercatat Rp 3.359.693 · belum dikirim Rp 0) Tanya soal layar ini Buat Nota Denda Terima pembayaran PESANAN JATUH TEMPO UMUR TOTAL TERBAYAR BELUM LUNAS TERCATAT · BELUM DIKIRIM EST. DENDA NOT"
     },
     {
@@ -47,7 +47,7 @@
       "action": "Baca pesan hasil [Buat Nota Denda]",
       "expect": "Pesan '1 nota denda siap: DN-DENDA-… Nota masih USULAN — belum menyentuh buku besar'; tombol jadi mati + alasannya",
       "ok": true,
-      "ms": 3428,
+      "ms": 3078,
       "info": "1 nota denda siap: KSC/DN-DENDA-00001. Nota masih USULAN — belum menyentuh buku besar. · KSC/DN-DENDA-00001 22397.95 · alasan tombol mati: Tidak ada denda baru: semua denda sudah jadi nota atau belum ada tagihan lewat tenggang."
     },
     {
@@ -56,7 +56,7 @@
       "action": "Tutup rincian → tab Rencana & Denda › Antrean Denda › saring 'Usulan (draf)' → baca nota → klik [Terbitkan]",
       "expect": "Nota DN-DENDA-…: 'Cicilan 1 · jatuh tempo … · telat 20 hari', nominal Rp 22.398, aturan 2%/bulan",
       "ok": true,
-      "ms": 2599,
+      "ms": 2496,
       "info": "KSC/DN-DENDA-00001 USULAN (BELUM BERJURNAL) Cicilan 1 (50%) · jatuh tempo 2026-10-28 · telat 20 hari Bunga 2% / bulan × 20/30 hari → Rp 22.398 Aturan dari: PT Rp 22.398 Terbitkan · rincian: Dasar denda Rp 1.679.846 (sisa tagihan yang telat) | Telat 20 hari − tenggang 0 hari = 20 hari kena denda | Bunga 2% / bulan × 20/30 hari → Rp 22.398"
     },
     {
@@ -65,7 +65,7 @@
       "action": "Konfirmasi [Terbitkan] → saring 'Terbit'",
       "expect": "Status nota berubah 'Terbit (berjurnal)'; KPI 'Denda terbit (belum dibayar)' bertambah",
       "ok": true,
-      "ms": 2475,
+      "ms": 2367,
       "info": "Denda Rp 22.398 diterbitkan dan dijurnal ke piutang denda pelanggan. → KSC/DN-DENDA-00001 TERBIT (BERJURNAL) Cicilan 1 (50%) · jatuh tempo 2026-10-28 · telat 20 hari Bunga 2% / bulan × 20/30 hari → Rp 22.398 Aturan dari: PT Rp 22.398"
     },
     {
@@ -74,8 +74,8 @@
       "action": "Cek buku: jurnal nota denda",
       "expect": "Piutang Denda (D) = Pendapatan Denda (K) = Rp 22.398 — seimbang",
       "ok": true,
-      "ms": 1531,
-      "info": "KSC/JE-00151: 1-1270 Piutang Denda Pelanggan D22397.95 K0 · 4-9300 Pendapatan Denda Keterlambatan D0 K22397.95 · status Terbit (sudah berjurnal)"
+      "ms": 1427,
+      "info": "KSC/JE-00214: 1-1270 Piutang Denda Pelanggan D22397.95 K0 · 4-9300 Pendapatan Denda Keterlambatan D0 K22397.95 · status Terbit (sudah berjurnal)"
     }
   ],
   "http_5xx": [],

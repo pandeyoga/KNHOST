@@ -2,7 +2,7 @@
   "code": "F10",
   "title": "Rekonsiliasi Bank — impor mutasi, cocokkan otomatis & manual, biaya bank",
   "ok": true,
-  "at": "2026-11-17T11:33:45.047Z",
+  "at": "2026-11-17T14:20:18.917Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Login akun peserta → Keuangan › Kas & Bank › Rekonsiliasi → pilih rekening BCA Operasional KSC",
       "expect": "Kartu ringkasan: Rekening (bersih) · Buku (bersih) · Tercocok · Perlu keputusan · Dana titipan · Selisih rekening vs buku; tab Mutasi & Pencocokan",
       "ok": true,
-      "ms": 6001,
-      "info": "kas F09 KSC/CASH-00036 Rp 310.000 · kwitansi KSC/AR-00004 KSC/CASH-00010 Rp 3.168.773 · kode bayar KN-8VJPP"
+      "ms": 6365,
+      "info": "kas F09 KSC/CASH-00042 Rp 310.000 · kwitansi KSC/AR-00004 KSC/CASH-00010 Rp 3.168.773 · kode bayar KN-8VJPP"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Klik [[Impor mutasi bank]] → *Template bank*: BCA — Rekening Koran (CSV) · CSV → tempel 4 baris teks rekening koran (lihat kotak teks) → [[Pratinjau]]",
       "expect": "\"Terbaca 3 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 3.168.773 · keluar Rp 325.000\"; tabel pratinjau 3 baris (Masuk / Keluar)",
       "ok": true,
-      "ms": 1252,
+      "ms": 1289,
       "info": "Terbaca 3 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 3.168.773 · keluar Rp 325.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF E-BANKING CR KN-8VJPP LATIHAN 01 TOKO KAIN PESERTA 01 — Rp 3.168.773 Masuk 17 Nov 2026 TRSF E-BANKING DB EKSPEDISI LATIHAN 01 — Rp 310.000 Keluar 17 Nov 2026 BIAYA ADM LATIHAN 01 — Rp 15.000 Keluar"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Klik [[Impor]]",
       "expect": "Pesan \"Impor BCA — Rekening Koran (CSV): 3 baris baru, 0 dilewati (sudah pernah masuk).\"; kartu Rekening (bersih) menyebut \"Impor terakhir: tempel baris oleh <nama Anda>\"",
       "ok": true,
-      "ms": 1286,
+      "ms": 1506,
       "info": "Impor BCA — Rekening Koran (CSV): 3 baris baru, 0 dilewati (sudah pernah masuk)."
     },
     {
@@ -38,17 +38,17 @@
       "action": "Klik [[Cocokkan otomatis]] → cari \"LATIHAN NN\" di kotak cari daftar mutasi → klik angka Skor pada baris TRSF E-BANKING CR",
       "expect": "Pesan \"Pencocokan otomatis: … tertaut (skor ≥ 80) …\"; baris transfer masuk Rp 3.168.773 berstatus Tercocok · satu-satu · otomatis, Transaksi buku KSC/CASH-00010; alasan skor menyebut \"Kode bayar KN-8VJPP cocok dengan pesanan KSC/SO-00008\"",
       "ok": true,
-      "ms": 1277,
-      "info": "Pencocokan otomatis: 1 tertaut (skor ≥ 80), 1 usulan (skor ≥ 60), 2 baris tersisa. · 17 Nov 2026 TRSF E-BANKING CR KN-8VJPP LATIHAN 01 TOKO KAIN PESERTA 01 Pihak: KN-8VJPP LATIHAN 01 TOKO KAIN PESERTA 01 K"
+      "ms": 1394,
+      "info": "Pencocokan otomatis: 1 tertaut (skor ≥ 80), 2 usulan (skor ≥ 60), 6 baris tersisa. · 17 Nov 2026 TRSF E-BANKING CR KN-8VJPP LATIHAN 01 TOKO KAIN PESERTA 01 Pihak: KN-8VJPP LATIHAN 01 TOKO KAIN PESERTA 01 K"
     },
     {
       "no": 5,
       "role": "Finance",
-      "action": "Pada baris TRSF E-BANKING DB EKSPEDISI (Rp 310.000) klik [[Cocokkan]] → pada kandidat KSC/CASH-00036 (nominal sama, skor tertinggi) klik [[Tautkan]]",
-      "expect": "Pop-up \"Cocokkan mutasi bank\" berisi kandidat KSC/CASH-00036 · nominal Rp 310.000 · skor 60 (Nominal sama, Tanggal sama); sesudah Tautkan: pesan \"Mutasi ditautkan (skor 60).\" dan baris Tercocok",
+      "action": "Pada baris TRSF E-BANKING DB EKSPEDISI (Rp 310.000) klik [[Cocokkan]] → pada kandidat KSC/CASH-00042 (nominal sama, skor tertinggi) klik [[Tautkan]]",
+      "expect": "Pop-up \"Cocokkan mutasi bank\" berisi kandidat KSC/CASH-00042 · nominal Rp 310.000 · skor 60 (Nominal sama, Tanggal sama); sesudah Tautkan: pesan \"Mutasi ditautkan (skor 60).\" dan baris Tercocok",
       "ok": true,
-      "ms": 1725,
-      "info": "Mutasi ditautkan (skor 60). · KSC/CASH-00036 · 17 Nov 2026 Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01 Nominal Rp 310.000 · sisa Rp 310.000 skor 60 Tautkan Nominal sama (+40) · Tanggal sama (+20)"
+      "ms": 1660,
+      "info": "Mutasi ditautkan (skor 60). · KSC/CASH-00042 · 17 Nov 2026 Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01 Nominal Rp 310.000 · sisa Rp 310.000 skor 60 Tautkan Nominal sama (+40) · Tanggal sama (+20)"
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "Pada baris BIAYA ADM (Rp 15.000, keluar) klik [[Catat biaya bank]] → konfirmasi [[Catat biaya bank]]",
       "expect": "Dialog \"Catat biaya bank?\" menyebut nominal Rp 15.000 dan PT; sesudah konfirmasi pesan \"Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).\"; baris Tercocok dengan keterangan \"Biaya bank · akun 6-8000\" dan Transaksi buku KSC/CASH-… baru",
       "ok": true,
-      "ms": 1074,
+      "ms": 1112,
       "info": "Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank)."
     },
     {
@@ -65,8 +65,8 @@
       "action": "Cek jurnal biaya bank: Akuntansi & Pajak › Buku Besar › Jurnal → ketik \"BIAYA ADM LATIHAN 01\" → klik baris bersumber \"Kas\"",
       "expect": "Jurnal \"Kas keluar · Biaya bank — BIAYA ADM LATIHAN 01\": 6-8000 Beban Administrasi Bank Debit Rp 15.000 · 1-1100 Kas Besar / Bank Kredit Rp 15.000. Baris yang hanya DICOCOKKAN (transfer masuk & biaya F09) tidak menerbitkan jurnal baru",
       "ok": true,
-      "ms": 6418,
-      "info": "KSC/CASH-00037 · KSC/JE-00160: 6-8000 Beban Administrasi Bank (D) Rp 15.000 · 1-1100 Kas Besar / Bank (K) Rp 15.000"
+      "ms": 6552,
+      "info": "KSC/CASH-00043 · KSC/JE-00223: 6-8000 Beban Administrasi Bank (D) Rp 15.000 · 1-1100 Kas Besar / Bank (K) Rp 15.000"
     },
     {
       "no": 8,
@@ -74,16 +74,16 @@
       "action": "Saring *Mutasi dari tanggal* & *sampai tanggal* = hari ini, lalu klik kartu [[Tercocok]]",
       "expect": "Kartu ringkasan mengikuti periode hari ini; daftar hanya baris Tercocok — ketiga baris LATIHAN NN ada di sana; Selisih rekening vs buku = mutasi bersih − buku bersih hari ini (semua peserta)",
       "ok": true,
-      "ms": 4400,
-      "info": "hari ini: rekening bersih Rp -111.091.067 · buku bersih Rp 54.623.908 · tercocok 5 · perlu keputusan 0 · selisih Rp -165.714.975"
+      "ms": 4510,
+      "info": "hari ini: rekening bersih Rp -106.555.617 · buku bersih Rp 74.954.113 · tercocok 10 · perlu keputusan 4 · selisih Rp -181.509.730"
     },
     {
       "no": 9,
       "role": "Finance",
       "action": "Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
-      "expect": "Baris KSC/CASH-00010, KSC/CASH-00036 dan kas biaya bank berstatus Rekonsiliasi \"Terekonsiliasi\"",
+      "expect": "Baris KSC/CASH-00010, KSC/CASH-00042 dan kas biaya bank berstatus Rekonsiliasi \"Terekonsiliasi\"",
       "ok": true,
-      "ms": 1883,
+      "ms": 2020,
       "info": ""
     }
   ],

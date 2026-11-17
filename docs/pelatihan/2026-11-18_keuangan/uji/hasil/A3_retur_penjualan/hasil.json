@@ -2,7 +2,7 @@
   "code": "A3_retur_penjualan",
   "title": "A3 Retur penjualan: store credit dipakai untuk tagihan lain, lalu pengembalian dana",
   "ok": true,
-  "at": "2026-11-17T11:23:51.972Z",
+  "at": "2026-11-17T14:10:16.144Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Pelanggan melunasi KSC/SO-00016 lewat transfer (kwitansi dicatat akun Finance peserta lewat API — layar ini dilatih di F02)",
       "expect": "KSC/SO-00016 lunas (sisa Rp 0)",
       "ok": true,
-      "ms": 1751,
+      "ms": 1686,
       "info": "KSC/SO-00016 dilunasi Rp 3.440.168"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Masuk sebagai sales@ → menu [[Retur]] → tab [[Retur Pelanggan]] → [[Buat Retur]]",
       "expect": "Pop-up 'Buat Retur / Barang Sisa' terbuka",
       "ok": true,
-      "ms": 7233,
+      "ms": 8141,
       "info": ""
     },
     {
@@ -29,8 +29,8 @@
       "action": "Cari & pilih pesanan KSC/SO-00016; centang roll yang dikembalikan; isi alasan & sebab keluhan → [[Buat Retur]]",
       "expect": "Retur SRET-… terbuka dengan status 'Menunggu Persetujuan'",
       "ok": true,
-      "ms": 4675,
-      "info": "SRET-00001 · 123.97 yard · roll RL-36323"
+      "ms": 4714,
+      "info": "SRET-00004 · 123.97 yard · roll RL-36323"
     },
     {
       "no": "A3",
@@ -38,8 +38,8 @@
       "action": "Masuk sebagai manager@ → Retur › Retur Pelanggan → cari nomor retur → [[Detail →]] → [[Setujui (Manager)]]",
       "expect": "Status 'Disetujui'; panel 'QC retur · SPK inspeksi per roll' menampilkan SPK KSC/INS-… (lahir otomatis)",
       "ok": true,
-      "ms": 10477,
-      "info": "SRET-00001 disetujui · SPK KSC/INS-00012"
+      "ms": 12583,
+      "info": "SRET-00004 disetujui · SPK KSC/INS-00018"
     },
     {
       "no": "A4",
@@ -47,7 +47,7 @@
       "action": "sales@ buka retur → panel 'Pengembalian barang': *Cara barang kembali* = Diantar sendiri oleh pelanggan → [[Barang sudah dikirim/dijemput]]",
       "expect": "Tahap 'Barang dikirim/dijemput' tercentang; menunggu scan terima gudang",
       "ok": true,
-      "ms": 11498,
+      "ms": 11831,
       "info": ""
     },
     {
@@ -56,7 +56,7 @@
       "action": "warehouse@ buka retur → tab [[Logistik & perjalanan]] → *Tahap* Terima di gudang, *Gudang* Jakarta · Gudang Sukacita, ketik nomor roll → [[Catat scan]]",
       "expect": "Lokasi roll: diterima di Jakarta · Gudang Sukacita; panel QC: 'Roll diterima gudang 1/1'",
       "ok": true,
-      "ms": 10415,
+      "ms": 10113,
       "info": "roll RL-36323 diterima"
     },
     {
@@ -65,7 +65,7 @@
       "action": "wh.admin@ buka retur → panel 'QC retur · SPK inspeksi per roll' → pilih petugas QC (Mulyadi) → [[Tugaskan]]",
       "expect": "Petugas SPK: Mulyadi; status SPK Ditugaskan",
       "ok": true,
-      "ms": 8921,
+      "ms": 9009,
       "info": ""
     },
     {
@@ -74,7 +74,7 @@
       "action": "qc@ buka retur → [[Buka SPK]] → [[Mulai periksa]] → baris roll [[QC 4-point]]: *Kondisi* Baik, *Qty aktual* = qty klaim, *Grade* A → [[Simpan hasil]] → *Keputusan akhir* Diterima → [[Tutup SPK]]",
       "expect": "SPK selesai; retur berstatus 'Siap diselesaikan' (hasil per roll: grade A, kondisi Baik)",
       "ok": true,
-      "ms": 15861,
+      "ms": 17321,
       "info": "hasil: [{\"grade\":\"A\",\"kondisi\":\"ok\",\"qty\":123.97}]"
     },
     {
@@ -83,7 +83,7 @@
       "action": "manager@ buka retur → [[Selesaikan (Pilih Outcome)]] → roll RL-36323: *Outcome* Store Credit → buka 'Lihat jurnal yang akan terbentuk' → isi *Bukti keputusan* → [[Simpan penyelesaian (1 roll)]]",
       "expect": "Retur 'Selesai: Store Credit'; panel 'Nota kredit' CN-… dengan lencana 'Jurnal Terbit'; pratinjau: SO asal sudah lunas — seluruh nilai 'Jadi saldo pelanggan'",
       "ok": true,
-      "ms": 13744,
+      "ms": 14466,
       "info": "pratinjau: Jadi saldo pelanggan Rp 3.440.168 KSC/SO-00016 sudah lunas — tidak ada tagihan yang dipotong. · CN-00001"
     },
     {
@@ -92,8 +92,8 @@
       "action": "Cek buku: Nota Kredit, jurnal retur (pembalikan penjualan, PPN keluaran, persediaan kembali), tagihan & saldo",
       "expect": "Nota Kredit = DPP + PPN; jurnal: 4-1000 Pendapatan (D) · 2-1200 PPN Keluaran (D) / 2-1450 Saldo Kredit Pelanggan (K); 1-1300 Persediaan (D) / 5-1000 HPP (K); saldo pelanggan naik sebesar Nota Kredit",
       "ok": true,
-      "ms": 2105,
-      "info": "CN-00001 DPP Rp 3.099.250 + PPN Rp 340.918 = Rp 3.440.167,5 · HPP dibalik Rp 2.231.460 · potong tagihan Rp 0 · refund Rp 0 · saldo Rp 3.440.167,5 · KSC/JE-00137 seimbang D=K=5671628 [4-1000 Pendapatan Penjualan D 3099250 · 2-1200 PPN Keluaran D 340918 · 2-1450 Saldo Kredit Pelanggan (Store Credit) K 3440168 · 1-1300 Persediaan Barang D 2231460 · 5-1000 Harga Pokok Penjualan K 2231460]"
+      "ms": 2419,
+      "info": "CN-00001 DPP Rp 3.099.250 + PPN Rp 340.918 = Rp 3.440.167,5 · HPP dibalik Rp 2.231.460 · potong tagihan Rp 0 · refund Rp 0 · saldo Rp 3.440.167,5 · KSC/JE-00200 seimbang D=K=5671628 [4-1000 Pendapatan Penjualan D 3099250 · 2-1200 PPN Keluaran D 340918 · 2-1450 Saldo Kredit Pelanggan (Store Credit) K 3440168 · 1-1300 Persediaan Barang D 2231460 · 5-1000 Harga Pokok Penjualan K 2231460]"
     },
     {
       "no": "A10",
@@ -101,8 +101,8 @@
       "action": "Akun Finance peserta → menu [[Retur]] → retur ini → panel 'Nota kredit' → klik lencana [[Jurnal Terbit]]",
       "expect": "Pop-up jurnal Nota Kredit: Pendapatan & PPN Keluaran di Debit, Saldo Kredit Pelanggan di Kredit; Persediaan (D) / HPP (K); Total Debit = Total Kredit",
       "ok": true,
-      "ms": 8797,
-      "info": "Jurnal KSC/JE-00137 Retur Penjualan 17 Nov 2026 · Credit Note / Retur penjualan CN-00001 oleh system Dokumen sumber Retur Jual SRET-00001 Buka Dokumen Sumber AKUN DEBIT KREDIT 4-1000 Pendapatan Penjualan Retur penjualan CN-00001 Rp 3.099.250 — 2-1200 PPN Keluaran Reversal PPN Keluaran CN-00001 Rp 34"
+      "ms": 9001,
+      "info": "Jurnal KSC/JE-00200 Retur Penjualan 17 Nov 2026 · Credit Note / Retur penjualan CN-00001 oleh system Dokumen sumber Retur Jual SRET-00004 Buka Dokumen Sumber AKUN DEBIT KREDIT 4-1000 Pendapatan Penjualan Retur penjualan CN-00001 Rp 3.099.250 — 2-1200 PPN Keluaran Reversal PPN Keluaran CN-00001 Rp 34"
     },
     {
       "no": "A11",
@@ -110,8 +110,8 @@
       "action": "Keuangan › [[Piutang]] › tab [[Titipan & Saldo Kredit]] → cari pelanggan Latihan 41 → buka barisnya → [[Pakai saldo]] → *Pesanan piutang tujuan* KSC/SO-00017 → [[Maks]] → [[Pakai Saldo]]",
       "expect": "Pesan hijau 'Berhasil dipakai Rp … (SCR-…)'; sisa tagihan KSC/SO-00017 berkurang; saldo pelanggan berkurang sebesar yang dipakai",
       "ok": true,
-      "ms": 9488,
-      "info": "Berhasil dipakai Rp 3.440.168 (KSC/SCR-00001). · sisa KSC/SO-00017 Rp 43.845 · saldo Rp 0 · KSC/JE-00138 seimbang D=K=3440168 [2-1450 Saldo Kredit Pelanggan (Store Credit) D 3440168 · 1-1200 Piutang Usaha K 3440168]"
+      "ms": 9843,
+      "info": "Berhasil dipakai Rp 3.440.168 (KSC/SCR-00001). · sisa KSC/SO-00017 Rp 43.845 · saldo Rp 0 · KSC/JE-00201 seimbang D=K=3440168 [2-1450 Saldo Kredit Pelanggan (Store Credit) D 3440168 · 1-1200 Piutang Usaha K 3440168]"
     },
     {
       "no": "B1",
@@ -119,7 +119,7 @@
       "action": "Masuk sebagai sales@ → menu [[Retur]] → tab [[Retur Pelanggan]] → [[Buat Retur]]",
       "expect": "Pop-up 'Buat Retur / Barang Sisa' terbuka",
       "ok": true,
-      "ms": 6376,
+      "ms": 8093,
       "info": ""
     },
     {
@@ -128,8 +128,8 @@
       "action": "Cari & pilih pesanan KSC/SO-00017; centang roll yang dikembalikan; isi alasan & sebab keluhan → [[Buat Retur]]",
       "expect": "Retur SRET-… terbuka dengan status 'Menunggu Persetujuan'",
       "ok": true,
-      "ms": 4540,
-      "info": "SRET-00002 · 125.55 yard · roll RL-36324"
+      "ms": 4523,
+      "info": "SRET-00005 · 125.55 yard · roll RL-36324"
     },
     {
       "no": "B3",
@@ -137,8 +137,8 @@
       "action": "Masuk sebagai manager@ → Retur › Retur Pelanggan → cari nomor retur → [[Detail →]] → [[Setujui (Manager)]]",
       "expect": "Status 'Disetujui'; panel 'QC retur · SPK inspeksi per roll' menampilkan SPK KSC/INS-… (lahir otomatis)",
       "ok": true,
-      "ms": 10263,
-      "info": "SRET-00002 disetujui · SPK KSC/INS-00013"
+      "ms": 11331,
+      "info": "SRET-00005 disetujui · SPK KSC/INS-00019"
     },
     {
       "no": "B4",
@@ -146,7 +146,7 @@
       "action": "sales@ buka retur → panel 'Pengembalian barang': *Cara barang kembali* = Diantar sendiri oleh pelanggan → [[Barang sudah dikirim/dijemput]]",
       "expect": "Tahap 'Barang dikirim/dijemput' tercentang; menunggu scan terima gudang",
       "ok": true,
-      "ms": 10181,
+      "ms": 11895,
       "info": ""
     },
     {
@@ -155,7 +155,7 @@
       "action": "warehouse@ buka retur → tab [[Logistik & perjalanan]] → *Tahap* Terima di gudang, *Gudang* Jakarta · Gudang Sukacita, ketik nomor roll → [[Catat scan]]",
       "expect": "Lokasi roll: diterima di Jakarta · Gudang Sukacita; panel QC: 'Roll diterima gudang 1/1'",
       "ok": true,
-      "ms": 9997,
+      "ms": 10158,
       "info": "roll RL-36324 diterima"
     },
     {
@@ -164,7 +164,7 @@
       "action": "wh.admin@ buka retur → panel 'QC retur · SPK inspeksi per roll' → pilih petugas QC (Mulyadi) → [[Tugaskan]]",
       "expect": "Petugas SPK: Mulyadi; status SPK Ditugaskan",
       "ok": true,
-      "ms": 9291,
+      "ms": 9153,
       "info": ""
     },
     {
@@ -173,7 +173,7 @@
       "action": "qc@ buka retur → [[Buka SPK]] → [[Mulai periksa]] → baris roll [[QC 4-point]]: *Kondisi* Baik, *Qty aktual* = qty klaim, *Grade* A → [[Simpan hasil]] → *Keputusan akhir* Diterima → [[Tutup SPK]]",
       "expect": "SPK selesai; retur berstatus 'Siap diselesaikan' (hasil per roll: grade A, kondisi Baik)",
       "ok": true,
-      "ms": 16417,
+      "ms": 17841,
       "info": "hasil: [{\"grade\":\"A\",\"kondisi\":\"ok\",\"qty\":125.55}]"
     },
     {
@@ -182,7 +182,7 @@
       "action": "manager@ buka retur → [[Selesaikan (Pilih Outcome)]] → roll RL-36324: *Outcome* Pengembalian Dana · *Rekening pengembalian dana* BCA Operasional KSC → buka 'Lihat jurnal yang akan terbentuk' → isi *Bukti keputusan* → [[Simpan penyelesaian (1 roll)]]",
       "expect": "Retur 'Selesai: Pengembalian Dana'; pratinjau 'Ke mana nilainya': potong sisa tagihan SO asal (bila masih ada) lalu 'Refund tunai ke pelanggan'; Nota Kredit CN-… + transaksi kas keluar",
       "ok": true,
-      "ms": 14871,
+      "ms": 13697,
       "info": "pratinjau: Potong sisa tagihan KSC/SO-00017 Rp 43.845 Refund tunai ke pelanggan Rp 3.440.168 · CN-00002"
     },
     {
@@ -191,8 +191,8 @@
       "action": "Cek buku: Nota Kredit, jurnal retur (pembalikan penjualan, PPN keluaran, persediaan kembali), tagihan & saldo",
       "expect": "Jurnal: 4-1000 (D) · 2-1200 (D) / 1-1200 Piutang (K, bagian yang memotong tagihan) · 1-1100 Kas Besar / Bank (K, refund); 1-1300 (D) / 5-1000 (K); mutasi kas keluar BCA = refund",
       "ok": true,
-      "ms": 2839,
-      "info": "CN-00002 DPP Rp 3.138.750 + PPN Rp 345.263 = Rp 3.484.012,5 · HPP dibalik Rp 2.259.900 · potong tagihan Rp 43.845 · refund Rp 3.440.167,5 · saldo Rp 0 · KSC/JE-00139 seimbang D=K=5743913 [4-1000 Pendapatan Penjualan D 3138750 · 2-1200 PPN Keluaran D 345263 · 1-1200 Piutang Usaha K 43845 · 1-1100 Kas Besar / Bank K 3440168 · 1-1300 Persediaan Barang D 2259900 · 5-1000 Harga Pokok Penjualan K 2259900]"
+      "ms": 2804,
+      "info": "CN-00002 DPP Rp 3.138.750 + PPN Rp 345.263 = Rp 3.484.012,5 · HPP dibalik Rp 2.259.900 · potong tagihan Rp 43.845 · refund Rp 3.440.167,5 · saldo Rp 0 · KSC/JE-00202 seimbang D=K=5743913 [4-1000 Pendapatan Penjualan D 3138750 · 2-1200 PPN Keluaran D 345263 · 1-1200 Piutang Usaha K 43845 · 1-1100 Kas Besar / Bank K 3440168 · 1-1300 Persediaan Barang D 2259900 · 5-1000 Harga Pokok Penjualan K 2259900]"
     },
     {
       "no": "B10",
@@ -200,17 +200,17 @@
       "action": "Akun Finance peserta → Keuangan › [[Kas & Bank]] › tab [[Transaksi Kas]] → cari 'Refund' atau nomor transaksi",
       "expect": "Baris kas keluar 'Refund tunai retur SRET-…/P1 → Latihan NN …', kategori Refund Retur Jual, rekening BCA, nominal = refund",
       "ok": true,
-      "ms": 6032,
-      "info": "KSC/CASH-00023 17 Nov 2026 Refund tunai retur SRET-00002/P1 → Latihan 41 · Toko Kain Peserta 41 Refund Retur Jual Kas Besar Sukacita −Rp 3.440.168 "
+      "ms": 5930,
+      "info": "KSC/CASH-00029 17 Nov 2026 Refund tunai retur SRET-00005/P1 → Latihan 41 · Toko Kain Peserta 41 Refund Retur Jual Kas Besar Sukacita −Rp 3.440.168 "
     },
     {
       "no": "C1",
       "role": "Finance",
       "action": "Menu [[Pusat Dokumen]] › tab [[Jejak Dokumen]] → ketik KSC/SO-00016 → klik hasilnya",
-      "expect": "Rantai: KSC/SO-00016 → surat jalan → kwitansi pelunasan; retur SRET-00001 → Nota Kredit; jurnal",
+      "expect": "Rantai: KSC/SO-00016 → surat jalan → kwitansi pelunasan; retur SRET-00004 → Nota Kredit; jurnal",
       "ok": true,
-      "ms": 3560,
-      "info": "DOKUMEN TERKAIT 12 RELASI 13 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 3.440.168 · Rantai dokumen 12 dokumen · 13 relasi · kedalaman 4 INSPEKSI & QC 1 KSC/INS-00012 Sukacita Latihan 41 · Toko Kain Peserta 41 17 Nov 2026 Selesai Pratinjau PDF PESANAN PENJUALAN (SO) 1 KSC/SO-00016 Sukacita Latihan 41 · Toko Kain Peserta 41 17 Nov 2026 Selesai TITIK MULAI Rp 3.440.168 Pratinjau PDF T"
+      "ms": 4007,
+      "info": "DOKUMEN TERKAIT 12 RELASI 13 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 3.440.168 · Rantai dokumen 12 dokumen · 13 relasi · kedalaman 4 INSPEKSI & QC 1 KSC/INS-00018 Sukacita Latihan 41 · Toko Kain Peserta 41 17 Nov 2026 Selesai Pratinjau PDF PESANAN PENJUALAN (SO) 1 KSC/SO-00016 Sukacita Latihan 41 · Toko Kain Peserta 41 17 Nov 2026 Selesai TITIK MULAI Rp 3.440.168 Pratinjau PDF T"
     }
   ],
   "http_5xx": [],

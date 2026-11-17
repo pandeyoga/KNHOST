@@ -6,7 +6,7 @@
  "tujuan": "Peserta bisa membaca format nomor dokumen keuangan per PT, memahami bahwa teks cetakan diatur di Desainer PDF, dan melihat sendiri teks baru tercetak di kwitansi lalu hilang lagi sesudah dikembalikan.",
  "kapan": "Saat pelanggan menanyakan arti nomor dokumen, saat nomor berikutnya tidak sesuai dugaan, atau saat PT ingin menambah kalimat tetap di kwitansi/faktur (mis. petunjuk transfer).",
  "konsep": [
-  "Setiap jenis dokumen punya format nomor sendiri per PT: awalan PT + kode jenis + nomor urut, mis. KSC/AR-00018 untuk kwitansi (penerimaan piutang) Sukacita. Nomor diberikan sistem saat dokumen dibuat; nomor yang sudah terpakai tidak dipakai ulang.",
+  "Setiap jenis dokumen punya format nomor sendiri per PT: awalan PT + kode jenis + nomor urut, mis. KSC/AR-00027 untuk kwitansi (penerimaan piutang) Sukacita. Nomor diberikan sistem saat dokumen dibuat; nomor yang sudah terpakai tidak dipakai ulang.",
   "Beberapa nomor terkunci karena diturunkan dari dokumen lain: nomor Faktur Komersial mengikuti nomor pesanan (KSC/SO-00033 → KSC/INV-00033).",
   "Teks cetakan (judul, teks pembuka, teks penutup, footer, tanda tangan) diatur di Template Dokumen › Desainer PDF per jenis dokumen. Lapisannya: aturan semua PT, lalu aturan khusus satu PT yang hanya boleh mengubah naskah, tempat, tanda tangan, dan tanda air.",
   "Token seperti {{nomor}}, {{pihak}}, {{grand_total}} diisi otomatis saat dicetak. Perubahan naskah berlaku pada cetakan berikutnya, termasuk cetak ulang dokumen lama; isi transaksi tidak berubah.",
@@ -14,7 +14,7 @@
  ],
  "peran": "Admin (pelatih) · Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kwitansi Sukacita terakhir (nomor dari pelatih, contoh KSC/AR-00017). Naskah yang ditambahkan lalu dikembalikan: teks penutup Kwitansi Penerimaan khusus Sukacita 'Simpan kwitansi {{nomor}} ini sebagai bukti pembayaran yang sah.'",
+ "data_awal": "Kwitansi Sukacita terakhir (nomor dari pelatih, contoh KSC/AR-00026). Naskah yang ditambahkan lalu dikembalikan: teks penutup Kwitansi Penerimaan khusus Sukacita 'Simpan kwitansi {{nomor}} ini sebagai bukti pembayaran yang sah.'",
  "alur": [
   {
    "peran": "Admin",
@@ -67,7 +67,7 @@
    "menu": "Penomoran Dokumen",
    "aksi": "Klik [[Ubah]] pada baris Penerimaan piutang. Baca pratinjau, lalu klik [[Batal]].",
    "isi": "",
-   "hasil": "Pop-up 'Ubah format nomor · Penerimaan piutang' berisi awalan, lebar angka, sisipan tanggal, mulai lagi dari 1, deret, dan 'Tiga nomor berikutnya' (contoh KSC/AR-00018 · KSC/AR-00019 · KSC/AR-00020). Ditutup tanpa menyimpan.",
+   "hasil": "Pop-up 'Ubah format nomor · Penerimaan piutang' berisi awalan, lebar angka, sisipan tanggal, mulai lagi dari 1, deret, dan 'Tiga nomor berikutnya' (contoh KSC/AR-00027 · KSC/AR-00028 · KSC/AR-00029). Ditutup tanpa menyimpan.",
    "gambar": "uji/hasil/K08/02-ubah-format-nomor.png"
   },
   {
@@ -117,7 +117,7 @@
   }
  ],
  "cek_buku": [
-  "Nomor kwitansi berikutnya (contoh KSC/AR-00043) lebih besar dari nomor kwitansi terakhir Sukacita (contoh KSC/AR-00017).",
+  "Nomor kwitansi berikutnya (contoh KSC/AR-00043) lebih besar dari nomor kwitansi terakhir Sukacita (contoh KSC/AR-00026).",
   "Selama peragaan, kwitansi tercetak dengan teks penutup bertoken terisi; sesudah dikembalikan, kwitansi tercetak sama persis dengan sebelum peragaan (selain stempel waktu 'Dicetak').",
   "Format nomor dan naskah tersimpan sesudah latihan sama persis dengan sebelumnya; jumlah dan isi kwitansi tidak berubah."
  ],

@@ -2,7 +2,7 @@
   "code": "F09",
   "title": "Rekening & Saldo + Transaksi Kas — biaya operasional dibayar dari bank",
   "ok": true,
-  "at": "2026-11-17T11:33:17.761Z",
+  "at": "2026-11-17T14:19:50.268Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Login akun peserta → Keuangan › Kas & Bank › Rekening & Saldo",
       "expect": "Lima kartu angka (Kas & Bank buku besar · Total Saldo Rekening · Saldo Bank · Saldo Kas · Mutasi Belum Dicocokkan) dan kartu rekening BCA Operasional KSC & Kas Toko KSC dengan saldo, uang masuk/keluar, jumlah transaksi",
       "ok": true,
-      "ms": 6196,
-      "info": "BCA Rp 804.948.908 · Kas Toko Rp 36.398.128 · KPI bank Rp 804.948.908 · KPI kas Rp 36.398.128"
+      "ms": 6583,
+      "info": "BCA Rp 825.279.113 · Kas Toko Rp 36.398.128 · KPI bank Rp 825.279.113 · KPI kas Rp 36.398.128"
     },
     {
       "no": 2,
@@ -20,8 +20,8 @@
       "action": "Klik kartu BCA Operasional KSC → tab Mutasi",
       "expect": "Daftar mutasi: tanggal, nomor & keterangan, Masuk, Keluar, Saldo berjalan, status Rekonsiliasi (Terekonsiliasi / Sebagian / Belum); kepala: Saldo & Terekonsiliasi",
       "ok": true,
-      "ms": 622,
-      "info": "BCA Operasional KSC · Saldo Rp 804.948.908 · Terekonsiliasi Rp 636.065.160"
+      "ms": 638,
+      "info": "BCA Operasional KSC · Saldo Rp 825.279.113 · Terekonsiliasi Rp 636.065.160"
     },
     {
       "no": 3,
@@ -29,7 +29,7 @@
       "action": "Buka tab Transaksi Kas → klik [[Catat Transaksi]]",
       "expect": "Pop-up \"Catat Transaksi Kas\" dengan banner \"Dicatat di buku Sukacita Textile\", isian Jenis Kas, Arah, Nominal, Kategori, Rekening, Deskripsi",
       "ok": true,
-      "ms": 1339,
+      "ms": 1451,
       "info": ""
     },
     {
@@ -38,8 +38,8 @@
       "action": "Isi *Jenis Kas*: Kas Besar / Bank (transfer) · *Arah*: Keluar (pengeluaran) · *Nominal*: Rp 310.000 · *Kategori*: Operasional · *Deskripsi*: Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01 → [[Catat Transaksi]]",
       "expect": "Rekening terisi otomatis \"BCA Operasional KSC\" (satu-satunya rekening bank); notifikasi \"Transaksi KSC/CASH-… (keluar) dicatat.\"",
       "ok": true,
-      "ms": 3488,
-      "info": "Transaksi KSC/CASH-00036 (keluar) dicatat."
+      "ms": 4098,
+      "info": "Transaksi KSC/CASH-00042 (keluar) dicatat."
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Ketik nomor transaksi di kotak cari daftar transaksi kas",
       "expect": "Baris: nomor KSC/CASH-…, keterangan \"Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01\", kategori Operasional, Kas Besar · Sukacita, nominal −Rp 310.000 (merah)",
       "ok": true,
-      "ms": 207,
-      "info": "KSC/CASH-00036 17 Nov 2026 Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01 Operasional Kas Besar Sukacita −Rp 310.000"
+      "ms": 178,
+      "info": "KSC/CASH-00042 17 Nov 2026 Ongkos ekspedisi kirim kain ke Toko Kain Peserta 01 — Latihan 01 Operasional Kas Besar Sukacita −Rp 310.000"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Cek buku: jurnal transaksi kas",
       "expect": "Jurnal Dr 6-4000 Beban Operasional Lainnya Rp 310.000 / Cr 1-1100 Kas Besar / Bank Rp 310.000 — seimbang",
       "ok": true,
-      "ms": 558,
-      "info": "KSC/JE-00159: 6-4000 Beban Operasional Lainnya (D) Rp 310.000 · 1-1100 Kas Besar / Bank (K) Rp 310.000"
+      "ms": 596,
+      "info": "KSC/JE-00222: 6-4000 Beban Operasional Lainnya (D) Rp 310.000 · 1-1100 Kas Besar / Bank (K) Rp 310.000"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Kembali ke Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
       "expect": "Baris baru keluar Rp 310.000 dengan status Rekonsiliasi \"Belum\"; saldo BCA berkurang Rp 310.000 oleh transaksi ini",
       "ok": true,
-      "ms": 1316,
-      "info": "saldo BCA Rp 804.948.908 → Rp 804.638.908 (termasuk transaksi peserta lain bila ada)"
+      "ms": 1600,
+      "info": "saldo BCA Rp 825.279.113 → Rp 824.969.113 (termasuk transaksi peserta lain bila ada)"
     },
     {
       "no": 8,
@@ -74,8 +74,8 @@
       "action": "Akuntansi & Pajak › Buku Besar › Jurnal → ketik \"Latihan 01\" di kotak cari → klik baris jurnal bersumber KSC/CASH-…",
       "expect": "Rincian jurnal: 6-4000 Beban Operasional Lainnya Debit Rp 310.000 · 1-1100 Kas Besar / Bank Kredit Rp 310.000 · Total debit = total kredit",
       "ok": true,
-      "ms": 2945,
-      "info": "KSC/JE-00159"
+      "ms": 2977,
+      "info": "KSC/JE-00222"
     }
   ],
   "http_5xx": [],

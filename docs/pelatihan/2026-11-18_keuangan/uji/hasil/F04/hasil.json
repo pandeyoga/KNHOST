@@ -2,7 +2,7 @@
   "code": "F04",
   "title": "Lebih bayar → titipan pelanggan → dipakai",
   "ok": true,
-  "at": "2026-11-17T11:28:49.906Z",
+  "at": "2026-11-17T14:15:17.969Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Penagihan & Penerimaan → ikon dompet [Terima pembayaran] pada SO kedua → pilih [Tertua dulu]",
       "expect": "Form terbuka; 'Nominal diterima' bisa diisi (awal = sisa Rp 1.954.710)",
       "ok": true,
-      "ms": 6549,
+      "ms": 7038,
       "info": "1954710"
     },
     {
@@ -20,7 +20,7 @@
       "action": "Isi *Nominal diterima* 2000000 (sesuai mutasi bank) + No. referensi, klik [Simpan kwitansi]",
       "expect": "Petunjuk kuning 'Lebih bayar Rp 45.290 dari sisa tagihan pesanan tujuan (Rp 1.954.710)'",
       "ok": true,
-      "ms": 1168,
+      "ms": 1352,
       "info": "Lebih bayar Rp 45.290 dari sisa tagihan pesanan tujuan (Rp 1.954.710) — akan diminta keputusan saat disimpan. Putuskan"
     },
     {
@@ -29,7 +29,7 @@
       "action": "Jendela 'Selisih Pembayaran · Lebih bayar' → pilih 'Simpan sebagai deposit pelanggan', alasan 'Pelanggan transfer berlebih' → [Lanjutkan & simpan kwitansi]",
       "expect": "Kalimat 'Dibayar Rp 2.000.000, seharusnya Rp 1.954.710 … Lebih Rp 45.290'",
       "ok": true,
-      "ms": 1031,
+      "ms": 1444,
       "info": "Dibayar Rp 2.000.000, seharusnya Rp 1.954.710 (sisa tagihan pesanan tujuan). Lebih Rp 45.290 — mau bagaimana?"
     },
     {
@@ -38,8 +38,8 @@
       "action": "Konfirmasi [Ya, simpan]",
       "expect": "Pesan 'Kwitansi … (Rp 2.000.000) … Rp 1.954.710 melunasi tagihan, Rp 45.290 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (SLB-…)'; baris SO hilang",
       "ok": true,
-      "ms": 2369,
-      "info": "Kwitansi KSC/AR-00023 (Rp 2.000.000) dicatat untuk Latihan 01 · Toko Kain Peserta 01. Rp 1.954.710 melunasi tagihan, Rp 45.290 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00002). ×"
+      "ms": 2685,
+      "info": "Kwitansi KSC/AR-00032 (Rp 2.000.000) dicatat untuk Latihan 01 · Toko Kain Peserta 01. Rp 1.954.710 melunasi tagihan, Rp 45.290 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00025). ×"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Cek buku: SO lunas, titipan pelanggan, jurnal kwitansi",
       "expect": "Titipan pelanggan Rp 45.290 · jurnal: Kas Besar/Bank (D) Rp 2.000.000 = Piutang Usaha (K) Rp 1.954.710 + Uang Muka Pelanggan (K) Rp 45.290",
       "ok": true,
-      "ms": 3043,
-      "info": "KSC/AR-00023 · KSC/JE-00147: 1-1100 D2000000 K0 · 1-1200 D0 K1954710 · 2-1400 D0 K45290"
+      "ms": 2964,
+      "info": "KSC/AR-00032 · KSC/JE-00210: 1-1100 D2000000 K0 · 1-1200 D0 K1954710 · 2-1400 D0 K45290"
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "Klik tab Titipan & Saldo Kredit → cari 'Latihan NN'",
       "expect": "Baris pelanggan: kolom Deposit Rp 45.290, Jumlah Rp 45.290",
       "ok": true,
-      "ms": 2038,
+      "ms": 1576,
       "info": "Latihan 01 · Toko Kain Peserta 01 Rp 0 Rp 45.290 Rp 0 Rp 45.290 —"
     },
     {
@@ -65,8 +65,8 @@
       "action": "Susulan: tagihan berikutnya pelanggan (python -m scripts.latih_keuangan.b_piutang --berikut NN)",
       "expect": "Pesanan baru terkirim (belum dibayar) muncul di Penagihan & Penerimaan",
       "ok": true,
-      "ms": 9468,
-      "info": "KSC/SO-00037 · Rp 3.406.035"
+      "ms": 10398,
+      "info": "KSC/SO-00055 · Rp 3.468.750"
     },
     {
       "no": 8,
@@ -74,8 +74,8 @@
       "action": "Tab Penagihan & Penerimaan → [Terima pembayaran] SO baru → centang 'Pakai titipan' → [Simpan kwitansi]",
       "expect": "'Nominal diterima' = total − titipan; Total diterima = total SO (uang + titipan); 'Nominal sesuai tagihan'",
       "ok": true,
-      "ms": 3938,
-      "info": "Rp 3.360.745 · Total diterima: Rp 3.406.035(uang Rp 3.360.745 + titipan Rp 45.290)"
+      "ms": 4495,
+      "info": "Rp 3.423.460 · Total diterima: Rp 3.468.750(uang Rp 3.423.460 + titipan Rp 45.290)"
     },
     {
       "no": 9,
@@ -83,8 +83,8 @@
       "action": "Konfirmasi [Ya, simpan]; cek buku",
       "expect": "SO baru lunas, titipan Rp 0; jurnal: Kas/Bank (D) uang baru + Uang Muka Pelanggan (D) titipan = Piutang (K) total SO",
       "ok": true,
-      "ms": 4879,
-      "info": "Kwitansi KSC/AR-00024 (Rp 3.406.035) dicatat untuk Latihan 01 · Toko Kain Peserta 01. × · KSC/JE-00150: 1-1100 D3360745 K0 · 2-1400 D45290 K0 · 1-1200 D0 K3406035"
+      "ms": 5813,
+      "info": "Kwitansi KSC/AR-00033 (Rp 3.468.750) dicatat untuk Latihan 01 · Toko Kain Peserta 01. × · KSC/JE-00213: 1-1100 D3423460 K0 · 2-1400 D45290 K0 · 1-1200 D0 K3468750"
     }
   ],
   "http_5xx": [],
