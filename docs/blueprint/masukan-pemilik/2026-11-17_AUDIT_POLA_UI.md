@@ -19,13 +19,81 @@ Cara membaca kolom:
 |---|---|---|
 | Pilot | Meja (semua), Retur Pelanggan, Pengaturan › kelompok pengaturan | selesai (`008aa68`) |
 | Sendiri 17 Nov | Pesanan (tahap dropdown, panel kanan hanya saat dipilih), Pesanan Khusus (templat daftar + lini masa vertikal), Tanya KN, panel rincian global, kartu beranda | selesai |
-| Keuangan | Beranda Keuangan (kartu berklik), Antar-PT, Bagan Akun (lingkup ikut PT), Lembar Insentif | dikerjakan (agen) |
-| Gudang | Barang Masuk / Keluar / Cutting satu pola, Lokasi Rak, SPK Inspeksi | dikerjakan (agen) |
-| Produk | Produk & Harga (alat admin dipindah), rincian produk | dikerjakan (agen) |
-| Pengaturan | Hak akses per peran (matriks tanpa gulir), Peran & Hak Akses, Aturan Persetujuan, Kontrol dua orang | dikerjakan (agen) |
-| Pembelian | PO, PR, Tagihan Supplier, Order Makloon, Retur ke Supplier | dikerjakan (agen) |
-| Keuangan-2 | sisa kandidat keuangan di tabel (rekonsiliasi, kasus, profitabilitas, anggaran, faktur pajak, kredit, aset, buku besar, kontrabon, GR/IR, pembayaran) | antre |
-| Lain-lain | R&D sample, permintaan desain, KPI desainer, transfer gudang, produksi, kehadiran, penjadwal, Pusat Export | antre |
+| Keuangan | Beranda Keuangan (kartu berklik), Antar-PT, Bagan Akun (lingkup ikut PT), Lembar Insentif | selesai (`02c6c4e`) |
+| Gudang | Barang Masuk / Keluar / Cutting satu pola, Lokasi Rak, SPK Inspeksi | selesai (`ba42d6d`) |
+| Produk | Produk & Harga (alat admin dipindah), rincian produk | selesai (`657605f`) |
+| Pengaturan | Hak akses per peran (matriks tanpa gulir), Peran & Hak Akses, Aturan Persetujuan, Kontrol dua orang | selesai (`df4edf6`) |
+| Pembelian | PO, PR, Tagihan Supplier, Order Makloon, Retur ke Supplier | selesai (`10ad5fc`) |
+| Keuangan-2 | rekonsiliasi, kasus, profitabilitas, faktur pajak, meja kredit, titipan, aset, buku besar, posting gagal, amandemen, kontrabon, GR/IR, RFQ | selesai (`16f93c9`, `f8ab4d0`) |
+| Lain-lain | R&D sample/desain/spesifikasi, permintaan desain, transfer, gaji, kas kecil, eskalasi, kontrak, klaim makloon, antrean cetak, pesanan sample, perbaikan, produksi, penjadwal | selesai (`82e92e7`, `0a0cd9b`, `7b2ab43`) |
+
+## Sesudah semua gelombang (17 Nov, pohon akhir)
+Kandidat tersisa = sebagian besar PENGECUALIAN SAH (lihat "Cara membaca kolom"): pengalih bagian/mode, angka isi
+laporan (arus kas, perubahan ekuitas, wizard kontrabon), kartu ringkasan anggaran. Sisa nyata dicatat untuk gelombang
+berikut bila pemilik meminta.
+
+57 berkas · chip/tab saringan 22 · bilah penjelasan 7 · kartu angka tanpa klik 60 · tombol buat di kepala 2
+
+| Berkas | Chip/tab saringan | Bilah penjelasan | Kartu angka tanpa klik | Buat di kepala |
+|---|---|---|---|---|
+| `features/purchasing/Supplier360Panel.jsx` | 2 |  | 2 |  |
+| `features/finance/BudgetView.jsx` |  |  | 5 |  |
+| `features/finance/cases/FinanceCasesView.jsx` |  |  | 5 |  |
+| `features/finance/CashFlowTab.jsx` |  |  | 4 |  |
+| `features/finance/EquityChangesTab.jsx` |  |  | 4 |  |
+| `features/finance/ProfitabilityView.jsx` |  |  | 4 |  |
+| `features/purchasing/contrabon/ContraBonCreateWizard.jsx` |  |  | 4 |  |
+| `features/purchasing/contrabon/ExchangeSchedulesTab.jsx` |  |  | 4 |  |
+| `features/purchasing/contrabon/UnbilledReceiptsTab.jsx` |  |  | 4 |  |
+| `features/hr/AttendanceView.jsx` |  |  | 3 |  |
+| `features/crm/Customer360Panel.jsx` | 2 |  |  |  |
+| `features/wms/StockOpnameTab.jsx` | 2 |  |  |  |
+| `features/wms/inventory/InventorySummaryCards.jsx` |  |  | 2 |  |
+| `features/admin/uom/UomConversionView.jsx` |  | 1 |  |  |
+| `features/costing/CostingView.jsx` |  |  | 1 |  |
+| `features/crm/CustomerCardSections.jsx` |  |  | 1 |  |
+| `features/designer/DesignerKpiTrendChart.jsx` | 1 |  |  |  |
+| `features/designer/DesignerKpiView.jsx` |  |  | 1 |  |
+| `features/desks/RoleDesk.jsx` |  |  | 1 |  |
+| `features/export/ColumnPicker.jsx` | 1 |  |  |  |
+| `features/export/CoveragePanel.jsx` | 1 |  |  |  |
+| `features/finance/ARAgingView.jsx` |  |  | 1 |  |
+| `features/finance/ClosingView.jsx` |  |  | 1 |  |
+| `features/finance/PeriodUnlockView.jsx` |  |  | 1 |  |
+| `features/finance/TaxOutputRecon.jsx` |  |  | 1 |  |
+| `features/finance/amendments/AmendmentCenterView.jsx` |  |  | 1 |  |
+| `features/finance/bank/BankRulesSettingsView.jsx` | 1 |  |  |  |
+| `features/finance/bank/ReconMatchModal.jsx` | 1 |  |  |  |
+| `features/finance/bank/ReconPayablePicker.jsx` | 1 |  |  |  |
+| `features/finance/payments/ReceivePaymentModal.jsx` | 1 |  |  |  |
+| `features/home/FinanceHomeCard.jsx` |  |  | 1 |  |
+| `features/hr/KpiView.jsx` |  |  | 1 |  |
+| `features/hr/MyPayslipCard.jsx` | 1 |  |  |  |
+| `features/incentive/IncentiveSetupView.jsx` |  | 1 |  |  |
+| `features/incentive/IncentiveSheetDetail.jsx` |  | 1 |  |  |
+| `features/internal_requests/InternalRequestsView.jsx` |  |  | 1 |  |
+| `features/inventory/InventoryStatusBoard.jsx` |  |  | 1 |  |
+| `features/inventory/lots/LotsView.jsx` |  | 1 |  |  |
+| `features/logistics/LogisticsView.jsx` |  |  |  | 1 |
+| `features/orders/RestockPanel.jsx` |  | 1 |  |  |
+| `features/pdf/PdfEditorTabs.jsx` | 1 |  |  |  |
+| `features/pettycash/VehicleLogsView.jsx` |  |  | 1 |  |
+| `features/purchasing/PoBoardView.jsx` |  |  | 1 |  |
+| `features/purchasing/PurchaseRequisitions.jsx` |  | 1 |  |  |
+| `features/purchasing/ReorderSuggestions.jsx` |  |  | 1 |  |
+| `features/purchasing/makloon/MakloonClaimRecapView.jsx` |  |  | 1 |  |
+| `features/purchasing/supplier-items/SupplierItemImportModal.jsx` | 1 |  |  |  |
+| `features/sales/ReturnDetail.jsx` | 1 |  |  |  |
+| `features/sales/ReturnPoliciesView.jsx` |  |  |  | 1 |
+| `features/sales_admin/SalesAdminDesk.jsx` |  |  | 1 |  |
+| `features/samples/SampleAdminDesk.jsx` |  |  | 1 |  |
+| `features/settings/config/SettingsBrowser.jsx` | 1 |  |  |  |
+| `features/settings/entities/EntityReadinessPanel.jsx` | 1 |  |  |  |
+| `features/settings/masters/ClientDatasetImportView.jsx` | 1 |  |  |  |
+| `features/tanya/TanyaActions.jsx` | 1 |  |  |  |
+| `features/wms/InventoryStockView.jsx` | 1 |  |  |  |
+| `features/wms/RollGradePanel.jsx` |  | 1 |  |  |
+
 
 ## Daftar kandidat (keadaan 17 Nov, sebelum gelombang agen digabung)
 92 berkas · chip/tab saringan 64 · bilah penjelasan 8 · kartu angka tanpa klik 78 · tombol buat di kepala 6

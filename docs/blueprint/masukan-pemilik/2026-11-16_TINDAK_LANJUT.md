@@ -44,17 +44,17 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 |---|---|---|
 | M1, M4 | Meja tetap terbuka, sama tinggi, cari/saring/urut/paginasi per kartu; Keep & Pending satu baris | selesai (pilot `008aa68`) |
 | M23 | Retur kacau | selesai (pilot) |
-| M24 | Chip saringan → dropdown | sebagian besar selesai: komponen bersama `FilterSelect`; lini (semua layar), Retur, Pengaturan, Pesanan, Pesanan Khusus, R&D sample/desain/spesifikasi, permintaan desain, transfer, 13 layar keuangan & pembelian, 11 layar lain; SPK Inspeksi & Barang Masuk/Keluar (gelombang Gudang) dan PO/PR/Tagihan/Order Makloon/Retur Supplier (gelombang Pembelian) dikerjakan agen. Pengalih bagian/mode sengaja tetap |
-| M43 | Semua menu Pengaturan | sebagian: Ketegasan & semua kelompok pengaturan (pilot); Hak akses (matriks tanpa gulir), Aturan Persetujuan, Kontrol dua orang antre |
+| M24 | Chip saringan → dropdown | selesai: komponen bersama `FilterSelect` (dropdown berhitungan) dipakai di semua daftar — lini, Retur, Pengaturan, Pesanan, Pesanan Khusus, R&D, permintaan desain, transfer, 13 layar keuangan & pembelian, 11 layar lain, SPK Inspeksi, Barang Masuk/Keluar/Cutting, PO/PR/Tagihan/Order Makloon/Retur Supplier. Pengalih bagian/mode (kartu 360, metode opname, mode alokasi bayar, tampilan roll) sengaja tetap |
+| M43 | Semua menu Pengaturan | selesai: Ketegasan & semua kelompok (pilot `008aa68`); Hak akses per peran = matriks tanpa gulir mendatar, Peran & Hak Akses satu bilah, Aturan Persetujuan & Kontrol dua orang = daftar padat ubah-di-baris (`df4edf6`) |
 | M3 | Tanya KN layar penuh, riwayat bisa disembunyikan | selesai: satu bidang kerja setinggi layar (tanpa kartu-kartu), panel laporan & riwayat bisa disembunyikan (diingat per peramban), strip aturan jadi baris tipis |
 | M8, M32 | Kartu angka relevan & bisa diklik (Portal, Beranda Keuangan) | selesai: beranda tanpa "Jml Tersedia"/"Gudang" (M8); Beranda Keuangan — semua kartu menuju laporan/daftar terkait (M32, `02c6c4e`); Rekonsiliasi Bank — kartu hitungan = saringan |
 | M14, M15 | Lini masa vertikal Pesanan Khusus | selesai: satu lini masa vertikal (✓/●/○, tanggal & pelaku, "berjalan sejak … (n hari)", dokumen tahap dilebur dari Rantai dokumen, aksi hanya di tahap berjalan, tahap selesai dilipat bila > 3) |
 | M17 | Tab status Pesanan → dropdown | selesai: dropdown "Tahap" (jumlah · nilai) di bilah daftar; kepala kartu ganda dihapus |
 | M18 | Pop-up melayang (Pelanggan) | selesai: rincian = panel tetap di kanan, konten diberi ruang (tidak menutupi tabel) |
-| M20 | Produk & Harga: alat admin dipindah | antre |
-| M22 | Rincian produk | antre |
-| M26 | Barang Masuk/Keluar/Cutting satu pola | antre |
-| M29 | Lokasi Rak | antre |
+| M20 | Produk & Harga: alat admin dipindah | selesai (`657605f`): katalog bersih (kepala satu baris, satu bilah: cari · tahap · lini · status · saringan lain · jumlah · Alat data master ▾ · Tambah produk); alat tata kelola/perbaikan/sumber restock pindah ke halaman admin tersendiri (pemegang izin) |
+| M22 | Rincian produk | selesai (`657605f`): kepala rincian = nama · SKU · status · aksi; kartu kosong dihapus (spek satu baris); label manusiawi; peringatan desain satu baris + tautan; Hapus permanen di menu Lainnya (nonaktif + alasan bila dipakai) |
+| M26 | Barang Masuk/Keluar/Cutting satu pola | selesai (`ba42d6d`): Barang Masuk / Keluar / Cutting satu pola (kepala satu baris + ?, bilah Cari → Status ▾ → Jenis ▾ → Gudang ▾ → jumlah → aksi; panel rincian hanya saat baris dipilih; satu tombol buat) |
+| M29 | Lokasi Rak | selesai (`ba42d6d`): kepala satu baris + ?, kartu angka membuka tabnya, antrean putaway jadi tabel berkolom |
 | M35 | Tombol buat di banyak tempat | selesai untuk Antar-PT (satu tombol per tab di bilah daftar, `02c6c4e`), Transfer, Pesanan Khusus; layar Pembelian di gelombang agen |
 | M36, M37 | Bagan Akun & Antar-PT boros; pemilih PT dobel berwarna lain | selesai (`02c6c4e`): kepala satu baris, satu bilah daftar, kartu angka = saringan; lingkup Bagan Akun ikut PT di bilah atas (Template Global = satu opsi dropdown), chip ungu dihapus |
 | M40 | Lembar Insentif boros | selesai (`02c6c4e`): kepala satu baris + ?, satu bilah (cari · periode · status dropdown · jumlah · Buat lembar), tabel padat |
