@@ -240,8 +240,8 @@ Centang langkah yang hasilnya sama dengan kolom *Yang harus terlihat*. Bila berb
 | 19 | Klik Simpan penyelesaian (1 roll). | Retur Selesai: Pengembalian Dana; Nota Kredit CN-00002 berlencana Jurnal Terbit. | ☐ | |
 | 20 | Klik tab Transaksi Kas. Ketik nomor transaksi di kotak cari. | Baris 'Refund tunai retur SRET-00005/P1 → Latihan NN …', kategori Refund Retur Jual, Kas Besar Sukacita, −Rp 3.440.168. | ☐ | |
 | 21 | Ketik KSC/SO-00016. Klik hasilnya. | Rantai dokumen memuat KSC/SO-00016, surat jalan, kwitansi, retur SRET-00004, SPK QC, dan Nota Kredit CN-00001. | ☐ | |
-| 22 | Pada retur lain yang sudah QC, pilih outcome Tukar Barang. Klik Simpan penyelesaian (1 roll). | 'Ke mana nilainya': Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.349.148. Retur SRET-00006 Selesai: Store Credit. | ☐ | |
-| 23 | Periksa Pengganti (yd). Klik Buat pesanan pengganti. | Ringkasan: 'Pesanan pengganti KSC/SO-00056 · Nilai pengganti Rp 3.349.148 · saldo retur dipakai Rp 3.349.148 · ditagih Rp 0'. | ☐ | |
+| 22 | Pada retur lain yang sudah QC, pilih outcome Tukar Barang. Klik Simpan penyelesaian (1 roll). | 'Ke mana nilainya': Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.446.273. Retur SRET-00007 Selesai: Store Credit. | ☐ | |
+| 23 | Periksa Pengganti (yd). Klik Buat pesanan pengganti. | Ringkasan: 'Pesanan pengganti KSC/SO-00114 · Nilai pengganti Rp 3.446.273 · saldo retur dipakai Rp 3.446.273 · ditagih Rp 0'. Saldo retur dipakai menjadi uang muka pesanan pengganti (belum dikirim), bukan pengurang piutang. | ☐ | |
 | 24 | Klik tab Retur ke Supplier (Nota Debit). Klik Buat Retur. | Pop-up 'Buat Retur ke Supplier' terbuka. | ☐ | |
 | 25 | Pilih pemasok dan PO. Klik Pilih roll, centang roll, klik Pakai. | Baris barang terisi qty = panjang roll dan harga = harga PO; isian per roll muncul. | ☐ | |
 | 26 | Isi alasan roll dan ringkasan. Klik Buat Retur. | Pesan hijau 'Retur PRET-00004 dibuat (menunggu persetujuan)'. | ☐ | |
