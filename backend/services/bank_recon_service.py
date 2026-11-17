@@ -358,8 +358,14 @@ async def preview(raw: str, format_id: str = "", fmt: Optional[Dict[str, Any]] =
 # ═════════════════════════════════════════════════════════════════════════════
 #  IMPOR
 # ═════════════════════════════════════════════════════════════════════════════
+#: M38 (pemilik 16 Nov: "saya bisa cocokkan otomatis padahal saya tidak upload berkas") — asal tiap baris mutasi dicatat:
+#: `berkas` (unggah berkas bank), `tempel` (input/tempel baris), `contoh` (data demo dibuat dari catatan kas sendiri).
+#: Baris lama tanpa catatan = "tidak tercatat".
+IMPORT_SOURCES = ("berkas", "tempel", "contoh")
+
+
 def _line_doc(bank_account_id: str, entity_id: str, r: Dict[str, Any], batch: str,
-              format_id: str) -> Dict[str, Any]:
+              format_id: str, source: str = "", actor: str = "", file_name: str = "") -> Dict[str, Any]:
     desc = (r.get("description") or "").strip()
     now = now_iso()
     return {
@@ -375,6 +381,8 @@ def _line_doc(bank_account_id: str, entity_id: str, r: Dict[str, Any], batch: st
         "match_type": "", "matched_at": "", "matched_by": "",
         "holding": {}, "holding_allocated": [], "holding_remaining": 0.0,
         "import_batch": batch, "format_id": format_id,
+        "import_source": source if source in IMPORT_SOURCES else "", "imported_by": actor or "",
+        "import_file": (file_name or "")[:200],
         "created_at": now, "updated_at": now,
     }
 
@@ -391,15 +399,20 @@ async def _dup_exists(bank_account_id: str, doc: Dict[str, Any]) -> bool:
 
 async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[str, Any]],
                        actor: str, entity_ids: Optional[List[str]] = None,
-                       active_entity: str = "", format_id: str = "") -> Dict[str, Any]:
-    """Impor baris mutasi yang SUDAH terstruktur (dipakai juga oleh seed & impor berkas)."""
+                       active_entity: str = "", format_id: str = "", source: str = "",
+                       file_name: str = "") -> Dict[str, Any]:
+    """Impor baris mutasi yang SUDAH terstruktur (dipakai juga oleh seed & impor berkas).
+
+    `source` (M38) — asal baris: `berkas` / `tempel` / `contoh`; pemanggil seed (`actor == "seed"`) = `contoh`."""
+    if not source:
+        source = "contoh" if actor == "seed" else "tempel"
     acc = await _account(bank_account_id, entity_ids)
     ent = entity_id or _stamp_entity(acc, active_entity)
     batch = new_id("stmtbatch")
     imported, skipped = 0, 0
     errors: List[Dict[str, Any]] = []
     for i, r in enumerate(lines or [], start=1):
-        doc = _line_doc(bank_account_id, ent, r, batch, format_id)
+        doc = _line_doc(bank_account_id, ent, r, batch, format_id, source, actor, file_name)
         # G3 D4-BANK-01 — semua jalur (berkas, input langsung, seed) lewat validator kalender ketat.
         if not parser.strict_iso_date(doc["stmt_date"]):
             errors.append({"row": r.get("row") or i, "reason": f"Tanggal tidak sah: {doc['stmt_date'] or '(kosong)'}"})
@@ -421,14 +434,14 @@ async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[st
 async def import_raw(bank_account_id: str, raw: str, format_id: str = "",
                      fmt: Optional[Dict[str, Any]] = None,
                      entity_ids: Optional[List[str]] = None, active_entity: str = "",
-                     actor: str = "", year_hint: int = 0) -> Dict[str, Any]:
+                     actor: str = "", year_hint: int = 0, file_name: str = "") -> Dict[str, Any]:
     """Impor dari ISI BERKAS (CSV/MT940/OFX) memakai template."""
     fdoc, detected = await _resolve_format(format_id, fmt, raw, entity_ids, active_entity)
     rows, errors = parser.parse_rows(raw, fdoc, year_hint)
     if not rows:
         raise ValueError("Tidak ada baris mutasi yang bisa dibaca — periksa template/berkas")
     res = await import_lines(bank_account_id, "", rows, actor, entity_ids, active_entity,
-                             fdoc.get("id", ""))
+                             fdoc.get("id", ""), source="berkas", file_name=file_name)
     res.update({"format_id": fdoc.get("id", ""), "format_name": fdoc.get("name", ""),
                 "detected": detected, "parsed": len(rows),
                 "errors": errors[:20], "error_count": len(errors)})
@@ -1751,11 +1764,27 @@ async def summary(bank_account_id: str, entity_ids: Optional[List[str]] = None,
             book_out += amt
     stmt_net, book_net = _round(stmt_in - stmt_out), _round(book_in - book_out)
     hold = await holding_summary(entity_ids, bank_account_id)
+    # M38 — asal mutasi: berapa baris dari berkas/tempel pengguna, berapa data contoh / tanpa catatan unggahan.
+    sources = {k: 0 for k in (*IMPORT_SOURCES, "tidak_tercatat")}
+    for ln in lines:
+        sources[ln.get("import_source") if ln.get("import_source") in IMPORT_SOURCES else "tidak_tercatat"] += 1
+    last = max((ln for ln in lines if ln.get("import_source") in ("berkas", "tempel")),
+               key=lambda ln: str(ln.get("created_at") or ""), default=None)
+    # Baris lama tanpa catatan asal: pernahkah PENGGUNA mengimpor mutasi ke rekening ini? (jejak audit impor). Tidak
+    # pernah → baris itu data contoh/lama, bukan unggahan pengguna.
+    ever_user_import = bool(await db.audit_logs.find_one(
+        {"entity_id": bank_account_id, "action": {"$in": ["bank_statement_imported", "bank_statement_imported_file"]}},
+        {"_id": 1}))
     return {
         "bank_account_id": bank_account_id, "account_name": acc.get("name", ""),
         "entity_id": acc.get("entity_id", ""),
         "period": {"start": start or "", "end": end or ""},
-        "statement": {"in": stmt_in, "out": stmt_out, "net": stmt_net, "lines": len(lines)},
+        "statement": {"in": stmt_in, "out": stmt_out, "net": stmt_net, "lines": len(lines),
+                      "sources": sources, "user_lines": sources["berkas"] + sources["tempel"],
+                      "ever_user_import": ever_user_import,
+                      "last_import": ({"source": last.get("import_source"), "by": last.get("imported_by", ""),
+                                       "file": last.get("import_file", ""), "at": last.get("created_at", "")}
+                                      if last else None)},
         "book": {"in": _round(book_in), "out": _round(book_out), "net": book_net},
         "matched": matched, "unmatched_lines": unmatched, "ignored": ignored,
         "suggested": suggested,

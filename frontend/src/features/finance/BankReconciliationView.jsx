@@ -45,6 +45,7 @@ import { moneyPost } from "../../utils/moneyRequest";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import { can } from "../../config/roles";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { askConfirm } from "../../services/confirmService";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
@@ -59,6 +60,30 @@ const STATUS_FILTERS = [
   { value: "holding", label: "Dititipkan" },
   { value: "ignored", label: "Diabaikan" },
 ];
+
+/** M38 — asal mutasi rekening: unggahan pengguna (berkas/tempel, terakhir oleh siapa) atau data contoh/lama. */
+function StatementSource({ st }) {
+  if (!st || !Number(st.lines || 0)) return null;
+  const src = st.sources || {};
+  const user = Number(st.user_lines || 0);
+  const other = Number(st.lines || 0) - user;
+  const last = st.last_import;
+  const tgl = (iso) => { try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }); } catch { return ""; } };
+  return (
+    <p className={`text-fs-12 ${user ? "text-kn-text-2" : "text-kn-warning-text"}`} data-testid="recon-statement-source">
+      {user > 0 && last
+        ? `Impor terakhir: ${last.source === "berkas" ? (last.file || "berkas") : "tempel baris"}${last.by ? ` oleh ${last.by}` : ""}${last.at ? `, ${tgl(last.at)}` : ""}`
+        : null}
+      {other > 0 && (
+        <span className="block" data-testid="recon-statement-source-other">
+          {Number(src.contoh || 0) > 0 || (!user && !st.ever_user_import)
+            ? `${other} baris data contoh — bukan unggahan Anda`
+            : `${other} baris tanpa catatan asal (impor lama)`}
+        </span>
+      )}
+    </p>
+  );
+}
 
 export default function BankReconciliationView({ user = null }) {
   const [accounts, setAccounts] = useState([]);
@@ -136,6 +161,17 @@ export default function BankReconciliationView({ user = null }) {
   useEffect(() => { loadData(); }, [loadData]);
 
   async function doAutoMatch() {
+    // M38 (pemilik 16 Nov) — mutasi yang tidak pernah diunggah pengguna (data contoh/lama) tidak dicocokkan diam-diam.
+    const st = summary?.statement || {};
+    if (Number(st.lines || 0) > 0 && !Number(st.user_lines || 0) && !st.ever_user_import) {
+      const ok = await askConfirm({
+        title: "Mutasi ini bukan unggahan Anda",
+        message: "Belum pernah ada mutasi bank yang diunggah ke rekening ini — baris yang tampil adalah data contoh/lama. "
+          + "Pencocokan sungguhan butuh mutasi dari rekening koran (Impor mutasi bank). Tetap cocokkan baris contoh ini?",
+        confirmLabel: "Tetap cocokkan", testId: "recon-auto-match-sample-confirm",
+      });
+      if (!ok) return;
+    }
     setBusy("auto"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/auto-match`,
@@ -220,6 +256,7 @@ export default function BankReconciliationView({ user = null }) {
             <p className="stat-label">Rekening (bersih)</p>
             <p className="stat-value tabular-nums">{noStatement ? "—" : kpiValueParts(formatCurrency(summary.statement.net))}</p>
             <p className="text-[11px] text-[#8E8E93]">{noStatement ? "belum ada mutasi diimpor" : `${summary.statement.lines} baris mutasi`}</p>
+            <StatementSource st={summary.statement} />
           </div>
           <div className="stat-card">
             <p className="stat-label">Buku (bersih)</p>

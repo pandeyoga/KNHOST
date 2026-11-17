@@ -56,6 +56,7 @@ class RawImportInput(BaseModel):
     format_id: Optional[str] = ""
     fmt: Optional[Dict[str, Any]] = None
     year_hint: Optional[int] = 0
+    file_name: Optional[str] = ""   # M38 — nama berkas yang diunggah (asal mutasi)
 
 
 class PreviewInput(BaseModel):
@@ -195,7 +196,7 @@ async def import_statement(payload: StatementImportInput, request: Request,
     try:
         res = await svc.import_lines(payload.bank_account_id, payload.entity_id or "",
                                      [l.model_dump() for l in payload.lines],
-                                     _actor_name(actor), _ids(ctx), ctx.active_entity_id)
+                                     _actor_name(actor), _ids(ctx), ctx.active_entity_id, source="tempel")
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(_actor_name(actor), "bank_statement_imported", "bank_account",
@@ -211,7 +212,7 @@ async def import_file(payload: RawImportInput, request: Request,
         res = await svc.import_raw(payload.bank_account_id, payload.raw,
                                    payload.format_id or "", payload.fmt, _ids(ctx),
                                    ctx.active_entity_id, _actor_name(actor),
-                                   int(payload.year_hint or 0))
+                                   int(payload.year_hint or 0), file_name=payload.file_name or "")
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(_actor_name(actor), "bank_statement_imported_file", "bank_account",

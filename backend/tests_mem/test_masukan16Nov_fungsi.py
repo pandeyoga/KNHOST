@@ -148,3 +148,28 @@ async def test_M19_sales_pj_jatuh_ke_pic_tim(db):
                                "sales_team": [{"user_id": "u1", "name": "Ayu PIC", "role": "pic", "split_pct": 100}]},
                               with_credit=False)
     assert c["assigned_sales_name"] == "Ayu PIC"
+
+
+async def test_M38_asal_mutasi_tercatat(klien, kepala_admin, db):
+    """M38 — "bisa cocokkan otomatis padahal tidak upload berkas": asal tiap baris mutasi dicatat (berkas / tempel /
+    contoh) dan ringkasan rekonsiliasi menyebut berapa baris unggahan pengguna."""
+    from services import bank_recon_service as brs
+    await db.bank_accounts.insert_one({"id": "bank_uji_m38", "name": "BCA Uji M38", "entity_id": "ent_ksc",
+                                       "account_code": "1-1110", "cash_type": "kas_besar", "active": True})
+    baris = lambda n, amt: [{"stmt_date": "2026-11-1%d" % n, "amount": amt, "direction": "in",  # noqa: E731
+                            "description": f"TRSF UJI {n}"}]
+    await brs.import_lines("bank_uji_m38", "ent_ksc", baris(1, 1000), "seed")   # jalur seed demo
+    r = await klien.get("/api/bank-reconciliation/summary", headers=kepala_admin,
+                        params={"bank_account_id": "bank_uji_m38"})
+    assert r.status_code == 200, r.text
+    st = r.json()["statement"]
+    assert st["sources"]["contoh"] == 1 and st["user_lines"] == 0 and st["ever_user_import"] is False
+    r = await klien.post("/api/bank-reconciliation/import", headers=kepala_admin,
+                         json={"bank_account_id": "bank_uji_m38", "lines": baris(2, 2000)})
+    assert r.status_code == 200, r.text
+    st = (await klien.get("/api/bank-reconciliation/summary", headers=kepala_admin,
+                          params={"bank_account_id": "bank_uji_m38"})).json()["statement"]
+    assert st["sources"]["tempel"] == 1 and st["user_lines"] == 1 and st["ever_user_import"] is True
+    assert st["last_import"]["source"] == "tempel" and st["last_import"]["by"]
+    ln = await db.bank_statement_lines.find_one({"bank_account_id": "bank_uji_m38", "import_source": "contoh"})
+    assert ln is not None

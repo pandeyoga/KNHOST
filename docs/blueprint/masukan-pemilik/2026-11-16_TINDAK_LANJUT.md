@@ -17,7 +17,7 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 | M7 | Lokasi = area, POS ikut area | Pilihan menampilkan area **dan** tiap gudang; POS punya pilihan lokasi sendiri | Pilihan = area (gudang tanpa area tetap muncul; per gedung hanya untuk petugas berpagar); POS memakai area dari bilah atas | selesai |
 | M16 | Panel kanan Pesanan bertentangan dengan baris | Panel jatuh ke daftar dasbor sesudah ganti tab/cari/halaman → menceritakan pesanan lain (batal) tanpa tanda pesanan mana | Panel hanya untuk pesanan yang tampil & tersorot; nomor + pelanggan di kepala panel; panel tetap (sticky) | selesai |
 | M39 | Rincian gaji tidak sejajar; PPh 21 "Rp 0 0,00%" | Rincian satu sel 5 kolom dibagi 3; tarif tampil tanpa label walau pajak 0 | Rincian sejajar kolom (Pendapatan · Potongan · Tanggungan); pajak 0 → "—"; ada pajak → "TER {kategori} {tarif}" | selesai |
-| M38 | Rekonsiliasi "cocokkan otomatis tanpa input file" | Tombol aktif walau belum ada mutasi; mencocokkan 0 baris lalu pesan sukses. Data demo membuat mutasi dari catatan kas sendiri (melingkar). Tidak ada tarik mutasi otomatis | Tombol nonaktif + alasan "Impor mutasi bank dulu". **Tanya:** apakah maksudnya ingin mutasi bank masuk otomatis (fitur baru: koneksi bank/API)? | selesai (temuan) · tanya (fitur) |
+| M38 | Rekonsiliasi: "bisa cocokkan otomatis padahal saya tidak upload berkas" (pemilik 17 Nov: maksudnya temuan) | (1) Tombol aktif walau belum ada mutasi; (2) data acuan/demo membuat mutasi bank contoh dari catatan kas sendiri (`seed_bank_statement`), tanpa tanda asal — jadi tampak seperti mutasi sungguhan padahal tidak pernah diunggah | Tombol nonaktif + alasan bila tidak ada mutasi; asal tiap baris dicatat (`import_source`: berkas/tempel/contoh, pengunggah, nama berkas); layar menulis "Impor terakhir: {berkas} oleh {nama}" atau "n baris data contoh — bukan unggahan Anda"; Cocokkan otomatis atas mutasi yang tidak pernah diunggah minta konfirmasi dulu | selesai |
 | O1 | Meja Admin Sales: "Shipped" mentah | Subtitle = kode tahap berbahasa Inggris | Subtitle = kota · sales; kode lain yang bocor (jenis permintaan, jenis target desain, "revision", "sent") diberi label | selesai |
 | O2 | Meja MD Sample: "Rp 0" | Nilai biaya sample jarang diisi | Antrean jumlah (bukan rupiah) | selesai |
 | O3 | Meja Saya: giliran 40 hari berlencana "Info" | Lencana = tingkat notifikasi; giliran lama tidak ditutup bila dokumen pindah ke status tanpa giliran atau dokumen lama | Lencana = tahap; baris yang dokumennya sudah pindah tahap tidak tampil; giliran lama ditutup | selesai |
@@ -60,5 +60,4 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 | M40 | Lembar Insentif boros | antre |
 
 ## C. Pertanyaan untuk pemilik
-1. M38 — "cocokkan otomatis tanpa input file": maksudnya (a) temuan tombol (sudah diperbaiki), atau (b) ingin mutasi bank
-   masuk sendiri tanpa unggah berkas (perlu koneksi bank — fitur baru)?
+1. ~~M38~~ — dijawab 17 Nov: temuan (bisa mencocokkan tanpa mengunggah berkas) → diperbaiki.

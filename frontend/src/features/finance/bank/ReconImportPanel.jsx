@@ -63,7 +63,7 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
     try {
       const r = await axios.post(`${API}/bank-reconciliation/import-file`,
         { bank_account_id: accountId, raw, format_id: formatId || "",
-          year_hint: yearHint() });
+          year_hint: yearHint(), file_name: fileName || "" });   // M38 — asal mutasi tercatat
       const d = r.data || {};
       onDone(`Impor ${d.format_name || ""}: ${d.imported} baris baru, ${d.skipped} dilewati `
         + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.`);

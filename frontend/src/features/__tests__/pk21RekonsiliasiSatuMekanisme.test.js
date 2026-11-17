@@ -31,6 +31,11 @@ jest.mock("../../components/KNSelect", () => {
   return { __esModule: true, default: Pilih, KNSelect: Pilih };
 });
 jest.mock("@/components/KNDatePicker", () => () => null);
+const mockAskConfirm = jest.fn(async () => false);
+jest.mock("../../services/confirmService", () => ({
+  __esModule: true, askConfirm: (...a) => mockAskConfirm(...a), askReason: jest.fn(async () => "alasan uji"),
+  askText: jest.fn(async () => null), askChoice: jest.fn(async () => null), default: {},
+}));
 jest.mock("@/components/MoneyInput", () => () => null);
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
@@ -152,4 +157,22 @@ test("Rekonsiliasi Bank: galat 400 tidak memuat ulang (kendali)", async () => {
   await click(q(host, "recon-unmatch-m1"));
   expect(n()).toBe(before);
   expect(q(host, "recon-error").textContent).toContain("TERCOCOK");
+});
+
+test("M38 — mutasi data contoh (bukan unggahan): asal tertulis & Cocokkan otomatis minta konfirmasi dulu", async () => {
+  const ACC = [{ id: "ba_r1", name: "BCA PK21" }];
+  const S38 = { ...SUMMARY, matched: 0, unmatched_lines: 1,
+    statement: { net: 1000, lines: 1, user_lines: 0, ever_user_import: false,
+      sources: { berkas: 0, tempel: 0, contoh: 1, tidak_tercatat: 0 }, last_import: null } };
+  routeGet({ "/bank-accounts": ACC, "/bank-reconciliation/lines": [], "/bank-reconciliation/summary": S38,
+    "/bank-reconciliation/holding": { items: [], balance: 0, count: 0 }, "/bank-reconciliation/rules": [],
+    "/bank-reconciliation/formats": [] });
+  const { host } = await mount(
+    <ViewPresetProvider preset={{ view: "bank-reconciliation", nonce: 1, bank_account_id: "ba_r1" }}>
+      <BankReconciliationView />
+    </ViewPresetProvider>);
+  expect(q(host, "recon-statement-source-other").textContent).toContain("data contoh");
+  await click(q(host, "recon-auto-match"));
+  expect(mockAskConfirm).toHaveBeenCalledTimes(1);
+  expect(mockPost).not.toHaveBeenCalled();   // dibatalkan → tidak mencocokkan diam-diam
 });
