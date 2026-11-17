@@ -425,6 +425,50 @@ def rekap(sc) -> str:
     return "".join(rows)
 
 
+HASIL_LABEL = {"lulus": ("ok", "Lulus"), "diperbaiki": ("ok", "Diperbaiki"), "keputusan": ("bad", "Keputusan pemilik")}
+
+
+def _tabel_json(nama: str):
+    f = os.path.join(HERE, nama)
+    if not os.path.exists(f):
+        return []
+    try:
+        d = json.load(open(f, encoding="utf-8"))
+    except ValueError:
+        return []
+    return d if isinstance(d, list) else d.get("baris") or d.get("rows") or []
+
+
+def lampiran() -> str:
+    """Lampiran: uji variasi isian (src/variasi_*.json) & dokumen cetak (src/dokumen_cetak.json), bila ada."""
+    out = []
+    var = _tabel_json("variasi_piutang_kas.json") + _tabel_json("variasi_hutang_pajak_gaji.json")
+    if var:
+        rows = "".join(
+            f"<tr><td>{fmt(r.get('layar'))}</td><td>{fmt(r.get('isian'))}</td><td><span class='nav'>{escape(str(r.get('masukan', '')))}</span></td>"
+            f"<td>{fmt(r.get('harap'))}</td><td><span class='{HASIL_LABEL.get(r.get('hasil'), ('muted', ''))[0]}'>"
+            f"{escape(HASIL_LABEL.get(r.get('hasil'), ('', str(r.get('hasil') or '')))[1])}</span>"
+            f"{('<br><span class=muted>' + fmt(r.get('catatan')) + '</span>') if r.get('catatan') else ''}</td></tr>" for r in var)
+        out.append(f"""<section class="sec"><div class="head"><div><div class="kicker">Lampiran A</div><h2>Uji variasi isian & hitungan</h2></div></div>
+  <p>Selain langkah di panduan, setiap isian yang diketik peserta diuji dengan variasi yang wajar (format nominal, kosong, nol,
+  negatif, melebihi sisa, klik ganda, format tempel mutasi) di layar, lalu hasilnya dicocokkan dengan buku. {len(var)} kasus.</p>
+  <table class="grid"><colgroup><col style="width:16%"><col style="width:14%"><col style="width:18%"><col style="width:28%"><col style="width:24%"></colgroup>
+  <thead><tr><th>Layar</th><th>Isian</th><th>Yang diketik</th><th>Yang benar</th><th>Hasil</th></tr></thead><tbody>{rows}</tbody></table></section>""")
+    dok = _tabel_json("dokumen_cetak.json")
+    if dok:
+        rows = "".join(
+            f"<tr><td><b>{fmt(r.get('dokumen'))}</b></td><td>{fmt(r.get('cara_cetak'))}</td><td>{fmt(r.get('dicek'))}</td>"
+            f"<td><span class='{HASIL_LABEL.get(r.get('hasil'), ('muted', ''))[0]}'>"
+            f"{escape(HASIL_LABEL.get(r.get('hasil'), ('', str(r.get('hasil') or '')))[1])}</span>"
+            f"{('<br><span class=muted>' + fmt(r.get('catatan')) + '</span>') if r.get('catatan') else ''}</td></tr>" for r in dok)
+        out.append(f"""<section class="sec"><div class="head"><div><div class="kicker">Lampiran B</div><h2>Dokumen cetak yang diperiksa</h2></div></div>
+  <p>Setiap dokumen yang terbit dari skenario latihan dicetak, lalu isinya (nomor, tanggal, identitas PT, baris barang, DPP, PPN,
+  total, terbilang) dicocokkan dengan transaksi, formatnya diperiksa, dan pengaturan naskah dokumen diuji (ubah → tercetak → dikembalikan).</p>
+  <table class="grid"><colgroup><col style="width:18%"><col style="width:22%"><col style="width:36%"><col style="width:24%"></colgroup>
+  <thead><tr><th>Dokumen</th><th>Cara cetak</th><th>Yang dicek</th><th>Hasil</th></tr></thead><tbody>{rows}</tbody></table></section>""")
+    return "".join(out)
+
+
 def build_html(sc) -> str:
     KARTU_ROWS = "".join(f'<tr><td>{escape(lbl)} <span class="muted">({escape(sk)})</span><br><span class="nav">{escape(k)}</span></td><td></td></tr>'  # noqa: N806
                          for k, lbl, sk in KARTU)
@@ -512,6 +556,7 @@ def build_html(sc) -> str:
                 f'<p>{len(b)} skenario untuk manajer. Penutupan periode memengaruhi semua pengguna — di pelatihan diperagakan pelatih.</p></section>'
         body += "".join(scenario_html(d) for d in b)
     body += f"""
+{lampiran()}
 <section class="sec"><div class="head"><div><div class="kicker">Bukti</div><h2>Rekap uji jalan (layar + buku)</h2></div></div>
   <p>Setiap baris = satu skenario yang dijalankan otomatis di browser (Playwright) dengan akun peran, lalu dicocokkan dengan jurnal,
   saldo, dan status di server. Galat 5xx = galat server selama uji.</p>

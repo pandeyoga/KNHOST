@@ -23,7 +23,7 @@
    "menu": "Bilah atas",
    "aksi": "Baca kotak PT, bilah Lokasi, tombol Tanya KN, lonceng, muat ulang",
    "isi": "",
-   "hasil": "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah — terkunci, akun Anda hanya PT Sukacita (tidak bisa pindah PT). Bilah 'Lokasi: Semua lokasi — lokasi kerja belum diatur' + tulisan oranye 'Lokasi kerja belum diatur': ABAIKAN — itu untuk stok/gudang, tidak memengaruhi angka keuangan.",
+   "hasil": "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah — terkunci, akun Anda hanya PT Sukacita (tidak bisa pindah PT). Bilah 'Lokasi: Semua lokasi …' (ikon segitiga kecil): ABAIKAN — itu untuk stok/gudang, tidak memengaruhi angka keuangan.",
    "gambar": "uji/hasil/F01/02-bilah-atas.png"
   },
   {
