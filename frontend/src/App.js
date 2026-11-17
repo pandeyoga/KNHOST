@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { formatUnitTotals } from "./utils/qtyByUnit";
 import "./App.css";
 import { LoginScreen, MetricCard, Sidebar, TopBar } from "./components/CoreWidgets";
-import { formatQty } from "./utils/formatters";
 import useIsMobile from "./hooks/useIsMobile";
 // Fase 3 · P1 — pemilih aplikasi HP diekstrak (wilayah P7); navigasi & sinkron sesi diekstrak ke hook.
 import MobileAppSwitch from "./features/mobile/MobileAppSwitch";
@@ -34,8 +33,6 @@ import { openNotifDocument } from "./features/notifications/notifDocTarget";
 import { setAccessContext, can } from "./config/roles";
 import {
   Archive,
-  Boxes,
-  Building2,
   Clock3,
   PackageCheck,
   Sparkles,
@@ -348,15 +345,16 @@ function App() {
             />
           }
         />
-        <main id="main-content" className="mx-auto w-full max-w-[1600px] px-4 pt-4 pb-24 md:px-5 md:pt-5 md:pb-24">
-          <section data-testid="metrics-row" className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 no-print">
+        {/* M18 (pemilik 16 Nov: "popup muncul sembarangan") — rincian = PANEL TETAP di kanan; konten diberi ruang di
+            layar lebar sehingga tabel tidak tertutup kartu melayang. */}
+        <main id="main-content" className={`mx-auto w-full max-w-[1600px] px-4 pt-4 pb-24 md:px-5 md:pt-5 md:pb-24${activeDetail ? " xl:pr-[404px]" : ""}`}>
+          {/* M8 (pemilik 16 Nov) — kartu angka beranda hanya yang relevan & bisa ditindak: "Jml Tersedia" (stok gudang) dan
+              "Gudang" (jumlah gudang) dihapus dari beranda — stok ada di Stok & ATP, gudang di Operasi Gudang. */}
+          <section data-testid="metrics-row" className="grid gap-3 sm:grid-cols-3 no-print">
             {showHomeWidgets && <>
             <MetricCard testId="metric-products" icon={Archive} label="Produk Aktif" value={data.metrics?.products || 0} tone="rgba(0,122,255,.12)" hint="Buka katalog" onClick={() => showMetricDetail("products")} />
-            {/* F-04 — stok per SATUAN (yard dan kg tidak dijumlahkan) + jumlah roll tersedia */}
-            <MetricCard testId="metric-available" icon={Boxes} label="Jml Tersedia" value={formatUnitTotals(data.metrics?.available_by_unit, data.metrics?.available_qty)} tone="rgba(52,199,89,.14)" hint={data.metrics?.available_rolls != null ? `${formatQty(data.metrics.available_rolls)} roll · Lihat stok` : "Lihat stok"} onClick={() => showMetricDetail("available")} />
             <MetricCard testId="metric-reserved" icon={Clock3} label="Jml Dipesan" value={formatUnitTotals(data.metrics?.reserved_by_unit, data.metrics?.reserved_qty)} tone="rgba(175,82,222,.14)" hint="Lihat pesanan" onClick={() => showMetricDetail("reserved")} />
             <MetricCard testId="metric-orders" icon={PackageCheck} label="Pesanan Aktif" value={data.metrics?.active_orders || 0} tone="rgba(255,149,0,.14)" hint="Lihat pesanan" onClick={() => showMetricDetail("orders")} />
-            <MetricCard testId="metric-warehouses" icon={Building2} label="Gudang" value={data.metrics?.warehouses || 0} tone="rgba(60,60,67,.10)" hint="Buka Operasi Gudang" onClick={() => showMetricDetail("warehouses")} />
             </>}
           </section>
 

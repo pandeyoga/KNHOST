@@ -7,6 +7,7 @@ import AttachmentGallery from "../../components/AttachmentThumb";   // UAT 24 Ok
 import { openRnd } from "../rnd/rndDeepLink";
 import { SAMPLE_STATUS_META } from "../rnd/rndMeta";
 import { docStatus } from "./SpecialOrderShared";
+import { formatDate } from "../../utils/formatters";
 
 const TYPE_LABEL = { printing: "Kain printing", labdip: "Warna khusus (labdip)", handfeel: "Handfeel", proofing: "Proofing" };
 
@@ -35,66 +36,27 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
 
   return (
     <div className="grid gap-3" data-testid="od-chain-panel">
-      <section className="section-card !p-3">
-        <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Lini masa pesanan khusus</p>
-        <ol className="flex flex-wrap items-center gap-1" data-testid="od-phases">
-          {phases.map(([k, label], i) => (
-            <li key={k} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] ${i < idx ? "border-[#CDE9D6] bg-[#EAF7EF] text-[#1A7A3A]" : i === idx ? "border-[#0058CC] bg-[#0058CC] font-bold text-white" : parallel.includes(k) ? "border-[#0058CC] bg-[#EEF4FF] font-semibold text-[#0058CC]" : "border-[#EFF0F2] text-[#9A9BA3]"}`}
-              data-testid={`od-phase-${k}`} title={parallel.includes(k) ? "Berjalan bersamaan" : undefined}>
-              {i < idx ? <CheckCircle2 size={10} /> : <Circle size={10} />} {label}
-            </li>
-          ))}
-        </ol>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[#6B6B73]" data-testid="od-request-meta">
-          <span>Tipe permintaan:</span>
-          {(order.request_types || []).length === 0 ? <span className="italic text-[#9A9BA3]">belum ditentukan (OD lama)</span>
-            : order.request_types.map((t) => <span key={t} className="rounded-full bg-[#EEF4FF] px-2 py-px font-semibold text-[#0058CC]">{TYPE_LABEL[t] || t}</span>)}
-          <span className="text-[#C7C9CF]">·</span>
-          <span>Tingkat detail: <b className="text-[#3C3C43]">{order.detail_level === "full" ? "spesifikasi lengkap" : "hanya referensi"}</b></span>
-          {order.reference_notes ? <><span className="text-[#C7C9CF]">·</span><span>{order.reference_notes}</span></> : null}
+      {/* M14/M15 (pemilik 16 Nov) — dulu 13 lencana tahap berderet mendatar + "Rantai dokumen" terpisah. Kini SATU lini
+          masa VERTIKAL: tiap tahap = status (✓ selesai · ● berjalan · ○ belum), tanggal & pelaku / "menunggu sejak …",
+          dokumen tahap itu (rantai dokumen dilebur ke sini), dan aksi HANYA di tahap yang berjalan. */}
+      <section className="section-card !p-3" data-testid="od-chain">
+        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-fs-12 text-kn-text-2" data-testid="od-request-meta">
+          <span className="font-bold text-kn-text">Lini masa</span>
+          <span>Tipe: {(order.request_types || []).length === 0 ? <i>belum ditentukan (OD lama)</i>
+            : order.request_types.map((t) => TYPE_LABEL[t] || t).join(", ")}</span>
+          <span>· Detail: {order.detail_level === "full" ? "spesifikasi lengkap" : "hanya referensi"}</span>
+          {order.reference_notes ? <span>· {order.reference_notes}</span> : null}
         </div>
         {order.spec && Object.values(order.spec).some(Boolean) && (
-          <p className="mt-1 text-[11px] text-[#3C3C43]" data-testid="od-spec-summary">
+          <p className="mb-2 text-fs-12 text-kn-text" data-testid="od-spec-summary">
             Spesifikasi: {[order.spec.fabric_type, order.spec.gramasi && `${order.spec.gramasi} gsm`, order.spec.lebar && `lebar ${order.spec.lebar} cm`, order.spec.sku_hint && `SKU ${order.spec.sku_hint}`, order.spec.color_new_note && `warna baru: ${order.spec.color_new_note}`].filter(Boolean).join(" · ") || "—"}
           </p>
         )}
-      </section>
-
-      <section className="section-card !p-3" data-testid="od-chain">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Rantai dokumen</p>
-          {approved && !routed && canRoute && (   /* POST /route → order.approve */
-            <button className="primary-button !py-1 text-[11px]" disabled={busy} data-testid="od-route-button" onClick={route}><Send size={12} /> Teruskan ke Desainer / R&amp;D</button>
-          )}
-        </div>
-        {(order.routing_errors || []).length > 0 && <p className="mb-2 text-[11px] text-[#C0392B]" data-testid="od-routing-errors">{order.routing_errors.join(" · ")}</p>}
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-          <Node title="Permintaan desain" on={!!ch.design_request} testId="od-node-design">
-            {ch.design_request ? <>
-              <b className="font-mono">{ch.design_request.number}</b> · {ch.design_request.status_label || docStatus(ch.design_request.status)}{ch.design_request.assigned_to_name ? ` · ${ch.design_request.assigned_to_name}` : ""}
-              {ch.design && <span className="block">Desain <b className="font-mono">{ch.design.code}</b> · {docStatus(ch.design.status)}</span>}
-            </> : (order.request_types || []).includes("printing") ? "lahir saat OD disetujui" : "tidak perlu (bukan printing)"}
-          </Node>
-          <Node title="Sample R&D" on={(ch.samples || []).length > 0} testId="od-node-samples">
-            {(ch.samples || []).length === 0 ? ((order.request_types || []).includes("printing") ? "proofing dibuat MD setelah desain ACC" : "lahir saat OD disetujui") : ch.samples.map((s) => (
-              <button key={s.id} type="button" className="block text-left hover:underline" data-testid={`od-sample-${s.id}`} onClick={() => openRnd({ view: "rnd-samples", sampleId: s.id, sampleNumber: s.number })}>
-                <b className="font-mono">{s.number}</b> · {s.customer_revised ? <span className="font-semibold text-[#B45309]" data-testid={`od-sample-revised-${s.id}`}>ditolak pelanggan (revisi)</span> : ((SAMPLE_STATUS_META[s.status] || {}).label || s.status)} · {(s.sample_types || []).join("+")}
-                {s.decision?.supplier_name ? ` · pemenang ${s.decision.supplier_name}` : ""}{s.revision_of_sample_id ? " · revisi pelanggan" : ""} <ExternalLink size={9} className="inline text-[#0058CC]" />
-              </button>
-            ))}
-          </Node>
-          <Node title="SKU produk (eksklusif pelanggan ini)" on={(ch.products || []).length > 0} testId="od-node-products">
-            {(ch.products || []).length === 0 ? "lahir saat sampling ACC" : ch.products.map((p) => (
-              <span key={p.id} className="block"><b className="font-mono">{p.sku}</b> {p.name} <ProductColorChip product={p} compact />{p.exclusive_customer_name ? <span className="ml-1 rounded-full bg-[#B45309] px-1.5 py-px text-[9.5px] font-bold text-white" data-testid={`od-product-exclusive-${p.id}`}>Eksklusif: {p.exclusive_customer_name}</span> : null}</span>
-            ))}
-          </Node>
-          <Node title="PR / PO → SO" on={!!ch.pr || !!ch.so || (ch.po || []).length > 0} testId="od-node-purchasing">
-            {(ch.prs || []).length > 1 ? ch.prs.map((p) => <span key={p.id} className="block" data-testid={`od-pr-${p.id}`}>PR <b className="font-mono">{p.number}</b> · {docStatus(p.status)}</span>)
-              : ch.pr ? <span className="block">PR <b className="font-mono">{ch.pr.number}</b> · {docStatus(ch.pr.status)}</span> : <span className="block">PR belum dibuat</span>}
-            {(ch.po || []).map((p) => <span key={p.id} className="block" data-testid={`od-po-${p.id}`}>PO <b className="font-mono">{p.po_number}</b> · {p.supplier_name} · {docStatus(p.status)}</span>)}
-            {ch.so ? <span className="block">SO <b className="font-mono">{ch.so.order_number || ch.so.number}</b> · {docStatus(ch.so.status)}</span> : <span className="block">SO belum dikonversi</span>}
-          </Node>
-        </div>
+        {(order.routing_errors || []).length > 0 && <p className="mb-2 text-fs-12 text-kn-danger-text" data-testid="od-routing-errors">{order.routing_errors.join(" · ")}</p>}
+        <PhaseTimeline order={order} ch={ch} phases={phases} idx={idx} parallel={parallel}
+          action={approved && !routed && canRoute ? (   /* POST /route → order.approve */
+            <button className="primary-button btn-sm" disabled={busy} data-testid="od-route-button" onClick={route}><Send size={12} /> Teruskan ke Desainer / R&amp;D</button>
+          ) : null} />
       </section>
 
       <section className="section-card !p-3" data-testid="od-references">
@@ -121,11 +83,131 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
   );
 }
 
-function Node({ title, on, children, testId }) {
+const fmtTgl = (iso) => (iso ? formatDate(iso) : "");
+const sejak = (iso) => {
+  if (!iso) return "";
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return Number.isFinite(d) ? (d < 1 ? "< 1 hari" : `${d} hari`) : "";
+};
+
+/** Kapan & oleh siapa tahap `k` terjadi: status_history (status) atau dokumen tahapnya (tahap turunan). */
+function phaseEvent(k, order, ch) {
+  const hist = [...(order.status_history || [])].reverse().find((h) => h.status === k);
+  if (hist) return { at: hist.timestamp || hist.at, by: hist.user_name || hist.user || "" };
+  const samples = ch.samples || [];
+  if (k === "design" && ch.design_request) return { at: ch.design_request.created_at, by: ch.design_request.assigned_to_name || "" };
+  if (k === "sampling" && samples[0]) return { at: samples[0].created_at, by: "" };
+  if (k === "sample_ready") { const s = samples.find((x) => x.finished_at || x.delivered_at); return s ? { at: s.finished_at || s.delivered_at, by: "" } : null; }
+  if (k === "customer_review") { const d = (order.customer_decisions || []).slice(-1)[0]; return d ? { at: d.at || d.timestamp, by: d.by || d.user_name || "" } : null; }
+  if (k === "pricing" && order.pricing?.locked_at) return { at: order.pricing.locked_at, by: order.pricing.locked_by || "" };
+  return null;
+}
+
+/** Dokumen milik tahap `k` (dulu kartu "Rantai dokumen" terpisah). */
+function PhaseDocs({ k, order, ch }) {
+  const samples = ch.samples || [];
+  if (k === "design") {
+    if (!ch.design_request) return (order.request_types || []).includes("printing") ? <Doc muted>Permintaan desain lahir saat OD disetujui</Doc> : null;
+    return (
+      <Doc testId="od-node-design">
+        Permintaan desain <b className="font-mono">{ch.design_request.number}</b> · {ch.design_request.status_label || docStatus(ch.design_request.status)}
+        {ch.design && <> · desain <b className="font-mono">{ch.design.code}</b> ({docStatus(ch.design.status)})</>}
+      </Doc>
+    );
+  }
+  if (k === "sampling" || k === "sample_ready") {
+    if (k === "sample_ready") return null;   // satu daftar sample di tahap sampling
+    if (!samples.length) return <Doc muted>{(order.request_types || []).includes("printing") ? "Proofing dibuat MD setelah desain ACC" : "Sample lahir saat OD disetujui"}</Doc>;
+    return (
+      <div data-testid="od-node-samples">
+        {samples.map((x) => (
+          <button key={x.id} type="button" className="block text-left text-fs-12 hover:underline" data-testid={`od-sample-${x.id}`}
+            onClick={() => openRnd({ view: "rnd-samples", sampleId: x.id, sampleNumber: x.number })}>
+            Sample <b className="font-mono">{x.number}</b> · {x.customer_revised ? <span className="font-semibold text-kn-warning-text" data-testid={`od-sample-revised-${x.id}`}>ditolak pelanggan (revisi)</span> : ((SAMPLE_STATUS_META[x.status] || {}).label || x.status)} · {(x.sample_types || []).join("+")}
+            {x.decision?.supplier_name ? ` · pemenang ${x.decision.supplier_name}` : ""} <ExternalLink size={10} className="inline text-kn-action" />
+          </button>
+        ))}
+      </div>
+    );
+  }
+  if (k === "pricing") {
+    if (!(ch.products || []).length) return <Doc muted>SKU produk lahir saat sampling ACC</Doc>;
+    return (
+      <div data-testid="od-node-products">
+        {ch.products.map((p) => (
+          <Doc key={p.id}>SKU <b className="font-mono">{p.sku}</b> {p.name} <ProductColorChip product={p} compact />
+            {p.exclusive_customer_name ? <span className="ml-1 status-pill pill-warning" data-testid={`od-product-exclusive-${p.id}`}>Eksklusif: {p.exclusive_customer_name}</span> : null}</Doc>
+        ))}
+      </div>
+    );
+  }
+  if (k === "confirmed") {
+    const prs = (ch.prs || []).length ? ch.prs : (ch.pr ? [ch.pr] : []);
+    if (!prs.length && !(ch.po || []).length) return null;
+    return (
+      <div data-testid="od-node-purchasing">
+        {prs.map((p) => <Doc key={p.id} testId={`od-pr-${p.id}`}>PR <b className="font-mono">{p.number}</b> · {docStatus(p.status)}</Doc>)}
+        {(ch.po || []).map((p) => <Doc key={p.id} testId={`od-po-${p.id}`}>PO <b className="font-mono">{p.po_number}</b> · {p.supplier_name} · {docStatus(p.status)}</Doc>)}
+      </div>
+    );
+  }
+  if (k === "in_production" && ch.so) {
+    return <Doc testId="od-node-so">SO <b className="font-mono">{ch.so.order_number || ch.so.number}</b> · {docStatus(ch.so.status)}</Doc>;
+  }
+  return null;
+}
+
+function Doc({ children, muted = false, testId }) {
+  return <p className={`text-fs-12 ${muted ? "text-kn-text-2" : "text-kn-text"}`} data-testid={testId}>{children}</p>;
+}
+
+function PhaseTimeline({ order, ch, phases, idx, parallel, action }) {
+  const done = phases.slice(0, idx);
+  const [showDone, setShowDone] = useState(done.length <= 3);
+  const cancelled = ["cancelled", "rejected"].includes(order.status);
+  const rows = phases.map(([k, label], i) => ({ k, label, i,
+    state: cancelled && i >= idx ? "skip" : i < idx ? "done" : i === idx ? "now" : parallel.includes(k) ? "parallel" : "todo" }));
+  const visible = rows.filter((r) => showDone || r.state !== "done");
   return (
-    <div className={`rounded-lg border p-2.5 text-[11.5px] ${on ? "border-[#CDE9D6] bg-[#F4FCF6]" : "border-[#EFF0F2] bg-white"}`} data-testid={testId}>
-      <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">{on ? <CheckCircle2 size={11} className="text-[#1A7A3A]" /> : <Circle size={11} className="text-[#C7C9CF]" />} {title}</p>
-      <div className={on ? "text-[#1C1C1E]" : "text-[#9A9BA3]"}>{children}</div>
-    </div>
+    <ol className="relative" data-testid="od-phases">
+      {!showDone && done.length > 0 && (
+        <li className="mb-1 pl-7">
+          <button type="button" className="link-button text-fs-12" data-testid="od-phases-show-done" onClick={() => setShowDone(true)}>
+            {done.length} tahap selesai — lihat
+          </button>
+        </li>
+      )}
+      {visible.map((r, n) => {
+        const ev = phaseEvent(r.k, order, ch);
+        const last = n === visible.length - 1;
+        const dot = r.state === "done" ? <CheckCircle2 size={16} className="text-kn-success-text" />
+          : r.state === "now" ? <span className="block h-3.5 w-3.5 rounded-full bg-kn-action ring-4 ring-kn-action-soft" />
+            : r.state === "parallel" ? <span className="block h-3 w-3 rounded-full border-2 border-kn-action bg-white" />
+              : <Circle size={14} className="text-kn-divider" />;
+        return (
+          <li key={r.k} className="relative flex gap-3 pb-3" data-testid={`od-phase-${r.k}`} data-state={r.state}>
+            {!last && <span className="absolute left-[7px] top-5 bottom-0 w-px bg-kn-divider" aria-hidden="true" />}
+            <span className="relative z-10 mt-0.5 flex w-4 shrink-0 justify-center">{dot}</span>
+            <div className="min-w-0 flex-1">
+              <p className={`text-fs-13 ${r.state === "now" ? "font-bold text-kn-text" : r.state === "done" ? "font-semibold text-kn-text" : "text-kn-text-2"}`}>
+                {r.label}
+                {r.state === "parallel" && <span className="ml-1 text-fs-12 font-normal text-kn-action">· berjalan bersamaan</span>}
+                {r.state === "skip" && <span className="ml-1 text-fs-12 font-normal">· tidak dilanjutkan</span>}
+              </p>
+              {r.state === "done" && ev?.at && (
+                <p className="text-fs-12 text-kn-text-2">{fmtTgl(ev.at)}{ev.by ? ` · ${ev.by}` : ""}</p>
+              )}
+              {r.state === "now" && (
+                <p className="text-fs-12 text-kn-warning-text" data-testid="od-phase-now-wait">
+                  {ev?.at ? `Berjalan sejak ${fmtTgl(ev.at)} (${sejak(ev.at)})` : "Tahap berjalan"}{ev?.by ? ` · ${ev.by}` : ""}
+                </p>
+              )}
+              {(r.state === "done" || r.state === "now" || r.state === "parallel") && <PhaseDocs k={r.k} order={order} ch={ch} />}
+              {r.state === "now" && action && <div className="mt-1.5">{action}</div>}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

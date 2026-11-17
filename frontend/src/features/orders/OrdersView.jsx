@@ -170,27 +170,17 @@ export default function OrdersView({
 
       {viewMode === "list" && (
         <>
-          {/* D-17 — SATU kontrol status: tab tahap + jumlah + nilai Rp (total termasuk PPN). */}
-          <PageTabs testId="orders-status-tabs" value={stage} ariaLabel="Tahap pesanan"
-            onChange={(k) => { setStage(k); setSubStatus(""); }}
-            tabs={ORDER_STAGES.map((st) => ({
-              key: st.key, testId: `orders-status-tab-${st.testKey}`, count: countOf(st), showZero: true,
-              title: st.key === "waiting_stock" && backorderHint ? backorderHint : undefined,
-              label: (
-                <>
-                  {st.label}
-                  <span data-testid={st.statTestId || `orders-stat-${st.label.toLowerCase()}`}
-                    title={`${st.label} · nilai = total termasuk PPN`}
-                    className="ml-1.5 text-[10.5px] font-semibold tabular-nums text-[#6B6B73]">
-                    {formatCurrency(amtOf(st.statuses))}
-                  </span>
-                </>
-              ),
-            }))} />
-
           <ListToolbar testId="orders-toolbar">
             <SearchBox value={searchQuery} onChange={setSearchQuery} testId="orders-search-input"
               placeholder='Cari nomor, pelanggan, produk… ("SO-0001" = nomor tepat)' />
+            {/* M17 (pemilik 16 Nov) — tab tahap bernilai diganti SATU dropdown "Tahap" (jumlah + nilai, total termasuk
+                PPN) di bilah daftar; D-17 tetap: satu kontrol status. */}
+            <KNSelect data-testid="orders-stage" aria-label="Tahap pesanan" className="field w-auto"
+              value={stage} onValueChange={(k) => { setStage(k); setSubStatus(""); }}
+              options={ORDER_STAGES.map((st) => ({
+                value: st.key,
+                label: `${st.key === "all" ? "Semua tahap" : st.label} (${countOf(st)}) · ${formatCurrency(amtOf(st.statuses))}`,
+              }))} />
             {subOptions.length > 0 && (
               <KNSelect data-testid="orders-status-detail" aria-label="Sub-status"
                 className="field !py-1 !text-[11px] w-auto"
@@ -198,16 +188,14 @@ export default function OrdersView({
             )}
             <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="orders"
                         allowed={user?.allowed_line_codes} testId="orders-line-filter" />
+            <span className="text-fs-12 text-kn-text-2" data-testid="orders-stage-note">nilai = total termasuk PPN</span>
+            {backorderHint && (
+              <span className="text-fs-12 text-kn-warning-text" data-testid="orders-backorder-hint">{backorderHint}</span>
+            )}
           </ListToolbar>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
             <section className="section-card min-w-0">
-              <div className="section-head">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="kicker">Kendali Pesanan</span>
-                  <h2>Pesanan Penjualan</h2>
-                </div>
-              </div>
               {/* Audit UI 24 Okt (004) — "Memuat pesanan…" hanya ikut halaman server (bukan muat dasbor global). */}
               <ResponsiveTable testId="orders" columns={COLUMNS} rowKey="id"
                 rows={paged.loading ? [] : filteredOrders} loading={paged.loading}

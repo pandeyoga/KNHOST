@@ -131,9 +131,10 @@ test("K-03: daftar Pesanan — kolom 'Total (termasuk PPN)' + DPP; kartu tahap b
   expect(rupiah(q(host, "order-total-so_d4").textContent)).toBe(1159950);   // dulu total_amount bruto 1.200.000
   expect(rupiah(q(host, "order-dpp-so_d4").textContent)).toBe(1045000);
   expect(q(host, "order-dpp-so_np")).toBeNull();                              // tanpa PPN: tidak ada baris DPP
-  const card = q(host, "orders-stat-dipesan");
-  expect(card.textContent).toContain("2.204.950");                           // grand_total per status, bukan bruto
-  expect(card.getAttribute("title")).toMatch(/total termasuk PPN/);
+  // M17 — tab tahap kini dropdown "Tahap"; nilai per tahap ada di label opsinya (grand_total, bukan bruto).
+  const opt = [...q(host, "orders-stage").options].find((o) => o.value.startsWith("reserved"));
+  expect(opt.textContent).toContain("2.204.950");                            // grand_total per status, bukan bruto
+  expect(q(host, "orders-stage-note").textContent).toMatch(/total termasuk PPN/);
   const cols = global.__d4Export.columns;
   const tot = cols.find((c) => c.header === "Total (termasuk PPN)");
   const dpp = cols.find((c) => c.header === "DPP (harga sebelum PPN)");
@@ -146,7 +147,7 @@ test("K-03: kartu tahap — server lama tanpa grand_total jatuh ke total_amount"
   global.__d4Orders = [];
   routeGet({ "/sales-orders/stats/summary": { total_orders: 1, by_status: { done: { count: 1, total_amount: 500000 } } } });
   const { host } = await mount(<OrdersView orders={[]} user={{ role: "admin", permissions: {} }} />);
-  expect(q(host, "orders-stat-selesai").textContent).toContain("500.000");
+  expect([...q(host, "orders-stage").options].find((o) => o.value === "done").textContent).toContain("500.000");
 });
 
 test("K-03: Ringkasan Harga detail SO = DPP · DPP nilai lain (11/12) · PPN · Total (termasuk PPN)", async () => {

@@ -77,3 +77,33 @@ test("M12 + M13 — target harga opsional; langkah 4 tanpa induk & warna dobel",
   expect(q("od-color")).toBeNull();
   expect(q("od-item-color-1")).not.toBeNull();   // warna diisi sekali di item
 });
+
+// M14/M15 — lini masa vertikal: tahap selesai/berjalan/belum, tanggal & pelaku, dokumen tahap, aksi di tahap berjalan.
+describe("M14 — lini masa vertikal Pesanan Khusus", () => {
+  const SpecialOrderChainPanel = jest.requireActual("../sales/SpecialOrderChainPanel").default;
+  test("tahap berjalan menyebut sejak kapan + dokumen tahapnya; tahap selesai bertanggal", async () => {
+    const order = {
+      id: "od1", status: "approved", request_types: ["labdip"], detail_level: "reference",
+      status_history: [{ status: "pending_approval", timestamp: "2026-11-01T00:00:00Z", user_name: "Ayu" },
+        { status: "approved", timestamp: "2026-11-02T00:00:00Z", user_name: "Rina Manajer" }],
+      chain: {
+        phases: [["draft", "Draf"], ["pending_approval", "Menunggu persetujuan"], ["approved", "Disetujui"],
+          ["sampling", "Sampling berjalan"], ["done", "Selesai"]],
+        phase: "sampling", phase_parallel: [],
+        samples: [{ id: "s1", number: "SMP-1", status: "in_progress", sample_types: ["labdip"], created_at: "2026-11-03T00:00:00Z" }],
+      },
+    };
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const r = createRoot(host);
+    await act(async () => { r.render(<SpecialOrderChainPanel order={order} canEdit={false} canRoute={false} />); });
+    const ph = (k) => host.querySelector(`[data-testid="od-phase-${k}"]`);
+    expect(ph("approved").getAttribute("data-state")).toBe("done");
+    expect(ph("approved").textContent).toContain("Rina Manajer");
+    expect(ph("sampling").getAttribute("data-state")).toBe("now");
+    expect(ph("sampling").textContent).toContain("Berjalan sejak");
+    expect(ph("sampling").textContent).toContain("SMP-1");
+    expect(ph("done").getAttribute("data-state")).toBe("todo");
+    await act(async () => { r.unmount(); });
+  });
+});

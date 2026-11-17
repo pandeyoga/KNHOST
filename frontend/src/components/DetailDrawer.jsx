@@ -5,7 +5,11 @@ export default function DetailDrawer({ detail, onClose, onNavigate }) {
   useEscapeClose(!!detail, onClose, false);   // Esc menutup drawer agar tidak menghalangi baris di belakangnya
   if (!detail) return null;
   return (
-    <aside data-testid="interactive-detail-drawer" className="fixed right-4 top-16 z-50 w-[min(380px,calc(100vw-32px))] rounded-[14px] border border-[#E5E5EA] bg-white/95 p-4 shadow-[0_16px_40px_rgba(20,28,45,0.18)] backdrop-blur-xl no-print" role="dialog" aria-label="Rincian">
+    // M18 (pemilik 16 Nov) — dulu kartu melayang di atas tabel. Kini PANEL TETAP setinggi layar di kanan (di layar lebar
+    // konten utama diberi ruang — App `xl:pr-[404px]`), bergulir sendiri; di layar sempit tetap lembar kanan.
+    <aside data-testid="interactive-detail-drawer"
+      className="fixed bottom-0 right-0 top-[var(--topbar-h)] z-40 w-[min(388px,100vw)] overflow-y-auto border-l border-kn-divider bg-white p-4 no-print"
+      role="complementary" aria-label="Rincian">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p data-testid="detail-drawer-kicker" className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Rincian</p>

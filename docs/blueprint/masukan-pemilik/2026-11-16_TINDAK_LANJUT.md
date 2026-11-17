@@ -47,10 +47,10 @@ status. Status: **selesai** (kode + uji, sudah di-commit) · **dikerjakan** · *
 | M24 | Chip saringan → dropdown | sebagian: lini (semua layar), Retur, Pengaturan; SPK Inspeksi, Barang Masuk/Keluar antre |
 | M43 | Semua menu Pengaturan | sebagian: Ketegasan & semua kelompok pengaturan (pilot); Hak akses (matriks tanpa gulir), Aturan Persetujuan, Kontrol dua orang antre |
 | M3 | Tanya KN layar penuh, riwayat bisa disembunyikan | antre |
-| M8, M32 | Kartu angka relevan & bisa diklik (Portal, Beranda Keuangan) | antre (komponen `MetricRow` sudah mendukung klik) |
-| M14, M15 | Lini masa vertikal Pesanan Khusus | antre |
-| M17 | Tab status Pesanan → dropdown | antre |
-| M18 | Pop-up melayang (Pelanggan) | antre |
+| M8, M32 | Kartu angka relevan & bisa diklik (Portal, Beranda Keuangan) | M8 selesai: "Jml Tersedia" & "Gudang" dihapus dari beranda; M32 dikerjakan (gelombang Keuangan) |
+| M14, M15 | Lini masa vertikal Pesanan Khusus | selesai: satu lini masa vertikal (✓/●/○, tanggal & pelaku, "berjalan sejak … (n hari)", dokumen tahap dilebur dari Rantai dokumen, aksi hanya di tahap berjalan, tahap selesai dilipat bila > 3) |
+| M17 | Tab status Pesanan → dropdown | selesai: dropdown "Tahap" (jumlah · nilai) di bilah daftar; kepala kartu ganda dihapus |
+| M18 | Pop-up melayang (Pelanggan) | selesai: rincian = panel tetap di kanan, konten diberi ruang (tidak menutupi tabel) |
 | M20 | Produk & Harga: alat admin dipindah | antre |
 | M22 | Rincian produk | antre |
 | M26 | Barang Masuk/Keluar/Cutting satu pola | antre |

@@ -293,7 +293,7 @@ async def chain_of(od: Dict[str, Any]) -> Dict[str, Any]:
     """Rantai dokumen untuk rincian OD + fase turunan."""
     out: Dict[str, Any] = {"design_request": None, "design": None, "samples": [], "products": [], "pr": None, "po": [], "so": None}
     if od.get("design_request_id"):
-        req = await db.design_requests.find_one({"id": od["design_request_id"]}, {"_id": 0, "id": 1, "number": 1, "status": 1, "design_id": 1, "assigned_to_name": 1})
+        req = await db.design_requests.find_one({"id": od["design_request_id"]}, {"_id": 0, "id": 1, "number": 1, "status": 1, "design_id": 1, "assigned_to_name": 1, "created_at": 1})   # M14 — tanggal tahap desain
         if req:
             # 23 Okt — label status SAMA dengan modul Desainer ("Menunggu penugasan", bukan "Diajukan").
             from services.design_request_service import STATUS_LABEL as _DR_LABEL

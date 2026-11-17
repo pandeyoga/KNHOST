@@ -74,6 +74,14 @@ afterEach(async () => {
 });
 
 // ── D-17 ────────────────────────────────────────────────────────────────────
+async function pilihTahap(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {});
+}
+
 test("D-17: satu kontrol status — tab tahap ber-nilai Rp, tanpa kartu pipeline, Sub-status hanya status tahap aktif", async () => {
   routeGet({ "/sales-orders/stats/summary": { total_orders: 3, by_status: {
     reserved: { count: 2, grand_total: 200000 }, waiting_approval: { count: 1, grand_total: 100000 } } } });
@@ -81,13 +89,14 @@ test("D-17: satu kontrol status — tab tahap ber-nilai Rp, tanpa kartu pipeline
   expect(q(host, "orders-pipeline")).toBeNull();
   expect(q(host, "tab-dashboard").getAttribute("role")).toBe("tab");
   expect(q(host, "tab-list").getAttribute("aria-selected")).toBe("true");
-  expect(q(host, "orders-stat-dipesan").textContent).toContain("300.000");
-  expect(q(host, "orders-status-detail")).toBeNull();                 // tab "Semua" tidak punya sub-status
-  await click(q(host, "orders-status-tab-reserved"));
+  // M17 — tahap = dropdown "Tahap" (nilai di label opsi), bukan deret tab.
+  expect([...q(host, "orders-stage").options].find((o) => o.value.startsWith("reserved")).textContent).toContain("300.000");
+  expect(q(host, "orders-status-detail")).toBeNull();                 // "Semua tahap" tidak punya sub-status
+  await pilihTahap(q(host, "orders-stage"), "reserved,waiting_approval,approved");
   const sub = q(host, "orders-status-detail");
   expect([...sub.options].map((o) => o.value)).toEqual(["", "reserved", "waiting_approval", "approved"]);
   expect(sub.options[2].textContent).toBe("Menunggu Persetujuan (1)");
-  await click(q(host, "orders-status-tab-done"));
+  await pilihTahap(q(host, "orders-stage"), "done");
   expect(q(host, "orders-status-detail")).toBeNull();
 });
 

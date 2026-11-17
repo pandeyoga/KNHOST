@@ -32,7 +32,7 @@ import { KNSelect } from "../../components/KNSelect";
 import FilterChips from "../../components/FilterChips";
 import PageTabs from "../../components/PageTabs";
 import { PageHeader } from "../../components/ListPageParts";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { kpiValueParts } from "./financeShared";
 import ReconImportPanel from "./bank/ReconImportPanel";
 import ReconLinesTable from "./bank/ReconLinesTable";
@@ -68,7 +68,7 @@ function StatementSource({ st }) {
   const user = Number(st.user_lines || 0);
   const other = Number(st.lines || 0) - user;
   const last = st.last_import;
-  const tgl = (iso) => { try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }); } catch { return ""; } };
+  const tgl = (iso) => formatDate(iso);
   return (
     <p className={`text-fs-12 ${user ? "text-kn-text-2" : "text-kn-warning-text"}`} data-testid="recon-statement-source">
       {user > 0 && last

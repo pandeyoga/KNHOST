@@ -109,7 +109,7 @@ test("R5 Backorder = status Menunggu stok; sisa pendingan SO hidup = 'Sebagian m
   expect(q(host, "order-partial-stock-chip-pt").textContent).toBe("Sebagian menunggu stok");
   expect(q(host, "order-backorder-chip-cx")).toBeNull();
   expect(q(host, "order-partial-stock-chip-cx")).toBeNull();
-  expect(q(host, "orders-status-tab-waiting_stock").getAttribute("title")).toContain("1 SO lain (tahap lain) sebagian masih menunggu stok");
+  expect(q(host, "orders-backorder-hint").textContent).toContain("1 SO lain (tahap lain) sebagian masih menunggu stok");
 });
 
 describe("R5 Pengaturan: /config/health hanya untuk pemegang settings.view", () => {
