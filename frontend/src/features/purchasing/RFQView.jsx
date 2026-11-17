@@ -9,7 +9,7 @@ import { SearchBox } from "../../components/ListControls";
 import RFQCreateModal from "./RFQCreateModal";
 import RFQDetailPanel from "./RFQDetailPanel";
 import DetailModal from "../../components/DetailModal";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import ResponsiveTable from "../../components/ResponsiveTable";
 import { can } from "../../config/roles";
 import { canWriteInScope, WRITE_BLOCK_HINT } from "../../utils/writeScope";
@@ -131,7 +131,7 @@ export default function RFQView({ currentUser, selectedEntity, focusDoc, onClear
         </div>
         <div className="section-body">
           {/* Fase 3 · P5 (L-01/L-04) — status = SARINGAN (FilterChips), bukan tab; testid lama `rfq-tab-*` tetap. */}
-          <FilterChips ariaLabel="Status RFQ" value={tab} onChange={setTab} chipTestId={(k) => `rfq-tab-${k}`}
+          <FilterSelect testId="rfq-status" ariaLabel="Status RFQ" value={tab} onChange={setTab}
             options={TABS.map((t) => ({ key: t.key, label: t.label, count: counts[t.key] }))} />
           <div className="mt-2"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / judul / PR / supplier…" testId="rfq-search" /></div>
         </div>

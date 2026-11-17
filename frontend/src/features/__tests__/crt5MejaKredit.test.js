@@ -72,6 +72,15 @@ async function mount(el) {
   await flush();
 }
 async function click(el) { await act(async () => { el.click(); }); await flush(); }
+// Pola UI 16 Nov — saringan chip kini dropdown (FilterSelect); pilih nilai seperti pengguna memilih opsi.
+async function pilih(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+}
+
 async function choose(el, value) {
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, value);
@@ -118,8 +127,9 @@ describe("Kredit & Plafon — enam antrean", () => {
   test("(a) enam chip berlabel persis + jumlah; Finance tanpa Setujui", async () => {
     route({ "/credit-desk/summary": SUMMARY, "/credit-desk?menunggu_keputusan": MENUNGGU });
     await mount(desk(FIN));
-    const labels = [...document.querySelectorAll('[data-testid^="credit-desk-chip-"]')].map((b) => b.textContent);
-    expect(labels).toEqual(["Menunggu keputusan2", "Ditahan1", "Jatuh tempo3", "Janji bayar0", "Kaji ulang4", "Denda5"]);
+    // Pola UI 16 Nov — enam antrean = satu dropdown berhitungan (dulu enam chip).
+    const labels = [...q("credit-desk-chips").options].map((o) => o.textContent);
+    expect(labels).toEqual(["Menunggu keputusan (2)", "Ditahan (1)", "Jatuh tempo (3)", "Janji bayar (0)", "Kaji ulang (4)", "Denda (5)"]);
     expect(q("credit-desk-row-cro_1")).toBeTruthy();
     expect(q("credit-desk-approve-cro_1")).toBeNull();
     expect(text()).not.toContain("Setujui");
@@ -142,10 +152,10 @@ describe("Kredit & Plafon — enam antrean", () => {
     route({ "/credit-desk/summary": { ...SUMMARY, ditahan: 0 }, "/credit-desk?menunggu_keputusan": MENUNGGU,
       "/credit-desk?ditahan": { items: [], total: 0, page: 1, page_size: 25 } });
     await mount(desk(MGR));
-    await click(q("credit-desk-chip-ditahan"));
+    await pilih(q("credit-desk-chips"), "ditahan");
     expect(q("credit-desk-empty").textContent).toBe("Tidak ada pekerjaan di antrean ini.");
     route({ "/credit-desk/summary": SUMMARY, "/credit-desk?jatuh_tempo": new Error("jaringan") });
-    await click(q("credit-desk-chip-jatuh_tempo"));
+    await pilih(q("credit-desk-chips"), "jatuh_tempo");
     expect(q("credit-desk-error")).toBeTruthy();
     expect(text()).toContain("Coba lagi");
   });
@@ -188,12 +198,12 @@ describe("Kredit & Plafon — enam antrean", () => {
       "/credit-desk?denda": { items: [{ id: "pnl_1", number: "DN-1", customer_id: "cus_d", customer_name: "Toko D",
         entity_id: "ent_kanda", amount: 25000, status: "draft", plan_void: true }], total: 1, page: 1, page_size: 25 } });
     await mount(desk(MGR));
-    await click(q("credit-desk-chip-jatuh_tempo"));
+    await pilih(q("credit-desk-chips"), "jatuh_tempo");
     expect(text()).toContain("Telat 10 hari");
     await click(q("credit-desk-copy-cus_c:ent_kanda"));
     expect(tulis).toHaveBeenCalledWith("Yth. Toko C,\n…");
     expect(q("credit-desk-notice").textContent).toContain("Naskah pengingat Toko C disalin");
-    await click(q("credit-desk-chip-denda"));
+    await pilih(q("credit-desk-chips"), "denda");
     expect(q("credit-desk-planvoid-pnl_1")).toBeTruthy();
     expect(q("credit-desk-issue-pnl_1")).toBeTruthy();
     expect(q("credit-desk-waive-pnl_1")).toBeTruthy();

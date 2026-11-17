@@ -62,6 +62,15 @@ async function mount(el) {
   return host;
 }
 async function click(el) { await act(async () => { el.click(); }); await flush(); }
+// Pola UI 16 Nov — saringan chip kini dropdown (FilterSelect); pilih nilai seperti pengguna memilih opsi.
+async function pilih(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+}
+
 async function ketik(el, v) {
   await act(async () => {
     const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
@@ -138,15 +147,15 @@ test("Draf: status ikon+teks, kolom Sumber, saringan Draf/Diganti, sakelar jenis
   expect(buka).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "sales_order", focus_id: "so1" }));
   await click(q("fkt-incomplete-d1"));
   expect(buka).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "customer", focus_id: "cus1" }));
-  await click(q("fkt-kind-retur"));
+  await pilih(q("fkt-kind"), "retur");
   expect(q("fkt-row-r1").textContent).toMatch(/Nota CN-1/);
   expect(q("fkt-row-r1").textContent).toMatch(/atas FKT-7/);
   expect(q("fkt-replace-r1")).toBeNull();
-  await click(q("fkt-kind-faktur"));
-  await click(q("fkt-filter-diganti"));
+  await pilih(q("fkt-kind"), "faktur");
+  await pilih(q("fkt-filter"), "diganti");
   expect(q("fkt-row-d1")).toBeNull();
   expect(q("fkt-row-f0")).not.toBeNull();
-  await click(q("fkt-filter-draf"));
+  await pilih(q("fkt-filter"), "draf");
   expect(q("fkt-row-d1")).not.toBeNull();
 });
 
@@ -184,7 +193,7 @@ test("Tanpa izin terbit/batal: tombol draf tidak tampil; daftar draf kosong puny
   routeGet({ "/tax-invoices": [DIGANTI] });
   await mount(wrap(<TaxInvoices currentUser={{ role: "viewer", permissions: { tax_invoice: ["view"] } }} />));
   expect(q("fkt-issue-f0")).toBeNull();
-  await click(q("fkt-filter-draf"));
+  await pilih(q("fkt-filter"), "draf");
   expect(q("fkt-table").textContent).toMatch(/Tidak ada draf faktur\./);
 });
 

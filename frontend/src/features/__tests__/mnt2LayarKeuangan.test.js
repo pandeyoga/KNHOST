@@ -20,7 +20,12 @@ jest.mock("../../services/apiClient", () => ({
   setAuthToken: () => {}, setActiveEntity: () => {}, setLocationScope: () => {},
 }));
 jest.mock("../../components/KNSelect", () => {
-  const S = (p) => <select data-testid={p["data-testid"]} value={p.value || ""} onChange={() => {}} />;
+  const S = (p) => (   // pola UI 16 Nov — opsi ikut dirender supaya nilai saringan dropdown terbaca
+    <select data-testid={p["data-testid"]} value={p.value || ""} onChange={() => {}}>
+      {!(p.options || []).some((o) => o.value === "") && <option value="" />}
+      {(p.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
   return { __esModule: true, default: S, KNSelect: S };
 });
 jest.mock("../finance/InventoryReconTab", () => () => <div data-testid="layar-rekon-persediaan" />);
@@ -140,7 +145,7 @@ describe("U1–U2 — Titipan & Saldo Kredit (customer-credit)", () => {
       <ViewPresetProvider preset={{ view: "customer-credit", bagian: "saldo", nonce: 3 }}>
         <CustomerCreditView currentUser={ADMIN} selectedEntity="ent_ksc" />
       </ViewPresetProvider>);
-    expect(q(host, "cc-filter-saldo_kredit").getAttribute("aria-pressed")).toBe("true");
+    expect(q(host, "cc-filter").value).toBe("saldo_kredit");   // pola UI 16 Nov — saringan = dropdown
   });
 });
 

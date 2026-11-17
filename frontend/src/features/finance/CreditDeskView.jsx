@@ -19,7 +19,7 @@ import { Ban, ChevronDown, ChevronRight, History } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import PaginationBar from "../../components/PaginationBar";
@@ -206,7 +206,7 @@ export default function CreditDeskView({ currentUser, selectedEntity }) {
 
       <div className="section-card">
         <div className="section-body grid gap-2">
-          <FilterChips testId="credit-desk-chips" ariaLabel="Antrean kredit" value={queue} options={chips}
+          <FilterSelect testId="credit-desk-chips" ariaLabel="Antrean kredit" value={queue} options={chips}
             onChange={(k) => { setQueue(k); setPage(1); setExpanded({}); }} />
           <SearchBox value={search} onChange={setSearch} testId="credit-desk-search"
             placeholder="Cari pelanggan, nomor pesanan, atau nota…" />

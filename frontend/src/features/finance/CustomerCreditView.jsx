@@ -25,7 +25,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate, formatDateTime } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import KNPager from "../../components/KNPager";
 import { SearchBox } from "../../components/ListControls";
 import EntityBadge from "../../components/EntityBadge";
@@ -192,7 +192,7 @@ export default function CustomerCreditView({ currentUser, selectedEntity = "all"
                 : "Kolom saldo kredit tidak ditampilkan: butuh akses lihat penerimaan pembayaran."}</p>
           )}
           <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari pelanggan…" testId="cc-search" />
-          <FilterChips testId="cc-filter" ariaLabel="Saring titipan" value={saringan}
+          <FilterSelect testId="cc-filter" ariaLabel="Saring titipan" value={saringan}
             onChange={(k) => { setPilihan(k); setPage(1); }}
             options={SARINGAN.filter((x) => (x.key === "saldo_kredit" ? bacaSaldo : x.key === "semua" || bacaTitipan))
               .map((x) => ({ key: x.key, label: x.label,

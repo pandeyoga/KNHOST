@@ -26,7 +26,7 @@ import FocusNotice from "../../../components/FocusNotice";
 import useFocusDoc from "../../../hooks/useFocusDoc";
 import { useAppNav } from "../../../context/AppNavContext";
 import axios, { API } from "../../../services/apiClient";
-import FilterChips from "../../../components/FilterChips";
+import FilterSelect from "../../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import { MetricRow } from "../../../components/ListPageParts";
 import useIsMobile from "../../../hooks/useIsMobile";
 import { formatCurrency } from "../../../utils/formatters";
@@ -165,7 +165,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity, focus
                 <input data-testid="amd-search" value={q} onChange={(e) => setQ(e.target.value)}
                   className="field !pl-8" placeholder="Cari no. amandemen / dokumen / alasan / pengusul…" />
               </div>
-              <FilterChips testId="amd-status-filters" ariaLabel="Saring status amandemen" className="min-w-0"
+              <FilterSelect testId="amd-status-filters" ariaLabel="Saring status amandemen" className="min-w-0"
                 value={status || "all"} onChange={(k) => { setStatus(k === "all" ? "" : k); setSelected(null); }}
                 options={STATUS_TABS.map((f) => ({
                   key: f.key || "all", label: f.label, testId: `amd-filter-${f.key || "all"}`,

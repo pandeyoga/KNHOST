@@ -16,7 +16,7 @@ import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import EntityRequiredNotice from "../../components/EntityRequiredNotice";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import KNPager from "../../components/KNPager";
 import { SearchBox } from "../../components/ListPageParts";
 import { askReason } from "../../services/confirmService";
@@ -156,7 +156,7 @@ export default function GrIrView() {
         <div className="section-body space-y-2">
           <p className="text-[12px] text-kn-text-2" data-testid="grir-keterangan">{KETERANGAN}</p>
           <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari nomor PO/SPK, pemasok, atau mitra…" testId="grir-search">
-            <FilterChips testId="grir-umur" value={bucket || "semua"} ariaLabel="Umur"
+            <FilterSelect testId="grir-umur" value={bucket || "semua"} ariaLabel="Umur"
               onChange={(k) => { setBucket(k === "semua" ? "" : k || ""); setPage(1); }}
               options={UMUR.map((u) => ({ key: u.key || "semua", label: u.label }))} />
           </SearchBox>

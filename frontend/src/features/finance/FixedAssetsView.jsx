@@ -20,7 +20,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import FocusNotice from "../../components/FocusNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import { SearchBox } from "../../components/ListPageParts";
 import useFocusDoc from "../../hooks/useFocusDoc";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
@@ -360,7 +360,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
           {/* PK-42 — kepala kartu hanya judul, jumlah, dan dua tombol; alasan, cari, saringan di badan. */}
           <EntityGateNote selectedEntity={selectedEntity} what="menambah aset tetap" testId="add-asset-btn-scope-note" />
           <SearchBox testId="fa-search" value={q} onChange={setQ} placeholder="Cari nomor / nama / kategori…">
-            <FilterChips testId="fa-filter" value={filter} onChange={(k) => setFilter(k || "all")} ariaLabel="Status aset"
+            <FilterSelect testId="fa-filter" value={filter} onChange={(k) => setFilter(k || "all")} ariaLabel="Status aset"
               options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: counts[f.key],
                 hidden: f.key !== "all" && f.key !== filter && !counts[f.key] }))} />
           </SearchBox>

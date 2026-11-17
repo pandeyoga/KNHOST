@@ -29,7 +29,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { KNSelect } from "../../components/KNSelect";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import PageTabs from "../../components/PageTabs";
 import { PageHeader } from "../../components/ListPageParts";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -346,7 +346,7 @@ export default function BankReconciliationView({ user = null }) {
                 data-testid="recon-filter-bar">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="text-[11px] font-semibold text-[#6B6B73]">Tampilkan status</span>
-                  <FilterChips ariaLabel="Saring status mutasi" className="min-w-0" testId="recon-filter-status"
+                  <FilterSelect ariaLabel="Saring status mutasi" className="min-w-0" testId="recon-filter-status"
                     value={fStatus || "all"} onChange={(k) => setFStatus(k === "all" ? "" : k)}
                     options={STATUS_FILTERS.map((o) => ({ key: o.value || "all", label: o.label }))} />
                 </div>

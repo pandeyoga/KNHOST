@@ -12,7 +12,7 @@ import KNDatePicker from "../../components/KNDatePicker";
 import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import FormModal from "../../components/FormModal";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
 import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
@@ -296,10 +296,10 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
           </p>
           {/* Audit UI 24 Okt (066) → fase 4 · R2: saringan status = FilterChips (bukan tab; tab tingkat-2 milik Pusat Pajak). */}
           <div className="flex flex-wrap items-end gap-2">
-            <FilterChips testId="fkt-filter" ariaLabel="Saring status faktur" value={filter} onChange={setFilter}
+            <FilterSelect testId="fkt-filter" ariaLabel="Saring status faktur" value={filter} onChange={setFilter}
               options={FILTERS.map((f) => ({ key: f.id, label: f.label,
                 count: f.id === "draf" ? draftCount : undefined }))} />
-            <FilterChips testId="fkt-kind" ariaLabel="Jenis dokumen pajak" value={kind} onChange={(k) => k && setKind(k)}
+            <FilterSelect testId="fkt-kind" ariaLabel="Jenis dokumen pajak" value={kind} onChange={(k) => k && setKind(k)}
               options={KINDS} />
             <div className="relative ml-auto w-full sm:w-[300px]">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8E8E93]" />

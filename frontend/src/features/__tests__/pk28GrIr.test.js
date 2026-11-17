@@ -28,7 +28,14 @@ jest.mock("../../services/confirmService", () => ({ askReason: (...a) => mockAsk
 jest.mock("../../components/EntityScopeBanner", () => () => <div data-testid="grir-scope" />);
 // Komponen yang menarik `@radix-ui`/`cmdk` (tidak termuat di lingkungan uji lokal) — panel faktur hanya dipakai bagian
 // `PriceVarianceRow`-nya.
-jest.mock("../../components/KNSelect", () => () => null);
+jest.mock("../../components/KNSelect", () => {   // pola UI 16 Nov — saringan Umur = dropdown → <select> setara
+  const S = (p) => (
+    <select data-testid={p["data-testid"]} value={p.value || ""} onChange={(e) => p.onValueChange?.(e.target.value)}>
+      {(p.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return { __esModule: true, default: S, KNSelect: S };
+});
 jest.mock("../../components/KNDatePicker", () => () => null);
 jest.mock("../documents/DocumentActionsBar", () => () => null);
 jest.mock("../documents/trace/DocRefsPanel", () => () => null);
@@ -53,6 +60,15 @@ async function mount(el, { entity = "ent_ksc", open } = {}) {
   await settle();
   return { host, root };
 }
+// Pola UI 16 Nov — saringan chip kini dropdown (FilterSelect); pilih nilai seperti pengguna memilih opsi.
+async function pilih(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {}); await act(async () => {});
+}
+
 async function click(el) {
   await act(async () => { el.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
   await settle();
@@ -211,7 +227,7 @@ test("saringan Umur dan sakelar 'Tampilkan yang sudah nol' dikirim ke server", a
   mockGet.mockResolvedValue({ data: ISI });
   const { host } = await mount(<GrIrView />);
   expect(mockGet.mock.calls[0][1].params).toMatchObject({ status: "terbuka", page: 1, page_size: 50 });
-  await click(q(host, "grir-umur->90"));
+  await pilih(q(host, "grir-umur"), ">90");
   expect(mockGet.mock.calls.at(-1)[1].params).toMatchObject({ bucket: ">90", status: "terbuka" });
   await act(async () => { q(host, "grir-show-zero").click(); });
   await settle();

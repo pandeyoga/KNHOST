@@ -26,7 +26,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import { formatUnitTotals } from "../../utils/qtyByUnit";
 import PageTabs from "../../components/PageTabs";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import useViewPreset from "../../hooks/useViewPreset";
 import { useAppNav } from "../../context/AppNavContext";
 import { canCurrent } from "../../config/roles";
@@ -207,7 +207,7 @@ function RealisasiPanel({ selectedEntity }) {
           <Panel title="Rincian Profitabilitas" icon={Boxes} testId="prof-table-panel">
             {/* Fase 3 · P4 (L-01/L-08) — pil ungu buatan sendiri → FilterChips baku (dimensi = saringan, bukan tab);
                 di badan panel supaya di HP chip bergulir sendiri, tidak melebarkan kepala panel. */}
-            <FilterChips testId="prof-dim" ariaLabel="Dimensi profitabilitas" value={dim} onChange={setDim} className="mb-2"
+            <FilterSelect testId="prof-dim" ariaLabel="Dimensi profitabilitas" value={dim} onChange={setDim} className="mb-2"
               options={DIMS.map((d) => ({ key: d.id, label: d.label, icon: d.icon }))} />
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
               <table className="w-full min-w-[820px] text-[12px]" data-testid="prof-table">

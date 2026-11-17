@@ -37,7 +37,7 @@ import useViewPreset from "../../hooks/useViewPreset";
 import { useAppNav } from "../../context/AppNavContext";
 import useJournalActions from "./useJournalActions";   // PK-43 — anulir/balik dari tab Jurnal & Buku Besar
 import JournalProposalsPanel, { JournalProposalBanner } from "./JournalProposalsPanel";   // KF-T6
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 
 const TONE_GRAY = "bg-gray-100 text-gray-600";
@@ -290,7 +290,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
     <div>
       {!pendingView && <JournalProposalBanner refreshKey={refreshKey} onOpen={() => setPendingView(true)} />}
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <FilterChips testId="gl-journal-view" ariaLabel="Saringan jurnal" value={pendingView ? "pending" : "posted"}
+        <FilterSelect testId="gl-journal-view" ariaLabel="Saringan jurnal" value={pendingView ? "pending" : "posted"}
           onChange={(k) => setPendingView(k === "pending")}
           options={[{ key: "posted", label: "Buku jurnal" },
             { key: "pending", label: "Menunggu persetujuan", testId: "gl-journal-pending-filter" }]} />

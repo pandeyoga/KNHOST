@@ -11,7 +11,7 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import KNPager from "../../components/KNPager";
 import { SearchBox } from "../../components/ListPageParts";
 import { askConfirm } from "../../services/confirmService";
@@ -101,7 +101,7 @@ export default function PostingFailuresView() {
         <div className="section-body space-y-2">
           <p className="text-[12px] text-kn-text-2" data-testid="pf-keterangan">{KETERANGAN}</p>
           <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari nomor dokumen…" testId="pf-search">
-            <FilterChips testId="pf-filter" value={kind || "all"} onChange={(k) => pilihJenis(k || "all")}
+            <FilterSelect testId="pf-filter" value={kind || "all"} onChange={(k) => pilihJenis(k || "all")}
               options={chips} ariaLabel="Jenis dokumen" />
           </SearchBox>
           {!canRetry && <p className="text-[12px] text-kn-text-2" data-testid="pf-no-manage">{ALASAN_TANPA_IZIN}</p>}

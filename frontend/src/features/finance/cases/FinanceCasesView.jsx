@@ -25,7 +25,7 @@ import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
 import DetailModal from "../../../components/DetailModal";
-import FilterChips from "../../../components/FilterChips";
+import FilterSelect from "../../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import { PageHeader } from "../../../components/ListPageParts";
 import useIsMobile from "../../../hooks/useIsMobile";
 import { formatCurrency } from "../../../utils/formatters";
@@ -297,7 +297,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
       <div className="section-card">
         <div className="section-body space-y-3">
           {!!stats?.by_type?.length && (
-            <FilterChips testId="case-type-chips" ariaLabel="Saring jenis kasus" clearable
+            <FilterSelect testId="case-type-chips" ariaLabel="Saring jenis kasus" clearable
               value={fType || null} onChange={(k) => setFType(k || "")}
               options={stats.by_type.map((t) => ({
                 key: t.case_type, testId: `case-chip-${t.case_type}`,
@@ -309,7 +309,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
             data-testid="case-filter-bar">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-[#6B6B73]">Status</span>
-              <FilterChips ariaLabel="Saring status kasus" className="min-w-0" testId="case-filter-status"
+              <FilterSelect ariaLabel="Saring status kasus" className="min-w-0" testId="case-filter-status"
                 value={fStatus || "all"} onChange={(k) => setFStatus(k === "all" ? "" : k)}
                 options={STATUS_FILTERS.map((o) => ({
                   key: o.value || "all", label: o.label,

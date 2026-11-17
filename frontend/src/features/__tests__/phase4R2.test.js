@@ -29,6 +29,17 @@ import { askConfirm } from "../../services/confirmService";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn(() => Promise.resolve({ data: {} }));
+// Pola UI 16 Nov — saringan status kini dropdown (FilterSelect → KNSelect); di jsdom = <select> setara.
+jest.mock("../../components/KNSelect", () => {
+  const M = ({ value, onValueChange, options = [], "data-testid": tid, disabled }) => (
+    <select data-testid={tid} value={value ?? ""} disabled={disabled} onChange={(e) => onValueChange(e.target.value)}>
+      {!options.some((o) => o.value === "") && <option value="" />}
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return { __esModule: true, default: M, KNSelect: M };
+});
+const optOf = (host, tid, v) => [...(host.querySelector(`[data-testid="${tid}"]`)?.options || [])].find((o) => o.value === v) || null;
 jest.mock("../../services/apiClient", () => ({
   __esModule: true,
   default: {
@@ -153,7 +164,7 @@ test("Store credit & Faktur Pajak: pop-up baku; saringan status Faktur = FilterC
 
   routeGet({ "/tax-invoices": [{ id: "f1", number: "FKT-1", order_number: "SO-1", status: "normal", nsfp: "" }] });
   const { host: h3 } = await mount(<TaxInvoices currentUser={{ role: "admin", permissions: { tax_invoice: ["*"] } }} />);
-  expect(q(h3, "fkt-filter-all").getAttribute("aria-pressed")).toBe("true");
+  expect(q(h3, "fkt-filter").value).toBe("all");                // saringan status = dropdown (dulu chip aktif)
   expect(h3.querySelector(".tab-bar")).toBeNull();
   await click(q(h3, "fkt-cancel-f1"));
   expectStdDialog(h3, "fkt-modal");
@@ -176,8 +187,8 @@ test("Rekonsiliasi Bank: PageHeader, PageTabs, saringan status FilterChips, impo
   expect(q(host, "recon-head").classList.contains("view-header")).toBe(true);
   expect(q(host, "recon-tabs").getAttribute("role")).toBe("tablist");
   expect(q(host, "recon-tab-lines").getAttribute("aria-selected")).toBe("true");
-  expect(q(host, "recon-filter-status-all").getAttribute("aria-pressed")).toBe("true");
-  expect(q(host, "recon-filter-status-unmatched")).not.toBeNull();
+  expect(q(host, "recon-filter-status").value).toBe("all");
+  expect(optOf(host, "recon-filter-status", "unmatched")).not.toBeNull();
   expect(q(host, "recon-import-panel")).toBeNull();
   await click(q(host, "recon-import-toggle"));
   expectStdDialog(host, "recon-import-panel");
@@ -274,9 +285,9 @@ test("Kontrabon: PageHeader, PageTabs (cb-tab-*), saringan status = FilterChips 
     permissions: { contra_bon: ["*"], vendor_bill: ["view"] } }} selectedEntity="ent_ksc" entities={[]} />);
   expect(q(host, "cb-head").classList.contains("view-header")).toBe(true);
   expect(q(host, "cb-tab-list").getAttribute("aria-selected")).toBe("true");
-  expect(q(host, "cb-filter-status-all").getAttribute("aria-pressed")).toBe("true");
-  expect(q(host, "cb-filter-status-draft").textContent).toMatch(/2/);
-  expect(q(host, "cb-filter-status-all").textContent).toMatch(/3/);
+  expect(q(host, "cb-filter-status").value).toBe("all");
+  expect(optOf(host, "cb-filter-status", "draft").textContent).toMatch(/2/);
+  expect(optOf(host, "cb-filter-status", "all").textContent).toMatch(/3/);
   await click(q(host, "cb-new"));
   expectStdDialog(host, "cb-create-wizard");
 });
@@ -291,8 +302,9 @@ test("Kasus Keuangan (dibuka dari HP): PageHeader, chip jenis/status; di layar s
   const { host } = await mount(<FinanceCasesView currentUser={{ role: "admin", permissions: { finance_case: ["*"] } }}
     selectedEntity="all" entities={[]} />);
   expect(q(host, "case-head").classList.contains("view-header")).toBe(true);
-  expect(q(host, "case-chip-double_payment").getAttribute("aria-pressed")).toBe("false");
-  expect(q(host, "case-filter-status-open").textContent).toMatch(/1/);
+  expect(q(host, "case-type-chips").value).toBe("");             // jenis = dropdown, belum dipilih
+  expect(optOf(host, "case-type-chips", "double_payment")).not.toBeNull();
+  expect(optOf(host, "case-filter-status", "open").textContent).toMatch(/1/);
   expect(q(host, "case-detail-empty")).toBeNull();              // tidak ada kolom samping di layar sempit
   await click(q(host, "case-row-k1"));
   expect(q(host, "case-detail-modal").getAttribute("role")).toBe("dialog");
@@ -313,8 +325,8 @@ test("Wizard kasus = FormModal; Koreksi & Amandemen tanpa tab tunggal, status = 
     selectedEntity="all" />);
   expect(q(h2, "amd-tab-daftar")).toBeNull();
   expect(q(h2, "amd-reasons-link")).not.toBeNull();
-  expect(q(h2, "amd-filter-all").getAttribute("aria-pressed")).toBe("true");
-  expect(q(h2, "amd-filter-pending_approval").textContent).toMatch(/1/);
+  expect(q(h2, "amd-status-filters").value).toBe("all");
+  expect(optOf(h2, "amd-status-filters", "pending_approval").textContent).toMatch(/1/);
   expect(q(h2, "amd-kpi-rejected").querySelector(".metric-zero")).not.toBeNull();   // nol netral
 });
 
