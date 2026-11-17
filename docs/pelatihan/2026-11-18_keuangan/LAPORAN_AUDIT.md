@@ -253,6 +253,21 @@ sisa gerbang nama peran:
 Data uji: pengguna `uji.kustom1–5@` dinonaktifkan; peran UJI-KUSTOM dibiarkan (dipakai jejak audit) — hapus R4 "Manajer
 Tanpa Setuju" bila mengganggu pesan Aturan Persetujuan.
 
+### Sembilan kegagalan jest "lama" (dulu dilaporkan sebagai "himpunan lama yang sama")
+
+Kelima suite tidak bisa dimuat sampai 16 Nov (`@radix-ui/primitive/is-development` hilang), sehingga perubahan KP-T4, PR-T5,
+CR-T1, MN-T3 (14–15 Nov) tidak pernah diuji ulang. Tujuh uji usang (diperbarui mengikuti keputusan unit itu, plus kasus baru);
+dua menyembunyikan bug nyata:
+
+| # | Temuan | Status |
+|---|---|---|
+| E-T1 | **Desainer PDF digerbang nama peran "admin"**: Manajer/Finance pemegang `pdf_template.manage` tidak bisa membuka desainer, padahal server menerima simpanannya dan "Lengkapi PT" mengarahkan ke sana (alur buntu); lihat-saja melihat tombol simpan → 403 | D · `DocTemplatesView.jsx` (gerbang izin) · `phase3P8Activation` D-01 (merah di kode lama). Akibat: Manajer & Finance kini melihat Desainer PDF — bila harus khusus Admin, cabut izinnya di Peran & Hak Akses (K-54) |
+| E-T2 | Penolakan aksi selain lihat berbunyi "tidak punya akses ke modul ini" padahal pengguna sedang di modul itu | D · `utils/apiError.js` · `fe07ReturnErrors` (merah di kode lama) |
+| E-T3 | Awalan galat Retur berbahasa Inggris ("Gagal reject/approve/settle/submit") | D · `SalesReturns.jsx`. Sisa serupa di `CycleCount.jsx`, `PurchaseApprovalView.jsx`, `useAppActions.js` — terbuka |
+| E-T5 | `useCanDecideMap` memakai jawaban lama sesaat sesudah status dokumen berubah (tombol jenjang 2 tampil sesaat; server tetap menolak) | Terbuka (rendah) |
+
+Jest penuh sesudahnya: **1.778/1.778 lulus, 0 gagal**.
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
@@ -287,6 +302,7 @@ Tanpa Setuju" bila mengganggu pesan Aturan Persetujuan.
 | K-51 | **Hutang & piutang per pihak (S5).** (1) Janji bayar memakai izin ubah pesanan (`order.update`) — terlalu luas; perlu izin penagihan sendiri? (2) Janji bayar dicatat per SO, bukan per pelanggan — perlu janji per pelanggan? (3) Bayar beberapa tagihan = N kas keluar, sedangkan bank menunjukkan satu mutasi (rekonsiliasi pakai cocok-pecah) — tetap begini atau satu kas dengan alokasi? (4) Rekening koran pemasok / rekap hutang PDF belum ada (baru CSV) — perlu? (5) Rencana cicilan tidak dibuat dari rincian piutang — perlu? (6) Pemasok yang hanya punya potongan tanpa tagihan terbuka tidak muncul di daftar. (7) Konfirmasi kwitansi membulatkan rupiah (lihat K-07). |
 | K-52 | **K-FIN-01 untuk akun latihan.** Akun `finance.latihNN` kini lintas PT seperti Manajer (kotak PT bisa dibuka; data PT Kanda & Cipta terjangkau) dan memegang izin Manajer (setujui, tutup buku, jurnal manual, bagan akun). Selama kelas peserta diminta tetap di PT Sukacita dan tidak menyetujui/mengubah pengaturan bersama. Sesudah kelas: `--nonaktifkan`. Bila ingin akun latihan tetap terkunci 1 PT, perlu peran kustom "Finance latihan" (berbasis Finance, lintas PT dimatikan) — putuskan sebelum pelatihan berikutnya. |
 | K-53 | **Akun Finance kini lintas PT (K-FIN-01) — `allowed_entity_ids` diabaikan untuk semua akun Finance**, termasuk akun latihan yang ditugaskan ke Sukacita saja (terbukti: finance.latih01 membaca dan bisa menulis di semua PT). Bila pembatasan PT harus tetap, Admin mematikan "lintas PT" untuk peran Finance di Peran & Hak Akses (berlaku untuk semua akun Finance) atau memakai peran kustom. Mohon keputusan. |
+| K-54 | Sesudah gerbang nama peran Desainer PDF dicabut (E-T1), Manajer dan Finance (pemegang `pdf_template.manage`) membuka Desainer PDF. Bila desainer harus khusus Admin, cabut izin itu dari peran Manajer/Finance di Peran & Hak Akses (bukan memasang lagi gerbang nama peran). |
 | K-26 | Akun "Selisih harga pembelian" dan "Selisih nilai retur beli" belum dipetakan: kliring GR/IR ditolak dan Kesiapan PT kurang "Pemetaan akun". Akun mana yang dipakai? |
 | K-27 | Finance boleh **membaca** Aturan Keuangan & Pajak (izin `settings.view`)? Manajer tidak bisa mengubah "Kelompok umur piutang" (butuh `settings.manage`) — disengaja? |
 | K-28 | Akun yang pernah dipakai di riwayat pemetaan tetap dihitung akun kontrol walau pemetaannya sudah dikembalikan. Disengaja? |
