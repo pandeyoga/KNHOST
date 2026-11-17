@@ -260,12 +260,14 @@ export default function SchedulerView({ currentUser, onNavigate, only = null }) 
       {/* KPI */}
       <div className={`grid gap-3 ${hasJobs && hasWa ? "grid-cols-2 lg:grid-cols-4" : hasJobs ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"}`}>
         {hasJobs && <>
+        {/* Pola UI 16 Nov (prinsip 5) — kartu angka membuka tab daftarnya. */}
         <KpiCard testId="sched-kpi-jobs" label="Job Aktif" icon={AlarmClock} accent="#6B219A"
                  value={`${summary?.jobs_enabled ?? 0} / ${summary?.jobs_total ?? 0}`}
-                 sub="terjadwal otomatis" />
+                 sub="terjadwal otomatis" onClick={() => setTab("jobs")} actionLabel="Lihat job" />
         <KpiCard testId="sched-kpi-runs" label="Eksekusi Hari Ini" icon={ListChecks} accent="#0058CC"
                  value={summary?.runs_today ?? 0}
-                 sub={summary?.failed_today ? `${summary.failed_today} gagal` : "tanpa kegagalan"} />
+                 sub={summary?.failed_today ? `${summary.failed_today} gagal` : "tanpa kegagalan"}
+                 onClick={() => setTab("runs")} actionLabel="Lihat riwayat" />
         <KpiCard testId="sched-kpi-notif" label="Notifikasi Hari Ini" icon={Bell} accent="#C77700"
                  value={summary?.notifications_today ?? 0}
                  sub={`${summary?.notifications_unread ?? 0} belum dibaca siapa pun · ${summary?.escalation?.open ?? 0} eskalasi terbuka`} />

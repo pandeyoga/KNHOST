@@ -207,9 +207,13 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard testId="prod-kpi-boms" label="Total BOM" value={summary?.boms ?? boms.length} icon={Layers3} accent="#0058CC" sub={`${activeBoms.length} aktif`} />
-        <KpiCard testId="prod-kpi-open" label="Perintah Kerja Terbuka" value={summary?.open ?? 0} icon={ClipboardList} accent="#C77700" sub="draf + dirilis" />
-        <KpiCard testId="prod-kpi-done" label="Perintah Kerja Selesai" value={summary?.completed ?? 0} icon={CheckCircle2} accent="#1B7F4B" />
+        {/* Pola UI 16 Nov (prinsip 5) — kartu angka membuka daftarnya (BOM / Perintah Kerja). */}
+        <KpiCard testId="prod-kpi-boms" label="Total BOM" value={summary?.boms ?? boms.length} icon={Layers3} accent="#0058CC" sub={`${activeBoms.length} aktif`}
+          onClick={() => setTab("bom")} actionLabel="Lihat BOM" />
+        <KpiCard testId="prod-kpi-open" label="Perintah Kerja Terbuka" value={summary?.open ?? 0} icon={ClipboardList} accent="#C77700" sub="draf + dirilis"
+          onClick={() => setTab("wo")} actionLabel="Lihat perintah kerja" />
+        <KpiCard testId="prod-kpi-done" label="Perintah Kerja Selesai" value={summary?.completed ?? 0} icon={CheckCircle2} accent="#1B7F4B"
+          onClick={() => setTab("wo")} actionLabel="Lihat perintah kerja" />
         <KpiCard testId="prod-kpi-value" label="Nilai Produksi" value={`Rp ${compactIDR(summary?.produced_value || 0)}`} icon={Wallet} accent="#0058CC" sub={`${summary?.produced_qty ?? 0} unit`} />
       </div>
 
