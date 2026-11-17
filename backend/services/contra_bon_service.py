@@ -50,6 +50,7 @@ from core_utils import DEFAULT_ENTITY_ID, new_id, next_doc_number, now_iso, rupi
 from pymongo import ReturnDocument
 from db import db
 from services import gl_service
+from services.book_date import tanggal_buku
 from services.config_resolver import value_of
 from services.vendor_bill_service import already_billed_map, bill_financials, po_line_id
 
@@ -142,6 +143,13 @@ def _round(n: Any) -> float:
 def _rp(v: Any) -> str:
     """Alias tipis ke `core_utils.rupiah` — satu sumber format uang untuk seluruh backend."""
     return rupiah(v)
+
+
+def _hari_ini() -> date:
+    """Hari ini = tanggal buku WIB. Dulu `date.today()` (zona MESIN): di mesin ber-zona UTC kontrabon yang dibuat pukul
+    00.00–07.00 WIB bertanggal siklus kemarin dan jatuh temponya sehari lebih awal (deploy memasang TZ=Asia/Jakarta,
+    lingkungan uji/dev tidak)."""
+    return date.fromisoformat(tanggal_buku())
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -445,9 +453,11 @@ async def available_credits(supplier_id: str, entity_id: str,
     bill_ids = [b["id"] async for b in db.vendor_bills.find(
         {"supplier_id": supplier_id}, {"_id": 0, "id": 1})]
     if bill_ids:
+        # Ulasan 18 Nov (R-S5-02): uang muka milik PT kas-nya — dulu dibaca lintas PT sehingga form kontrabon PT lain
+        # menawarkannya dan potongannya dijurnal di PT yang salah.
         async for t in db.cash_transactions.find(
                 {"ref_type": "ap_advance", "ref_id": {"$in": bill_ids},
-                 "status": {"$ne": "void"}}, {"_id": 0}):
+                 "status": {"$ne": "void"}, **ent_q}, {"_id": 0}):
             total = _round(t.get("amount"))
             spent = _round((used.get(t["id"]) or {}).get("amount"))
             if total - spent <= EPS:
@@ -569,7 +579,7 @@ async def prepare(supplier_id: str, entity_id: str, exclude_cb_id: str = "") -> 
     credits = await available_credits(supplier_id, ent, exclude_cb_id)
     gr = await unbilled_receipts(None, supplier_id=supplier_id, entity_id=ent)
     days = await _term_days(sup, ent)
-    today = date.today()
+    today = _hari_ini()
     attached = [
         {"bill_id": b["bill_id"], "bill_number": b["bill_number"],
          "amount": b["claim_deduction"],
@@ -707,7 +717,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
             "match": match,
         })
 
-    today = date.today()
+    today = _hari_ini()
     number = await next_doc_number(COLL, "number", "CB-", entity_id=entity_id)
     doc: Dict[str, Any] = {
         "id": new_id("cbn"), "number": number, "entity_id": entity_id,
@@ -1225,7 +1235,7 @@ async def summary(entity_ids: Optional[List[str]] = None, entity_id: str = "") -
     overdue = [r for r in rows if (r.get("sla") or {}).get("overdue")]
     gr = await unbilled_receipts(entity_ids, entity_id=entity_id)
     due_soon = []
-    today = date.today()
+    today = _hari_ini()
     for r in scheduled:
         when = (r.get("schedule") or {}).get("planned_payment_date") or ""
         try:

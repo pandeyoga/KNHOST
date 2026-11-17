@@ -66,8 +66,12 @@ export default function APSupplierDetail({ detail, loading, error, onRetry, onCl
   const bisa = bills.filter(bisaDibayarLangsung);
   const terpilih = bisa.filter((b) => pilih[b.bill_id]);
   const totalPilih = terpilih.reduce((s, b) => s + Number(b.outstanding || 0), 0);
-  const semuaDipilih = bisa.length > 0 && terpilih.length === bisa.length;
-  const toggleSemua = () => setPilih(semuaDipilih ? {} : Object.fromEntries(bisa.map((b) => [b.bill_id, true])));
+  // Review S5 (R-S5-05) — "pilih semua" = tagihan yang TAMPIL menurut cari/saringan (dulu semua tagihan yang bisa dibayar,
+  // termasuk yang disembunyikan saringan: menyaring "Lewat jatuh tempo" lalu pilih semua ikut mencentang yang belum jatuh
+  // tempo). Centang yang sudah ada di luar saringan tidak diubah.
+  const bisaTampil = rows.filter(bisaDibayarLangsung);
+  const semuaDipilih = bisaTampil.length > 0 && bisaTampil.every((b) => pilih[b.bill_id]);
+  const toggleSemua = () => setPilih((p) => ({ ...p, ...Object.fromEntries(bisaTampil.map((b) => [b.bill_id, !semuaDipilih])) }));
 
   function unduh() {
     const base = `rekap-hutang-${(detail?.supplier?.code || nama).replace(/[^\w-]+/g, "-").toLowerCase()}`;
@@ -138,7 +142,7 @@ export default function APSupplierDetail({ detail, loading, error, onRetry, onCl
                   <thead>
                     <tr>
                       <th className="w-8">
-                        {canPayBill && bisa.length > 0 && (
+                        {canPayBill && bisaTampil.length > 0 && (
                           <input type="checkbox" aria-label="Pilih semua tagihan yang bisa dibayar langsung" checked={semuaDipilih}
                             disabled={allPt} onChange={toggleSemua} data-testid="ap-detail-check-all" />
                         )}
@@ -171,7 +175,7 @@ export default function APSupplierDetail({ detail, loading, error, onRetry, onCl
                         <td className="col-sticky-end text-right">
                           {b.contra_bon ? (
                             <span className="text-fs-12 text-kn-text-2" data-testid={`ap-detail-held-${b.bill_id}`}>
-                              Bayar lewat kontrabon {b.contra_bon.number}
+                              Bayar lewat kontrabon{b.contra_bon.number ? ` ${b.contra_bon.number}` : ""}
                             </span>
                           ) : canPayBill ? (
                             <button type="button" className="secondary-button btn-sm whitespace-nowrap" disabled={allPt}

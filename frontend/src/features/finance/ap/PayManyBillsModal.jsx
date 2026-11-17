@@ -80,7 +80,9 @@ export default function PayManyBillsModal({ supplierName, entityId, ptName, bill
       const prev = (results || []).filter((r) => r.ok);
       const all = [...prev, ...out];
       setResults(all);
-      onDone?.(all, ringkasHasil(all));
+      // Review S5 (R-S5-04) — pesan untuk bilah HIJAU rincian pemasok hanya bila ada yang terbayar; dulu "Tidak ada tagihan
+      // yang terbayar: n gagal." tampil sebagai pemberitahuan sukses. Rinciannya tetap di tabel hasil form ini.
+      onDone?.(all, all.some((r) => r.ok) ? ringkasHasil(all) : "");
     } finally { setSaving(false); inFlight.current = false; }
   }
 

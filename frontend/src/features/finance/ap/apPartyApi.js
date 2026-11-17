@@ -193,5 +193,7 @@ export const CSV_TAGIHAN = [
   { key: "grand_total", header: "Total", type: "num" },
   { key: "amount_paid", header: "Dibayar", type: "num" },
   { key: "outstanding", header: "Sisa", type: "num" },
-  { header: "Kontrabon", get: (b) => (b.contra_bon ? `${b.contra_bon.number} (${b.contra_bon.status_label})` : "") },
+  // Review S5 (R-S5-03) — tanpa izin lihat kontrabon server hanya mengirim fakta "dipegang" (nomor & status kosong).
+  { header: "Kontrabon", get: (b) => (!b.contra_bon ? ""
+    : b.contra_bon.number ? `${b.contra_bon.number} (${b.contra_bon.status_label})` : "Ya") },
 ];

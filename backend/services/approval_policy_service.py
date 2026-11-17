@@ -102,13 +102,15 @@ def _needs(row: Optional[Dict[str, Any]]) -> bool:
 
 def _row(doc_kind: str, entity_id: str, level: int, roles: List[str], *, any_holder: bool = False,
          min_amount: float = 0.0, max_amount: Optional[float] = None, label: str = "", sort: int = 1,
-         legacy_role: str = "") -> Dict[str, Any]:
+         legacy_role: str = "", setara: bool = True) -> Dict[str, Any]:
     """`legacy_role` = peran tunggal sumber lama (mis. `required_role` aturan SO/PO/PR) — HANYA untuk field kompatibel
     `required_role` / `required_approval_role` yang masih dibaca tampilan & notifikasi; tidak pernah untuk memutus.
 
     K-FIN-01 — baris bawaan yang menyebut Manajer ikut menyebut Finance (dan peran kustom ber-dasar Finance):
-    `role_registry.SETARA_PERAN`. Baris yang hanya menyebut Admin tidak berubah."""
-    if not any_holder and roles:
+    `role_registry.SETARA_PERAN`. Baris yang hanya menyebut Admin tidak berubah. `setara=False` = baris isian Admin
+    (`_parse_levels`): disimpan persis seperti dipilih (review K-FIN-01 R-KF-01 — dulu Finance ditambahkan diam-diam
+    sehingga Admin tidak bisa menyimpan "Manajer saja")."""
+    if setara and not any_holder and roles:
         roles = _ordered({*roles, *_registry().setara_untuk(roles)})
     return {"doc_kind": doc_kind, "entity_id": entity_id or "all", "level": int(level),
             "label": label or (kind(doc_kind)["level_labels"].get(int(level)) or "Persetujuan"),
@@ -646,7 +648,7 @@ def _parse_levels(doc_kind: str, levels: Any) -> List[Dict[str, Any]]:
                 if rid not in roles:
                     roles.append(rid)
             out.append(_row(doc_kind, "all", level, _ordered(roles), any_holder=any_holder, min_amount=lo,
-                            max_amount=hi, label=label, sort=i))
+                            max_amount=hi, label=label, sort=i, setara=False))
     return out
 
 

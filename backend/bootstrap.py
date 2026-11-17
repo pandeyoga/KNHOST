@@ -682,17 +682,23 @@ async def migrate_kfin01_approval_policies() -> Dict[str, Any]:
     if done and done.get("kfin01_aturan_persetujuan"):
         return {"diubah": []}
     import role_registry as reg
+    # Review K-FIN-01 (R-KF-03) — migrasi ini berjalan di `run_bootstrap`, SEBELUM `server.lifespan` memuat peran kustom
+    # ke registry (`custom_role_service.sync_registry`): `setara_untuk` belum mengenal peran kustom. Peran kustom
+    # ber-dasar peran setara (Finance) dibaca langsung dari `custom_roles`.
+    kustom = {c["id"]: c.get("base_role") or "" async for c in db.custom_roles.find({}, {"_id": 0, "id": 1,
+                                                                                         "base_role": 1})}
     changed: List[str] = []
     async for row in db.approval_policies.find({"active": True, "any_holder": {"$ne": True}},
                                                {"_id": 0, "id": 1, "roles": 1}):
         roles = list(row.get("roles") or [])
-        extra = reg.setara_untuk(roles)
+        hit = {r for r, ps in reg.SETARA_PERAN.items() if set(roles) & set(ps)}
+        extra = [r for r in [*reg.setara_untuk(roles), *(c for c, b in kustom.items() if b in hit)] if r not in roles]
         if not roles or not extra:
             continue
         want = set(roles) | set(extra)
-        await db.approval_policies.update_one({"id": row["id"]}, {"$set": {
-            "roles": [r for r in reg.role_ids() if r in want] + [r for r in roles if r not in reg.ROLES],
-            "updated_at": now_iso()}})
+        urut = [r for r in reg.role_ids() if r in want]
+        urut += [r for r in [*roles, *extra] if r not in urut]
+        await db.approval_policies.update_one({"id": row["id"]}, {"$set": {"roles": urut, "updated_at": now_iso()}})
         changed.append(row["id"])
     if changed:
         try:

@@ -37,7 +37,10 @@ KSC, KANDA = "ent_ksc", "ent_kanda"
 
 
 def _tgl(hari: int) -> str:
-    return (datetime.date.today() + datetime.timedelta(days=hari)).isoformat()
+    # Review S5 — dari tanggal buku WIB (server: `report_basis.tanggal_buku`), bukan tanggal UTC mesin uji: pukul
+    # 00.00–07.00 WIB keduanya berbeda satu hari dan umur tagihan meleset satu (46 ≠ 45).
+    from services.book_date import tanggal_buku
+    return (datetime.date.fromisoformat(tanggal_buku()) + datetime.timedelta(days=hari)).isoformat()
 
 
 def _tagihan(bid: str, sup: str, nama: str, total: float, due: str, *, ent: str = KSC, status: str = "posted",

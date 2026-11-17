@@ -54,6 +54,14 @@ async def _credits(supplier_id: str, entity_id: str) -> Dict[str, Any]:
     cr = await available_credits(supplier_id, entity_id)
     notes = cr.get("purchase_returns") or []
     adv = cr.get("supplier_advances") or []
+    # Review S5 (R-S5-01) — `available_credits` menyaring nota debit per PT tetapi uang muka (`ap_advance`) TIDAK: uang
+    # muka pemasok dari PT lain ikut, sehingga baris PT lain menampilkannya dan "Semua PT" menjumlahnya sekali per PT.
+    # Uang muka milik PT kas-nya (`cash_transactions.entity_id` = PT tagihan yang lebih bayar, `ap_payment_service`).
+    if adv:
+        ids = [x.get("ref_id") for x in adv if x.get("ref_id")]
+        pemilik = {t["id"]: t.get("entity_id") or "" async for t in db.cash_transactions.find(
+            {"id": {"$in": ids}}, {"_id": 0, "id": 1, "entity_id": 1})}
+        adv = [x for x in adv if pemilik.get(x.get("ref_id")) == entity_id]
     return {"debit_notes": from_cents(sum(to_cents(x.get("amount")) for x in notes)), "debit_note_count": len(notes),
             "advance": from_cents(sum(to_cents(x.get("amount")) for x in adv)), "advance_count": len(adv),
             "items": [{**x, "entity_id": entity_id} for x in notes + adv]}
@@ -161,6 +169,10 @@ async def supplier_detail(supplier_id: str, scope_ids: List[str], scope_q: Dict[
         return None
     items = await open_payables({**(scope_q or {}), "supplier_id": supplier_id})
     holders = await _holders([it["bill"].get("id", "") for it in items])
+    if not with_contra_bons:
+        # Review S5 (R-S5-03) — tanpa `contra_bon.view` hanya FAKTA "dipegang kontrabon" (alasan tidak bisa dibayar
+        # langsung) yang dikirim; nomor, status, dan id kontrabonnya tidak (dulu bocor lewat baris tagihan).
+        holders = {k: {"id": "", "number": "", "status": "", "status_label": ""} for k in holders}
     bills = [_bill_row(it, holders.get(it["bill"].get("id", ""))) for it in items]
     bills.sort(key=lambda r: (r["due_date"] or "9999-99-99", r["bill_number"]))
     ents = sorted({b["entity_id"] for b in bills} | set(scope_ids or []))
