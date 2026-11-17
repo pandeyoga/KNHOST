@@ -72,11 +72,21 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
     });
     setRolls(rows);
   };
+  // S2 (pelatihan 18 Nov) — pasangan panjang↔berat yang masih SESUAI faktor produk (mis. baris pertama yang diisi
+  // otomatis dari qty diterima) ikut dihitung ulang. Dulu baris pertama 500 yard = 75,44 kg; panjangnya diubah ke 100
+  // (dipecah per roll) tetapi beratnya tetap 75,44 → "Aktual lebih besar 80%" dan penerimaan diblokir.
+  const sepadan = (x) => {
+    const w = Number(x.weight) || 0;
+    return w > 0 && Math.abs(w - r2((Number(x.length) || 0) * kgm)) <= Math.max(0.011, w * 0.002);
+  };
   const updateDerived = (i, k, v) => {
     const row = { ...rolls[i], [k]: v };
     if (kgm > 0) {
-      if (k === "weight" && (!Number(rolls[i].length) || rolls[i]._autoLen)) { row.length = r2((Number(v) || 0) / kgm); row._autoLen = true; }
-      if (k === "length" && (!Number(rolls[i].weight) || rolls[i]._autoWt)) { row.weight = r2((Number(v) || 0) * kgm); row._autoWt = true; }
+      // Hanya isian UTAMA (panjang untuk tugas bersatuan panjang, berat untuk tugas kg) yang menyeret pasangannya yang
+      // masih sepadan; berat aktual (catch-weight) yang diketik tidak pernah mengubah panjang.
+      const auto = sepadan(rolls[i]) && k === (isKg ? "weight" : "length");
+      if (k === "weight" && (!Number(rolls[i].length) || rolls[i]._autoLen || auto)) { row.length = r2((Number(v) || 0) / kgm); row._autoLen = true; }
+      if (k === "length" && (!Number(rolls[i].weight) || rolls[i]._autoWt || auto)) { row.weight = r2((Number(v) || 0) * kgm); row._autoWt = true; }
       if (k === "length") row._autoLen = false;
       if (k === "weight") row._autoWt = false;
     }

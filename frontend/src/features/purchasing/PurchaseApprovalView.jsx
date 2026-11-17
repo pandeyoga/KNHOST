@@ -127,6 +127,12 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
       if (updated.status === "waiting_approval") {
         const next = pendingLevelOf(getChain(updated));
         setNotice(`PO ${po.po_number}: tingkat disetujui. Lanjut menunggu persetujuan ${roleLabel(next?.required_role)}.`);
+      } else if (["completed", "partial"].includes(updated.status)) {
+        // S2 (pelatihan 18 Nov) — revisi PO yang barangnya sudah diterima (mis. "Tutup sisa" ke qty diterima): tidak ada
+        // tugas Barang Masuk baru; dulu pesannya tetap "Tugas Barang Masuk … otomatis dibuat".
+        setNotice(`PO ${po.po_number} disetujui penuh. ${updated.status === "completed"
+          ? "Barang sudah diterima seluruhnya — PO Selesai, tidak ada tugas Barang Masuk baru."
+          : "Tugas Barang Masuk untuk sisa barang diperbarui."}`);
       } else {
         setNotice(`PO ${po.po_number} disetujui penuh. Tugas Barang Masuk untuk gudang otomatis dibuat.`);
       }

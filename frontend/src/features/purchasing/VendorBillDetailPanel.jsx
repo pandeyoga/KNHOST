@@ -26,7 +26,7 @@ import { BudgetCheckNotice } from "../../components/BudgetCheckNotice";   // PK-
  */
 function StatusPill({ status }) {
   const map = {
-    draft: ["pill-muted", "Draft"], pending_approval: ["pill-warning", "Menunggu Approval"],
+    draft: ["pill-muted", "Draf"], pending_approval: ["pill-warning", "Menunggu Persetujuan"],   // S2 — sama dengan daftar
     posted: ["pill-info", "Terposting"], paid: ["pill-success", "Lunas"], cancelled: ["pill-danger", "Dibatalkan"],
   };
   const [cls, label] = map[status] || ["pill-muted", status];
@@ -34,7 +34,7 @@ function StatusPill({ status }) {
 }
 function MatchPill({ status }) {
   const map = {
-    matched: ["pill-success", "Match Bersih"], warning: ["pill-warning", "Ada Selisih"], blocked: ["pill-danger", "Over-billing"],
+    matched: ["pill-success", "Match Bersih"], warning: ["pill-warning", "Ada Selisih"], blocked: ["pill-danger", "Lebih Tagih"],
   };
   const [cls, label] = map[status] || ["pill-muted", status];
   return <span className={`status-pill ${cls}`} data-testid="vb-detail-match">{label}</span>;
@@ -132,7 +132,9 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Card label="Total Tagihan" value={formatCurrency(fin.grand_total)} testId="vb-fin-grand" />
             <Card label="Sudah Dibayar" value={formatCurrency(fin.amount_paid)} testId="vb-fin-paid" tone="text-green-700" />
-            <Card label="Sisa Hutang" value={formatCurrency(fin.outstanding)} testId="vb-fin-outstanding" tone="text-red-600" />
+            {/* S2 (pelatihan 18 Nov) — draf/menunggu persetujuan/dibatalkan belum (atau tidak lagi) menjadi hutang. */}
+            <Card label="Sisa Hutang" value={["posted", "paid"].includes(bill.status) ? formatCurrency(fin.outstanding) : "— (belum hutang)"}
+              testId="vb-fin-outstanding" tone="text-red-600" />
             <Card label="PPN Masukan" value={formatCurrency(bill.ppn_amount)} testId="vb-fin-ppn" />
           </div>
           <PriceVarianceRow bill={bill} />

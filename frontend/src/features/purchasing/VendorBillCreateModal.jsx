@@ -93,19 +93,27 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
     setItems((arr) => arr.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   }
 
+  // S2 (pelatihan 18 Nov) — ambang dari konteks penagihan = ambang server (`three_way_policy`), termasuk ambang RUPIAH:
+  // selisih yang nilainya ≤ ambang rupiah bukan pengecualian (sama dengan `evaluate_match`). Dulu hanya persen → layar
+  // menahan "lebih tagih" / meminta persetujuan untuk selisih kecil yang server terima atau posting langsung.
+  const tol = ctx?.tolerances || {};
+  const qTol = tol.qty_pct ?? qtyTol;
+  const pTol = tol.price_pct ?? priceTol;
+  const vTol = Number(tol.value_rp || 0);
   const rows = useMemo(() => items.map((it) => {
     const billed = Number(it.billed_qty || 0);
     const price = Number(it.price || 0);
     const remaining = matchMode === "received" ? it.billable_received : it.billable_ordered;
-    const overQty = billed > remaining + Math.abs(remaining) * (qtyTol / 100) + 1e-6;
+    const overQty = billed > remaining + Math.abs(remaining) * (qTol / 100) + 1e-6
+      && Math.max(0, billed - remaining) * price > vTol + 0.01;
     const pvar = it.po_price > 0 ? ((price - it.po_price) / it.po_price) * 100 : 0;
-    const priceVar = Math.abs(pvar) > priceTol + 1e-6;
+    const priceVar = it.po_price > 0 && Math.abs(pvar) > pTol + 1e-6 && Math.abs(price - it.po_price) * billed > vTol + 0.01;
     const subtotal = billed * price;
     let status = "ok";
     if (overQty) status = "blocked";
     else if (priceVar || billed > remaining + 1e-6) status = "warning";
     return { ...it, billed, price, remaining, overQty, pvar, priceVar, subtotal, status };
-  }), [items, matchMode, priceTol, qtyTol]);
+  }), [items, matchMode, pTol, qTol, vTol]);
 
   const active = rows.filter((r) => r.include && r.billed > 0);
   const grossTotal = active.reduce((s, r) => s + r.subtotal, 0);
@@ -249,7 +257,7 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
                 <div className="flex flex-wrap items-center gap-2" data-testid="vb-overall-match">
                   <OIcon size={15} className={overall === "matched" ? "text-green-600" : overall === "warning" ? "text-amber-500" : "text-red-500"} />
                   <span className={`status-pill ${oCls}`}>{oLabel}</span>
-                  <span className="text-[11px] text-[#6B6B73]">toleransi qty {qtyTol}% · harga ±{priceTol}%</span>
+                  <span className="text-[11px] text-[#6B6B73]" data-testid="vb-tolerance-note">toleransi qty {qTol}% · harga ±{pTol}%{vTol > 0 ? ` · selisih ≤ ${formatCurrency(vTol)} diabaikan` : ""}</span>
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] uppercase font-bold text-[#6B6B73]">Subtotal (sebelum PPN)</p>

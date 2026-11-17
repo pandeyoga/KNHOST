@@ -13,7 +13,7 @@ Prinsip:
 import re
 from typing import Any, Dict, List, Optional
 from db import db
-from core_utils import now_iso
+from core_utils import now_iso, rupiah
 
 # Status bill yang dipakai dedupe nomor invoice supplier (semua yang belum batal).
 ACTIVE_BILL_STATUSES = {"draft", "pending_approval", "posted", "paid"}
@@ -88,6 +88,13 @@ async def already_billed_map(po_id: str, exclude_bill_id: Optional[str] = None) 
     return {k: round(v, 4) for k, v in out.items()}
 
 
+def _n(x: float) -> str:
+    """Angka pesan 3-way match gaya Indonesia: 1.000 · 7,14 (bukan 1000 · 7.14)."""
+    v = round(float(x or 0), 2)
+    s = f"{v:,.2f}".rstrip("0").rstrip(".")
+    return s.replace(",", "_").replace(".", ",").replace("_", ".")
+
+
 def _variance_pct(actual: float, base: float) -> float:
     if base <= 0:
         return 0.0
@@ -148,8 +155,8 @@ def evaluate_match(
         if billed > remaining + tol_qty + 1e-6 and over_value > value_tol + 0.01:
             qty_status = "over_billed"
             blocked = True
-            msg = (f"Tagih {billed:g} melebihi sisa yang boleh ditagih {remaining:g} "
-                   f"({'diterima' if match_mode == 'received' else 'dipesan'}) + toleransi {qty_tol:g}%")
+            msg = (f"Tagih {_n(billed)} melebihi sisa yang boleh ditagih {_n(remaining)} "
+                   f"({'diterima' if match_mode == 'received' else 'dipesan'}) + toleransi {_n(qty_tol)}%")
             messages.append(msg)
             exceptions.append({"product_id": pid, "sku": po_it.get("sku", ""),
                                "product_name": po_it.get("product_name", ""),
@@ -157,7 +164,7 @@ def evaluate_match(
         elif billed > remaining + 1e-6:
             qty_status = "within_tolerance"
             warning = True
-            msg = f"Tagih {billed:g} sedikit di atas sisa {remaining:g} namun dalam toleransi {qty_tol:g}%"
+            msg = f"Tagih {_n(billed)} sedikit di atas sisa {_n(remaining)} namun dalam toleransi {_n(qty_tol)}%"
             messages.append(msg)
             exceptions.append({"product_id": pid, "sku": po_it.get("sku", ""),
                                "product_name": po_it.get("product_name", ""),
@@ -169,7 +176,9 @@ def evaluate_match(
         if po_price > 0 and abs(pvar) > price_tol + 1e-6 and abs(price - po_price) * billed > value_tol + 0.01:
             price_status = "price_variance"
             warning = True
-            msg = f"Harga {price:g} menyimpang {pvar:+g}% dari harga PO {po_price:g} (toleransi ±{price_tol:g}%)"
+            # S2 (pelatihan 18 Nov) — angka gaya Indonesia (dulu "Harga 15000 menyimpang +7.14% dari harga PO 14000").
+            msg = (f"Harga {rupiah(price)} menyimpang {'+' if pvar > 0 else ''}{_n(pvar)}% dari harga PO {rupiah(po_price)} "
+                   f"(toleransi ±{_n(price_tol)}%)")
             messages.append(msg)
             exceptions.append({"product_id": pid, "sku": po_it.get("sku", ""),
                                "product_name": po_it.get("product_name", ""),

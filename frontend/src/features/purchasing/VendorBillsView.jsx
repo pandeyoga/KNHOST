@@ -98,6 +98,13 @@ const vbDecideParams = (b) => (b.status === "pending_approval"
   ? { docKind: b.bill_type === "campaign_expense" ? "vendor_bill.kampanye" : "vendor_bill", entityId: b.entity_id,
     amount: b.grand_total || b.total_amount || 0 } : null);
 
+/** Pesan halaman sesudah aksi dari rincian tagihan. S4 (pelatihan 18 Nov) — `payment_void` dulu tampil mentah:
+ *  "VB-00012: payment_void." */
+export const PESAN_AKSI_TAGIHAN = { submit: "dikirim", approve: "disetujui & terposting", reject: "ditolak", cancel: "dibatalkan",
+  pay: "pembayaran dicatat", payment_void: "pembayaran dibatalkan, jurnalnya dibalik — hutang terbuka kembali" };
+
+const AP_STATUS = ["posted", "paid"];   // status tagihan yang sudah menjadi hutang
+
 export default function VendorBillsView({ currentUser, selectedEntity, focusDoc, onClearFocus, onOpenDocument }) {
   const { entities } = useEntityScope();
   const [pos, setPos] = useState([]);
@@ -133,7 +140,11 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
   const loading = paged.loading;
   // KP-T4 — boleh setujui/tolak = jawaban server (izin + Aturan Persetujuan), bukan peringkat peran di layar.
   const decide = useCanDecideMap(detail ? [...filtered, detail] : filtered, vbDecideParams);
-  const canApproveDoc = (b) => !!(b && decide[b.id]?.allowed);
+  // S2 (pelatihan 18 Nov) — kontrol dua orang (`kontrol.tagihan_pemasok`): pembuat tagihan tidak menyetujui tagihannya
+  // sendiri (server 403). Dulu Manajer pembuat melihat [Setujui & Posting] lalu ditolak; kini petunjuknya tampil — pola
+  // yang sama dengan "PO Anda — disetujui orang lain". Tanpa nama peran (INV-ROLE-02): pembuat siapa pun diarahkan ke orang lain.
+  const milikSendiri = (b) => !!(b && b.created_by_id && b.created_by_id === currentUser?.id);
+  const canApproveDoc = (b) => !!(b && decide[b.id]?.allowed) && !milikSendiri(b);
 
   useEffect(() => { loadMeta(); }, [selectedEntity]); // eslint-disable-line
 
@@ -199,8 +210,7 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
   }
 
   async function onAction(action, data) {
-    const labels = { submit: "dikirim", approve: "disetujui & terposting", reject: "ditolak", cancel: "dibatalkan", pay: "pembayaran dicatat" };
-    setNotice(`${data.bill_number}: ${labels[action] || action}.`);
+    setNotice(`${data.bill_number}: ${PESAN_AKSI_TAGIHAN[action] || action}.`);
     setDetail(data);
     reload();
   }
@@ -236,7 +246,10 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
         <p className="flex items-center gap-1 truncate text-xs text-muted"><EntityBadge entityId={b.entity_id} /><span className="truncate">{b.po_number || "—"} · {b.aging_bucket ? (b.days_past_due > 0 ? `lewat ${b.days_past_due} hari` : "belum jatuh tempo") : `${b.items?.length || 0} item`}</span></p>
       </td>
       <td className="text-right font-semibold tabular-nums">{formatCurrency(b.grand_total)}</td>
-      <td className={`text-right tabular-nums ${(b.financials?.outstanding ?? b.outstanding) > 0 ? "text-red-600" : "text-muted"}`}>{formatCurrency(b.financials?.outstanding ?? b.outstanding)}</td>
+      {/* S2 (pelatihan 18 Nov) — hanya tagihan terposting yang menjadi hutang; draf/menunggu/dibatalkan dulu menampilkan
+          "sisa" merah sebesar total (mis. draf lebih tagih yang dibatalkan). */}
+      <td data-testid={`vb-sisa-${b.id}`} className={`text-right tabular-nums ${AP_STATUS.includes(b.status) && (b.financials?.outstanding ?? b.outstanding) > 0 ? "text-red-600" : "text-muted"}`}>
+        {AP_STATUS.includes(b.status) ? formatCurrency(b.financials?.outstanding ?? b.outstanding) : "—"}</td>
       <td><MatchPill status={b.match_status} /></td>
       <td><StatusPill status={b.status} /></td>
       <td className="text-xs text-muted">{b.supplier_invoice_no || "—"}</td>
@@ -347,7 +360,7 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
           <VendorBillDetailPanel
             bill={detail}
             canApprove={canApproveDoc(detail)}
-            decideHint={decide[detail.id]?.message || ""}
+            decideHint={milikSendiri(detail) ? "Tagihan Anda — disetujui orang lain (kontrol dua orang)." : (decide[detail.id]?.message || "")}
             currentUser={currentUser}
             onClose={() => setDetail(null)}
             onAction={onAction}

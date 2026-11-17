@@ -19,7 +19,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { PageHeader } from "../../components/ListPageParts";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
 
 // FASE P6 — kolom Unduh CSV (mengikuti kolom tabel + nominal yang di layar tampil kecil
 // di bawah nama supplier).
@@ -201,8 +201,8 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       // R6.3 — tampilkan peringatan anggaran (mode WARN) bila ada.
       const bWarn = (po.budget_check?.warnings || []).join(" · ");
       setNotice(`${po.approval_required
-        ? `Purchase Order ${po.po_number} dibuat. Menunggu APPROVAL role '${po.required_approval_role}' sebelum inbound task dibuat.`
-        : `Purchase Order ${po.po_number} dibuat & inbound task otomatis dibuat.`}${bWarn ? ` ⚠️ Anggaran: ${bWarn}` : ""}`);
+        ? `PO ${po.po_number} dibuat. Menunggu persetujuan ${roleLabel(po.required_approval_role)} — tugas Barang Masuk dibuat sesudah disetujui.`
+        : `PO ${po.po_number} dibuat — tidak perlu persetujuan (sesuai Aturan Persetujuan); tugas Barang Masuk untuk gudang otomatis dibuat.`}${bWarn ? ` ⚠️ Anggaran: ${bWarn}` : ""}`);
       setShowCreateForm(false);
       setFormData(emptyForm);
       fetchPOs();
@@ -308,8 +308,8 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       const res = await axios.post(`${API}/purchase-orders/${amendPO.id}/amend`, payload);
       const po = res.data;
       setNotice(po.approval_required
-        ? `PO ${po.po_number} direvisi (v${po.version}). Menunggu APPROVAL role '${po.required_approval_role}' sebelum inbound task dibuat.`
-        : `PO ${po.po_number} direvisi (v${po.version}). Inbound task diperbarui otomatis.`);
+        ? `PO ${po.po_number} direvisi (v${po.version}). Menunggu persetujuan ulang ${roleLabel(po.required_approval_role)} — tugas Barang Masuk dibuat sesudah disetujui.`
+        : `PO ${po.po_number} direvisi (v${po.version}) — langsung berlaku, tidak perlu persetujuan ulang (sesuai Aturan Persetujuan); tugas Barang Masuk diperbarui.`);
       setAmendPO(null);
       await fetchPOs();
       await handleViewDetail(po.id);

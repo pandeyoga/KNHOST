@@ -1,0 +1,296 @@
+{
+  "code": "S2",
+  "title": "Amandemen & situasi khusus pengadaan — PT Sukacita",
+  "ok": true,
+  "at": "2026-11-17T13:50:00.132Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Manajer",
+      "action": "Login manager@ → Pembelian › Pesanan Pembelian → [[Buat PO]] → [[Beli Barang Jadi]] → *Supplier* Latihan 70 · Pemasok Grey Peserta 70 · *Lokasi kirim* Jakarta · *Catatan* · baris: Grey Woven Katun Poplin 1.000 yard × Rp 14.000, Grade A → [[+]] → [[Simpan PO]]",
+      "expect": "Ringkasan: Subtotal Rp 14.000.000 · DPP (nilai lain 11/12) Rp 12.833.333 · PPN 12% Rp 1.540.000 · Total Rp 15.540.000; sesudah simpan: \"PO KSC/PO-… dibuat — tidak perlu persetujuan…\", status Menunggu barang (di bawah Rp 100 juta)",
+      "ok": true,
+      "ms": 21380,
+      "info": "PO KSC/PO-00073 dibuat — tidak perlu persetujuan (sesuai Aturan Persetujuan); tugas Barang Masuk untuk gudang otomatis dibuat. × · KSC/PO-00073 v1 · tugas Barang Masuk 1000 yard"
+    },
+    {
+      "no": 2,
+      "role": "Manajer",
+      "action": "Klik baris PO-1 → di rincian klik [[Revisi / Amandemen PO]] → *Harga* Rp 14.500 · *Alasan* \"Konfirmasi harga baru dari pemasok\" → [[Simpan Revisi]]",
+      "expect": "Pesan \"PO … direvisi (v2) — langsung berlaku, tidak perlu persetujuan ulang\"; nilai Rp 14.500.000 + PPN Rp 1.595.000; tugas Barang Masuk tetap 1.000 yard; tidak ada jurnal",
+      "ok": true,
+      "ms": 8822,
+      "info": "PO KSC/PO-00073 direvisi (v2) — langsung berlaku, tidak perlu persetujuan ulang (sesuai Aturan Persetujuan); tugas Barang Masuk diperbarui. × · Rp 14.500.000 + PPN Rp 1.595.000 = Rp 16.095.000"
+    },
+    {
+      "no": 3,
+      "role": "Manajer",
+      "action": "Buka lagi rincian PO-1 → [[Revisi / Amandemen PO]] → *Qty* 7.000 · *Alasan* \"Tambahan pesanan untuk stok cabang\" → [[Simpan Revisi]]",
+      "expect": "Perkiraan Rp 101.500.000 (≥ Rp 100 juta) → pesan \"direvisi (v3). Menunggu persetujuan ulang Manajer…\"; status Menunggu persetujuan; tugas Barang Masuk dihapus sampai disetujui",
+      "ok": true,
+      "ms": 7198,
+      "info": "PO KSC/PO-00073 direvisi (v3). Menunggu persetujuan ulang Manajer — tugas Barang Masuk dibuat sesudah disetujui. × · alasan persetujuan amount_threshold · peran manager"
+    },
+    {
+      "no": 4,
+      "role": "Manajer",
+      "action": "Pusat Persetujuan › tab Persetujuan Pembelian → cari nomor PO-1",
+      "expect": "Baris PO-1: Rp 112.665.000 (DPP Rp 101.500.000), Menunggu; kolom Aksi terkunci \"PO Anda — disetujui orang lain\" (pembuat PO tidak menyetujui revisi PO-nya sendiri)",
+      "ok": true,
+      "ms": 3033,
+      "info": "KSC/PO-00073 Latihan 70 · Pemasok Grey Peserta 70 Jakarta · Gudang Sukacita · 1 item Rp 112.665.000 DPP Rp 101.500.000 MANAJER · PERSETUJUAN Tingkat 1 dari 1 Menunggu PO Anda — disetujui orang lain"
+    },
+    {
+      "no": 5,
+      "role": "Admin",
+      "action": "Login admin@ → Pusat Persetujuan › Persetujuan Pembelian → baris PO-1 → [[Setujui]]",
+      "expect": "Pesan \"PO … disetujui penuh…\"; PO-1 v3 berlaku; tugas Barang Masuk 7.000 yard dibuat untuk Gudang",
+      "ok": true,
+      "ms": 13773,
+      "info": "PO KSC/PO-00073 disetujui penuh. Tugas Barang Masuk untuk gudang otomatis dibuat. × · disetujui Budi Santoso · tugas 7000 yard"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Login akun peserta (finance.latih70) → Pembelian › Pesanan Pembelian → cari PO-1 → klik baris → gulir ke Riwayat Amandemen → buka v3 dan v2",
+      "expect": "Lencana v3; Riwayat Amandemen: v3 \"Tambahan pesanan untuk stok cabang\" (Qty 1.000 → 7.000, Grand Total), v2 \"Konfirmasi harga…\" (Harga 14.000 → 14.500); Finance tidak punya tombol revisi/batal; belum ada jurnal",
+      "ok": true,
+      "ms": 10482,
+      "info": "v3: v3 Tambahan pesanan untuk stok cabang oleh Dewi Manager · 17 Nov 2026, 20.46 · 3 perubahan Qty Grey Woven Katun Poplin 1.000 7.000 Subtotal (sebelum diskon) Rp  · v2: v2 Konfirmasi harga baru dari pemasok oleh Dewi Manager · 17 Nov 2026, 20.45 · 3 perubahan Harga Grey Woven Katun Poplin"
+    },
+    {
+      "no": 7,
+      "role": "Manajer",
+      "action": "Login manager@ → Pesanan Pembelian → buka PO-1 → [[Batalkan PO]] → [[Batalkan PO]] (konfirmasi)",
+      "expect": "Pesan \"KSC/PO-… berhasil dibatalkan.\"; status Dibatalkan; tugas Barang Masuk ikut dibatalkan",
+      "ok": true,
+      "ms": 13279,
+      "info": "Yakin membatalkan KSC/PO-00073? Tindakan ini tidak dapat dibatalkan. → KSC/PO-00073 berhasil dibatalkan. ×"
+    },
+    {
+      "no": 8,
+      "role": "Buku",
+      "action": "Cek buku PO-1 (dibatalkan tanpa penerimaan)",
+      "expect": "Tidak ada jurnal (GR, tagihan, kliring) untuk PO-1; tidak ada tagihan/hutang; tidak ada tugas gudang terbuka",
+      "ok": true,
+      "ms": 2921,
+      "info": "jurnal 0 · tagihan 0 · status cancelled · versi v3 · 2 amandemen"
+    },
+    {
+      "no": 9,
+      "role": "Manajer",
+      "action": "Buat PO-2 seperti langkah 1: 1.000 yard × Rp 14.000 → [[Simpan PO]]",
+      "expect": "PO-2 Rp 14.000.000 + PPN Rp 1.540.000, tanpa persetujuan; tugas Barang Masuk 1.000 yard",
+      "ok": true,
+      "ms": 12346,
+      "info": "PO KSC/PO-00074 dibuat — tidak perlu persetujuan (sesuai Aturan Persetujuan); tugas Barang Masuk untuk gudang otomatis dibuat. × · tugas 1000 yard"
+    },
+    {
+      "no": 10,
+      "role": "Gudang",
+      "action": "Login warehouse@ → Gudang › Operasi Gudang › Barang Masuk → tab Scan Terima per PO → cari PO-2 → klik tugasnya → [[Input Manual]] → *Qty diterima* 600 · *Dye Lot* DL-S2-70 → [[Kirim Hasil Scan]]",
+      "expect": "Pesan \"Penerimaan tercatat — Diterima 600 dari 1.000 yard\"; tugas Sedang diterima",
+      "ok": true,
+      "ms": 10223,
+      "info": "tugas receiving · diterima 600"
+    },
+    {
+      "no": 11,
+      "role": "Gudang",
+      "action": "Pada tugas PO-2 tidak ada tombol [[Selesaikan]] (diterima 600 < pesanan 1.000). Klik [[Eskalasi]] → *Alasan* \"Pemasok hanya mengirim 600 yard; sisa 400 yard tidak dikirim\" → [[Eskalasi]]",
+      "expect": "Panel tugas menulis \"Sisa PO: 400 yard\" dan hanya menawarkan [[Eskalasi]]; sesudah eskalasi pesan \"Dieskalasi ke manajer\", tugas berstatus Dieskalasi",
+      "ok": true,
+      "ms": 1257,
+      "info": "escalated · alasan \"Pemasok hanya mengirim 600 yard; sisa 400 yard tidak dikirim (Latihan 70)\""
+    },
+    {
+      "no": 12,
+      "role": "Manajer",
+      "action": "Login manager@ → Meja Saya → kartu \"Perlu keputusan — eskalasi gudang\" → baris PO-2 → [[Tinjau & Selesaikan]] pada kartu PO-2 → *Qty disesuaikan* 600 · *Catatan penyelesaian* → [[Selesaikan & Lanjutkan Tugas]]",
+      "expect": "Kartu eskalasi: Diharapkan 1.000 · Diterima 600 yard; sesudah diselesaikan tugas kembali ke Gudang berstatus Siap diselesaikan (harapan 600 yard)",
+      "ok": true,
+      "ms": 10854,
+      "info": "tugas qc_check · harapan 600 · diterima 600"
+    },
+    {
+      "no": 13,
+      "role": "Gudang",
+      "action": "Login warehouse@ → Barang Masuk › Scan Terima per PO → tugas PO-2 → [[Selesaikan]] → pop-up Rincian Roll: 6 roll × 100 yard ([[+ Tambah roll]]), Dye Lot, *Lot supplier*, *No. SJ supplier* SJ-S2-70-VY9L → [[Selesaikan Penerimaan]]",
+      "expect": "Σ roll = 600 yard ✓; pesan \"Barang masuk gudang\"; roll masuk karantina menunggu pemeriksaan kedatangan; PO-2 \"Diterima sebagian\" 600/1.000",
+      "ok": true,
+      "ms": 12059,
+      "info": "PO-2 partial · diterima 600/1000 · 6 roll"
+    },
+    {
+      "no": 14,
+      "role": "Buku",
+      "action": "Cek buku: jurnal penerimaan PO-2",
+      "expect": "Persediaan Barang 1-1300 (D) Rp 8.400.000 / Hutang Belum Ditagih (GR/IR) 2-1150 (K) Rp 8.400.000 — hanya 600 yard yang diterima, seimbang",
+      "ok": true,
+      "ms": 628,
+      "info": "KSC/JE-00648 seimbang D=K=8400000 [1-1300 Persediaan Barang D 8400000 · 2-1150 Hutang Belum Ditagih (GR/IR) K 8400000]"
+    },
+    {
+      "no": 15,
+      "role": "Manajer",
+      "action": "Login manager@ → Keuangan › Hutang › Tagihan → [[Buat Tagihan]] → *Pesanan Pembelian* PO-2 · *No. Faktur Supplier* INV-S2-70-VY9L → *Qty Tagih* 700 (angka di faktur pemasok)",
+      "expect": "Baris: Dipesan 1.000 · Diterima 600 · Sisa Tagih 600; Cocok? \"Lebih tagih\"; ringkasan \"Lebih tagih (tidak bisa dikirim)\"; tombol utama berubah menjadi [[Perbaiki Kelebihan Tagih Dulu]] dan mati",
+      "ok": true,
+      "ms": 12315,
+      "info": "Lebih Tagih (Tidak Bisa Dikirim) toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan · tombol \"Perbaiki Kelebihan Tagih Dulu\" (mati)"
+    },
+    {
+      "no": 16,
+      "role": "Manajer",
+      "action": "Klik [[Simpan Draf]] (draf dicatat apa adanya) → buka draf itu dari daftar → [[Kirim]]",
+      "expect": "Draf tersimpan (status Draf, Lebih tagih); [[Kirim]] ditolak: \"3-way match GAGAL — lebih tagih (… Tagih 700 melebihi sisa yang boleh ditagih 600 (diterima) …). Draf tidak bisa diubah — batalkan draf ini, lalu buat tagihan baru…\"; status tetap Draf, tidak ada jurnal",
+      "ok": true,
+      "ms": 7665,
+      "info": "VB-00075 draf · 3-way match GAGAL — lebih tagih (DMO-GRY-WVN-001: Tagih 700 melebihi sisa yang boleh ditagih 600 (diterima) + toleransi 0%). Draf tidak bisa diubah — batalkan draf ini, lalu buat tagihan baru dengan qty sesuai penerimaan"
+    },
+    {
+      "no": 17,
+      "role": "Manajer",
+      "action": "Di rincian draf klik [[Batalkan]] → *Alasan pembatalan* \"Qty faktur salah — pemasok hanya mengirim 600 yard\" → [[Batalkan Tagihan]]",
+      "expect": "Draf berstatus Dibatalkan; nomor faktur pemasok bebas dipakai lagi; tidak ada jurnal",
+      "ok": true,
+      "ms": 2881,
+      "info": "VB-00075 cancelled · Qty faktur salah — pemasok hanya mengirim 600 yard"
+    },
+    {
+      "no": 18,
+      "role": "Manajer",
+      "action": "[[Buat Tagihan]] → PO-2 · *No. Faktur Supplier* INV-S2-70-VY9L (faktur yang sudah diperbaiki pemasok) → biarkan *Qty Tagih* 600 → [[Kirim & Posting]]",
+      "expect": "Pencocokan \"Cocok bersih\"; Subtotal Rp 8.400.000; pesan \"Tagihan VB-… dibuat — langsung terposting (cocok bersih).\"; Total Rp 9.324.000 = DPP Rp 8.400.000 + PPN Rp 924.000",
+      "ok": true,
+      "ms": 6301,
+      "info": "Tagihan VB-00076 dibuat — langsung terposting (cocok bersih). × · VB-00076 · DPP Rp 8.400.000 · PPN Rp 924.000 · total Rp 9.324.000"
+    },
+    {
+      "no": 19,
+      "role": "Buku",
+      "action": "Cek buku: jurnal tagihan PO-2 & sisa GR/IR",
+      "expect": "GR/IR 2-1150 (D) Rp 8.400.000 + PPN Masukan 1-1500 (D) Rp 924.000 / Hutang Usaha 2-1100 (K) Rp 9.324.000; sisa GR/IR PO-2 = Rp 0 (yang diterima = yang ditagih)",
+      "ok": true,
+      "ms": 2407,
+      "info": "KSC/JE-00649 seimbang D=K=9324000 [2-1150 Hutang Belum Ditagih (GR/IR) D 8400000 · 1-1500 PPN Masukan D 924000 · 2-1100 Hutang Usaha K 9324000] · sisa GR/IR PO-2 Rp 0"
+    },
+    {
+      "no": 20,
+      "role": "Manajer",
+      "action": "Pesanan Pembelian → buka PO-2 (Diterima sebagian, Belum Ditagih Rp 6.216.000) → [[Revisi / Amandemen PO]] → pada baris yang sudah diterima klik [[Tutup sisa — qty jadi 600 (= diterima)]] → *Alasan* \"Pemasok tidak sanggup mengirim sisa 400 yard\" → [[Simpan Revisi]]",
+      "expect": "Baris terkunci (harga/satuan/diskon), hanya \"Tutup sisa\"; perkiraan Rp 8.400.000; pesan \"direvisi (v2). Menunggu persetujuan ulang…\"; PO-2 Menunggu persetujuan",
+      "ok": true,
+      "ms": 6760,
+      "info": "sebelum: Belum Ditagih Rp 6.216.000 · PO KSC/PO-00074 direvisi (v2). Menunggu persetujuan ulang Admin — tugas Barang Masuk dibuat sesudah disetujui. × · alasan persetujuan qty_to_received"
+    },
+    {
+      "no": 21,
+      "role": "Admin",
+      "action": "Login admin@ → Pusat Persetujuan › Persetujuan Pembelian → baris PO-2 → [[Setujui]]",
+      "expect": "Pesan \"PO … disetujui penuh. Barang sudah diterima seluruhnya — PO Selesai, tidak ada tugas Barang Masuk baru.\"; PO-2 berstatus Selesai (600/600)",
+      "ok": true,
+      "ms": 12049,
+      "info": "PO KSC/PO-00074 disetujui penuh. Barang sudah diterima seluruhnya — PO Selesai, tidak ada tugas Barang Masuk baru. × · PO-2 completed · tugas tetap 1 (qc_pending, harapan 600)"
+    },
+    {
+      "no": 22,
+      "role": "Finance",
+      "action": "Login akun peserta → Pesanan Pembelian → buka PO-2",
+      "expect": "Status Selesai · v2 · Status Penagihan: Nilai PO Rp 9.324.000 = Sudah Ditagih Rp 9.324.000 · Belum Ditagih Rp 0; Riwayat Amandemen v2 Qty 1.000 → 600",
+      "ok": true,
+      "ms": 7879,
+      "info": "STATUS PENAGIHAN (TAGIHAN SUPPLIER) Nilai PO (Grand Total) Rp 9.324.000 Sudah Ditagih (1 tagihan) Rp 9.324.000 Belum Ditagih Rp 0 Hutang & pembayaran supplier dikelola di menu Tagihan Supplier. Buat t"
+    },
+    {
+      "no": 23,
+      "role": "Manajer",
+      "action": "Login manager@ → buat PO-3 seperti langkah 1: 500 yard × Rp 14.000 → [[Simpan PO]]",
+      "expect": "PO-3 Rp 7.000.000 + PPN Rp 770.000, tanpa persetujuan; tugas Barang Masuk 500 yard",
+      "ok": true,
+      "ms": 19452,
+      "info": "PO KSC/PO-00075 dibuat — tidak perlu persetujuan (sesuai Aturan Persetujuan); tugas Barang Masuk untuk gudang otomatis dibuat. ×"
+    },
+    {
+      "no": 24,
+      "role": "Gudang",
+      "action": "Login warehouse@ → Barang Masuk › Scan Terima per PO → PO-3 → [[Input Manual]] 500 yard → [[Kirim Hasil Scan]] → [[Selesaikan]] → 5 roll × 100 yard, SJ SJ-S2-70-VY9L-3 → [[Selesaikan Penerimaan]]",
+      "expect": "Diterima 500 dari 500 yard → \"Barang masuk gudang\"; PO-3 Selesai (diterima penuh)",
+      "ok": true,
+      "ms": 13179,
+      "info": "PO-3 completed · KSC/JE-00650 seimbang D=K=7000000 [1-1300 Persediaan Barang D 7000000 · 2-1150 Hutang Belum Ditagih (GR/IR) K 7000000]"
+    },
+    {
+      "no": 25,
+      "role": "Manajer",
+      "action": "Login manager@ → Tagihan → [[Buat Tagihan]] → PO-3 · *No. Faktur Supplier* INV-S2-70-VY9L-3 → *Harga* Rp 15.000 (harga di faktur pemasok)",
+      "expect": "Baris: harga PO Rp 14.000, Cocok? \"Selisih\" +7,1%; ringkasan \"Ada selisih (perlu persetujuan)\"; Subtotal Rp 7.500.000; tombol [[Kirim (minta persetujuan)]]",
+      "ok": true,
+      "ms": 12633,
+      "info": "Ada Selisih (Perlu Persetujuan) toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan · tombol \"Kirim (minta persetujuan)\""
+    },
+    {
+      "no": 26,
+      "role": "Manajer",
+      "action": "Klik [[Kirim (minta persetujuan)]] → buka tagihan itu",
+      "expect": "Status Menunggu Persetujuan; pengecualian \"Harga Rp 15.000 menyimpang +7,14% dari harga PO Rp 14.000 (toleransi ±5%)\"; Manajer pembuat tidak melihat [[Setujui & Posting]] — petunjuk \"Tagihan Anda — disetujui orang lain (kontrol dua orang)\"; belum ada jurnal & hutang",
+      "ok": true,
+      "ms": 6169,
+      "info": "VB-00077 pending_approval · Selisih 3-Way Matching (1) • DMO-GRY-WVN-001: Harga Rp 15.000 menyimpang +7,14% dari harga PO Rp 14.000 (toleransi ±5%) · petunjuk \"Tagihan Anda — disetujui orang lain (kontrol dua orang).\""
+    },
+    {
+      "no": 27,
+      "role": "Admin",
+      "action": "Login admin@ → Keuangan › Hutang › Tagihan → buka tagihan PO-3 → [[Setujui & Posting]] → konfirmasi [[Setujui & Posting]]",
+      "expect": "Status Terposting; Total Rp 8.325.000 = DPP Rp 7.500.000 + PPN Rp 825.000; baris \"Selisih harga terhadap PO Rp 500.000\" + catatan \"masih berada di akun GR/IR karena akun Selisih harga pembelian belum diatur…\"",
+      "ok": true,
+      "ms": 14268,
+      "info": "disetujui Budi Santoso · Selisih harga terhadap PO Rp 500.000 Selisih ini masih berada di akun GR/IR karena akun \"Selisih harga pembelian\" belum diatur di Pemetaan Akun. · terposting ke akun selisih: false"
+    },
+    {
+      "no": 28,
+      "role": "Buku",
+      "action": "Cek buku: jurnal tagihan PO-3 (selisih harga)",
+      "expect": "GR/IR 2-1150 (D) Rp 7.500.000 (= Rp 7.000.000 nilai PO + Rp 500.000 selisih, karena akun selisih harga belum dipetakan) + PPN Masukan 1-1500 (D) Rp 825.000 / Hutang Usaha 2-1100 (K) Rp 8.325.000; sisa GR/IR PO-3 = −Rp 500.000 (bersaldo debit)",
+      "ok": true,
+      "ms": 2240,
+      "info": "KSC/JE-00651 seimbang D=K=8325000 [2-1150 Hutang Belum Ditagih (GR/IR) D 7500000 · 1-1500 PPN Masukan D 825000 · 2-1100 Hutang Usaha K 8325000] · sisa GR/IR PO-3 Rp -500.000"
+    },
+    {
+      "no": 29,
+      "role": "Finance",
+      "action": "Login akun peserta → Keuangan › Hutang › tab GR/IR → centang *Tampilkan yang sudah nol* → ketik nomor PO-2, lalu nomor PO-3, lalu nomor PO-1",
+      "expect": "PO-2: diterima Rp 8.400.000 = ditagih Rp 8.400.000, sisa Rp 0; PO-3: diterima Rp 7.000.000, ditagih Rp 7.500.000, sisa −Rp 500.000 \"termasuk selisih harga\"; PO-1 (batal) tidak ada; peringatan akun \"Selisih harga pembelian\" belum diatur",
+      "ok": true,
+      "ms": 7800,
+      "info": "PO-2 sisa Rp 0 · PO-3 sisa -Rp 500.000 termasuk selisih harga Rp 500.000 · PO-1 tidak ada · peringatan pemetaan tampil"
+    },
+    {
+      "no": 30,
+      "role": "Finance",
+      "action": "Keuangan › Hutang › Tagihan → ketik nomor faktur pemasok materi ini (INV-S2-70-VY9L)",
+      "expect": "Tagihan PO-2 Rp 9.324.000 dan PO-3 Rp 8.325.000 Terposting (draf lebih tagih Dibatalkan) → hutang pemasok bertambah Rp 17.649.000 (peserta baru: total Rp 17.649.000); kartu \"Cocok dengan saldo akun hutang\"",
+      "ok": true,
+      "ms": 3855,
+      "info": "hutang Latihan 70 · Pemasok Grey Peserta 70: 4 tagihan terposting · sisa Rp 35.298.000 (awal Rp 17.649.000 + Rp 17.649.000) · Cocok dengan saldo akun hutang."
+    },
+    {
+      "no": 31,
+      "role": "Finance",
+      "action": "Pusat Dokumen › tab Jejak Dokumen → ketik nomor PO-2 → klik hasilnya",
+      "expect": "Rantai PO-2 (v2) → tugas terima → tagihan (yang dibatalkan dan yang terposting) → jurnal penerimaan & jurnal tagihan",
+      "ok": true,
+      "ms": 3552,
+      "info": "rantai memuat KSC/PO-00074 → VB-00076 → KSC/JE-00648 → KSC/JE-00649 (+ draf batal VB-00075)"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  ],
+  "notes": [
+    "Peserta 70 · Latihan 70 · Pemasok Grey Peserta 70 · PO-1 1000 yd → harga Rp 14.500 → 7000 yd · PO-2 1000 yd terima 600 · PO-3 500 yd faktur @ Rp 15.000"
+  ]
+}

@@ -18,11 +18,13 @@ function fmtDateTime(iso) {
   } catch { return String(iso); }
 }
 
-const MONEY_FIELDS = new Set(["total", "grand_total"]);
+// S2 (pelatihan 18 Nov) — harga baris juga rupiah, qty berpemisah ribuan (dulu "1000 → 7000", "14000 → 14500").
+const MONEY_FIELDS = new Set(["total", "grand_total", "item_price"]);
 
 function fmtVal(field, v) {
   if (v === null || v === undefined || v === "-") return "-";
   if (MONEY_FIELDS.has(field) && !isNaN(Number(v))) return formatCurrency(Number(v));
+  if (field === "item_qty" && !isNaN(Number(v))) return Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 });
   return String(v);
 }
 
@@ -83,7 +85,7 @@ export default function POVersionHistory({ amendments = [], currentVersion = 1 }
                   )}
                   {/* Snapshot ringkas sebelum revisi */}
                   <div className="rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-2.5 py-1.5 text-[10.5px] text-[#6B6B73]">
-                    <p className="font-semibold text-[#3C3C43] mb-0.5">Snapshot sebelum revisi (v{snap.version ?? "—"})</p>
+                    <p className="font-semibold text-[#3C3C43] mb-0.5">Isi sebelum revisi (v{snap.version ?? "—"})</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                       <span>Supplier: <b className="text-[#3C3C43]">{snap.supplier_name || "—"}</b></span>
                       <span>Gudang: <b className="text-[#3C3C43]">{snap.warehouse_name || "—"}</b></span>

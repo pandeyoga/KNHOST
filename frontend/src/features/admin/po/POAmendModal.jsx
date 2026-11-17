@@ -35,6 +35,8 @@ function unitOptionsFor(product, currentUnit) {
   return opts;
 }
 
+const fq = (n) => Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+
 export default function POAmendModal({
   po, products = [], warehouses = [], suppliers = [],
   onSubmit, onClose, submitting = false,
@@ -165,12 +167,12 @@ export default function POAmendModal({
         {/* Peringatan re-approval (2.a) */}
         <div data-testid="po-amend-reapproval-warning" className="mt-3 flex items-start gap-2 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-2 text-[11.5px] text-[#9A5B00]">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          <span>Setiap revisi <b>mengulang persetujuan dari awal</b> berdasarkan nilai baru. Tugas barang masuk yang belum menerima barang akan dibuat ulang setelah disetujui.</span>
+          <span>Setiap revisi <b>menilai ulang persetujuan dari awal</b> berdasarkan nilai baru: bila nilai baru perlu persetujuan, PO kembali menunggu persetujuan; bila tidak, revisi langsung berlaku. Tugas barang masuk yang belum menerima barang dibuat ulang sesudah revisi berlaku.</span>
         </div>
         {hasReceipt && (
           <div data-testid="po-amend-receipt-note" className="mt-2 flex items-start gap-2 rounded-md border border-[#D6E4FF] bg-[#F5F9FF] px-2.5 py-2 text-[11.5px] text-[#0058CC]">
             <Lock size={13} className="mt-0.5 shrink-0" />
-            <span>PO ini sudah ada penerimaan barang. Gudang terkunci, dan <b>baris yang barangnya sudah diterima terkunci dari revisi</b> (qty, satuan, harga, diskon tidak bisa diubah; baris tidak dapat dihapus). Tambahkan baris baru untuk kebutuhan tambahan.</span>
+            <span>PO ini sudah ada penerimaan barang. Gudang terkunci, dan <b>baris yang barangnya sudah diterima terkunci dari revisi</b> (satuan, harga, diskon tidak bisa diubah; baris tidak dapat dihapus). Qty baris itu hanya bisa diturunkan tepat ke qty diterima lewat <b>Tutup sisa</b> (perlu persetujuan ulang). Tambahkan baris baru untuk kebutuhan tambahan.</span>
           </div>
         )}
 
@@ -232,9 +234,12 @@ export default function POAmendModal({
             ) : items.map((it, i) => {
               const prod = products.find((p) => p.id === it.product_id);
               const locked = Number(it.received_qty || 0) > 0;
+              const recv = Number(it.received_qty || 0);
+              const orig = Number((po.items || []).find((x) => x.product_id === it.product_id)?.quantity ?? it.quantity);
               return (
-                <div key={it.product_id} data-testid={`po-amend-item-${i}`}
-                  className="grid grid-cols-[1fr_84px_78px_96px_56px_64px_28px] items-center gap-1 px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0 text-[11.5px]">
+                <div key={it.product_id} className="border-b border-[#EFF0F2] last:border-0">
+                <div data-testid={`po-amend-item-${i}`}
+                  className="grid grid-cols-[1fr_84px_78px_96px_56px_64px_28px] items-center gap-1 px-2.5 py-1.5 text-[11.5px]">
                   <span className="truncate" title={`${it.sku} — ${it.product_name}`}>{it.sku}<span className="text-[#9A9BA3]"> · {it.product_name}</span></span>
                   <input data-testid={`po-amend-item-qty-${i}`} type="number" min={it.received_qty || 0} value={it.quantity} disabled={locked}
                     title={locked ? "Sudah diterima — baris terkunci dari revisi" : undefined}
@@ -255,6 +260,27 @@ export default function POAmendModal({
                     className={`justify-self-end ${locked ? "text-gray-300 cursor-not-allowed" : "text-red-400 hover:text-red-600"}`}>
                     {locked ? <Lock size={12} /> : <Trash2 size={12} />}
                   </button>
+                </div>
+                {/* S2 (pelatihan 18 Nov) — G3 V3-PO-02: qty baris yang sudah diterima boleh diturunkan TEPAT ke qty diterima
+                    (menutup sisa yang tidak dikirim, selalu persetujuan ulang). Dulu isian qty terkunci sehingga jalan ini
+                    (juga "Amendment ke qty aktual" dari panel selisih penerimaan) buntu di layar. */}
+                {locked && orig > recv + 0.001 && (
+                  <div data-testid={`po-amend-item-close-${i}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2.5 pb-1.5 text-[10.5px] text-[#6B6B73]">
+                    {Number(it.quantity) > recv + 0.001 ? (
+                      <>
+                        <span>Sisa {fq(orig - recv)} {it.unit} belum diterima.</span>
+                        <button type="button" data-testid={`po-amend-item-close-rest-${i}`} className="link-button"
+                          onClick={() => updateItem(i, { quantity: recv })}>Tutup sisa — qty jadi {fq(recv)} (= diterima)</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold text-[#9A5B00]">Sisa {fq(orig - recv)} {it.unit} ditutup: qty {fq(orig)} → {fq(recv)} (perlu persetujuan ulang).</span>
+                        <button type="button" data-testid={`po-amend-item-close-undo-${i}`} className="link-button"
+                          onClick={() => updateItem(i, { quantity: orig })}>Urungkan</button>
+                      </>
+                    )}
+                  </div>
+                )}
                 </div>
               );
             })}
@@ -294,7 +320,7 @@ export default function POAmendModal({
             </div>
           </div>
           <div data-testid="po-amend-estimate" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5 text-[11.5px] space-y-1">
-            <div className="flex justify-between"><span className="text-[#6B6B73]">Subtotal (GROSS)</span><span data-testid="po-amend-est-gross" className="tabular-nums">{formatCurrency(est.gross)}</span></div>
+            <div className="flex justify-between"><span className="text-[#6B6B73]">Subtotal (sebelum diskon)</span><span data-testid="po-amend-est-gross" className="tabular-nums">{formatCurrency(est.gross)}</span></div>
             {est.disc > 0 && <div className="flex justify-between"><span className="text-[#6B6B73]">Total Diskon</span><span data-testid="po-amend-est-disc" className="tabular-nums text-[#A8221A]">− {formatCurrency(est.disc)}</span></div>}
             <div className="flex justify-between border-t border-[#E5E6E8] pt-1 mt-1 font-bold"><span>Subtotal Bersih (sebelum PPN)</span><span data-testid="po-amend-est-net" className="tabular-nums text-[#007AFF]">{formatCurrency(est.net)}</span></div>
             {est.ppn > 0 && <div className="flex justify-between"><span className="text-[#6B6B73]">PPN Masukan</span><span data-testid="po-amend-est-ppn" className="tabular-nums">{formatCurrency(est.ppn)}</span></div>}
@@ -306,7 +332,7 @@ export default function POAmendModal({
         <div className="modal-actions">
           <button className="secondary-button" data-testid="po-amend-cancel" onClick={onClose} disabled={submitting}>Batal</button>
           <button className="primary-button" data-testid="po-amend-submit" onClick={validateAndSubmit} disabled={submitting || !reason.trim()}>
-            {submitting ? "Memproses…" : "Simpan Revisi & Re-approval"}
+            {submitting ? "Memproses…" : "Simpan Revisi"}
           </button>
         </div>
       </div>

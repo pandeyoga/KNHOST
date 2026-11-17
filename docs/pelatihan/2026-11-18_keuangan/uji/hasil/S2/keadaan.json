@@ -1,0 +1,38 @@
+{
+  "sup": "sup_f9aaad5697c2",
+  "hutangAwal": {
+    "_id": null,
+    "n": 2,
+    "sisa": 17649000
+  },
+  "po1": {
+    "id": "po_cdaad3be3d48",
+    "number": "KSC/PO-00073"
+  },
+  "po2": {
+    "id": "po_89b6ce81a4be",
+    "number": "KSC/PO-00074"
+  },
+  "task2": "wms_b19c2b17bd80",
+  "je_gr2": "KSC/JE-00648",
+  "draf2": {
+    "id": "vbill_80a0b3e8d719",
+    "number": "VB-00075"
+  },
+  "bill2": {
+    "id": "vbill_0b4b9fc79c29",
+    "number": "VB-00076"
+  },
+  "je_bill2": "KSC/JE-00649",
+  "po3": {
+    "id": "po_a419e8a39de5",
+    "number": "KSC/PO-00075"
+  },
+  "task3": "wms_984cc4020704",
+  "je_gr3": "KSC/JE-00650",
+  "bill3": {
+    "id": "vbill_90eddd106db5",
+    "number": "VB-00077"
+  },
+  "je_bill3": "KSC/JE-00651"
+}

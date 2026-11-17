@@ -306,7 +306,7 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
     _addc("warehouse", "Gudang", po.get("warehouse_name", ""), wh.get("name", ""))
     _addc("expected_delivery_date", "Tgl Kirim", po.get("expected_delivery_date", "") or "-", new_eta or "-")
     _addc("notes", "Catatan", po.get("notes", "") or "-", new_notes or "-")
-    _addc("total", "Subtotal (GROSS)", po.get("total_amount", 0), total_amount)
+    _addc("total", "Subtotal (sebelum diskon)", po.get("total_amount", 0), total_amount)
     _addc("grand_total", "Grand Total", po.get("grand_total", 0), grand_total)
 
     new_version = int(po.get("version", 1) or 1) + 1
@@ -322,7 +322,9 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
     }
     amendment = {
         "version": new_version, "reason": reason, "changes": changes, "snapshot_before": snapshot_before,
-        "amended_by": payload.amended_by or actor.get("name", "Admin"),
+        # S2 (pelatihan 18 Nov) — nama pengubah = akun yang masuk; `amended_by` kiriman layar (bawaan skema "Admin")
+        # hanya cadangan. Dulu setiap amandemen dari layar tercatat "oleh Admin" walau dibuat Manajer (pola C-15).
+        "amended_by": actor.get("name") or payload.amended_by or "Admin",
         "amended_by_id": actor.get("id", ""), "amended_at": now_iso(),
     }
 
@@ -358,7 +360,7 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
     }
     note = f"{reason} · {len(changes)} perubahan"
     tl = timeline_entry("amended", f"PO diamandemen → v{new_version}", amendment["amended_by"],
-                        f"{note} · perlu re-approval" if needs_approval else note)
+                        f"{note} · perlu persetujuan ulang" if needs_approval else note)
     # P20 DOC-03 — CAS: amandemen atas PO yang baru saja disetujui/ditolak/diubah pihak lain ditolak 409.
     _cas = {"id": po_id, "status": po.get("status"), "updated_at": po.get("updated_at")}
     if "approval_level_current" in po:

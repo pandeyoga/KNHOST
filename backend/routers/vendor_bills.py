@@ -35,6 +35,16 @@ async def _tolerances(entity_id: str) -> Dict[str, float]:
     return {"qty": tw["qty_pct"], "price": tw["price_pct"], "value": tw["value_rp"]}
 
 
+def _lebih_tagih_msg(match: Dict[str, Any], draft: bool = False) -> str:
+    """S2 (pelatihan 18 Nov) — pesan lebih tagih dalam bahasa pengguna + rincian baris; draf tidak bisa diubah, jadi
+    jalan keluarnya disebut (dulu "over-billing … Perbaiki qty tagihan dulu" padahal draf tidak punya tombol ubah)."""
+    rinci = "; ".join(f"{e.get('sku') or e.get('product_name') or ''}: {e.get('detail', '')}".strip(": ")
+                      for e in (match or {}).get("exceptions") or [] if e.get("type") == "qty_over_billed")
+    jalan = ("Draf tidak bisa diubah — batalkan draf ini, lalu buat tagihan baru dengan qty sesuai penerimaan."
+             if draft else "Ubah qty tagihan sesuai penerimaan, lalu kirim lagi.")
+    return f"3-way match GAGAL — lebih tagih{(' (' + rinci + ')') if rinci else ''}. {jalan}"
+
+
 def _hydrate(bill: Dict[str, Any]) -> Dict[str, Any]:
     bill["financials"] = bill_financials(bill)
     return bill
@@ -54,7 +64,13 @@ async def po_billing_context(po_id: str, request: Request) -> Dict[str, Any]:
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
     await guard_doc(request, "purchase_orders", po, strict=False)   # P18 AUTH-02 IDOR
-    return await build_billing_context(po)
+    ctx = await build_billing_context(po)
+    # S2 (pelatihan 18 Nov) — ambang 3-way yang SAMA dengan server (termasuk ambang rupiah kontrabon) untuk pratinjau
+    # form: dulu layar memakai % saja → selisih kecil (≤ ambang rupiah) tampil "perlu persetujuan"/"lebih tagih" padahal
+    # server memposting langsung / meminta persetujuan.
+    tol = await _tolerances(po.get("entity_id") or "")
+    ctx["tolerances"] = {"qty_pct": tol["qty"], "price_pct": tol["price"], "value_rp": tol["value"]}
+    return ctx
 
 
 # ── Payables summary (AP berbasis bill) — STATIC sebelum route /{id} ──────────
@@ -359,6 +375,10 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
     match = evaluate_match(po, pricing["items"], match_mode, billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"],
                            returned_unbilled=await returned_unbilled_map(po["id"]))   # PK-28
 
+    if payload.submit_now and match["match_status"] == "blocked":
+        # S2 (pelatihan 18 Nov) — "Kirim" yang pasti ditolak tidak boleh meninggalkan draf tersembunyi: dulu draf lebih
+        # tagih tetap tersimpan sesudah 400 dan memegang No. faktur pemasok → kiriman yang sudah dikoreksi ditolak 409.
+        raise HTTPException(status_code=400, detail=_lebih_tagih_msg(match))
     bill_number = await next_bill_number(entity_id)   # KP-T5 — PT dokumen (N1)
     # A2 (pelatihan 18 Nov) — nama pembuat = akun yang masuk; `created_by` kiriman layar (bawaan skema "Admin") hanya
     # cadangan. Dulu setiap tagihan dari layar tercatat "dibuat Admin" di Riwayat walau dibuat Manajer.
@@ -475,15 +495,16 @@ async def _do_submit(bill_id: str, actor: Dict[str, Any], locked: bool = False) 
         bill["match_status"] = match["match_status"]
         bill["approval_required"] = needs_approval
     if bill.get("match_status") == "blocked":
-        raise HTTPException(status_code=400,
-                            detail="3-way match GAGAL (over-billing di luar toleransi). Perbaiki qty tagihan dulu.")
+        raise HTTPException(status_code=400, detail=_lebih_tagih_msg(match if po else {}, draft=True))
     if bill.get("approval_required"):
         updated = await db.vendor_bills.find_one_and_update(
             {"id": bill_id},
             {"$set": {"status": "pending_approval", "approval_status": "pending", "updated_at": now_iso()},
              "$push": {"timeline": timeline_entry(
-                 "submitted_for_approval", "Menunggu persetujuan manager", actor.get("name", ""),
-                 "ada selisih qty/harga dalam toleransi")}},
+                 # S2 (pelatihan 18 Nov) — dulu "Menunggu persetujuan manager · ada selisih qty/harga dalam toleransi"
+                 # padahal selisih harga justru MELEBIHI toleransi; penyetuju ditentukan Aturan Persetujuan.
+                 "submitted_for_approval", "Menunggu persetujuan", actor.get("name", ""),
+                 "ada selisih qty/harga terhadap PO/penerimaan — perlu disetujui orang lain")}},
             projection={"_id": 0}, return_document=ReturnDocument.AFTER)
         await audit(actor["name"], "vendor_bill_submitted", "vendor_bill", bill_id,
                     {"bill_number": bill.get("bill_number"), "to": "pending_approval"})

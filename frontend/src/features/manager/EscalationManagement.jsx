@@ -205,7 +205,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   data-testid={`escalation-status-${task.id}`}
                   className={`text-xs font-semibold px-3 py-1 rounded-full ${isHanging(task) ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-700"}`}
                 >
-                  {isHanging(task) ? "MENGGANTUNG (resolving)" : "ESCALATED"}
+                  {isHanging(task) ? "Menggantung" : "Dieskalasi"}
                 </span>
               </div>
 
@@ -222,7 +222,7 @@ export default function ManagerEscalationDashboard({ user }) {
 
               {/* Qty Info */}
               <div className="bg-[#FFF3CD] border border-[#FFC107] rounded-lg p-3 mb-3">
-                <p className="text-sm font-semibold text-[#856404] mb-1">Qty Issue:</p>
+                <p className="text-sm font-semibold text-[#856404] mb-1">Selisih qty:</p>
                 {task.task_type === "inbound" ? (
                   <p className="text-sm text-[#856404]">
                     Diharapkan: {formatQty(task.expected_qty)} {task.unit} | Diterima: {formatQty(task.received_qty || 0)} {task.unit}
@@ -240,7 +240,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   <p className="font-semibold text-red-700 mb-1">Alasan:</p>
                   <p className="text-red-600">{task.escalation.reason}</p>
                   <p className="text-[#3C3C43] text-xs mt-2">
-                    Escalated by: {task.escalation.escalated_by} | {formatDateTime(task.escalation.escalated_at)}
+                    Dieskalasi oleh: {task.escalation.escalated_by} | {formatDateTime(task.escalation.escalated_at)}
                   </p>
                 </div>
               )}
@@ -323,7 +323,7 @@ export default function ManagerEscalationDashboard({ user }) {
                 <p className="text-sm font-semibold text-red-700">Alasan Eskalasi:</p>
                 <p className="text-sm text-red-600 mt-1">{selectedTask.escalation.reason}</p>
                 <p className="text-xs text-[#3C3C43] mt-2">
-                  By: {selectedTask.escalation.escalated_by} on {formatDateTime(selectedTask.escalation.escalated_at)}
+                  Oleh: {selectedTask.escalation.escalated_by} · {formatDateTime(selectedTask.escalation.escalated_at)}
                 </p>
               </div>
             )}
@@ -343,9 +343,10 @@ export default function ManagerEscalationDashboard({ user }) {
               )}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Adjusted Qty (opsional - kosongkan jika tidak adjust)
+                  Qty disesuaikan (opsional — kosongkan bila tidak diubah)
                 </label>
                 <input
+                  data-testid="esc-adjusted-qty"
                   type="number"
                   step="0.01"
                   value={resolveData.adjusted_qty || ""}
@@ -354,7 +355,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   placeholder={`Saat ini: ${formatQty(selectedTask.task_type === "inbound" ? selectedTask.expected_qty : selectedTask.quantity)}`}
                 />
                 <p className="text-xs text-[#3C3C43] mt-1">
-                  Adjust qty jika setelah investigasi memang ada perubahan legitimate (shortage, damage, etc)
+                  Ubah qty bila hasil pemeriksaan memang sah berubah (barang kurang dikirim, rusak, dll.)
                 </p>
               </div>
 
@@ -363,6 +364,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   Catatan Penyelesaian * (wajib)
                 </label>
                 <textarea
+                  data-testid="esc-resolution-notes"
                   value={resolveData.resolution_notes}
                   onChange={(e) => setResolveData({ ...resolveData, resolution_notes: e.target.value })}
                   className="field w-full"
@@ -370,7 +372,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   placeholder="Jelaskan hasil pemeriksaan dan tindakan yang diambil..."
                 />
                 <p className="text-xs text-[#3C3C43] mt-1">
-                  Contoh: "Konfirmasi dengan supplier, barang shortage 10m. Qty disesuaikan ke actual received."
+                  Contoh: "Sudah konfirmasi ke supplier, barang kurang 10 m. Qty disesuaikan ke yang benar-benar diterima."
                 </p>
               </div>
             </div>

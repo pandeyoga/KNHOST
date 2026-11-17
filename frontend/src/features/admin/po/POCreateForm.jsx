@@ -442,7 +442,8 @@ export default function POCreateForm({
         )}
         <div className="flex gap-2">
           {/* E7.2 — tombol DIMATIKAN, bukan dibiarkan gagal di server: pesan pada tombol
-              menjelaskan alasannya, dan pita di atas memberi satu klik ke jalan benar. */}
+              menjelaskan alasannya, dan pita di atas memberi satu klik ke jalan benar.
+              S2 (pelatihan 18 Nov) — label "Simpan PO" (dulu "Buat PO & Auto-create Inbound Tasks"). */}
           <button data-testid="submit-po-button" onClick={onSubmit}
             disabled={submitting || supplierIsGroupEntity}
             title={supplierIsGroupEntity
@@ -450,7 +451,7 @@ export default function POCreateForm({
               : ""}
             className="flex-1 primary-button justify-center disabled:opacity-50 disabled:cursor-not-allowed">
             {supplierIsGroupEntity ? "Pakai menu Antar Entitas untuk badan usaha grup"
-              : submitting ? "Memproses…" : "Buat PO & Auto-create Inbound Tasks"}
+              : submitting ? "Memproses…" : "Simpan PO"}
           </button>
           <button data-testid="cancel-form-button" onClick={onCancel} disabled={submitting}
             className="secondary-button">

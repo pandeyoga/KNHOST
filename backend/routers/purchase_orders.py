@@ -135,6 +135,16 @@ async def recompute_po_payment_status(po_id: str) -> None:
                   "updated_at": now_iso()}})
 
 
+async def _settle_after_revision(po_id: str) -> Dict[str, Any]:
+    """S2 (pelatihan 18 Nov) — sesudah amandemen berlaku / persetujuan penuh: status PO dihitung ulang dari qty diterima
+    (amandemen & persetujuan menulis `pending` → PO yang barangnya sudah diterima tampil "Menunggu barang") dan ringkasan
+    tagihan disinkronkan ke nilai PO baru (dulu "Belum Ditagih" tetap dari nilai lama)."""
+    await recompute_po_status(po_id)
+    from services.vendor_bill_service import sync_po_billing
+    await sync_po_billing(po_id)
+    return await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}) or {}
+
+
 def _inspection_request_from_po(po: Dict[str, Any], item: Dict[str, Any]) -> Dict[str, Any]:
     """FIX-6 — jejak penanda "minta inspeksi" yang berasal dari baris PO."""
     return {"requested": True, "source": "po_line", "po_number": po.get("po_number", ""),
@@ -153,12 +163,23 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
         if wh:
             wh_name = wh.get("name", "")
             wh_city = wh.get("city", "") or wh_city
+    tol = float(((await get_effective_settings(entity_id or None)).get("purchasing", {}) or {})
+                .get("receive_tolerance_percent", 2.0) or 0)
     for item in po.get("items", []):
         # Phase 7.2 — idempotent saat re-approval amendment: jangan duplikat task yg sudah ada.
+        # S2 (pelatihan 18 Nov) — "ada" = tugas yang BELUM memposting barang (menunggu/sedang diterima/dieskalasi).
+        # Tugas karantina/QC/selesai (`qc_pending`, `qc_rejected`, `completed`) sudah diposting: dulu `qc_pending`
+        # dianggap masih ada dan `expected_qty`-nya ditimpa sisa (0), sedangkan sesudah QC selesai lahir tugas BARU
+        # sebesar qty penuh walau barangnya sudah diterima (amandemen PO ke qty diterima → tugas hantu di gudang).
         existing = await db.wms_tasks.find_one({
             "po_id": po["id"], "product_id": item["product_id"], "flow_type": "inbound",
-            "status": {"$nin": ["cancelled", "completed"]},
+            "status": {"$in": ["waiting_goods", "receiving", "qc_check", "put_away", "escalated"]},
         }, {"_id": 0, "id": 1, "expected_qty": 1})
+        ordered = float(item["quantity"] or 0)
+        received = float(item.get("received_qty") or 0)
+        remaining = round(max(0.0, ordered - received), 2)
+        if not existing and received > 0 and remaining <= ordered * tol / 100 + 1e-6:
+            continue   # S2 — baris sudah diterima penuh (dalam toleransi): tidak ada yang perlu diterima lagi
         if existing:
             # FIX-6 — penanda "minta inspeksi" baris PO (amandemen) ikut ke tugas yang masih menunggu barang.
             if item.get("inspection_requested"):
@@ -166,7 +187,7 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
                     {"id": existing["id"], "inspection_request.requested": {"$ne": True}},
                     {"$set": {"inspection_request": _inspection_request_from_po(po, item)}})
             # KN-E18 — tugas sisa (kiriman parsial) mengharapkan SISA baris PO, bukan qty penuh.
-            want = round(max(0.0, float(item["quantity"] or 0) - float(item.get("received_qty") or 0)), 2)
+            want = remaining
             if abs(float(existing.get("expected_qty", 0) or 0) - want) > 0.001:
                 await db.wms_tasks.update_one(
                     {"id": existing["id"]},
@@ -185,7 +206,7 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
             "product_id": item["product_id"],
             "product_name": item.get("product_name", ""),
             "sku": item.get("sku", ""),
-            "expected_qty": item["quantity"],
+            "expected_qty": remaining if received > 0 else item["quantity"],   # S2 — tugas sisa = SISA baris PO
             "received_qty": 0.0,
             "quantity": 0.0,
             "unit": item.get("unit", "meter"),
@@ -197,7 +218,7 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
             "unit_factor_to": item.get("unit_factor_to", ""),
             # FASE U — dua satuan: RENCANA jumlah roll turun dari baris PO, sedangkan
             # `qty_rolls` (hasil) DIHITUNG saat penerimaan selesai dari roll yang lahir.
-            "expected_rolls": item.get("qty_rolls"),
+            "expected_rolls": item.get("qty_rolls") if received <= 0 else None,
             "qty_rolls": None,
             "warehouse_id": po["warehouse_id"],
             "warehouse_name": wh_name,
@@ -817,9 +838,11 @@ async def amend_purchase_order(po_id: str, payload: PurchaseOrderAmend, request:
     if result["needs_approval"]:
         from services.notification_service import notify_po_awaiting_approval
         await notify_po_awaiting_approval(updated)
-    else:
-        await _create_inbound_tasks_for_po(updated)
-    return safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
+        from services.vendor_bill_service import sync_po_billing
+        await sync_po_billing(po_id)   # S2 — ringkasan tagihan mengikuti nilai versi baru
+        return safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
+    await _create_inbound_tasks_for_po(updated)
+    return safe_doc(await _settle_after_revision(po_id))
 
 
 async def _assert_fresh_decision(po: Dict[str, Any], request: Request, body: Optional[Dict[str, Any]] = None) -> None:
@@ -967,13 +990,15 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
                   "approved_by": actor["name"], "approved_at": now_iso(), "updated_at": now_iso()},
          "$push": {"timeline": timeline_entry(
              "approved", f"Disetujui penuh ({len(chain)} tingkat)", actor["name"],
-             " · ".join(budget_check.get("warnings") or [f"tingkat akhir oleh role {actor.get('role')}"])[:400])}},
+             " · ".join(budget_check.get("warnings") or ["tingkat akhir"])[:400])}},   # S2 — dulu "oleh role admin"
         projection={"_id": 0}, return_document=ReturnDocument.AFTER
     )
     if not updated:
         raise HTTPException(status_code=409, detail="PO baru saja disetujui/berubah oleh pihak lain. Muat ulang.")
     # Buat inbound task setelah PO disetujui penuh
     await _create_inbound_tasks_for_po(updated)
+    if any(float(it.get("received_qty") or 0) > 0 for it in updated.get("items") or []):
+        updated = await _settle_after_revision(po_id)   # S2 — amandemen sesudah penerimaan: status & tagihan terkini
     from services import po_variance_task_service as _pvt
     await _pvt.close_amendment_tasks(po_id, actor["name"])  # G3 V3-PO-03 — baru selesai SESUDAH approval
     try:
