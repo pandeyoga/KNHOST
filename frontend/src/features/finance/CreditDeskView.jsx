@@ -14,7 +14,7 @@
  *  · Riwayat izin kredit & pengajuan profil (`CreditOverridesPanel`, `CreditProfileRequestsPanel`) dipakai ulang di bagian
  *    bawah (dulu isi tab ini; tab "Persetujuan Kredit" CRM sudah dipindah MN-T1).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Ban, ChevronDown, ChevronRight, History } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
@@ -78,17 +78,23 @@ export default function CreditDeskView({ currentUser, selectedEntity }) {
     if (!canQueues) return;
     try { setSummary((await axios.get(`${API}/credit-desk/summary`)).data); } catch { setSummary(null); }
   }, [canQueues]);
+  // Pelatihan 18 Nov (F06) — jawaban LAMA tidak boleh menimpa yang baru: daftar tanpa saringan (lebih lambat) dulu tiba
+  // sesudah hasil pencarian sehingga kotak cari berisi "Latihan 23" tetapi tabel menampilkan semua pelanggan.
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
     if (!canQueues) { setLoading(false); return; }
+    const mine = ++loadSeq.current;
     setLoading(true);
     try {
       const r = await axios.get(`${API}/credit-desk`, { params: { queue, page, page_size: PAGE_SIZE, q: q || undefined } });
+      if (mine !== loadSeq.current) return;
       setData(r.data);
       setError("");
     } catch (e) {
+      if (mine !== loadSeq.current) return;
       setData(null);
       setError(apiErrorText(e, "Daftar kerja kredit belum bisa dimuat."));
-    } finally { setLoading(false); }
+    } finally { if (mine === loadSeq.current) setLoading(false); }
   }, [queue, page, q, canQueues]);
   useEffect(() => { load(); }, [load, selectedEntity]);
   useEffect(() => { loadSummary(); }, [loadSummary, selectedEntity]);

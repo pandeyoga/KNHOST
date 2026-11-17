@@ -216,6 +216,19 @@ DATASETS: List[Dict[str, Any]] = [
                  C("outstanding", "Sisa", "money"), C("payment_status", "Status bayar"),
                  C("bill_date", "Tgl tagihan", "datetime"), C("due_date", "Jatuh tempo", "date"),
                  C("entity_id", "ID badan usaha")],
+     # Latihan Keuangan 17 Nov — `outstanding`/`payment_status` tersimpan TIDAK diperbarui saat tagihan dibayar
+     # (ap_payment_service hanya menambah `amount_paid`), jadi Sisa/Status bayar di ekspor dulu basi. Dihitung ulang di
+     # sini dengan rumus yang sama dengan `vendor_bill_service.bill_financials` (grand − dibayar − selisih ditutup).
+     "stages": [{"$addFields": {"_vb_grand": {"$cond": [{"$gt": [{"$ifNull": ["$grand_total", 0]}, 0]},
+                                                       "$grand_total", {"$ifNull": ["$total_amount", 0]}]},
+                                "_vb_paid": {"$ifNull": ["$amount_paid", 0]},
+                                "_vb_closed": {"$ifNull": ["$ap_variance_closed", 0]}}},
+                {"$addFields": {"outstanding": {"$round": [{"$max": [{"$subtract": [
+                    "$_vb_grand", {"$add": ["$_vb_paid", "$_vb_closed"]}]}, 0]}, 2]}}},
+                {"$addFields": {"payment_status": {"$switch": {"branches": [
+                    {"case": {"$and": [{"$lte": ["$_vb_paid", 0.01]}, {"$lte": ["$_vb_closed", 0.01]}]}, "then": "unpaid"},
+                    {"case": {"$lte": ["$outstanding", 0.01]}, "then": "paid"}], "default": "partial"}}}},
+                {"$project": {"_vb_grand": 0, "_vb_paid": 0, "_vb_closed": 0}}],
      "joins": [SUPPLIER_JOIN, ENTITY_JOIN()]},
     {"id": "ar_receipts", "label": "Uang Masuk (Kwitansi AR)", "group": "Keuangan", "collection": "ar_receipts",
      "grain": "1 baris = 1 kwitansi (kas diterima, bukan penjualan)", "key": "id", "perm": ("ar_receipt", "view"),

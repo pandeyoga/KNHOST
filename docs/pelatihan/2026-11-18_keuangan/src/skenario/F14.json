@@ -1,0 +1,121 @@
+{
+ "kode": "F14",
+ "judul": "Pesanan Sample berbayar — terima uang lalu setujui pembayaran",
+ "bagian": "A",
+ "tujuan": "Peserta bisa menindaklanjuti sample berbayar yang menunggu ACC Finance: memastikan uang pelanggan sudah masuk dengan mencatat kwitansi ke pesanan sample (SOS), lalu menyetujui pembayaran sehingga sample bisa diteruskan Admin Sample ke gudang untuk dipotong. Peserta tahu jurnalnya: uang sebelum barang dikirim = Uang Muka Pelanggan.",
+ "kapan": "Saat kartu 'Sample berbayar menunggu ACC bayar' di Beranda Keuangan berisi — pelanggan (biasanya pembeli baru) mentransfer harga sample sebelum sample dipotong & dikirim.",
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Kartu Peserta baris *d_hutang:sample_berbayar*: Sales sudah membuat Pesanan Sample berbayar (contoh peserta 04: KSC/SOS-00009, 3 yard, Rp 83.250 = Rp 75.000 + PPN Rp 8.250) untuk pelanggan KEDUA Anda 'Latihan NN · Butik Sample Peserta NN' (bukan pelanggan F02–F04), status Menunggu ACC bayar. Anggap pelanggan sudah transfer Rp 83.250 ke BCA Operasional KSC dengan referensi TRF-SAMPLE-NN.",
+ "alur": [
+  {
+   "peran": "Sales",
+   "label": "Pesanan sample berbayar (SOS)"
+  },
+  {
+   "peran": "Pelanggan",
+   "label": "Transfer harga sample"
+  },
+  {
+   "peran": "Finance",
+   "label": "Catat kwitansi ke SOS",
+   "cabang": "Uang belum masuk → jangan setujui"
+  },
+  {
+   "peran": "Finance",
+   "label": "Setujui pembayaran sample"
+  },
+  {
+   "peran": "Admin Sample",
+   "label": "Teruskan ke gudang"
+  },
+  {
+   "peran": "Gudang",
+   "label": "Potong, kirim sample"
+  },
+  {
+   "peran": "Buku",
+   "label": "Uang muka → penjualan saat kirim"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "nav_id": "finance-tower",
+   "tab": "finance-desk"
+  },
+  {
+   "menu": "Penjualan › Pelanggan",
+   "nav_id": "customers-crm",
+   "tab": "customers-crm"
+  },
+  {
+   "menu": "Penjualan › Pesanan Sample",
+   "nav_id": "sample-orders",
+   "tab": null
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Pada kartu [[Sample berbayar menunggu ACC bayar]] ketik nomor SOS Anda di kotak cari kartu",
+   "isi": "*Cari*: KSC/SOS-… (Kartu Peserta)",
+   "hasil": "Baris SOS: 'Latihan NN · Butik Sample Peserta NN', lencana 'ACC bayar', 'sample berbayar baru', nilai Rp 83.250, tombol [[Tinjau]].",
+   "gambar": "uji/hasil/F14/01-meja-sample-berbayar.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan Sample",
+   "aksi": "Klik [[Tinjau]]",
+   "isi": "",
+   "hasil": "Pesanan Sample terbuka pada SOS Anda: BERBAYAR, Menunggu ACC bayar; Subtotal Rp 75.000 · PPN 12% Rp 8.250 · Total Rp 83.250; kotak kuning 'Pembayaran belum disetujui Finance/Admin Sample.' JANGAN setujui dulu — pastikan uangnya masuk.",
+   "gambar": "uji/hasil/F14/02-rincian-sample.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Penjualan › Pelanggan",
+   "aksi": "Buka menu [[Pelanggan]], cari pelanggan sample Anda, klik barisnya, lalu [[Terima pembayaran]]",
+   "isi": "*Cari*: Butik Sample Peserta NN",
+   "hasil": "Kartu pelanggan terbuka; form 'Terima pembayaran' menampilkan Tagihan terbuka: KSC/SOS-… 'Belum lunas Rp 83.250'.",
+   "gambar": "uji/hasil/F14/04-kartu-pelanggan-terima.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Form Terima pembayaran",
+   "aksi": "Isi form lalu klik [[Simpan kwitansi]] → [[Ya, simpan]]",
+   "isi": "*Nominal diterima*: 83.250 · *Tanggal terima*: hari ini · *Cara bayar*: Transfer bank · *Rekening penerima*: BCA Operasional KSC · *No. referensi*: TRF-SAMPLE-NN · *Alokasi ke tagihan*: Tertua dulu",
+   "hasil": "Konfirmasi 'Catat penerimaan Rp 83.250 dari Latihan NN · Butik Sample Peserta NN ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?'; sesudah disimpan kwitansi KSC/AR-… tercatat dan SOS berstatus bayar Lunas.",
+   "gambar": "uji/hasil/F14/06-konfirmasi-kwitansi.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Penjualan › Pesanan Sample",
+   "aksi": "Buka menu [[Pesanan Sample]], cari nomor SOS, klik barisnya → [[Setujui Pembayaran]]",
+   "isi": "*Cari*: KSC/SOS-…",
+   "hasil": "Bilah hijau 'KSC/SOS-…: pembayaran disetujui.'; status menjadi 'Siap ke gudang'; kotak hijau 'Pembayaran disetujui Peserta Keuangan NN'. Sample kini di antrean Admin Sample 'Siap diteruskan ke gudang'.",
+   "gambar": "uji/hasil/F14/08-sample-disetujui.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal kwitansi: 1-1100 Kas Besar / Bank (D) Rp 83.250 · 2-1400 Uang Muka Pelanggan (K) Rp 83.250 — seimbang (barang belum dikirim → uang muka, belum pendapatan).",
+  "Persetujuan pembayaran sample TIDAK membuat jurnal; pesanan sample belum punya jurnal sampai dikirim.",
+  "Saat sample dikirim, jurnal pengakuan penjualan terbit (Piutang / Penjualan + PPN Keluaran) dan uang muka menutup piutangnya."
+ ],
+ "kesalahan_umum": [
+  "Menekan [[Setujui Pembayaran]] sebelum uang masuk — persetujuan = izin memotong roll & mengirim sample.",
+  "Mencatat kwitansi sample di pelanggan F02–F04 (Toko Kain Peserta) — sample milik pelanggan kedua 'Butik Sample Peserta NN'.",
+  "Mengetik nominal 83.250 di kotak cari, bukan di *Nominal diterima*; atau memilih 'Atur sendiri' tanpa mengisi kotak alokasi.",
+  "Bingung PPN 12% tapi PPN Rp 8.250 (bukan Rp 9.000): PPN 12% dihitung atas DPP nilai lain 11/12 × Rp 75.000 = Rp 68.750."
+ ],
+ "catatan_pelatih": "Pelanggan sample sengaja pelanggan KEDUA peserta supaya kwitansi 'Tertua dulu' di F02–F04 tidak teralokasi ke SOS (open-orders memuat semua pesanan hidup pelanggan, termasuk sample yang belum dikirim). Izin Finance: sample_order lihat + setujui bayar (bersama Admin Sample). Bila nilai potong aktual berubah > ±5% sesudah dipotong, sample muncul lagi sebagai 'ACC ulang' (tombol [[Setujui Ulang Pembayaran]]) — sebutkan saja. Kwitansi ke pesanan yang belum dikirim dijurnal ke Uang Muka Pelanggan (2-1400), bukan Piutang. Data acuan: harga sample Rp 25.000/yard dari master harga sample.",
+ "uji": {
+  "berkas": "uji/F14_sample_berbayar.js",
+  "peserta_uji": "04"
+ }
+}

@@ -12,6 +12,7 @@ PK-41 (RP-08) — nota kredit (bukan nota debit, bukan batal) bertanggal dalam p
 `net_amount` dan HPP sebesar `cogs_amount` (barang retur yang kembali ke stok) di semua dimensi; jawaban membawa
 `totals.credit_notes`, `totals.cogs_returned`, dan `reconciliation` (marjin layar ini → laba kotor Laba-Rugi).
 """
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
@@ -265,7 +266,8 @@ async def _reconciliation(start: Optional[str], end: Optional[str], scope: Optio
                           margin: float) -> List[Dict[str, Any]]:
     """PK-41 (RP-08) — pencocokan marjin layar ini ke laba kotor Laba-Rugi periode & cakupan yang sama, berurutan:
     marjin layar → penghapusan/penyesuaian persediaan (akun beban pokok selain HPP, mengurangi) → penjualan antar-PT
-    (laba kotor jurnal antar-PT, tidak dihitung layar ini) → selisih belum dijelaskan → laba kotor Laba-Rugi."""
+    (laba kotor jurnal antar-PT, tidak dihitung layar ini) → pendapatan lain (akun pendapatan selain penjualan barang)
+    → selisih belum dijelaskan → laba kotor Laba-Rugi."""
     from services import financial_statement_service as fs
     from services.gl_mapping_service import known_codes
     pl = await fs.income_statement(start, end, scope)
@@ -291,12 +293,30 @@ async def _reconciliation(start: Optional[str], end: Optional[str], scope: Optio
             sen = to_cents(float(ln.get("credit") or 0)) - to_cents(float(ln.get("debit") or 0))
             if t == "income" or (t == "expense" and code.startswith("5")):
                 interco += sen
+    # Pelatihan 18 Nov (F17) — pendapatan di luar penjualan barang yang ikut di bagian Pendapatan Laba-Rugi (denda
+    # 4-9300, bunga/lain 4-9000, klaim makloon 4-9200, laba pelepasan aset 4-9100 …) tidak pernah ada di layar ini;
+    # dulu jatuh ke "Selisih belum dijelaskan" (mis. denda Rp 42.739 di data latihan). Jurnal antar-PT sudah di baris
+    # antar-PT, jadi dikecualikan di sini.
+    jual = set(await known_codes("penjualan.pendapatan", fs.scope_entity(scope)))
+    oq: Dict[str, Any] = {"status": {"$ne": "void"}, "lines.account_code": {"$regex": "^4"}, **(scope or {})}
+    if df:
+        oq["date"] = df
+    lainnya = 0
+    async for je in db.journal_entries.find(oq, {"_id": 0, "lines": 1, "source_type": 1}):
+        if re.match(r"^interco_(transaction|return)", str(je.get("source_type") or "")):
+            continue
+        for ln in je.get("lines") or []:
+            code = ln.get("account_code") or ""
+            if (amap.get(code) or {}).get("type") == "income" and code not in jual:
+                lainnya += to_cents(float(ln.get("credit") or 0)) - to_cents(float(ln.get("debit") or 0))
     layar = to_cents(margin)
-    selisih = gross_pl - (layar + lain + interco)
+    selisih = gross_pl - (layar + lain + interco + lainnya)
     return [{"key": "margin", "label": "Marjin kotor layar ini", "amount": from_cents(layar)},
             {"key": "inventory_adjustments",
              "label": "Penghapusan dan penyesuaian persediaan (akun beban pokok selain HPP)", "amount": from_cents(lain)},
             {"key": "interco", "label": "Penjualan antar-PT (tidak termasuk di layar ini)", "amount": from_cents(interco)},
+            {"key": "other_income", "label": "Pendapatan lain di Laba-Rugi (denda, bunga, klaim — bukan penjualan barang)",
+             "amount": from_cents(lainnya)},
             {"key": "unexplained", "label": "Selisih belum dijelaskan", "amount": from_cents(selisih)},
             {"key": "gross_profit_pl", "label": "Laba kotor menurut Laba-Rugi", "amount": from_cents(gross_pl)}]
 

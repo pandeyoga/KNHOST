@@ -255,7 +255,10 @@ async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any],
                    "reference_no": receipt.get("reference_no", "")})
         # KN-G3: jurnal kas diposting SEKARANG (bukan menunggu backfill) supaya saldo Piutang & Uang Muka Pelanggan
         # langsung benar — penting sejak keputusan selisih pembayaran (FASE G-3) bisa menjurnal di detik yang sama.
-        await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {"gl_status": "posted", "gl_error": ""}})
+        # Pelatihan 18 Nov — id jurnal kas ikut ditulis: label "Jurnal Terbit" di Riwayat Pembayaran (AR) membuka jurnalnya
+        # (dulu kosong → label mati, peserta tidak bisa memeriksa Dr Bank / Cr Piutang dari kwitansinya).
+        await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {
+            "gl_status": "posted", "gl_error": "", "journal_entry_id": (cdoc or {}).get("journal_entry_id") or ""}})
     except cash_ledger.CashPostingError as exc:
         logger.error("[_post_cash_in] jurnal kwitansi %s gagal: %s", receipt.get("number"), exc.error)
         cdoc = exc.txn
@@ -268,8 +271,9 @@ async def _post_deposit_gl(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """W2-015 — jurnal reklas kwitansi murni deposit; gagal → gl_status=failed (bisa repost)."""
     from services import gl_service as _gl
     try:
-        await _gl.post_deposit_only_receipt(doc, created_by=actor.get("name", "system"))
-        await db.ar_receipts.update_one({"id": doc["id"]}, {"$set": {"gl_status": "posted", "gl_error": ""}})
+        je = await _gl.post_deposit_only_receipt(doc, created_by=actor.get("name", "system"))
+        await db.ar_receipts.update_one({"id": doc["id"]}, {"$set": {
+            "gl_status": "posted", "gl_error": "", "journal_entry_id": (je or {}).get("id") or ""}})
     except Exception as exc:  # noqa: BLE001
         logger.error("[deposit_gl] jurnal kwitansi %s gagal: %s", doc.get("number"), exc)
         await db.ar_receipts.update_one({"id": doc["id"]}, {"$set": {
@@ -302,11 +306,12 @@ async def repost_receipt(receipt_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail="Kwitansi tanpa transaksi kas — tidak ada jurnal untuk diulang")
     from services import cash_ledger   # PK-20 — jurnal kas lewat pembuat kas (pintu tahan-gagal di dalamnya)
     try:
-        await cash_ledger.ensure_posted(txn["id"])
+        je = await cash_ledger.ensure_posted(txn["id"])
     except cash_ledger.CashPostingError as exc:
         await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"gl_status": "failed", "gl_error": exc.error[:300]}})
         raise HTTPException(status_code=409, detail=f"Jurnal masih gagal: {exc.error}")
     await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"gl_status": "posted", "gl_error": "",
+                                                                  "journal_entry_id": (je or {}).get("id") or "",
                                                                   "updated_at": now_iso()}})
     return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
 
@@ -852,12 +857,34 @@ async def saringan_verifikasi(*, bank_verified: Optional[str] = None, older_than
     return syarat[0] if len(syarat) == 1 else {"$and": syarat}
 
 
+async def _isi_id_jurnal(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Pelatihan 18 Nov — kwitansi lama (sebelum `journal_entry_id` ditulis) berjurnal tetapi tanpa id jurnal: id dibaca
+    dari transaksi kasnya (atau jurnal reklas deposit) supaya label "Jurnal Terbit" bisa dibuka. Hanya baca, tanpa tulis."""
+    kurang = [r for r in rows if r.get("gl_status") == "posted" and not r.get("journal_entry_id")]
+    if not kurang:
+        return rows
+    kas = [r["cash_txn_id"] for r in kurang if r.get("cash_txn_id")]
+    peta: Dict[str, str] = {}
+    if kas:
+        async for c in db.cash_transactions.find({"id": {"$in": kas}}, {"_id": 0, "id": 1, "journal_entry_id": 1}):
+            peta[c["id"]] = c.get("journal_entry_id") or ""
+    dep = [r["id"] for r in kurang if not r.get("cash_txn_id")]
+    peta_dep: Dict[str, str] = {}
+    if dep:
+        async for j in db.journal_entries.find({"source_type": "ar_receipt_deposit", "source_id": {"$in": dep},
+                                                "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "source_id": 1}):
+            peta_dep[j["source_id"]] = j["id"]
+    for r in kurang:
+        r["journal_entry_id"] = peta.get(r.get("cash_txn_id") or "", "") or peta_dep.get(r["id"], "")
+    return rows
+
+
 async def list_receipts(customer_id: Optional[str] = None,
                         scope: Optional[Dict[str, Any]] = None,
                         extra: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     rows = await db.ar_receipts.find(_receipt_query(customer_id, scope, extra=extra), {"_id": 0}) \
         .sort(RECEIPT_SORT).to_list(RECEIPT_UNPAGED_LIMIT)
-    return [safe_doc(r) for r in rows]
+    return await _isi_id_jurnal([safe_doc(r) for r in rows])
 
 
 async def list_receipts_page(customer_id: Optional[str], scope: Optional[Dict[str, Any]], *, page: int,
@@ -868,7 +895,7 @@ async def list_receipts_page(customer_id: Optional[str], scope: Optional[Dict[st
     total = await db.ar_receipts.count_documents(query)
     rows = await db.ar_receipts.find(query, {"_id": 0}).sort(RECEIPT_SORT) \
         .skip((page - 1) * page_size).limit(page_size).to_list(page_size)
-    return envelope([safe_doc(r) for r in rows], total, page, page_size)
+    return envelope(await _isi_id_jurnal([safe_doc(r) for r in rows]), total, page, page_size)
 
 
 async def get_receipt(receipt_id: str) -> Optional[Dict[str, Any]]:

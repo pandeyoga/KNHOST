@@ -208,8 +208,12 @@ CASH_OUT_KEYWORDS = [
     ("internet", "6-3000"), ("telepon", "6-3000"),
     ("pembelian", "1-1300"), ("beli", "1-1300"), ("bahan", "1-1300"),
     ("operasional", "6-4000"),
+    # Latihan Keuangan 17 Nov — kategori "Transfer / Top-up" = pindah dana antar kas/rekening SENDIRI: lewat 1-1150 Kas
+    # Transit (sama dengan pindah-buku G-9). Dulu jatuh ke beban (keluar) dan Suspense (masuk) → beban palsu.
+    ("transfer", ACC_KAS_TRANSIT),
 ]
 CASH_IN_KEYWORDS = [
+    ("transfer", ACC_KAS_TRANSIT),   # pasangan baris keluar di atas (masuk dari kas/rekening sendiri)
     ("modal", "3-1000"), ("capital", "3-1000"), ("investasi", "3-1000"), ("setoran modal", "3-1000"),
     ("bunga", "4-9000"), ("jasa giro", "4-9000"),
     ("penjualan tunai", "4-1000"),
@@ -974,7 +978,8 @@ async def list_entries_paged(source: Optional[str] = None, account_code: Optiona
     query = _journal_query(source, account_code, status, scope, start, end)
     if q:
         query = merge_query(query, build_search(
-            q, ["number", "description", "memo", "ref_number", "source_type"]))
+            q, ["number", "description", "memo", "ref_number", "source_type",
+                "source_label"]))   # Latihan Keuangan 17 Nov — nomor dokumen sumber (KSC/CASH-…, AR-…) bisa dicari
     total = await db.journal_entries.count_documents(query)
     rows = await (db.journal_entries.find(query, {"_id": 0})
                   .sort("number", -1)

@@ -24,6 +24,8 @@ import FormModal from "../../components/FormModal";
 import KNPager from "../../components/KNPager";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
+import MoneyInput from "../../components/MoneyInput";   // pelatihan 18 Nov (F15) — nominal rupiah seragam + pratinjau
+import { parseDecimal } from "../../utils/decimalInput";
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
@@ -123,7 +125,9 @@ export function alasanTidakBisaSetor({ canWrite, canPay, sisaTotal = null }) {
 
 /** Galat isian form setoran (sebelum kirim); "" = siap dikirim. */
 export function galatForm(f, sisa) {
-  const n = Number(f.amount);
+  // Pelatihan 18 Nov (F15) — nominal dibaca seperti isian rupiah lain ("45.240,50" / "40864,5"); dulu `Number()` mentah:
+  // koma desimal → NaN, dan isian lama membuang koma sehingga "40.864,5" tersimpan 40,8645.
+  const n = parseDecimal(f.amount);
   if (!f.kind || !f.period) return "Pilih jenis dan masa.";
   if (!(n > 0)) return "Nominal harus lebih dari 0.";
   if (sisa != null && n > sisa + 0.005) return `Nominal melebihi sisa kewajiban (${formatCurrency(sisa)}).`;
@@ -210,7 +214,7 @@ export default function PayrollRemittancesView() {
   const simpan = async () => {
     const g = galatForm(form, form.period === period ? sisaOf(form.kind) : null);
     if (g) { setFormErr(g); return; }
-    const nominal = formatCurrency(Number(form.amount));
+    const nominal = formatCurrency(parseDecimal(form.amount));
     const ok = await askConfirm({
       title: `Catat setoran ${KIND_LABEL[form.kind]} ${nominal}?`,
       message: `Setoran ${KIND_LABEL[form.kind]} masa ${formatPeriod(form.period)} sebesar ${nominal} untuk ${pt}. `
@@ -221,7 +225,7 @@ export default function PayrollRemittancesView() {
     if (!ok) return;
     setBusy(true);
     try {
-      const body = { kind: form.kind, period: form.period, amount: Number(form.amount), paid_date: form.paid_date,
+      const body = { kind: form.kind, period: form.period, amount: parseDecimal(form.amount), paid_date: form.paid_date,
         account_id: acc || "", cash_type: form.cash_type, reference: form.reference || "", notes: form.notes || "" };
       const r = await intent.send(body, (k) => moneyPost(`${API}/hr/payroll/remittances`, body, k));
       setOpen(false);
@@ -366,7 +370,7 @@ export default function PayrollRemittancesView() {
           <div><label className="field-label">Masa <span className="req">*</span></label>
             <KNSelect data-testid="remit-form-period" value={form.period} className="field" onValueChange={(v) => ubah({ period: v })} options={monthOpts} /></div>
           <div><label className="field-label">Nominal (Rp) <span className="req">*</span></label>
-            <input data-testid="remit-form-amount" className="field" inputMode="decimal" value={form.amount || ""} onChange={(e) => ubah({ amount: e.target.value.replace(/[^\d.]/g, "") })} />
+            <MoneyInput testId="remit-form-amount" className="field" value={form.amount || ""} onChange={(v) => ubah({ amount: v })} />
             {form.period === period && sisaOf(form.kind) != null && <p className="text-fs-12 text-kn-text-2 mt-1">Sisa kewajiban: {formatCurrency(sisaOf(form.kind))}</p>}</div>
           <div><label className="field-label">Tanggal setor <span className="req">*</span></label>
             <KNDatePicker data-testid="remit-form-date" value={form.paid_date || ""} onChange={(v) => ubah({ paid_date: v })} clearable={false} />

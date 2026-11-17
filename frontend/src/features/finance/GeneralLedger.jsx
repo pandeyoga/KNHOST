@@ -35,7 +35,7 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import useViewPreset from "../../hooks/useViewPreset";
 import { useAppNav } from "../../context/AppNavContext";
-import useJournalActions from "./useJournalActions";   // PK-43 — anulir/balik dari tab Jurnal & Buku Besar
+import useJournalActions, { izinAkuntansi } from "./useJournalActions";   // PK-43 — anulir/balik dari tab Jurnal & Buku Besar
 import JournalProposalsPanel, { JournalProposalBanner } from "./JournalProposalsPanel";   // KF-T6
 import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
@@ -197,11 +197,16 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           <PageTabs testId="gl-tabs" ariaLabel="Jurnal & Buku Besar" className="min-w-0" value={tab} onChange={setTab}
             tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon, testId: `gl-tab-${t.id}` }))} />
           <div className="flex items-center gap-2 ml-auto">
+            {/* Pelatihan 18 Nov (F16) — Finance (lihat saja, K-09) tidak lagi melihat tombol yang pasti ditolak 403. */}
             {tab === "journal" && (
               <>
-                <EntityGatedButton selectedEntity={selectedEntity} what="membuat jurnal" hint={false} aria-describedby="gl-new-journal-scope-note"
-                  data-testid="gl-new-journal" className="primary-button" onClick={() => setShowModal(true)}><Plus size={14} /> Jurnal Baru</EntityGatedButton>
-                <button type="button" data-testid="gl-sync" className="secondary-button" onClick={runSync} disabled={syncing}><RotateCcw size={13} className={syncing ? "animate-spin" : ""} /> Sinkronkan</button>
+                {izinAkuntansi("create") && (
+                  <EntityGatedButton selectedEntity={selectedEntity} what="membuat jurnal" hint={false} aria-describedby="gl-new-journal-scope-note"
+                    data-testid="gl-new-journal" className="primary-button" onClick={() => setShowModal(true)}><Plus size={14} /> Jurnal Baru</EntityGatedButton>
+                )}
+                {izinAkuntansi("manage") && (
+                  <button type="button" data-testid="gl-sync" className="secondary-button" onClick={runSync} disabled={syncing}><RotateCcw size={13} className={syncing ? "animate-spin" : ""} /> Sinkronkan</button>
+                )}
               </>
             )}
             <button data-testid="gl-refresh" className="icon-button" onClick={refreshAll} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} /></button>
@@ -209,7 +214,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
         </div>
         <div className="section-body">
           {/* PK-42 — kepala kartu sudah berisi lima tab + tiga tombol: alasan tombol Jurnal Baru yang mati di bilah sendiri. */}
-          {tab === "journal" && <EntityGateNote selectedEntity={selectedEntity} what="membuat jurnal" testId="gl-new-journal-scope-note" />}
+          {tab === "journal" && izinAkuntansi("create") && <EntityGateNote selectedEntity={selectedEntity} what="membuat jurnal" testId="gl-new-journal-scope-note" />}
           {/* MN-T2 — dua tab lama kini seksi di Tutup Buku (tautan hanya bila peran boleh membukanya). */}
           {bukaTutupBuku && (
             <p className="mb-2 text-fs-12 text-kn-text-2" data-testid="gl-moved-note">
@@ -284,7 +289,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
   useEffect(() => { if (paged.error) onError(paged.error); }, [paged.error]); // eslint-disable-line
 
   // PK-12 — satu kunci per niat (anulir / balik); Fase 4 · R2 — galat DILEMPAR ke pop-up rincian. PK-43 — `useJournalActions`.
-  const { voidEntry, reverseEntry } = useJournalActions(() => { setDetail(null); onChanged(); });
+  const { voidEntry, reverseEntry, bolehBatal } = useJournalActions(() => { setDetail(null); onChanged(); });
 
   return (
     <div>
@@ -374,7 +379,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
           />
         </div>
       )}
-      {detail && <JournalDetailModal je={detail} sourceMeta={sourceMeta} entities={entities} selectedEntity={selectedEntity} onClose={() => setDetail(null)} onVoid={voidEntry} onReverse={reverseEntry} onOpenDocument={onOpenDocument} />}
+      {detail && <JournalDetailModal je={detail} sourceMeta={sourceMeta} entities={entities} selectedEntity={selectedEntity} onClose={() => setDetail(null)} onVoid={bolehBatal ? voidEntry : undefined} onReverse={bolehBatal ? reverseEntry : undefined} onOpenDocument={onOpenDocument} />}
     </div>
   );
 }

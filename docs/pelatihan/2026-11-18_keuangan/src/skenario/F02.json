@@ -1,0 +1,161 @@
+{
+ "kode": "F02",
+ "judul": "Terima pelunasan penuh lewat transfer bank (kwitansi piutang)",
+ "bagian": "A",
+ "tujuan": "Peserta bisa mencatat uang masuk pelanggan yang melunasi satu SO penuh lewat transfer ke rekening BCA Operasional KSC, mengalokasikannya ke SO yang benar, lalu membuktikan hasilnya di layar (SO hilang dari daftar tagihan, kwitansi tercatat) dan di buku (jurnal Kas Besar/Bank Debit = Piutang Usaha Kredit, sama persis dengan nilai SO).",
+ "kapan": "Setiap kali mutasi rekening BCA menunjukkan transfer pelanggan yang menyebut nomor SO / kode bayar — biasanya pagi hari saat cek mutasi, atau saat kartu 'Uang masuk perlu dicatat' di Perlu Tindakan berisi.",
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Kartu Peserta baris *a_dasar:so_lunas*: SO terkirim & belum dibayar milik pelanggan 'Latihan NN · Toko Kain Peserta NN' (contoh peserta 02: KSC/SO-00006, total Rp 3.359.692,50 — layar membulatkan menjadi Rp 3.359.693), termin 30 hari. Rekening penerima PT Sukacita: BCA Operasional KSC · BCA 7415595554.",
+ "alur": [
+  {
+   "peran": "Sales",
+   "label": "SO dibuat & disetujui"
+  },
+  {
+   "peran": "Gudang",
+   "label": "Barang dikirim (tempo 30 hari)"
+  },
+  {
+   "peran": "Pelanggan",
+   "label": "Transfer ke BCA KSC"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terima pembayaran di Penagihan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Alokasi ke SO, simpan kwitansi",
+   "cabang": "Nominal ≠ sisa → dialog Selisih (F03/F04)"
+  },
+  {
+   "peran": "Sistem",
+   "label": "Jurnal Bank D / Piutang K"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cek jurnal di Riwayat"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "nav_id": "finance-tower",
+   "tab": "finance-desk"
+  },
+  {
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "nav_id": "ar-aging",
+   "tab": "collection-worklist"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Layar masuk → Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Masuk dengan akun peserta; lihat kartu 'Uang masuk perlu dicatat'",
+   "isi": "*Email*: finance.latihNN@kainnusantara.id · *Kata sandi*: demo12345",
+   "hasil": "Tab 'Perlu Tindakan' terbuka; kartu 'Uang masuk perlu dicatat' memuat SO-SO tempo yang belum dibayar (termasuk SO Anda) dengan tombol 'Terima pembayaran'. Boleh dicatat dari sini, tetapi latihan ini memakai layar Piutang.",
+   "gambar": "uji/hasil/F02/01-meja-finance.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang",
+   "aksi": "Klik menu [[Piutang]] di grup KEUANGAN (sisi kiri)",
+   "isi": "",
+   "hasil": "Hub Piutang terbuka dengan enam tab: Saldo & Umur · Penagihan & Penerimaan · Rencana & Denda · Titipan & Saldo Kredit · Kredit & Plafon · Kasus.",
+   "gambar": "uji/hasil/F02/02-menu-piutang-menu.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Klik tab [[Penagihan & Penerimaan]]",
+   "isi": "",
+   "hasil": "Tiga kartu angka (TOTAL TAGIHAN (AR) · JATUH TEMPO (LEWAT TEMPO) · PERLU DIINGATKAN), daftar 'Reminder Penagihan' (kolom Pelanggan · Pesanan · Belum Lunas · Jatuh Tempo · Telat · Aksi) dan di bawahnya 'Riwayat Pembayaran (AR)'.",
+   "gambar": "uji/hasil/F02/03-menu-piutang-tab.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Gulir ke baris SO Anda (pelanggan 'Latihan NN', nomor SO dari Kartu Peserta) → klik ikon dompet (tengah, judul 'Terima pembayaran') di kolom Aksi",
+   "isi": "",
+   "hasil": "Baris SO: Belum Lunas Rp 3.359.693 (contoh peserta 02), Jatuh Tempo 17 Des 2026, Telat '30h Lagi'. Tiga ikon Aksi: lonceng = tandai sudah diingatkan · dompet = terima pembayaran · telepon = catat tindak lanjut.",
+   "gambar": "uji/hasil/F02/04-penagihan-baris-so.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Form 'Terima pembayaran · Latihan NN …'",
+   "aksi": "Periksa isian yang sudah terisi otomatis",
+   "isi": "",
+   "hasil": "Pita 'PT: Sukacita'; *Nominal diterima* Rp 3.359.693; *Tanggal terima* hari ini; *Cara bayar* Transfer bank ('→ masuk Kas Besar (bank)'); *Rekening penerima* 'BCA Operasional KSC · BCA 7415595554' terkunci ('Satu-satunya rekening penerimaan PT ini…'); *Alokasi ke tagihan* = [[Atur sendiri]] dengan SO Anda bertanda 'Dibuka' dan kotak alokasi berisi sisa persis 3359692.5; SO lain milik pelanggan berisi 0.",
+   "gambar": "uji/hasil/F02/05-form-terima-pembayaran.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Form 'Terima pembayaran'",
+   "aksi": "Isi *No. referensi* dari bukti transfer → klik [[Simpan kwitansi]]",
+   "isi": "*No. referensi*: TRF-LATIHNN-F02 · Kotak alokasi SO: biarkan (bila Anda mengetik nominal mutasi 3359693, sistem tetap memakai sisa persis 3.359.692,50 — tidak bisa melebihi sisa)",
+   "hasil": "Di bawah form: 'Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan.' Kaki form: 'Total diterima: Rp 3.359.693'.",
+   "gambar": "uji/hasil/F02/06-form-nominal-referensi.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Jendela 'Simpan kwitansi'",
+   "aksi": "Baca kalimat konfirmasi → klik [[Ya, simpan]]",
+   "isi": "",
+   "hasil": "Kalimat: 'Catat penerimaan Rp 3.359.693 dari Latihan NN · Toko Kain Peserta NN ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?' — periksa nominal, pelanggan, rekening dan PT sebelum menekan Ya.",
+   "gambar": "uji/hasil/F02/07-konfirmasi-simpan.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+   "aksi": "Lihat hasil di bagian atas layar",
+   "isi": "",
+   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp 3.359.693) dicatat untuk Latihan NN · Toko Kain Peserta NN.'; baris SO Anda HILANG dari Reminder Penagihan (lunas); TOTAL TAGIHAN (AR) turun sebesar nilai SO.",
+   "gambar": "uji/hasil/F02/08-kwitansi-tercatat.png"
+  },
+  {
+   "no": 9,
+   "peran": "Finance",
+   "menu": "Penagihan & Penerimaan › Riwayat Pembayaran (AR)",
+   "aksi": "Ketik nomor kwitansi di kotak 'Cari nomor kwitansi / pelanggan…' → klik label hijau [[Jurnal Terbit]] di kolom Status",
+   "isi": "",
+   "hasil": "Baris kwitansi: Rekening 'Transfer bank · BCA 7415595554', No. referensi TRF-LATIHNN-F02, Jumlah Rp 3.359.693, Pesanan = SO Anda, Selisih '—', Status 'Tercatat' + 'Jurnal Terbit'.",
+   "gambar": "uji/hasil/F02/09-riwayat-kwitansi.png"
+  },
+  {
+   "no": 10,
+   "peran": "Finance",
+   "menu": "Jurnal (pop-up Buku Besar)",
+   "aksi": "Baca jurnal penerimaan → [[Tutup]]",
+   "isi": "",
+   "hasil": "'Jurnal KSC/JE-…' · 'Kas in · Penerimaan KSC/AR-… — Latihan NN … · Ref TRF-LATIHNN-F02'; Dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'; baris 1-1100 Kas Besar / Bank Debit Rp 3.359.693 dan 1-1200 Piutang Usaha Kredit Rp 3.359.693; Total Debit = Total Kredit.",
+   "gambar": "uji/hasil/F02/10-jurnal-kwitansi.png"
+  }
+ ],
+ "cek_buku": [
+  "Jurnal kwitansi (sumber transaksi kas KSC/CASH-…): 1-1100 Kas Besar / Bank (D) Rp 3.359.692,50 · 1-1200 Piutang Usaha (K) Rp 3.359.692,50 — seimbang, nilai PERSIS sama dengan SO (layar membulatkan ke Rp 3.359.693).",
+  "SO a_dasar:so_lunas: status bayar Lunas (paid), sisa Rp 0; kwitansi teralokasi 1 SO, tidak ada sisa titipan (unapplied 0).",
+  "Kas masuk tercatat di rekening BCA Operasional KSC (bahan rekonsiliasi bank F10)."
+ ],
+ "kesalahan_umum": [
+  "Memakai [[Tertua dulu]] lalu mengetik nominal mutasi: uang dialokasikan ke SO TERTUA pelanggan lebih dulu, dan sisa recehnya (mis. Rp 0,50) bisa jatuh ke SO kedua. Untuk melunasi SO tertentu, buka dari baris SO itu ('Atur sendiri').",
+  "Lupa *No. referensi* — rekonsiliasi bank (F10) jadi sulit mencocokkan mutasi.",
+  "Memilih cara bayar Tunai untuk transfer: uang masuk Kas Kecil, bukan bank.",
+  "Mengira angka layar Rp 3.359.693 = nilai buku: SO latihan bernilai setengah rupiah; buku menyimpan Rp 3.359.692,50."
+ ],
+ "catatan_pelatih": "Pelanggan tidak bisa mentransfer Rp 0,50: mutasi bank akan Rp 3.359.693 (atau …692) sementara kwitansi tercatat Rp 3.359.692,50 — selisih Rp 0,50 muncul saat rekonsiliasi (lihat pertanyaan untuk pemilik). Form TIDAK menolak bila nominal mutasi diketik di kotak alokasi: angkanya dibatasi ke sisa tagihan. Label 'Jurnal Terbit' kini bisa diklik untuk membuka jurnal (perbaikan 17 Nov). Kerjakan F02 sebelum F04.",
+ "uji": {
+  "berkas": "uji/F02_pelunasan_penuh.js",
+  "peserta_uji": "02"
+ }
+}

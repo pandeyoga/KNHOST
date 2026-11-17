@@ -127,7 +127,8 @@ afterEach(async () => {
 });
 
 // ── Tagihan pemasok (U1–U5) ────────────────────────────────────────────────────────────────────────────────────────
-const MGR = { role: "manager", permissions: { vendor_bill: ["view", "approve", "pay"] } };
+// Pelatihan 18 Nov (F11) — Kirim/Batalkan tagihan kini butuh `vendor_bill.update` (bawaan Manajer memegangnya).
+const MGR = { role: "manager", permissions: { vendor_bill: ["view", "update", "approve", "pay"] } };
 const billOf = (over = {}) => ({
   id: "vb1", bill_number: "VB-2026-0001", status: "pending_approval", match_status: "matched",
   supplier_name: "CV Benang Jaya", entity_id: "ent_ksc", po_number: "PO-0001", items: [], timeline: [], payments: [],

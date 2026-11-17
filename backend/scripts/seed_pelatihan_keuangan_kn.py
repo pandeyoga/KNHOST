@@ -53,17 +53,34 @@ def preps():
     return out
 
 
-async def kartu(n: int) -> None:
+LABEL = {
+    "a_dasar:akun": "Akun", "a_dasar:mitra": "Pelanggan & pemasok", "a_dasar:so_lunas": "F02/F13 SO pelunasan penuh",
+    "a_dasar:so_sebagian": "F03/F04 SO bayar sebagian", "b_piutang:cicilan": "F05 Pelanggan cicilan",
+    "b_piutang:izin_kredit": "F06 Izin kredit", "b_piutang:so_berikut": "F04 Tagihan berikutnya",
+    "c_kas:pd_kas_kecil": "F07 PD kas kecil", "c_kas:titipan_sales": "F08 Titipan sales",
+    "c_kas:kwitansi_transfer": "F10 Kwitansi transfer", "a_dasar:tagihan_bayar": "F11 Tagihan dibayar",
+    "a_dasar:tagihan_kontrabon": "F12 Tagihan kontrabon", "d_hutang:sample_berbayar": "F14 Sample berbayar",
+    "d_hutang:gaji_susulan": "F15 Gaji susulan", "e_buku:so_jejak": "F16 SO jejak dokumen",
+}
+
+
+def _nilai(v) -> str:
+    if isinstance(v, float):
+        return f"Rp {v:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".").replace(",00", "")
+    return str(v)
+
+
+async def kartu(n: int, mulai: int = 1) -> None:
     state = (await db.migrations.find_one({"id": FLAG}, {"_id": 0}) or {}).get("peserta", {})
     log("\n================ KARTU PESERTA (sandi semua: demo12345 · PT Sukacita) ================")
-    for i in range(1, n + 1):
+    for i in range(mulai, n + 1):
         p = Peserta(i)
         done = state.get(p.kode, {})
         log(f"\nPeserta {p.kode} — {p.email}")
         for key, val in done.items():
             if isinstance(val, dict):
-                show = {k: v for k, v in val.items() if not k.endswith("_id")}
-                log(f"  {key:<34} {json.dumps(show, ensure_ascii=False)}")
+                show = " · ".join(f"{k}: {_nilai(v)}" for k, v in val.items() if not k.endswith("_id") and v not in ("", None))
+                log(f"  {LABEL.get(key, key):<30} {show}")
 
 
 async def nonaktifkan() -> None:
@@ -84,7 +101,7 @@ async def main() -> None:
     if a.nonaktifkan:
         return await nonaktifkan()
     if a.kartu:
-        return await kartu(a.peserta)
+        return await kartu(a.peserta, a.mulai)
     if not await db.migrations.find_one({"id": "demo_lengkap_master"}):
         sys.exit("Jalankan dulu data demo lengkap (deploy/setup_demo_lengkap.sh).")
     cst = (await db.business_entities.find_one({"doc_prefix": "CST"}, {"_id": 0, "id": 1}))["id"]
@@ -115,7 +132,7 @@ async def main() -> None:
     finally:
         await asyncio.sleep(2)
         await api.close()
-    await kartu(a.peserta)
+    await kartu(a.peserta, a.mulai)
     if failed:
         sys.exit(f"\nSelesai dengan {len(failed)} langkah gagal: {', '.join(failed)} (jalankan ulang setelah diperbaiki)")
     log("\nSELESAI — data latihan keuangan siap.")

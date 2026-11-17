@@ -510,15 +510,17 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     from services import payment_variance_service as pvs
     ent_scope: Any = scope.get("entity_id") if isinstance(scope, dict) else ""
     selisih = await pvs.pending(ent_scope or "")
+    # Pelatihan 18 Nov (F01) — `pvs.pending` mengembalikan `receipt_id`, `delta`, `direction`, `receipt_date`,
+    # `age_days` (bukan `id`/`variance`/`created_at`): dulu baris ber-ref_id kosong → tombol meja macet "Memproses…"
+    # (busyRef "" === ref_id "") dan NILAI Rp 0.
     queues.append(_queue(
         "selisih_bayar", "Selisih bayar perlu diputuskan",
         "Lebih/kurang bayar yang belum diputus. Di luar batas kewenangan → manajer.",
-        [_row(ref_type="ar_receipt", ref_id=r.get("id", ""), number=r.get("number", "—"),
+        [_row(ref_type="ar_receipt", ref_id=r.get("receipt_id") or r.get("id", ""), number=r.get("number", "—"),
               title=r.get("customer_name", "—"),
-              subtitle=str((r.get("variance") or {}).get("kind_label")
-                           or (r.get("variance") or {}).get("kind") or "selisih"),
-              value=abs(float((r.get("variance") or {}).get("amount") or 0)),
-              age_days=_age_days(r.get("created_at")), at=r.get("created_at"), badge="perlu keputusan",
+              subtitle={"under": "kurang bayar", "over": "lebih bayar"}.get(str(r.get("direction") or ""), "selisih"),
+              value=abs(float(r.get("delta") or 0)),
+              age_days=int(r.get("age_days") or 0), at=r.get("receipt_date") or "", badge="perlu keputusan",
               action="Putuskan", action_kind="decide_variance")
          for r in map(safe_doc, selisih)],
         action_label="Putuskan", owner="finance"))

@@ -1,0 +1,114 @@
+{
+ "kode": "F13",
+ "judul": "Faktur Pajak Keluaran — terbitkan dari Beranda Keuangan & isi NSFP",
+ "bagian": "A",
+ "tujuan": "Peserta bisa menerbitkan faktur pajak keluaran untuk pesanan ber-PPN yang sudah dikirim, mengisi Nomor Seri Faktur Pajak (NSFP) resmi, membaca aturan pajak & data pembeli di rincian faktur, dan tahu bahwa faktur pajak TIDAK menjurnal (PPN keluaran sudah dijurnal saat barang dikirim).",
+ "kapan": "Setiap hari / sebelum tutup masa PPN: kartu 'Faktur pajak perlu terbit' di Beranda Keuangan berisi pesanan ber-PPN yang belum punya faktur. NSFP diisi setelah nomor resmi didapat dari Coretax DJP.",
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Kartu Peserta baris *a_dasar:so_lunas*: SO terkirim (contoh peserta 04: KSC/SO-00010, total Rp 3.336.105) untuk pelanggan 'Latihan NN · Toko Kain Peserta NN'. Menerbitkan faktur tidak mengubah piutang/pembayaran SO, jadi boleh sebelum atau sesudah F02. NSFP latihan: 01002611180000NN (NN = nomor peserta; contoh peserta 04: 0100261118000004).",
+ "alur": [
+  {
+   "peran": "Sales",
+   "label": "SO ber-PPN dibuat"
+  },
+  {
+   "peran": "Gudang",
+   "label": "Barang dikirim (surat jalan)"
+  },
+  {
+   "peran": "Buku",
+   "label": "Piutang (D) / Penjualan + PPN Keluaran (K)"
+  },
+  {
+   "peran": "Finance",
+   "label": "Terbitkan faktur FKT-…"
+  },
+  {
+   "peran": "Finance",
+   "label": "Isi NSFP dari Coretax",
+   "cabang": "NSFP belum ada → isi menyusul"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cocokkan PPN faktur = buku"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "nav_id": "finance-tower",
+   "tab": "finance-desk"
+  },
+  {
+   "menu": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+   "nav_id": "tax-hub",
+   "tab": "tax-invoices"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Pada kartu [[Faktur pajak perlu terbit]] ketik nomor SO Anda di kotak cari kartu",
+   "isi": "*Cari*: KSC/SO-… (baris *so_lunas* Kartu Peserta)",
+   "hasil": "Satu baris: nomor SO, nama pelanggan 'Latihan NN · Toko Kain Peserta NN', status Selesai, 'PPN 3xx.xxx', nilai = total SO, tombol [[Terbitkan]].",
+   "gambar": "uji/hasil/F13/01-meja-faktur-perlu-terbit.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Klik [[Terbitkan]] pada baris itu",
+   "isi": "",
+   "hasil": "Bilah hijau 'Faktur Pajak KSC/FKT-… diterbitkan untuk KSC/SO-….'; baris SO hilang dari kartu. (Tombol ini langsung menerbitkan — tidak ada dialog tanya.)",
+   "gambar": "uji/hasil/F13/02-faktur-terbit.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+   "aksi": "Buka grup AKUNTANSI & PAJAK › [[Pajak]], ketik nomor SO di kotak cari",
+   "isi": "*Cari*: KSC/SO-…",
+   "hasil": "Baris KSC/FKT-…: status 'Normal', 'NSFP belum diisi' (oranye), Sumber KSC/SO-…, pembeli 'tanpa NPWP/NIK' + lencana 'Data pajak belum lengkap'; DPP Rp … · nilai lain (11/12) Rp … · PPN Rp … · Total = total SO.",
+   "gambar": "uji/hasil/F13/03-faktur-keluaran.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Faktur Keluaran",
+   "aksi": "Klik ikon [[#]] (Isi NSFP resmi) pada baris faktur, isi nomor, klik [[Konfirmasi]]",
+   "isi": "*Nomor Seri Faktur Pajak (16 digit)*: 01002611180000NN · *Kode Transaksi*: biarkan (04 = DPP nilai lain)",
+   "hasil": "Pop-up tertutup; kolom NSFP baris faktur berisi nomor yang diketik.",
+   "gambar": "uji/hasil/F13/05-nsfp-terisi.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Faktur Keluaran",
+   "aksi": "Klik ikon [[i]] (Rincian faktur & aturan pajak), baca, lalu tutup",
+   "isi": "",
+   "hasil": "'Aturan pajak saat terbit': Tarif PPN 12%, DPP nilai lain 11/12, pembulatan per dokumen, harga belum termasuk PPN; 'Pembeli menurut data pajak': Identitas tanpa NPWP/NIK, nama & alamat pelanggan, daftar data yang belum lengkap.",
+   "gambar": "uji/hasil/F13/06-rincian-faktur.png"
+  }
+ ],
+ "cek_buku": [
+  "Faktur pajak TIDAK membuat jurnal (0 jurnal ber-sumber faktur).",
+  "PPN di faktur = kredit 2-1200 PPN Keluaran pada jurnal 'Pengakuan penjualan KSC/SO-… · KSC/SJ-…' (saat dikirim): 1-1200 Piutang Usaha (D) = 4-1000 Pendapatan Penjualan (K) + 2-1200 PPN Keluaran (K).",
+  "Status bayar dan sisa piutang SO tidak berubah karena faktur terbit.",
+  "Di bawah daftar faktur, 'Pencocokan PPN keluaran' membandingkan Σ PPN faktur terbit dengan akun PPN keluaran per masa."
+ ],
+ "kesalahan_umum": [
+  "Menekan [[Terbitkan]] pada SO peserta lain — faktur langsung terbit; pembatalan hanya oleh Manajer (izin batal faktur).",
+  "Mengetik NSFP yang sama dengan peserta lain → ditolak 'Nomor seri … sudah dipakai faktur KSC/FKT-…'. Pakai NSFP latihan dengan nomor peserta Anda.",
+  "Mengira faktur pajak menambah piutang/pendapatan — tidak; itu dokumen pajak, bukan jurnal.",
+  "Mencari tombol Unduh e-Faktur/Coretax — belum ada di aplikasi; NSFP dari Coretax diisi manual.",
+  "Mengabaikan lencana 'Data pajak belum lengkap' — di pekerjaan nyata lengkapi NPWP/NIK pelanggan (lewat Admin/Sales) sebelum faktur diunggah ke Coretax."
+ ],
+ "catatan_pelatih": "Pemicu faktur PT Sukacita = per pesanan (tax.pemicu_faktur bawaan) sehingga kartu 'Faktur pajak perlu terbit' memuat SEMUA SO ber-PPN yang belum berfaktur (milik semua peserta dan data demo) — minta peserta selalu mencari nomor SO sendiri dulu. Finance boleh menerbitkan, mengisi NSFP dan membuat pengganti; membatalkan faktur = Manajer. Hal yang perlu diputuskan pemilik (dicatat di laporan audit): (1) faktur per pesanan boleh terbit walau pembeli tanpa NPWP/NIK (hanya lencana), sedangkan draf faktur per surat jalan ditolak 'Lengkapi data pajak pelanggan dulu' — samakan aturannya?; (2) isian NSFP tidak memeriksa jumlah digit/format (label '16 digit', Coretax kini 17 digit); (3) ekspor e-Faktur/Coretax belum tersedia (pengaturan 'Terbitkan e-Faktur' hanya sakelar). Tombol cetak 'format lama' membuka /api/… di tab baru — di lingkungan lokal tanpa proxy tidak tampil; di VPS normal.",
+ "uji": {
+  "berkas": "uji/F13_faktur_pajak.js",
+  "peserta_uji": "04"
+ }
+}

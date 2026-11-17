@@ -440,8 +440,11 @@ async def import_raw(bank_account_id: str, raw: str, format_id: str = "",
     rows, errors = parser.parse_rows(raw, fdoc, year_hint)
     if not rows:
         raise ValueError("Tidak ada baris mutasi yang bisa dibaca — periksa template/berkas")
+    # M38 — teks rekening koran yang DITEMPEL ke kotak (tanpa nama berkas) tercatat `tempel`, bukan `berkas`
+    # (dulu semua impor lewat jalur ini berlabel "berkas" sehingga ringkasan menulis "Impor terakhir: berkas").
     res = await import_lines(bank_account_id, "", rows, actor, entity_ids, active_entity,
-                             fdoc.get("id", ""), source="berkas", file_name=file_name)
+                             fdoc.get("id", ""), source="berkas" if (file_name or "").strip() else "tempel",
+                             file_name=file_name)
     res.update({"format_id": fdoc.get("id", ""), "format_name": fdoc.get("name", ""),
                 "detected": detected, "parsed": len(rows),
                 "errors": errors[:20], "error_count": len(errors)})
@@ -1741,6 +1744,19 @@ async def list_lines(bank_account_id: str, entity_ids: Optional[List[str]] = Non
     return [safe_doc(l) for l in lines]
 
 
+def _dalam_periode(txn: Dict[str, Any], start: Optional[str], end: Optional[str]) -> bool:
+    """Transaksi buku bertanggal (tanggal buku WIB) di dalam saringan periode ringkasan; tanpa saringan = selalu."""
+    if not start and not end:
+        return True
+    raw = txn.get("txn_date") or txn.get("created_at") or ""
+    try:
+        from services.book_date import tanggal_buku
+        tgl = tanggal_buku(raw) if raw else ""
+    except ValueError:
+        tgl = str(raw)[:10]
+    return bool(tgl) and (not start or tgl >= start[:10]) and (not end or tgl <= end[:10])
+
+
 async def summary(bank_account_id: str, entity_ids: Optional[List[str]] = None,
                   start: Optional[str] = None, end: Optional[str] = None) -> Dict[str, Any]:
     acc = await _account(bank_account_id, entity_ids)
@@ -1753,10 +1769,14 @@ async def summary(bank_account_id: str, entity_ids: Optional[List[str]] = None,
     ignored = sum(1 for l in lines if l["status"] == "ignored")
     holding = [l for l in lines if l["status"] == "holding"]
     suggested = sum(1 for l in lines if l["status"] == "unmatched" and (l.get("suggestions") or []))
-    unrec_txns = len(await _candidate_txns(bank_account_id, entity_ids))
+    # Pelatihan 18 Nov — sisi BUKU ikut periode yang dipilih (layar menulis "kartu ringkasan mengikuti periode yang
+    # dipilih"); dulu hanya mutasi yang disaring, buku tetap seluruh riwayat → selisih periode tidak bermakna.
+    unrec_txns = len([t for t in await _candidate_txns(bank_account_id, entity_ids) if _dalam_periode(t, start, end)])
     book_in = book_out = 0.0
     bq = await _book_query(acc, entity_ids)
     for t in await db.cash_transactions.find(bq, {"_id": 0}).to_list(20000):
+        if not _dalam_periode(t, start, end):
+            continue
         amt = _round(t.get("amount"))
         if t.get("direction") == "in":
             book_in += amt

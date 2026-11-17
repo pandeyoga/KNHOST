@@ -50,6 +50,9 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
     reject: useIntentKey("vbrej"), cancel: useIntentKey("vbcan"),
   };
   const canPay = can(currentUser?.permissions, "vendor_bill", "pay");   // = POST /vendor-bills/{id}/pay
+  // Pelatihan keuangan 18 Nov (temuan F11) — Kirim & Batalkan = `vendor_bill.update` (POST …/submit, …/cancel). Dulu tampil
+  // untuk semua peran: Finance (izin lihat & bayar, K-17) menekan Batalkan lalu ditolak 403 di server.
+  const canUpdate = can(currentUser?.permissions, "vendor_bill", "update");
   const { entities } = useEntityScope();
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
@@ -202,7 +205,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
 
         {/* Actions footer */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          {bill.status === "draft" && (
+          {bill.status === "draft" && canUpdate && (
             <>
               <button data-testid="vb-action-cancel" onClick={() => cancelBill()} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               <button data-testid="vb-action-submit" onClick={() => act("submit")} disabled={busy} className="primary-button"><Send size={13} /> Kirim</button>
@@ -219,7 +222,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
           )}
           {bill.status === "posted" && (
             <>
-              {bill.bill_type !== "makloon_service" && (
+              {bill.bill_type !== "makloon_service" && canUpdate && (
                 <button data-testid="vb-action-cancel-posted" onClick={() => cancelBill()} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               )}
               {canPay && Number(fin.outstanding) > 0.01 && (

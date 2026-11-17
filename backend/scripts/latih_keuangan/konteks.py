@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 from db import db
-from scripts.demo_api import Api
+from scripts.demo_api import Api, ApiError
 from scripts.seed_demo_transaksi_kn import MAIL, Ctx
 
 KSC = "ent_ksc"
@@ -47,6 +47,44 @@ class LatihCtx(Ctx):
 
     async def admin(self):
         return await self.api.system_admin()
+
+    async def u(self, key: str):
+        """Sesi akun demo (`sales`, `warehouse`, `mdquality`, …). VPS: akun yang belum ada DIBUAT (peran/PT sama dengan
+        data demo lengkap); akun yang sandinya sudah diganti pemilik TIDAK diubah — dipakai sesi sementara bertanda
+        `demo_seed` (dihapus saat skrip selesai), sama seperti sesi admin internal."""
+        email = key if "@" in key else key + MAIL
+        if email in self.api._sessions:
+            return self.api._sessions[email]
+        try:
+            return await self.api.as_user(email)
+        except ApiError:
+            pass
+        user = await db.users.find_one({"email": email}, {"_id": 0, "password_hash": 0})
+        if not user:
+            from scripts.seed_demo_lengkap_kn import accounts
+            spec = next((a for a in accounts(self.cst) if a["email"] == email), None)
+            if not spec:
+                raise RuntimeError(f"Akun {email} tidak ada dan bukan akun demo yang dikenal.")
+            adm = await self.admin()
+            await adm.post("/users", {"name": spec["name"], "email": email, "role": spec["role"], "password": SANDI,
+                                      "home_entity_id": spec["home"], "allowed_entity_ids": spec["allowed"]})
+            try:
+                return await self.api.as_user(email)
+            except ApiError:
+                user = await db.users.find_one({"email": email}, {"_id": 0, "password_hash": 0})
+        if (user or {}).get("status") not in (None, "active"):
+            raise RuntimeError(f"Akun {email} tidak aktif — aktifkan dulu di Pengaturan › Akun.")
+        import secrets
+        from datetime import datetime, timedelta, timezone
+
+        from core_utils import new_id, now_iso
+        from scripts.demo_api import Session
+        token = secrets.token_urlsafe(32)
+        await db.sessions.insert_one({"id": new_id("session"), "token": token, "user_id": user["id"], "created_at": now_iso(),
+                                      "demo_seed": True,
+                                      "expires_at": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()})
+        self.api._sessions[email] = Session(self.api.client, token, user)
+        return self.api._sessions[email]
 
     async def peserta_user(self, p: Peserta):
         return await self.api.as_user(p.email)

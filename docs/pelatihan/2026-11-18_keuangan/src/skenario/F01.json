@@ -1,0 +1,198 @@
+{
+ "kode": "F01",
+ "judul": "Orientasi Finance — masuk, Beranda Keuangan, bilah atas, Profil Saya, Tanya KN",
+ "bagian": "A",
+ "tujuan": "Peserta mengenal layar kerja harian Finance: tiga tab Beranda Keuangan (Perlu Tindakan · Posisi · Analisis), cara mencari, menyaring, berpindah halaman dan membuka baris di kartu antrean, membaca angka posisi kas/piutang/hutang dan tahu angka itu sama dengan buku besar.",
+ "kapan": "Setiap pagi saat masuk: lihat apa yang menunggu (Perlu Tindakan), cek posisi kas/piutang/hutang (Posisi), sesekali tren & rasio (Analisis).",
+ "peran": "Finance (akun peserta)",
+ "menit": 20,
+ "data_awal": "Kartu Peserta baris *a_dasar:akun*: email finance.latihNN@kainnusantara.id, sandi demo12345, hanya PT Sukacita. Dua SO latihan terkirim & belum dibayar (*a_dasar:so_lunas*, *a_dasar:so_sebagian*, pelanggan 'Latihan NN · Toko Kain Peserta NN') muncul di kartu 'Uang masuk perlu dicatat'. Orientasi TIDAK mencatat apa pun.",
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Layar masuk",
+   "aksi": "Isi *Email* dan *Kata sandi* dari Kartu Peserta → [[Masuk]]",
+   "isi": "*Email*: finance.latihNN@kainnusantara.id · *Kata sandi*: demo12345",
+   "hasil": "Langsung mendarat di Keuangan › Beranda Keuangan, tab 'Perlu Tindakan'. Di atas ada tiga tab: Perlu Tindakan · Posisi · Analisis. Pita abu-abu 'Angka untuk Sukacita Textile'.",
+   "gambar": "uji/hasil/F01/01-beranda-perlu-tindakan.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Bilah atas",
+   "aksi": "Baca kotak PT, bilah Lokasi, tombol Tanya KN, lonceng, muat ulang",
+   "isi": "",
+   "hasil": "Kotak PT bertuliskan 'Sukacita · Finance' tanpa panah — terkunci, akun Anda hanya PT Sukacita (tidak bisa pindah PT). Bilah 'Lokasi: Semua lokasi — lokasi kerja belum diatur' + tulisan oranye 'Lokasi kerja belum diatur': ABAIKAN — itu untuk stok/gudang, tidak memengaruhi angka keuangan.",
+   "gambar": "uji/hasil/F01/02-bilah-atas.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Baca kepala tiap kartu: judul · angka jumlah · 'tertua …' · NILAI",
+   "isi": "",
+   "hasil": "Kartu hanya muncul bila ada isinya. 'Faktur pajak perlu terbit' = pesanan ber-PPN tanpa faktur pajak keluaran; 'Uang masuk perlu dicatat' = tagihan pelanggan yang menunggu kwitansi; 'Selisih bayar perlu diputus' = kwitansi kurang/lebih bayar yang belum diputus. Ringkasan di judul: 'NN dokumen · N kelompok'.",
+   "gambar": "uji/hasil/F01/03-kepala-kartu.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Di kartu 'Uang masuk perlu dicatat' ketik nama pelanggan Anda di kotak *Cari nomor dokumen / pelanggan / keterangan…*",
+   "isi": "*Cari*: Toko Kain Peserta NN",
+   "hasil": "Tinggal dua baris milik Anda (SO *a_dasar:so_lunas* dan *a_dasar:so_sebagian*), nilainya = sisa tagihan SO, masing-masing bertombol [[Terima pembayaran]].",
+   "gambar": "uji/hasil/F01/04-cari-uang-masuk.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Klik [[Terima pembayaran]] pada SO lunas Anda → baca formnya → [[Batal]]",
+   "isi": "Jangan isi apa pun — pencatatan dilatih di F02.",
+   "hasil": "Form 'Terima pembayaran' terbuka dengan 'Pelanggan: Latihan NN · Toko Kain Peserta NN'. [[Batal]] menutup form tanpa mencatat apa pun.",
+   "gambar": "uji/hasil/F01/05-form-terima-pembayaran.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Di kartu 'Faktur pajak perlu terbit' klik [[Berikutnya]] di bawah kartu, lalu [[Sebelumnya]]",
+   "isi": "",
+   "hasil": "Tiap kartu 5 baris per halaman. Keterangan berubah 'Menampilkan 6–10 dari … baris' dan 'Hal 2 / …'. Kotak *Semua status* menyaring status, kotak *Tertua dulu* mengubah urutan (Terbaru dulu / Nilai terbesar).",
+   "gambar": "uji/hasil/F01/06-faktur-pajak-halaman-2.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "aksi": "Baca kartu 'Selisih bayar perlu diputus' (bila tampil)",
+   "isi": "",
+   "hasil": "Baris kwitansi (mis. KSC/AR-00002 Konveksi Maju Bersama) bertuliskan 'kurang bayar'/'lebih bayar', NILAI = besar selisihnya, tombol [[Putuskan]] membuka Piutang › Rencana & Denda › Selisih. Jangan memutus di orientasi.",
+   "gambar": "uji/hasil/F01/07-selisih-bayar.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Posisi",
+   "aksi": "Klik tab [[Posisi]] → baca empat kartu teratas",
+   "isi": "",
+   "hasil": "POSISI KAS = saldo buku besar akun kas & bank; PIUTANG (AR) = total belum lunas, dengan rincian 'tercatat Rp … · belum dikirim Rp …'; HUTANG (AP) = sisa tagihan pemasok; MODAL KERJA BERSIH = Kas + piutang tercatat − hutang (keterangan di kartu).",
+   "gambar": "uji/hasil/F01/08-posisi-kartu.png"
+  },
+  {
+   "no": 9,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Posisi",
+   "aksi": "Gulir ke 'Laba-Rugi YTD' dan 'Rincian Kas per Akun (GL)'",
+   "isi": "",
+   "hasil": "Rincian kas: 1-1100 Kas Besar / Bank + 1-1110 Kas Kecil, dan tulisan 'Jumlahnya = Posisi Kas di kartu atas'. Pendapatan & Laba Bersih YTD dari jurnal tahun berjalan; tombol 'Rincian: Akuntansi & Pajak › Laporan' hanya untuk manajer.",
+   "gambar": "uji/hasil/F01/09-posisi-rincian-kas.png"
+  },
+  {
+   "no": 10,
+   "peran": "Finance",
+   "menu": "Keuangan › Beranda Keuangan › Analisis",
+   "aksi": "Klik tab [[Analisis]] → baca grafik tren, empat rasio, dan tabel per PT",
+   "isi": "",
+   "hasil": "Baris 'Sukacita' di tabel: Pendapatan · Beban · Laba Bersih · Marjin — Pendapatan & Laba Bersih sama dengan kartu Laba-Rugi YTD di tab Posisi. Rasio: marjin kotor, marjin bersih, rasio lancar, utang terhadap ekuitas.",
+   "gambar": "uji/hasil/F01/10-analisis.png"
+  },
+  {
+   "no": 11,
+   "peran": "Finance",
+   "menu": "Menu samping › Akun › Profil Saya",
+   "aksi": "Klik [[Profil Saya]]",
+   "isi": "",
+   "hasil": "Kartu profil karyawan (nama 'Peserta Keuangan NN', nomor EMP-…, absen hari ini, cuti & lembur). Ganti sandi TIDAK ada di aplikasi: bila lupa sandi, minta Admin mereset di Pengaturan › Pengguna & Hak Akses.",
+   "gambar": "uji/hasil/F01/11-profil-saya.png"
+  },
+  {
+   "no": 12,
+   "peran": "Finance",
+   "menu": "Menu samping › Tanya KN",
+   "aksi": "Klik [[Tanya KN]] → di galeri contoh pilih 'Posisi kas & bank'",
+   "isi": "",
+   "hasil": "Jawaban berisi tabel posisi kas & bank hari ini; totalnya sama dengan POSISI KAS di Beranda Keuangan. Kotak 'CHAT AI: Menunggu kunci penyedia model' berarti chat bebas belum aktif — contoh laporan tetap jalan.",
+   "gambar": "uji/hasil/F01/12-tanya-kn-posisi-kas.png"
+  }
+ ],
+ "cek_buku": [
+  "POSISI KAS = saldo akun 1-1100 Kas Besar / Bank + 1-1110 Kas Kecil (Buku Besar › Neraca Saldo) — uji: sama sampai rupiah.",
+  "PIUTANG 'tercatat' = saldo akun 1-1200 Piutang Usaha; 'belum dikirim' = pesanan yang belum dikirim (belum masuk buku).",
+  "HUTANG (AP) = saldo akun 2-1100 Hutang Usaha; MODAL KERJA = Kas + piutang tercatat − hutang.",
+  "Pendapatan & Laba Bersih YTD (Posisi) = baris Sukacita di Analisis = jumlah jurnal akun 4-… / 5-… / 6-… tahun berjalan.",
+  "Angka jumlah di kepala kartu Perlu Tindakan = isi antrean di server; nilai baris 'Uang masuk' = sisa tagihan SO."
+ ],
+ "kesalahan_umum": [
+  "Mengklik [[Terbitkan]] di kartu 'Faktur pajak perlu terbit' saat orientasi — tombol itu LANGSUNG menerbitkan faktur pajak.",
+  "Menyimpan form Terima pembayaran saat orientasi (harusnya [[Batal]]; pencatatan di F02).",
+  "Mengira 'Lokasi kerja belum diatur' sebagai galat — tidak berpengaruh ke pekerjaan keuangan.",
+  "Membandingkan PIUTANG (AR) total dengan saldo buku besar — yang sama dengan buku adalah angka 'tercatat'.",
+  "Angka Posisi berubah saat dibaca ulang: semua peserta bekerja di PT Sukacita yang sama → tekan ikon muat ulang dulu sebelum membandingkan.",
+  "Mencari 'Latihan NN' saja ikut memunculkan pelanggan kedua Anda 'Latihan NN · Toko Kain Cicilan NN' (dipakai di F05) — ketik 'Toko Kain Peserta NN' untuk pelanggan utama."
+ ],
+ "catatan_pelatih": "Semua peserta memakai PT Sukacita yang SAMA: angka Posisi/Analisis dan isi kartu Perlu Tindakan bergerak selama latihan (uji jalan membaca ulang sampai layar = buku). Tiga temuan untuk diketahui: (1) bilah Lokasi tampil untuk Finance karena izin lihat produk/logistik — abaikan; (2) tidak ada fitur ganti sandi sendiri — reset oleh Admin; (3) Profil Saya akun latihan menyebut jabatan 'Manajer' karena data karyawan dibuat otomatis saat backend menyala (peran Finance belum dipetakan ke jabatan). Kartu 'Selisih bayar' dulu menampilkan Rp 0 dan tombol macet 'Memproses…' — sudah diperbaiki (lihat LAPORAN_AUDIT).",
+ "uji": {
+  "berkas": "uji/F01_orientasi.js",
+  "peserta_uji": "05"
+ },
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Masuk dengan akun peserta"
+  },
+  {
+   "peran": "Sistem",
+   "label": "Mendarat di Perlu Tindakan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cari, saring, buka baris antrean",
+   "cabang": "Catat/terbitkan dikerjakan di F02 dst."
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca Posisi kas-piutang-hutang"
+  },
+  {
+   "peran": "Sistem",
+   "label": "Angka = saldo buku besar"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca Analisis per PT"
+  },
+  {
+   "peran": "Finance",
+   "label": "Profil Saya & Tanya KN"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+   "nav_id": "finance-tower",
+   "tab": "finance-desk"
+  },
+  {
+   "menu": "Keuangan › Beranda Keuangan › Posisi",
+   "nav_id": "finance-tower",
+   "tab": "finance-tower"
+  },
+  {
+   "menu": "Keuangan › Beranda Keuangan › Analisis",
+   "nav_id": "finance-tower",
+   "tab": "bi-finance"
+  },
+  {
+   "menu": "Akun › Profil Saya",
+   "nav_id": "hr-my-profile",
+   "tab": ""
+  },
+  {
+   "menu": "Modul › Tanya KN",
+   "nav_id": "tanya-kn",
+   "tab": ""
+  }
+ ]
+}

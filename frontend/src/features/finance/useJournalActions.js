@@ -10,6 +10,19 @@
 import { API } from "../../services/apiClient";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import { can } from "../../config/roles";
+
+/**
+ * Pelatihan 18 Nov (F16) — izin akuntansi akun yang sedang masuk (dari sesi tersimpan `kn_user`). Finance = `view` saja
+ * (K-09): tombol Jurnal Baru (`create`), Sinkronkan (`manage`), Anulir/Balik (`void`) dulu tampil lalu ditolak 403.
+ * Data izin belum ada (uji komponen / sesi lama) → `true` (perilaku lama); server tetap menegakkan.
+ */
+export function izinAkuntansi(aksi) {
+  let u = null;
+  try { u = JSON.parse(localStorage.getItem("kn_user") || "null"); } catch { u = null; }
+  if (!u || !u.permissions || u.role === "admin") return true;
+  return can(u.permissions, "accounting", aksi);
+}
 
 export default function useJournalActions(onDone) {
   const voidIntent = useIntentKey("jev");
@@ -28,5 +41,6 @@ export default function useJournalActions(onDone) {
     onDone?.();
   };
 
-  return { voidEntry, reverseEntry };
+  // `bolehBatal` — anulir & balik jurnal ber-izin `accounting.void`; pemanggil tidak mengirim aksinya bila tidak boleh.
+  return { voidEntry, reverseEntry, bolehBatal: izinAkuntansi("void") };
 }

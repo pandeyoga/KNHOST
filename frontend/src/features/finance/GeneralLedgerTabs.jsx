@@ -117,7 +117,7 @@ export function LedgerTab({ accounts, refreshKey, code, setCode, onError, range 
   const [failed, setFailed] = useState(false);
   const [entry, setEntry] = useState(null);
   const [opening, setOpening] = useState("");
-  const { voidEntry, reverseEntry } = useJournalActions(() => { setEntry(null); onChanged?.(); });
+  const { voidEntry, reverseEntry, bolehBatal } = useJournalActions(() => { setEntry(null); onChanged?.(); });
   const start = range?.start || "";
   const end = range?.end || "";
 
@@ -240,7 +240,7 @@ export function LedgerTab({ accounts, refreshKey, code, setCode, onError, range 
         </div>
       )}
       {entry && <JournalDetailModal je={entry} sourceMeta={sourceMeta} entities={entities} selectedEntity={selectedEntity}
-        onClose={() => setEntry(null)} onVoid={voidEntry} onReverse={reverseEntry} onOpenDocument={onOpenDocument} />}
+        onClose={() => setEntry(null)} onVoid={bolehBatal ? voidEntry : undefined} onReverse={bolehBatal ? reverseEntry : undefined} onOpenDocument={onOpenDocument} />}
     </div>
   );
 }

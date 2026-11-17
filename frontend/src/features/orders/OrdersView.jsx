@@ -117,6 +117,16 @@ export default function OrdersView({
       setStage("all");
       setSubStatus("");
       if (focusDoc.number) setSearchQuery(`"${focusDoc.number}"`);   // tanda kutip = nomor tepat (bukan substring)
+      else {
+        // Latihan Keuangan 17 Nov — tautan tanpa nomor (Rencana & Denda, Titipan & Saldo Kredit, Inbox Persetujuan):
+        // sejak M16 panel hanya untuk pesanan yang TAMPIL, jadi pesanan di luar halaman 1 dulu tidak pernah terbuka.
+        // Nomornya diambil dulu lalu daftar disaring ke pesanan itu.
+        const id = focusDoc.focus_id;
+        axios.get(`${API}/sales-orders/${id}`).then((r) => {
+          const n = r.data?.number || r.data?.order_number;
+          if (n) setSearchQuery(`"${n}"`);
+        }).catch(() => {});
+      }
       setSelectedOrder(focusDoc.focus_id);
       onClearFocus?.();
     }

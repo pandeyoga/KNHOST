@@ -1,0 +1,128 @@
+{
+ "kode": "F06",
+ "judul": "Kredit & Plafon — membaca antrean keputusan kredit dan kartu pelanggan",
+ "bagian": "A",
+ "tujuan": "Peserta tahu di mana melihat pengajuan kredit (plafon pelanggan baru, izin kredit dari Sales), apa yang bisa dan tidak bisa dilakukan Finance (hanya membaca; memutus = Manajer), cara membaca kartu pelanggan (Eksposur, Plafon, Lewat jatuh tempo, Titipan) dan antrean 'Jatuh tempo' untuk menagih.",
+ "kapan": "Saat Sales bertanya 'izin kredit saya sudah diputus?', saat SO tertahan kredit, dan setiap pagi untuk melihat pelanggan yang tagihannya jatuh tempo/telat.",
+ "peran": "Finance (akun peserta)",
+ "menit": 15,
+ "data_awal": "Kartu Peserta baris *b_piutang:izin_kredit*: Sales (Ayu Marketing) mengajukan izin kredit Rp 50.000.000 berlingkup pelanggan untuk 'Latihan NN · Toko Kain Peserta NN' (alasan 'Riwayat bayar baik'), menunggu Manajer. Juga pengajuan profil kredit (plafon Rp 300.000.000) yang lahir saat pelanggan dibuat. Antrean Jatuh tempo memakai pelanggan Cicilan dari F05.",
+ "alur": [
+  {
+   "peran": "Admin",
+   "label": "Pelanggan dibuat, plafon diusulkan"
+  },
+  {
+   "peran": "Sales",
+   "label": "Ajukan izin kredit"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca antrean & kartu"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui / tolak",
+   "cabang": "Finance tidak punya tombol Setujui"
+  },
+  {
+   "peran": "Finance",
+   "label": "Pantau jatuh tempo & riwayat"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Piutang › Kredit & Plafon",
+   "nav_id": "ar-aging",
+   "tab": "credit-overrides"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang",
+   "aksi": "Klik menu [[Piutang]]",
+   "isi": "",
+   "hasil": "Hub Piutang terbuka.",
+   "gambar": "uji/hasil/F06/01-menu-kredit-menu.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Keuangan › Piutang › Kredit & Plafon",
+   "aksi": "Klik tab [[Kredit & Plafon]]",
+   "isi": "",
+   "hasil": "Judul 'Kredit & Plafon · Daftar Kerja Kredit'; pilihan antrean 'Menunggu keputusan (…)' (lainnya: Ditahan · Jatuh tempo · Janji bayar · Kaji ulang · Denda); kotak cari.",
+   "gambar": "uji/hasil/F06/02-menu-kredit-tab.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Kredit & Plafon › Menunggu keputusan",
+   "aksi": "Ketik 'Latihan NN · Toko Kain Peserta' di kotak cari → baca dua baris → klik [[Buka kartu pelanggan]] pada baris Izin Kredit",
+   "isi": "*Cari pelanggan, nomor pesanan, atau nota*: Latihan NN · Toko Kain Peserta",
+   "hasil": "Dua baris: 'Ubah Profil' Rp 300.000.000 (Budi Santoso, 'Jenis plafon: khusus · Plafon kredit: Rp 300.000.000 · Plafon diusulkan saat pelanggan dibuat') dan 'Izin Kredit' Rp 50.000.000 (Ayu Marketing, 'Riwayat bayar baik — …'). TIDAK ada kolom Aksi / tombol Setujui-Tolak untuk Finance.",
+   "gambar": "uji/hasil/F06/03-antrean-menunggu-keputusan.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Kartu pelanggan",
+   "aksi": "Baca empat kotak atas dan panel Eksposur",
+   "isi": "",
+   "hasil": "Kepala: nama, 'Wholesale', status kredit 'Sehat'. Kotak EKSPOSUR · PLAFON (tertulis 'tanpa batas' selama plafon belum disetujui) · LEWAT JATUH TEMPO · TITIPAN & SALDO KREDIT. Panel Eksposur: Piutang barang terkirim, Pesanan belum dikirim, Giro belum cair, Titipan & saldo kredit, Sisa plafon. Tab: Tagihan & Jadwal · Pembayaran · Denda & Kasus · Tindak Lanjut · Rekening Koran · Riwayat Lain · Kredit.",
+   "gambar": "uji/hasil/F06/04-kartu-pelanggan.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Kartu pelanggan",
+   "aksi": "Klik [[Kembali ke daftar]]",
+   "isi": "",
+   "hasil": "Kembali ke Daftar Kerja Kredit.",
+   "gambar": "uji/hasil/F06/05-kembali-ke-daftar.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Kredit & Plafon › Jatuh tempo",
+   "aksi": "Ganti antrean ke 'Jatuh tempo' → cari 'Cicilan NN'",
+   "isi": "*Cari*: Cicilan NN",
+   "hasil": "Baris 'Latihan NN · Toko Kain Cicilan NN' · 1 tagihan · sisa Rp 1.616.992 · 'Telat 20 Hari' · tombol [[Salin pengingat]]; [[Catat janji bayar]] mati dengan alasan 'Mencatat janji butuh akses ubah pesanan.' (janji bayar dicatat lewat ikon telepon di Penagihan & Penerimaan).",
+   "gambar": "uji/hasil/F06/06-antrean-jatuh-tempo.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Kredit & Plafon",
+   "aksi": "Klik [[Riwayat izin kredit & pengajuan profil]] di bawah daftar",
+   "isi": "",
+   "hasil": "Riwayat terbuka.",
+   "gambar": "uji/hasil/F06/07-buka-riwayat.png"
+  },
+  {
+   "no": 8,
+   "peran": "Finance",
+   "menu": "Kredit & Plafon › Riwayat",
+   "aksi": "Baca daftar izin kredit (Menunggu · Disetujui · Ditolak · Semua)",
+   "isi": "",
+   "hasil": "Kolom Pelanggan · Lingkup ('Pelanggan ini') · Nominal · Sisa · Berlaku sampai · Alasan · Pemohon · Status 'Menunggu' · Keputusan — hanya baca.",
+   "gambar": "uji/hasil/F06/08-riwayat-kredit.png"
+  }
+ ],
+ "cek_buku": [
+  "Skenario membaca: tidak ada jurnal. Izin kredit dan profil kredit tidak mengubah buku besar; Eksposur = piutang terkirim + pesanan belum dikirim + giro belum cair − titipan.",
+  "Izin kredit tetap 'Menunggu' (status pending) sampai Manajer memutus."
+ ],
+ "kesalahan_umum": [
+  "Mencari tombol Setujui: Finance hanya memantau; keputusan oleh Manajer (izin `credit_override.approve` / `credit_profile.approve`).",
+  "Membaca 'PLAFON tanpa batas' sebagai plafon disetujui — artinya plafon belum diatur/belum disetujui.",
+  "Mengetik nomor SO di antrean Menunggu keputusan untuk izin berlingkup pelanggan — cari dengan nama pelanggan."
+ ],
+ "catatan_pelatih": "Finance punya izin ajukan perubahan profil kredit (credit_profile.update), tetapi tiap pelanggan latihan sudah punya satu pengajuan terbuka (hanya satu per pelanggan per PT), jadi tidak dilatih. Bila ingin memperlihatkan keputusan: masuk sebagai manager@ dan setujui izin peserta di layar yang sama (opsional, demo pelatih). Perbaikan 17 Nov: pencarian antrean tidak lagi tertimpa daftar lama (dulu kotak cari berisi 'Latihan NN' tetapi tabel menampilkan semua pelanggan).",
+ "uji": {
+  "berkas": "uji/F06_kredit_plafon.js",
+  "peserta_uji": "02"
+ }
+}

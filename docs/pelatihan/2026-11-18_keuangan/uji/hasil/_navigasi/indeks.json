@@ -1,0 +1,182 @@
+{
+  "finance|finance-tower|finance-desk": {
+    "file": "uji/hasil/_navigasi/finance__finance-tower__finance-desk.png",
+    "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
+    "role": "finance"
+  },
+  "finance|finance-tower|finance-tower": {
+    "file": "uji/hasil/_navigasi/finance__finance-tower__finance-tower.png",
+    "menu": "Keuangan › Beranda Keuangan › Posisi",
+    "role": "finance"
+  },
+  "finance|ar-aging|ar-aging": {
+    "file": "uji/hasil/_navigasi/finance__ar-aging__ar-aging.png",
+    "menu": "Keuangan › Piutang › Saldo & Umur",
+    "role": "finance"
+  },
+  "finance|ar-aging|collection-worklist": {
+    "file": "uji/hasil/_navigasi/finance__ar-aging__collection-worklist.png",
+    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
+    "role": "finance"
+  },
+  "finance|ar-aging|payment-plans": {
+    "file": "uji/hasil/_navigasi/finance__ar-aging__payment-plans.png",
+    "menu": "Keuangan › Piutang › Rencana & Denda",
+    "role": "finance"
+  },
+  "finance|ar-aging|customer-credit": {
+    "file": "uji/hasil/_navigasi/finance__ar-aging__customer-credit.png",
+    "menu": "Keuangan › Piutang › Titipan & Saldo Kredit",
+    "role": "finance"
+  },
+  "finance|ar-aging|credit-overrides": {
+    "file": "uji/hasil/_navigasi/finance__ar-aging__credit-overrides.png",
+    "menu": "Keuangan › Piutang › Kredit & Plafon",
+    "role": "finance"
+  },
+  "finance|accounts-payable|vendor-bills": {
+    "file": "uji/hasil/_navigasi/finance__accounts-payable__vendor-bills.png",
+    "menu": "Keuangan › Hutang › Tagihan",
+    "role": "finance"
+  },
+  "finance|accounts-payable|contra-bons": {
+    "file": "uji/hasil/_navigasi/finance__accounts-payable__contra-bons.png",
+    "menu": "Keuangan › Hutang › Kontrabon",
+    "role": "finance"
+  },
+  "finance|accounts-payable|gr-ir": {
+    "file": "uji/hasil/_navigasi/finance__accounts-payable__gr-ir.png",
+    "menu": "Keuangan › Hutang › GR/IR",
+    "role": "finance"
+  },
+  "finance|cash-bank|bank-accounts": {
+    "file": "uji/hasil/_navigasi/finance__cash-bank__bank-accounts.png",
+    "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+    "role": "finance"
+  },
+  "finance|cash-bank|cash-management": {
+    "file": "uji/hasil/_navigasi/finance__cash-bank__cash-management.png",
+    "menu": "Keuangan › Kas & Bank › Transaksi Kas",
+    "role": "finance"
+  },
+  "finance|cash-bank|bank-reconciliation": {
+    "file": "uji/hasil/_navigasi/finance__cash-bank__bank-reconciliation.png",
+    "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
+    "role": "finance"
+  },
+  "finance|cash-bank|petty-cash": {
+    "file": "uji/hasil/_navigasi/finance__cash-bank__petty-cash.png",
+    "menu": "Keuangan › Kas & Bank › Kas Kecil",
+    "role": "finance"
+  },
+  "finance|cash-bank|cash-holdings": {
+    "file": "uji/hasil/_navigasi/finance__cash-bank__cash-holdings.png",
+    "menu": "Keuangan › Kas & Bank › Titipan Sales",
+    "role": "finance"
+  },
+  "finance|ledger|general-ledger": {
+    "file": "uji/hasil/_navigasi/finance__ledger__general-ledger.png",
+    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "role": "finance"
+  },
+  "finance|ledger|chart-of-accounts": {
+    "file": "uji/hasil/_navigasi/finance__ledger__chart-of-accounts.png",
+    "menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun",
+    "role": "finance"
+  },
+  "finance|tax-hub|": {
+    "file": "uji/hasil/_navigasi/finance__tax-hub__utama.png",
+    "menu": "Akuntansi & Pajak › Pajak (Faktur Keluaran)",
+    "role": "finance"
+  },
+  "finance|sample-orders|": {
+    "file": "uji/hasil/_navigasi/finance__sample-orders__utama.png",
+    "menu": "Penjualan › Pesanan Sample",
+    "role": "finance"
+  },
+  "finance|hr-payroll-hub|": {
+    "file": "uji/hasil/_navigasi/finance__hr-payroll-hub__utama.png",
+    "menu": "SDM › Penggajian › Setoran & Pajak",
+    "role": "finance"
+  },
+  "finance|document-center|doc-trace": {
+    "file": "uji/hasil/_navigasi/finance__document-center__doc-trace.png",
+    "menu": "Pusat Dokumen › Jejak Dokumen",
+    "role": "finance"
+  },
+  "manager|closing|closing": {
+    "file": "uji/hasil/_navigasi/manager__closing__closing.png",
+    "menu": "Akuntansi & Pajak › Tutup Buku › Daftar Periksa & Tutup",
+    "role": "manager"
+  },
+  "manager|closing|period-unlock": {
+    "file": "uji/hasil/_navigasi/manager__closing__period-unlock.png",
+    "menu": "Akuntansi & Pajak › Tutup Buku › Buka Periode",
+    "role": "manager"
+  },
+  "manager|fin-reports|financial-statements": {
+    "file": "uji/hasil/_navigasi/manager__fin-reports__financial-statements.png",
+    "menu": "Akuntansi & Pajak › Laporan › Laba-Rugi, Neraca & Arus Kas",
+    "role": "manager"
+  },
+  "finance|finance-tower|bi-finance": {
+    "file": "uji/hasil/_navigasi/finance__finance-tower__bi-finance.png",
+    "menu": "Keuangan › Beranda Keuangan › Analisis",
+    "role": "finance"
+  },
+  "finance|hr-my-profile|": {
+    "file": "uji/hasil/_navigasi/finance__hr-my-profile__utama.png",
+    "menu": "Akun › Profil Saya",
+    "role": "finance"
+  },
+  "finance|tanya-kn|": {
+    "file": "uji/hasil/_navigasi/finance__tanya-kn__utama.png",
+    "menu": "Modul › Tanya KN",
+    "role": "finance"
+  },
+  "manager|cash-bank|petty-cash": {
+    "file": "uji/hasil/_navigasi/manager__cash-bank__petty-cash.png",
+    "menu": "Keuangan › Kas & Bank › Kas Kecil",
+    "role": "manager"
+  },
+  "manager|ledger|general-ledger": {
+    "file": "uji/hasil/_navigasi/manager__ledger__general-ledger.png",
+    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "role": "manager"
+  },
+  "manager|cash-bank|bank-accounts": {
+    "file": "uji/hasil/_navigasi/manager__cash-bank__bank-accounts.png",
+    "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+    "role": "manager"
+  },
+  "manager|accounts-payable|contra-bons": {
+    "file": "uji/hasil/_navigasi/manager__accounts-payable__contra-bons.png",
+    "menu": "Keuangan › Hutang › Kontrabon",
+    "role": "manager"
+  },
+  "finance|tax-hub|tax-invoices": {
+    "file": "uji/hasil/_navigasi/finance__tax-hub__tax-invoices.png",
+    "menu": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "role": "finance"
+  },
+  "finance|customers-crm|customers-crm": {
+    "file": "uji/hasil/_navigasi/finance__customers-crm__customers-crm.png",
+    "menu": "Penjualan › Pelanggan",
+    "role": "finance"
+  },
+  "finance|hr-payroll-hub|hr-payroll-remittances": {
+    "file": "uji/hasil/_navigasi/finance__hr-payroll-hub__hr-payroll-remittances.png",
+    "menu": "SDM › Penggajian › Setoran & Pajak",
+    "role": "finance"
+  },
+  "manager|fin-reports|profitability": {
+    "file": "uji/hasil/_navigasi/manager__fin-reports__profitability.png",
+    "menu": "Akuntansi & Pajak › Laporan › Profitabilitas",
+    "role": "manager"
+  },
+  "manager|closing|posting-failures": {
+    "file": "uji/hasil/_navigasi/manager__closing__posting-failures.png",
+    "menu": "Akuntansi & Pajak › Tutup Buku › Posting Gagal",
+    "role": "manager"
+  }
+}

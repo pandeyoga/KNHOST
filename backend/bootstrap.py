@@ -1363,6 +1363,10 @@ ROLE_TO_ORG = {
     "manager": ("manajemen", "manajer"),
     "sales": ("penjualan", "sales_exec"),
     "warehouse": ("gudang", "staf_gudang"),
+    # Latihan Keuangan 17 Nov — dulu peran di luar daftar ini jatuh ke "Manajemen › Manajer" (akun Finance tercatat
+    # sebagai Manajer). Kini Finance & Admin Sales ke departemen Keuangan & Admin; peran lain TANPA jabatan (HR mengisi).
+    "finance": ("keuangan", "akunting"),
+    "sales_admin": ("keuangan", "staf_admin"),
 }
 _HR_DEFAULT_SALARY = {"admin": 15000000, "manager": 12000000, "sales": 6000000, "warehouse": 4500000}
 
@@ -1419,7 +1423,7 @@ async def seed_hr_foundation() -> None:
         if u["id"] in linked:
             continue
         eid = u.get("home_entity_id") or PRIMARY_ENTITY_ID
-        dkey, pkey = ROLE_TO_ORG.get(u.get("role", ""), ("manajemen", "manajer"))
+        dkey, pkey = ROLE_TO_ORG.get(u.get("role", ""), ("", ""))
         dept_id, pos_id = f"orgu_{eid}_{dkey}", f"orgu_{eid}_{dkey}_{pkey}"
         if not await db.hr_org_units.find_one({"id": dept_id}, {"_id": 0, "id": 1}):
             dept_id, pos_id = "", ""

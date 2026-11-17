@@ -15,6 +15,9 @@ import PenaltyPanel from "./PenaltyPanel";
 import PaymentVarianceQueue from "./PaymentVarianceQueue";
 import { errText, listPenalties, listPlans, listVariances, money, penaltyMeta } from "./paymentApi";
 
+// Pelatihan 18 Nov — status rencana dulu tampil mentah ("Active").
+export const STATUS_RENCANA = { active: "Aktif", closed: "Selesai", void: "Dibatalkan" };
+
 const PEN_TABS = [
   { key: "", label: "Semua" },
   { key: "draft", label: "Usulan (draf)" },
@@ -236,8 +239,9 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
                         )}
                       </td>
                       <td className="px-2 py-2">
-                        <span className="rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[10px] font-medium capitalize text-[#4A4B52]">
-                          {p.status}
+                        <span className="rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[10px] font-medium text-[#4A4B52]"
+                          data-testid={`pp-plan-status-${p.id}`}>
+                          {STATUS_RENCANA[p.status] || p.status}
                         </span>
                       </td>
                       <td className="px-2 py-2 text-right">

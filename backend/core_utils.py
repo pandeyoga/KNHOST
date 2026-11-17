@@ -282,8 +282,12 @@ def rupiah(value: Any) -> str:
     Negatif ditulis dengan tanda minus di depan: `-Rp 1.000`.
     """
     try:
-        n = round(float(value or 0))
-    except (TypeError, ValueError):
+        # Latihan Keuangan 17 Nov — bulat setengah ke atas (menjauhi nol), sama dengan layar (Intl `formatCurrency`).
+        # Dulu `round()` (pembulatan bankir): Rp 3.484.012,5 tertulis "Rp 3.484.012" di pesan server tetapi
+        # "Rp 3.484.013" di layar — dua angka berbeda untuk tagihan yang sama di satu dialog.
+        from decimal import ROUND_HALF_UP, Decimal
+        n = int(Decimal(str(float(value or 0))).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    except (TypeError, ValueError, ArithmeticError):
         return "Rp 0"
     sign = "-" if n < 0 else ""
     return f"{sign}Rp {abs(n):,}".replace(",", ".")

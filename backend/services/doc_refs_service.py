@@ -373,8 +373,11 @@ def _title_of(doc_type: str, doc: Dict[str, Any]) -> str:
 
 
 def _amount_of(doc: Dict[str, Any]) -> float:
+    # Pelatihan 18 Nov (F16) — `total_debit` = nilai jurnal: simpul Jurnal di Jejak Dokumen dulu tanpa angka (Rp 0 →
+    # tidak digambar), sehingga peserta tidak bisa mencocokkan nilai jurnal dengan kwitansi/SO tanpa membukanya.
     for k in ("grand_total", "total_amount", "amount", "gross_amount", "net_amount",
-              "total_est_amount", "acquisition_cost", "total_pengeluaran"):   # PK-44 — aset tetap, LPJ
+              "total_est_amount", "acquisition_cost", "total_pengeluaran",   # PK-44 — aset tetap, LPJ
+              "total_debit"):
         if doc.get(k) not in (None, ""):
             try:
                 return float(doc[k])

@@ -176,6 +176,14 @@ describe("K-B1-01 — bilah cakupan selalu terlihat", () => {
     expect(onChange).toHaveBeenCalledWith("all");
   });
 
+  test("Latihan Keuangan — akun tanpa pekerjaan gudang (quiet): tanpa teks peringatan, ikon & tooltip tetap", async () => {
+    respond = () => ({ view: { mode: "unset", label: "Semua lokasi — lokasi kerja belum diatur", choice: "" }, restricted: false,
+      home_set: false, options: [{ value: "", label: "Lokasi kerja saya", kind: "home" }, { value: "all", label: "Semua lokasi", kind: "all" }] });
+    const { host } = await mount(<LocationScopeBar value="" onChange={() => {}} quiet />);
+    expect(host.querySelector('[data-testid="location-scope-bar-unset"]')).toBeNull();
+    expect(host.querySelector('[data-testid="location-scope-bar-trigger"]').getAttribute("title")).toMatch(/belum diatur/);
+  });
+
   test("petugas berpagar: label lokasi tugas, tanpa pilihan 'Semua lokasi'", async () => {
     respond = () => ({ view: { mode: "restricted", label: "Soreang", choice: "" }, restricted: true, home_set: true, home_label: "Soreang",
       options: [{ value: "", label: "Lokasi kerja saya", kind: "home" }, { value: "wh:w1", label: "SRG-01 · Soreang", kind: "wh" }] });

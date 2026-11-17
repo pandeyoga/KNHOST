@@ -495,7 +495,9 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
         "cash_advance_number": ca["number"],
         "divisi": (payload.divisi or ca.get("divisi", "")).strip(),
         "periode": periode,
-        "dibuat_oleh": (payload.dibuat_oleh or actor.get("name", "")).strip(),
+        # Pelatihan 18 Nov — karyawan penanggung jawab LPJ (yang mengembalikan sisa / menerima reimburse) bawaannya
+        # PEMOHON PD, bukan pengetik LPJ: Finance yang mengetik LPJ atas nama karyawan dulu tercatat sebagai "karyawan".
+        "dibuat_oleh": (payload.dibuat_oleh or ca.get("created_by") or actor.get("name", "")).strip(),
         "disetujui_oleh": "",
         "catatan": (payload.catatan or "").strip(),
         "status": "draft",

@@ -30,8 +30,20 @@ python docs/pelatihan/2026-11-18_keuangan/src/bangun.py
 
 ## Menjalankan uji jalan (lingkungan lokal)
 
+Semua skenario berurutan (urutan kelas) untuk satu peserta, lalu potret panduan navigasi:
+
 ```bash
-node docs/pelatihan/2026-11-18_keuangan/uji/F02_<nama>.js
+KN_PESERTA=01 bash docs/pelatihan/2026-11-18_keuangan/uji/jalankan_semua.sh
 ```
 
-Nomor peserta uji dapat diganti dengan `KN_PESERTA=07`.
+Satu skenario: `node docs/pelatihan/2026-11-18_keuangan/uji/F02_pelunasan_penuh.js` (nomor peserta: `KN_PESERTA=07`).
+Skenario memakai dokumen peserta, jadi peserta yang sudah dipakai tidak bisa diulang — siapkan peserta baru
+(`seed_pelatihan_keuangan_kn.py --mulai 07 --peserta 07`).
+
+## Urutan & catatan kelas
+
+- Piutang wajib F02 → F03 → F04 → F05 → F06; Hutang F11 sebelum F12.
+- F04 langkah 7 dijalankan pelatih (membuat tagihan berikutnya) sesudah semua peserta selesai langkah 6.
+- F07 (persetujuan LPJ), F12 (kontrabon: Manajer & Admin), F17–F18 (Manajer) memakai akun pelatih.
+- Tutup buku (F18) diperagakan pelatih pada bulan kosong; jangan menutup Oktober/November.
+- Selengkapnya: `LAPORAN_AUDIT.md` § 4.

@@ -95,6 +95,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   // Sisir gerbang peran (2026-10-20): catat = cash.create, anulir = cash.delete.
   const canCreate = can(currentUser?.permissions, "cash", "create");
   const canVoid = can(currentUser?.permissions, "cash", "delete");
+  // Pelatihan 18 Nov — pratinjau anggaran (POST /finance/budget-check) butuh `budget.view`; tanpa izin itu (mis. Finance)
+  // dulu tetap dipanggil dan selalu dijawab 403 (galat merah di konsol tiap mengetik nominal). Peringatan anggaran
+  // tetap muncul sesudah simpan (`budget_check.warnings`) dan mode Tolak tetap ditegakkan server.
+  const canBudget = can(currentUser?.permissions, "budget", "view");
 
   // PK-42 — daftar berhalaman di server; saringan jenis kas & cari ikut kueri (kembali ke halaman 1 saat berubah).
   const scoped = !!selectedEntity && selectedEntity !== "all";
@@ -347,7 +351,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
                   Pakai form Bayar pemasok</button>
               </p>
             )}
-            {form.direction === "out" && showForm && (
+            {form.direction === "out" && showForm && canBudget && (
               <BudgetPreview entityId={selectedEntity} source="cash_out" category={form.category}
                 amount={form.amount} date={form.txn_date || ""} testId="cash-budget-preview" />
             )}

@@ -118,6 +118,7 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
 
   const canCreate = can(currentUser?.permissions, "vendor_bill", "create");   // POST /vendor-bills
   const canPay = can(currentUser?.permissions, "vendor_bill", "pay");   // MN-T3 — = POST /vendor-bills/{id}/pay
+  const canUpdate = can(currentUser?.permissions, "vendor_bill", "update");   // Kirim cepat = POST …/submit (temuan F11)
   const [payBill, setPayBill] = useState(null);
 
   // P2 — paginasi server-side; tab status jadi filter server, search q server-side.
@@ -241,7 +242,7 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
       <td className="text-xs text-muted">{b.supplier_invoice_no || "—"}</td>
       <td className="text-right" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1.5">
-          {b.status === "draft" && (
+          {b.status === "draft" && canUpdate && (
             <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} disabled={!!quickBusy} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
           )}
           {b.status === "pending_approval" && canApproveDoc(b) && (

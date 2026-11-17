@@ -15,6 +15,8 @@ export const SOURCE_LABELS = {
   inter_company_transfer: "Transfer Antar-PT",
   cash_transaction_void: "Anulir Kas", cash_transaction_reversal: "Pembalik Kas", petty_cash_settlement: "LPJ Kas Kecil",
   bank_holding_alloc: "Alokasi Dana Titipan", bank_opening_adjustment: "Penyesuaian Saldo Awal Bank",
+  // PM-T4 — sama dengan backend gl_service.JOURNAL_SOURCE_LABEL (dulu tampil mentah "Cash holding" di Buku Besar).
+  cash_holding: "Titipan Tunai Sales", cash_holding_reversal: "Pembalik Titipan Tunai",
   ar_receipt_deposit: "Penerimaan Piutang", ar_receipt_deposit_void: "Anulir Penerimaan Piutang",
   advance_reclass: "Reklas Uang Muka", advance_reclass_reversal: "Pembalik Reklas Uang Muka",
   payment_variance_alloc: "Alokasi Selisih Bayar", payment_variance_reversal: "Pembalik Selisih Bayar",

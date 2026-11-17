@@ -61,6 +61,10 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
   const [editAcc, setEditAcc] = useState(null);
   const [detailAcc, setDetailAcc] = useState(null);
   const canAudit = can(currentUser?.permissions, "audit", "view");
+  // Pelatihan 18 Nov (F16) — Finance hanya MELIHAT Bagan Akun (K-09, izin `accounting.view`): tombol tambah/ubah/hapus/
+  // pakai-di-PT memanggil endpoint ber-izin `accounting.manage` (403 untuk Finance) → disembunyikan. Pemanggil tanpa
+  // data izin (komponen lama) tetap melihat tombolnya; server tetap menegakkan.
+  const bolehUbah = !currentUser?.permissions || can(currentUser.permissions, "accounting", "manage");
   // M37 — lingkup mengikuti PT di bilah atas (`selectedEntity`: id PT atau "all"); `globalView` = pilihan
   // "Template Global" di dropdown Lingkup saat satu PT dipilih. Ganti PT di bilah atas → kembali ke bagan PT itu.
   const ptId = typeof selectedEntity === "string"
@@ -202,10 +206,12 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
             <>
               <button type="button" data-testid="coa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang"
                 title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
-              <button type="button" data-testid="coa-add-toggle" className="primary-button whitespace-nowrap"
-                onClick={() => setShowForm(true)}>
-                <Plus size={14} /> Tambah Akun
-              </button>
+              {bolehUbah && (
+                <button type="button" data-testid="coa-add-toggle" className="primary-button whitespace-nowrap"
+                  onClick={() => setShowForm(true)}>
+                  <Plus size={14} /> Tambah Akun
+                </button>
+              )}
             </>
           )}>
           <SearchInput testId="coa-search" placeholder="Cari kode / nama akun…" value={q} onChange={setQ}
@@ -284,7 +290,7 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
                             {scopeEntityId && (
                               <td className="px-3 py-2 w-[190px]">
                                 <button type="button" data-testid={`coa-toggle-entity-active-${a.code}`}
-                                  disabled={togglingCode === a.code}
+                                  disabled={togglingCode === a.code || !bolehUbah}
                                   onClick={() => toggleEntityActive(a)}
                                   title={usedHere
                                     ? `Berhenti memakai akun ini di ${scopeLabel} (badan usaha lain tidak terpengaruh)`
@@ -302,8 +308,8 @@ export default function ChartOfAccounts({ entities = [], currentUser, selectedEn
                             <td className="px-3 py-2 w-[104px] text-right">
                               <div className="inline-flex items-center gap-1">
                                 <button data-testid={`coa-detail-${a.code}`} className="icon-button" onClick={() => setDetailAcc(a)} aria-label="Detail akun" title="Detail & riwayat perubahan"><History size={13} /></button>
-                                <button data-testid={`coa-edit-${a.code}`} className="icon-button" onClick={() => setEditAcc(a)} aria-label="Ubah"><Pencil size={13} /></button>
-                                {(!a.system || scopeEntityId) && (
+                                {bolehUbah && <button data-testid={`coa-edit-${a.code}`} className="icon-button" onClick={() => setEditAcc(a)} aria-label="Ubah"><Pencil size={13} /></button>}
+                                {bolehUbah && (!a.system || scopeEntityId) && (
                                   <button data-testid={`coa-delete-${a.code}`} className="icon-button text-[#C0392B]" onClick={() => removeAccount(a)} disabled={deletingCode === a.code} aria-label="Hapus"><Trash2 size={13} /></button>
                                 )}
                               </div>

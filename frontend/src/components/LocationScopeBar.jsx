@@ -50,7 +50,7 @@ export function useLocationScopeSummary(choice, entityKey = "") {
   return summary;
 }
 
-export default function LocationScopeBar({ value = "", onChange, compact = false, testId = "location-scope-bar",
+export default function LocationScopeBar({ value = "", onChange, compact = false, quiet = false, testId = "location-scope-bar",
   entityKey = "" }) {
   const summary = useLocationScopeSummary(value, entityKey);
   const [open, setOpen] = useState(false);
@@ -84,7 +84,9 @@ export default function LocationScopeBar({ value = "", onChange, compact = false
         {restricted && <Lock size={12} aria-label="dibatasi" />}
         {canPick && <ChevronDown size={13} className={open ? "rotate-180 transition-transform" : "transition-transform"} />}
       </button>
-      {unset && !compact && (
+      {/* Latihan Keuangan 17 Nov — `quiet`: akun tanpa pekerjaan gudang (mis. Finance) tidak diganggu teks peringatan;
+          ikon segitiga + tooltip di pemicu tetap ada. */}
+      {unset && !compact && !quiet && (
         // Teks pendek + terpotong rapi: kalimat panjang dulu mendorong bilah atas melebar (halaman bergeser ke samping
         // di ±1024 px). Penjelasan lengkap tetap di tooltip pemicu & menu.
         <span className="location-scope-unset" data-testid={`${testId}-unset`}

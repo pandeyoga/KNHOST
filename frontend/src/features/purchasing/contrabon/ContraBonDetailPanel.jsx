@@ -49,6 +49,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   // Sisir lanjutan gerbang peran (2026-10-21): tiap langkah = izin endpointnya (ajukan/jadwal/sengketa/batal/potongan = contra_bon.update,
   // verifikasi = .verify, setujui = .approve, bayar = .pay).
   const canWrite = can(currentUser?.permissions, "contra_bon", "update");
+  const canPayCb = can(currentUser?.permissions, "contra_bon", "pay");
   const STEP_PERM = { submit: "update", verify: "verify", approve: "approve", schedule: "update", pay: "pay" };
   const canEdit = canWrite && EDITABLE.includes(cb.status);
   const step = nextStep(cb);
@@ -176,11 +177,19 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
               <Ban size={14} /> Batalkan
             </button>
           )}
-          {!canWrite && (
+          {/* Pelatihan keuangan 18 Nov (temuan F12) — Finance (izin lihat & bayar, K-17) dulu membaca "hanya bisa memantau
+              … keputusan atas uang ada di Keuangan" padahal dialah Keuangan yang membayar. Pemegang izin bayar kini diberi
+              tahu langkah berikutnya & kapan ia bisa membayar; teks lama tetap untuk peran pemantau (mis. Gudang). */}
+          {!canWrite && (canPayCb ? (step && step.action !== "pay" && (
+            <p className="text-[11px] text-[#6B6B73]" data-testid="cb-detail-readonly">
+              Langkah berikutnya — {step.label} — dikerjakan pemegang izin kontrabon (bawaan: Manajer). Anda mencatat
+              pembayaran sesudah status kontrabon Dijadwalkan bayar.
+            </p>
+          )) : (
             <p className="text-[11px] text-[#8E8E93]" data-testid="cb-detail-readonly">
               Peran Anda hanya bisa memantau kontrabon — keputusan atas uang ada di Keuangan.
             </p>
-          )}
+          ))}
         </div>
 
         {pending.length > 0 && (

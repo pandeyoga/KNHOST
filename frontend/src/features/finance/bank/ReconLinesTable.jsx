@@ -27,6 +27,8 @@ import { apiErrorText } from "../../../utils/apiError";
 import ReconPayablePicker from "./ReconPayablePicker";   // MN-T3 — pilih dokumen, bayar lewat satu form Bayar pemasok
 import { can } from "../../../config/roles";
 import useListSearch from "@/hooks/useListSearch";
+import { confirmMoney } from "../../../utils/moneyConfirm";   // pelatihan 18 Nov — `02` N5 (aksi uang berkonfirmasi)
+import { useEntityScope } from "../../../context/EntityScopeContext";
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
 const fmtDate = (s) => formatDate(s);
@@ -114,6 +116,37 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
       setPicked([]); setGroupTxn(null);
       await onReload();
     } catch (e) { setMErr(apiErrorText(e)); onError?.(e); }
+  }
+
+  // Pelatihan 18 Nov (`02_STANDAR` N5) — tiga tombol baris yang MELAHIRKAN kas + jurnal baru (biaya bank, bunga bank,
+  // titipkan) dulu langsung memposting sekali klik. Kini bertanya dulu dengan nominal, PT, dan jurnal yang terbit.
+  const { entities = [] } = useEntityScope() || {};
+  const JURNAL_BARIS = {
+    charge: {
+      title: "Catat biaya bank?", confirmLabel: "Catat biaya bank", action: "book-charge", body: { kind: "charge" },
+      effect: (l) => `Mutasi keluar "${l.description || "tanpa keterangan"}" dibukukan sebagai biaya administrasi bank: `
+        + "kas keluar dari rekening ini dan jurnal Dr Beban Adm Bank / Cr Bank.",
+      done: "Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).",
+    },
+    interest: {
+      title: "Catat bunga bank?", confirmLabel: "Catat bunga bank", action: "book-charge", body: { kind: "interest" },
+      effect: (l) => `Mutasi masuk "${l.description || "tanpa keterangan"}" dibukukan sebagai bunga · jasa giro: `
+        + "kas masuk ke rekening ini dan jurnal Dr Bank / Cr Pendapatan Bunga.",
+      done: "Bunga · jasa giro dibukukan (Dr Bank / Cr Pendapatan Bunga).",
+    },
+    holding: {
+      title: "Titipkan dana ini?", confirmLabel: "Titipkan dana", action: "holding", body: { note: "" },
+      effect: (l) => `Dana masuk "${l.description || "tanpa keterangan"}" belum diketahui pengirimnya: dicatat sebagai `
+        + "titipan dana (kas masuk dan jurnal Dr Bank / Cr Titipan) sampai dialokasikan.",
+      done: "Dana dititipkan (jurnal Dr Bank / Cr Titipan terbit).",
+    },
+  };
+  async function jurnalBaris(l, jenis) {
+    const j = JURNAL_BARIS[jenis];
+    const ok = await confirmMoney({ title: j.title, effect: j.effect(l), amount: l.amount, entityId: l.entity_id,
+      entities, confirmLabel: j.confirmLabel, testId: `recon-${jenis}-confirm` });
+    if (!ok) return;
+    await onAction(l.id, j.action, j.body, j.done);
   }
 
   async function acceptSuggestion(line, sug) {
@@ -287,8 +320,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                         {l.direction === "in" && (
                           <button data-testid={`recon-holding-${l.id}`} className="link-button"
                             style={{ color: "#0058CC" }} disabled={busy === l.id + "holding"}
-                            onClick={() => onAction(l.id, "holding", { note: "" },
-                              "Dana dititipkan (jurnal Dr Bank / Cr Titipan terbit).")}>
+                            onClick={() => jurnalBaris(l, "holding")}>
                             <PiggyBank size={12} /> Titipkan
                           </button>
                         )}
@@ -300,8 +332,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                           <>
                             <button data-testid={`recon-charge-${l.id}`} className="link-button"
                               style={{ color: "#B26A00" }} disabled={busy === l.id + "book-charge"}
-                              onClick={() => onAction(l.id, "book-charge", { kind: "charge" },
-                                "Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).")}>
+                              onClick={() => jurnalBaris(l, "charge")}>
                               <Receipt size={12} /> Catat biaya bank
                             </button>
                             {/* FASE G-7 US8 + MN-T3 — uang keluar untuk pemasok: tunjuk kontrabon/tagihannya, lalu satu form
@@ -316,8 +347,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                         ) : (
                           <button data-testid={`recon-interest-${l.id}`} className="link-button"
                             style={{ color: "#1B7F4B" }} disabled={busy === l.id + "book-charge"}
-                            onClick={() => onAction(l.id, "book-charge", { kind: "interest" },
-                              "Bunga · jasa giro dibukukan (Dr Bank / Cr Pendapatan Bunga).")}>
+                            onClick={() => jurnalBaris(l, "interest")}>
                             <Percent size={12} /> Catat bunga bank
                           </button>
                         )}

@@ -1,0 +1,136 @@
+{
+ "kode": "F09",
+ "judul": "Rekening & Saldo + Transaksi Kas — baca saldo, catat biaya yang dibayar dari bank",
+ "bagian": "A",
+ "tujuan": "Peserta bisa membaca posisi kas & bank (angka buku besar vs saldo per rekening, mutasi dan status rekonsiliasi), mencatat biaya operasional yang dibayar langsung dari rekening bank lewat Transaksi Kas dengan kategori dan rekening yang benar, lalu memastikan saldo, mutasi rekening, dan jurnalnya benar. Transaksi ini dipakai lagi di F10 (rekonsiliasi).",
+ "kapan": "Pagi hari: cek saldo tiap rekening. Sepanjang hari: mencatat uang keluar/masuk yang TIDAK punya dokumen sumber (bukan tagihan pemasok, bukan kwitansi pelanggan, bukan kas kecil) — mis. ongkos ekspedisi, biaya parkir kantor, pendapatan lain.",
+ "peran": "Finance (akun peserta)",
+ "menit": 15,
+ "data_awal": "Rekening PT Sukacita: 'BCA Operasional KSC' (bank) dan 'Kas Toko KSC' (kas kecil) — dipakai bersama semua peserta. Nominal latihan unik per peserta: Rp 300.000 + (nomor peserta × Rp 10.000) — peserta 03 = Rp 330.000, peserta 05 = Rp 350.000. Catat nominal & nomor KSC/CASH-… yang terbit: dipakai di F10.",
+ "alur": [
+  {
+   "peran": "Finance",
+   "label": "Baca saldo per rekening"
+  },
+  {
+   "peran": "Finance",
+   "label": "Lihat mutasi rekening BCA"
+  },
+  {
+   "peran": "Finance",
+   "label": "Catat biaya keluar dari bank",
+   "cabang": "ada tagihan pemasok → pakai Bayar pemasok"
+  },
+  {
+   "peran": "Buku",
+   "label": "Beban naik, bank turun"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cek jurnal di Buku Besar"
+  },
+  {
+   "peran": "Bank",
+   "label": "Muncul di rekening koran (F10)"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+   "nav_id": "cash-bank",
+   "tab": "bank-accounts"
+  },
+  {
+   "menu": "Keuangan › Kas & Bank › Transaksi Kas",
+   "nav_id": "cash-bank",
+   "tab": "cash-management"
+  },
+  {
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "nav_id": "ledger",
+   "tab": "general-ledger"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+   "aksi": "Masuk dengan akun peserta → buka tab Rekening & Saldo → baca lima kartu angka dan dua kartu rekening",
+   "isi": "",
+   "hasil": "Kartu: 'Kas & Bank (buku besar)' = angka utama (saldo akun kas & bank di buku besar), 'Total Saldo Rekening', 'Saldo Bank', 'Saldo Kas', 'Mutasi Belum Dicocokkan'. Kartu rekening BCA Operasional KSC (saldo, panah masuk hijau / keluar merah, 'N transaksi · N belum dicocokkan') dan Kas Toko KSC (lencana 'Kas kecil'). Saldo Bank = saldo kartu BCA; Saldo Kas = saldo kartu Kas Toko.",
+   "gambar": "uji/hasil/F09/01-rekening-saldo.png"
+  },
+  {
+   "no": 2,
+   "peran": "Finance",
+   "menu": "Rekening & Saldo › BCA Operasional KSC",
+   "aksi": "Klik kartu [[BCA Operasional KSC]] → tab Mutasi → tutup (×)",
+   "isi": "",
+   "hasil": "Kepala: 'Saldo Rp … · Terekonsiliasi Rp …'. Tabel Tanggal · No/Deskripsi · Masuk · Keluar · Saldo berjalan · Rekonsiliasi (lencana Terekonsiliasi / Sebagian / Belum). Tombol [[Cocokkan di Rekonsiliasi Bank →]] membuka layar F10.",
+   "gambar": "uji/hasil/F09/02-mutasi-bca.png"
+  },
+  {
+   "no": 3,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Transaksi Kas",
+   "aksi": "Buka tab Transaksi Kas → baca kartu 'Kas Besar / Bank' dan 'Kas Kecil' → klik [[Catat Transaksi]]",
+   "isi": "",
+   "hasil": "Dua kartu saldo (saldo awal rekening + masuk − keluar) dengan catatan sumber angka; daftar transaksi kas terbaru dulu. Pop-up 'Catat Transaksi Kas' terbuka dengan pita 'Dicatat di buku Sukacita Textile'.",
+   "gambar": "uji/hasil/F09/03-transaksi-kas.png"
+  },
+  {
+   "no": 4,
+   "peran": "Finance",
+   "menu": "Transaksi Kas › Catat Transaksi Kas",
+   "aksi": "Isi form → [[Catat Transaksi]]",
+   "isi": "*Jenis Kas*: Kas Besar / Bank (transfer) · *Arah*: Keluar (pengeluaran) · *Nominal (Rp)*: 300.000 + NN × 10.000 (peserta 03 → 330000) · *Kategori*: Operasional · *Rekening*: BCA Operasional KSC (terisi otomatis) · *Deskripsi*: Ongkos ekspedisi kirim kain ke Toko Kain Peserta NN — Latihan NN",
+   "hasil": "Di bawah isian muncul tautan 'Membayar tagihan pemasok? Pakai form Bayar pemasok'. Sesudah simpan: bilah hijau 'Transaksi KSC/CASH-… (keluar) dicatat.' — catat nomornya.",
+   "gambar": "uji/hasil/F09/04-form-transaksi-kas.png"
+  },
+  {
+   "no": 5,
+   "peran": "Finance",
+   "menu": "Transaksi Kas › daftar",
+   "aksi": "Ketik nomor KSC/CASH-… di kotak 'Cari nomor / keterangan / kategori…'",
+   "isi": "*Cari*: KSC/CASH-… (dari langkah 4)",
+   "hasil": "Satu baris: nomor, tanggal hari ini, keterangan + kategori 'Operasional', 'Kas Besar · Sukacita', nominal merah −Rp 330.000 (contoh peserta 03) dengan panah keluar.",
+   "gambar": "uji/hasil/F09/05-daftar-transaksi-kas.png"
+  },
+  {
+   "no": 6,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Rekening & Saldo",
+   "aksi": "Kembali ke Rekening & Saldo → klik kartu [[BCA Operasional KSC]] → Mutasi",
+   "isi": "",
+   "hasil": "Baris baru paling atas: KSC/CASH-… 'Ongkos ekspedisi … — Latihan NN', kolom Keluar = nominal Anda, Rekonsiliasi 'Belum' (belum dicocokkan dengan rekening koran — dikerjakan di F10). Saldo BCA turun sebesar nominal Anda (ditambah transaksi peserta lain bila ada).",
+   "gambar": "uji/hasil/F09/06-mutasi-bca-baru.png"
+  },
+  {
+   "no": 7,
+   "peran": "Finance",
+   "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
+   "aksi": "Ketik *Latihan NN* di kotak 'Cari nomor jurnal / keterangan…' → klik baris bersumber [[Kas]] dengan keterangan 'Kas out · Ongkos ekspedisi …'",
+   "isi": "*Cari*: Latihan NN",
+   "hasil": "Rincian jurnal: 6-4000 Beban Operasional Lainnya — Debit Rp 330.000; 1-1100 Kas Besar / Bank — Kredit Rp 330.000; Total debit = kredit. Tombol [[Bukti Kas Keluar]] mencetak voucher.",
+   "gambar": "uji/hasil/F09/07-jurnal-transaksi-kas.png"
+  }
+ ],
+ "cek_buku": [
+  "Transaksi Kas · Keluar · Kas Besar/Bank · Operasional: 6-4000 Beban Operasional Lainnya (D) · 1-1100 Kas Besar / Bank (K) — nominal sama, seimbang",
+  "Rekening & Saldo: kartu BCA turun sebesar nominal; transaksi tertaut ke rekening BCA (muncul di Mutasi dengan status Rekonsiliasi 'Belum')",
+  "Kategori menentukan akun lawan: Operasional/Lain-lain (keluar) → 6-4000 · Gaji/Upah → 6-1000 · Pembelian → 1-1300 Persediaan · uang MASUK selain 'Setoran Modal' → 1-9999 Akun Sementara (Suspense)"
+ ],
+ "kesalahan_umum": [
+  "Membayar tagihan pemasok lewat Transaksi Kas → hutang pemasok tidak berkurang. Pakai Hutang › Tagihan › [[Bayar]] (tautan 'Pakai form Bayar pemasok' di form).",
+  "Memindah uang Kas Toko ke Bank (setor tunai) dengan dua Transaksi Kas kategori 'Transfer / Top-up': jurnal KELUAR jadi 6-4000 Beban Operasional dan jurnal MASUK jadi 1-9999 Suspense — laba turun palsu. Jangan dipakai sampai fitur pindah-buku tersedia; laporkan ke Manajer Keuangan.",
+  "Mencatat uang MASUK (mis. jual kardus bekas) dengan kategori Lain-lain/Operasional → masuk 1-9999 Akun Sementara (Suspense), harus direklas akuntan. Tanyakan Manajer sebelum mencatat penerimaan lain-lain.",
+  "Kategori 'Pembelian' untuk barang habis pakai → masuk Persediaan 1-1300 tanpa stok. Pakai 'Operasional'.",
+  "Jenis Kas salah (Kas Kecil padahal dibayar transfer) → saldo Kas Toko turun padahal uang keluar dari BCA, dan mutasi bank tidak akan pernah cocok di F10."
+ ],
+ "catatan_pelatih": "Saldo semua rekening dipakai bersama — angka kartu bergerak karena peserta lain; minta peserta membuktikan lewat BARIS miliknya (nomor KSC/CASH-…, deskripsi 'Latihan NN'). Nominal dibuat unik per peserta (selisih > 1%) supaya di F10 transaksi peserta lain tidak ikut menjadi kandidat cocok. Celah yang ditemukan saat uji (pertanyaan ke pemilik): kategori 'Transfer / Top-up' tidak memakai akun 1-1150 Kas & Bank Transit; penerimaan lain-lain jatuh ke Suspense; form tidak menampilkan akun lawan sebelum disimpan. Kotak cari Jurnal mencari nomor jurnal & keterangan (bukan nomor KSC/CASH di kolom Sumber) — cari dengan 'Latihan NN'.",
+ "uji": {
+  "berkas": "uji/F09_rekening_transaksi_kas.js",
+  "peserta_uji": "35"
+ }
+}

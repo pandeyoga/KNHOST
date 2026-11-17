@@ -180,7 +180,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       title: `Tutup buku ${periodText} — ${entityText}?`,
       message: (
         <>
-          <span className="block">Jurnal penutup (laba/rugi {pv ? formatCurrency(pv.net_income) : "periode ini"} → Laba Ditahan) akan dibuat dan periode terkunci: jurnal baru pada periode ini ditolak. Membuka lagi hanya lewat Reopen (Admin) atau Buka Periode.</span>
+          <span className="block">Jurnal penutup (laba/rugi {pv ? formatCurrency(pv.net_income) : "periode ini"} → Laba Ditahan) akan dibuat dan periode terkunci: jurnal baru pada periode ini ditolak. Membuka lagi hanya lewat Buka Kembali (Admin, di Riwayat) atau usul Buka Periode (sementara, dua orang).</span>
           {warnings.map((w) => <span key={w} className="block mt-1 font-semibold text-[#B9770E]" data-testid="closing-confirm-warning">⚠ {w}</span>)}
         </>
       ),
@@ -461,7 +461,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                               {c.status === "closed" && isAdmin && (
                                 <button data-testid={`closing-reopen-${c.id}`} onClick={() => doReopen(c)} disabled={busy}
                                   className="btn-secondary text-[11px] py-1 px-2 inline-flex items-center gap-1 text-[#B26B00]">
-                                  <Unlock size={12} /> Reopen
+                                  {/* Pelatihan 18 Nov (F18) — label Indonesia, sama dengan judul dialognya ("Buka kembali periode …"). */}
+                                  <Unlock size={12} /> Buka Kembali
                                 </button>
                               )}
                               {!(c.status === "closed" && (isAdmin || (c.stale && canReclose))) && <span className="text-[10px] text-[#C9C9CE]">—</span>}

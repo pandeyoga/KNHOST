@@ -222,7 +222,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
         </div>
       )}
 
-      {!isCard && <CustomerColorsSection customerId={customerId} customerName={data.name} />}
+      {!isCard && can(perms, "color", "view") && <CustomerColorsSection customerId={customerId} customerName={data.name} />}
 
       {!isCard && can(perms, "customer", "delete") && data.status !== "merged" && (
         <CustomerMergeSection customer={data} onDone={(msg) => { onChanged?.(msg); load(); }} onError={onError} />

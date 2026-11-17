@@ -321,7 +321,7 @@ function App() {
           notice={notice}
           // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
           infoCta={{ label: "Tutup", onClick: () => setNotice("") }}
-          entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} entityKey={selectedEntity} />}</>}
+          entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} entityKey={selectedEntity} quiet={!can(user?.permissions || {}, "wms", "view")} />}</>}
           helpMenu={isMobile ? null : helpMenu("topbar")}
           notificationCenter={
             <NotificationCenter

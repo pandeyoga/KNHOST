@@ -380,6 +380,7 @@ async def test_PK41_U11_profitabilitas_nota_kredit(klien, adm, db):
         ("Marjin kotor layar ini", 32 * RB),
         ("Penghapusan dan penyesuaian persediaan (akun beban pokok selain HPP)", -12 * RB),
         ("Penjualan antar-PT (tidak termasuk di layar ini)", 0),
+        ("Pendapatan lain di Laba-Rugi (denda, bunga, klaim — bukan penjualan barang)", 0),   # pelatihan 18 Nov
         ("Selisih belum dijelaskan", 0),
         ("Laba kotor menurut Laba-Rugi", 20 * RB)]
     # dimensi ikut dikurangi: produk, pelanggan, PT, bulan

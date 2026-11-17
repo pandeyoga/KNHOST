@@ -182,7 +182,7 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
         {cashDir !== "out" && (
           <button type="button" data-testid="gl-print-received-voucher" className="secondary-button" onClick={() => printReceivedVoucher(je, entityName)}><Printer size={13} /> Bukti Kas Masuk</button>
         )}
-        {je.source_type === "manual" && je.status !== "void" && (
+        {je.source_type === "manual" && je.status !== "void" && onVoid && (
           <button type="button" data-testid="gl-journal-void" className="secondary-button !text-[#C0392B]" disabled={voidBusy} onClick={doVoid}>Anulir Jurnal</button>
         )}
         {je.status !== "void" && !je.reversed_by_entry_id && !je.reversed && !isReversalType(je.source_type) && onReverse && (

@@ -383,15 +383,20 @@ async def pre_assess(customer_id: str, funds: float,
         capacity = open_capacity
     others_total = round(sum(o["outstanding"] for o in others), 2)
     money = round(float(funds or 0), 2)
+    # Pelatihan 18 Nov — pesanan tujuan yang belum jatuh tempo memakai sisa tagihannya sebagai `expected` (lihat
+    # `_targets`); labelnya dulu tetap "tagihan yang jatuh tempo" sehingga bayar 40 % atas tagihan "30 hari lagi" terbaca
+    # seolah tagihannya sudah jatuh tempo. Angka & arah selisih tidak berubah, hanya kalimatnya.
+    belum_tempo = bool(targets) and all(t.get("basis") in ("term_not_due", "plan_not_due") for t in targets)
+    label_harap = "sisa tagihan pesanan tujuan, belum jatuh tempo" if belum_tempo else "tagihan yang jatuh tempo"
 
     if money > capacity + EPS:
         delta = round(money - capacity, 2)          # LEBIH bayar (tak bisa dialokasikan)
         boundary, boundary_label = capacity, "sisa tagihan pesanan tujuan"
     elif money < expected - EPS:
         delta = round(money - expected, 2)          # KURANG bayar (jatuh tempo tak tertutup)
-        boundary, boundary_label = expected, "tagihan yang jatuh tempo"
+        boundary, boundary_label = expected, label_harap
     else:
-        delta, boundary, boundary_label = 0.0, expected, "tagihan yang jatuh tempo"
+        delta, boundary, boundary_label = 0.0, expected, label_harap
     direction = classify(delta, policy["tolerance"])
     suggested_due = (datetime.now(timezone.utc)
                      + timedelta(days=int(policy["reschedule_days"]))).date().isoformat()

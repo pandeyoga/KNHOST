@@ -194,8 +194,14 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   }, [customerId]);
 
   const allocTotal = useMemo(() => Object.values(alloc).reduce((s, v) => s + (Number(v) || 0), 0), [alloc]);
-  const effectiveAmount = mode === "manual" ? allocTotal : Number(amount) || 0;
-  const depositUse = useDeposit ? Math.min(Number(depositAmt) || 0, deposit) : 0;
+  const depositWanted = useDeposit ? Math.min(Number(depositAmt) || 0, deposit) : 0;
+  // Pelatihan 18 Nov (F04) — "Atur sendiri": angka per tagihan = yang DILUNASI (uang baru + titipan). Dulu titipan
+  // ditambahkan DI LUAR alokasi (uang = Σ alokasi, titipan = dana lebih) → pesanan tidak bertambah lunas, titipan
+  // kembali utuh, dan kwitansi terbaca "lebih bayar" sebesar titipan. Kini titipan dipakai lebih dulu dan uang baru =
+  // Σ alokasi − titipan. "Tertua dulu" tidak berubah: nominal = uang baru, titipan menambah dana.
+  const depositUse = mode === "manual" ? Math.min(depositWanted, allocTotal) : depositWanted;
+  const effectiveAmount = mode === "manual"
+    ? Math.round(Math.max(allocTotal - depositUse, 0) * 100) / 100 : Number(amount) || 0;
   const totalFunds = effectiveAmount + depositUse;
   const allocatedOrders = useMemo(() => {
     if (mode === "manual") return openOrders.filter((o) => Number(alloc[o.order_id]) > 0);
@@ -291,7 +297,13 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
           ? ` Selisihnya masuk antrean Selisih Bayar untuk diputus.${v.decision_error ? ` Catatan: ${v.decision_error}` : ""}`
           : "");
       const bank = await linkBankLine(data);
-      onDone?.(`Kwitansi ${data?.number || ""} (${formatCurrency(data?.applied_total ?? data?.amount)}) dicatat untuk ${customerName}.${extra}${bank}`, data);
+      // Pelatihan 18 Nov (F04) — lebih bayar: dulu pesan hanya menyebut yang teralokasi (Rp 1.971.027) padahal uang yang
+      // diterima Rp 2.000.000; kini nominal diterima + rinciannya (melunasi tagihan · jadi titipan pelanggan).
+      const sisaTitipan = Number(data?.unapplied_amount || 0);
+      const diterima = sisaTitipan > 0.01 ? (data?.total_funds ?? data?.amount) : (data?.applied_total ?? data?.amount);
+      const rinci = sisaTitipan > 0.01
+        ? ` ${formatCurrency(data?.applied_total || 0)} melunasi tagihan, ${formatCurrency(sisaTitipan)} menjadi titipan pelanggan.` : "";
+      onDone?.(`Kwitansi ${data?.number || ""} (${formatCurrency(diterima)}) dicatat untuk ${customerName}.${rinci}${extra}${bank}`, data);
     } catch (e) {
       const msg = apiErrorText(e, "Kwitansi belum bisa disimpan.");
       setError(msg); onError?.(msg);
@@ -345,7 +357,12 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                   <label className="field-label">Nominal diterima</label>
                   {mode === "auto"
                     ? <MoneyInput testId="ar-receipt-amount" className="field" value={amount} onChange={(v) => setAmount(v)} placeholder="0" />
-                    : <p className="field flex items-center tabular-nums" data-testid="ar-receipt-amount-manual">{formatCurrency(allocTotal)}</p>}
+                    : <p className="field flex items-center tabular-nums" data-testid="ar-receipt-amount-manual">{formatCurrency(effectiveAmount)}</p>}
+                  {mode === "manual" && depositUse > 0 && (
+                    <p className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-amount-manual-note">
+                      Σ alokasi {formatCurrency(allocTotal)} − titipan {formatCurrency(depositUse)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="field-label">Tanggal terima</label>
