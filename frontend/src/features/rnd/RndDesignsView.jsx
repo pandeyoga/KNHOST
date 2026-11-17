@@ -16,7 +16,7 @@ import OkNotice from "../../components/OkNotice";
 import LineFilter from "../../components/LineFilter";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import useViewPreset from "../../hooks/useViewPreset";
 import { useAppNav } from "../../context/AppNavContext";
 import DesignFormModal from "./DesignFormModal";
@@ -181,7 +181,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
             )}
           </div>
           {/* L-01: status = FilterChips (dulu tab garis di dalam panel saringan). */}
-          <FilterChips testId="rnd-filter-status" ariaLabel="Status desain" value={f.status} onChange={(v) => set("status", v || "")}
+          <FilterSelect testId="rnd-filter-status" ariaLabel="Status desain" value={f.status} onChange={(v) => set("status", v || "")}
             options={statusOptions(mode).map((o) => ({ ...o, count: counts[o.key] || 0, testId: `rnd-filter-status-${o.key || "all"}` }))} />
           {showFilters && (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5" data-testid="rnd-designs-filters">

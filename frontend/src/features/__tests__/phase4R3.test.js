@@ -234,8 +234,9 @@ describe("L-02/L-07 — kepala, tab & tabel baku", () => {
     await mount(<RepairOrdersView currentUser={{ permissions: {} }} />);
     await act(async () => { await new Promise((r) => setTimeout(r, 250)); });
     expect(q("repair-header").classList.contains("view-header")).toBe(true);
-    expect(q("repair-tab-all").getAttribute("aria-pressed")).toBe("true");
-    expect(q("repair-tab-draft").classList.contains("filter-chip")).toBe(true);
+    // Pola UI 16 Nov — status = dropdown (dulu FilterChips).
+    expect(q("repair-tab").value).toBe("");   // "Semua" terpilih (kunci kosong)
+    expect([...q("repair-tab").options].some((o) => o.value === "draft")).toBe(true);
     expect(q("repair-row-ro1")).not.toBeNull();
   });
   test("Eskalasi: PageHeader + FilterChips filter-type-*; pop-up Selesaikan = FormModal", async () => {
@@ -243,7 +244,7 @@ describe("L-02/L-07 — kepala, tab & tabel baku", () => {
       po_number: "PO-1", expected_qty: 10, received_qty: 8, unit: "yard", escalation: { reason: "kurang", escalated_by: "a", escalated_at: "2026-10-20T00:00:00Z" } }] : [] }));
     await mount(<EscalationManagement user={{}} />);
     expect(q("escalation-header").classList.contains("view-header")).toBe(true);
-    expect(q("filter-type-inbound").classList.contains("filter-chip")).toBe(true);
+    expect([...q("filter-type").options].some((o) => o.value === "inbound")).toBe(true);   // jenis = dropdown
     await act(async () => { q("resolve-task-e1").click(); });
     expect(isFormModal("escalation-resolve-modal")).toBe(true);
     await act(async () => { q("escalation-resolve-submit").click(); });

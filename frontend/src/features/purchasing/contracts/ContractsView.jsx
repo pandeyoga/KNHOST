@@ -21,7 +21,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import ContractFormModal from "./ContractFormModal";
 import ContractToleranceInline from "./ContractToleranceInline";
 import { can } from "../../../config/roles";
-import { StatusTabs } from "../../../components/ListControls";
+import FilterSelect from "../../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu StatusTabs)
 import usePagedRows from "../../../hooks/usePagedRows";
 import useProcessTypes from "../../../hooks/useProcessTypes";
 import { internalPriceAccess, internalPriceSummary } from "../../interco_prices/internalPriceApi";
@@ -199,8 +199,8 @@ export default function ContractsView({ currentUser, selectedEntity, focusDoc, o
                 className="field !pl-8" placeholder="Cari nomor / mitra / produk / proses…" />
             </div>
             <div className="flex flex-wrap gap-1.5" data-testid="contracts-filters">
-              <StatusTabs value={type} onChange={setType} testIdPrefix="contracts-filter"
-                tabs={TYPE_FILTERS.map((f) => ({ ...f, testKey: f.key || "all", count: typeCount(f.key) }))} />
+              <FilterSelect value={type} onChange={(v) => setType(v || "")} testId="contracts-filter" ariaLabel="Jenis kontrak"
+                options={TYPE_FILTERS.map((f) => ({ key: f.key, label: f.label, count: typeCount(f.key) }))} />
             </div>
           </div>
           {/* Fase 3 · P5 — D-23: pop-up "Isi massal harga internal" (ringkasan pasangan + editor massal) dulu

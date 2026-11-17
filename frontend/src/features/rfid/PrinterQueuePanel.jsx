@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ClipboardCheck, Printer, RefreshCw, Settings2 } from "lucide-react";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import PaginationBar from "../../components/PaginationBar";
 import axios, { API } from "../../services/apiClient";
 import { canCurrent } from "../../config/roles";
@@ -244,7 +244,7 @@ export default function PrinterQueuePanel({ whId, isAdmin = false }) {
       </SectionCard>
 
       <SectionCard testId="printer-jobs" title="Antrean job cetak">
-        <FilterChips testId="printer-jobs-filter" value={filter} onChange={(k) => { setFilter(k); jp.setPage(1); }}
+        <FilterSelect testId="printer-jobs-filter" value={filter} onChange={(k) => { setFilter(k); jp.setPage(1); }}
           options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: countOf(f) }))} />
         {shown.length === 0 ? <EmptyBox icon={Printer} text="Tidak ada job untuk saringan ini." /> : (
           <>

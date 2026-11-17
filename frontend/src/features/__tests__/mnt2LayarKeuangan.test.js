@@ -21,7 +21,7 @@ jest.mock("../../services/apiClient", () => ({
 }));
 jest.mock("../../components/KNSelect", () => {
   const S = (p) => (   // pola UI 16 Nov — opsi ikut dirender supaya nilai saringan dropdown terbaca
-    <select data-testid={p["data-testid"]} value={p.value || ""} onChange={() => {}}>
+    <select data-testid={p["data-testid"]} value={p.value || ""} onChange={(e) => p.onValueChange?.(e.target.value)}>
       {!(p.options || []).some((o) => o.value === "") && <option value="" />}
       {(p.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -94,6 +94,15 @@ const SC = [{ customer_id: "cust_c", customer_name: "Pelanggan C", entity_id: "e
 const LEDGER = [{ id: "sce_1", type: "adjust", amount: 300000, balance_after: 300000, ref_number: "", note: "uji",
   created_at: "2026-11-10T03:00:00Z" }];
 const CC_ROUTES = { "/ar/advance-report": ADV, "/store-credit/ledger": LEDGER, "/store-credit": SC };
+
+// Pola UI 16 Nov — saringan chip kini dropdown (FilterSelect); pilih nilai seperti pengguna memilih opsi.
+async function pilih(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {}); await act(async () => {});
+}
 
 describe("U1–U2 — Titipan & Saldo Kredit (customer-credit)", () => {
   test("U1 — satu baris C: 2.000.000 · 500.000 · 300.000 · jumlah 2.800.000; kepala kolom berlabel sumber", async () => {
@@ -291,8 +300,9 @@ describe("Kas Kecil — satu daftar bertahap", () => {
     routeGet({ "/petty-cash/worklist": WL, "/cash-advances/ca_3": { id: "ca_3", number: "PD-3", status: "settled" },
       "/cash-advance-settlements/stl_3": { id: "stl_3", number: "STL-3" }, "/expense-categories": [] });
     const host = await mount(<PettyCashView currentUser={user("admin")} selectedEntity="ent_ksc" entities={[]} />);
-    const chips = [...host.querySelectorAll('[data-testid="pc-stage"] button')].map((b) => b.textContent);
-    expect(chips).toEqual(["Semua4", "Diajukan1", "Dicairkan1", "Dipertanggungjawabkan1", "Selesai1"]);
+    // Pola UI 16 Nov — tahap = dropdown berhitungan (dulu deret chip).
+    const chips = [...q(host, "pc-stage").options].filter((o) => o.value !== "").map((o) => o.textContent);
+    expect(chips).toEqual(["Semua (4)", "Diajukan (1)", "Dicairkan (1)", "Dipertanggungjawabkan (1)", "Selesai (1)"]);
     expect(q(host, "pc-row-stage-ca_3").textContent).toBe("Dipertanggungjawabkan");
     expect(q(host, "pc-sisa-ca_3").textContent).toContain("Hutang reimburse");
     expect(q(host, "pc-sisa-ca_3").textContent).toContain("300.000");
@@ -304,7 +314,7 @@ describe("Kas Kecil — satu daftar bertahap", () => {
     expect(q(host, "layar-rincian-pd").textContent).toBe("PD-3");
     expect(q(host, "layar-rincian-lpj").textContent).toBe("STL-3");
     // klik chip → saringan tahap ikut kueri
-    await click(q(host, "pc-stage-dicairkan"));
+    await pilih(q(host, "pc-stage"), "dicairkan");
     expect(mockGet.mock.calls.some(([u, c]) => u.includes("/petty-cash/worklist") && c?.params?.stage === "dicairkan")).toBe(true);
   });
   test("PD dicairkan tanpa LPJ: tombol Pertanggungjawabkan membuka form LPJ dengan PD terpilih", async () => {
@@ -331,7 +341,7 @@ describe("Kas Kecil — satu daftar bertahap", () => {
         <ViewPresetProvider preset={{ view: "petty-cash", bagian, nonce: 20 }}>
           <PettyCashView currentUser={user("admin")} selectedEntity="ent_ksc" entities={[]} />
         </ViewPresetProvider>);
-      expect(q(host, `pc-stage-${chip}`).getAttribute("aria-pressed")).toBe("true");
+      expect(q(host, "pc-stage").value).toBe(chip);
     });
   test("tanpa izin lihat kas kecil: pesan akses, tidak memanggil server", async () => {
     const host = await mount(<PettyCashView currentUser={{ role: "x", permissions: {} }} selectedEntity="ent_ksc" entities={[]} />);

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlaskConical, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import EntityBadge from "../../components/EntityBadge";
 import { openConfig } from "../settings/config/configDeepLink";
 import SpecFormModal from "./SpecFormModal";
@@ -154,7 +154,7 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
                         allowed={currentUser?.allowed_line_codes} testId="rnd-specs-line-filter" />
             {/* Fase 3 · P6 (L-01) — saringan status = FilterChips baku (dulu pil biru buatan sendiri), berhitungan
                 dari agregat server (`stats`) supaya angka chip sama dengan kartu ringkasan. */}
-            <FilterChips testId="rnd-specs-filters" ariaLabel="Status spesifikasi" value={status} onChange={(v) => setStatus(v || "")}
+            <FilterSelect testId="rnd-specs-filters" ariaLabel="Status spesifikasi" value={status} onChange={(v) => setStatus(v || "")}
               options={STATUS_FILTERS.map((f) => ({ key: f.key, label: f.label, testId: `rnd-specs-filter-${f.key || "all"}`,
                 count: f.key ? (stats[f.key] ?? undefined) : (stats.total ?? undefined) }))} />
           </div>

@@ -26,7 +26,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import ResponsiveTable from "../../components/ResponsiveTable";
 import KNPager from "../../components/KNPager";
 import { SearchBox } from "../../components/ListControls";
@@ -199,7 +199,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
           {canCreate && <EntityGateNote selectedEntity={selectedEntity} what="mengajukan dana" testId="pc-create-scope-note" />}
           <SearchBox value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Cari nomor PD/LPJ, keperluan, pemohon…"
             testId="pc-search" />
-          <FilterChips testId="pc-stage" ariaLabel="Tahap kas kecil" value={stage || "all"}
+          <FilterSelect testId="pc-stage" ariaLabel="Tahap kas kecil" value={stage || "all"}
             onChange={(k) => { setStage(k === "all" ? "" : k); setPage(1); }}
             options={[{ key: "all", label: "Semua", count: data ? semua : undefined },
               ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon, count: data ? Number(counts[s.key]) || 0 : undefined }))]} />

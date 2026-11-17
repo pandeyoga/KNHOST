@@ -5,7 +5,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
 import { PageHeader } from "../../components/ListPageParts";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import FormModal from "../../components/FormModal";
 import { formatDateTime, formatQty } from "../../utils/formatters";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
@@ -161,7 +161,7 @@ export default function ManagerEscalationDashboard({ user }) {
           </>
         )} />
 
-      <FilterChips testId="filter-type" value={filterType} onChange={(v) => setFilterType(v || "all")} ariaLabel="Jenis tugas"
+      <FilterSelect testId="filter-type" value={filterType} onChange={(v) => setFilterType(v || "all")} ariaLabel="Jenis tugas"
         options={[{ key: "all", label: "Semua" }, { key: "inbound", label: "Barang Masuk" }, { key: "outbound", label: "Barang Keluar" }]} />
 
       {/* Tasks List */}

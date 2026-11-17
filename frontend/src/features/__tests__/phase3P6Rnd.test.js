@@ -253,7 +253,7 @@ test("D-09: alias cs-design-gallery (preset gallery+acc) → Desain & Pattern mo
   expect(q("gallery-card-c")).toBeTruthy();
   expect(q("gallery-card-a")).toBeNull();
   expect(q("gallery-card-ownership-b").textContent).toContain("Customer label");
-  expect(q("rnd-filter-status-all").textContent).toContain("Semua status ACC");
+  expect(opt("rnd-filter-status", "").textContent).toContain("Semua status ACC");   // opsi "semua" bernilai kosong
   await click(q("rnd-designs-tab-master"));
   expect(q("design-card-a")).toBeTruthy();
   expect(q("design-card-d")).toBeTruthy();

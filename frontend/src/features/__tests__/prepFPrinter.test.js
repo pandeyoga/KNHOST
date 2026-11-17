@@ -93,6 +93,15 @@ function mockApi() {
   axios.post.mockResolvedValue({ data: { status: "confirmed" } });
 }
 
+// Pola UI 16 Nov — saringan chip kini dropdown (FilterSelect); pilih nilai seperti pengguna memilih opsi.
+async function pilih(el, v) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {}); await act(async () => {});
+}
+
 test("label status & aturan tindakan sama dengan server", () => {
   expect(JOB_STATUS.needs_review[1]).toBe("Perlu Ditinjau");
   expect(ITEM_STATUS.unknown[1]).toBe("Tidak pasti");
@@ -120,7 +129,7 @@ test("panel: connector aktif TERPISAH dari status printer; tindak lanjut & job; 
   expect($("[data-testid='printer-jobs-pager-export']")).not.toBeNull();
   expect($("[data-testid='printer-job-j2']")).not.toBeNull();         // saringan bawaan: sedang berjalan
   expect($("[data-testid='printer-job-j1']")).toBeNull();
-  await click($("[data-testid='printer-jobs-filter-review']"));
+  await pilih($("[data-testid='printer-jobs-filter']"), "review");
   expect($("[data-testid='printer-job-j1']").textContent).toContain("Perlu Ditinjau");
   expect($("[data-testid='printer-queue-panel']").textContent).not.toMatch(/needs_review|stale_started|confirm_success/);
   expect(axios.get).toHaveBeenCalledWith("/api/rfid/printers/follow-up", { params: { warehouse_id: "wh1" } });
@@ -159,7 +168,7 @@ test("tanpa izin approve: tombol Tinjau disembunyikan, ada petunjuk", async () =
 test("rincian job: tiga dimensi (job · printer · verifikasi C72) dan bukti per label", async () => {
   mockApi();
   await mount(<PrinterQueuePanel whId="wh1" />);
-  await click($("[data-testid='printer-jobs-filter-review']"));
+  await pilih($("[data-testid='printer-jobs-filter']"), "review");
   await click($("[data-testid='printer-job-j1']"));
   const dims = $("[data-testid='print-job-dims']").textContent;
   expect(dims).toContain("Perlu Ditinjau");

@@ -19,7 +19,7 @@ import { Ban, CheckCircle2, Clock, HandCoins, Landmark, ReceiptText, RefreshCw, 
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import FormModal from "../../components/FormModal";
 import KNPager from "../../components/KNPager";
 import KNSelect from "../../components/KNSelect";
@@ -307,7 +307,7 @@ export default function PayrollRemittancesView() {
       <div className="section-card">
         <div className="section-head flex-wrap gap-2">
           <h3 className="text-fs-14 font-bold">Riwayat setoran {formatPeriod(period)}</h3>
-          <FilterChips testId="remit-kind" value={kind} ariaLabel="Jenis setoran" onChange={(k) => { setKind(k || "semua"); setPage(1); }} options={JENIS} />
+          <FilterSelect testId="remit-kind" value={kind} ariaLabel="Jenis setoran" onChange={(k) => { setKind(k || "semua"); setPage(1); }} options={JENIS} />
         </div>
         {canVoid && !canWrite && rows.length > 0 && <p className="section-pad !py-2 text-fs-12 text-kn-text-2" data-testid="remit-void-why">Batalkan: {TEKS_SEMUA_PT}.</p>}
         {aksiErr && <div className="section-pad !py-2"><ErrorNotice testId="remit-void-error" message={aksiErr} onDismiss={() => setAksiErr("")} /></div>}

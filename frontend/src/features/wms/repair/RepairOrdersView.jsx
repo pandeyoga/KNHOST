@@ -6,7 +6,7 @@ import axios, { API } from "../../../services/apiClient";
 import { can } from "../../../config/roles";
 import { SearchBox } from "../../../components/ListControls";
 import { PageHeader } from "../../../components/ListPageParts";
-import FilterChips from "../../../components/FilterChips";
+import FilterSelect from "../../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import ResponsiveTable from "../../../components/ResponsiveTable";
 import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
 import RepairCreateModal from "./RepairCreateModal";
@@ -70,7 +70,7 @@ export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc
         actions={can(currentUser?.permissions, "repair_order", "create") && (
           <button type="button" className="primary-button" onClick={() => setCreate(true)} data-testid="repair-new"><Plus size={13} /> Perbaikan baru</button>)} />
       <section className="section-card section-pad grid gap-3">
-        <FilterChips value={status} onChange={setStatus} testId="repair-tab" ariaLabel="Status perbaikan"
+        <FilterSelect value={status} onChange={setStatus} testId="repair-tab" ariaLabel="Status perbaikan"
           options={TABS.map(([k, l]) => ({ key: k, label: l, count: k ? data.counts?.[k] || 0 : total, testId: `repair-tab-${k || "all"}` }))} />
         <SearchBox value={q} onChange={setQ} placeholder="Cari nomor, mitra, roll, SKU…" testId="repair-search" />
         <ExportMenu dataset="repair_orders" label="perbaikan" testId="repair-export" search={q}

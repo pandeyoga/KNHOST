@@ -5,7 +5,8 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Award, CheckCircle2, Clock, Loader2, RefreshCw, Scale, Wallet } from "lucide-react";
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../../components/ListPageParts";
+import { PageHeader, MetricRow, SearchBox } from "../../../components/ListPageParts";
+import FilterSelect from "../../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu StatusTabs)
 import axios, { API } from "../../../services/apiClient";
 import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -73,8 +74,8 @@ export default function MakloonClaimsView({ currentUser, selectedEntity }) {
         { label: "Nilai disetujui", value: formatCurrency(stats.approved_amount || 0), icon: Wallet, tone: "#1B7F4B" },
       ]} />
       <SearchBox value={q} onChange={setQ} testId="claims-search" placeholder="Cari no. pesanan / mitra / produk…" />
-      <StatusTabs groupTestId="claims-filters" value={status} onChange={setStatus} testId={(k) => `claims-filter-${k || "all"}`}
-        tabs={FILTERS.map((f) => ({ ...f, count: f.key ? stats[f.key] : 0 }))} />
+      <FilterSelect testId="claims-filters" ariaLabel="Status klaim" value={status} onChange={(v) => setStatus(v || "")}
+        options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: f.key ? stats[f.key] : undefined }))} />
 
       <div className="grid gap-2.5">
           {loading ? (

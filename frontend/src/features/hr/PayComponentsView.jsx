@@ -21,7 +21,7 @@ import { Ban, CheckCircle2, Circle, Clock, Layers, ListPlus, Pencil, Plus, Refre
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu FilterChips)
 import FormModal from "../../components/FormModal";
 import KNPager from "../../components/KNPager";
 import KNSelect from "../../components/KNSelect";
@@ -335,7 +335,7 @@ export default function PayComponentsView() {
             <button type="button" data-testid="payinput-add" disabled={!!alasanInp || masukanOpts.length === 0} onClick={bukaMasukan} className="primary-button btn-sm whitespace-nowrap"><Plus size={13} /> Tambah masukan</button>
             {(alasanInp || (canWrite && compState === "ready" && masukanOpts.length === 0)) && <span className="text-fs-12 text-kn-text-2" data-testid="payinput-add-why">{alasanInp || "Belum ada komponen masukan yang aktif."}</span>}
           </div>
-          <FilterChips testId="payinput-status" value={status} ariaLabel="Status masukan" onChange={(k) => { setStatus(k || "semua"); setPage(1); }} options={STATUS_CHIPS} />
+          <FilterSelect testId="payinput-status" value={status} ariaLabel="Status masukan" onChange={(k) => { setStatus(k || "semua"); setPage(1); }} options={STATUS_CHIPS} />
         </div>
         {listState === "loading" ? (
           <div className="section-pad text-fs-13 text-kn-text-2" role="status" data-testid="payinput-loading">Memuat masukan…</div>

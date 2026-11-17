@@ -10,7 +10,8 @@ import { formatCurrency, formatDateTime, formatPct, formatQty } from "../../util
 import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
 import { listSampleOrders, listSampleOrdersPage, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
 import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
-import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
+import { SearchBox, ListToolbar } from "../../components/ListControls";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu StatusTabs)
 import PageTabs from "../../components/PageTabs";
 import ResponsiveTable from "../../components/ResponsiveTable";
 import usePagedRows from "../../hooks/usePagedRows";
@@ -173,10 +174,11 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
       </section>
 
       <div>
-        <StatusTabs testIdPrefix="sample-filter" value={filter} onChange={setFilter}
-          tabs={FILTERS.map((f) => ({ key: f.id, testKey: f.id.split(",")[0], label: f.label,
-            count: f.id === "all" ? (stats?.total ?? 0) : f.id.split(",").reduce((n, s) => n + Number(bs[s] || 0), 0) }))} />
         <ListToolbar testId="sample-orders-toolbar">
+          {/* Pola UI 16 Nov — status = dropdown berhitungan di bilah daftar (dulu deret tab status). */}
+          <FilterSelect testId="sample-filter" ariaLabel="Status pesanan sample" value={filter} onChange={(v) => setFilter(v || "all")}
+            options={FILTERS.map((f) => ({ key: f.id, label: f.label,
+              count: f.id === "all" ? (stats?.total ?? 0) : f.id.split(",").reduce((n, s) => n + Number(bs[s] || 0), 0) }))} />
           <SearchBox value={q} onChange={setQ} testId="sample-orders-search" placeholder="Cari nomor / pelanggan / sales / produk…" />
           <ExportMenu dataset="sales_orders" label="pesanan-sample" testId="sample-orders-export" search={q}
             filters={[["order_type", "eq", "sample"], filter !== "all" && ["status", "in", filter.split(",")]]} sort={[{ key: "created_at", dir: "desc" }]} />
