@@ -1,23 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Boxes, ShoppingBag, Clock, CheckCircle2 } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { parseDecimal } from "../../utils/decimalInput";
 import { lateState } from "./po/poUtils";
-import POPaymentChips from "./po/POPaymentChips";
 import POCreateForm from "./po/POCreateForm";
 import { POBuyerEntitySwitch, takePODraft } from "./po/POBuyerEntitySwitch";
 import PODetailPanel from "./po/PODetailPanel";
 import POCompactPanel from "./po/POCompactPanel";
 import POListTable from "./po/POListTable";
 import POCreateMenu from "./po/POCreateMenu";
+import POListToolbar, { PAYMENT_KEYS, PO_TABS } from "./po/POListToolbar";   // pola UI 16 Nov — kartu + bilah daftar
 import DetailModal from "../../components/DetailModal";
 import POAmendModal from "./po/POAmendModal";
 import MakloonWizard from "../purchasing/makloon/MakloonWizard";   // MP-T2 (K-59) — satu wizard untuk dua pintu
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
-import LineFilter from "../../components/LineFilter";   // FASE L
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
+import { PageHeader } from "../../components/ListPageParts";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import { can } from "../../config/roles";
@@ -54,18 +53,11 @@ const CSV_COLUMNS = [
  *   - POCreateForm    — form buat PO baru
  *   - PODetailPanel   — panel detail PO dipilih
  *   - poUtils         — getStatusBadge helper
+ *   - POListToolbar   — kartu angka + bilah daftar (cari · status · status bayar · terlambat · lini · + Buat)
  */
-const PO_TABS = [
-  { key: "", label: "Semua" },
-  { key: "approval", label: "Menunggu Persetujuan", statuses: "waiting_approval" },
-  { key: "inbound", label: "Menunggu / Proses Terima", statuses: "pending,receiving,partial" },
-  { key: "done", label: "Selesai", statuses: "completed,closed_short" },
-  { key: "closed", label: "Ditolak / Batal", statuses: "rejected,cancelled" },
-];
-// G4-30 — PO mati tidak dihitung/ditampilkan di chip status bayar.
+// G4-30 — PO mati tidak dihitung/ditampilkan di saringan status bayar.
 const DEAD_PO_STATUSES = ["rejected", "cancelled"];
 const LIVE_PO_STATUSES = PO_TABS.filter((t) => t.statuses && t.key !== "closed").map((t) => t.statuses).join(",");
-const PAYMENT_KEYS = ["unpaid", "partial", "paid", "settled_by_return"];
 
 export default function PurchaseOrderManagement({ user, selectedEntity, onApprovePO, focusDoc, onClearFocus, onOpenDocument, onSwitchEntity, buyerEntities = [] }) {
   const [products, setProducts] = useState([]);
@@ -85,9 +77,9 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   // P2 — paginasi server-side + pencarian (po_number / supplier).
   // FASE L — chip lini disaring di SERVER (daftar berhalaman).
   const [lineFilter, setLineFilter] = useState("");
-  const [lateOnly, setLateOnly] = useState(false);   // chip "Terlambat" — disaring SERVER
+  const [lateOnly, setLateOnly] = useState(false);   // centang "Hanya terlambat" — disaring SERVER
   const [statusTab, setStatusTab] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("");   // chip status bayar — disaring SERVER
+  const [paymentFilter, setPaymentFilter] = useState("");   // dropdown status bayar — disaring SERVER
   const [counts, setCounts] = useState({});
   const [payCounts, setPayCounts] = useState({});
   const poParams = useMemo(() => ({
@@ -117,7 +109,6 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       .catch(() => [k || "__all", 0])))
       .then((pairs) => setPayCounts(Object.fromEntries(pairs)));
   }, [lineFilter, lateOnly, search, pos, selectedEntity, paymentFilter]);
-  const tabCount = (t) => (t.statuses ? t.statuses.split(",").reduce((a, k) => a + (counts[k] || 0), 0) : 0);
 
   const emptyForm = {
     supplier_id: "", supplier_name: "", supplier_contact: "", warehouse_id: "", ship_to_site_id: "",
@@ -334,8 +325,17 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       {notice && <div className="notice-bar success" data-testid="po-mgmt-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       {error && !showCreateForm && <ErrorNotice message={error || paged.error} onRetry={fetchPOs} onDismiss={() => setError("")} testId="po-mgmt-error" />}
 
+      {/* Pola UI (04_POLA_UI §2.A — gelombang Pembelian): kepala SATU baris (keterangan di ?), kartu angka = saringan
+          cepat ke status yang sama dengan dropdown, satu bilah daftar (cari · status · status bayar · terlambat · lini ·
+          jumlah · + Buat PO) tepat di atas tabel. Dulu: subjudul, kartu pajangan, tombol "Terlambat" merah buatan, deret
+          chip status bayar, deret tab status, dan tombol buat di kepala halaman. */}
       <PageHeader icon={ShoppingBag} title={<span data-testid="panel-title">Pesanan Pembelian (PO)</span>}
-        subtitle="Pesanan ke supplier — dari persetujuan, kedatangan barang, sampai penagihan (3-way matching)."
+        help="Pesanan ke supplier — dari persetujuan, kedatangan barang, sampai penagihan (3-way matching)." />
+
+      <POListToolbar counts={counts} payCounts={payCounts} total={paged.total}
+        statusTab={statusTab} onStatusTab={setStatusTab} paymentFilter={paymentFilter} onPaymentFilter={setPaymentFilter}
+        lateOnly={lateOnly} onLateOnly={setLateOnly} search={search} onSearch={setSearch}
+        lineFilter={lineFilter} onLineFilter={setLineFilter} allowedLines={user?.allowed_line_codes}
         actions={canCreateBahan ? (
           <button type="button" data-testid="create-po-bahan-button" className="primary-button"
             onClick={() => { setMakloonMode(null); setShowCreateForm(true); }}><Plus size={15} />Buat PO bahan</button>
@@ -345,27 +345,6 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
             else { setShowCreateForm(false); setMakloonMode(mode); }
           }} />
         ) : null} />
-
-      <MetricRow testId="po-stats" items={[
-        { label: "Total PO", value: Object.values(counts).reduce((a, b) => a + b, 0), icon: ShoppingBag, hint: "semua status", testId: "po-metric-total" },
-        { label: "Menunggu Persetujuan", value: counts.waiting_approval || 0, icon: Clock, testId: "po-metric-approval" },
-        { label: "Menunggu / Proses Terima", value: (counts.pending || 0) + (counts.receiving || 0) + (counts.partial || 0), icon: Boxes, testId: "po-metric-inbound" },
-        { label: "Selesai", value: (counts.completed || 0) + (counts.closed_short || 0), icon: CheckCircle2, testId: "po-metric-done" },
-      ]} />
-
-      <SearchBox value={search} onChange={setSearch} testId="po-search" placeholder="Cari no. PO / supplier / gudang…">
-        <button data-testid="po-filter-late" onClick={() => setLateOnly((v) => !v)}
-          title="Hanya PO yang lewat tanggal kirim dijanjikan supplier & masih menunggu barang"
-          className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-            lateOnly ? "bg-[#C0341D] text-white" : "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"}`}>
-          <Clock size={13} /> Terlambat
-        </button>
-        <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-orders"
-                    allowed={user?.allowed_line_codes} testId="po-line-filter" />
-      </SearchBox>
-      <POPaymentChips value={paymentFilter} onChange={setPaymentFilter} counts={payCounts} allCount={payCounts.__all ?? null} />
-      <StatusTabs value={statusTab} onChange={setStatusTab} testId={(k) => `po-tab-${k || "all"}`}
-        tabs={PO_TABS.map((t) => ({ ...t, count: tabCount(t) }))} />
 
       {/* Create Form */}
       {/* FASE P5 — form Buat PO menjadi POP-UP: daftar PO di belakang tetap terlihat.

@@ -5,7 +5,9 @@ import { confirmBillApprove } from "../../utils/moneyConfirm";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import useIntentKey from "../../hooks/useIntentKey";
 import { Receipt, Plus, Send, Wallet, Scale, Clock, AlertTriangle, Loader2 } from "lucide-react";
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
+import { ListToolbar, MetricRow, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
+import KNSelect from "../../components/KNSelect";
+import PagedRows from "../../components/PagedRows";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
@@ -104,6 +106,9 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [tab, setTab] = useState("all");
+  // Pola UI 16 Nov — kartu umur hutang = saringan cepat ("" = daftar biasa; "open" = semua hutang terbuka; selain itu
+  // kunci kelompok umur `not_due`/`1-30`/…). Barisnya = `bills` ringkasan hutang, sumber yang sama dengan angka kartu.
+  const [aging, setAging] = useState("");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -150,6 +155,26 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
   }
 
   const reload = () => { paged.refresh(); loadMeta(); };
+
+  // Kartu umur aktif → tagihan berhutang terbuka di kelompok itu (cari = kolom yang sama dengan cari server).
+  const agingRows = useMemo(() => {
+    if (!aging) return null;
+    const term = search.trim().toLowerCase();
+    return (summary?.bills || []).filter((r) => aging === "open" || r.aging_bucket === aging)
+      .filter((r) => !term || [r.bill_number, r.supplier_name, r.po_number, r.supplier_invoice_no]
+        .some((v) => String(v || "").toLowerCase().includes(term)))
+      .map((r) => ({ ...r, id: r.bill_id }));
+  }, [aging, summary, search]);
+  const rows = agingRows || filtered;
+
+  // Baris ringkasan hutang tidak membawa isi tagihan (item, linimasa) — rinciannya diambil dulu.
+  async function openBill(b) {
+    if (!b.aging_bucket) { setDetail(b); return; }
+    try {
+      const r = await axios.get(`${API}/vendor-bills/${b.id}`);
+      setDetail(r.data);
+    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat rincian tagihan."); }
+  }
 
   async function refreshDetail(id) {
     try {
@@ -200,45 +225,90 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
     } finally { setQuickBusy(""); }
   }
 
+  // Satu bentuk baris untuk daftar server dan daftar kartu umur hutang.
+  const renderRow = (b) => (
+    <tr key={b.id} data-testid={`vb-row-${b.id}`} onClick={() => openBill(b)} className="cursor-pointer">
+      <td><span className="font-mono font-semibold">{b.bill_number}</span></td>
+      <td className="max-w-[340px]">
+        <p className="truncate font-medium"><SupplierCardLink id={b.supplier_id} name={b.supplier_name}
+          perms={currentUser?.permissions} testId={`vb-supplier-card-${b.id}`} /></p>
+        <p className="flex items-center gap-1 truncate text-xs text-muted"><EntityBadge entityId={b.entity_id} /><span className="truncate">{b.po_number || "—"} · {b.aging_bucket ? (b.days_past_due > 0 ? `lewat ${b.days_past_due} hari` : "belum jatuh tempo") : `${b.items?.length || 0} item`}</span></p>
+      </td>
+      <td className="text-right font-semibold tabular-nums">{formatCurrency(b.grand_total)}</td>
+      <td className={`text-right tabular-nums ${(b.financials?.outstanding ?? b.outstanding) > 0 ? "text-red-600" : "text-muted"}`}>{formatCurrency(b.financials?.outstanding ?? b.outstanding)}</td>
+      <td><MatchPill status={b.match_status} /></td>
+      <td><StatusPill status={b.status} /></td>
+      <td className="text-xs text-muted">{b.supplier_invoice_no || "—"}</td>
+      <td className="text-right" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1.5">
+          {b.status === "draft" && (
+            <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} disabled={!!quickBusy} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
+          )}
+          {b.status === "pending_approval" && canApproveDoc(b) && (
+            <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} disabled={!!quickBusy} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
+          )}
+          {b.status === "posted" && canPay && (b.financials?.outstanding ?? b.outstanding) > 0.01 && (
+            <button data-testid={`vb-quick-pay-${b.id}`} onClick={() => setPayBill(b)} className="secondary-button btn-sm whitespace-nowrap"><Wallet size={12} /> Bayar</button>
+          )}
+          <button className="link-button" onClick={() => openBill(b)} data-testid={`vb-open-${b.id}`}>Detail →</button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div data-testid="vendor-bills-view" className="view-container">
       {notice && <div className="notice-bar success" data-testid="vb-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error || paged.error} onRetry={reload} onDismiss={() => setError("")} testId="vb-error" />
       <FocusNotice {...fokus} testId="vb-focus-notice" />
 
+      {/* Pola UI (04_POLA_UI §2.A — gelombang Pembelian): kepala SATU baris (keterangan di ?), kartu umur hutang =
+          saringan cepat (klik → tagihan berhutang di kelompok itu; klik lagi → daftar biasa), satu bilah daftar (cari ·
+          status · jumlah · + Buat Tagihan) tepat di atas tabel. Dulu: subjudul, kartu pajangan, deret tab status, dan
+          tombol buat di kepala halaman. */}
       <PageHeader icon={Receipt} title={<span data-testid="vendor-bills-title">Tagihan Supplier</span>}
-        subtitle="Tagihan dicocokkan PO ↔ penerimaan ↔ tagihan (3-way matching); yang terposting menjadi hutang usaha sampai dibayar."
-        actions={canCreate && (
-          <EntityGatedButton selectedEntity={selectedEntity} what="membuat tagihan pemasok"
-            data-testid="create-vendor-bill-button" onClick={() => setShowCreate(true)} className="primary-button">
-            <Plus size={14} /> Buat Tagihan
-          </EntityGatedButton>
-        )} />
+        help="Tagihan dicocokkan PO ↔ penerimaan ↔ tagihan (3-way matching); yang terposting menjadi hutang usaha sampai dibayar." />
 
       {/* PK-41 (RP-07) — kelompok umur = hari LEWAT jatuh tempo; kelompok pertama "Belum jatuh tempo" (judul dari server). */}
       {summary && (
         <MetricRow testId="vb-summary" items={[
-          { label: "Total hutang (AP)", value: formatCurrency(summary.total_outstanding), icon: Wallet, tone: "#C0392B", hint: "belum dibayar", testId: "vb-summary-total" },
-          { label: apLabel(summary, "not_due"), value: formatCurrency(summary.aging?.not_due), icon: Clock, testId: "vb-summary-not-due" },
-          { label: `Lewat ${apLabel(summary, "1-30")}`, value: formatCurrency(summary.aging?.["1-30"]), icon: Clock, testId: "vb-summary-1-30" },
-          { label: `Lewat ${apLabel(summary, "31-60")}`, value: formatCurrency(summary.aging?.["31-60"]), icon: Clock },
-          { label: `Lewat ${apLabel(summary, "61-90")}`, value: formatCurrency(summary.aging?.["61-90"]), icon: AlertTriangle, tone: "#B26A00" },
-          { label: `Lewat ${apLabel(summary, ">90")}`, value: formatCurrency(summary.aging?.[">90"]), icon: AlertTriangle, tone: "#C0392B" },
-        ]} />
+          { k: "open", label: "Total hutang (AP)", value: formatCurrency(summary.total_outstanding), icon: Wallet, tone: "var(--kn-danger-text)", hint: "belum dibayar", testId: "vb-summary-total" },
+          { k: "not_due", label: apLabel(summary, "not_due"), value: formatCurrency(summary.aging?.not_due), icon: Clock, testId: "vb-summary-not-due" },
+          { k: "1-30", label: `Lewat ${apLabel(summary, "1-30")}`, value: formatCurrency(summary.aging?.["1-30"]), icon: Clock, testId: "vb-summary-1-30" },
+          { k: "31-60", label: `Lewat ${apLabel(summary, "31-60")}`, value: formatCurrency(summary.aging?.["31-60"]), icon: Clock, testId: "vb-summary-31-60" },
+          { k: "61-90", label: `Lewat ${apLabel(summary, "61-90")}`, value: formatCurrency(summary.aging?.["61-90"]), icon: AlertTriangle, tone: "var(--kn-warning-text)", testId: "vb-summary-61-90" },
+          { k: ">90", label: `Lewat ${apLabel(summary, ">90")}`, value: formatCurrency(summary.aging?.[">90"]), icon: AlertTriangle, tone: "var(--kn-danger-text)", testId: "vb-summary-over-90" },
+        ].map(({ k, ...card }) => ({
+          ...card, active: aging === k,
+          onClick: () => { setTab("all"); setAging(aging === k ? "" : k); },
+        }))} />
       )}
       {summary?.reconciliation && <ApReconciliation rec={summary.reconciliation} />}
 
-      <SearchBox value={search} onChange={setSearch} testId="vb-search" placeholder="Cari no. tagihan / supplier / PO / inv. supplier…" />
-      <StatusTabs value={tab} onChange={setTab} testId={(k) => `vb-tab-${k}`}
-        tabs={TABS.map((t) => ({ ...t, count: counts[t.key] || 0 }))} />
+      <div className="mt-3">
+        <ListToolbar testId="vb-toolbar" count={aging ? `${rows.length} tagihan berhutang` : `${paged.total ?? 0} tagihan`}
+          actions={canCreate && (
+            <EntityGatedButton selectedEntity={selectedEntity} what="membuat tagihan pemasok"
+              data-testid="create-vendor-bill-button" onClick={() => setShowCreate(true)} className="primary-button">
+              <Plus size={14} /> Buat Tagihan
+            </EntityGatedButton>
+          )}>
+          <SearchInput testId="vb-search" placeholder="Cari no. tagihan / supplier / PO / inv. supplier…" value={search}
+            onChange={setSearch} className="min-w-[220px] flex-1 sm:max-w-[360px]" />
+          <KNSelect data-testid="vb-status-filter" aria-label="Status"
+            className="!h-auto !w-auto min-w-[210px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={tab} onValueChange={(v) => { setAging(""); setTab(v || "all"); }}
+            options={TABS.map((t) => ({ value: t.key, label: `${t.key === "all" ? "Semua status" : t.label} (${counts[t.key] || 0})` }))} />
+        </ListToolbar>
+      </div>
 
       {loading ? (
         <div className="loading-state"><Loader2 size={22} className="spin" /><p>Memuat tagihan supplier…</p></div>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="empty-state" data-testid="vb-empty">
           <Scale size={30} style={{ opacity: 0.3 }} />
-          <p className="font-semibold">{search || tab !== "all" ? "Tidak ada tagihan yang cocok dengan filter ini." : "Belum ada tagihan supplier."}</p>
-          {canCreate && tab === "all" && <p className="text-sm text-muted">Buat tagihan dari PO yang sudah diterima untuk memulai 3-way matching.</p>}
+          <p className="font-semibold">{search || tab !== "all" || aging ? "Tidak ada tagihan yang cocok dengan filter ini." : "Belum ada tagihan supplier."}</p>
+          {canCreate && tab === "all" && !aging && <p className="text-sm text-muted">Buat tagihan dari PO yang sudah diterima untuk memulai 3-way matching.</p>}
         </div>
       ) : (
         <div className="table-container">
@@ -247,47 +317,19 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
               <tr><th>Nomor</th><th>Supplier / PO</th><th className="text-right">Total</th><th className="text-right">Sisa</th><th>Pencocokan</th><th>Status</th><th>Inv. supplier</th><th className="text-right">Aksi</th></tr>
             </thead>
             <tbody>
-              {filtered.map((b) => (
-                <tr key={b.id} data-testid={`vb-row-${b.id}`} onClick={() => setDetail(b)} className="cursor-pointer">
-                  <td><span className="font-mono font-semibold">{b.bill_number}</span></td>
-                  <td className="max-w-[340px]">
-                    <p className="truncate font-medium"><SupplierCardLink id={b.supplier_id} name={b.supplier_name}
-                      perms={currentUser?.permissions} testId={`vb-supplier-card-${b.id}`} /></p>
-                    <p className="flex items-center gap-1 truncate text-xs text-muted"><EntityBadge entityId={b.entity_id} /><span className="truncate">{b.po_number || "—"} · {b.items?.length || 0} item</span></p>
-                  </td>
-                  <td className="text-right font-semibold tabular-nums">{formatCurrency(b.grand_total)}</td>
-                  <td className={`text-right tabular-nums ${(b.financials?.outstanding ?? b.outstanding) > 0 ? "text-red-600" : "text-muted"}`}>{formatCurrency(b.financials?.outstanding ?? b.outstanding)}</td>
-                  <td><MatchPill status={b.match_status} /></td>
-                  <td><StatusPill status={b.status} /></td>
-                  <td className="text-xs text-muted">{b.supplier_invoice_no || "—"}</td>
-                  <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1.5">
-                      {b.status === "draft" && (
-                        <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} disabled={!!quickBusy} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
-                      )}
-                      {b.status === "pending_approval" && canApproveDoc(b) && (
-                        <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} disabled={!!quickBusy} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
-                      )}
-                      {b.status === "posted" && canPay && (b.financials?.outstanding ?? b.outstanding) > 0.01 && (
-                        <button data-testid={`vb-quick-pay-${b.id}`} onClick={() => setPayBill(b)} className="secondary-button btn-sm whitespace-nowrap"><Wallet size={12} /> Bayar</button>
-                      )}
-                      <button className="link-button" onClick={() => setDetail(b)} data-testid={`vb-open-${b.id}`}>Detail →</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {agingRows ? <PagedRows rows={agingRows} testId="vb-aging-pager">{renderRow}</PagedRows> : filtered.map(renderRow)}
             </tbody>
           </table>
         </div>
       )}
-      <PaginationBar
+      {!aging && <PaginationBar
         testId="vb-pager" label="tagihan"
         page={paged.page} pageSize={paged.pageSize} total={paged.total}
         hasMore={paged.hasMore} loading={paged.loading}
         onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
         exportConfig={{ columns: CSV_COLUMNS, rows: filtered,
           fetchAll: paged.fetchAll, filename: "tagihan-supplier" }}
-      />
+      />}
 
       <VendorBillCreateModal
         open={showCreate}

@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Boxes, Plus, ArrowRight, Factory, Clock, Loader2, CheckCircle2 } from "lucide-react";
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
+import { ListToolbar, MetricRow, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
+import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import FocusNotice from "../../components/FocusNotice";
@@ -18,8 +19,10 @@ import MakloonOrderDetailPanel from "./MakloonOrderDetailPanel";
 
 export const MKO_STATUS = MKO_STATUS_SHARED; // re-export untuk kompatibilitas impor lama
 const MODE_LABEL = { process_only: "Proses Saja", buy_process: "Beli + Proses" };
+// Pola UI 16 Nov — kelompok status kartu "Diproses" (juga pilihan di dropdown status; pola Retur Pelanggan).
+const GROUP_PROCESS = "in_process,partially_received";
 const FILTERS = [
-  { key: "", label: "Semua" }, { key: "draft", label: "Draf" },
+  { key: "", label: "Semua status" }, { key: GROUP_PROCESS, label: "Diproses (semua)" }, { key: "draft", label: "Draf" },
   { key: "in_process", label: "Diproses" }, { key: "partially_received", label: "Diterima sebagian" },
   { key: "completed", label: "Selesai" }, { key: "cancelled", label: "Dibatalkan" },
 ];
@@ -76,10 +79,12 @@ export default function MakloonOrdersView({ currentUser, selectedEntity, focusDo
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((o) => (!statusFilter || o.status === statusFilter)
+    const statuses = statusFilter.split(",");
+    return rows.filter((o) => (!statusFilter || statuses.includes(o.status))
       && (!q || [o.mko_number, o.material_name, o.final_output_name].some((v) => (v || "").toLowerCase().includes(q))));
   }, [rows, search, statusFilter]);
   const cnt = (k) => rows.filter((o) => o.status === k).length;
+  const statusCount = (v) => v.split(",").reduce((n, k) => n + cnt(k), 0);   // satu status atau kelompok
   // PK-44 (IA-04) — tautan dokumen membuka rincian order makloon ber-id itu (dicek ada dulu → pemberitahuan bila tidak).
   const fokus = useFocusDoc(focusDoc, "makloon_order", async (id) => {
     await axios.get(`${API}/makloon-orders/${id}`);
@@ -100,24 +105,38 @@ export default function MakloonOrdersView({ currentUser, selectedEntity, focusDo
     <div data-testid="makloon-orders-view" className="view-container">
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="mko-error" />
       <FocusNotice {...fokus} testId="mko-focus-notice" />
+      {/* Pola UI (04_POLA_UI §2.A — gelombang Pembelian): kepala SATU baris (keterangan di ?), kartu angka = saringan
+          cepat ke status yang sama dengan dropdown, satu bilah daftar (cari · lini · status · jumlah · Unduh · + Buat
+          Order Makloon) tepat di atas tabel. Dulu: subjudul, kartu pajangan, deret tab status di baris lain, dan tombol
+          buat di kepala halaman. */}
       <PageHeader icon={Boxes} title={<span data-testid="makloon-orders-title">Order Makloon (Subkontrak)</span>}
-        subtitle="Kirim bahan ke mitra makloon (tenun, rajut, celup, printing…), pantau tiap langkah, lalu terima hasilnya."
-        actions={canManage && <button data-testid="create-makloon-order-button" onClick={() => setShowCreate(true)} className="primary-button"><Plus size={14} /> Buat Order Makloon</button>} />
+        help="Kirim bahan ke mitra makloon (tenun, rajut, celup, printing…), pantau tiap langkah, lalu terima hasilnya." />
       <MetricRow testId="mko-stats" items={[
-        { label: "Total order", value: listMeta?.total ?? rows.length, icon: Boxes, hint: "semua status" },
-        { label: "Draf", value: cnt("draft"), icon: Clock },
-        { label: "Diproses", value: cnt("in_process") + cnt("partially_received"), icon: Loader2 },
-        { label: "Selesai", value: cnt("completed"), icon: CheckCircle2 },
-      ]} />
-      <SearchBox value={search} onChange={setSearch} testId="mko-search" placeholder="Cari no. pesanan / bahan / hasil…">
-        <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="makloon-orders"
-                    allowed={currentUser?.allowed_line_codes} testId="mko-line-filter" />
-      </SearchBox>
-      <div className="kn-list-toolbar">
-        <StatusTabs groupTestId="mko-filters" value={statusFilter} onChange={setStatusFilter} testId={(k) => `mko-filter-${k || "all"}`}
-          tabs={FILTERS.map((f) => ({ ...f, count: f.key ? cnt(f.key) : 0 }))} />
-        <ExportMenu dataset="makloon_orders" label="order-makloon" testId="mko-export" search={search}
-          filters={[statusFilter && ["status", "eq", statusFilter], lineFilter && ["line_code", "eq", lineFilter]]} sort={[{ key: "created_at", dir: "desc" }]} />
+        { k: "", label: "Total order", value: listMeta?.total ?? rows.length, icon: Boxes, hint: "semua status" },
+        { k: "draft", label: "Draf", value: cnt("draft"), icon: Clock },
+        { k: GROUP_PROCESS, label: "Diproses", value: statusCount(GROUP_PROCESS), icon: Loader2 },
+        { k: "completed", label: "Selesai", value: cnt("completed"), icon: CheckCircle2 },
+      ].map(({ k, ...card }) => ({
+        ...card, testId: `mko-stat-${k === GROUP_PROCESS ? "process" : k || "all"}`, active: !!k && statusFilter === k,
+        onClick: () => setStatusFilter(k && statusFilter !== k ? k : ""),
+      }))} />
+      <div className="mt-3">
+        <ListToolbar testId="mko-filters" count={`${filtered.length} order`}
+          actions={<>
+            <ExportMenu dataset="makloon_orders" label="order-makloon" testId="mko-export" search={search}
+              filters={[statusFilter && (statusFilter.includes(",") ? ["status", "in", statusFilter.split(",")] : ["status", "eq", statusFilter]),
+                lineFilter && ["line_code", "eq", lineFilter]]} sort={[{ key: "created_at", dir: "desc" }]} />
+            {canManage && <button data-testid="create-makloon-order-button" onClick={() => setShowCreate(true)} className="primary-button"><Plus size={14} /> Buat Order Makloon</button>}
+          </>}>
+          <SearchInput testId="mko-search" placeholder="Cari no. pesanan / bahan / hasil…" value={search}
+            onChange={setSearch} className="min-w-[220px] flex-1 sm:max-w-[320px]" />
+          <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="makloon-orders"
+                      allowed={currentUser?.allowed_line_codes} testId="mko-line-filter" />
+          <KNSelect data-testid="mko-status-filter" aria-label="Status"
+            className="!h-auto !w-auto min-w-[190px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}
+            options={FILTERS.map((f) => ({ value: f.key, label: `${f.label} (${f.key ? statusCount(f.key) : rows.length})` }))} />
+        </ListToolbar>
       </div>
 
       {loading ? (

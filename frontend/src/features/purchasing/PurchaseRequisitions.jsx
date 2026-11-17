@@ -7,7 +7,8 @@ import {
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
+import KNSelect from "../../components/KNSelect";
+import { ListToolbar, MetricRow, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
 import { SOURCE_LABEL, StatusPill } from "./prConstants";
 import DetailPanel from "./PurchaseRequisitionDetailPanel";
 import PrCreateModal from "./PrCreateModal";
@@ -123,33 +124,46 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
       {toast && <div className="notice-bar success" data-testid="pr-toast"><span>{toast}</span><button onClick={() => setToast("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="pr-error" />
 
+      {/* Pola UI (04_POLA_UI §2.A — gelombang Pembelian): kepala SATU baris (keterangan di ?), kartu angka = saringan
+          cepat ke status yang sama dengan dropdown, satu bilah daftar (cari · lini · status · jumlah · Muat ulang · + PR
+          Baru). Dulu: subjudul, kartu pajangan, deret tab status, dan tombol di kepala halaman. Bilah gabung PR hanya
+          muncul bila ada PR yang dicentang (bilah aksi kontekstual). */}
       <PageHeader icon={ClipboardList} title={<span data-testid="pr-title">Permintaan Pembelian (PR)</span>}
-        subtitle="Kebutuhan barang dari gudang, saran reorder, atau pesanan khusus — disetujui dulu, lalu dikonversi menjadi PO."
-        actions={<>
-          <button data-testid="pr-refresh" className="secondary-button" onClick={load} aria-label="Muat ulang">
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
-          </button>
-          <button data-testid="pr-create-btn" className="primary-button" onClick={() => setView("create")}>
-            <Plus size={14} /> PR Baru
-          </button>
-        </>} />
+        help="Kebutuhan barang dari gudang, saran reorder, atau pesanan khusus — disetujui dulu, lalu dikonversi menjadi PO." />
 
       <MetricRow testId="pr-metrics" items={[
-        { label: "Total PR", value: total, icon: ClipboardList, hint: "semua status", testId: "pr-metric-total" },
-        { label: "Menunggu Persetujuan", value: byStatus.pending_approval || 0, icon: Clock, testId: "pr-metric-pending" },
-        { label: "Disetujui", value: byStatus.approved || 0, icon: CheckCircle2, testId: "pr-metric-approved" },
-        { label: "Jadi PO", value: byStatus.converted || 0, icon: FileText, testId: "pr-metric-converted" },
-      ]} />
-
-      <SearchBox value={search} onChange={setSearch} testId="pr-search" placeholder="Cari no. PR / barang / gudang…">
-        <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-requisitions"
-                    allowed={currentUser?.allowed_line_codes} testId="pr-line-filter" />
-      </SearchBox>
-      <StatusTabs value={statusFilter} onChange={setStatusFilter} testId={(k) => `pr-tab-${k || "all"}`}
-        tabs={tabs.map((t) => ({ ...t, count: t.key ? byStatus[t.key] : 0 }))} />
+        { k: "", label: "Total PR", value: total, icon: ClipboardList, hint: "semua status", testId: "pr-metric-total" },
+        { k: "pending_approval", label: "Menunggu Persetujuan", value: byStatus.pending_approval || 0, icon: Clock, testId: "pr-metric-pending" },
+        { k: "approved", label: "Disetujui", value: byStatus.approved || 0, icon: CheckCircle2, testId: "pr-metric-approved" },
+        { k: "converted", label: "Jadi PO", value: byStatus.converted || 0, icon: FileText, testId: "pr-metric-converted" },
+      ].map(({ k, ...card }) => ({
+        ...card, active: !!k && statusFilter === k,
+        onClick: () => setStatusFilter(k && statusFilter !== k ? k : ""),
+      }))} />
 
       <MergeSuggestions entityId={selectedEntity} reloadKey={mergeKey} canAct={canPo}
         onPick={(g) => { setPicked(g.prs.map((p) => p.pr_id)); setMerge({ supplier: g.supplier_id, label: [g.supplier_code, g.supplier_name].filter(Boolean).join(" · ") }); }} />
+
+      <div className="mt-3">
+        <ListToolbar testId="pr-toolbar" count={`${shown.length} PR`}
+          actions={<>
+            <button data-testid="pr-refresh" className="secondary-button" onClick={load} aria-label="Muat ulang">
+              <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
+            </button>
+            <button data-testid="pr-create-btn" className="primary-button" onClick={() => setView("create")}>
+              <Plus size={14} /> PR Baru
+            </button>
+          </>}>
+          <SearchInput testId="pr-search" placeholder="Cari no. PR / barang / gudang…" value={search}
+            onChange={setSearch} className="min-w-[220px] flex-1 sm:max-w-[320px]" />
+          <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-requisitions"
+                      allowed={currentUser?.allowed_line_codes} testId="pr-line-filter" />
+          <KNSelect data-testid="pr-status-filter" aria-label="Status"
+            className="!h-auto !w-auto min-w-[200px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}
+            options={tabs.map((t) => ({ value: t.key, label: `${t.key ? t.label : "Semua status"} (${t.key ? byStatus[t.key] || 0 : total})` }))} />
+        </ListToolbar>
+      </div>
       {picked.length > 0 && (
         <div className="notice-bar" data-testid="pr-merge-bar">
           <span>{picked.length} PR dipilih untuk digabung.</span>

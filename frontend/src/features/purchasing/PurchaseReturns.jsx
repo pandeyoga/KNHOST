@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
 import { RotateCcw, Plus, X, CheckCircle, XCircle, Send, FileText, Layers, Trash2, Clock, Loader2 } from "lucide-react";
-import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
+import { ListToolbar, MetricRow, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { convFactor } from "../../utils/uom";
 import KNSelect from "../../components/KNSelect";
@@ -339,21 +339,33 @@ export default function PurchaseReturns({ currentUser, selectedEntity, focusDoc,
       <FocusNotice {...fokus} testId="pret-focus-notice" />
       <ErrorNotice message={paged.error} onRetry={paged.refresh} testId="pret-list-error" />
 
+      {/* Pola UI (04_POLA_UI §2.A — gelombang Pembelian): kepala SATU baris (keterangan di ?), kartu angka = saringan
+          cepat ke status yang sama dengan dropdown, satu bilah daftar (cari · lini · status · jumlah · + Buat Retur) tepat
+          di atas tabel. Dulu: subjudul, kartu pajangan, deret tab status, dan tombol buat di kepala halaman. */}
       <PageHeader icon={RotateCcw} title={<span data-testid="purchase-returns-title">Retur ke Supplier (Nota Debit)</span>}
-        subtitle="Kembalikan barang ke pemasok — setelah disetujui terbit Nota Debit yang memotong tagihan pemasok."
-        actions={<button data-testid="create-return-button" onClick={() => { setError(""); setShowForm(!showForm); }} className="primary-button"><Plus size={14} /> Buat Retur</button>} />
+        help="Kembalikan barang ke pemasok — setelah disetujui terbit Nota Debit yang memotong tagihan pemasok." />
       <MetricRow testId="pret-stats" items={[
-        { label: "Total retur", value: counts.all ?? 0, icon: RotateCcw, hint: "semua status" },
-        { label: "Draf", value: counts.draft ?? 0, icon: FileText },
-        { label: "Menunggu persetujuan", value: counts.pending_approval ?? 0, icon: Clock },
-        { label: "Disetujui", value: counts.approved ?? 0, icon: CheckCircle },
-      ]} />
-      <SearchBox value={search} onChange={setSearch} testId="pret-search" placeholder="Cari nomor, supplier, PO, atau no. nota debit…">
-        <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-returns"
-                    allowed={currentUser?.allowed_line_codes} testId="pret-line-filter" />
-      </SearchBox>
-      <StatusTabs value={tab} onChange={setTab} testId={(k) => `pret-tab-${k}`}
-        tabs={TABS.map((t) => ({ ...t, count: counts[t.key] }))} />
+        { k: "all", label: "Total retur", value: counts.all ?? 0, icon: RotateCcw, hint: "semua status" },
+        { k: "draft", label: "Draf", value: counts.draft ?? 0, icon: FileText },
+        { k: "pending_approval", label: "Menunggu persetujuan", value: counts.pending_approval ?? 0, icon: Clock },
+        { k: "approved", label: "Disetujui", value: counts.approved ?? 0, icon: CheckCircle },
+      ].map(({ k, ...card }) => ({
+        ...card, testId: `pret-stat-${k}`, active: k !== "all" && tab === k,
+        onClick: () => setTab(k !== "all" && tab !== k ? k : "all"),
+      }))} />
+      <div className="mt-3">
+        <ListToolbar testId="pret-toolbar" count={`${paged.total ?? 0} retur`}
+          actions={<button data-testid="create-return-button" onClick={() => { setError(""); setShowForm(!showForm); }} className="primary-button"><Plus size={14} /> Buat Retur</button>}>
+          <SearchInput testId="pret-search" placeholder="Cari nomor, supplier, PO, atau no. nota debit…" value={search}
+            onChange={setSearch} className="min-w-[220px] flex-1 sm:max-w-[340px]" />
+          <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-returns"
+                      allowed={currentUser?.allowed_line_codes} testId="pret-line-filter" />
+          <KNSelect data-testid="pret-status-filter" aria-label="Status"
+            className="!h-auto !w-auto min-w-[200px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+            value={tab} onValueChange={(v) => setTab(v || "all")}
+            options={TABS.map((t) => ({ value: t.key, label: `${t.key === "all" ? "Semua status" : t.label} (${counts[t.key]})` }))} />
+        </ListToolbar>
+      </div>
 
       {/* Create form */}
       {/* FASE P4 — form retur beli menjadi POP-UP (dulu menyelip di atas daftar retur;
