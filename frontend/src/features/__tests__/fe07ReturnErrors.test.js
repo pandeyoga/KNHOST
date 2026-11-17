@@ -4,6 +4,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import SalesReturns from "../sales/SalesReturns";
 import ReturnSettleModal from "../sales/ReturnSettleModal";
+import { setServerLabels } from "../../config/auditLabels";
 
 jest.mock("../../services/apiClient", () => {
   const fn = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };
@@ -45,6 +46,11 @@ async function mount(el) {
   return { host, root };
 }
 const q = (host, id) => host.querySelector(`[data-testid="${id}"]`);
+
+// Kamus label izin dari server (`GET /api/access/labels`), cuplikan yang dipakai uji ini.
+const LABELS = { resources: { sales_return: "Retur Penjualan" }, actions: { view: "Lihat", reject: "Tolak" } };
+beforeAll(() => setServerLabels(LABELS));
+afterAll(() => setServerLabels(null));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -90,14 +96,35 @@ test("modal tolak: gagal → modal & alasan tetap, pesan tampil di modal", async
   expect(q(host, "reject-modal")).not.toBeNull();
   expect(q(host, "reject-modal-reason").value).toBe("Barang tidak sesuai");
   // UAT 24 Okt (audit UI tahap 2) — G0-03: kode izin mentah tidak lagi tampil; pesan akses Indonesia.
-  expect(q(host, "reject-modal-error")?.textContent).toContain("Retur Penjualan");
+  // PR-T5 (b8bd0a2, 14 Nov) — nama halaman & aksi dari SATU kamus server (`GET /api/access/labels`, dimuat
+  // `useSessionSync` → `setServerLabels`); peta label setempat dihapus. Uji ini dulu bergantung pada peta setempat
+  // itu sehingga merah sejak PR-T5; kini kamus diisi seperti sesi yang sudah dimuat (lihat `beforeAll` di atas).
+  expect(q(host, "reject-modal-error")?.textContent)
+    .toBe("Gagal menolak: Anda tidak punya izin “Tolak” di Retur Penjualan.");
   expect(q(host, "reject-modal-error")?.textContent).not.toContain("sales_return.reject");
   await act(async () => { root.unmount(); });
 });
 
+test("modal tolak: kamus label belum termuat → tetap kalimat IZIN tindakan, bukan \"tidak punya akses ke modul ini\"", async () => {
+  // Kamus server bisa gagal dimuat (useSessionSync menelan galatnya). Dulu aksi tanpa label jatuh ke
+  // "Anda tidak punya akses ke modul ini." — keliru: pengguna sedang membuka modul itu, yang tidak dimiliki izin Tolak.
+  setServerLabels(null);
+  axios.post.mockRejectedValue({ response: { status: 403, data: { detail: "Permission ditolak: sales_return.reject" } } });
+  const { host, root } = await mount(<SalesReturns currentUser={manager} focusDoc={{ focus_type: "sales_return", focus_id: "sret_1" }} onClearFocus={() => {}} />);
+  await act(async () => { q(host, "reject-return-btn").click(); });
+  const ta = q(host, "reject-modal-reason");
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+  await act(async () => { setter.call(ta, "Barang tidak sesuai"); ta.dispatchEvent(new Event("input", { bubbles: true })); });
+  await act(async () => { q(host, "reject-modal-confirm").click(); });
+  await flush();
+  expect(q(host, "reject-modal-error")?.textContent).toBe("Gagal menolak: Anda tidak punya izin untuk tindakan ini.");
+  await act(async () => { root.unmount(); });
+  setServerLabels(LABELS);
+});
+
 test("modal penyelesaian: gagal → tetap terbuka dengan pesan; berhasil → ditutup", async () => {
   const ret = { ...RET, status: "inspected" };
-  for (const [result, closed] of [["Gagal settle: QC belum lengkap", false], [null, true]]) {
+  for (const [result, closed] of [["Gagal menyelesaikan: QC belum lengkap", false], [null, true]]) {
     const onClose = jest.fn();
     const onSettle = jest.fn().mockResolvedValue(result);
     const { host, root } = await mount(<ReturnSettleModal ret={ret} open onClose={onClose} onSettle={onSettle} />);

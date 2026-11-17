@@ -6,7 +6,7 @@
  * "template aktif" di Pusat Cetak. Satu data diedit dua layar. Kini satu layar dengan dua tab:
  *   · "Kop & tata letak dasar" — tabel berlapis global → badan usaha (`EntityMasterKindPanel`, aturan lapisan sama
  *     dengan Master per Badan Usaha) + form terlengkap dari AdminView (`DocTemplateForm`) + Pratinjau;
- *   · "Desainer PDF" — `PdfTemplateDesigner` (tetap khusus admin, seperti dulu).
+ *   · "Desainer PDF" — `PdfTemplateDesigner`: hanya bagi pemegang izin `pdf_template.manage` (lihat gerbang di bawah).
  * Alias `?view=doc-templates-basic` → tab dasar. Hak tulis dijaga server (izin `template`): manajer membaca.
  */
 import { useState } from "react";
@@ -17,15 +17,20 @@ import DetailModal from "../../components/DetailModal";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useViewPreset from "../../hooks/useViewPreset";
 import { apiErrorText } from "../../utils/apiError";
-import { roleCanSee } from "../../config/roles";
+import { can, hiddenByRoleSetting } from "../../config/roles";
 import EntityMasterKindPanel from "../settings/masters/EntityMasterKindPanel";
 import DocTemplateForm from "../admin/DocTemplateForm";
 import PdfTemplateDesigner from "./PdfTemplateDesigner";
 
 export default function DocTemplatesView({ currentUser, selectedEntity, entities = [], orders = [], initialTab = "" }) {
-  // Fase 3 · P8 (§1.1 butir 6) — "Desainer PDF" = layar lama `pdf-templates` (tab admin saja): gerbang lewat id itu supaya
-  // peran kustom bermodul Admin (katalog akses memuat `pdf-templates`) tidak kehilangan desainernya. Manajer tetap tidak.
-  const designerAllowed = roleCanSee(["admin"], currentUser?.role, "pdf-templates");
+  // "Desainer PDF" = alat TULIS template & kop (setiap simpan di `/api/pdf/templates|branding` berizin
+  // `pdf_template.manage`). Wewenang dari IZIN, bukan nama peran (`docs/blueprint/02_STANDAR.md` §3 Z2): dulu
+  // `roleCanSee(["admin"], …, "pdf-templates")` — peran bawaan selain Admin (Manajer, dan Finance di data acuan) yang
+  // memegang `pdf_template.manage` tidak melihat desainernya, padahal server menerima simpanannya dan "Lengkapi PT"
+  // (KP-T2 butir kop & tanda tangan) mengarahkan mereka ke layar ini; sebaliknya modul Dokumen tingkat "Lihat saja"
+  // melihat tombol simpan yang pasti 403. Pengaturan peran yang menyembunyikan `pdf-templates` tetap dipatuhi.
+  const designerAllowed = can(currentUser?.permissions, "pdf_template", "manage")
+    && !hiddenByRoleSetting(currentUser?.role, "pdf-templates");
   const pick = (t) => (t === "desainer" && designerAllowed ? "desainer" : "dasar");
   const [tab, setTab] = useState(() => pick(initialTab));
   useViewPreset("pdf-templates", (p) => { if (p.tab) setTab(pick(p.tab)); });

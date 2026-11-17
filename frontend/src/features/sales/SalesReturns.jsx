@@ -143,6 +143,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
   // FE-07 — satu pintu aksi: error tampil di layar AKTIF (detail/modal, bukan state induk yang tak terlihat),
   // pemanggil menerima pesan errornya sehingga modal hanya ditutup bila berhasil, dan klik ulang selama
   // proses berjalan diabaikan (tidak menggandakan transaksi). Hasil: null = berhasil, string = pesan gagal.
+  // Awalan pesan berbahasa Indonesia ("Gagal menolak: …"; dulu "Gagal reject/approve/settle/submit").
   const busyRef = useRef("");
   const [busyAction, setBusyAction] = useState("");
   async function runAction(key, label, fn) {
@@ -169,7 +170,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
   }
 
   function handleApprove(ret) {
-    return runAction("approve", "Gagal approve", async () => {
+    return runAction("approve", "Gagal menyetujui", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/approve`, { notes: "" });
       setNotice(`${ret.number} disetujui. Lanjut ke inspeksi.`);
       showFresh(res.data); load();
@@ -178,7 +179,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
 
   function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout, exchange,
     refundAccountId) {
-    return runAction("settle", "Gagal settle", async () => {
+    return runAction("settle", "Gagal menyelesaikan", async () => {
       const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
@@ -195,7 +196,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
   }
 
   function handleReject(ret, reason) {
-    return runAction("reject", "Gagal reject", async () => {
+    return runAction("reject", "Gagal menolak", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/reject`, { notes: reason });
       setNotice(`${ret.number} ditolak.`);
       showFresh(res.data); load();
@@ -212,7 +213,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
   }
 
   function handleSubmit(ret) {
-    return runAction("submit", "Gagal submit", async () => {
+    return runAction("submit", "Gagal mengajukan", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/submit`, {});
       setNotice(`${ret.number} dikirim untuk approval.`);
       showFresh(res.data); load();

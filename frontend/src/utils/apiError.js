@@ -83,9 +83,14 @@ export function permissionDeniedText(detail) {
   }
   const parts = [];
   codes.forEach(({ mod, act }) => {
-    const modL = permissionResourceLabel(mod) || "modul ini";
+    const modKnown = permissionResourceLabel(mod);
+    const modL = modKnown || "modul ini";
     const actL = permissionActionLabel(act, mod);
-    const txt = act === "view" || !actL ? `akses ke ${modL}` : `izin “${actL}” di ${modL}`;
+    // Aksi selain `view` yang labelnya belum ada di kamus (kamus belum termuat / izin baru) TETAP kalimat izin tindakan:
+    // dulu jatuh ke "akses ke modul ini" — keliru, pengguna sedang berada di modul itu dan hanya tidak berizin aksinya.
+    const txt = act === "view" ? `akses ke ${modL}`
+      : actL ? `izin “${actL}” di ${modL}`
+        : modKnown ? `izin untuk tindakan ini di ${modKnown}` : "izin untuk tindakan ini";
     if (!parts.includes(txt)) parts.push(txt);
   });
   // "A" · "A atau B" · "A, B, atau C"

@@ -63,9 +63,15 @@ afterEach(async () => {
 });
 
 // ── D-05 ────────────────────────────────────────────────────────────────────
+// CR-T1 (281374f, 14 Nov) — plafon kredit di form pelanggan baru kini "Usulan plafon kredit" (menjadi pengajuan profil
+// kredit) dan hanya tampil bagi pemegang `credit_profile.update`. Akun admin sungguhan membawa izin efektifnya (admin
+// memegang credit_profile view/update/approve — `backend/permissions_config.py`); dulu uji ini memakai akun tanpa izin
+// sehingga isian plafon hilang dan uji merah sejak CR-T1.
+const ADMIN = { role: "admin", name: "Adi", permissions: { credit_profile: ["view", "update", "approve"] } };
+
 test("D-05: Pelanggan Baru di POS (admin) = form CRM LENGKAP — segmen, sales PJ, NPWP, limit, lot, metode bayar", async () => {
   routeGet({ "/sales-users": [{ id: "u_s1", name: "Ayu Sales" }] });
-  const { host } = await mount(<CreateCustomerModal open onClose={() => {}} onCreated={() => {}} user={{ role: "admin", name: "Adi" }} />);
+  const { host } = await mount(<CreateCustomerModal open onClose={() => {}} onCreated={() => {}} user={ADMIN} />);
   const dlg = q(host, "create-customer");
   expect(dlg.getAttribute("role")).toBe("dialog");
   for (const id of ["customer-name", "customer-segment", "customer-assigned-sales", "customer-npwp", "customer-credit-limit",
@@ -80,6 +86,16 @@ test("D-05: Pelanggan Baru di POS (admin) = form CRM LENGKAP — segmen, sales P
   await click(q(host, "create-customer-button"));
   expect(q(host, "create-customer-missing").textContent).toMatch(/nama toko.*sales penanggung jawab/);
   expect(mockPost).not.toHaveBeenCalled();
+});
+
+test("D-05 · CR-T1: tanpa izin credit_profile.update tidak ada isian usulan plafon (izin, bukan nama peran)", async () => {
+  routeGet({ "/sales-users": [{ id: "u_s1", name: "Ayu Sales" }] });
+  const tanpa = await mount(<CreateCustomerModal open onClose={() => {}} user={{ role: "admin", name: "Adi", permissions: {} }} />);
+  expect(q(tanpa.host, "customer-name")).not.toBeNull();
+  expect(q(tanpa.host, "customer-credit-limit")).toBeNull();
+  const kustom = await mount(<CreateCustomerModal open onClose={() => {}}
+    user={{ role: "cr_kredit", name: "Kiki", permissions: { credit_profile: ["view", "update"] } }} />);
+  expect(q(kustom.host, "customer-credit-limit")).not.toBeNull();
 });
 
 test("D-05: sales = penanggung jawab otomatis (tanpa pemilih), tombol 'Buat Pelanggan'", async () => {
@@ -124,12 +140,19 @@ test("D-07: tombol 'Buka Pesanan Khusus' membawa preset tab Menunggu Persetujuan
 const SORD = { id: "sord1", number: "SORD-1", status: "pending_approval", customer_name: "Toko Ayu", chain: {}, items: [],
   total_amount: 1500000, custom_item: { description: "Kain custom" } };
 const MGR = { role: "manager", permissions: { order: ["view", "approve", "update", "create"] } };
+// KP-T4 (0c5486e, 14 Nov) — tombol Setujui/Tolak Pesanan Khusus kini juga menunggu jawaban server
+// `GET /api/approval-policies/can-decide/me` (Aturan Persetujuan jenjang berjalan), bukan izin saja. Dua uji D-07 di
+// bawah dulu tidak menyiapkan jawaban itu sehingga tombolnya tidak pernah muncul (merah sejak KP-T4).
+const CAN_DECIDE = "/approval-policies/can-decide/me";
 
 test("D-07: Setujui di Pesanan Khusus = dialog bersama (catatan opsional) + pesan hasil berantai", async () => {
+  routeGet({ [CAN_DECIDE]: { allowed: true } });
   askReason.mockResolvedValue("");
   mockPost.mockResolvedValue({ data: { ...SORD, status: "confirmed", chain: { design_request: { number: "DSR-0012" }, samples: [{ number: "SMP-0031" }] } } });
   const onUpdate = jest.fn();
   const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={onUpdate} onBack={() => {}} />);
+  expect(mockGet).toHaveBeenCalledWith(`/api${CAN_DECIDE}`,
+    { params: expect.objectContaining({ doc_kind: "special_order", amount: 1500000, level: 1, action: "approve" }) });
   await click(q(host, "approve-special-order-btn"));
   expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ testId: "sord-approve-dialog", reasonRequired: false }));
   expect(mockPost).toHaveBeenCalledWith("/api/special-orders/sord1/approve", { notes: "" });
@@ -138,6 +161,7 @@ test("D-07: Setujui di Pesanan Khusus = dialog bersama (catatan opsional) + pesa
 });
 
 test("D-07: Tolak = alasan wajib ≥5 huruf lewat dialog bersama (pop-up tolak lama hilang)", async () => {
+  routeGet({ [CAN_DECIDE]: { allowed: true } });
   askReason.mockResolvedValue("Harga tidak sesuai");
   mockPost.mockResolvedValue({ data: { ...SORD, status: "cancelled" } });
   const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={() => {}} onBack={() => {}} />);
@@ -145,6 +169,15 @@ test("D-07: Tolak = alasan wajib ≥5 huruf lewat dialog bersama (pop-up tolak l
   expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ testId: "sord-reject-dialog", reasonRequired: true, reasonMinLength: 5 }));
   expect(mockPost).toHaveBeenCalledWith("/api/special-orders/sord1/reject", { reason: "Harga tidak sesuai" });
   expect(q(host, "reject-modal")).toBeNull();
+});
+
+test("D-07 · KP-T4: berizin approve tetapi server menolak jenjang ini → tanpa Setujui/Tolak, petunjuk server tampil", async () => {
+  routeGet({ [CAN_DECIDE]: { allowed: false, message: "Jenjang 1 diputus peran Direksi menurut Aturan Persetujuan." } });
+  const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={() => {}} onBack={() => {}} />);
+  expect(q(host, "approve-special-order-btn")).toBeNull();
+  expect(q(host, "reject-special-order-btn")).toBeNull();
+  expect(q(host, "od-decide-hint").textContent).toBe("Jenjang 1 diputus peran Direksi menurut Aturan Persetujuan.");
+  expect(mockPost).not.toHaveBeenCalled();
 });
 
 // ── D-06 ────────────────────────────────────────────────────────────────────

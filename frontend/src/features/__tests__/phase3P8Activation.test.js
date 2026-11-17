@@ -2,7 +2,7 @@
 // katalog akses peran kustom & `hidden_views` tetap berlaku setelah layar lama menjadi alias/tab:
 //  · D-11 Profitabilitas: tab Realisasi dijaga izin akuntansi; peran kustom modul Laporan → tab katalog saja.
 //  · D-29 Perangkat: tab RFID = id `cs-rfid-devices`, tab Mesin absen = id `hr-attendance-setup`.
-//  · D-01 Template Dokumen: "Desainer PDF" = id `pdf-templates` (tab admin lama).
+//  · D-01 Template Dokumen: "Desainer PDF" — kini izin `pdf_template.manage` (02_STANDAR §3 Z2; lihat describe D-01).
 //  · D-09 Desain & Pattern: mode Galeri = id `cs-design-gallery`.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -77,7 +77,10 @@ const asCustom = (role, permissions, hidden = []) => setAccessContext({ role, pe
 beforeAll(() => {
   registerDynamicRoles([...fixture,
     { id: "cr_uji_desain", label: "uji", custom: true, base_role: "",
-      nav: { add: ["designer-hub", "design-requests", "rnd-designs", "cs-design-gallery"], remove: [] } }]);
+      nav: { add: ["designer-hub", "design-requests", "rnd-designs", "cs-design-gallery"], remove: [] } },
+    // Peran kustom tanpa acuan bermodul Dokumen (katalog: `pdf-templates` milik modul `documents`, PR-T5).
+    { id: "cr_dokumen", label: "uji dokumen", custom: true, base_role: "",
+      nav: { add: ["settings-hub", "settings-documents", "pdf-templates", "document-center", "documents"], remove: [] } }]);
 });
 afterAll(() => registerDynamicRoles([]));
 beforeEach(() => {
@@ -139,17 +142,51 @@ describe("D-29 — Perangkat (gerbang per id lama)", () => {
   });
 });
 
-describe("D-01 — Template Dokumen: Desainer PDF", () => {
-  test("peran kustom modul Admin tetap punya Desainer PDF (dulu tab pdf-templates); manajer tidak", async () => {
-    asCustom("cr_settings_admin", { settings: ["view"], template: ["view"] });
-    await mount(withNav("cr_settings_admin", <DocTemplatesView currentUser={{ role: "cr_settings_admin" }} initialTab="desainer" />));
+// D-01 (Fase 3 · P8, 26 Okt) dulu: "peran kustom modul Admin tetap punya Desainer PDF; manajer tidak" — gerbang
+// `roleCanSee(["admin"], role, "pdf-templates")`. Dua hal berubah sesudahnya:
+//  · PR-T5 (b8bd0a2, 14 Nov; `docs/blueprint/unit/PR-T5.md` tabel 2) memecah modul Admin; `pdf-templates` pindah ke
+//    modul Dokumen (pemilik `pdf_template`). Fixture katalog dibangkitkan ulang: `cr_settings_admin` (Pusat Pengaturan)
+//    kini `remove` `pdf-templates` → uji lama merah sejak PR-T5 (tersembunyi karena suite ini gagal dimuat sampai 16 Nov).
+//  · 02_STANDAR §3 Z2 — wewenang dari izin: Desainer PDF = alat tulis (`pdf_template.manage`), jadi gerbangnya kini izin
+//    itu. Manajer bawaan memegang `pdf_template.manage` (permissions_config; data acuan juga Finance), server menerima
+//    simpanannya, dan "Lengkapi PT" mengarahkannya ke sini untuk kop & tanda tangan → kini ia melihat desainernya.
+describe("D-01 — Template Dokumen: Desainer PDF mengikuti izin pdf_template.manage", () => {
+  const open = async (role, permissions, hidden = []) => {
+    asCustom(role, permissions, hidden);
+    await mount(withNav(role, <DocTemplatesView currentUser={{ role, permissions }} initialTab="desainer" />));
+  };
+  test("peran kustom modul Dokumen (Kelola) tanpa peran acuan: tab Desainer PDF ada dan terbuka", async () => {
+    await open("cr_dokumen", { document: ["view"], pdf_template: ["view", "manage"] });
     expect(q("doc-templates-tabs-desainer")).not.toBeNull();
     expect(q("stub-desainer")).not.toBeNull();
-    await act(async () => { root.unmount(); });
-    setAccessContext(null);
-    await mount(withNav("manager", <DocTemplatesView currentUser={{ role: "manager" }} initialTab="desainer" />));
+  });
+  test("peran kustom Pusat Pengaturan saja (PR-T5: pdf-templates bukan modulnya): tanpa Desainer PDF", async () => {
+    await open("cr_settings_admin", { settings: ["view", "update"] });
+    expect(q("doc-templates-tabs-desainer")).toBeNull();
+    expect(q("stub-desainer")).toBeNull();
+    expect(q("stub-dasar")).not.toBeNull();
+  });
+  test("modul Dokumen tingkat Lihat saja (pdf_template.view): tanpa desainer — simpan di sana pasti 403", async () => {
+    await open("cr_dokumen", { document: ["view"], pdf_template: ["view"] });
     expect(q("doc-templates-tabs-desainer")).toBeNull();
     expect(q("stub-dasar")).not.toBeNull();
+  });
+  test("Manajer bawaan berizin pdf_template.manage: Desainer PDF ada (izin, bukan nama peran)", async () => {
+    setAccessContext({ role: "manager", permissions: { pdf_template: ["view", "manage"] } });
+    await mount(withNav("manager", <DocTemplatesView currentUser={{ role: "manager", permissions: { pdf_template: ["view", "manage"] } }} initialTab="desainer" />));
+    expect(q("doc-templates-tabs-desainer")).not.toBeNull();
+    expect(q("stub-desainer")).not.toBeNull();
+  });
+  test("Manajer yang izin pdf_template dicabut: tanpa Desainer PDF; hidden_views pdf-templates dipatuhi", async () => {
+    setAccessContext({ role: "manager", permissions: { order: ["view"] } });
+    await mount(withNav("manager", <DocTemplatesView currentUser={{ role: "manager", permissions: { order: ["view"] } }} initialTab="desainer" />));
+    expect(q("doc-templates-tabs-desainer")).toBeNull();
+    expect(q("stub-dasar")).not.toBeNull();
+    await act(async () => { root.unmount(); });
+    host.remove(); root = null;
+    await open("cr_dokumen", { pdf_template: ["view", "manage"] }, ["pdf-templates"]);
+    expect(q("doc-templates-tabs-desainer")).toBeNull();
+    expect(q("stub-desainer")).toBeNull();
   });
 });
 

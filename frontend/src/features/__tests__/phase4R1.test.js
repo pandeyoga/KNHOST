@@ -14,6 +14,7 @@ import { CustomerAddressSheet, CustomerFollowupSheet } from "../sales/mobile/Mob
 import MobileMdApp from "../sales/mobile/MobileMdApp";
 import MobileOrders from "../sales/mobile/MobileOrders";
 import { HUB_TABS } from "../../config/hubTabs";
+import { EntityScopeProvider } from "../../context/EntityScopeContext";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -92,16 +93,23 @@ afterEach(() => {
   delete global.__r1Variant;
 });
 
+// MN-T3 (351d1f9/0f49f18, 15 Nov) — form "Terima pembayaran pelanggan" (spesifikasi `docs/blueprint/unit/MN-T3.md` §A):
+// judul "Terima pembayaran · {pelanggan}" (dulu "Catat Pembayaran") dan mode Semua PT = tombol mati dengan petunjuk
+// "Pilih satu PT untuk mencatat pembayaran." Tiga uji kwitansi di bawah dulu dipasang TANPA PT aktif (konteks bawaan
+// "all") sehingga Simpan kwitansi selalu mati — merah sejak MN-T3. Kini dipasang di PT KSC seperti sesi sungguhan
+// (login memilih PT bawaan akun, `useAppActions`), dan mode Semua PT diuji tersendiri.
+const inPt = (el, pt = "ent_ksc") => (
+  <EntityScopeProvider selectedEntity={pt} entities={[{ id: "ent_ksc", short_name: "KSC" }]} canSwitch>{el}</EntityScopeProvider>);
 const OPEN = [{ order_id: "so1", number: "KSC/SO-0001", outstanding: 50000 }, { order_id: "so2", number: "KSC/SO-0002", outstanding: 75000 }];
 // PM-T3 — kas kwitansi wajib berekening penerima (PT kwitansi, melayani cara bayar): satu rekening bawaan transfer.
 const PENERIMA = [{ id: "rek_a", name: "BCA KSC", bank_name: "BCA", account_number: "123", holder_name: "PT KSC", is_default: true }];
 
 test("Kwitansi HP = ARReceiptModal (FormModal): tanggal, deposit, mode alokasi, SO asal di atas & teralokasi", async () => {
   routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": { deposit_balance: 20000 } });
-  const { host } = await mount(<MobileArReceipt customer={{ id: "c1", name: "Toko A", focus_order_id: "so2" }} onClose={() => {}} onDone={() => {}} />);
+  const { host } = await mount(inPt(<MobileArReceipt customer={{ id: "c1", name: "Toko A", focus_order_id: "so2" }} onClose={() => {}} onDone={() => {}} />));
   const card = q(host, "m-ar-receipt");
   expect(card.className).toMatch(/\bkn-modal-card\b/);                     // layar penuh di HP (FormModal)
-  expect(q(host, "m-ar-receipt-title").textContent).toBe("Catat Pembayaran · Toko A");
+  expect(q(host, "m-ar-receipt-title").textContent).toBe("Terima pembayaran · Toko A");   // MN-T3 §A
   for (const id of ["ar-receipt-date", "ar-receipt-method", "ar-receipt-deposit-box", "ar-receipt-mode-auto", "ar-receipt-mode-manual",
     "ar-receipt-notes", "ar-receipt-total", "ar-receipt-submit", "ar-receipt-cancel"]) expect(q(host, id)).not.toBeNull();
   expect(q(host, "m-ar-amount")).toBeNull();                                 // form HP ringkas lama sudah tidak ada
@@ -116,7 +124,7 @@ test("Kwitansi HP offline-aware lewat prop `offline`: antrean → pesan offline;
   routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {}, "/bank-accounts/receiving": PENERIMA });
   const onDone = jest.fn();
   mockOfflinePost.mockResolvedValueOnce({ queued: true, key: "k1" });
-  const a = await mount(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={onDone} />);
+  const a = await mount(inPt(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={onDone} />));
   await click(q(a.host, "ar-receipt-submit"));
   expect(mockOfflinePost).toHaveBeenCalledTimes(1);
   const [url, body, opts] = mockOfflinePost.mock.calls[0];
@@ -129,16 +137,18 @@ test("Kwitansi HP offline-aware lewat prop `offline`: antrean → pesan offline;
   expect(mockPost).not.toHaveBeenCalled();
 
   mockOfflinePost.mockResolvedValueOnce({ queued: false, data: { number: "AR-9", amount: 125000 } });
-  const b = await mount(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={onDone} />);
+  const b = await mount(inPt(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={onDone} />));
   await click(q(b.host, "ar-receipt-submit"));
-  expect(onDone).toHaveBeenLastCalledWith(expect.stringContaining("Pembayaran AR-9"), { number: "AR-9", amount: 125000 });
+  // MN-T3 (a) — pesan hasil form baru: "Kwitansi {nomor} ({nominal}) dicatat untuk {pelanggan}." (dulu "Pembayaran …").
+  expect(onDone).toHaveBeenLastCalledWith(expect.stringMatching(/^Kwitansi AR-9 \(Rp\s125\.000\) dicatat untuk Toko A\.$/),
+    { number: "AR-9", amount: 125000 });
 });
 
 test("Kwitansi desktop: FormModal, POST ber-Idempotency-Key (tanpa antrean offline), galat server di DALAM pop-up", async () => {
   routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {}, "/bank-accounts/receiving": PENERIMA });
   mockPost.mockRejectedValueOnce({ response: { status: 400, data: { detail: "Periode terkunci" } } });
   const onError = jest.fn();
-  const { host } = await mount(<ARReceiptModal customerId="c1" customerName="Toko A" onClose={() => {}} onDone={() => {}} onError={onError} />);
+  const { host } = await mount(inPt(<ARReceiptModal customerId="c1" customerName="Toko A" onClose={() => {}} onDone={() => {}} onError={onError} />));
   expect(q(host, "ar-receipt-modal").className).toMatch(/\bkn-modal-card\b/);
   expect(q(host, "ar-receipt-modal-close")).not.toBeNull();
   await click(q(host, "ar-receipt-submit"));
@@ -148,6 +158,16 @@ test("Kwitansi desktop: FormModal, POST ber-Idempotency-Key (tanpa antrean offli
   expect(q(host, "ar-receipt-modal-error").textContent).toContain("Periode terkunci");   // di kaki pop-up
   expect(q(host, "ar-receipt-modal").contains(q(host, "ar-receipt-modal-error"))).toBe(true);
   expect(onError).toHaveBeenCalledWith("Periode terkunci");
+});
+
+test("Kwitansi di mode Semua PT (MN-T3 §A): Simpan kwitansi mati dengan petunjuk, tidak ada yang terkirim", async () => {
+  routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {}, "/bank-accounts/receiving": PENERIMA });
+  const { host } = await mount(inPt(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={() => {}} />, "all"));
+  expect(q(host, "ar-receipt-submit").disabled).toBe(true);
+  expect(q(host, "ar-receipt-scope-note").textContent).toBe("Pilih satu PT untuk mencatat pembayaran.");
+  await click(q(host, "ar-receipt-submit"));
+  expect(mockOfflinePost).not.toHaveBeenCalled();
+  expect(mockPost).not.toHaveBeenCalled();
 });
 
 const ORDER = { id: "so1", number: "KSC/SO-0001", customer_name: "Toko A", grand_total: 100000, order_discount_percent: 0,
