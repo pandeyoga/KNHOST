@@ -183,12 +183,13 @@ s.addNotes("Pembukaan. Slide berisi alur, cara menuju layar, dan tangkapan layar
 // urutan pelatihan
 s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
 s.addText("Urutan pelatihan", { placeholder: "title" });
+const langkahY = Math.min(1.08, 5.5 / Math.max(1, D.modul.length));   // 5 bagian = 1,08"; 6 bagian = 0,92"
 D.modul.forEach((m, i) => {
-  const y = 1.35 + i * 1.08;
+  const y = 1.35 + i * langkahY;
   s.addText(m.no, { shape: pres.shapes.OVAL, x: 0.6, y: y + 0.12, w: 0.66, h: 0.66, fill: { color: i === 1 ? HEX.amber : HEX.teal },
     color: "FFFFFF", fontSize: 22, bold: true, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: `urut-${m.no}-no` });
   s.addText([{ text: m.judul, options: { bold: true, fontSize: 19, color: HEX.navy, breakLine: true, fontFace: THEME.headFontFace } },
-    { text: m.ringkas, options: { fontSize: 13.5, color: HEX.slate } }], { x: 1.5, y, w: 11.2, h: 0.95, valign: "middle", margin: 0,
+    { text: m.ringkas, options: { fontSize: 13.5, color: HEX.slate } }], { x: 1.5, y, w: 11.2, h: langkahY - 0.1, valign: "middle", margin: 0,
     isTextBox: true, objectName: `urut-${m.no}-teks`, fit: "shrink" });
 });
 s.addNotes("Urutan mengikuti cara kerja keuangan: fondasi dulu (akun & aturan) supaya peserta tahu akun apa yang akan terisi, lalu alur " +

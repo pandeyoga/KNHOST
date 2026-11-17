@@ -10,14 +10,15 @@ Status: **D** = diperbaiki (berkas · uji) · **K** = perlu keputusan pemilik ·
 
 | Uji | Hasil |
 |---|---|
-| Pemulihan data acuan (12 skrip, sama dengan `deploy/setup_demo_lengkap.sh`) | 12/12 lulus (sebelumnya 3 gagal — A-01…A-03) |
-| Data latihan peserta 01–06 (`seed_pelatihan_keuangan_kn.py`) | lulus; diuji juga dengan sandi akun demo yang sudah diganti & akun demo yang belum ada (kondisi VPS) |
-| Uji jalan layar + buku, 18 skenario (`uji/jalankan_semua.sh`) | **142/142 langkah lulus, dua kali berturut-turut pada pohon akhir** (peserta 01, lalu peserta 02 sesudah perbaikan terakhir), 0 galat 5xx. Tangkapan layar panduan & slide dari putaran peserta 02 |
-| Uji variasi isian & hitungan (`uji/variasi/`) | Piutang & Kas 86 kasus (42 lulus · 32 diperbaiki · 12 keputusan pemilik) · Hutang/Pajak/Gaji/Laporan 78 kasus lulus sesudah perbaikan · hitungan dicocokkan rumus sendiri — lihat §2a |
-| Dokumen cetak (`uji/dokumen/`, peserta 02) | D1 dokumen penjualan 12/12 · D3 naskah/template 9/9 · D2 dokumen keuangan 15/16: sisa 1 = rekening koran memuat keterangan "Kas in" dari jurnal LAMA yang dibuat sebelum perbaikan P-09 (jurnal baru "Kas masuk/keluar"; jurnal terposting tidak diubah) — lihat §2b |
-| Jest penuh (pohon akhir) | 1.643 lulus · 9 gagal = himpunan lama yang sama (phase3P3, roleGateSweep2, phase4R1, fe07ReturnErrors, phase3P8Activation) |
-| Backend `tests_mem` penuh | 2.476 lulus · 0 gagal (sebelum perbaikan P-09/P-12); sesudahnya uji kas & latihan terkait 148/148 |
-| Gate `--ci` (pohon akhir) | keluar 1 (merah lama: pagar gudang E4.1) · dibanding garis dasar `2026-11-17_latih_keuangan_gate_ci.log`: **tidak ada pelanggaran baru**, 1 pelanggaran lama hilang (role_gate_ui). Log: `docs/blueprint/garis-dasar-gate/2026-11-17_latih_keuangan2_gate_ci.log` |
+| Pemulihan data acuan dari nol (`restore_local_demo.sh`, kode terbaru) | lulus — 9/9 skenario transaksi demo OK |
+| Data latihan (`seed_pelatihan_keuangan_kn.py`) | peserta kelas 01 + peserta peraga 21, 31, 41–45 lulus; peserta baru sesudah aktivitas kelas kini juga lulus (perbaikan pemilihan roll, C-31) |
+| **Uji jalan kurikulum lengkap** (`uji/jalankan_semua.sh`, berurutan sesuai kurikulum) | **36 skrip · 333/333 langkah lulus di layar + buku · 0 galat 5xx · 31 menit**. Praktik Finance (F, K, H) berurutan di SATU akun peserta kelas (01) seperti di kelas; alur ujung ke ujung A1–A3 di peserta peraga 21, 31, 41–43; potret navigasi 36 layar. Tangkapan layar manual & slide dari putaran ini |
+| Galat konsol peramban (putaran akhir) | 0 dari aplikasi sesudah perbaikan C-29/C-30 (sisa: gangguan jaringan sandbox ke CDN, bukan aplikasi; 2× 400 memang disengaja oleh uji penolakan) |
+| Dokumen cetak (`uji/dokumen/`, peserta 01, data bersih) | D1 dokumen penjualan 12/12 · **D2 dokumen keuangan 16/16** (sisa "Kas in" hilang pada data bersih) · D3 naskah/template 9/9 |
+| Uji variasi isian & hitungan (`uji/variasi/` V1–V8) | 164 kasus (lihat §2a) — tidak diulang; perubahan sesudahnya tidak menyentuh isian yang diuji |
+| Jest penuh (pohon akhir) | 1.688 lulus · 9 gagal = himpunan lama yang sama (phase3P3, roleGateSweep2, phase4R1, fe07ReturnErrors, phase3P8Activation) |
+| Backend `tests_mem` penuh | 2.489 lulus · 0 gagal |
+| Gate `--ci` | lihat baris penutup (dijalankan sekali pada pohon akhir sesudah bagian 5) |
 
 ## 1. Data acuan & data demo
 
@@ -150,6 +151,10 @@ dan setiap materi baru dijalankan di layar dengan akun peran, lalu jurnalnya dic
 | C-26 | F12 | Nominal kartu kontrabon terbelah ("Rp 1.287.60" + "0"); penerimaan barang "tugas 945058 · completed" | `break-words`; id & status mentah | D · `ContraBonParts.jsx` · `latihKontrabonTampil.test.js` |
 | C-27 | F04 | Aturan nominal transfer "dibulatkan ke atas ke Rp 500.000" bisa menghasilkan kelebihan ≤ Rp 5.000 → masuk toleransi, titipan tidak terbentuk | Aturan latihan | D · teks & uji: kelebihan minimal Rp 10.000 |
 | C-28 | — | Label Kartu Peserta berbeda antara manual dan cetakan skrip data latihan | Dua sumber | D · satu daftar (`bangun.py` = `seed_pelatihan_keuangan_kn.py`), dicek saat membangun |
+| C-29 | A3 | QC membuka SPK inspeksi retur → 403 tanda tangan elektronik (putaran akhir) | Izin `esign.view` tidak ada untuk QC | D · `permissions_config.py` (`A2_DEFAULT_PAIRS` + qc) · `test_PRT9_izin_bawaan.py`; diulang di layar (peserta 45) tanpa 403 |
+| C-30 | A3 | Sales membuka panel karantina retur → 403 daftar supplier di setiap muat | Panggilan `/suppliers` tanpa cek izin | D · `ReturnQuarantinePanel.jsx` (hanya bila `supplier.view`) · `latihA3Karantina.test.js` |
+| C-31 | — | Menyiapkan peserta baru sesudah ada aktivitas kelas gagal: SO ditolak "Qty roll … melebihi panjang bebas" | Skrip data memilih roll yang sebagian panjangnya sudah dipesan | D · `seed_demo_transaksi_kn.py` (roll dengan pesanan sebagian dilewati); peserta 45 tersiapkan lengkap |
+| C-32 | — | Gate: layar Karyawan memutuskan dari nama peran (`admin`) dan memanggil `/users` untuk Finance | Perubahan K-SDM-01 | D · `EmployeesView.jsx` (`can(perms,'user','view')`), `audit_sales_roles_ux.py` (pagar dicatat) · `verify_role_gate_ui` 0 pelanggaran |
 
 ## 3. Perlu keputusan pemilik
 

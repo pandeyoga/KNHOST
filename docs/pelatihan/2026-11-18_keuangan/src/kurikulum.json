@@ -10,7 +10,9 @@
     "Setiap transaksi di aplikasi otomatis membuat jurnal. Tugas Finance adalah memastikan uang yang masuk dan keluar tercatat pada dokumen yang benar, cocok dengan bank, dan bukunya seimbang.",
     "Setiap langkah di panduan ini sudah dijalankan di layar dengan akun peran yang sama dengan peserta, lalu angkanya dicocokkan dengan jurnal dan saldo."
    ],
-   "kode": ["F01"]
+   "kode": [
+    "F01"
+   ]
   },
   {
    "no": "1",
@@ -21,7 +23,17 @@
     "Dokumen operasional (pesanan, penerimaan barang, tagihan, kas) tidak memilih akun sendiri. Aplikasi memakai pemetaan akun: setiap jenis transaksi sudah ditentukan akun debit dan kreditnya.",
     "Aturan seperti tarif PPN, termin, denda, toleransi selisih, dan siapa yang boleh menyetujui adalah pengaturan, bukan angka tetap di program. Pengaturan diubah oleh Manajer atau Admin dan berlaku untuk semua pengguna, jadi di kelas diperagakan pelatih."
    ],
-   "kode": ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "K08", "K09"]
+   "kode": [
+    "K01",
+    "K02",
+    "K03",
+    "K04",
+    "K05",
+    "K06",
+    "K07",
+    "K08",
+    "K09"
+   ]
   },
   {
    "no": "2",
@@ -32,7 +44,13 @@
     "Setiap alur di bagian ini dijalankan di layar dari awal sampai akhir dengan akun setiap peran (Sales, Admin Sales, Gudang, MD Quality, Pembelian, Manajer, Finance), lalu jurnal di setiap tahap dicocokkan.",
     "Pesanan sampai Uang Masuk dan Pengadaan sampai Bayar adalah dua siklus utama. Retur membalik sebagian siklus itu. Karyawan sampai Gaji Dibayar adalah siklus SDM. Semua bermuara di buku besar, laporan, dan tutup buku."
    ],
-   "kode": ["A1", "A2", "A3", "A4", "A5"]
+   "kode": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5"
+   ]
   },
   {
    "no": "3",
@@ -43,11 +61,55 @@
     "Kerjakan berurutan di dalam setiap siklus. Beberapa skenario memakai hasil skenario sebelumnya."
    ],
    "sub": [
-    {"no": "3.1", "judul": "Piutang — uang masuk dari pelanggan", "kode": ["F02", "F03", "F04", "F05", "F06", "F13", "F14"]},
-    {"no": "3.2", "judul": "Hutang — uang keluar ke pemasok", "kode": ["F11", "F12"]},
-    {"no": "3.3", "judul": "Kas & Bank", "kode": ["F07", "F08", "F09", "F10"]},
-    {"no": "3.4", "judul": "SDM & Gaji", "kode": ["H01", "H02", "H03", "H04", "F15"]},
-    {"no": "3.5", "judul": "Buku Besar & Dokumen", "kode": ["F16"]}
+    {
+     "no": "3.1",
+     "judul": "Piutang — uang masuk dari pelanggan",
+     "kode": [
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F13",
+      "F14"
+     ]
+    },
+    {
+     "no": "3.2",
+     "judul": "Hutang — uang keluar ke pemasok",
+     "kode": [
+      "F11",
+      "F12"
+     ]
+    },
+    {
+     "no": "3.3",
+     "judul": "Kas & Bank",
+     "kode": [
+      "F07",
+      "F08",
+      "F09",
+      "F10"
+     ]
+    },
+    {
+     "no": "3.4",
+     "judul": "SDM & Gaji",
+     "kode": [
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "F15"
+     ]
+    },
+    {
+     "no": "3.5",
+     "judul": "Buku Besar & Dokumen",
+     "kode": [
+      "F16"
+     ]
+    }
    ]
   },
   {
@@ -58,17 +120,60 @@
     "Laporan Laba-Rugi, Neraca, dan Arus Kas dibaca langsung dari jurnal. Bila semua siklus di bagian sebelumnya tercatat benar, laporan pasti seimbang.",
     "Tutup buku mengunci periode supaya tidak ada transaksi baru bertanggal di periode itu. Tutup buku berlaku untuk semua pengguna, jadi di kelas diperagakan pelatih pada bulan kosong."
    ],
-   "kode": ["F17", "F18"]
+   "kode": [
+    "F17",
+    "F18"
+   ]
+  },
+  {
+   "no": "5",
+   "judul": "Situasi Khusus & Koreksi",
+   "ringkas": "Amandemen penjualan dan pembelian, pengiriman sebagian, uang muka, pembatalan, serta koreksi pembayaran, kwitansi, gaji, dan jurnal.",
+   "intro": [
+    "Di pekerjaan nyata, dokumen sering berubah sesudah dibuat: harga dikoreksi, barang dikirim bertahap, pesanan dibatalkan, atau pembayaran salah rekening.",
+    "Aturannya sama di semua situasi: angka yang sudah terbit tidak diubah diam-diam. Koreksi dibuat sebagai dokumen baru (amandemen, nota kredit/debit, jurnal pembalik) yang punya alasan, penyetuju, dan jejak.",
+    "Bagian ini dipakai sesudah praktik inti, atau sebagai bahan tanya jawab. Setiap situasi sudah dijalankan di layar dengan akun peran yang benar dan jurnalnya dicocokkan."
+   ],
+   "kode": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+   ]
   }
  ],
  "peran": [
-  ["Sales", "Membuat pesanan penjualan, menagih pelanggan, menerima titipan tunai dan menyetorkannya."],
-  ["Admin Sales", "Memeriksa pesanan, melepas ke gudang, mengurus retur pelanggan."],
-  ["Gudang", "Menerima barang, mengambil dan mengirim barang, membuat surat jalan."],
-  ["MD Quality / QC", "Memeriksa mutu barang datang dan barang retur."],
-  ["Pembelian / Manajer", "Menyetujui permintaan pembelian, membuat dan menyetujui PO, membuat kontrabon."],
-  ["Finance", "Mencatat uang masuk dan keluar, faktur pajak, rekonsiliasi bank, kas kecil, SDM & penggajian, memeriksa jurnal."],
-  ["Manajer", "Menyetujui kredit, harga, pembelian, dan gaji; membaca laporan; menutup buku."],
-  ["Admin", "Mengatur akun pengguna, hak akses, dan pengaturan sistem."]
+  [
+   "Sales",
+   "Membuat pesanan penjualan, menagih pelanggan, menerima titipan tunai dan menyetorkannya."
+  ],
+  [
+   "Admin Sales",
+   "Memeriksa pesanan, melepas ke gudang, mengurus retur pelanggan."
+  ],
+  [
+   "Gudang",
+   "Menerima barang, mengambil dan mengirim barang, membuat surat jalan."
+  ],
+  [
+   "MD Quality / QC",
+   "Memeriksa mutu barang datang dan barang retur."
+  ],
+  [
+   "Pembelian / Manajer",
+   "Menyetujui permintaan pembelian, membuat dan menyetujui PO, membuat kontrabon."
+  ],
+  [
+   "Finance",
+   "Mencatat uang masuk dan keluar, faktur pajak, rekonsiliasi bank, kas kecil, SDM & penggajian, memeriksa jurnal."
+  ],
+  [
+   "Manajer",
+   "Menyetujui kredit, harga, pembelian, dan gaji; membaca laporan; menutup buku."
+  ],
+  [
+   "Admin",
+   "Mengatur akun pengguna, hak akses, dan pengaturan sistem."
+  ]
  ]
 }

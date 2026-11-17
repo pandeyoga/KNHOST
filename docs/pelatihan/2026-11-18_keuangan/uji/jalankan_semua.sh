@@ -12,6 +12,7 @@
 #   KN_PESERTA_A3J  peserta peraga retur penjualan (bawaan 41) · KN_PESERTA_A3B retur pembelian (42) ·
 #   KN_PESERTA_A3T  tukar barang (43) — alur 2 diperagakan pelatih dengan akun tiap peran, jadi dokumennya terpisah
 #                   dari dokumen latihan peserta kelas.
+#   KN_PESERTA_S1…S4  situasi khusus bagian 5 (bawaan 61, 66, 71, 76; peserta peraga tersendiri)
 # Data: backend/scripts/seed_pelatihan_keuangan_kn.py --mulai NN --peserta NN untuk peserta kelas, A1, A3*;
 #       --hanya a_dasar:akun lalu --hanya a_dasar:mitra untuk A2. Peserta yang sudah dipakai tidak bisa diulang.
 # Butuh backend :8001, frontend :3000, dan `python3` (KN_PY) yang bisa menjalankan skrip backend (F04 langkah 9).
@@ -21,6 +22,7 @@ cd "$(dirname "$0")"
 export KN_PESERTA="${KN_PESERTA:-01}"
 A1="${KN_PESERTA_A1:-21}"; A2="${KN_PESERTA_A2:-31}"
 A3J="${KN_PESERTA_A3J:-41}"; A3B="${KN_PESERTA_A3B:-42}"; A3T="${KN_PESERTA_A3T:-43}"
+S1="${KN_PESERTA_S1:-61}"; S2="${KN_PESERTA_S2:-66}"; S3="${KN_PESERTA_S3:-71}"; S4="${KN_PESERTA_S4:-76}"
 
 # berkas[@peserta] — urutan = kurikulum
 URUT=(
@@ -46,6 +48,9 @@ URUT=(
   F16_buku_besar_jejak
   # 4 · Manajer
   F17_laporan_keuangan F18_tutup_buku
+  # 5 · Situasi khusus & koreksi (peraga; peserta tersendiri)
+  "situasi/S1_amandemen_penjualan@$S1" "situasi/S2_amandemen_pembelian@$S2"
+  "situasi/S3_situasi_penjualan@$S3" "situasi/S4_koreksi_pembatalan@$S4"
 )
 
 pilih() {   # true bila skrip termasuk KN_HANYA (kosong = semua)
@@ -55,7 +60,7 @@ pilih() {   # true bila skrip termasuk KN_HANYA (kosong = semua)
   return 1
 }
 
-if [ -z "${KN_HANYA:-}" ]; then rm -rf hasil/F[0-9]* hasil/K[0-9]* hasil/H[0-9]* hasil/A[0-9]* hasil/_navigasi; fi
+if [ -z "${KN_HANYA:-}" ]; then rm -rf hasil/F[0-9]* hasil/K[0-9]* hasil/H[0-9]* hasil/A[0-9]* hasil/S[0-9]* hasil/_navigasi; fi
 GAGAL=(); LULUS=0
 mulai_semua=$(date +%s)
 for item in "${URUT[@]}"; do
