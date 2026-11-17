@@ -1908,7 +1908,7 @@ async def post_goods_receipt(*, task_id: str, entity_id: str, amount: float,
     await seed_default_coa()
     lines = _balanced_pair(ACC_PERSEDIAAN, ACC_GRIR, amount, f"Penerimaan barang {label}".strip())
     return await _insert_entry(
-        lines=lines, description=f"Goods Receipt {label}".strip(), date=date or now_iso(),
+        lines=lines, description=f"Penerimaan barang {label}".strip(), date=date or now_iso(),
         source_type="goods_receipt", source_id=task_id, entity_id=entity_id,
         created_by="system", source_label=label, ref={"po_id": po_id} if po_id else None)
 
@@ -2298,7 +2298,7 @@ async def post_vendor_bill(bill: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     lines.append({"account_code": ACC_HUTANG, "debit": 0.0, "credit": grand,
                   "description": f"Hutang usaha {num} — {bill.get('supplier_name', '')}".strip()})
     je = await _insert_entry(
-        lines=lines, description=f"Vendor Bill {num}",
+        lines=lines, description=f"Tagihan pemasok {num}",
         date=bill.get("posted_at") or bill.get("bill_date") or now_iso(),
         source_type="vendor_bill", source_id=bid, entity_id=bill.get("entity_id", ""),
         created_by="system", source_label=num, ref={"po_id": bill["po_id"]} if bill.get("po_id") else None)

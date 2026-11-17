@@ -5,6 +5,7 @@
  */
 import { Scissors, Trash2, Scale, Banknote, History, PackageCheck, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
+import { docStatusLabel } from "../../../utils/docStatus";
 import { EVENT_LABEL, EXCEPTION_TYPE_LABEL, fmtDate, fmtDateTime } from "./contraBonApi";
 
 export function TotalsGrid({ totals }) {
@@ -14,9 +15,11 @@ export function TotalsGrid({ totals }) {
   // seperti "Rp 17.662.320" tidak terpotong di tengah — sempat terlihat terpotong.
   const cell = "rounded-md border border-[#EFF0F2] bg-white px-2 py-1.5";
   const lbl = "text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]";
-  const val = "mt-0.5 text-[13px] font-bold tabular-nums leading-tight break-words";
+  // Pelatihan 18 Nov (F12): `break-words` memotong nominal di tengah ("Rp 1.287.60" + "0"). Nominal tidak boleh
+  // terbelah: satu baris, dan lima kartu sejajar baru di layar sangat lebar (panel rincian sempit).
+  const val = "mt-0.5 whitespace-nowrap text-[13px] font-bold tabular-nums leading-tight";
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5"
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-5"
       data-testid="cb-detail-totals">
       <div className={cell}>
         <p className={lbl}>Nilai faktur</p>
@@ -292,7 +295,8 @@ export function ReceiptSection({ receipt, loading }) {
             <p key={`${g.grn_task_id}-${g.bill_number}`}
               className="flex items-center gap-1 rounded-md border border-[#EFF0F2] bg-white px-2 py-1 text-[11px]">
               <PackageCheck size={11} className="text-[#0058CC]" />
-              {g.po_number} · tugas {String(g.grn_task_id).slice(-6)} · {g.status}
+              {/* Pelatihan 18 Nov (F12): dulu "tugas 945058 · completed" (potongan id & status mentah). */}
+              {g.po_number} · penerimaan gudang · {docStatusLabel(g.status)}
               <span className="text-[#8E8E93]">
                 {g.completed_at ? ` · ${fmtDate(g.completed_at)}` : ""}
               </span>
