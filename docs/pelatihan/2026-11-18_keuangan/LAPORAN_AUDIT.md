@@ -268,6 +268,25 @@ dua menyembunyikan bug nyata:
 
 Jest penuh sesudahnya: **1.778/1.778 lulus, 0 gagal**.
 
+### Uji jalan adversarial alur krusial (peserta 96–99; klik ganda, dua pengguna, nominal tepi, urutan koreksi, Semua PT, periode tertutup)
+
+| # | Temuan | Status |
+|---|---|---|
+| D-F1 | **Membatalkan kwitansi/kas manual bertanggal MAJU dibalik bertanggal hari ini** (sebelum jurnal aslinya) → November mendapat Dr 1-1200 / Cr 1-1100 tanpa jurnal asal | D · `posting_registry.tanggal_pembalik`, `ar_receipt_service`, `routers/cash.py` · `test_latih_adv_batal_tanggal_maju.py`. Sisa kelas ini (pembalik deposit/titipan tunai/reklas uang muka) masih hari ini — terbuka |
+| D-F2 | **Dua pengguna [Terbitkan] bersamaan → dua kontrabon untuk tagihan yang sama** (uang tetap dijaga di langkah bayar) | D · `contra_bon_service._mundur_bila_bentrok` · `test_latih_adv_kontrabon_ganda.py` |
+| D-F3/F4 | Pesan pengguna yang kalah balapan berisi kode mentah ("Aksi 'ap_pay_vendor_bill' … Kunci Saga"); "Receipt sudah di-void" | D · `atomic_claim`, `ar_receipt_service`, `cash.py` · `test_latih_adv_pesan_klaim.py` |
+| D-O3 | [Lepas] baris biaya/bunga bank langsung membatalkan kas & jurnal tanpa konfirmasi (N5) | D · `ReconLinesTable.jsx` · `pelatihanKasBank.test.js` |
+| D-O8 | Pesan sukses rekonsiliasi kedua terhapus timer pesan pertama | D · `BankReconciliationView.jsx` |
+| D-O1 | **Tebus saldo retur (store credit) ke SO belum dikirim mengkredit 1-1200 langsung** (seharusnya 2-1400) → akun piutang < buku pembantu, Saldo & Umur "Selisih" | sedang dikerjakan (lihat hasil akhir di bawah) |
+| D-O2 | **Dua kwitansi dengan nomor referensi transfer sama** (pelanggan, PT, rekening sama) diterima tanpa peringatan → satu transfer tercatat dua kali; penjaga hanya pemindai harian 08.25 | Terbuka · **keputusan pemilik** (K-55) |
+| D-O4…O9 | Form Bayar aktif untuk tagihan berkontrabon (ditolak sesudah konfirmasi) & sisa lama sesudah kalah balapan; form kwitansi membulatkan sen (K-07); alokasi lebih dari sisa dipangkas diam-diam dan tampil "3472357.5"; isian negatif di Bayar terpilih mengurangi total; form kwitansi tidak memperingatkan periode tertutup sebelum simpan | Terbuka (rendah) |
+
+Yang diuji dan **tidak** bercacat: klik ganda/Enter berulang di semua tombol uang (tetap satu dokumen, satu kas, satu jurnal);
+dua pengguna menerima/membayar/menautkan/mencatat biaya bank yang sama (satu menang); balik jurnal tiga permintaan (satu
+pembalik); nominal 0/negatif/teks/tiga desimal ditolak; bayar sebagian ber-sen tepat; batal → bayar ulang → kontrabon; periode
+tertutup menolak kwitansi/bayar/kas/jurnal tanpa residu; mode Semua PT mematikan form uang dengan alasan; Hutang per Pemasok =
+Σ tagihan = kartu pemasok; rekening koran = Σ sisa SO.
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
@@ -303,6 +322,7 @@ Jest penuh sesudahnya: **1.778/1.778 lulus, 0 gagal**.
 | K-52 | **K-FIN-01 untuk akun latihan.** Akun `finance.latihNN` kini lintas PT seperti Manajer (kotak PT bisa dibuka; data PT Kanda & Cipta terjangkau) dan memegang izin Manajer (setujui, tutup buku, jurnal manual, bagan akun). Selama kelas peserta diminta tetap di PT Sukacita dan tidak menyetujui/mengubah pengaturan bersama. Sesudah kelas: `--nonaktifkan`. Bila ingin akun latihan tetap terkunci 1 PT, perlu peran kustom "Finance latihan" (berbasis Finance, lintas PT dimatikan) — putuskan sebelum pelatihan berikutnya. |
 | K-53 | **Akun Finance kini lintas PT (K-FIN-01) — `allowed_entity_ids` diabaikan untuk semua akun Finance**, termasuk akun latihan yang ditugaskan ke Sukacita saja (terbukti: finance.latih01 membaca dan bisa menulis di semua PT). Bila pembatasan PT harus tetap, Admin mematikan "lintas PT" untuk peran Finance di Peran & Hak Akses (berlaku untuk semua akun Finance) atau memakai peran kustom. Mohon keputusan. |
 | K-54 | Sesudah gerbang nama peran Desainer PDF dicabut (E-T1), Manajer dan Finance (pemegang `pdf_template.manage`) membuka Desainer PDF. Bila desainer harus khusus Admin, cabut izin itu dari peran Manajer/Finance di Peran & Hak Akses (bukan memasang lagi gerbang nama peran). |
+| K-55 | **Kwitansi dengan nomor referensi transfer yang sama** (pelanggan, PT, rekening sama) saat ini diterima tanpa peringatan (D-O2). Ditolak (409) atau diperingatkan di konfirmasi ("Nomor referensi … sudah dipakai kwitansi KSC/AR-…") dengan isian "transfer berbeda"? |
 | K-26 | Akun "Selisih harga pembelian" dan "Selisih nilai retur beli" belum dipetakan: kliring GR/IR ditolak dan Kesiapan PT kurang "Pemetaan akun". Akun mana yang dipakai? |
 | K-27 | Finance boleh **membaca** Aturan Keuangan & Pajak (izin `settings.view`)? Manajer tidak bisa mengubah "Kelompok umur piutang" (butuh `settings.manage`) — disengaja? |
 | K-28 | Akun yang pernah dipakai di riwayat pemetaan tetap dihitung akun kontrol walau pemetaannya sudah dikembalikan. Disengaja? |
