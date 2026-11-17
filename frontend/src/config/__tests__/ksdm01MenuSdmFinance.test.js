@@ -2,6 +2,8 @@
 // Izin bawaan dari `access_builtin_fixture.json` (generator `backend/tests/fe03_access_fixture.py` =
 // `permissions_config.KSDM01_DEFAULT_PAIRS`), overlay menu `ROLE_NAV.finance` (roles.js). Pemisahan tugas: Finance
 // menyiapkan & memposting gaji, Manajer mengesahkan & membatalkan; struktur organisasi tetap Admin/Manajer.
+// K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan jangan
+// dipisah") MENGGANTIKAN pemisahan itu: Finance kini memegang izin SDM & gaji Manajer dan mewarisi menunya.
 import builtin from "./fixtures/access_builtin_fixture.json";
 import { buildNavGroups, hubTabsForRole, resolveDeepLinkTarget } from "../navigationConfig";
 import { setAccessContext } from "../roles";
@@ -23,33 +25,37 @@ const menu = (role, perms) => {
 
 describe("K-SDM-01 — izin bawaan Finance", () => {
   const p = builtin.permissions.finance;
-  test("SDM: lihat, tambah, ubah, data pribadi, kehadiran, aturan gaji — tanpa hapus, struktur organisasi, pengaturan umum", () => {
-    expect([...p.hr].sort()).toEqual(["create", "manage_attendance", "manage_payroll", "update", "view", "view_pii"]);
+  test("SDM: K-SDM-01 + (K-FIN-01) hapus karyawan & struktur organisasi seperti Manajer — tanpa pengaturan SDM umum", () => {
+    expect([...p.hr].sort()).toEqual(["create", "delete", "manage_attendance", "manage_org", "manage_payroll", "update",
+      "view", "view_pii"]);
+    expect(builtin.permissions.manager.hr.every((a) => p.hr.includes(a))).toBe(true);
   });
-  test("Penggajian: siapkan, posting, bayar — sahkan & batalkan tetap Manajer (pemisahan tugas)", () => {
-    expect([...p.payroll].sort()).toEqual(["create", "pay", "post"]);
+  test("Penggajian: siapkan, posting, bayar + (K-FIN-01) sahkan & batalkan seperti Manajer", () => {
+    expect([...p.payroll].sort()).toEqual(["approve", "create", "pay", "post", "void"]);
     expect(builtin.permissions.manager.payroll).toEqual(expect.arrayContaining(["approve", "void"]));
   });
 });
 
 describe("K-SDM-01 — menu Finance", () => {
-  test("SDM › Karyawan, Kehadiran, Penggajian (Proses Gaji, Setoran & Pajak, Komponen & Masukan), Kinerja & Insentif", () => {
+  test("SDM (K-FIN-01): menu SDM Finance = menu SDM Manajer (Karyawan, Kehadiran, Penggajian, Kinerja & Insentif, …)", () => {
     const m = menu("finance");
-    expect(m.hrd).toEqual({
-      "hr-people": ["hr-employees"],
-      "hr-attendance-hub": ["hr-attendance", "hr-leave", "hr-overtime"],
-      "hr-payroll-hub": ["hr-payroll-runs", "hr-payroll-remittances", "hr-pay-components"],
-      "hr-kpi-hub": ["incentive-capaian", "incentive-sheets", "incentive-setup"],
-    });
+    expect(m.hrd).toEqual(menu("manager").hrd);
+    expect(m.hrd["hr-payroll-hub"]).toEqual(expect.arrayContaining(["hr-payroll-runs", "hr-payroll-remittances",
+      "hr-pay-components"]));
   });
-  test("Pengaturan › SDM: Aturan SDM & Penggajian, Shift & Lokasi Absen, Kalender Libur (tanpa Mesin Absen)", () => {
-    expect(menu("finance")["settings-hub"]["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup", "hr-holidays"]);
+  test("Pengaturan › SDM (K-FIN-01) = Manajer", () => {
+    expect(menu("finance")["settings-hub"]["settings-hr"]).toEqual(menu("manager")["settings-hub"]["settings-hr"]);
   });
-  test("Struktur Organisasi & Lacak Lapangan tidak dibuka (tetap Admin/Manajer)", () => {
+  test("Struktur Organisasi & Lacak Lapangan (K-FIN-01): terbuka seperti untuk Manajer", () => {
+    for (const role of ["manager", "finance"]) {
+      login(role);
+      expect(resolveDeepLinkTarget("hr-org-units", role)).not.toBeNull();
+      expect(resolveDeepLinkTarget("hr-payroll-runs", role)).toMatchObject({ view: "hr-payroll-runs", navId: "hr-payroll-hub" });
+    }
+    login("manager");
+    const lacakManajer = !!resolveDeepLinkTarget("hr-live-tracking", "manager");
     login("finance");
-    expect(resolveDeepLinkTarget("hr-org-units", "finance")).toBeNull();
-    expect(resolveDeepLinkTarget("hr-live-tracking", "finance")).toBeNull();
-    expect(resolveDeepLinkTarget("hr-payroll-runs", "finance")).toMatchObject({ view: "hr-payroll-runs", navId: "hr-payroll-hub" });
+    expect(!!resolveDeepLinkTarget("hr-live-tracking", "finance")).toBe(lacakManajer);
   });
   test("bukti-merah: Admin mencabut izin SDM Finance → Karyawan/Kehadiran/Proses Gaji tersembunyi, Setoran & Pajak tetap", () => {
     const tanpaHr = { ...builtin.permissions.finance };

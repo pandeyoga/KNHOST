@@ -193,8 +193,9 @@ async def test_CRT3_izin_bawaan_setara():
         co = set(izin.get("credit_override") or [])
         assert ("view" in co) == ("view" in (izin.get("customer") or [])), peran
         assert ("create" in co) == ("create" in (izin.get("order") or [])), peran
+    # K-FIN-01 (pemilik 17 Nov): Finance memegang semua izin bawaan Manajer, termasuk memutus izin kredit.
     assert {p for p, i in pc.DEFAULT_PERMISSIONS.items() if "approve" in (i.get("credit_override") or [])} == \
-        {"admin", "manager"}
+        {"admin", "manager", "finance"}
 
 
 # ── U16 — putaran `t1_config` sembilan kunci ─────────────────────────────────────────────────────────────────────────

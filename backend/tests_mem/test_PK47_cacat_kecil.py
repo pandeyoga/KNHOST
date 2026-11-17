@@ -1,8 +1,8 @@
 """PK-47 — lima cacat kecil dari uji sapuan endpoint (docs/blueprint/unit/PK-47.md).
 
 Fixture: PT uji `ent_uji_t` (CV, `is_test`), barang `prd_y` (yard, gramasi 150, lebar 1.5), PO `po_a` (ent_ksc, tingkat
-manager), `po_c`/`po_d` (ent_kanda, tingkat finance), `po_e` (ent_kanda, tingkat manager); akun `fin` (Finance,
-hanya ent_ksc), `sopir`.
+manager), `po_c`/`po_d` (ent_kanda, tingkat finance), `po_e` (ent_kanda, tingkat manager); akun `fin` (penyetuju PO
+hanya ent_ksc — K-FIN-01: peran kustom tanpa acuan berizin PO, karena Finance kini lintas PT seperti Manajer), `sopir`.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _po(pid: str, ent: str, peran: str) -> dict:
 
 
 @pytest.fixture(scope="module")
-async def siap(db, akun, sesi, peran_sopir):
+async def siap(db, akun, sesi, peran_sopir, peran_tanpa_acuan):
     await db.business_entities.insert_one({"id": "ent_uji_t", "status": "active", "is_test": True, "type": "CV",
                                            "legal_name": "CV Uji Sapuan", "short_name": "Uji Sapuan",
                                            "doc_prefix": "UJT", "created_at": "2026-11-13T00:00:00+00:00"})
@@ -33,7 +33,10 @@ async def siap(db, akun, sesi, peran_sopir):
                                   "created_at": "2026-11-13T00:00:00+00:00"})
     await db.purchase_orders.insert_many([_po("po_a", "ent_ksc", "manager"), _po("po_c", "ent_kanda", "finance"),
                                           _po("po_d", "ent_kanda", "finance"), _po("po_e", "ent_kanda", "manager")])
-    fin = await akun("finance", entitas=("ent_ksc",))
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance bawaan kini lintas PT (setara Manajer), jadi pagar PT penugasan
+    # diuji dengan peran kustom tanpa acuan yang memegang izin setujui/tolak PO (bawaan: tidak lintas PT).
+    fin = await akun(await peran_tanpa_acuan({"purchase_order": ["view", "approve", "reject"]},
+                                             label="Penyetuju PO satu PT"), entitas=("ent_ksc",))
     sopir = await akun(peran_sopir)
     return {"fin": await sesi(fin), "sopir": await sesi(sopir)}
 

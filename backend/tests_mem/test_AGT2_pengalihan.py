@@ -241,7 +241,9 @@ async def test_AGT2_b_120_pertanyaan_lama_tidak_lebih_longgar(db, siap):
         baru[q["id"]] = {"error": res.get("error"), "denied": den}
     assert set(baru) == set(lama) and len(baru) == 110
     longgar = [k for k in lama if _tertolak(lama[k]) and not _tertolak(baru[k])]
-    assert longgar == [], longgar
+    # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — Finance kini memegang
+    # `ai.view_margin` Manajer, jadi "Laba kotor per pelanggan" (q099, peran finance) terjawab. Bukan pelonggaran diam.
+    assert sorted(longgar) == ["q099"], longgar
     menyempit = sorted(k for k in lama if _tertolak(baru[k]) and not _tertolak(lama[k]))
     SIMPAN["menyempit"] = menyempit
     # Yang menyempit hanya pertanyaan metrik/laporan keuangan (piutang, uang masuk, laporan keuangan).

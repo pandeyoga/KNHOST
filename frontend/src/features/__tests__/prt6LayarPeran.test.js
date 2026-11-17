@@ -227,14 +227,16 @@ test("'Menu & tab yang tampil': id grup sidebar/hub tidak tampil sebagai centang
 });
 
 test("menu peran bawaan bertambah dari nav.add server (tidak diwariskan ke peran kustom)", () => {
-  // K-SDM-01 — Karyawan kini menu bawaan Finance; contoh menu tambahan = Struktur Organisasi (tetap Admin/Manajer).
-  expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(false);
-  registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: ["hrd", "hr-org-units"], remove: [] } },
-    { id: "cr_fin", label: "Fin", custom: true, base_role: "finance", nav: { add: [], remove: [] } }]);
+  // K-SDM-01 — Karyawan kini menu bawaan Finance; K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance mewarisi seluruh menu
+  // Manajer (termasuk Struktur Organisasi), jadi contoh peran bawaan di sini = Admin Sales.
   expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(true);
-  expect(roleCanSee(["admin", "manager"], "cr_fin", "hr-org-units")).toBe(false);
-  registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: [], remove: [] } }]);
-  expect(roleCanSee(["admin", "manager"], "finance", "hr-org-units")).toBe(false);
+  expect(roleCanSee(["admin", "manager"], "sales_admin", "hr-org-units")).toBe(false);
+  registerDynamicRoles([{ id: "sales_admin", label: "Admin Sales", custom: false, home_view: "sales-admin-desk", nav: { add: ["hrd", "hr-org-units"], remove: [] } },
+    { id: "cr_sa", label: "SA", custom: true, base_role: "sales_admin", nav: { add: [], remove: [] } }]);
+  expect(roleCanSee(["admin", "manager"], "sales_admin", "hr-org-units")).toBe(true);
+  expect(roleCanSee(["admin", "manager"], "cr_sa", "hr-org-units")).toBe(false);
+  registerDynamicRoles([{ id: "sales_admin", label: "Admin Sales", custom: false, home_view: "sales-admin-desk", nav: { add: [], remove: [] } }]);
+  expect(roleCanSee(["admin", "manager"], "sales_admin", "hr-org-units")).toBe(false);
 });
 
 test("formulir akun: tanpa peran awal ('Pilih peran…', wajib); kalimat lintas PT dari server; label peran dasar", async () => {

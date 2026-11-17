@@ -125,6 +125,10 @@ async def test_PRT3_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
             lama = sebelum[peran][rute]
             if lama == kode:
                 continue
+            # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — kode Finance = kode
+            # Manajer.
+            if peran == "finance" and kode == sesudah["manager"][rute]:
+                continue
             p, jalur = putusan[rute]
             if peran in ("admin", "manager"):
                 tak_sah.append((peran, rute, lama, kode, "Admin/Manajer harus sama"))
@@ -144,7 +148,7 @@ async def test_PRT3_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
         for rute in ("GET /api/sales-incentives", "GET /api/sales-users"):
             assert sesudah[peran][rute] == 403, (peran, rute)
     for peran in PERAN_BAWAAN:
-        boleh5 = peran in ("admin", "manager")
+        boleh5 = peran in ("admin", "manager", "finance")   # K-FIN-01 — Finance setara Manajer
         assert (sesudah[peran]["GET /api/entities/ent_ksc"] == 200) is boleh5, peran
         assert (sesudah[peran]["GET /api/finance/period-unlocks"] == 200) is (peran in ("admin", "manager", "finance")), peran
         assert (sesudah[peran]["GET /api/purchase-orders/resolve-sourcing?product_id=x"] != 403) is boleh5, peran

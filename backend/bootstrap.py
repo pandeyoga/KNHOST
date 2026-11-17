@@ -671,6 +671,41 @@ async def migrate_kft1_settings_permissions() -> None:
     await db.system_settings.update_one(marker, {"$set": {"kft1_izin_pengaturan": now_iso()}}, upsert=True)
 
 
+async def migrate_kfin01_approval_policies() -> Dict[str, Any]:
+    """K-FIN-01 (keputusan pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — sekali jalan:
+    baris Aturan Persetujuan TERSIMPAN (`approval_policies`, aktif, bukan "semua pemegang akses") yang menyebut Manajer
+    ikut menyebut Finance (dan peran kustom ber-dasar Finance; `role_registry.setara_untuk`). Baris bawaan (belum
+    tersimpan) sudah dihitung dengan aturan yang sama (`approval_policy_service._row`). Ditandai
+    `system_settings{scope: "__migrations__"}.kfin01_aturan_persetujuan`; perubahan Admin sesudahnya bertahan."""
+    marker = {"scope": "__migrations__"}
+    done = await db.system_settings.find_one(marker, {"_id": 0, "kfin01_aturan_persetujuan": 1})
+    if done and done.get("kfin01_aturan_persetujuan"):
+        return {"diubah": []}
+    import role_registry as reg
+    changed: List[str] = []
+    async for row in db.approval_policies.find({"active": True, "any_holder": {"$ne": True}},
+                                               {"_id": 0, "id": 1, "roles": 1}):
+        roles = list(row.get("roles") or [])
+        extra = reg.setara_untuk(roles)
+        if not roles or not extra:
+            continue
+        want = set(roles) | set(extra)
+        await db.approval_policies.update_one({"id": row["id"]}, {"$set": {
+            "roles": [r for r in reg.role_ids() if r in want] + [r for r in roles if r not in reg.ROLES],
+            "updated_at": now_iso()}})
+        changed.append(row["id"])
+    if changed:
+        try:
+            from dependencies import audit
+            await audit("Sistem (K-FIN-01)", "approval_policies_finance_added", "approval_policies", "kfin01",
+                        {"baris": changed}, reason="Keputusan pemilik 17 Nov 2026: Finance setara Manajer")
+        except Exception:  # noqa: BLE001 — jejak audit tidak boleh menggagalkan start
+            import logging
+            logging.getLogger("bootstrap").warning("[K-FIN-01] audit aturan persetujuan gagal dicatat")
+    await db.system_settings.update_one(marker, {"$set": {"kfin01_aturan_persetujuan": now_iso()}}, upsert=True)
+    return {"diubah": changed}
+
+
 # ─── PR-T2 (K-47) — gerbang nama peran → izin, sekali jalan ────────────────────────────────────────────────────────
 PRT2_MIGRATION_ID = "prt2:gerbang-peran"
 #: Baris bertanda N (nama peran saja): pasangan pengganti → peran yang hari ini lolos lewat nama (`role_in`: peran itu
@@ -1991,6 +2026,7 @@ async def run_bootstrap() -> None:
     await sync_permission_revocations()
     await ensure_locked_role_defaults()   # M41 — Admin (terkunci) selalu memegang seluruh izin bawaannya
     await migrate_kft1_settings_permissions()
+    await migrate_kfin01_approval_policies()   # K-FIN-01 — Aturan Persetujuan tersimpan: Manajer → + Finance
     from services.dual_control import migrasi_sakelar_lama as _kft6_migrasi   # KF-T6 — sakelar SoD lama → kontrol.*
     await _kft6_migrasi()
     from services.special_order_phase2 import migrasi_margin_lama as _kft7_margin   # KF-T7 — margin pesanan khusus lama

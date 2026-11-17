@@ -518,7 +518,8 @@ async def test_KMT3_katalog():
     for role, acts in (("admin", {"prepare", "approve"}), ("manager", {"prepare", "approve"}),
                        ("sales_admin", {"prepare"}), ("finance", {"prepare"})):
         assert acts <= set(DEFAULT_PERMISSIONS[role]["incentive"]), role
-    assert "approve" not in DEFAULT_PERMISSIONS["finance"]["incentive"]
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: kini juga mengesahkan lembar (dulu hanya menyiapkan).
+    assert "approve" in DEFAULT_PERMISSIONS["finance"]["incentive"]
     assert "incentive" not in DEFAULT_PERMISSIONS["sales"] or not ({"prepare", "approve"}
                                                                    & set(DEFAULT_PERMISSIONS["sales"]["incentive"]))
     assert (ACTION_LABEL["incentive.prepare"], ACTION_LABEL["incentive.approve"]) == (

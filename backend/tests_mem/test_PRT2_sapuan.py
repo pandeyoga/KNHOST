@@ -88,8 +88,9 @@ async def test_U12_kode_jawaban_peran_bawaan_sama_dengan_sebelum(klien, akun, se
     sebelum = json.loads(BERKAS_SEBELUM.read_text())
     sesudah = await sapu(klien, akun, sesi)
     assert sorted(sebelum) == sorted(PERAN_BAWAAN)
+    # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — kode Finance = kode Manajer.
     beda = [(p, rute, sebelum[p].get(rute), k) for p, rutes in sesudah.items() for rute, k in rutes.items()
-            if sebelum[p].get(rute) != k]
+            if sebelum[p].get(rute) != k and not (p == "finance" and k == sesudah["manager"].get(rute))]
     assert not beda, beda
     # Manajer: 200 di semua rute manajer; 403 di rute yang hanya Admin (bunyi U12).
     m = sesudah["manager"]

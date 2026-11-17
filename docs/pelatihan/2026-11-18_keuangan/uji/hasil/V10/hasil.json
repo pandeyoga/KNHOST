@@ -1,0 +1,92 @@
+{
+  "code": "V10",
+  "title": "K-FIN-01 — Finance setara Manajer di layar",
+  "ok": true,
+  "at": "2026-11-17T17:31:12.420Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Login finance.latih01@ → menu [[Meja Saya]]",
+      "expect": "Judul 'Meja Manajer' (antrean keputusan Manajer); menu samping memuat Tutup Buku, Pusat Persetujuan, SDM",
+      "ok": true,
+      "ms": 9755,
+      "info": "Meja Manajer"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Buka Pusat Persetujuan",
+      "expect": "Layar terbuka tanpa galat akses; tab persetujuan lintas modul (matriks) tersedia seperti untuk Manajer",
+      "ok": true,
+      "ms": 4749,
+      "info": "Pusat Persetujuan · Menunggu keputusan (semua jenis): 29 23 di daftar bawah · 6 ditangani di layar lain Pesanan penjualan 10 Permintaan harga khusus 2 Permintaan pembelian (PR) 1 Retur penjualan 1 Pes"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Keuangan › Piutang › tab [[Kredit & Plafon]] → izin kredit peserta → [[Setujui]] → catatan → [[Setujui]]",
+      "expect": "Tombol Setujui/Tolak tampil (dulu khusus Manajer); status izin Disetujui",
+      "ok": true,
+      "ms": 6260,
+      "info": "Latihan 01 · Toko Kain Peserta 01 Rp 50.000.000 → approved oleh Peserta Keuangan 01"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Keuangan › Hutang › tab [[Kontrabon]] → kontrabon Terverifikasi yang diajukan Manajer → [[Setujui kontrabon]]",
+      "expect": "Status Disetujui (dulu Manajer/Admin); kontrol dua orang: pengaju (Manajer) ≠ penyetuju (Finance)",
+      "ok": true,
+      "ms": 4545,
+      "info": "KSC/CB-00001 sudah disetujui Peserta Keuangan 01 pada putaran sebelumnya (kontrabon disetujui tidak bisa dibatalkan)"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Akuntansi & Pajak › Buku Besar › Jurnal → [[Jurnal Baru]] → 'Uji K-FIN-01 — Finance setara Manajer' · 6-2000 Debit 1.000 · 2-1900 Kredit 1.000 → [[Posting Jurnal]] → buka jurnalnya → [[Balik Jurnal]]",
+      "expect": "Tombol Jurnal Baru tampil (dulu Finance lihat saja); jurnal seimbang terposting; jurnal pembalik terbit (efek bersih nol)",
+      "ok": true,
+      "ms": 6445,
+      "info": "Jurnal manual berhasil diposting. · KSC/JE-00241 D/K Rp 1.000 · pembalik KSC/JE-00242"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Akuntansi & Pajak › Tutup Buku → Bulanan · September 2026 → [[Pratinjau]] → [[Tutup Buku]] → konfirmasi",
+      "expect": "Tombol Tutup Buku tampil & berhasil (dulu Manajer); September tertutup (bulan kosong). Admin membukanya kembali sesudah uji",
+      "ok": true,
+      "ms": 4870,
+      "info": "Periode September 2026 berhasil ditutup. Jurnal penutup: —. ✕ · ditutup oleh Peserta Keuangan 01"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "SDM › Penggajian › Komponen & Masukan → periode November 2026 → [[Sahkan]] masukan → lalu Proses Gaji → proses susulan November (diajukan Manajer) → [[Sahkan]]",
+      "expect": "Kedua tombol Sahkan tampil (dulu khusus Manajer, K-SDM-01) dan berhasil; proses & masukan uji dibatalkan sesudahnya",
+      "ok": true,
+      "ms": 10534,
+      "info": "masukan approved · KSC/PAY-00014 approved oleh Peserta Keuangan 01 · \"November 2026 · proses Susulan · 1 karyawan · gaji bersih Rp 100.000 · Sukacita Textile. Setelah disahkan, penggajian in\""
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Pengaturan › Keuangan & Pajak › kelompok [[Pajak, pembukuan & antar-PT]] → 'LPJ kas kecil wajib berlampiran bukti' (izin Akuntansi Kelola) dan 'Faktur pajak elektronik' (khusus Admin)",
+      "expect": "Yang pertama bisa diubah (kotak isian + [[Simpan]], seperti Manajer; dulu terkunci untuk Finance); yang kedua tetap terkunci 'Hanya pemegang akses …' (Manajer pun sama)",
+      "ok": true,
+      "ms": 13681,
+      "info": "finance.lpj_wajib_lampiran: bisa diubah · tax.efaktur_enabled: terkunci"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Akun finance.latih01@ (Peserta Keuangan 01) · peran finance",
+    "Tagihan kontrabon peserta 01 tidak tersedia / sudah berkontrabon — langkah 4 tanpa data",
+    "Masukan gaji pinp_d304a02cc0c0 (Budi Santoso, Rp 100.000, 2026-11) dicatat Finance — menunggu disahkan",
+    "September dibuka kembali (Admin)",
+    "Proses KSC/PAY-00014 dibatalkan",
+    "Masukan gaji uji dibatalkan",
+    "Keadaan akhir: {\"tutup\":0,\"masukan\":\"cancelled\",\"proses\":\"cancelled\"}"
+  ]
+}

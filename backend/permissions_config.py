@@ -1115,3 +1115,25 @@ for _role, _mods in A2_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# K-FIN-01 (keputusan pemilik 17 Nov 2026 malam, kata-kata asli: "untuk sekarang finance juga memiliki akses yang sama
+# dengan manager dan jangan dipisah") — izin bawaan peran Finance = izin bawaan peran Manajer (SEMUA sumber daya & aksi),
+# ditambah izin bawaan Finance sendiri yang tidak dimiliki Manajer (keputusan pemilik sebelumnya: `gl_mapping.update`
+# GL-01/GL-08, `interco_price.view/set` 2026-10). Menggantikan pembagian K-SDM-01 (Finance kini juga mengesahkan dan
+# menganulir gaji, menghapus karyawan, struktur organisasi, dst. — seperti Manajer). Kontrol dua orang per PENGGUNA
+# (`services/dual_control.py`, `kontrol.<aksi>.min_orang`) tidak berubah.
+# BLOK INI HARUS TETAP PALING AKHIR: dibentuk dari DEFAULT_PERMISSIONS["manager"] sesudah semua blok pasangan, jadi
+# pasangan bawaan Manajer yang ditambahkan blok di atas ikut ke Finance. Blok pasangan baru ditaruh DI ATAS blok ini
+# (uji `tests_mem/test_KFIN01_finance_setara_manajer.py` U1 memerah bila Manajer punya pasangan yang Finance tidak).
+# Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9);
+# pencabutan Admin sesudahnya bertahan; peran kustom ber-dasar Finance mengikuti bila modulnya belum diubah.
+# ═══════════════════════════════════════════════════════════════════════════
+KFIN01_SETARA = ("finance", "manager")   # (peran penerima, peran acuan)
+_fin, _mgr = (DEFAULT_PERMISSIONS[r] for r in KFIN01_SETARA)
+#: Pasangan bawaan Manajer yang belum dipegang Finance (dihitung sekali di sini; dipakai uji & laporan).
+KFIN01_DEFAULT_PAIRS = {KFIN01_SETARA[0]: {_res: tuple(a for a in _acts if a not in (_fin.get(_res) or []))
+                                           for _res, _acts in _mgr.items()
+                                           if any(a not in (_fin.get(_res) or []) for a in _acts)}}
+for _res, _acts in KFIN01_DEFAULT_PAIRS[KFIN01_SETARA[0]].items():
+    _fin[_res] = list(_fin.get(_res) or []) + list(_acts)

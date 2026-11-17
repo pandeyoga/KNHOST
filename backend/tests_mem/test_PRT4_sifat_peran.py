@@ -29,7 +29,8 @@ HOME_BAWAAN = {"admin": "admin-home", "manager": "manager-home", "sales_admin": 
                "warehouse_admin": "warehouse-admin-desk", "sample_admin": "sample-admin-desk",
                "md_quality": "inspections", "qc": "inspections"}
 KATEGORI_BAWAAN = {"sales": "sales", "driver": "sopir", "designer": "desainer", "warehouse": "gudang",
-                   "admin": "pengawas", "manager": "pengawas"}
+                   "admin": "pengawas", "manager": "pengawas",
+                   "finance": "pengawas"}   # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer
 MILIK_SENDIRI_BAWAAN = {"sales", "driver", "designer"}
 
 

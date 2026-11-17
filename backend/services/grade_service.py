@@ -28,7 +28,10 @@ def normalize_or_raise(raw: Any, field_label: str = "Grade") -> str:
 
 
 def can_override(actor: Optional[Dict[str, Any]]) -> bool:
-    return str((actor or {}).get("role", "")).lower() in OVERRIDE_ROLES
+    # K-FIN-01 — nama persis ATAU peran setara (`role_registry.SETARA_PERAN`: Finance setara Manajer).
+    from role_registry import SETARA_PERAN
+    role = str((actor or {}).get("role", "")).lower()
+    return any(r in OVERRIDE_ROLES for r in (role, *SETARA_PERAN.get(role, ())))
 
 
 def history_entry(grade_before: Optional[str], grade_after: str, source: str,

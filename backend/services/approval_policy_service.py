@@ -104,7 +104,12 @@ def _row(doc_kind: str, entity_id: str, level: int, roles: List[str], *, any_hol
          min_amount: float = 0.0, max_amount: Optional[float] = None, label: str = "", sort: int = 1,
          legacy_role: str = "") -> Dict[str, Any]:
     """`legacy_role` = peran tunggal sumber lama (mis. `required_role` aturan SO/PO/PR) — HANYA untuk field kompatibel
-    `required_role` / `required_approval_role` yang masih dibaca tampilan & notifikasi; tidak pernah untuk memutus."""
+    `required_role` / `required_approval_role` yang masih dibaca tampilan & notifikasi; tidak pernah untuk memutus.
+
+    K-FIN-01 — baris bawaan yang menyebut Manajer ikut menyebut Finance (dan peran kustom ber-dasar Finance):
+    `role_registry.SETARA_PERAN`. Baris yang hanya menyebut Admin tidak berubah."""
+    if not any_holder and roles:
+        roles = _ordered({*roles, *_registry().setara_untuk(roles)})
     return {"doc_kind": doc_kind, "entity_id": entity_id or "all", "level": int(level),
             "label": label or (kind(doc_kind)["level_labels"].get(int(level)) or "Persetujuan"),
             "min_amount": _num(min_amount) or 0, "max_amount": _num(max_amount),

@@ -403,7 +403,8 @@ async def test_CRT1_jalur_lama_dimatikan(klien, db, uji):
     assert all("manage_credit" not in ((p or {}).get("customer") or []) for p in rec["matrix"].values())
     assert "crt1:izin-kredit" in rec["migrations_applied"]
     for peran, harus in (("admin", {"view", "update", "approve"}), ("manager", {"view", "update", "approve"}),
-                         ("finance", {"view", "update"}), ("sales_admin", {"view", "update"}),
+                         # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: + `approve`.
+                         ("finance", {"view", "update", "approve"}), ("sales_admin", {"view", "update"}),
                          ("sales", {"view", "update"})):
         assert set(rec["matrix"][peran].get("credit_profile") or []) == harus, peran
 

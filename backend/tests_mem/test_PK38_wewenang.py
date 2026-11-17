@@ -331,10 +331,12 @@ async def test_PK38_U11_izin_setujui_saja(klien, akun, sesi, peran_tanpa_acuan, 
 
 async def test_PK38_U12_finance_bawaan_bayar_kontrabon(klien, kepala_admin):
     from permissions_config import DEFAULT_PERMISSIONS
-    assert DEFAULT_PERMISSIONS["finance"]["contra_bon"] == ["view", "pay"]
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: kontrabon penuh (dulu hanya lihat + bayar, PK-38).
+    assert DEFAULT_PERMISSIONS["finance"]["contra_bon"][:2] == ["view", "pay"]
+    assert set(DEFAULT_PERMISSIONS["finance"]["contra_bon"]) == set(DEFAULT_PERMISSIONS["manager"]["contra_bon"])
     r = await klien.get("/api/access/roles/finance", headers=kepala_admin)
     assert r.status_code == 200, r.text
-    assert sorted(r.json()["permissions"]["contra_bon"]) == ["pay", "view"]
+    assert sorted(r.json()["permissions"]["contra_bon"]) == sorted(DEFAULT_PERMISSIONS["manager"]["contra_bon"])
 
 
 async def test_PK38_bayar_orang_kedua_bila_diatur(klien, db, kontrabon, orang):

@@ -28,8 +28,20 @@ async function mount(user) {
 }
 afterEach(() => { mockGet.mockReset(); document.body.innerHTML = ""; });
 
-test("Finance: tanpa GET /api/users; Tambah & Ubah tampil, Tandai keluar tidak", async () => {
+// K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance bawaan kini memegang izin Manajer (`user.view`, `hr.delete`). Perilaku
+// "tanpa izin akun" diuji dengan izin bentuk K-SDM-01 (akun & hapus karyawan dicabut).
+const FINANCE_KSDM01 = { ...builtin.permissions.finance, hr: builtin.permissions.finance.hr.filter((a) => !["delete", "manage_org"].includes(a)) };
+delete FINANCE_KSDM01.user;
+
+test("K-FIN-01: Finance bawaan = Manajer — memuat daftar akun, Tambah, Ubah & Tandai keluar tampil", async () => {
   const host = await mount({ role: "finance", permissions: builtin.permissions.finance });
+  expect(mockGet.mock.calls.map((c) => c[0])).toContain("/api/users");
+  expect(host.querySelector('[data-testid="create-employee-button"]')).toBeTruthy();
+  expect(host.querySelector('[data-testid="deactivate-employee-emp_1"]')).toBeTruthy();
+});
+
+test("Finance tanpa izin akun & hapus (bentuk K-SDM-01): tanpa GET /api/users; Tambah & Ubah tampil, Tandai keluar tidak", async () => {
+  const host = await mount({ role: "finance", permissions: FINANCE_KSDM01 });
   expect(mockGet.mock.calls.map((c) => c[0])).not.toContain("/api/users");
   expect(host.querySelector('[data-testid="create-employee-button"]')).toBeTruthy();
   expect(host.querySelector('[data-testid="edit-employee-emp_1"]')).toBeTruthy();

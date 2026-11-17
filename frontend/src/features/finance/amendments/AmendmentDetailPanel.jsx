@@ -18,7 +18,7 @@ import {
   CheckCircle2, Link2, Loader2, Scale, ShieldAlert, UserCheck, XCircle,
 } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
-import { can, roleLabel } from "../../../config/roles";
+import { can, roleIs, roleLabel } from "../../../config/roles";
 import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import { amendmentDetail, approverLabel, decideAmendment, errText, statusMeta } from "./amendmentApi";
@@ -124,8 +124,9 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
   // (= endpoint). Tanpa approval_permission, server juga menuntut peran persis (Admin atau peran
   // penyetuju kebijakan) — aturan bisnis amandemen, tetap berbasis peran.
   const permDecide = can(currentUser?.permissions, ...(amd.approval_permission || "finance_amendment.approve").split("."));
-  const roleOk = !!amd.approval_permission || currentUser?.role === "admin"
-    || currentUser?.role === (amd.required_role || policy.approver_role || "manager");
+  // K-FIN-01 — `roleIs` (registry): peran persis, peran acuan, atau peran setara (Finance setara Manajer).
+  const roleOk = !!amd.approval_permission
+    || roleIs(currentUser?.role, ["admin", amd.required_role || policy.approver_role || "manager"]);
   const dualBlocked = !!policy.dual_control && isProposer;
   const canDecide = pending && permDecide && roleOk && !dualBlocked;
 

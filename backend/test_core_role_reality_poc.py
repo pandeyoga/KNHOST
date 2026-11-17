@@ -21,7 +21,8 @@ R5  **Pisah tugas (SD2).** Akun yang mengerjakan alur pesanan DAN uang/pajak
     `pisah_tugas` + usulan dua akun.
 R6  **Di luar peran.** Jejak yang peran sekarang tidak boleh lakukan (mis. `sales`
     menerbitkan faktur pajak) muncul sebagai `di_luar_peran` dan ditandai per baris.
-R7  **Laporan ini bukan untuk semua orang**: `sales`/`sales_admin`/`finance` → 403.
+R7  **Laporan ini bukan untuk semua orang**: `sales`/`sales_admin` → 403 (K-FIN-01: `finance` membaca seperti Manajer,
+    menerapkan tetap 403).
 R8  **Terap hanya untuk peran USULAN.** Peran lain ditolak 400 dengan kalimat yang
     menuntun — satu salah-klik tidak boleh memindahkan wewenang ke arah yang tak
     pernah dihitung. Peran yang sama juga ditolak.
@@ -362,8 +363,11 @@ def d_permission(sales, sa, fin):
     head("LANGKAH 4 — laporan wewenang bukan untuk semua orang (R7)")
     for nama, cl in (("sales", sales), ("Admin Sales", sa), ("Finance", fin)):
         r = cl.get("/api/access/role-reality")
-        check(f"R7 · {nama} DITOLAK membaca laporan cek peran",
-              r.status_code == 403, f"HTTP {r.status_code}")
+        # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance memegang `user.view` Manajer: membaca laporan seperti Manajer;
+        # MENERAPKAN (`user.update`) tetap ditolak, seperti untuk Manajer.
+        harus = 200 if nama == "Finance" else 403
+        check(f"R7 · {nama} {'MEMBACA (K-FIN-01)' if harus == 200 else 'DITOLAK membaca'} laporan cek peran",
+              r.status_code == harus, f"HTTP {r.status_code}")
         r2 = cl.post(f"/api/access/role-reality/{LEGACY}/apply",
                      json={"role": "sales_admin"})
         check(f"R7 · {nama} DITOLAK menerapkan perubahan peran",

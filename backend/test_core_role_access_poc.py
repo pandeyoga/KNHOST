@@ -18,9 +18,9 @@ G1. IZIN BACA YANG HILANG SUDAH DIBERIKAN — dan HANYA yang perlu:
 G2. PAGAR TIDAK IKUT LONGGAR (yang penting justru ini):
     · `sales`/`warehouse` → `/ar/aging` TETAP 403 (aging memuat piutang SEMUA
       pelanggan; sales dibatasi kepemilikan datanya sendiri — E8.4)
-    · `sales`/`sales_admin`/`finance`/`warehouse` → `/users` TETAP 403
-    · `finance` → `POST /vendor-bills` TETAP 403 (MN-T1/K-17: Finance kini MELIHAT dan MEMBAYAR hutang —
-      `GET /vendor-bills` 200 di G1 — tetapi tidak membuat/mengubah tagihan pemasok)
+    · `sales`/`sales_admin`/`warehouse` → `/users` TETAP 403
+    · (K-FIN-01, pemilik 17 Nov 2026 malam — Finance memegang akses Manajer: `/users`, `POST /vendor-bills`, dan
+      `POST /suppliers` tidak lagi ditolak untuk Finance; baris Finance dicabut dari G2)
     · `warehouse` → `POST /suppliers` TETAP 403 (hanya BACA yang diberikan)
 G3. KPI BERANDA TIDAK BOLEH BERBOHONG (INV-HOME-01):
     · `approvals_pending` == `approvals.total` (dulu 0 vs 6 di layar yang sama)
@@ -115,11 +115,9 @@ def g2_pagar_tidak_longgar(cl):
         ("warehouse", "GET", "/ar/aging", "gudang bukan wilayah piutang"),
         ("sales", "GET", "/users", "daftar akun bukan wilayah sales"),
         ("sales_admin", "GET", "/users", "daftar akun bukan wilayah Admin Sales"),
-        ("finance", "GET", "/users", "daftar akun bukan wilayah kasir"),
         ("warehouse", "GET", "/users", "daftar akun bukan wilayah gudang"),
-        # MN-T1 (K-17): Finance melihat & membayar hutang, tetapi MEMBUAT tagihan pemasok tetap bukan wilayahnya
-        # (izin dicek sebelum PO dibaca → 403 tanpa menyentuh data).
-        ("finance", "POST", "/vendor-bills", "membuat tagihan pemasok tetap Pembelian/Manajer (E8.1b, K-17)"),
+        # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini memegang izin Manajer: daftar akun (`user.view`) dan
+        # membuat tagihan pemasok (`vendor_bill.create`) terbuka baginya; dua baris Finance di sini dicabut.
         ("sales", "GET", "/suppliers", "sales tidak berurusan dengan supplier"),
     ]
     for role, method, path, why in tolak:
@@ -128,7 +126,7 @@ def g2_pagar_tidak_longgar(cl):
         ok(r.status_code == 403, f"{role:11s} {method} {path:30s} 403", f"({why}) → {r.status_code}")
 
     # HANYA BACA: menulis master supplier tetap tertutup untuk peran baru pembacanya.
-    for role in ("warehouse", "finance"):
+    for role in ("warehouse",):   # K-FIN-01 — Finance kini menulis master pemasok seperti Manajer
         r = cl[role].post("/api/suppliers", json={"name": "PT Uji Pagar Tulis"})
         ok(r.status_code == 403, f"{role:11s} POST /suppliers                   403",
            f"(hanya izin BACA yang diberikan) → {r.status_code}")

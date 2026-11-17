@@ -79,8 +79,26 @@ const CB = (status) => ({ id: "cb1", number: "KSC/CB-1", status, status_label: s
   entity_id: "ent_ksc", bills: [], deductions: [], decisions: [], payments: [], timeline: [],
   totals: { bills_total: 100, deductions_total: 0, net_payable: 100, paid_total: 0, outstanding: 100 } });
 
-test("F12 — Finance (lihat + bayar) di kontrabon Disetujui: langkah berikutnya milik Manajer, bukan 'hanya bisa memantau'", async () => {
-  const fin = { id: "u_fin", role: "finance", permissions: BUILTIN.permissions.finance };
+// K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance bawaan kini memegang izin kontrabon Manajer (ubah, verifikasi, setujui).
+// Teks "langkah berikutnya" untuk pemegang lihat + bayar saja diuji dengan izin bentuk PK-38 (`contra_bon: view, pay`).
+const FIN_LIHAT_BAYAR = { ...BUILTIN.permissions.finance, contra_bon: ["view", "pay"] };
+
+test("K-FIN-01 — Finance bawaan di kontrabon Disetujui: aksi utama sama dengan Manajer", async () => {
+  const aksi = async (role) => {
+    await mount(<ContraBonDetailPanel cb={CB("approved")} meta={{}} currentUser={{ id: `u_${role}`, role,
+      permissions: BUILTIN.permissions[role] }} onClose={() => {}} onChanged={() => {}} />);
+    const out = { utama: q("cb-action-primary")?.textContent || null, bacaSaja: Boolean(q("cb-detail-readonly")) };
+    for (const r of roots) await act(async () => { r.unmount(); });
+    roots = []; document.body.innerHTML = "";
+    return out;
+  };
+  const mgr = await aksi("manager");
+  expect(mgr.utama).not.toBeNull();
+  expect(await aksi("finance")).toEqual(mgr);
+});
+
+test("F12 — pemegang lihat + bayar (bentuk PK-38) di kontrabon Disetujui: langkah berikutnya milik Manajer, bukan 'hanya bisa memantau'", async () => {
+  const fin = { id: "u_fin", role: "finance", permissions: FIN_LIHAT_BAYAR };
   await mount(<ContraBonDetailPanel cb={CB("approved")} meta={{}} currentUser={fin} onClose={() => {}} onChanged={() => {}} />);
   const t = q("cb-detail-readonly").textContent;
   expect(t).toMatch(/Langkah berikutnya — Jadwalkan pembayaran/);
@@ -89,8 +107,8 @@ test("F12 — Finance (lihat + bayar) di kontrabon Disetujui: langkah berikutnya
   expect(q("cb-action-primary")).toBeNull();
 });
 
-test("F12 — Finance di kontrabon Dijadwalkan bayar: tombol Catat pembayaran, tanpa teks hanya-baca", async () => {
-  const fin = { id: "u_fin", role: "finance", permissions: BUILTIN.permissions.finance };
+test("F12 — pemegang lihat + bayar di kontrabon Dijadwalkan bayar: tombol Catat pembayaran, tanpa teks hanya-baca", async () => {
+  const fin = { id: "u_fin", role: "finance", permissions: FIN_LIHAT_BAYAR };
   await mount(<ContraBonDetailPanel cb={CB("scheduled_payment")} meta={{}} currentUser={fin} onClose={() => {}} onChanged={() => {}} />);
   expect(q("cb-action-primary").textContent).toMatch(/Catat pembayaran/);
   expect(q("cb-detail-readonly")).toBeNull();

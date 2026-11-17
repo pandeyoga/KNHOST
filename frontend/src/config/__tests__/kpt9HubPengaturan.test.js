@@ -147,9 +147,11 @@ const POTRET = {
     "settings-cfg-purchasing", "settings-cfg-rnd", "settings-cfg-sales", "settings-cfg-system", "settings-cfg-warehouse",
     "settings-config", "settings-devices", "settings-doc-numbering", "settings-dual-control", "settings-receiving-ocr"],
   sales_admin: ["grade-master", "return-policies"],
-  finance: ["gl-account-mappings", "hr-attendance-setup", "hr-holidays", "settings-cfg-hr"],
+  // K-FIN-01 (pemilik 17 Nov 2026 malam: "finance juga memiliki akses yang sama dengan manager") — = Manajer (di bawah).
+  finance: null,
   warehouse_admin: ["grade-master", "settings-receiving-ocr"],
 };
+POTRET.finance = [...POTRET.manager];   // dulu: Pemetaan Akun, Aturan SDM & Penggajian, Shift & Lokasi Absen, Kalender Libur
 /** id tab baru → id wadah lama (layar yang dulu memuatnya). */
 const WADAH = {
   "settings-pt-profile": "entities-access", "settings-pt-readiness": "entities-access", "settings-accounts": "entities-access",

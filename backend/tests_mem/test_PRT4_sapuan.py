@@ -112,8 +112,9 @@ async def test_U13_kode_dan_jumlah_baris_peran_bawaan_sama_dengan_sebelum(klien,
         pytest.skip("berkas 'sebelum' ditulis")
     sebelum = json.loads(BERKAS_SEBELUM.read_text())
     assert sorted(sebelum) == sorted([*PERAN_BAWAAN, "sales:sA"])
+    # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — kode Finance = kode Manajer.
     beda = [(p, rute, sebelum[p].get(rute), v) for p, rutes in sesudah.items() for rute, v in rutes.items()
-            if sebelum[p].get(rute) != v]
+            if sebelum[p].get(rute) != v and not (p == "finance" and v == sesudah["manager"].get(rute))]
     assert not beda, beda
     # Bunyi U13 — Manajer termasuk: melihat KPI sA dan kedua pelanggan sA/sB; Sales melihat miliknya saja.
     assert sesudah["manager"]["/api/sales/kpi?sales_id={sA}"][1]["untuk"] == "sA"

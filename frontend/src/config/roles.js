@@ -44,12 +44,14 @@ export const ROLE_REGISTRY = {
     order: 3,
     newIn: "E-8",
   },
+  // K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan jangan
+  // dipisah") — lintas badan usaha seperti Manajer; peringkat tetap 2 (setara lewat `ROLE_SETARA`, bukan peringkat).
   finance: {
     label: "Finance",
     longLabel: "Kasir / Finance",
     rank: 2,
-    crossEntity: false,
-    scopeHint: "1 badan usaha (bisa ditugaskan ke beberapa)",
+    crossEntity: true,
+    scopeHint: "lintas badan usaha",
     order: 4,
     newIn: "E-8",
   },
@@ -152,22 +154,34 @@ export function roleLabel(role, long = false) {
   return long ? e.longLabel : e.label;
 }
 
-/** Peran (atau peran ACUAN untuk peran kustom) termasuk daftar? Pengganti `[..].includes(role)`. */
-export function roleIs(role, list) {
-  if (list.includes(role)) return true;
+/** K-FIN-01 — cermin `backend/role_registry.SETARA_PERAN`: peran → peran yang gerbang namanya ikut ia lewati (satu
+ *  arah: Finance lolos gerbang Manajer, Manajer tidak lolos gerbang khusus Finance). Peran kustom ikut peran acuannya. */
+export const ROLE_SETARA = { finance: ["manager"] };
+
+/** Peran itu, peran acuannya (peran kustom), dan peran setara keduanya. */
+function selfAndPeers(role) {
+  const out = [role];
   const base = ROLE_REGISTRY[role]?.baseRole;
-  return !!base && list.includes(base);
+  if (base) out.push(base);
+  [...out].forEach((r) => (ROLE_SETARA[r] || []).forEach((p) => { if (!out.includes(p)) out.push(p); }));
+  return out;
+}
+
+/** Peran (atau peran ACUAN untuk peran kustom, atau peran SETARA — K-FIN-01) termasuk daftar? Pengganti
+ *  `[..].includes(role)`. */
+export function roleIs(role, list) {
+  return selfAndPeers(role).some((r) => !!r && list.includes(r));
 }
 
 export function roleRank(role) {
   return ROLE_REGISTRY[role]?.rank || 0;
 }
 
-/** Apakah peran aktor memenuhi tuntutan peran sebuah aturan persetujuan? */
+/** Apakah peran aktor memenuhi tuntutan peran sebuah aturan persetujuan? (K-FIN-01: Finance memenuhi tuntutan Manajer.) */
 export function roleSatisfies(actorRole, requiredRole) {
   if (!requiredRole) return true;
   const need = ROLE_REGISTRY[requiredRole]?.rank ?? ROLE_REGISTRY.manager.rank;
-  return roleRank(actorRole) >= need;
+  return selfAndPeers(actorRole).some((r) => roleRank(r) >= need);
 }
 
 /** Pilihan peran untuk formulir akun (layar "Badan Usaha & Akses"). */
@@ -250,9 +264,11 @@ export const ROLE_NAV = {
     remove: [],
   },
   finance: {
-    // Finance TIDAK mewarisi siapa pun: wilayahnya sempit & spesifik supaya
-    // "kasir" tidak diam-diam mendapat layar operasional/master.
-    inherit: null,
+    // K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan
+    // jangan dipisah") — Finance MEWARISI seluruh menu & tab Manajer (izin bawaannya kini = izin Manajer + miliknya
+    // sendiri, `backend/permissions_config.py` blok K-FIN-01), ditambah menu khas Finance di bawah. Dulu `inherit: null`
+    // (wilayah sempit "kasir"). Untuk memisah lagi: kembalikan `inherit: null`.
+    inherit: "manager",
     add: [
       "finance-desk",              // Meja Finance (gelombang 2) — beranda perannya
       "home", "hr-my-profile", "documents",
@@ -463,7 +479,7 @@ function homeFromServer(r, fallback) {
 // PR-T4 — kategori kerja per peran dari `kategori_kerja` jawaban `GET /api/roles` (Sifat peran). Nilai tertulis =
 // cadangan sebelum jawaban datang (= bawaan sistem `backend/role_registry.PRT4_BUILTIN_TRAITS`).
 const WRITTEN_CATEGORY = { sales: "sales", driver: "sopir", designer: "desainer", warehouse: "gudang",
-  admin: "pengawas", manager: "pengawas" };
+  admin: "pengawas", manager: "pengawas", finance: "pengawas" };   // K-FIN-01 — Finance setara Manajer
 const ROLE_CATEGORY = { ...WRITTEN_CATEGORY };
 
 /** Kategori kerja peran: "" · "sales" · "sopir" · "desainer" · "gudang" · "pengawas" (bukan nama peran). */

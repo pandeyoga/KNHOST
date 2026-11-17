@@ -33,11 +33,16 @@ penyetuju nilai.
 
 LINTAS BADAN USAHA
 ------------------
-Hanya `admin` & `manager`. **`sales_admin` SENGAJA TIDAK lintas-entitas**
+Bawaan: `admin`, `manager`, dan (K-FIN-01) `finance`. **`sales_admin` SENGAJA TIDAK lintas-entitas**
 (keputusan pemilik E8.10b#1: Admin Sales berbasis PENUGASAN — boleh dikunci 1 badan
 usaha atau diberi beberapa lewat `users.allowed_entity_ids`, mekanisme yang sudah ada
-untuk peran non-lintas). `finance` mengikuti pola yang sama karena kas & pajak selalu
-milik satu badan usaha (keputusan E7e).
+untuk peran non-lintas). `finance` dulu mengikuti pola yang sama (keputusan E7e).
+
+K-FIN-01 (keputusan pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan
+jangan dipisah") — Finance memegang akses Manajer di semua lapisan: izin bawaan (`permissions_config.KFIN01_*`), lintas
+badan usaha, kategori kerja "pengawas" (Meja Saya = Meja Manajer), Aturan Persetujuan bawaan, dan gerbang nama peran
+lama (`role_in`/`role_satisfies` lewat `SETARA_PERAN`). Peringkat (`rank`) Finance TETAP 2: aturan bawaan yang menuntut
+"finance" (mis. pembayaran sample: peringkat ≥ 2) tidak boleh menyempit.
 """
 from typing import Any, Dict, List, Optional
 
@@ -89,16 +94,17 @@ ROLES: Dict[str, Dict[str, Any]] = {
     "finance": {
         "label": "Finance",
         "long_label": "Kasir / Finance (uang masuk & pajak keluaran)",
-        "rank": 2,
-        "cross_entity": False,
+        "rank": 2,   # K-FIN-01 — tetap 2; setara Manajer lewat `SETARA_PERAN`, bukan peringkat
+        "cross_entity": True,   # K-FIN-01 — sama dengan Manajer
         # GELOMBANG 2: beranda = **Meja Finance** (5 antrean uang masuk & pajak).
         # MN-T1 — Meja Finance kini tab "Perlu Tindakan" di Keuangan › Beranda Keuangan: menu yang disorot = hub itu.
         "home_view": "finance-desk",
         "home_nav_id": "finance-tower",
-        "scope_hint": "1 badan usaha (bisa ditugaskan ke beberapa)",
+        "scope_hint": "lintas badan usaha",
         "description": (
             "Mencatat uang masuk (kwitansi AR), menerbitkan faktur pajak keluaran, "
-            "memutus selisih bayar, menerbitkan denda, dan mencatat kas."
+            "memutus selisih bayar, menerbitkan denda, dan mencatat kas. "
+            "Sementara ini memegang akses yang sama dengan Manajer (keputusan pemilik 17 Nov 2026)."
         ),
         "order": 4,
         "new_in": "E-8",
@@ -334,6 +340,9 @@ PRT4_BUILTIN_TRAITS: Dict[str, Dict[str, str]] = {
     "warehouse": {"kategori_kerja": "gudang"},
     "admin": {"kategori_kerja": "pengawas"},
     "manager": {"kategori_kerja": "pengawas"},
+    # K-FIN-01 — Finance setara Manajer: Meja Saya = Meja Manajer, lokasi jualan & daftar gudang seperti pengawas, dan
+    # giliran pelaksana hanya yang menyebut Finance (bukan setiap izin Manajer yang kini ia pegang).
+    "finance": {"kategori_kerja": "pengawas"},
 }
 #: Halaman awal bawaan peran bawaan (foto registry sebelum `apply_traits` menimpa `home_view`/`home_nav_id`).
 BUILTIN_HOME: Dict[str, tuple] = {rid: (r["home_view"], r["home_nav_id"]) for rid, r in ROLES.items()}
@@ -551,13 +560,38 @@ def base_or_self(role: Optional[str]) -> str:
     return (ROLES.get(r) or {}).get("base_role") or r
 
 
-def role_in(actor_role: Optional[str], roles) -> bool:
-    """Peran (atau peran ACUAN untuk peran kustom) termasuk dalam `roles`?"""
+#: K-FIN-01 (keputusan pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager
+#: dan jangan dipisah") — peran bawaan → peran bawaan yang gerbang namanya IKUT ia lewati. Satu arah: Finance lolos
+#: gerbang nama/peringkat yang menuntut Manajer; Manajer TIDAK lolos gerbang khusus Finance. Peran kustom ber-dasar
+#: Finance ikut (sama seperti `role_in` untuk peran acuan). Untuk memisah lagi: hapus barisnya (dan blok K-FIN-01
+#: `permissions_config`).
+SETARA_PERAN: Dict[str, tuple] = {"finance": ("manager",)}
+
+
+def _diri_dan_setara(actor_role: Optional[str]) -> List[str]:
+    """Peran itu, peran acuannya (peran kustom), dan peran yang setara dengan keduanya (`SETARA_PERAN`)."""
     r = actor_role or ""
-    if r in roles:
-        return True
+    out = [r]
     base = (ROLES.get(r) or {}).get("base_role") or ""
-    return bool(base) and base in roles
+    if base:
+        out.append(base)
+    for x in list(out):
+        out += [p for p in SETARA_PERAN.get(x, ()) if p not in out]
+    return out
+
+
+def setara_untuk(roles) -> List[str]:
+    """Peran (bawaan & kustom) yang lolos lewat `SETARA_PERAN` saat `roles` disebut — untuk melengkapi daftar penyetuju
+    bawaan (mis. Aturan Persetujuan yang menyebut Manajer ikut menyebut Finance). Urut registry."""
+    want = {str(x) for x in roles or ()}
+    hit = {r for r, ps in SETARA_PERAN.items() if want.intersection(ps)}
+    return [rid for rid in role_ids() if rid not in want
+            and (rid in hit or ((ROLES[rid].get("base_role") or "") in hit))]
+
+
+def role_in(actor_role: Optional[str], roles) -> bool:
+    """Peran (atau peran ACUAN untuk peran kustom, atau peran SETARA — K-FIN-01) termasuk dalam `roles`?"""
+    return any(x and x in roles for x in _diri_dan_setara(actor_role))
 
 
 def role_label(role: str, long: bool = False) -> str:
@@ -586,10 +620,11 @@ def role_satisfies(actor_role: str, required_role: Optional[str]) -> bool:
     """Apakah peran aktor memenuhi `required_role` dari matriks persetujuan?
 
     Hirarki: admin(4) > manager(3) > sales_admin/finance(2) > sales/warehouse(1).
-    `admin` selalu lolos. Admin Sales & Finance TIDAK memenuhi tuntutan `manager`
-    — itu disengaja (mereka pelaksana, bukan penyetuju nilai).
+    `admin` selalu lolos. Admin Sales TIDAK memenuhi tuntutan `manager` — itu disengaja (pelaksana, bukan penyetuju
+    nilai). K-FIN-01: Finance memenuhi tuntutan Manajer lewat `SETARA_PERAN` (peringkatnya sendiri tetap 2).
     """
-    return rank_of(actor_role) >= required_rank(required_role)
+    need = required_rank(required_role)
+    return any(rank_of(x) >= need for x in _diri_dan_setara(actor_role))
 
 
 def home_of(role: str) -> Dict[str, str]:
@@ -666,13 +701,16 @@ def _self_test() -> int:
     chk("admin peringkat tertinggi", max(r["rank"] for r in ROLES.values()) == ROLES["admin"]["rank"])
     chk("sales_admin & finance di atas sales/gudang",
         rank_of("sales_admin") > rank_of("sales") and rank_of("finance") > rank_of("warehouse"))
-    chk("sales_admin & finance DI BAWAH manajer (bukan penyetuju nilai)",
+    chk("sales_admin & finance DI BAWAH manajer menurut peringkat (Finance setara lewat SETARA_PERAN, K-FIN-01)",
         rank_of("sales_admin") < rank_of("manager") and rank_of("finance") < rank_of("manager"))
-    chk("BAWAAN lintas badan usaha hanya admin & manager (selebihnya diatur admin per peran)",
-        {r for r, v in BUILTIN_CROSS_ENTITY.items() if v} == {"admin", "manager"},
+    chk("BAWAAN lintas badan usaha hanya admin, manager & finance (K-FIN-01; selebihnya diatur admin per peran)",
+        {r for r, v in BUILTIN_CROSS_ENTITY.items() if v} == {"admin", "manager", "finance"},
         str(sorted(r for r, v in BUILTIN_CROSS_ENTITY.items() if v)))
     chk("aturan 'manager' tidak bisa dipenuhi Admin Sales",
         not role_satisfies("sales_admin", "manager"))
+    chk("K-FIN-01: aturan & gerbang 'manager' dipenuhi Finance; gerbang 'finance' tidak dipenuhi Manajer",
+        role_satisfies("finance", "manager") and role_in("finance", ("manager",))
+        and not role_in("manager", ("finance",)) and not role_satisfies("finance", "admin"))
     chk("aturan 'manager' dipenuhi manajer & admin",
         role_satisfies("manager", "manager") and role_satisfies("admin", "manager"))
     chk("aturan kosong = tanpa persetujuan (siapa pun yang boleh ubah)",

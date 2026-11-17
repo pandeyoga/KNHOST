@@ -136,7 +136,8 @@ describe("aktivasi P8 (tabel §6 rencana fase 3)", () => {
     expect(resolveDeepLinkTarget("costing", "warehouse_admin")).toBeNull();
     expect(resolveDeepLinkTarget("cs-design-gallery", "sales")).toBeNull();
     expect(resolveDeepLinkTarget("interco-transfers", "sales")).toBeNull();
-    expect(resolveDeepLinkTarget("rnd-labdip", "finance")).toBeNull();
+    // K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini mewarisi menu Manajer (R&D ikut); contoh peran tanpa R&D = Sopir.
+    expect(resolveDeepLinkTarget("rnd-labdip", "driver")).toBeNull();
   });
 
   test("D-23: tab tersembunyi supplier-internal-prices (peran Kontrak yang punya Master Pembelian)", () => {

@@ -251,6 +251,10 @@ async def _bandingkan(perms_of, kinds=None) -> Dict[str, Any]:
                     for role in roles:
                         actor = {"id": f"uji_{role}", "name": f"Uji {role}", "role": role}
                         lama = await lama_boleh(kind, role, amt, ent, level, perms_of(role))
+                        # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — penilai
+                        # lama + satu aturan: Finance boleh bila Manajer (dengan izin Finance sendiri) boleh.
+                        for peer in role_registry.SETARA_PERAN.get(role, ()):
+                            lama = lama or await lama_boleh(kind, peer, amt, ent, level, perms_of(role))
                         baru = (await aps.can_decide(kind, ent, amt, actor, level))["allowed"]
                         kombinasi += 1
                         if lama != baru:
@@ -276,7 +280,8 @@ async def test_KPT4_U1_baris_bawaan_semua_antrean(db):
     j1 = [r for r in po if r["level"] == 1 and r["roles"]]
     j2 = [r for r in po if r["level"] == 2]
     assert [(r["min_amount"], r["max_amount"]) for r in j1] == [(100 * JT, None)]
-    assert "manager" in j1[0]["roles"] and "admin" in j1[0]["roles"] and "finance" not in j1[0]["roles"]
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — baris yang menyebut Manajer ikut menyebut Finance (dulu: tanpa Finance).
+    assert "manager" in j1[0]["roles"] and "admin" in j1[0]["roles"] and "finance" in j1[0]["roles"]
     assert [(r["min_amount"], r["label"], r["roles"]) for r in j2] == [(500 * JT, "Direksi", ["admin"])]
     # tiap jenis katalog menunjuk antrean yang ada (INV-APPR-01 aturan G); kosong = keputusan langsung tanpa antrean
     assert {v["queue_key"] for v in APPROVAL_KINDS.values()} - {""} <= antrean
@@ -312,7 +317,10 @@ async def test_KPT4_U2_setara_penilai_lama(klien, kepala_admin, db, peran_tanpa_
     assert hasil["ditulis"]["baris"] > 0
     # butir 4: Manajer Kosong (acuan Manajer, nol izin) dan finance (aturan PO kanda ≥ finance) diberi izin PO
     assert set(hasil["izin"].get(kosong, {}).get("purchase_order", [])) == {"approve", "reject"}
-    assert set(hasil["izin"].get("finance", {}).get("purchase_order", [])) == {"approve", "reject"}
+    # K-FIN-01 — Finance SUDAH memegang izin PO Manajer (bawaan), jadi migrasi tidak perlu memberinya apa pun.
+    assert not hasil["izin"].get("finance", {}).get("purchase_order")
+    from permissions_config import DEFAULT_PERMISSIONS
+    assert {"approve", "reject"} <= set(DEFAULT_PERMISSIONS["finance"]["purchase_order"])
 
     from dependencies import permission_matrix
     matrix = await permission_matrix()

@@ -104,6 +104,10 @@ function api({ queue = [RUN], accounts = [R_GAJI], list = [] } = {}) {
   });
 }
 const FINANCE = { role: "finance", permissions: builtin.permissions.finance };
+// K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance bawaan kini memegang `payroll.void` (setara Manajer); tombol Batalkan
+// diuji dengan pemegang `payroll.pay` TANPA `payroll.void` (mis. Finance yang aksi batalnya dicabut Admin).
+const FINANCE_TANPA_VOID = { role: "finance", permissions: { ...builtin.permissions.finance,
+  payroll: builtin.permissions.finance.payroll.filter((a) => a !== "void") } };
 
 afterEach(() => {
   mockGet.mockReset(); mockPost.mockReset(); mockConfirm.mockReset(); mockReason.mockReset();
@@ -205,7 +209,8 @@ describe("Gaji siap dibayar", () => {
 
 describe("Setoran BPJS dan PPh 21", () => {
   test("Finance (tanpa payroll.void): tanpa tombol Batalkan; rekap setahun 12 masa per jenis", async () => {
-    setAccessContext(FINANCE);
+    expect(builtin.permissions.finance.payroll).toContain("void");   // K-FIN-01
+    setAccessContext(FINANCE_TANPA_VOID);
     api({ list: [SETORAN] });
     const { host } = await mount(<PayrollRemittancesView />);
     expect(q(host, "remit-void-strm_1")).toBeNull();

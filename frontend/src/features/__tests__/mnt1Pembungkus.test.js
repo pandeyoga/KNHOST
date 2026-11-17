@@ -59,7 +59,9 @@ describe("CRM & Pelanggan — tinggal tiga sub-tab", () => {
 describe("Kredit & Plafon (credit-overrides) — memutus hanya dengan credit_override.approve", () => {
   const baris = [{ id: "co1", customer_name: "PT Uji", reason: "lewat batas", amount: 1000, requested_by: "Sales",
     created_at: "2026-11-01T00:00:00Z", status: "pending" }];
-  test.each([["manager", true], ["finance", false]])("%s: tombol Setujui/Tolak = %s", async (role, boleh) => {
+  // K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini memegang `credit_override.approve` (setara Manajer); peran
+  // pembaca tanpa hak memutus = Admin Sales.
+  test.each([["manager", true], ["finance", true], ["sales_admin", false]])("%s: tombol Setujui/Tolak = %s", async (role, boleh) => {
     mockGet.mockResolvedValue({ data: baris });
     const host = await mount(<CreditOverridesPanel currentUser={user(role)} />);
     expect(ada(host, "override-row-co1")).toBe(true);

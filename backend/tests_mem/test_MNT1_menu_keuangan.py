@@ -122,6 +122,7 @@ async def test_MNT1_U13b_izin_bawaan_finance_dan_manajer(klien, kepala_admin):
     assert {"view", "pay"} <= set(f["vendor_bill"]) and {"view", "pay"} <= set(f["contra_bon"])
     assert "disburse" in f["cash_advance"]
     assert {"view", "create"} <= set(f["cash"]) and "view" in f["accounting"]          # K-09 (sudah ada)
-    assert not ({"create", "void", "manage"} & set(f["accounting"]))                   # Buku Besar lihat saja
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: Buku Besar penuh (dulu lihat saja, K-09).
+    assert {"create", "void", "manage"} <= set(f["accounting"])
     m = (await klien.get("/api/access/roles/manager", headers=kepala_admin)).json()["permissions"]
     assert "disburse" in m["cash_advance"]

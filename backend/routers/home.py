@@ -48,7 +48,9 @@ async def home_sales(request: Request, entity_id: Optional[str] = Query(None),
                      sales_id: Optional[str] = Query(None)) -> Dict[str, Any]:
     """Performa Saya. Sales melihat dirinya sendiri; admin/manager boleh pilih sales_id."""
     user = await current_user(request)
-    target = sales_id if (sales_id and user["role"] in ("admin", "manager")) else user["id"]
+    from role_registry import SETARA_PERAN   # K-FIN-01 — nama persis ATAU peran setara (Finance setara Manajer)
+    pengawas = any(r in ("admin", "manager") for r in (user["role"], *SETARA_PERAN.get(user["role"], ())))
+    target = sales_id if (sales_id and pengawas) else user["id"]
     eid = await _own_entity(request, entity_id)
     return await home_service.sales_home(target, eid, await _allowed(request), user)
 

@@ -160,6 +160,11 @@ for _r, _tambah in _pc.KSDM01_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.A2_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# K-FIN-01 (pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan jangan
+# dipisah") — Finance menerima seluruh izin bawaan Manajer yang belum ia pegang (`permissions_config.KFIN01_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.KFIN01_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)

@@ -240,7 +240,9 @@ async def test_MNT3_U9_sales_lain_ditolak(klien, data, akun, sesi):
 
 
 async def test_MNT3_U10_pt_lain_tanpa_angka(klien, data, akun, sesi):
-    h = await sesi(await akun("finance", entitas=(KANDA,)), entitas=KANDA)
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini lintas PT seperti Manajer; pagar PT diuji dengan Admin Sales
+    # (peran pembaca pelanggan & kwitansi yang tetap berbasis penugasan PT).
+    h = await sesi(await akun("sales_admin", entitas=(KANDA,)), entitas=KANDA)
     r = await klien.get(f"/api/customers/{data['C']}/360", headers=h)
     assert r.status_code in (403, 404), r.text
     assert "1000000" not in r.text and "8000000" not in r.text

@@ -360,8 +360,10 @@ def c_sales_admin_desk(sa, fin, s1):
     check("US15 — faktur pajak & uang masuk TIDAK di meja ini (itu Finance)",
           not any(k in ids for k in ("siap_faktur_pajak", "uang_masuk"))
           and len(d.get("not_my_desk") or []) >= 3, str(d.get("not_my_desk"))[:90])
-    check("BUKTI-MERAH: Finance TIDAK bisa membuka Meja Admin Sales",
-          fin.get("/api/sales-admin/desk").status_code == 403)
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance memegang izin Manajer (`order.confirm`), jadi meja ini terbuka
+    # baginya seperti bagi Manajer (dulu BUKTI-MERAH 403).
+    check("K-FIN-01: Finance membuka Meja Admin Sales seperti Manajer",
+          fin.get("/api/sales-admin/desk").status_code == 200)
     check("BUKTI-MERAH: sales lapangan TIDAK bisa membuka Meja Admin Sales",
           s1.get("/api/sales-admin/desk").status_code == 403)
     baris = [row for q in d["queues"] for row in q["rows"]]
@@ -399,11 +401,12 @@ def d_finance_desk(fin, sa, s1):
           sa.get("/api/finance/desk").status_code == 403)
     o = fin.get("/api/sales-orders").json()
     check("Finance boleh MELIHAT pesanan (dia menagihnya)", isinstance(o, list) and o)
-    oid = o[0]["id"] if o else "x"
-    check("BUKTI-MERAH: Finance TIDAK bisa mengonfirmasi pesanan",
-          fin.post(f"/api/sales-orders/{oid}/confirm").status_code == 403)
-    check("BUKTI-MERAH: Finance TIDAK bisa memverifikasi pesanan",
-          fin.post(f"/api/sales-orders/{oid}/verify", json={"note": ""}).status_code == 403)
+    # K-FIN-01 — Finance kini boleh mengonfirmasi & memverifikasi pesanan seperti Manajer (dulu BUKTI-MERAH 403). Diuji
+    # pada pesanan yang TIDAK ADA (izin lolos → 404) supaya POC tidak mengubah pesanan demo.
+    check("K-FIN-01: Finance mengonfirmasi pesanan → izin lolos (404, pesanan tak ada)",
+          fin.post("/api/sales-orders/so_poc_tidak_ada/confirm").status_code == 404)
+    check("K-FIN-01: Finance memverifikasi pesanan → izin lolos (404, pesanan tak ada)",
+          fin.post("/api/sales-orders/so_poc_tidak_ada/verify", json={"note": ""}).status_code == 404)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -23,6 +23,10 @@ E8.10b#1 **Admin Sales berbasis PENUGASAN**: bisa diberi beberapa badan usaha le
 E8.10b#2 **Finance** yang mencatat uang masuk & menerbitkan faktur pajak — bukan
       Admin Sales, bukan sales. Finance TIDAK bisa membuat/mengonfirmasi pesanan.
 E8.1b **Peringkat**: `sales_admin`/`finance` (2) TIDAK memenuhi tuntutan `manager` (3).
+K-FIN-01 (keputusan pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan
+      jangan dipisah") MENGGANTIKAN pembatasan Finance di atas: Finance kini memegang izin Manajer, lintas badan usaha,
+      dan lolos tuntutan `manager` lewat `role_registry.SETARA_PERAN` (peringkatnya tetap 2). Bagian B, E, dan F
+      memeriksa kesetaraan itu; pemisahan Admin Sales & sales tetap.
 
 BUKTI-MERAH: setiap pagar diuji dari DUA sisi — peran yang HARUS ditolak (403) dan
 peran yang HARUS lolos (bukan 403; 404/400/409 = izin lolos, dokumen tak ada).
@@ -301,11 +305,12 @@ def b_identity(adm, sa, fin):
     check("E8.10b#1 Admin Sales ditugaskan 2 badan usaha & boleh berpindah",
           sorted(sac["allowed_entity_ids"]) == sorted([ENT_A, ENT_B])
           and sac["can_switch_entity"] is True, str(sac["allowed_entity_ids"]))
-    check("Finance terkunci 1 badan usaha (kas & pajak selalu milik satu badan usaha)",
-          fc["allowed_entity_ids"] == [ENT_A] and fc["can_switch_entity"] is False,
-          str(fc["allowed_entity_ids"]))
-    check("peran baru BUKAN peran lintas-entitas (tak ikut oversight grup)",
-          rr.CROSS_ENTITY_ROLES == {"admin", "manager"}, str(sorted(rr.CROSS_ENTITY_ROLES)))
+    # K-FIN-01 — Finance lintas badan usaha seperti Manajer (penugasan 1 PT tidak lagi membatasinya).
+    check("K-FIN-01: Finance lintas badan usaha seperti Manajer (bisa berpindah ke PT lain)",
+          {ENT_A, ENT_B} <= set(fc["allowed_entity_ids"]) and fc["can_switch_entity"] is True
+          and fc.get("is_cross_entity") is True, str(fc["allowed_entity_ids"]))
+    check("Admin Sales BUKAN peran lintas-entitas; lintas-entitas bawaan = admin, manager, finance (K-FIN-01)",
+          rr.CROSS_ENTITY_ROLES == {"admin", "manager", "finance"}, str(sorted(rr.CROSS_ENTITY_ROLES)))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -418,16 +423,14 @@ def e_finance(fin):
     check("Finance melihat kas", fin.get("/api/cash-transactions").status_code == 200)
     check("Finance melihat piutang (AR aging)", fin.get("/api/ar-aging").status_code in (200, 404))
 
-    # Yang HARUS tertutup — meja pesanan bukan wilayahnya.
+    # K-FIN-01 — dulu "HARUS tertutup (meja pesanan bukan wilayahnya)"; kini Finance memegang izin Manajer.
     r = fin.post(f"/api/sales-orders/{FAKE}/confirm")
-    check("Finance KONFIRMASI pesanan → 403", r.status_code == 403, f"HTTP {r.status_code}")
-    # Drift 2026-09: payload sah menurut aturan kini (telepon 10–13 angka, alamat ≥3 huruf)
-    # supaya yang diukur benar-benar PAGAR IZIN (403), bukan validasi payload (422).
-    r = fin.post("/api/customers", json={"name": "POC", "pic_name": "x", "phone": "081200000002",
-                                         "email": "a@b.c", "city": "Bandung", "address": "Jl. Uji POC E-8"})
-    check("Finance BUAT pelanggan → 403 (hanya melihat)", r.status_code == 403,
+    check("K-FIN-01: Finance KONFIRMASI pesanan → izin lolos (404, pesanan tak ada)", r.status_code == 404,
           f"HTTP {r.status_code}")
     perms = fin.login_body["permissions"]
+    # Membuat pelanggan diperiksa dari izin efektif (POST sungguhan kini 200 dan meninggalkan data).
+    check("K-FIN-01: Finance boleh MEMBUAT pelanggan seperti Manajer (izin efektif `customer.create`)",
+          "create" in (perms.get("customer") or []), str(perms.get("customer")))
     # Matriks izin sah kemudian menambah dua KEPUTUSAN Finance atas pesanan: `approve_price_edit` (2026-10,
     # setujui harga/diskon override) & `release_unpaid` (F-10, lepas kirim SO belum lunas ber-alasan).
     # Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/mengonfirmasi/mengirim pesanan.
@@ -436,23 +439,22 @@ def e_finance(fin):
     # PR-T5 (PR-07) — `order.print` dihapus dari katalog (tidak pernah diperiksa server; cetak dokumen pesanan cukup
     # `order.view`), jadi yang dituntut tinggal `view`.
     order_perms = set(perms.get("order") or [])
-    check("izin efektif Finance: pesanan hanya lihat/cetak + keputusan keuangan (tanpa buat/ubah/konfirmasi)",
-          {"view"} <= order_perms
-          and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid", "view_sales_kpi"},
-          str(perms.get("order")))
+    import permissions_config as pc
+    check("K-FIN-01: izin efektif Finance atas pesanan ⊇ Manajer (buat, setujui, konfirmasi, …)",
+          set(pc.DEFAULT_PERMISSIONS["manager"]["order"]) <= order_perms, str(perms.get("order")))
     # KP-T4 (K-47) — Finance memegang `vendor_bill.approve|reject` sebagai pengganti gerbang nama peran tagihan vendor
     # KAMPANYE (dulu `BILL_APPROVER_ROLES`); jenis mana yang boleh ia putus ditentukan Aturan Persetujuan (bawaan:
     # hanya `vendor_bill.kampanye`). (Membayar ditambahkan MN-T1/PK-38 — lihat di bawah.)
     # MN-T1 / PK-38 (K-09, K-17 keputusan pemilik) — membayar hutang = pemegang izin bayar (bawaan Finance & Manajer):
     # Finance kini memegang `vendor_bill.view|pay` dan `contra_bon.view|pay`. Yang tetap dijaga E8.2: Finance tidak
     # MEMBUAT/MENGUBAH sisi hutang (tagihan, kontrabon, landed cost) dan tidak memverifikasi/menyetujui kontrabon.
-    check("izin efektif Finance: sisi hutang hanya lihat/bayar + putus tagihan (tanpa buat/ubah, tanpa landed cost)",
-          set(perms.get("vendor_bill") or []) <= {"view", "pay", "approve", "reject"}
-          and set(perms.get("contra_bon") or []) <= {"view", "pay"}
-          and not perms.get("landed_cost"),
+    # K-FIN-01 — sisi hutang & faktur pajak = Manajer (dulu: lihat/bayar saja, tanpa landed cost, batal faktur Manajer).
+    check("K-FIN-01: izin efektif Finance sisi hutang ⊇ Manajer (tagihan, kontrabon, landed cost)",
+          all(set(pc.DEFAULT_PERMISSIONS["manager"][r]) <= set(perms.get(r) or [])
+              for r in ("vendor_bill", "contra_bon", "landed_cost")),
           f"vendor_bill={perms.get('vendor_bill')} contra_bon={perms.get('contra_bon')}")
-    check("izin efektif Finance: batal faktur pajak TETAP manajer",
-          "cancel" not in (perms.get("tax_invoice") or []), str(perms.get("tax_invoice")))
+    check("K-FIN-01: Finance boleh membatalkan faktur pajak seperti Manajer",
+          "cancel" in (perms.get("tax_invoice") or []), str(perms.get("tax_invoice")))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -476,14 +478,13 @@ def f_entity_assignment(sa, fin, sales):
           r.status_code == 409 and "Semua Entitas" in str(r.json().get("detail", "")),
           f"HTTP {r.status_code}")
 
-    sebar_f = ent_count(fin, "/api/ar-receipts", "all")
-    check("ISOLASI TETAP: Finance (1 penugasan) di mode gabungan hanya melihat badan usahanya",
-          set(sebar_f) <= {ENT_A}, str(sebar_f))
     sebar_s = ent_count(sales, "/api/sales-orders", "all")
     check("ISOLASI TETAP: sales (1 penugasan) tidak kebocoran PT lain di mode gabungan",
           set(sebar_s) <= {ENT_A}, str(sebar_s))
+    # K-FIN-01 — Finance lintas badan usaha seperti Manajer: PT di luar penugasannya terbuka (dulu 403).
     r = fin.get("/api/sales-orders", headers={"X-Entity-Id": ENT_B})
-    check("Finance menyebut badan usaha lain → 403", r.status_code == 403, f"HTTP {r.status_code}")
+    check("K-FIN-01: Finance membuka badan usaha lain seperti Manajer → 200", r.status_code == 200,
+          f"HTTP {r.status_code}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

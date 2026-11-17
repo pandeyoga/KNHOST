@@ -427,6 +427,7 @@ async def test_KMT2_izin_margin_bawaan_dan_katalog():
     from permissions_config import DEFAULT_PERMISSIONS
     assert "view_margin" in DEFAULT_PERMISSIONS["admin"]["incentive"]
     assert "view_margin" in DEFAULT_PERMISSIONS["manager"]["incentive"]
-    assert "view_margin" not in (DEFAULT_PERMISSIONS["finance"].get("incentive") or [])
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: kini juga melihat margin Capaian.
+    assert "view_margin" in (DEFAULT_PERMISSIONS["finance"].get("incentive") or [])
     assert am.ACTION_LABEL["incentive.view_margin"] == "Lihat margin"
     assert "incentive-capaian" in am.MODULE_BY_ID["incentive"]["nav"]

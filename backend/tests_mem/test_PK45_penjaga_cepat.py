@@ -350,7 +350,8 @@ async def test_PK45_izin_bawaan_sampai_ke_matriks_tersimpan(klien, db, kepala_ad
         r = await klien.get(f"/api/access/roles/{rid}", headers=kepala_admin)
         assert r.status_code == 200, r.text
         return r.json()
-    for peran, harus in (("admin", baru), ("manager", baru), ("finance", set()),
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance setara Manajer: ikut menerima `order.tax_override`.
+    for peran, harus in (("admin", baru), ("manager", baru), ("finance", baru),
                          ("sales", set()), ("sales_admin", set())):
         p = (await izin(peran))["permissions"]
         punya = {(res, a) for res, a in baru if a in (p.get(res) or [])}

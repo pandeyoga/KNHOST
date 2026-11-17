@@ -393,9 +393,10 @@ async def test_PYT4_U12_batal_setoran_bpjs(klien, db, siap):
         "cash_type": "kas_besar", "reference": "BPJS-OKT"})
     assert r.status_code == 200 and r.json()["status"] == "done", r.text
     st = r.json()
-    r = await klien.post(f"/api/hr/payroll/remittances/{st['id']}/void", json={"reason": "salah catat nominal"},
-                         headers=siap["fin"])
-    assert r.status_code == 403 and MODUL in r.json()["detail"], r.text
+    # K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini juga boleh membatalkan setoran (`payroll.void` Manajer; dulu
+    # 403): permintaannya sampai ke pemeriksaan alasan, bukan ditolak izin.
+    r = await klien.post(f"/api/hr/payroll/remittances/{st['id']}/void", json={"reason": "uji"}, headers=siap["fin"])
+    assert r.status_code == 400 and r.json()["detail"] == "Alasan wajib diisi (minimal 5 huruf).", r.text
     r = await klien.post(f"/api/hr/payroll/remittances/{st['id']}/void", json={"reason": "uji"}, headers=adm)
     assert r.status_code == 400 and r.json()["detail"] == "Alasan wajib diisi (minimal 5 huruf).", r.text
     r = await klien.post(f"/api/hr/payroll/remittances/{st['id']}/void", json={"reason": "salah catat nominal"},

@@ -67,7 +67,9 @@ const REMOVED = { warehouse_admin: ["my-desk"], sales_admin: ["my-desk"] };
 // MN-T1 — id menu/hub yang kini mendarat di tab pertama lain di hub yang sama (tercatat di roleReach.test.js
 // `ROLE_REACH_RELANDED`); layar lamanya tetap diperiksa terjangkau.
 // KM-T2 — tab pertama SDM › Kinerja & Insentif kini Capaian (`incentive-capaian`).
-const RELANDED = { manager: { "hr-kpi-hub": "incentive-capaian" }, finance: { "cash-bank": "bank-accounts" } };
+// K-FIN-01 — Finance mewarisi menu Manajer: hub yang dulu hanya berisi satu tab Finance kini mendarat di tab pertama.
+const RELANDED = { manager: { "hr-kpi-hub": "incentive-capaian" },
+  finance: { "cash-bank": "bank-accounts", "products-pricing": "md-products", "wms-operations": "operations" } };
 
 test("R5: Lot & Silsilah tersembunyi untuk sales (tanpa field_visibility.lot), tetap untuk gudang & manajer", () => {
   expect(builtin.view_resources["inventory-lots"]).toEqual(["field_visibility"]);

@@ -90,6 +90,10 @@ async def test_PRT5_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
                 continue
             if SESUDAH_PRT5.get((peran, rute), (None, None))[:2] == (lama, kode):
                 continue
+            # K-FIN-01 (pemilik 17 Nov 2026 malam: Finance memegang akses yang sama dengan Manajer) — kode Finance = kode
+            # Manajer.
+            if peran == "finance" and kode == sesudah["manager"][rute]:
+                continue
             berubah.append((peran, rute, lama, kode))
             if peran in ("admin", "manager"):
                 tak_sah.append((peran, rute, lama, kode, "Admin/Manajer harus sama"))
@@ -111,4 +115,7 @@ async def test_PRT5_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
         for rute in laporan:
             assert (sesudah[peran][rute] == 200) is _memegang_laporan(peran), (peran, rute, sesudah[peran][rute])
     assert sorted(p for p in PERAN_BAWAAN if _memegang_laporan(p)) == ["admin", "finance", "manager", "sales_admin"]
-    assert [b for b in berubah if b[3] == 200] == [("finance", "GET /api/reports/warehouse-utilization", 403, 200)]
+    # K-FIN-01 — perubahan Finance yang sama dengan Manajer tidak masuk `berubah` (Finance kini setara Manajer; dulu baris
+    # ini mencatat Finance 403 → 200 untuk laporan utilisasi gudang).
+    assert [b for b in berubah if b[3] == 200] == []
+    assert sesudah["finance"]["GET /api/reports/warehouse-utilization"] == 200

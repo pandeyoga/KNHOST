@@ -150,7 +150,10 @@ test("D-06 HP: antrean lintas tahap tanpa PO custom yang sudah ada di daftar kep
   ];
   expect(dedupQueue(items, [{ id: "sord_a" }]).map((x) => x.id)).toEqual(["sord_b", "pr1"]);
   expect(queueFullTarget(items[2], "admin")).toEqual({ nav: "approval-inbox", view: "approval-inbox", preset: { tab: "matrix" } });
-  expect(queueFullTarget(items[2], "finance")).toEqual({ nav: "purchase-requisitions", view: "purchase-requisitions" });
+  // K-FIN-01 (pemilik 17 Nov 2026 malam) — Finance kini mewarisi menu Manajer (matriks persetujuan); peran tanpa
+  // matriks (Admin Sales) tetap diarahkan ke layar dokumennya.
+  expect(queueFullTarget(items[2], "finance")).toEqual({ nav: "approval-inbox", view: "approval-inbox", preset: { tab: "matrix" } });
+  expect(queueFullTarget(items[2], "sales_admin")).toEqual({ nav: "purchase-requisitions", view: "purchase-requisitions" });
   // Layar tujuan yang tidak boleh dibuka peran ini → tombol tidak tampil (bukan "Permission ditolak").
   expect(canOpenFull({ view: "approval-inbox" }, "admin")).toBe(true);
   expect(canOpenFull({ view: "purchase-requisitions" }, "designer")).toBe(false);

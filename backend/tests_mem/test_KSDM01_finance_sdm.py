@@ -12,6 +12,11 @@ U2  alur HTTP di PT uji: Finance menambah karyawan (gaji pokok, PTKP, NPWP, reke
     6-1000 = Hutang Gaji 2-1600 + Hutang PPh 21 2-1800) → Finance tidak bisa menganulir (403).
 U3  instalasi lama: matriks & `defaults_applied` tanpa pasangan K-SDM-01 → start → pasangan tiba; Admin mencabut SDM
     Finance → start → pencabutan bertahan; kembalikan bawaan → pasangan kembali.
+
+K-FIN-01 (keputusan pemilik 17 Nov 2026 malam: "untuk sekarang finance juga memiliki akses yang sama dengan manager dan
+jangan dipisah") MENGGANTIKAN pemisahan di atas: Finance kini juga memegang `payroll.approve/void`, `hr.delete`,
+`hr.manage_org` (izin Manajer). U1–U3 disesuaikan: pasangan K-SDM-01 tetap sampai; pemisahan per PERAN tidak lagi
+diuji di sini (lihat `test_KFIN01_finance_setara_manajer.py` — termasuk kontrol dua orang per PENGGUNA).
 "Hari ini" dibekukan 3 Nov 2026 (`services.book_date._sekarang`), masa gaji Oktober 2026.
 """
 import datetime
@@ -27,7 +32,9 @@ OKT = "2026-10"
 HARI_INI = datetime.datetime(2026, 11, 3, 3, 0, tzinfo=datetime.timezone.utc)   # 3 Nov 2026 10.00 WIB
 SDM = {"view", "create", "update", "view_pii", "manage_attendance", "manage_payroll"}
 GAJI = {"create", "post", "pay"}
-MODUL = "Minta Admin menambahkan akses 'SDM & Penggajian'"
+#: K-FIN-01 — bawaan Finance sesudah keputusan 17 Nov malam = K-SDM-01 + izin SDM & gaji Manajer.
+SDM_KFIN = SDM | {"delete", "manage_org"}
+GAJI_KFIN = GAJI | {"approve", "void"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -47,14 +54,14 @@ async def _finance(klien, h) -> dict:
 async def test_KSDM01_U1_bawaan_finance(klien, kepala_admin):
     from permissions_config import DEFAULT_PERMISSIONS, KSDM01_DEFAULT_PAIRS
     assert set(KSDM01_DEFAULT_PAIRS["finance"]["hr"]) == SDM
-    assert set(DEFAULT_PERMISSIONS["finance"]["payroll"]) == GAJI
+    assert set(DEFAULT_PERMISSIONS["finance"]["payroll"]) == GAJI_KFIN   # K-FIN-01
     f = (await _finance(klien, kepala_admin))["permissions"]
-    assert set(f["hr"]) == SDM, f.get("hr")
-    assert set(f["payroll"]) == GAJI, f.get("payroll")
-    assert not set(f["payroll"]) & {"approve", "void"}
-    assert not set(f["hr"]) & {"delete", "manage_org", "manage_settings"}
+    assert set(f["hr"]) == SDM_KFIN, f.get("hr")
+    assert set(f["payroll"]) == GAJI_KFIN, f.get("payroll")
+    assert "manage_settings" not in set(f["hr"])   # Manajer pun tidak memegangnya
     m = (await klien.get("/api/access/roles/manager", headers=kepala_admin)).json()["permissions"]
-    assert {"approve", "void"} <= set(m["payroll"])   # Manajer tetap pemutus
+    assert {"approve", "void"} <= set(m["payroll"])   # Manajer tetap pemutus (Finance kini juga — K-FIN-01)
+    assert set(m["hr"]) <= set(f["hr"]) and set(m["payroll"]) <= set(f["payroll"])
 
 
 async def test_KSDM01_U2_finance_siapkan_dan_posting_manajer_sahkan(klien, db, akun, sesi):
@@ -80,8 +87,7 @@ async def test_KSDM01_U2_finance_siapkan_dan_posting_manajer_sahkan(klien, db, a
     assert r.status_code == 200, r.text
     inp = r.json()
     assert inp["status"] == "pending"
-    r = await klien.post(f"/api/hr/payroll/inputs/{inp['id']}/approve", headers=fin, json={})
-    assert r.status_code == 403 and MODUL in r.json()["detail"], r.text
+    # K-FIN-01 — Finance kini juga boleh mengesahkan (dulu 403); di sini Manajer yang mengesahkan (tetap boleh).
     r = await klien.post(f"/api/hr/payroll/inputs/{inp['id']}/approve", headers=mgr, json={})
     assert r.status_code == 200, r.text
 
@@ -90,8 +96,6 @@ async def test_KSDM01_U2_finance_siapkan_dan_posting_manajer_sahkan(klien, db, a
     run = r.json()
     assert run["status"] == "draft" and run["totals"]["employees"] == 1
     assert (await klien.post(f"/api/hr/payroll/runs/{run['id']}/submit", headers=fin, json={})).status_code == 200
-    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/approve", headers=fin, json={})
-    assert r.status_code == 403 and MODUL in r.json()["detail"], r.text
     r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/approve", headers=mgr, json={})
     assert r.status_code == 200, r.text
     r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/post-gl", headers=fin, json={})
@@ -105,8 +109,9 @@ async def test_KSDM01_U2_finance_siapkan_dan_posting_manajer_sahkan(klien, db, a
     assert round(sum(deb.values()), 2) == round(sum(kre.values()), 2) == round(t["gross"], 2)
     assert deb == {"6-1000": t["gross"]}, deb
     assert kre.get("2-1600") == t["net"] and kre.get("2-1800", 0) == t["pph21"] > 0, kre
-    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/void", headers=fin, json={"reason": "uji pemisahan tugas"})
-    assert r.status_code == 403 and MODUL in r.json()["detail"], r.text
+    # K-FIN-01 — Finance kini juga boleh menganulir (dulu 403 "pemisahan tugas").
+    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/void", headers=fin, json={"reason": "uji K-FIN-01 anulir"})
+    assert r.status_code == 200, r.text
 
 
 async def test_KSDM01_U3_instalasi_lama_menerima_pasangan_dan_pencabutan_bertahan(klien, db, kepala_admin):
@@ -118,9 +123,10 @@ async def test_KSDM01_U3_instalasi_lama_menerima_pasangan_dan_pencabutan_bertaha
                                                                          "defaults_applied.finance": ap}})
     await bootstrap.run_bootstrap()
     f = (await _finance(klien, kepala_admin))["permissions"]
-    assert set(f["hr"]) == SDM and set(f["payroll"]) == GAJI, (f.get("hr"), f.get("payroll"))
+    # K-FIN-01 — yang tiba = seluruh bawaan Finance sekarang (K-SDM-01 + izin SDM & gaji Manajer).
+    assert set(f["hr"]) == SDM_KFIN and set(f["payroll"]) == GAJI_KFIN, (f.get("hr"), f.get("payroll"))
     rec = await db.permission_settings.find_one({"id": "default"})
-    assert set(rec["defaults_applied"]["finance"]["hr"]) == SDM
+    assert set(rec["defaults_applied"]["finance"]["hr"]) == SDM_KFIN
 
     perms = {k: list(v) for k, v in f.items() if k != "hr"}   # Admin mencabut SDM Finance
     r = await klien.patch("/api/access/roles/finance", headers=kepala_admin, json={"permissions": perms})
@@ -129,7 +135,7 @@ async def test_KSDM01_U3_instalasi_lama_menerima_pasangan_dan_pencabutan_bertaha
     assert "hr" not in (await _finance(klien, kepala_admin))["permissions"]
     r = await klien.post("/api/access/roles/finance/reset", headers=kepala_admin)
     assert r.status_code == 200, r.text
-    assert set((await _finance(klien, kepala_admin))["permissions"]["hr"]) == SDM
+    assert set((await _finance(klien, kepala_admin))["permissions"]["hr"]) == SDM_KFIN
 
 
 async def test_KSDM01_U4_kode_karyawan_melewati_kode_terpakai(klien, db, akun, sesi):
