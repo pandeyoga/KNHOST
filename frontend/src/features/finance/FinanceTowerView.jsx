@@ -5,6 +5,9 @@
  * PK-16 — banner PT (`scope_meta`); gagal memuat → data dikosongkan (bukan "belum ada data").
  * PK-41 (RP-09) — kartu Piutang memecah "tercatat · belum dikirim"; Modal Kerja = kas + piutang TERCATAT − hutang
  * (keterangan dari server `working_capital_basis`).
+ * Pola UI 16 Nov (masukan pemilik M32) — SEMUA kartu angka bertujuan: Modal Kerja → Neraca, rasio → Laba-Rugi/Neraca,
+ * umur & terbesar → Piutang / Tagihan Pemasok (nama → kartu pelanggan/pemasok), rincian kas → Rekening & Saldo.
+ * Kalimat dasar perhitungan (dulu paragraf kaki halaman) pindah ke ikon ? di baris periode.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
@@ -13,13 +16,19 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import { useAppNav } from "../../context/AppNavContext";
+import { HelpTip } from "../../components/ListPageParts";
 import { FC, entityParam, KpiCard, EmptyState, formatCurrency } from "./financeShared";
 import {
   MonthlyTrendPanel, RatiosStrip, ArAgingPanel, ApAgingPanel,
   TopArPanel, TopApPanel, CashPanel, PlYtdCard,
 } from "./FinanceTowerParts";
 
-export default function FinanceTowerView({ selectedEntity }) {
+// Dulu paragraf permanen di kaki dasbor (pola UI §1.4: penjelasan di ikon ?).
+export const TEKS_DASAR_DASBOR = "Dashboard terpadu — posisi kas & rasio memakai saldo akhir; Laba-Rugi operasional (exclude "
+  + "penutup). Rincian laba-rugi, neraca & arus kas ada di Laporan Keuangan. Klik kartu atau tautan panel untuk membuka "
+  + "daftar sumber angkanya.";
+
+export default function FinanceTowerView({ selectedEntity, currentUser }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,16 +49,21 @@ export default function FinanceTowerView({ selectedEntity }) {
   const ytd = data?.pl?.ytd || {};
   const mtd = data?.pl?.mtd || {};
   // PK-44 (IA-11) — kartu angka membuka layar sumbernya; bilah "← Kembali ke Dasbor Keuangan" lewat `preset.from`.
-  // Modal Kerja tidak bertautan (angkanya turunan tiga kartu lain). Tautan hanya bila peran boleh membuka layarnya.
+  // Tautan hanya bila peran boleh membuka layarnya. M32 — Modal Kerja kini juga bertautan (Neraca: aset & kewajiban
+  // lancar), begitu pula rasio & panel di bawahnya.
   const { go, canOpen } = useAppNav();
-  const tujuan = (view) => (canOpen(view) ? () => go(view, { preset: { from: { view: "finance-tower" } } }) : undefined);
+  const tujuan = (view, preset = {}) => (canOpen(view)
+    ? () => go(view, { preset: { ...preset, from: { view: "finance-tower" } } }) : undefined);
+  const laporan = (tab) => tujuan("financial-statements", { tab });
+  const perms = currentUser?.permissions;
 
   return (
     <div data-testid="finance-tower-view">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]">
-          <CalendarDays size={13} className="text-[#6B219A]" />
-          <span>Periode berjalan: <b className="text-[#1C1C1E]">{data?.period?.month || "—"}</b> · YTD {data?.period?.year || ""}</span>
+        <div className="flex items-center gap-2 text-fs-12 text-kn-text-2">
+          <CalendarDays size={13} className="text-kn-neutral" />
+          <span>Periode berjalan: <b className="text-kn-text">{data?.period?.month || "—"}</b> · YTD {data?.period?.year || ""}</span>
+          <HelpTip text={TEKS_DASAR_DASBOR} testId="tower-help" label="Dasar angka dasbor" />
         </div>
         <button data-testid="tower-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
       </div>
@@ -81,7 +95,8 @@ export default function FinanceTowerView({ selectedEntity }) {
               onClick={tujuan("ar-aging")} actionLabel="Buka Piutang" />
             <KpiCard testId="tower-kpi-ap" label="Hutang (AP)" value={formatCurrency(data.ap?.outstanding)} icon={Truck} accent={FC.expense} tone="text-[#C0392B]"
               onClick={tujuan("vendor-bills")} actionLabel="Buka Tagihan Pemasok" />
-            <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub={data.working_capital_basis || "Kas + piutang tercatat − hutang"} />
+            <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub={data.working_capital_basis || "Kas + piutang tercatat − hutang"}
+              onClick={laporan("bs")} actionLabel="Buka Neraca" />
           </div>
 
           {/* Fase 3 · P4 (D-10) — dulu 4 kartu KPI Laba-Rugi (Pendapatan/Laba/Marjin Bersih/Pendapatan bulan ini);
@@ -91,23 +106,22 @@ export default function FinanceTowerView({ selectedEntity }) {
 
           <div className="grid lg:grid-cols-3 gap-3 mb-3">
             <div className="lg:col-span-2"><MonthlyTrendPanel monthly={data.monthly} /></div>
-            <CashPanel cash={data.cash} />
+            <CashPanel cash={data.cash} onOpen={tujuan("bank-accounts")} />
           </div>
 
-          <div className="mb-3"><RatiosStrip ratios={data.ratios} /></div>
+          <div className="mb-3"><RatiosStrip ratios={data.ratios} openReport={laporan} /></div>
 
           <div className="grid lg:grid-cols-2 gap-3 mb-3">
-            <ArAgingPanel ar={data.ar} />
-            <ApAgingPanel ap={data.ap} />
+            <ArAgingPanel ar={data.ar} onOpen={tujuan("ar-aging")} />
+            <ApAgingPanel ap={data.ap} onOpen={tujuan("vendor-bills")} />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-3">
-            <TopArPanel ar={data.ar} />
-            <TopApPanel ap={data.ap} />
+            <TopArPanel ar={data.ar} onOpen={tujuan("ar-aging")} perms={perms} />
+            <TopApPanel ap={data.ap} onOpen={tujuan("vendor-bills")} perms={perms} />
           </div>
         </>
       )}
-      <p className="mt-3 text-[11px] text-[#9A9BA3]">Dashboard terpadu — posisi kas & rasio memakai saldo akhir; Laba-Rugi operasional (exclude penutup). Rincian laba-rugi, neraca & arus kas ada di Laporan Keuangan.</p>
     </div>
   );
 }

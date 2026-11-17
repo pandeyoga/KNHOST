@@ -31,8 +31,12 @@ export const STATUS_LABEL = {
   cancelled: "Dibatalkan",
 };
 
+// Pola UI 16 Nov (M36) — kartu "Dokumen Terbuka" = saringan cepat: dikonfirmasi s/d difakturkan, belum lunas (server `$in`).
+export const OPEN_STATUS_FILTER = "confirmed,shipped,received,invoiced";
+
 export const STATUS_FILTERS = [
   { value: "", label: "Semua status" },
+  { value: OPEN_STATUS_FILTER, label: "Terbuka (belum lunas)" },
   { value: "draft", label: "Draf" },
   { value: "confirmed", label: "Dikonfirmasi" },
   { value: "shipped", label: "Dikirim" },

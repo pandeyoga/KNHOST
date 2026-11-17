@@ -8,33 +8,43 @@
  *   * `SettlementsPanel`  — riwayat netting (+ refund antar-PT, PK-31)
  */
 import {
-  AlertTriangle, Bell, Eye, Receipt, Truck, Undo2,
+  AlertTriangle, Bell, Eye, Layers, Plus, Receipt, Truck, Undo2,
 } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
 import useListSearch from "@/hooks/useListSearch";
-import { OptionTabs } from "../../../components/ListControls";
+import { ListToolbar } from "../../../components/ListPageParts";
+import StatusBadge from "../../../components/StatusBadge";
 import { formatCurrency } from "../../../utils/formatters";
 import {
   STATUS_CLASS, STATUS_LABEL, STATUS_FILTERS, ROLE_FILTERS,
   fmtDate, nextStep, canCancel, canReturn, taxState,
 } from "./intercoApi";
 
+// Dropdown bilah daftar selebar isinya (dulu "Semua peran" selebar layar) — sama dengan contoh pola (Retur Pelanggan).
+const SELECT_CLS = "!h-auto !w-auto min-w-[150px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13";
+
+/** Pola UI 16 Nov (04_POLA_UI §2.A · M35/M36): SATU bilah daftar — cari · Status ▾ · Peran ▾ · jumlah · + Transaksi Baru
+ *  (satu-satunya tombol buat di layar ini). Dulu: deret tab status, dropdown peran selebar layar, baris cari terpisah, dan
+ *  tombol buat di kepala halaman. `onCreate` kosong (tanpa izin) → tombol tidak tampil. */
 export function TransactionsPanel({
   rows, fStatus, fRole, setFStatus, setFRole, onAdvance, onView, onCancel,
-  onTax, onReturn, canWrite, canStep,
+  onTax, onReturn, canWrite, canStep, onCreate,
 }) {
   const srch = useListSearch(rows, null, { testId: "interco-tx", placeholder: "Cari nomor / PT / barang…" });
   return (
-    <div className="space-y-4">
-      <OptionTabs testId="interco-filter-status" value={fStatus} onChange={setFStatus}
-        options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? rows.length : undefined)} />
-      <div className="flex flex-wrap items-center gap-3">
-        <KNSelect data-testid="interco-filter-role" value={fRole} onValueChange={setFRole}
-                  options={ROLE_FILTERS} className="min-w-[190px]" placeholder="Peran" />
+    <div className="space-y-2">
+      <ListToolbar testId="interco-tx-toolbar" count={`${srch.shown.length} transaksi`}
+        actions={onCreate && (
+          <button type="button" onClick={onCreate} data-testid="interco-create-btn" className="primary-button">
+            <Plus size={14} /> Transaksi Baru
+          </button>
+        )}>
         {srch.searchBox}
-        {srch.pager}
-        <div className="ml-auto text-xs text-[#6E6E73]">{srch.shown.length} transaksi</div>
-      </div>
+        <KNSelect data-testid="interco-filter-status" aria-label="Status" value={fStatus || ""}
+          onValueChange={(v) => setFStatus(v || "")} options={STATUS_FILTERS} className={SELECT_CLS} placeholder="Semua status" />
+        <KNSelect data-testid="interco-filter-role" aria-label="Peran" value={fRole || ""}
+          onValueChange={(v) => setFRole(v || "")} options={ROLE_FILTERS} className={SELECT_CLS} placeholder="Semua peran" />
+      </ListToolbar>
 
       <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
         <div className="overflow-x-auto">
@@ -188,6 +198,7 @@ export function TransactionsPanel({
           </table>
         </div>
       </div>
+      {srch.pager}
     </div>
   );
 }
@@ -352,52 +363,58 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
   );
 }
 
-export function SettlementsPanel({ rows, focusId = "" }) {
+/** M35 — "Buat Pelunasan" (dulu di kepala layar bersama tiga tombol lain) = tombol buat daftar pelunasan ini. */
+export function SettlementsPanel({ rows, focusId = "", onCreate }) {
   return (
-    <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm" data-testid="interco-settlements-table">
-          <thead className="bg-[#F7F7F9] text-[#3C3C43]">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">Nomor</th>
-              <th className="text-left px-4 py-3 font-medium">Pembayar</th>
-              <th className="text-left px-4 py-3 font-medium">Penerima</th>
-              <th className="text-left px-4 py-3 font-medium">Metode</th>
-              <th className="text-right px-4 py-3 font-medium">Nilai</th>
-              <th className="text-left px-4 py-3 font-medium">Tanggal</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F2F2F5]">
-            {rows.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-[#8E8E93]">
-                Belum ada settlement.
-              </td></tr>
-            )}
-            {rows.map((s) => (
-              <tr key={s.id} data-testid={`interco-set-${s.id}`} className={`hover:bg-[#FAFAFB] ${s.id === focusId ? "row-focus" : ""}`}>
-                <td className="px-4 py-3 font-medium text-[#1D1D1F]">
-                  {s.number}
-                  {s.kind === "refund" && (
-                    <span className="status-pill bg-kn-warning-soft text-kn-warning-text ml-1" data-testid={`interco-set-refund-${s.id}`}>
-                      <Undo2 size={12} /> Pengembalian Dana
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">{s.payer_entity_name}</td>
-                <td className="px-4 py-3">{s.payee_entity_name}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex px-2 py-0.5 rounded text-xs bg-[#F2F2F5] text-[#3C3C43]">
-                    {s.method}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">
-                  {formatCurrency(s.total_applied)}
-                </td>
-                <td className="px-4 py-3 text-[#3C3C43]">{fmtDate(s.settle_date)}</td>
+    <div className="space-y-2">
+      <ListToolbar testId="interco-set-toolbar" count={`${rows.length} pelunasan`}
+        actions={onCreate && (
+          <button type="button" onClick={onCreate} data-testid="interco-open-settle-btn" className="primary-button">
+            <Layers size={14} /> Buat Pelunasan
+          </button>
+        )} />
+      <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-testid="interco-settlements-table">
+            <thead className="bg-[#F7F7F9] text-[#3C3C43]">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Nomor</th>
+                <th className="text-left px-4 py-3 font-medium">Pembayar</th>
+                <th className="text-left px-4 py-3 font-medium">Penerima</th>
+                <th className="text-left px-4 py-3 font-medium">Metode</th>
+                <th className="text-right px-4 py-3 font-medium">Nilai</th>
+                <th className="text-left px-4 py-3 font-medium">Tanggal</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-[#F2F2F5]">
+              {rows.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-[#8E8E93]">
+                  Belum ada settlement.
+                </td></tr>
+              )}
+              {rows.map((s) => (
+                <tr key={s.id} data-testid={`interco-set-${s.id}`} className={`hover:bg-[#FAFAFB] ${s.id === focusId ? "row-focus" : ""}`}>
+                  <td className="px-4 py-3 font-medium text-[#1D1D1F]">
+                    {s.number}
+                    {s.kind === "refund" && (
+                      <StatusBadge tone="warning" icon="tag" label="Pengembalian Dana" className="ml-1"
+                        testId={`interco-set-refund-${s.id}`} />
+                    )}
+                  </td>
+                  <td className="px-4 py-3">{s.payer_entity_name}</td>
+                  <td className="px-4 py-3">{s.payee_entity_name}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-fs-12 text-kn-text-2">{s.method}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium tabular-nums">
+                    {formatCurrency(s.total_applied)}
+                  </td>
+                  <td className="px-4 py-3 text-[#3C3C43]">{fmtDate(s.settle_date)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

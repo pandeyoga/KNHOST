@@ -1,22 +1,41 @@
 /**
  * FinanceTowerParts (FINANCE) — sub-panel dashboard Control Tower.
  * Dipisah agar FinanceTowerView tetap < 500 baris (batas guardrail).
+ *
+ * Pola UI 16 Nov (04_POLA_UI §1.5 · masukan pemilik M32): tiap kartu/panel angka punya jalan ke daftar sumbernya —
+ * rasio → Laporan Keuangan (Laba-Rugi/Neraca), umur & terbesar → Piutang / Tagihan Pemasok, nama → kartu pelanggan/
+ * pemasok, rincian kas → Rekening & Saldo. `onOpen` / `openReport(tab)` dari layar induk = `undefined` bila peran tidak
+ * boleh membuka layar itu (kartu tampil tanpa tautan, bukan tombol mati).
  */
 import {
   ComposedChart, BarChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, PieChart as PieIcon, Users, Truck, Scale, Landmark, Percent, PiggyBank } from "lucide-react";
+import {
+  ChevronRight, TrendingUp, PieChart as PieIcon, Users, Truck, Scale, Landmark, Percent, PiggyBank,
+} from "lucide-react";
 import { FC, compactIDR, chartTooltip, Panel, EmptyState, formatCurrency } from "./financeShared";
-import { isZeroMetric } from "../../components/ListPageParts";
+import { isZeroMetric, MetricRow } from "../../components/ListPageParts";
+import { CustomerCardLink, SupplierCardLink } from "./cards/partyCards";
 import FinReportLink from "./FinReportLink";
+
+/** Tautan baku di kepala panel ("Buka Piutang ›"); tanpa `onClick` (peran tak boleh membuka) → tidak dirender. */
+export function PanelLink({ onClick, label, testId }) {
+  if (!onClick) return null;
+  return (
+    <button type="button" className="link-button" onClick={onClick} data-testid={testId}>
+      {label} <ChevronRight size={12} aria-hidden="true" />
+    </button>
+  );
+}
 
 export function MonthlyTrendPanel({ monthly }) {
   const rows = monthly || [];
   const empty = rows.length === 0 || !rows.some((m) => m.revenue || m.expense || m.net_income);
   const withExpense = rows.map((m) => ({ ...m, expense: (m.cogs || 0) + (m.opex || 0) }));
   return (
-    <Panel title="Tren Bulanan — Pendapatan · Beban · Laba Bersih" icon={TrendingUp} testId="tower-monthly">
+    <Panel title="Tren Bulanan — Pendapatan · Beban · Laba Bersih" icon={TrendingUp} testId="tower-monthly"
+      actions={<FinReportLink testId="tower-monthly-link" label="Laba-Rugi" />}>
       {empty ? (
         <EmptyState icon={TrendingUp} title="Belum ada aktivitas GL tahun ini" testId="tower-monthly-empty" />
       ) : (
@@ -48,28 +67,25 @@ const fmtRatio = (v) => {
 };
 const fmtPctId = (v, d = 1) => (v == null ? "—" : `${Number(v).toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d })}%`);
 
-export function RatiosStrip({ ratios }) {
+/** M32 — kartu rasio = tautan ke laporan sumbernya: marjin → Laba-Rugi, rasio neraca → Neraca. `openReport(tab)` →
+ *  handler klik (atau `undefined` bila peran tidak boleh membuka Laporan Keuangan). */
+export function RatiosStrip({ ratios, openReport = () => undefined }) {
   const r = ratios || {};
-  const exact = (v) => (v == null ? "" : `Nilai persis: ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })}x`);
+  const capped = (v) => Number(v) > RATIO_CAP;
   const items = [
     // Fase 3 · P4 (D-10) — Marjin Bersih tampil SEKALI di dasbor (dulu juga di baris KPI Laba-Rugi).
-    { label: "Marjin Kotor", value: fmtPctId(r.gross_margin), icon: Percent, hint: "laba kotor ÷ pendapatan, tahun berjalan" },
-    { label: "Marjin Bersih", value: fmtPctId(r.net_margin), icon: Percent, hint: "laba bersih ÷ pendapatan, tahun berjalan" },
-    { label: "Rasio Lancar", value: fmtRatio(r.current_ratio), icon: Scale, title: exact(r.current_ratio),
-      hint: Number(r.current_ratio) > RATIO_CAP ? "kewajiban lancar hampir nol" : "aset lancar ÷ kewajiban lancar" },
-    { label: "Utang thd Ekuitas", value: fmtRatio(r.debt_to_equity), icon: Landmark, title: exact(r.debt_to_equity),
+    { k: "gross", label: "Marjin Kotor", value: fmtPctId(r.gross_margin), icon: Percent, hint: "laba kotor ÷ pendapatan, tahun berjalan", tab: "pl" },
+    { k: "net", label: "Marjin Bersih", value: fmtPctId(r.net_margin), icon: Percent, hint: "laba bersih ÷ pendapatan, tahun berjalan", tab: "pl" },
+    { k: "current", label: "Rasio Lancar", value: fmtRatio(r.current_ratio), icon: Scale, tab: "bs",
+      hint: capped(r.current_ratio) ? "kewajiban lancar hampir nol" : "aset lancar ÷ kewajiban lancar" },
+    { k: "der", label: "Utang thd Ekuitas", value: fmtRatio(r.debt_to_equity), icon: Landmark, tab: "bs",
       hint: "total kewajiban ÷ ekuitas" },
   ];
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="tower-ratios">
-      {items.map((it) => (
-        <div key={it.label} className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2.5" title={it.title || undefined}>
-          <div className="flex items-center gap-1.5 mb-0.5"><it.icon size={12} className="text-[#6B219A]" /><p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{it.label}</p></div>
-          <p className="text-[15px] font-bold tabular-nums text-[#1C1C1E]">{it.value}</p>
-          {it.hint && <p className="text-[11px] text-[#9A9BA3]">{it.hint}</p>}
-        </div>
-      ))}
-    </div>
+    <MetricRow testId="tower-ratios" items={items.map((it) => ({
+      label: it.label, value: it.value, icon: it.icon, hint: it.hint, testId: `tower-ratio-${it.k}`,
+      onClick: openReport(it.tab),
+    }))} />
   );
 }
 
@@ -89,7 +105,7 @@ function AgingBars({ data, testId }) {
   );
 }
 
-export function ArAgingPanel({ ar }) {
+export function ArAgingPanel({ ar, onOpen }) {
   const a = ar?.aging || {};
   // PK-41 (RP-12) — judul kelompok dari `bucket_labels` server (batas `ar.aging_buckets`); bawaan 30/60/90 hari.
   const lbl = Object.fromEntries((ar?.bucket_labels || []).map((b) => [b.key, b.label]));
@@ -102,13 +118,14 @@ export function ArAgingPanel({ ar }) {
     { key: "b90_plus", name: lbl.b90_plus || "> 90 hari", value: a.b90_plus || 0, color: FC.expense },
   ].filter((d) => pakai(d.key));
   return (
-    <Panel title="Umur Piutang (AR Aging)" icon={Users} testId="tower-ar-aging">
+    <Panel title="Umur Piutang (AR Aging)" icon={Users} testId="tower-ar-aging"
+      actions={<PanelLink onClick={onOpen} label="Buka Piutang" testId="tower-ar-aging-open" />}>
       <AgingBars data={data} testId="tower-ar-aging-chart" />
     </Panel>
   );
 }
 
-export function ApAgingPanel({ ap }) {
+export function ApAgingPanel({ ap, onOpen }) {
   const a = ap?.aging || {};
   const data = [
     { name: "0-30", value: a.d0_30 || 0, color: FC.teal },
@@ -117,21 +134,25 @@ export function ApAgingPanel({ ap }) {
     { name: ">90", value: a.d90_plus || 0, color: FC.expense },
   ];
   return (
-    <Panel title="Umur Hutang (AP Aging)" icon={Truck} testId="tower-ap-aging">
+    <Panel title="Umur Hutang (AP Aging)" icon={Truck} testId="tower-ap-aging"
+      actions={<PanelLink onClick={onOpen} label="Buka Tagihan Pemasok" testId="tower-ap-aging-open" />}>
       <AgingBars data={data} testId="tower-ap-aging-chart" />
     </Panel>
   );
 }
 
-export function TopArPanel({ ar }) {
+export function TopArPanel({ ar, onOpen, perms }) {
   const rows = ar?.top || [];
   return (
-    <Panel title="Piutang Terbesar" icon={Users} testId="tower-top-ar">
+    <Panel title="Piutang Terbesar" icon={Users} testId="tower-top-ar"
+      actions={<PanelLink onClick={onOpen} label="Buka Piutang" testId="tower-top-ar-open" />}>
       {rows.length === 0 ? <p className="text-[11px] text-[#9A9BA3] py-3 text-center">Tidak ada piutang.</p> : (
         <div className="space-y-1.5">
           {rows.map((c, i) => (
             <div key={i} data-testid={`tower-ar-row-${i}`} className="flex items-center justify-between gap-2 text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
-              <span className="font-semibold text-[#1C1C1E] truncate max-w-[150px]" title={c.customer_name}>{c.customer_name}</span>
+              {/* M32 — nama pelanggan membuka kartu pelanggan (piutang, tagihan, riwayat). */}
+              <CustomerCardLink id={c.customer_id} name={c.customer_name} perms={perms} testId={`tower-ar-card-${i}`}
+                className="font-semibold truncate max-w-[150px]" />
               <div className="text-right"><span className="tabular-nums font-semibold text-[#1B7F4B]">{formatCurrency(c.outstanding)}</span>
                 {c.oldest_days > 0 && <span className="block text-[9px] text-[#C0392B]">telat {c.oldest_days}h</span>}</div>
             </div>
@@ -142,15 +163,17 @@ export function TopArPanel({ ar }) {
   );
 }
 
-export function TopApPanel({ ap }) {
+export function TopApPanel({ ap, onOpen, perms }) {
   const rows = ap?.top || [];
   return (
-    <Panel title="Hutang Terbesar" icon={Truck} testId="tower-top-ap">
+    <Panel title="Hutang Terbesar" icon={Truck} testId="tower-top-ap"
+      actions={<PanelLink onClick={onOpen} label="Buka Tagihan Pemasok" testId="tower-top-ap-open" />}>
       {rows.length === 0 ? <p className="text-[11px] text-[#9A9BA3] py-3 text-center">Tidak ada hutang.</p> : (
         <div className="space-y-1.5">
           {rows.map((b, i) => (
             <div key={i} data-testid={`tower-ap-row-${i}`} className="flex items-center justify-between gap-2 text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
-              <span className="font-semibold text-[#1C1C1E] truncate max-w-[150px]" title={b.party}>{b.party || b.number}</span>
+              <SupplierCardLink id={b.party_id} name={b.party || b.number} perms={perms} testId={`tower-ap-card-${i}`}
+                className="font-semibold truncate max-w-[150px]" />
               {/* G1-38 — per pemasok (bukan per tagihan): sisa + jumlah tagihan, seperti panel piutang. */}
               <div className="text-right"><span className="tabular-nums font-semibold text-[#C0392B]">{formatCurrency(b.amount)}</span>
                 {(b.bill_count || 0) > 0 && <span className="block text-[9px] text-[#8E8E93]">{b.bill_count} tagihan</span>}</div>
@@ -164,10 +187,11 @@ export function TopApPanel({ ap }) {
 
 // Fase 3 · P4 (D-10) — total "Posisi Kas" sudah di kartu KPI atas (label sumber K-02); panel ini hanya RINCIAN per
 // akun, supaya angka yang sama tidak tampil dua kali di satu layar.
-export function CashPanel({ cash }) {
+export function CashPanel({ cash, onOpen }) {
   const accounts = cash?.accounts || [];
   return (
-    <Panel title="Rincian Kas per Akun (GL)" icon={PieIcon} testId="tower-cash-panel">
+    <Panel title="Rincian Kas per Akun (GL)" icon={PieIcon} testId="tower-cash-panel"
+      actions={<PanelLink onClick={onOpen} label="Rekening & Saldo" testId="tower-cash-open" />}>
       {accounts.length === 0 ? <p className="text-[11px] text-[#9A9BA3] py-3 text-center">Belum ada akun kas/bank bersaldo.</p> : (
         <div className="space-y-1.5">
           {accounts.map((a) => (

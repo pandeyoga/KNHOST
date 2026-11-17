@@ -25,7 +25,7 @@ import useIntentKey from "../../../hooks/useIntentKey";
 import { PRICING_MODES, PPN_MODES } from "./intercoApi";
 
 export default function IntercoCreateModal({
-  entities = [], currentEntityId = "", onClose, onCreated, canOverride = false,
+  entities = [], currentEntityId = "", onClose, onCreated, canOverride = false, onOpenContract,
 }) {
   const [seller, setSeller] = useState(currentEntityId || (entities[0]?.id || ""));
   const [buyer, setBuyer] = useState("");
@@ -175,8 +175,21 @@ export default function IntercoCreateModal({
           <Field label="PT Pembeli" required hint="menerbitkan Pesanan Beli internal + Tagihan internal">
             <KNSelect value={buyer} onValueChange={setBuyer} options={buyerOptions} placeholder="Pilih PT pembeli" data-testid="interco-create-buyer" />
           </Field>
-          <Field label="Mode Harga" hint={canOverride ? "Harga tetap: diambil dari kontrak internal yang aktif"
-            : "Mengikuti pengaturan PT penjual. Mengubahnya butuh akses 'Ubah harga/PPN di luar kontrak'."}>
+          {/* Pola UI 16 Nov (M35) — "Kontrak Internal" bukan lagi tombol buat kedua di kepala layar: harga tetap dibutuhkan
+              tepat saat menerbitkan transaksi, jadi pintunya di sini (pop-up ini ditutup, wizard kontrak dibuka). */}
+          <Field label="Mode Harga" hint={(
+            <>
+              {canOverride ? "Harga tetap: diambil dari kontrak internal yang aktif"
+                : "Mengikuti pengaturan PT penjual. Mengubahnya butuh akses 'Ubah harga/PPN di luar kontrak'."}
+              {onOpenContract && (
+                <>
+                  {" · "}
+                  <button type="button" className="link-button" data-testid="interco-open-contract-btn"
+                    onClick={() => onOpenContract({ seller, buyer })}>Buat kontrak internal</button>
+                </>
+              )}
+            </>
+          )}>
             <KNSelect value={pricingMode} onValueChange={setPricingMode} options={pricingOptions}
               disabled={!canOverride} data-testid="interco-create-pricing" />
           </Field>

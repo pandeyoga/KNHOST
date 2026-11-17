@@ -100,8 +100,10 @@ async def finance_tower(scope: Optional[Dict[str, Any]] = None,
     ar_tot = ar_rep.get("totals", {})
     bi_data = await bi.finance_bi(year, scope, entity_ids or ([entity_id] if entity_id else []))
 
+    # Pola UI 16 Nov (M32) — `customer_id` ikut dikirim: nama di "Piutang Terbesar" membuka kartu pelanggan (baca saja).
     ar_top = [
-        {"customer_name": c.get("customer_name", ""), "outstanding": c.get("outstanding", 0),
+        {"customer_id": c.get("customer_id", ""), "customer_name": c.get("customer_name", ""),
+         "outstanding": c.get("outstanding", 0),
          "overdue": c.get("overdue", 0), "oldest_days": c.get("oldest_days", 0)}
         for c in ar_rep.get("customers", [])[:5]
     ]

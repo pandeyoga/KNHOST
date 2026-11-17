@@ -225,14 +225,14 @@ export default function AppViewRouter(props) {
           <SettingsLinkCards view="settings-whatsapp" />
         </>
       )}
-      {activeView === "chart-of-accounts" && <ChartOfAccounts entities={entities} currentUser={user} />}
+      {activeView === "chart-of-accounts" && <ChartOfAccounts entities={entities} currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "general-ledger" && <GeneralLedger selectedEntity={selectedEntity} entities={entities} focusDoc={focusDoc?.focus_type === "journal_entry" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
       {activeView === "financial-statements" && <FinancialStatementsView selectedEntity={selectedEntity} />}
       {activeView === "closing" && <ClosingView selectedEntity={selectedEntity} entities={entities} currentUser={user} />}
       {activeView === "posting-failures" && <PostingFailuresView />}
       {activeView === "period-unlock" && <PeriodUnlockView selectedEntity={selectedEntity} entities={entities} currentUser={user} />}
       {activeView === "bi-finance" && <BiFinanceView selectedEntity={selectedEntity} />}
-      {activeView === "finance-tower" && <FinanceTowerView selectedEntity={selectedEntity} />}
+      {activeView === "finance-tower" && <FinanceTowerView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "profitability" && <ProfitabilityView selectedEntity={selectedEntity} />}
       {activeView === "cashflow-forecast" && <CashFlowForecastView selectedEntity={selectedEntity} />}
       {activeView === "budget" && <BudgetView selectedEntity={selectedEntity} currentUser={user} />}

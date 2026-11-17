@@ -185,17 +185,3 @@ export function Labeled({ label, children }) {
     </div>
   );
 }
-
-export function Kpi({ label, value, icon: Icon, tone = "", testId }) {
-  return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}

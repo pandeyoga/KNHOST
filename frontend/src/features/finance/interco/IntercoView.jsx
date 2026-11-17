@@ -11,11 +11,16 @@
  *   3. Settlement       — pelunasan sekaligus banyak transaksi (US6)
  *   4. Retur Antar-PT   — jalan resmi sesudah barangnya berpindah (G-6b)
  *   5. Rapor Margin     — margin grup: sudah vs belum terealisasi (G-6b)
+ *
+ * Pola UI 16 Nov (04_POLA_UI §2.A · masukan pemilik M35/M36): kepala SATU baris (keterangan di ?), kartu angka = jalan
+ * cepat (klik → tab/daftar tersaring), status = dropdown (deret tab status dicabut), dan SATU tombol buat per layar di
+ * bilah daftarnya: "+ Transaksi Baru" di Daftar Transaksi, "Buat Pelunasan" di Settlement, "Pinjaman Baru" di Pinjaman.
+ * Dulu empat tombol (Muat ulang · Buat Pelunasan · Kontrak Internal · Transaksi Baru) di kepala halaman; Kontrak Internal
+ * kini dibuka dari pop-up Transaksi Baru (isian Mode Harga).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  RefreshCw, Plus, ArrowRightLeft, Layers, Wallet, CheckCircle2,
-  Handshake, Undo2, TrendingUp,
+  RefreshCw, ArrowRightLeft, Layers, Wallet, CheckCircle2, FileClock, Undo2, TrendingUp,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -47,6 +52,7 @@ import { TransactionsPanel, BalancesPanel, SettlementsPanel } from "./IntercoPan
 import DetailModal from "../../../components/DetailModal";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import { PageHeader, MetricRow } from "../../../components/ListPageParts";
+import { OPEN_STATUS_FILTER } from "./intercoApi";
 
 const TABS = [
   { id: "transactions", label: "Daftar Transaksi", icon: ArrowRightLeft },
@@ -61,7 +67,15 @@ const TABS = [
 ];
 
 // PK-17 — petunjuk kartu saldo bila server menyembunyikannya (`summary.finance_hidden`).
-const FINANCE_HIDDEN_HINT = "Saldo antar-PT hanya untuk peran berizin keuangan antar-PT.";
+const FINANCE_HIDDEN_HINT = "khusus izin keuangan antar-PT";
+
+// Keterangan halaman (dulu paragraf di bawah judul + keterangan panjang di tiap kartu) — kini di ikon ?.
+export const TEKS_ANTAR_PT = "Jual-beli antar-PT dengan harga internal & margin. Dokumen kembar (PO internal ↔ "
+  + "SO+Surat Jalan+Invoice) + faktur pajak internal + saldo pasangan PT + pelunasan (netting) + retur — barang fisik tetap "
+  + "lewat jalur gudang. Kartu piutang/utang = posisi BERSIH dua arah per pasangan PT (keputusan K-07); angka bruto per "
+  + "dokumen ada di Jadwal Bayar. Dokumen terbuka = dikonfirmasi s/d difakturkan, belum lunas (draf tidak dihitung). "
+  + "Rugi belum terealisasi tidak dieliminasi (konservatisme). Kontrak internal (harga tetap) dibuat dari pop-up "
+  + "Transaksi Baru.";
 
 // Tab yang bicara UANG antar-PT — dipagari izin `interco_finance` (E-0/E0.8f).
 const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
@@ -248,6 +262,29 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
     finally { sending.current = false; setBusy(false); }
   };
 
+  // K-07 — angka utama = posisi BERSIH dua arah per pasangan PT; bruto per dokumen di keterangan kartu & Jadwal Bayar.
+  // PK-17 (IA-09) — tanpa izin keuangan antar-PT server mengosongkan saldo (`finance_hidden`).
+  const hidden = Boolean(summary?.finance_hidden);
+  const unrealized = margin?.totals?.unrealized_margin || 0;
+  const openFilter = tab === "transactions" && fStatus === OPEN_STATUS_FILTER;
+  const kpiCards = [
+    { testId: "interco-kpi-receivable", label: "Piutang antar-PT (bersih)", icon: Wallet, tab: "balances",
+      value: hidden ? "—" : formatCurrency((summary?.net_receivable ?? summary?.total_receivable) || 0),
+      hint: hidden ? FINANCE_HIDDEN_HINT : `bruto ${formatCurrency(summary?.total_receivable || 0)}`,
+      isActive: tab === "balances", go: () => setTab("balances") },
+    { testId: "interco-kpi-payable", label: "Utang antar-PT (bersih)", icon: Wallet, tab: "schedule",
+      value: hidden ? "—" : formatCurrency((summary?.net_payable ?? summary?.total_payable) || 0),
+      hint: hidden ? FINANCE_HIDDEN_HINT : `bruto ${formatCurrency(summary?.total_payable || 0)}`,
+      isActive: tab === "schedule", go: () => setTab("schedule") },
+    { testId: "interco-kpi-open", label: "Dokumen terbuka", icon: FileClock, tab: "transactions",
+      value: String(summary?.open_documents || 0), hint: "belum lunas",
+      isActive: openFilter,
+      go: () => { setTab("transactions"); setFStatus(openFilter ? "" : OPEN_STATUS_FILTER); } },
+    { testId: "interco-kpi-unrealized", label: "Margin belum terealisasi", icon: TrendingUp, tab: "margin",
+      value: formatCurrency(unrealized), hint: unrealized < 0 ? "rugi — tidak dieliminasi" : "dieliminasi saat konsolidasi",
+      isActive: tab === "margin", go: () => setTab("margin") },
+  ];
+
   // PK-44 (IA-04) — tautan dokumen: pindah ke tab jenisnya; transaksi → rinciannya, lainnya → baris disorot.
   const [sorot, setSorot] = useState("");
   const fokus = useFocusDoc(focusDoc, Object.keys(FOCUS_TAB), async (id, fd) => {
@@ -263,7 +300,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
     {/* Fase 3 · P4 (L-04 kelas C) — akuntansi grup: di HP cukup banner "paling nyaman di desktop" (layar tetap
         jalan). Di luar wadah `space-y-*` supaya banner yang tersembunyi di desktop tidak menambah jarak atas. */}
     {!returnsMode && <DesktopOnlyNotice testId="interco-desktop-notice" what="Antar Entitas (grup)" />}
-    <div className={returnsMode ? "space-y-4" : "space-y-6"} data-testid="interco-view">
+    <div className="space-y-3" data-testid="interco-view">
       {returnsMode ? (
         <>
           <PageHeader icon={Undo2} testId="interco-returns-header"
@@ -283,78 +320,35 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
         </>
       ) : (
       <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          {/* Audit UI 24 Okt (136): H1 ±32px → ukuran judul halaman standar; tombol aksi boleh
-              membungkus di HP (dulu "Transaksi Baru" keluar layar) dan tombol utama biru. */}
-          <h1 className="text-[20px] font-bold text-[#1D1D1F]">Transaksi Antar Entitas</h1>
-          <p className="text-sm text-[#6E6E73] mt-1 max-w-3xl">
-            Jual-beli antar-PT dengan harga internal &amp; margin. Dokumen kembar (PO
-            internal ↔ SO+Surat Jalan+Invoice) + faktur pajak internal + saldo pasangan
-            PT + settlement (netting) + retur — barang fisik tetap lewat jalur gudang.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button onClick={refresh} disabled={busy} data-testid="interco-refresh-btn"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white hover:bg-[#F2F2F5] transition text-[#3C3C43]">
-            <RefreshCw size={15} className={busy ? "animate-spin" : ""} />
-            Muat ulang
+      <PageHeader icon={ArrowRightLeft} testId="interco-header"
+        title={<span data-testid="interco-title">Transaksi Antar-PT</span>} help={TEKS_ANTAR_PT}
+        actions={(
+          <button type="button" onClick={refresh} disabled={busy} data-testid="interco-refresh-btn" className="icon-button"
+            aria-label="Muat ulang" title="Muat ulang">
+            <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
           </button>
-          {can(perms, "interco", "settle") && ( /* PK-43 — mengikuti izin aksinya di server (`interco.settle`) */
-            <button onClick={() => setShowSettle({ open: true })} data-testid="interco-open-settle-btn"
-                    className="secondary-button"><Layers size={15} /> Buat Pelunasan</button>)}
-          {canWrite && (
-            <>
-              <button onClick={() => setShowContract({ open: true })}
-                      data-testid="interco-open-contract-btn"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white hover:bg-[#F2F2F5] transition text-[#3C3C43]">
-                <Handshake size={15} /> Kontrak Internal
-              </button>
-              <button onClick={() => setShowCreate(true)} data-testid="interco-create-btn"
-                      className="primary-button">
-                <Plus size={15} /> Transaksi Baru
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+        )} />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        {/* Keputusan pemilik K-07 (26 Okt) — angka utama = posisi BERSIH dua arah per pasangan PT (netting);
-            sisa per dokumen (bruto) = rincian di Jadwal Bayar. Server lama tanpa `net_*` jatuh ke angka bruto. */}
-        {/* PK-17 (IA-09) — tanpa izin keuangan antar-PT server mengosongkan saldo (`finance_hidden`). */}
-        <Kpi label="Piutang Antar-PT (bersih)"
-             value={summary?.finance_hidden ? "—"
-               : formatCurrency((summary?.net_receivable ?? summary?.total_receivable) || 0)}
-             hint={summary?.finance_hidden ? FINANCE_HIDDEN_HINT
-               : `posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_receivable || 0)}`}
-             testid="interco-kpi-receivable" />
-        <Kpi label="Utang Antar-PT (bersih)"
-             value={summary?.finance_hidden ? "—"
-               : formatCurrency((summary?.net_payable ?? summary?.total_payable) || 0)}
-             hint={summary?.finance_hidden ? FINANCE_HIDDEN_HINT
-               : `posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_payable || 0)} — lihat Jadwal Bayar`}
-             testid="interco-kpi-payable" />
-        <Kpi label="Dokumen Terbuka" value={String(summary?.open_documents || 0)}
-             hint="dikonfirmasi s/d difakturkan, belum lunas · draf tidak dihitung" testid="interco-kpi-open" />
-        <Kpi label="Margin Belum Terealisasi"
-             value={formatCurrency(margin?.totals?.unrealized_margin || 0)}
-             hint={(margin?.totals?.unrealized_margin || 0) < 0
-               ? "rugi belum terealisasi — tidak dieliminasi (konservatisme)"
-               : "dieliminasi di laporan konsolidasi grup"} testid="interco-kpi-unrealized" />
-      </div>
+      {/* Kartu angka = jalan cepat (pola UI §1.5): piutang → Saldo Antar-PT, utang → Jadwal Bayar, dokumen terbuka →
+          Daftar Transaksi tersaring "Terbuka", margin → Rapor Margin. Tab di luar izin → kartu tanpa klik. */}
+      <MetricRow testId="interco-kpis" items={kpiCards.map((c) => ({
+        label: c.label, value: c.value, hint: c.hint, icon: c.icon, testId: c.testId,
+        active: c.isActive,
+        onClick: tabs.some((t) => t.id === c.tab) ? c.go : undefined,
+      }))} />
       </>
       )}
 
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
       <FocusNotice {...fokus} testId="interco-focus-notice" />
       {msg && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#E8F6EE] text-[#1B7F4B] text-sm"
-             data-testid="interco-msg">
-          <CheckCircle2 size={15} /> {msg}
+        <div className="notice-bar success" data-testid="interco-msg">
+          <CheckCircle2 size={14} /> {msg}
         </div>
       )}
 
+      {/* Tab = pindah LAYAR (Daftar Transaksi, Saldo, Settlement, …), bukan saringan. Tetap bilah lama: berkas ini juga
+          dirender sebagai tab hub `interco-returns`, jadi `PageTabs` di sini = tab tingkat ketiga (INV-UI-14). */}
       <div className="border-b border-[#E5E5EA] flex gap-1 flex-wrap">
         {tabs.map((t) => {
           const I = t.icon;
@@ -384,6 +378,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           onTax={(r) => setTaxDoc(r)} onReturn={(r) => setReturnDoc(r)}
           canWrite={canWrite}
           canStep={canStep}
+          onCreate={canWrite ? () => setShowCreate(true) : undefined}
         />
       )}
       {tab === "balances" && (
@@ -396,7 +391,10 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           onRefund={(a) => setShowRefund({ payer: a.from_entity_id, payee: a.to_entity_id })}
         />
       )}
-      {tab === "settlements" && <SettlementsPanel rows={settlements} focusId={sorot} />}
+      {tab === "settlements" && (
+        <SettlementsPanel rows={settlements} focusId={sorot}
+          onCreate={can(perms, "interco", "settle") ? () => setShowSettle({ open: true }) : undefined} />
+      )}
       {tab === "schedule" && <IntercoPaymentSchedule selectedEntity={selectedEntity} entities={entities} />}
       {tab === "returns" && (
         <IntercoReturnsPanel
@@ -436,6 +434,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
         <IntercoCreateModal
           entities={entities} currentEntityId={entityId}
           canOverride={can(perms, "interco", "override_terms")}
+          onOpenContract={({ seller, buyer }) => { setShowCreate(false); setShowContract({ open: true, seller, buyer, fromCreate: true }); }}
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); showMsg("Transaksi antar-PT diterbitkan"); refresh(); }}
         />
@@ -463,7 +462,11 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           entities={entities} sellerEntityId={showContract.seller || entityId}
           buyerEntityId={showContract.buyer || ""}
           onClose={() => setShowContract(null)}
-          onCreated={() => { setShowContract(null); showMsg("Kontrak internal diterbitkan"); refresh(); }}
+          onCreated={() => {
+            const lanjut = Boolean(showContract.fromCreate);
+            setShowContract(null); showMsg("Kontrak internal diterbitkan"); refresh();
+            if (lanjut) setShowCreate(true);   // kembali ke pop-up Transaksi Baru yang tadi membuka wizard
+          }}
         />
       )}
       {detailId && (
@@ -505,15 +508,5 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       )}
     </div>
     </>
-  );
-}
-
-function Kpi({ label, value, hint, testid }) {
-  return (
-    <div className="rounded-xl border border-[#E5E5EA] bg-white p-4" data-testid={testid}>
-      <div className="text-xs uppercase tracking-wide text-[#6E6E73]">{label}</div>
-      <div className="mt-1.5 text-2xl font-semibold text-[#1D1D1F]">{value}</div>
-      <div className="mt-1 text-xs text-[#8E8E93]">{hint}</div>
-    </div>
   );
 }

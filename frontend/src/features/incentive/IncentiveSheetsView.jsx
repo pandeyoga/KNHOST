@@ -15,16 +15,20 @@
  *
  * KM-T5 — tautan "Skema insentif lama (arsip)" dicabut: jenjang komisi otomatis kini di Target & Aturan › "Komisi otomatis
  * (cara lama)" (hanya PT yang belum beralih ke Lembar Insentif).
+ *
+ * Pola UI 16 Nov (04_POLA_UI §2.A · masukan pemilik M40 "boros ruang"): kepala SATU baris (keterangan di ?), SATU bilah
+ * daftar — cari · Periode bayar ▾ · Status ▾ (dulu deret chip) · jumlah · + Buat lembar (alasan mati di sampingnya) —
+ * lalu tabel padat. Dulu: kartu berjudul + paragraf + tombol sebaris sendiri + label saringan + deret chip status.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, Plus, Search } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
 import FormModal from "../../components/FormModal";
 import KNPager from "../../components/KNPager";
 import KNSelect from "../../components/KNSelect";
+import { ListToolbar, PageHeader, SearchInput } from "../../components/ListPageParts";
 import useIntentKey from "../../hooks/useIntentKey";
 import useViewPreset from "../../hooks/useViewPreset";
 import { moneyPost } from "../../utils/moneyRequest";
@@ -39,7 +43,12 @@ import IncentiveSheetDetail, { STATUS_PILIHAN, StatusLembar, angka, labelStatusL
 export const TEKS_KOSONG = "Belum ada lembar insentif untuk saringan ini.";
 export const TEKS_SEMUA_PT = "Pilih satu PT dulu.";
 export const TEKS_TANPA_IZIN = "Membuat lembar butuh akses Siapkan lembar insentif di modul Kinerja & Insentif.";
+// Dulu paragraf di bawah judul kartu + kalimat di atas tabel (pola UI §1.4: penjelasan di ikon ?).
+export const TEKS_BANTU_LEMBAR = "Satu lembar per periode bayar berisi nominal insentif per sales dan komponen. Nominal "
+  + "diketik orang; angka dasar dipotret saat baris dibuat. Total dalam rupiah · klik nomor untuk membuka lembar.";
 const UKURAN_HALAMAN = 25;
+// Dropdown bilah daftar selebar isinya — sama dengan contoh pola (Retur Pelanggan).
+const SELECT_CLS = "!h-auto !w-auto min-w-[150px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13";
 
 /** Alasan "Buat lembar" mati — ditulis di samping tombol. "" = boleh. */
 export function alasanBuat({ canWrite, canPrepare }) {
@@ -95,7 +104,7 @@ export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
   const alasan = alasanBuat({ canWrite, canPrepare });
   const items = data?.items || [];
   const opsiPeriode = useMemo(() => [{ value: "", label: "Semua periode" }, ...pilihanPeriode("month", periodeBayarBawaan())], []);
-  const chips = [{ key: "all", label: "Semua" }, ...STATUS_PILIHAN.map((s) => ({ key: s, label: labelStatusLembar(s) }))];
+  const opsiStatus = [{ value: "", label: "Semua status" }, ...STATUS_PILIHAN.map((s) => ({ value: s, label: labelStatusLembar(s) }))];
   const simpan = async () => {
     if (!form.pay_period) { setFormErr("Pilih periode bayar."); return; }
     setBusy(true); setFormErr("");
@@ -107,32 +116,28 @@ export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
   };
 
   return (
-    <div className="space-y-4" data-testid="incentive-sheets-view">
+    <div className="space-y-3" data-testid="incentive-sheets-view">
+      <PageHeader icon={ClipboardList} title="Lembar Insentif" help={TEKS_BANTU_LEMBAR} testId="isheets-header" />
       <EntityScopeBanner testId="isheets-scope" />
-      <div className="section-card" data-testid="isheets-card">
-        <div className="section-head"><h2 className="flex items-center gap-2"><ClipboardList size={16} className="text-kn-action" aria-hidden="true" />Lembar Insentif</h2></div>
-        <div className="section-body space-y-3">
-          <p className="text-fs-12 text-kn-text-2">Satu lembar per periode bayar berisi nominal insentif per sales dan komponen. Nominal diketik orang; angka dasar dipotret saat baris dibuat.</p>
+      <ListToolbar testId="isheets-filters"
+        count={state === "ready" && items.length > 0
+          ? <span data-testid="isheets-count">{items.length} dari {data?.total ?? items.length} lembar</span> : null}
+        actions={(
           <div className="flex flex-wrap items-center gap-2" data-testid="isheets-actions">
-            <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid="isheets-create" disabled={!!alasan}
-              onClick={() => { setForm({ pay_period: periodeBayarBawaan(), title: "" }); setFormErr(""); setBuat(true); }}>
-              <Plus size={13} aria-hidden="true" /> Buat lembar</button>
             {alasan && <span className="text-fs-12 text-kn-text-2" data-testid="isheets-create-why">{alasan}</span>}
+            <button type="button" className="primary-button whitespace-nowrap" data-testid="isheets-create" disabled={!!alasan}
+              onClick={() => { setForm({ pay_period: periodeBayarBawaan(), title: "" }); setFormErr(""); setBuat(true); }}>
+              <Plus size={14} aria-hidden="true" /> Buat lembar</button>
           </div>
-          <div className="flex flex-wrap items-end gap-3" data-testid="isheets-filters">
-            <div className="w-[190px]"><label className="field-label">Periode bayar</label>
-              <KNSelect data-testid="isheets-period" value={periode} className="field" options={opsiPeriode}
-                onValueChange={(v) => { setPeriode(v || ""); setPage(1); }} /></div>
-            <label className="relative block w-full max-w-[260px]">
-              <span className="field-label">Cari</span>
-              <Search size={13} className="absolute bottom-2.5 left-2 text-kn-text-2" aria-hidden="true" />
-              <input data-testid="isheets-search" className="field pl-7" placeholder="Nomor atau judul" aria-label="Cari nomor atau judul"
-                value={cari} onChange={(e) => setCari(e.target.value)} />
-            </label>
-          </div>
-          <FilterChips testId="isheets-status" ariaLabel="Saringan status" value={status || "all"} options={chips}
-            onChange={(v) => { setStatus(!v || v === "all" ? "" : v); setPage(1); }} />
-        </div>
+        )}>
+        <SearchInput testId="isheets-search" placeholder="Cari nomor atau judul" ariaLabel="Cari nomor atau judul" value={cari}
+          onChange={setCari} className="min-w-[200px] flex-1 sm:max-w-[280px]" />
+        <KNSelect data-testid="isheets-period" aria-label="Periode bayar" value={periode} className={SELECT_CLS}
+          options={opsiPeriode} onValueChange={(v) => { setPeriode(v || ""); setPage(1); }} />
+        <KNSelect data-testid="isheets-status" aria-label="Status" value={status} className={SELECT_CLS}
+          options={opsiStatus} onValueChange={(v) => { setStatus(v || ""); setPage(1); }} />
+      </ListToolbar>
+      <div className="section-card" data-testid="isheets-card">
         {state === "loading" ? (
           <div className="section-pad text-fs-13 text-kn-text-2" role="status" data-testid="isheets-loading">Memuat lembar insentif…</div>
         ) : state === "error" ? (
@@ -141,12 +146,11 @@ export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
           <div className="section-pad text-center text-fs-13 text-kn-text-2" data-testid="isheets-empty">{TEKS_KOSONG}</div>
         ) : (
           <>
-            <p className="px-3 pb-1 text-fs-12 text-kn-text-2">Total dalam rupiah · klik nomor untuk membuka lembar.</p>
             <div className="overflow-x-auto">
               <table className="data-table head-wrap w-full" data-testid="isheets-table">
                 <thead><tr>
                   <th>Nomor</th><th>Periode bayar</th><th>Status</th><th className="text-right">Baris</th>
-                  <th className="text-right">Total</th><th>Penyiap</th><th>Pemutus</th>
+                  <th className="text-right">Total (Rp)</th><th>Penyiap</th><th>Pemutus</th>
                 </tr></thead>
                 <tbody>
                   {items.map((s) => (
@@ -167,9 +171,6 @@ export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-kn-divider px-3 py-2 text-fs-12 text-kn-text-2">
-              <span data-testid="isheets-count">{items.length} dari {data?.total ?? items.length} lembar</span>
             </div>
             <KNPager page={page} pageSize={UKURAN_HALAMAN} total={data?.total || 0} onChange={setPage} testId="isheets-pager" />
           </>

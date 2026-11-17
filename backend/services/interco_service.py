@@ -545,7 +545,10 @@ async def list_transactions(scope_entity_ids: List[str], entity_id: str = "",
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     if status:
-        q["status"] = status
+        # Pola UI 16 Nov (M36) — kartu "Dokumen Terbuka" = saringan cepat beberapa status sekaligus ("a,b" → `$in`).
+        sts = [x.strip() for x in str(status).split(",") if x.strip()]
+        if sts:
+            q["status"] = sts[0] if len(sts) == 1 else {"$in": sts}
     if role in ("seller", "buyer"):
         q["role"] = role
     if refund_open:   # PK-31 (IC-07) — dokumen penjual yang diretur sesudah (sebagian) lunas dan masih bersisa refund
