@@ -28,6 +28,8 @@ ROLES = {
     "cr_settings_admin": {"base_role": "", "levels": {"admin": "manage"}},   # PR-T5 — id lama = alias lima modul
     "cr_hr": {"base_role": "", "levels": {"hr": "manage"}},
     "cr_reports": {"base_role": "", "levels": {"reports": "manage"}},
+    # PR-T5 — Desainer PDF (`pdf-templates`) pindah dari modul Admin ke modul Dokumen (pemilik `pdf_template`).
+    "cr_documents": {"base_role": "", "levels": {"documents": "manage"}},
     # turunan Manager: semua modul penuh kecuali Akuntansi (editor peran selalu mengirim semua modul)
     "cr_manager_no_accounting": {"base_role": "manager",
                                  "levels": {**{m["id"]: "manage" for m in MODULE_CATALOG}, "accounting": "none"}},

@@ -65,7 +65,10 @@ afterEach(async () => {
 // ── D-05 ────────────────────────────────────────────────────────────────────
 test("D-05: Pelanggan Baru di POS (admin) = form CRM LENGKAP — segmen, sales PJ, NPWP, limit, lot, metode bayar", async () => {
   routeGet({ "/sales-users": [{ id: "u_s1", name: "Ayu Sales" }] });
-  const { host } = await mount(<CreateCustomerModal open onClose={() => {}} onCreated={() => {}} user={{ role: "admin", name: "Adi" }} />);
+  // CR-T1 (K-28) — isian plafon kini "Usulan plafon kredit", tampil bagi pemegang `credit_profile.update` (izin bawaan
+  // Admin; dulu form tidak memeriksa izin). Akun uji membawa izin bawaan Admin seperti sesudah masuk.
+  const admin = { role: "admin", name: "Adi", permissions: { credit_profile: ["view", "update", "approve"] } };
+  const { host } = await mount(<CreateCustomerModal open onClose={() => {}} onCreated={() => {}} user={admin} />);
   const dlg = q(host, "create-customer");
   expect(dlg.getAttribute("role")).toBe("dialog");
   for (const id of ["customer-name", "customer-segment", "customer-assigned-sales", "customer-npwp", "customer-credit-limit",
@@ -124,12 +127,18 @@ test("D-07: tombol 'Buka Pesanan Khusus' membawa preset tab Menunggu Persetujuan
 const SORD = { id: "sord1", number: "SORD-1", status: "pending_approval", customer_name: "Toko Ayu", chain: {}, items: [],
   total_amount: 1500000, custom_item: { description: "Kain custom" } };
 const MGR = { role: "manager", permissions: { order: ["view", "approve", "update", "create"] } };
+// KP-T4 — tombol Setujui/Tolak tampil bila izin `order.approve` DAN server menjawab jenjang ini boleh diputus pengguna
+// (`GET /approval-policies/can-decide/me`, Aturan Persetujuan); dulu cukup izin.
+const CAN_DECIDE = { "/approval-policies/can-decide/me": { allowed: true, message: "" } };
 
 test("D-07: Setujui di Pesanan Khusus = dialog bersama (catatan opsional) + pesan hasil berantai", async () => {
+  routeGet(CAN_DECIDE);
   askReason.mockResolvedValue("");
   mockPost.mockResolvedValue({ data: { ...SORD, status: "confirmed", chain: { design_request: { number: "DSR-0012" }, samples: [{ number: "SMP-0031" }] } } });
   const onUpdate = jest.fn();
   const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={onUpdate} onBack={() => {}} />);
+  expect(mockGet).toHaveBeenCalledWith("/api/approval-policies/can-decide/me",
+    { params: expect.objectContaining({ doc_kind: "special_order", level: 1, amount: 1500000 }) });
   await click(q(host, "approve-special-order-btn"));
   expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ testId: "sord-approve-dialog", reasonRequired: false }));
   expect(mockPost).toHaveBeenCalledWith("/api/special-orders/sord1/approve", { notes: "" });
@@ -138,6 +147,7 @@ test("D-07: Setujui di Pesanan Khusus = dialog bersama (catatan opsional) + pesa
 });
 
 test("D-07: Tolak = alasan wajib ≥5 huruf lewat dialog bersama (pop-up tolak lama hilang)", async () => {
+  routeGet(CAN_DECIDE);
   askReason.mockResolvedValue("Harga tidak sesuai");
   mockPost.mockResolvedValue({ data: { ...SORD, status: "cancelled" } });
   const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={() => {}} onBack={() => {}} />);
@@ -145,6 +155,14 @@ test("D-07: Tolak = alasan wajib ≥5 huruf lewat dialog bersama (pop-up tolak l
   expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ testId: "sord-reject-dialog", reasonRequired: true, reasonMinLength: 5 }));
   expect(mockPost).toHaveBeenCalledWith("/api/special-orders/sord1/reject", { reason: "Harga tidak sesuai" });
   expect(q(host, "reject-modal")).toBeNull();
+});
+
+test("D-07 · KP-T4: jenjang bukan milik pengguna (server menolak) → tanpa Setujui/Tolak, petunjuk server tampil", async () => {
+  routeGet({ "/approval-policies/can-decide/me": { allowed: false, message: "Jenjang ini diputus Direksi." } });
+  const { host } = await mount(<SpecialOrderDetail order={SORD} currentUser={MGR} onUpdate={() => {}} onBack={() => {}} />);
+  expect(q(host, "approve-special-order-btn")).toBeNull();
+  expect(q(host, "reject-special-order-btn")).toBeNull();
+  expect(q(host, "od-decide-hint").textContent).toBe("Jenjang ini diputus Direksi.");
 });
 
 // ── D-06 ────────────────────────────────────────────────────────────────────

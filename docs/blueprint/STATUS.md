@@ -296,4 +296,9 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   lewat `SettingCard`): `masukan-pemilik/2026-11-16_PILOT_POLA.md`. Penjaga UI: 0 pelanggaran baru. Jest penuh: 9 uji
   gagal di 5 suite yang **juga gagal di `HEAD`** (dulu tak bisa dimuat; pemetaan modul radix membuatnya terlihat).
   **Menunggu validasi pemilik** sebelum audit semua layar (langkah 2).
+  → 17 Nov: kesembilannya **uji usang**, bukan regresi layar — layar sengaja berubah di CR-T1 (usulan plafon butuh
+  `credit_profile.update`), KP-T4 (Setujui/Tolak uang muka & Pesanan Khusus ikut jawaban `can-decide`), PR-T5 (label
+  izin dari kamus server; Desainer PDF milik modul Dokumen) dan MN-T3 (form "Terima pembayaran", wajib satu PT, pesan
+  "Kwitansi …"). Uji diperbarui (+2 uji sisi "server menolak"), fixture akses + peran `cr_documents`; kelima suite lulus.
+  Alasan per uji: pesan commit "Jest: perbarui sembilan uji usang…".
 

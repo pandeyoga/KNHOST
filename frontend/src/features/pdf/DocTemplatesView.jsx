@@ -24,7 +24,8 @@ import PdfTemplateDesigner from "./PdfTemplateDesigner";
 
 export default function DocTemplatesView({ currentUser, selectedEntity, entities = [], orders = [], initialTab = "" }) {
   // Fase 3 · P8 (§1.1 butir 6) — "Desainer PDF" = layar lama `pdf-templates` (tab admin saja): gerbang lewat id itu supaya
-  // peran kustom bermodul Admin (katalog akses memuat `pdf-templates`) tidak kehilangan desainernya. Manajer tetap tidak.
+  // peran kustom yang katalog aksesnya memuat `pdf-templates` tidak kehilangan desainernya — sejak PR-T5 modul Dokumen
+  // (dulu modul Admin). Manajer tetap tidak.
   const designerAllowed = roleCanSee(["admin"], currentUser?.role, "pdf-templates");
   const pick = (t) => (t === "desainer" && designerAllowed ? "desainer" : "dasar");
   const [tab, setTab] = useState(() => pick(initialTab));

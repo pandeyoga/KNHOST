@@ -4,6 +4,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import SalesReturns from "../sales/SalesReturns";
 import ReturnSettleModal from "../sales/ReturnSettleModal";
+import { setServerLabels } from "../../config/auditLabels";
 
 jest.mock("../../services/apiClient", () => {
   const fn = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };
@@ -45,6 +46,12 @@ async function mount(el) {
   return { host, root };
 }
 const q = (host, id) => host.querySelector(`[data-testid="${id}"]`);
+
+// PR-T5 — nama halaman & aksi izin di pesan penolakan datang dari kamus server (`GET /api/access/labels`, diisi
+// `useSessionSync` saat sesi dimuat), bukan peta setempat. Uji mengisi kamus dengan nilai server
+// (`backend/access_modules.RESOURCE_LABEL["sales_return"]`, `ACTION_LABEL["reject"]`) seperti sesi yang sudah masuk.
+beforeAll(() => setServerLabels({ resources: { sales_return: "Retur Penjualan" }, actions: { reject: "Tolak" } }));
+afterAll(() => setServerLabels(null));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -90,7 +97,7 @@ test("modal tolak: gagal → modal & alasan tetap, pesan tampil di modal", async
   expect(q(host, "reject-modal")).not.toBeNull();
   expect(q(host, "reject-modal-reason").value).toBe("Barang tidak sesuai");
   // UAT 24 Okt (audit UI tahap 2) — G0-03: kode izin mentah tidak lagi tampil; pesan akses Indonesia.
-  expect(q(host, "reject-modal-error")?.textContent).toContain("Retur Penjualan");
+  expect(q(host, "reject-modal-error")?.textContent).toContain("Anda tidak punya izin “Tolak” di Retur Penjualan.");
   expect(q(host, "reject-modal-error")?.textContent).not.toContain("sales_return.reject");
   await act(async () => { root.unmount(); });
 });

@@ -2,7 +2,7 @@
 // katalog akses peran kustom & `hidden_views` tetap berlaku setelah layar lama menjadi alias/tab:
 //  · D-11 Profitabilitas: tab Realisasi dijaga izin akuntansi; peran kustom modul Laporan → tab katalog saja.
 //  · D-29 Perangkat: tab RFID = id `cs-rfid-devices`, tab Mesin absen = id `hr-attendance-setup`.
-//  · D-01 Template Dokumen: "Desainer PDF" = id `pdf-templates` (tab admin lama).
+//  · D-01 Template Dokumen: "Desainer PDF" = id `pdf-templates` (tab admin lama; sejak PR-T5 milik modul Dokumen).
 //  · D-09 Desain & Pattern: mode Galeri = id `cs-design-gallery`.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -140,11 +140,18 @@ describe("D-29 — Perangkat (gerbang per id lama)", () => {
 });
 
 describe("D-01 — Template Dokumen: Desainer PDF", () => {
-  test("peran kustom modul Admin tetap punya Desainer PDF (dulu tab pdf-templates); manajer tidak", async () => {
-    asCustom("cr_settings_admin", { settings: ["view"], template: ["view"] });
-    await mount(withNav("cr_settings_admin", <DocTemplatesView currentUser={{ role: "cr_settings_admin" }} initialTab="desainer" />));
+  // PR-T5 (`b8bd0a21`, PR-08) — modul Admin dipecah lima (Akun, Peran, PT, Pengaturan, Penjadwal); `pdf-templates` pindah
+  // ke modul Dokumen (pemilik `pdf_template`). Gerbang id lama `pdf-templates` tetap: yang berubah modul pembukanya.
+  test("peran kustom modul Dokumen punya Desainer PDF (id lama pdf-templates); modul Admin & manajer tidak", async () => {
+    asCustom("cr_documents", { document: ["view"], pdf_template: ["view"] });
+    await mount(withNav("cr_documents", <DocTemplatesView currentUser={{ role: "cr_documents" }} initialTab="desainer" />));
     expect(q("doc-templates-tabs-desainer")).not.toBeNull();
     expect(q("stub-desainer")).not.toBeNull();
+    await act(async () => { root.unmount(); });
+    asCustom("cr_settings_admin", { settings: ["view"], template: ["view"] });   // `admin` = alias lima modul baru
+    await mount(withNav("cr_settings_admin", <DocTemplatesView currentUser={{ role: "cr_settings_admin" }} initialTab="desainer" />));
+    expect(q("doc-templates-tabs-desainer")).toBeNull();
+    expect(q("stub-dasar")).not.toBeNull();
     await act(async () => { root.unmount(); });
     setAccessContext(null);
     await mount(withNav("manager", <DocTemplatesView currentUser={{ role: "manager" }} initialTab="desainer" />));
