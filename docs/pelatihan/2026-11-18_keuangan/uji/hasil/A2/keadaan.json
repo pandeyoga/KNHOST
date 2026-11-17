@@ -1,0 +1,34 @@
+{
+  "pr": {
+    "id": "pr_420721f61ad2",
+    "number": "PR-00009"
+  },
+  "po": {
+    "id": "po_433e717b968f",
+    "number": "KSC/PO-00047"
+  },
+  "task": {
+    "id": "wms_e97bd6011ec0"
+  },
+  "spk": {
+    "id": "ins_67f039d95e09",
+    "number": "KSC/INS-00052"
+  },
+  "je_gr": "KSC/JE-00376",
+  "bill": {
+    "id": "vbill_70611cfae1ce",
+    "number": "VB-00046"
+  },
+  "je_bill": "KSC/JE-00381",
+  "cb": {
+    "id": "cbn_ceb5e61998af",
+    "number": "KSC/CB-00006"
+  },
+  "kas": {
+    "id": "cash_bbc05e9aad02858c39e254fe",
+    "number": "KSC/CASH-00044"
+  },
+  "je_bayar": "KSC/JE-00383",
+  "bca": "bank_f6085cd8b38d",
+  "mutasi": "stmtline_a2a70c60acb8"
+}

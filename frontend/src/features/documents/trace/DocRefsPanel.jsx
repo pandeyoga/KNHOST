@@ -17,6 +17,7 @@ import { ExternalLink, GitBranch, Loader2, Lock, RefreshCw, Route } from "lucide
 import { canOpenNode, errText, fetchRefs, relFamily } from "./traceApi";
 import { openTrace } from "./traceDeepLink";
 import { docStatusLabel } from "../../../utils/docStatus";
+import { sourceLabel } from "../../finance/glSourceLabels";
 import { useAppNav } from "../../../context/AppNavContext";
 import ErrorNotice from "../../../components/ErrorNotice";
 import ProcessTimeline from "../ProcessTimeline";
@@ -72,7 +73,8 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
         </div>
         <p className="truncate text-fs-12 text-kn-text-2">
           {r.label}{r.status ? ` · ${docStatusLabel(r.status)}` : ""}{r.alive === false ? " · dokumen sudah tidak ada" : ""}
-          {r.note ? ` · ${r.note}` : ""}
+          {/* A2 (pelatihan 18 Nov) — catatan jurnal = kode sumber ("vendor_bill") → label, sama dengan Jejak Dokumen. */}
+          {r.note ? ` · ${/^[a-z][a-z0-9_]*$/.test(String(r.note)) ? sourceLabel(r.note) : r.note}` : ""}
         </p>
       </div>
       {r.link?.view && open && r.alive !== false && (canOpenNode(r) ? (

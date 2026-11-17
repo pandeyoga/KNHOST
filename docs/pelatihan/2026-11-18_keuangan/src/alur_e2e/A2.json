@@ -1,0 +1,479 @@
+{
+ "kode": "A2",
+ "modul": "2",
+ "judul": "Pengadaan sampai Bayar (procure to pay)",
+ "bagian": "B",
+ "tujuan": "Peserta memahami rantai lengkap pembelian di PT Sukacita — permintaan pembelian, pesanan pembelian, barang diterima dan diperiksa, tagihan pemasok, kontrabon, pembayaran, sampai rekonsiliasi bank — beserta siapa mengerjakan apa dan jurnal yang lahir di setiap tahap.",
+ "kapan": "Setiap pembelian bahan (mis. kain grey) ke pemasok luar. Finance masuk di ujung rantai, tetapi harus bisa membaca seluruh rantai untuk memastikan hutang yang dibayar memang untuk barang yang dipesan dan diterima.",
+ "konsep": [
+  "Satu pembelian = satu rantai dokumen: permintaan pembelian (PR) → pesanan pembelian (PO) → penerimaan barang → pemeriksaan kedatangan (SPK) → tagihan pemasok → kontrabon → pembayaran → mutasi bank. Setiap dokumen merujuk dokumen sebelumnya, sehingga rantainya bisa dibaca di Jejak Dokumen.",
+  "Hutang diakui dua tahap. Saat barang diterima, sistem mencatat Persediaan dan 'Hutang Belum Ditagih (GR/IR)' sebesar nilai PO tanpa PPN. Saat faktur pemasok dicatat dan cocok, GR/IR dihapus, PPN Masukan dicatat, dan Hutang Usaha diakui sebesar total faktur.",
+  "3-way match (pencocokan tiga arah): jumlah dipesan di PO = jumlah diterima gudang = jumlah ditagih di faktur, dan harga faktur = harga PO (toleransi harga ±5%, jumlah 0%). Cocok bersih → tagihan langsung terposting; ada selisih dalam toleransi → perlu persetujuan; lebih tagih → ditolak.",
+  "Persetujuan mengikuti nilai (Aturan Persetujuan): PR mulai Rp 50 juta dan PO mulai Rp 100 juta perlu persetujuan Manajer; di bawahnya disetujui otomatis. Pembuat dokumen tidak boleh menyetujui dokumennya sendiri (kontrol dua orang), jadi PO buatan Manajer disetujui Admin, dan kontrabon buatan Manajer disetujui Admin.",
+  "PPN pembelian dihitung 12% × DPP nilai lain (11/12 × DPP), jadi efektif 11% dari DPP: DPP Rp 105.000.000 → PPN Masukan Rp 11.550.000. Pembayaran hanya memindahkan Hutang Usaha ke Bank; rekonsiliasi mencocokkan mutasi rekening koran dengan transaksi kas yang sama tanpa jurnal baru."
+ ],
+ "peran": "Gudang · Manajer · Admin · Kepala Gudang · MD Quality · Finance (akun peserta)",
+ "menit": 60,
+ "data_awal": "Pemasok 'Latihan NN · Pemasok Grey Peserta NN' (termin NET30) dan akun Finance peserta. Barang: Grey Woven Katun Poplin (DMO-GRY-WVN-001, warna Natural) 7.500 yard (75 roll × 100 yard) × Rp 14.000 = DPP Rp 105.000.000, PPN Rp 11.550.000, total Rp 116.550.000, dikirim ke Gudang Sukacita Jakarta. Langkah Gudang, Manajer, Admin, Kepala Gudang, dan MD Quality diperagakan pelatih; peserta mengerjakan langkah Finance. Nomor dokumen berbeda per peserta (contoh peserta 34: PR-00009, KSC/PO-00047, VB-00046, KSC/CB-00006).",
+ "alur": [
+  {
+   "peran": "Gudang",
+   "label": "Ajukan permintaan pembelian (PR)"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Setujui PR"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Ubah PR menjadi PO"
+  },
+  {
+   "peran": "Admin",
+   "label": "Setujui PO (≥ Rp 100 juta)",
+   "cabang": "Pembuat PO tidak boleh menyetujui sendiri"
+  },
+  {
+   "peran": "Gudang",
+   "label": "Terima 75 roll di Jakarta"
+  },
+  {
+   "peran": "Kepala Gudang",
+   "label": "Tugaskan SPK kedatangan"
+  },
+  {
+   "peran": "MD Quality",
+   "label": "Periksa warna & handfeel, terima"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Catat tagihan pemasok",
+   "cabang": "Ada selisih → menunggu persetujuan"
+  },
+  {
+   "peran": "Finance",
+   "label": "Periksa 3-way match"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Buat & verifikasi kontrabon"
+  },
+  {
+   "peran": "Admin",
+   "label": "Setujui kontrabon"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Jadwalkan pembayaran"
+  },
+  {
+   "peran": "Finance",
+   "label": "Bayar dari BCA Operasional"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cocokkan mutasi bank"
+  },
+  {
+   "peran": "Finance",
+   "label": "Cek GR/IR & jejak dokumen"
+  }
+ ],
+ "navigasi": [
+  {
+   "menu": "Pembelian › Pengadaan › Permintaan Pembelian",
+   "nav_id": "sourcing",
+   "tab": "purchase-requisitions",
+   "peran": "Gudang"
+  },
+  {
+   "menu": "Pusat Persetujuan › Persetujuan Pembelian",
+   "nav_id": "approval-inbox",
+   "tab": "purchase-approval",
+   "peran": "Manajer"
+  },
+  {
+   "menu": "Gudang & Logistik › Operasi Gudang › Barang Masuk",
+   "nav_id": "wms-operations",
+   "tab": "goods-receipts",
+   "peran": "Gudang"
+  },
+  {
+   "menu": "Kualitas › SPK Inspeksi",
+   "nav_id": "quality-hub",
+   "tab": "inspections",
+   "peran": "MD Quality"
+  },
+  {
+   "menu": "Keuangan › Hutang › Tagihan",
+   "nav_id": "accounts-payable",
+   "tab": "vendor-bills",
+   "peran": "Finance"
+  },
+  {
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "nav_id": "accounts-payable",
+   "tab": "contra-bons",
+   "peran": "Finance"
+  },
+  {
+   "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
+   "nav_id": "cash-bank",
+   "tab": "bank-reconciliation",
+   "peran": "Finance"
+  },
+  {
+   "menu": "Keuangan › Hutang › GR/IR (Diterima Belum Ditagih)",
+   "nav_id": "accounts-payable",
+   "tab": "gr-ir",
+   "peran": "Finance"
+  },
+  {
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "nav_id": "document-center",
+   "tab": "doc-trace",
+   "peran": "Finance"
+  }
+ ],
+ "langkah": [
+  {
+   "no": 1,
+   "peran": "Gudang",
+   "menu": "Pembelian › Pengadaan › Permintaan Pembelian",
+   "aksi": "Masuk sebagai Gudang (warehouse@). Klik [[PR Baru]].",
+   "isi": "",
+   "hasil": "Pop-up \"Buat Permintaan Pembelian\" terbuka.",
+   "gambar": "uji/hasil/A2/01-gudang-pr-baru.png"
+  },
+  {
+   "no": 2,
+   "peran": "Gudang",
+   "menu": "Pop-up Buat Permintaan Pembelian",
+   "aksi": "Pilih artikel, lalu warna. Klik [[Tambah]].",
+   "isi": "*1. Pilih artikel*: DMO-GRY-WVN-001 · Grey Woven Katun Poplin · *2. Pilih warna*: Natural · grade A",
+   "hasil": "Baris barang muncul dengan pemenuhan \"Beli ke Supplier\".",
+   "gambar": "uji/hasil/A2/02-gudang-pilih-barang.png"
+  },
+  {
+   "no": 3,
+   "peran": "Gudang",
+   "menu": "Pop-up Buat Permintaan Pembelian",
+   "aksi": "Isi jumlah, lokasi, dan pemasok. Klik [[Simpan PR]].",
+   "isi": "*Qty*: 7500 · *Roll*: 75 · *Est. Harga*: 14000 · *Lokasi kirim*: Jakarta · *Supplier Preferensi*: klik \"Tampilkan semua supplier\", pilih Latihan NN · Pemasok Grey Peserta NN · *Alasan*: stok grey untuk celup · biarkan centang *Langsung ajukan persetujuan*",
+   "hasil": "Total Estimasi Rp 105.000.000. Sesudah disimpan muncul \"PR-… dibuat.\" dan PR berstatus Menunggu Persetujuan (contoh peserta 34: PR-00009).",
+   "gambar": "uji/hasil/A2/03-gudang-isi-pr.png"
+  },
+  {
+   "no": 4,
+   "peran": "Manajer",
+   "menu": "Pembelian › Pengadaan › Permintaan Pembelian",
+   "aksi": "Masuk sebagai Manajer (manager@). Ketik nomor PR di kotak cari, lalu klik [[Detail →]].",
+   "isi": "",
+   "hasil": "Rincian PR: Persetujuan \"Perlu Manajer\", Total Estimasi Rp 105.000.000, dibuat oleh Eko Warehouse.",
+   "gambar": "uji/hasil/A2/05-manajer-daftar-pr.png"
+  },
+  {
+   "no": 5,
+   "peran": "Manajer",
+   "menu": "Rincian PR",
+   "aksi": "Klik [[Setujui]], lalu [[Setujui PR]] pada konfirmasi.",
+   "isi": "",
+   "hasil": "Konfirmasi \"Setujui PR-…? Estimasi Rp 105.000.000…\". Sesudahnya status Disetujui dan panel \"Pemenuhan & Realisasi\" muncul.",
+   "gambar": "uji/hasil/A2/07-manajer-konfirmasi-pr.png"
+  },
+  {
+   "no": 6,
+   "peran": "Manajer",
+   "menu": "Rincian PR",
+   "aksi": "Klik [[Konversi ke PO]]. Periksa pemasok dan lokasi, lalu klik [[Buat PO]].",
+   "isi": "*Supplier*: terisi dari supplier preferensi · *Lokasi kirim*: Jakarta · *Estimasi tanggal terima*: opsional",
+   "hasil": "PR berstatus Jadi PO dengan \"PO terkait: KSC/PO-00047\" (contoh peserta 34). PO bernilai Rp 116.550.000 (DPP Rp 105.000.000 + PPN Rp 11.550.000) dan menunggu persetujuan.",
+   "gambar": "uji/hasil/A2/08-manajer-konversi-po.png"
+  },
+  {
+   "no": 7,
+   "peran": "Manajer",
+   "menu": "Pusat Persetujuan › Persetujuan Pembelian",
+   "aksi": "Buka Pusat Persetujuan › Persetujuan Pembelian. Ketik nomor PO di kotak cari.",
+   "isi": "",
+   "hasil": "Baris PO: Total Rp 116.550.000, DPP Rp 105.000.000, Tingkat 1 dari 1, Menunggu. Kolom Aksi bergembok \"PO Anda — disetujui orang lain\" (Manajer pembuat PO tidak bisa menyetujui).",
+   "gambar": "uji/hasil/A2/10-manajer-po-terkunci.png"
+  },
+  {
+   "no": 8,
+   "peran": "Admin",
+   "menu": "Pusat Persetujuan › Persetujuan Pembelian",
+   "aksi": "Masuk sebagai Admin (admin@). Cari PO, lalu klik [[Setujui]].",
+   "isi": "",
+   "hasil": "Pesan \"PO KSC/PO-… disetujui penuh. Tugas Barang Masuk untuk gudang otomatis dibuat.\"",
+   "gambar": "uji/hasil/A2/11-admin-setujui-po.png"
+  },
+  {
+   "no": 9,
+   "peran": "Gudang",
+   "menu": "Gudang & Logistik › Operasi Gudang › Barang Masuk › Scan Terima per PO",
+   "aksi": "Masuk sebagai Gudang. Buka tab Scan Terima per PO, cari nomor PO, lalu klik tugasnya.",
+   "isi": "",
+   "hasil": "Tugas PO: 0/7.500 yard · rencana 75 roll, status Menunggu barang. Panel kanan berisi pilihan Scan Label Supplier / Input Manual.",
+   "gambar": "uji/hasil/A2/14-gudang-tugas-po.png"
+  },
+  {
+   "no": 10,
+   "peran": "Gudang",
+   "menu": "Panel tugas penerimaan",
+   "aksi": "Klik [[Input Manual]]. Isi jumlah diterima, lalu klik [[Kirim Hasil Scan]].",
+   "isi": "*Qty diterima*: 7500 (Yard) · *Dye Lot*: nomor lot celup pada surat jalan (contoh DL-A2-NN)",
+   "hasil": "Pesan \"Penerimaan tercatat — Diterima 7.500 dari 7.500 yard\"; tombol [[Selesaikan]] muncul.",
+   "gambar": "uji/hasil/A2/15-gudang-input-manual.png"
+  },
+  {
+   "no": 11,
+   "peran": "Gudang",
+   "menu": "Pop-up Goods Receipt — Rincian Roll",
+   "aksi": "Klik [[Selesaikan]], lalu [[Buat 75 roll (bagi rata 7.500 yard)]]. Isi identitas lot, lalu klik [[Selesaikan Penerimaan]].",
+   "isi": "*Nomor lot supplier*: dari surat jalan · *Nomor SJ supplier*: nomor surat jalan pemasok · *Dye lot* tiap roll: sama dengan surat jalan",
+   "hasil": "Rencana PO 75 roll · form berisi 75 roll ✓ (75 × 100 yard). Sesudahnya: \"Penerimaan selesai · lot terbentuk\", tugas Menunggu QC, 75 roll masuk karantina, SPK kedatangan terbit.",
+   "gambar": "uji/hasil/A2/16-gudang-rincian-roll.png"
+  },
+  {
+   "no": 12,
+   "peran": "Kepala Gudang",
+   "menu": "Kualitas › SPK Inspeksi",
+   "aksi": "Masuk sebagai Kepala Gudang (wh.admin@). Ketik nomor SPK, lalu buka SPK-nya.",
+   "isi": "",
+   "hasil": "SPK Inspeksi Penerimaan PO berstatus Draf berisi 75 roll (contoh peserta 34: KSC/INS-00052).",
+   "gambar": "uji/hasil/A2/18-kepala-gudang-daftar-spk.png"
+  },
+  {
+   "no": 13,
+   "peran": "Kepala Gudang",
+   "menu": "Rincian SPK",
+   "aksi": "Pilih petugas, lalu klik [[Tugaskan]].",
+   "isi": "*Tugaskan ke petugas inspect*: Lestari Wulandari (MD Quality)",
+   "hasil": "Status SPK berubah menjadi Ditugaskan.",
+   "gambar": "uji/hasil/A2/19-kepala-gudang-tugaskan.png"
+  },
+  {
+   "no": 14,
+   "peran": "MD Quality",
+   "menu": "Kualitas › SPK Inspeksi",
+   "aksi": "Masuk sebagai MD Quality (mdquality@). Buka SPK, lalu klik [[MD Quality]] pada roll pertama.",
+   "isi": "",
+   "hasil": "Pop-up pemeriksaan warna & handfeel roll pertama terbuka.",
+   "gambar": "uji/hasil/A2/20-mdq-baris-pertama.png"
+  },
+  {
+   "no": 15,
+   "peran": "MD Quality",
+   "menu": "Pop-up pemeriksaan roll",
+   "aksi": "Isi hasil banding, lalu klik [[Simpan hasil]].",
+   "isi": "*Hasil banding WARNA*: Sesuai sample · *Hasil banding HANDFEEL*: Sesuai sample · *Catatan*: opsional",
+   "hasil": "Baris roll pertama bertanda Sesuai sample; \"1/75 roll dicek (wajib 1)\".",
+   "gambar": "uji/hasil/A2/21-mdq-isi-hasil.png"
+  },
+  {
+   "no": 16,
+   "peran": "MD Quality",
+   "menu": "Rincian SPK",
+   "aksi": "Pilih keputusan akhir, lalu klik [[Tutup SPK]].",
+   "isi": "*Keputusan akhir*: Diterima seluruhnya",
+   "hasil": "SPK Selesai · Diterima seluruhnya. 75 roll lepas karantina menjadi stok tersedia; PO berstatus Selesai.",
+   "gambar": "uji/hasil/A2/22-mdq-tutup-spk.png"
+  },
+  {
+   "no": 17,
+   "peran": "Manajer",
+   "menu": "Keuangan › Hutang › Tagihan",
+   "aksi": "Masuk sebagai Manajer. Klik [[Tagihan baru]], lalu pilih PO dan isi nomor faktur.",
+   "isi": "*Pesanan Pembelian*: KSC/PO-… · Latihan NN · Pemasok Grey Peserta NN · *No. Faktur Supplier*: nomor faktur dari pemasok",
+   "hasil": "Baris terisi otomatis: tagih 7.500 yard (= diterima) × Rp 14.000; pencocokan \"Cocok Bersih\"; Subtotal (sebelum PPN) Rp 105.000.000.",
+   "gambar": "uji/hasil/A2/25-manajer-isi-tagihan.png"
+  },
+  {
+   "no": 18,
+   "peran": "Manajer",
+   "menu": "Pop-up Tagihan baru",
+   "aksi": "Klik [[Kirim & Posting]].",
+   "isi": "",
+   "hasil": "Pesan \"Tagihan VB-… dibuat — langsung terposting (cocok bersih).\" Rincian: Total Rp 116.550.000, PPN Masukan Rp 11.550.000, Sisa Hutang Rp 116.550.000 (contoh peserta 34: VB-00046).",
+   "gambar": "uji/hasil/A2/26-tagihan-terposting.png"
+  },
+  {
+   "no": 19,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Tagihan",
+   "aksi": "Masuk dengan akun peserta. Ketik \"Latihan NN\" di kotak cari, lalu klik [[Detail →]].",
+   "isi": "",
+   "hasil": "Rincian tagihan: Terposting · Match Bersih; \"3-way match bersih: qty & harga sesuai PO/penerimaan.\"; Pesan 7.500 = Terima 7.500 = Tagih 7.500; Harga PO = Harga Bill Rp 14.000; Dokumen Terkait: PO dan jurnal.",
+   "gambar": "uji/hasil/A2/29-finance-3way-match.png"
+  },
+  {
+   "no": 20,
+   "peran": "Manajer",
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "aksi": "Klik [[Kontrabon baru]], pilih pemasok, lalu klik [[Lanjut]]. Centang hanya tagihan VB-… peserta, lalu klik [[Lanjut]].",
+   "isi": "*Supplier*: Latihan NN · Pemasok Grey Peserta NN",
+   "hasil": "Langkah 2 \"Pilih faktur\": baris VB-… (PO KSC/PO-…, jatuh tempo +30 hari, sisa hutang Rp 116.550.000) tercentang; \"Terpilih 1 faktur dari 1 PO · nilai Rp 116.550.000\".",
+   "gambar": "uji/hasil/A2/31-manajer-kontrabon-faktur.png"
+  },
+  {
+   "no": 21,
+   "peran": "Manajer",
+   "menu": "Wizard Kontrabon",
+   "aksi": "Centang *Ajukan langsung*, lalu klik [[Terbitkan kontrabon]].",
+   "isi": "",
+   "hasil": "Bilah hijau \"Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp 116.550.000.\"; status Diajukan (contoh peserta 34: KSC/CB-00006).",
+   "gambar": "uji/hasil/A2/32-manajer-kontrabon-periksa.png"
+  },
+  {
+   "no": 22,
+   "peran": "Manajer",
+   "menu": "Rincian kontrabon",
+   "aksi": "Klik [[Verifikasi 3-way match]].",
+   "isi": "",
+   "hasil": "Pesan \"… terverifikasi — 3-way match dijalankan ulang.\"; status Terverifikasi.",
+   "gambar": "uji/hasil/A2/33-manajer-verifikasi-kontrabon.png"
+  },
+  {
+   "no": 23,
+   "peran": "Admin",
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "aksi": "Masuk sebagai Admin. Buka kontrabon, lalu klik [[Setujui kontrabon]].",
+   "isi": "",
+   "hasil": "Status Disetujui (orang kedua menyetujui).",
+   "gambar": "uji/hasil/A2/34-admin-setujui-kontrabon.png"
+  },
+  {
+   "no": 24,
+   "peran": "Manajer",
+   "menu": "Rincian kontrabon",
+   "aksi": "Klik [[Jadwalkan pembayaran]]. Pilih rekening, lalu klik [[Simpan jadwal bayar]].",
+   "isi": "*Tanggal rencana*: biarkan (= jatuh tempo) · *Cara bayar*: Transfer bank · *Rekening rencana*: BCA Operasional KSC",
+   "hasil": "Status Dijadwalkan bayar; tanggal rencana = jatuh tempo NET30.",
+   "gambar": "uji/hasil/A2/36-manajer-jadwal-bayar.png"
+  },
+  {
+   "no": 25,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › Kontrabon",
+   "aksi": "Masuk dengan akun peserta. Cari nomor kontrabon, buka, lalu klik [[Catat pembayaran]].",
+   "isi": "",
+   "hasil": "Form \"Bayar pemasok\": Kontrabon KSC/CB-…, Sisa Rp 116.550.000, rekening BCA Operasional KSC terisi dari jadwal.",
+   "gambar": "uji/hasil/A2/37-finance-catat-pembayaran.png"
+  },
+  {
+   "no": 26,
+   "peran": "Finance",
+   "menu": "Form Bayar pemasok",
+   "aksi": "Klik [[Bayar]], baca konfirmasinya, lalu klik [[Ya, bayar]].",
+   "isi": "",
+   "hasil": "Konfirmasi \"Bayar Rp 116.550.000 ke Latihan NN · Pemasok Grey Peserta NN dari BCA Operasional KSC … untuk Sukacita?\". Sesudahnya status kontrabon Sudah dibayar dan tagihan Lunas.",
+   "gambar": "uji/hasil/A2/39-finance-konfirmasi-bayar.png"
+  },
+  {
+   "no": 27,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
+   "aksi": "Pilih rekening BCA Operasional KSC. Klik [[Impor mutasi bank]], tempel baris rekening koran, lalu klik [[Pratinjau]] dan [[Impor]].",
+   "isi": "*Template bank*: BCA — Rekening Koran (CSV) · teks: baris judul + 1 baris \"TRSF E-BANKING DB KSC/CB-… LATIHAN NN PEMASOK GREY\" Rp 116.550.000 DB",
+   "hasil": "\"Terbaca 1 baris … keluar Rp 116.550.000\"; sesudah impor: \"1 baris baru, 0 dilewati\".",
+   "gambar": "uji/hasil/A2/42-finance-rekon-pratinjau.png"
+  },
+  {
+   "no": 28,
+   "peran": "Finance",
+   "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
+   "aksi": "Ketik \"LATIHAN NN\" di kotak cari mutasi. Klik [[Cocokkan]], lalu [[Tautkan]] pada kandidat kas pembayaran.",
+   "isi": "",
+   "hasil": "Kandidat KSC/CASH-… \"Pembayaran kontrabon KSC/CB-…\" skor 93 (nominal sama, tanggal sama, nomor referensi cocok). Sesudahnya baris mutasi Tercocok.",
+   "gambar": "uji/hasil/A2/44-finance-rekon-kandidat.png"
+  },
+  {
+   "no": 29,
+   "peran": "Finance",
+   "menu": "Keuangan › Hutang › GR/IR (Diterima Belum Ditagih)",
+   "aksi": "Ketik nomor PO di kotak cari. Centang *Tampilkan yang sudah nol*.",
+   "isi": "",
+   "hasil": "Baris PO: Selesai, Nilai diterima Rp 105.000.000 = Sudah ditagih Rp 105.000.000, Sisa GR/IR Rp 0.",
+   "gambar": "uji/hasil/A2/46-finance-grir-nol.png"
+  },
+  {
+   "no": 30,
+   "peran": "Finance",
+   "menu": "Pusat Dokumen › Jejak Dokumen",
+   "aksi": "Ketik nomor PO di *Cari dokumen*, lalu klik hasilnya.",
+   "isi": "",
+   "hasil": "Rantai & daftar relasi: PR-00009 → KSC/PO-00047 → penerimaan & SPK → VB-00046 → KSC/CB-00006 → KSC/CASH-00044 → jurnal KSC/JE-00376, KSC/JE-00381, KSC/JE-00383 (contoh peserta 34).",
+   "gambar": "uji/hasil/A2/47-finance-jejak-dokumen.png"
+  }
+ ],
+ "jurnal_per_tahap": [
+  {
+   "tahap": "PR diajukan & disetujui",
+   "dokumen": "PR (contoh peserta 34: PR-00009)",
+   "jurnal": "Tidak ada jurnal (baru rencana kebutuhan)"
+  },
+  {
+   "tahap": "PO dibuat & disetujui",
+   "dokumen": "PO (KSC/PO-00047)",
+   "jurnal": "Tidak ada jurnal (janji beli; dipakai untuk pencocokan)"
+  },
+  {
+   "tahap": "Barang diterima gudang (75 roll, masuk karantina)",
+   "dokumen": "Penerimaan barang · jurnal KSC/JE-00376",
+   "jurnal": "1-1300 Persediaan Barang (D) Rp 105.000.000 · 2-1150 Hutang Belum Ditagih (GR/IR) (K) Rp 105.000.000"
+  },
+  {
+   "tahap": "SPK kedatangan diterima MD Quality",
+   "dokumen": "SPK KSC/INS-00052",
+   "jurnal": "Tidak ada jurnal (status roll: karantina → tersedia)"
+  },
+  {
+   "tahap": "Tagihan pemasok terposting (3-way match bersih)",
+   "dokumen": "Tagihan VB-00046 · jurnal KSC/JE-00381",
+   "jurnal": "2-1150 GR/IR (D) Rp 105.000.000 · 1-1500 PPN Masukan (D) Rp 11.550.000 · 2-1100 Hutang Usaha (K) Rp 116.550.000"
+  },
+  {
+   "tahap": "Kontrabon diajukan, diverifikasi, disetujui, dijadwalkan",
+   "dokumen": "Kontrabon KSC/CB-00006",
+   "jurnal": "Tidak ada jurnal (tanda terima faktur & rencana bayar)"
+  },
+  {
+   "tahap": "Kontrabon dibayar Finance",
+   "dokumen": "Transaksi kas KSC/CASH-00044 · jurnal KSC/JE-00383",
+   "jurnal": "2-1100 Hutang Usaha (D) Rp 116.550.000 · 1-1100 Kas Besar / Bank (K) Rp 116.550.000"
+  },
+  {
+   "tahap": "Mutasi rekening koran dicocokkan",
+   "dokumen": "Baris mutasi BCA → transaksi kas",
+   "jurnal": "Tidak ada jurnal baru (hanya menandai kas terekonsiliasi)"
+  }
+ ],
+ "titik_kontrol": [
+  "PR mulai Rp 50 juta wajib disetujui Manajer sebelum bisa dijadikan PO.",
+  "PO mulai Rp 100 juta wajib disetujui; pembuat PO tidak bisa menyetujuinya sendiri (layar menulis \"PO Anda — disetujui orang lain\").",
+  "Barang yang diterima masuk karantina sampai SPK kedatangan ditutup MD Quality; stok baru bisa dijual sesudah diterima.",
+  "3-way match di tagihan: jumlah tagih tidak boleh melebihi jumlah diterima; selisih harga di atas toleransi butuh persetujuan.",
+  "Nomor faktur pemasok tidak boleh dipakai dua kali untuk pemasok yang sama (cegah tagihan ganda).",
+  "Kontrabon: diverifikasi ulang 3-way match, disetujui orang kedua (Admin), dijadwalkan, baru dibayar Finance.",
+  "Rekonsiliasi bank: setiap pembayaran harus punya pasangan mutasi di rekening koran."
+ ],
+ "cek_buku": [
+  "Jurnal penerimaan barang (contoh peserta 34: KSC/JE-00376): 1-1300 Persediaan Barang (D) Rp 105.000.000 · 2-1150 Hutang Belum Ditagih (GR/IR) (K) Rp 105.000.000 — seimbang.",
+  "Jurnal tagihan pemasok (KSC/JE-00381): 2-1150 GR/IR (D) Rp 105.000.000 + 1-1500 PPN Masukan (D) Rp 11.550.000 · 2-1100 Hutang Usaha (K) Rp 116.550.000 — seimbang.",
+  "Jurnal pembayaran (KSC/JE-00383, sumber kas KSC/CASH-00044): 2-1100 Hutang Usaha (D) Rp 116.550.000 · 1-1100 Kas Besar / Bank (K) Rp 116.550.000 — seimbang; kas keluar dari BCA Operasional KSC.",
+  "Sisa GR/IR PO = diterima Rp 105.000.000 − ditagih Rp 105.000.000 = Rp 0. Sisa Hutang Usaha tagihan = Rp 0 (Lunas).",
+  "Mutasi BCA 'TRSF E-BANKING DB … LATIHAN NN PEMASOK GREY' Rp 116.550.000 berstatus Tercocok ke kas pembayaran; tidak ada jurnal baru."
+ ],
+ "kesalahan_umum": [
+  "Membayar tagihan tanpa membuka rinciannya: periksa dulu \"Match Bersih\" dan Pesan = Terima = Tagih.",
+  "Mencari jurnal PPN di jurnal penerimaan barang: PPN Masukan baru tercatat saat tagihan pemasok terposting, bukan saat barang datang.",
+  "Mengira hutang sudah lunas setelah kontrabon disetujui: kontrabon hanya tanda terima & rencana bayar; hutang berkurang saat Finance mencatat pembayaran.",
+  "Memilih kandidat milik peserta lain saat mencocokkan mutasi: pilih kandidat dengan nomor kontrabon dan nama pemasok Anda."
+ ],
+ "catatan_pelatih": "Langkah non-Finance diperagakan pelatih dengan akun peran (warehouse@, manager@, admin@, wh.admin@, mdquality@; sandi demo12345); peserta mengikuti di layar lalu mengerjakan langkah Finance (periksa tagihan, bayar kontrabon, rekonsiliasi, GR/IR, Jejak Dokumen). Supaya tiap peserta punya kontrabon sendiri, siapkan rantainya lewat layar sebelum kelas: `KN_SAMPAI=21 KN_PESERTA=NN node docs/pelatihan/2026-11-18_keuangan/uji/e2e/A2_procure_to_pay.js` (± 6 menit per peserta; berhenti saat kontrabon Dijadwalkan bayar), atau peragakan satu rantai lengkap di depan kelas. Nilai sengaja Rp 105 juta supaya persetujuan PR (≥ Rp 50 juta) dan PO (≥ Rp 100 juta) benar-benar muncul; pembelian kecil (mis. F11 Rp 1,68 juta) disetujui otomatis. Di rincian PR ada dua tombol ke PO: [[Konversi ke PO]] (seluruh PR) dan [[Realisasi ke PO]] di panel Pemenuhan & Realisasi (bisa pilih baris) — hasilnya sama untuk PR satu baris. Tulisan \"Roll langsung ke gedung simpan\" di panel penerimaan hanya soal gedung penempatan rak; pemeriksaan kedatangan MD Quality tetap berlaku. MD Quality cukup memeriksa contoh (minimal 1 roll); roll lain ditandai \"lolos lewat sampling\". Rincian tagihan menampilkan \"Belum ada kedatangan (GRN) tertutup\" karena PT Sukacita masih memakai penerimaan Scan Terima per PO — normal. Label \"PPN 12%\" di kaki tagihan = tarif 12% atas DPP nilai lain (11/12), jadi nilainya 11% dari DPP. Nomor PR dan tagihan (PR-…, VB-…) belum memakai awalan PT seperti PO (KSC/PO-…). Keterangan jurnal sistem masih berbahasa Inggris (\"Goods Receipt …\", \"Vendor Bill …\"). Penting: setiap rantai mengeluarkan Rp 116.550.000 dari BCA Operasional KSC (saldo buku 17 Nov sore ± Rp 620 juta) dan sistem tidak menolak pembayaran walau saldo menjadi minus — siapkan paling banyak 4 rantai, sisanya peragakan bersama. Semua peserta memakai rekening yang sama; saldo bergerak selama sesi.",
+ "uji": {
+  "berkas": "uji/e2e/A2_procure_to_pay.js",
+  "peserta_uji": "34"
+ }
+}

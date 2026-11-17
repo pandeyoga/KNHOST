@@ -93,8 +93,11 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
     if (po.status !== "waiting_approval" || !pendingLevelOf(getChain(po))) return false;
     if (!decide[po.id]?.allowed) return false;
     // SoD — pembuat tidak boleh menyetujui PO sendiri.
-    if (role !== "admin" && po.created_by_id && currentUser?.id && po.created_by_id === currentUser.id) return false;
+    if (isOwnPo(po)) return false;
     return true;
+  }
+  function isOwnPo(po) {
+    return role !== "admin" && !!po.created_by_id && !!currentUser?.id && po.created_by_id === currentUser.id;
   }
   function canRejectNow(po) {
     return po.status === "waiting_approval" && !!pendingLevelOf(getChain(po)) && !!decide[po.id]?.allowed;
@@ -125,7 +128,7 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
         const next = pendingLevelOf(getChain(updated));
         setNotice(`PO ${po.po_number}: tingkat disetujui. Lanjut menunggu persetujuan ${roleLabel(next?.required_role)}.`);
       } else {
-        setNotice(`PO ${po.po_number} disetujui penuh. Inbound task otomatis dibuat.`);
+        setNotice(`PO ${po.po_number} disetujui penuh. Tugas Barang Masuk untuk gudang otomatis dibuat.`);
       }
       await loadPOs();
     } catch (e) {
@@ -251,9 +254,12 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
                             </>
                           ) : (
                             <span data-testid={`po-approve-locked-${po.id}`}
+                              title={isOwnPo(po) ? "Pembuat PO tidak boleh menyetujui PO-nya sendiri (kontrol dua orang)" : undefined}
                               className="flex items-center gap-1 text-[10.5px] text-[#9A5B00] text-right leading-tight">
                               <Lock size={11} className="shrink-0" />
-                              {rejectOk ? "—" : (decide[po.id]?.message ? "Belum berwenang" : "Menunggu persetujuan")}
+                              {/* A2 (pelatihan 18 Nov) — dulu pembuat PO hanya melihat "—" tanpa alasan. */}
+                              {isOwnPo(po) ? "PO Anda — disetujui orang lain"
+                                : rejectOk ? "—" : (decide[po.id]?.message ? "Belum berwenang" : "Menunggu persetujuan")}
                             </span>
                           )
                         ) : (

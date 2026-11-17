@@ -42,6 +42,10 @@ def _hydrate(bill: Dict[str, Any]) -> Dict[str, Any]:
 
 # ── Billing context (pre-fill form) — STATIC sebelum route /{id} ──────────────
 
+# A2 (pelatihan 18 Nov) — label Riwayat tagihan dalam Bahasa Indonesia (dulu "match: matched").
+_MATCH_LABEL = {"matched": "cocok bersih", "warning": "ada selisih (perlu persetujuan)", "blocked": "lebih tagih"}
+
+
 @router.get("/purchase-orders/{po_id}/billing-context")
 async def po_billing_context(po_id: str, request: Request) -> Dict[str, Any]:
     """Konteks penagihan PO untuk membuat Vendor Bill (ordered/received/billed/billable)."""
@@ -356,10 +360,13 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
                            returned_unbilled=await returned_unbilled_map(po["id"]))   # PK-28
 
     bill_number = await next_bill_number(entity_id)   # KP-T5 — PT dokumen (N1)
-    actor_name = payload.created_by or actor.get("name", "Admin")
+    # A2 (pelatihan 18 Nov) — nama pembuat = akun yang masuk; `created_by` kiriman layar (bawaan skema "Admin") hanya
+    # cadangan. Dulu setiap tagihan dari layar tercatat "dibuat Admin" di Riwayat walau dibuat Manajer.
+    actor_name = actor.get("name") or payload.created_by or "Admin"
     needs_approval = match["match_status"] == "warning"
-    timeline = [timeline_entry("created", "Vendor Bill dibuat", actor_name,
-                               f"{len(match['items'])} item · {rupiah(pricing['grand_total'])} · match: {match['match_status']}")]
+    timeline = [timeline_entry("created", "Tagihan pemasok dibuat", actor_name,
+                               f"{len(match['items'])} item · {rupiah(pricing['grand_total'])} · "
+                               f"3-way match: {_MATCH_LABEL.get(match['match_status'], match['match_status'])}")]
 
     bill = {
         "id": new_id("vbill"),
@@ -482,7 +489,7 @@ async def _do_submit(bill_id: str, actor: Dict[str, Any], locked: bool = False) 
                     {"bill_number": bill.get("bill_number"), "to": "pending_approval"})
         return _hydrate(safe_doc(updated))
     # tanpa approval → langsung posted
-    return await _post_bill(bill_id, actor, note="auto-posted (match bersih)")
+    return await _post_bill(bill_id, actor, note="otomatis diposting (3-way match bersih)")
 
 
 async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dict[str, Any]:
@@ -499,7 +506,7 @@ async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dic
         {"$set": {"status": "posted", "approval_status": "approved" if note.startswith("disetujui") else "not_required",
                   "posted_by": actor.get("name", ""), "posted_at": now_iso(), "updated_at": now_iso(),
                   "gl_status": "pending", **_grir},   # PK-18 — efek ditulis, jurnal belum dicoba
-         "$push": {"timeline": timeline_entry("posted", "Bill di-posting (AP diakui)", actor.get("name", ""), note)}},
+         "$push": {"timeline": timeline_entry("posted", "Tagihan diposting (hutang diakui)", actor.get("name", ""), note)}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not updated:
         raise HTTPException(status_code=409, detail="Bill sudah di-posting/berubah oleh proses lain. Muat ulang.")
@@ -610,7 +617,7 @@ async def reject_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
         {"$set": {"status": "cancelled", "approval_status": "rejected",
                   "rejected_by": actor["name"], "rejection_reason": payload.notes,
                   "rejected_at": now_iso(), "updated_at": now_iso()},
-         "$push": {"timeline": timeline_entry("rejected", "Bill ditolak", actor["name"], payload.notes or "")}},
+         "$push": {"timeline": timeline_entry("rejected", "Tagihan ditolak", actor["name"], payload.notes or "")}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor["name"], "vendor_bill_rejected", "vendor_bill", bill_id,
                 {"bill_number": bill.get("bill_number"), "reason": payload.notes})
@@ -771,7 +778,7 @@ async def cancel_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
         {"id": bill_id},
         {**_saga.finish_set({"status": "cancelled", "cancelled_by": actor["name"],
                              "cancel_reason": payload.notes, "cancelled_at": now_iso(), "updated_at": now_iso()}),
-         "$push": {"timeline": timeline_entry("cancelled", "Bill dibatalkan", actor["name"], payload.notes or "")}},
+         "$push": {"timeline": timeline_entry("cancelled", "Tagihan dibatalkan", actor["name"], payload.notes or "")}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await sync_po_billing(bill["po_id"])
     await audit(actor["name"], "vendor_bill_cancelled", "vendor_bill", bill_id,

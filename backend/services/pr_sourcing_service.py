@@ -538,7 +538,16 @@ async def realize_many_to_po(pr_refs: List[Dict[str, Any]], *, supplier_id: str,
         for it in lines_by_pr[p["id"]]:
             q = round(float(it["quantity"]) - float(it.get("realized_qty") or 0), 3)
             m = merged.setdefault(it["product_id"], {"product_id": it["product_id"], "unit": it.get("unit") or "",
-                                                     "est_price": 0.0, "qty": 0.0, "allocations": [], "line_no": it.get("line_no")})
+                                                     "est_price": 0.0, "qty": 0.0, "allocations": [], "line_no": it.get("line_no"),
+                                                     "rolls": 0})
+            # A2 (pelatihan 18 Nov) — rencana roll baris PR ikut ke baris PO (dulu hilang → tugas gudang tanpa "rencana N
+            # roll" dan tombol "Buat N roll" di form penerimaan tidak muncul). Realisasi sebagian = sebanding sisa qty;
+            # satu baris PR tanpa rencana roll → baris PO tanpa rencana (bukan angka tebakan).
+            _rolls, _q_line = it.get("qty_rolls"), float(it.get("quantity") or 0)
+            if m["rolls"] is not None and _rolls not in (None, "") and _q_line > 0:
+                m["rolls"] += int(round(int(_rolls) * q / _q_line))
+            else:
+                m["rolls"] = None
             if (it.get("unit") or "") != m["unit"]:
                 raise SourcingError(f"{it.get('sku') or it['product_id']}: satuan di {p['number']} ({it.get('unit')}) beda dari "
                                     f"PR lain ({m['unit']}) — samakan satuannya atau realisasikan terpisah.")
@@ -570,6 +579,8 @@ async def realize_many_to_po(pr_refs: List[Dict[str, Any]], *, supplier_id: str,
             "quantity": qty, "unit": doc_unit,
             "base_unit": base_unit, "quantity_base": trail["base_qty"], "uom_trail": trail,
             "price": price, "discount_percent": 0, "received_qty": 0.0,
+            # FASE U — dua satuan: rencana roll dari PR (turunan `received_rolls` diisi penerimaan nyata).
+            "qty_rolls": it["rolls"] or None, "received_rolls": None,
             # FASE E — jejak sourcing pada baris PO
             "contract_id": src["contract_id"], "contract_number": src["contract_number"],
             "supplier_item_id": src["supplier_item_id"], "supplier_sku": src["supplier_sku"],

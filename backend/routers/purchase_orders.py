@@ -652,7 +652,9 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         approval_reason = force_reason if not approval_reason else f"{approval_reason}+{force_reason}"
 
     # Depth #3 — riwayat/timeline approval PO.
-    actor_name = payload.created_by or "Admin"
+    # A2 (pelatihan 18 Nov) — nama pembuat = akun yang masuk (bawaan skema `created_by` = "Admin" dulu tercatat di
+    # riwayat PO manual walau dibuat Manajer/MD); kiriman layar hanya cadangan.
+    actor_name = actor.get("name") or payload.created_by or "Admin"
     _created_label = "Call-off dibuat" if po_type == "call_off" else "PO dibuat"
     _created_detail = f"{len(items)} item · {rupiah(total_amount)}"
     if parent:
@@ -743,7 +745,7 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         # R6.3 — Budget Control: tag anggaran PO (default akun Persediaan bila tak di-tag)
         "budget_dimension": (payload.budget_dimension or "").strip(),
         "budget_key": (payload.budget_key or "").strip(),
-        "created_by": payload.created_by,
+        "created_by": actor_name,
         "created_by_id": actor.get("id", ""),
         "created_at": now_iso(),
         "updated_at": now_iso()

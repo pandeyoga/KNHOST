@@ -1,0 +1,262 @@
+{
+  "code": "A2",
+  "title": "Pengadaan sampai bayar (procure to pay) — PT Sukacita",
+  "ok": true,
+  "at": "2026-11-17T10:34:49.405Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Gudang",
+      "action": "Login warehouse@ → Pembelian › Pengadaan › tab Permintaan Pembelian → [[PR Baru]]",
+      "expect": "Pop-up \"Buat Permintaan Pembelian\": pilih artikel → warna → [[Tambah]], lalu lokasi kirim, supplier preferensi, alasan",
+      "ok": true,
+      "ms": 28767,
+      "info": "KNGrey Woven Katun Poplin · warna Natural SUPnama versi supplier belum diisi DMO-GRY-WVN-001 · yard Beli ke Supplier Rp Rp 14.000 Rp 1.400.000"
+    },
+    {
+      "no": 2,
+      "role": "Gudang",
+      "action": "Isi baris: *Qty* 7500 · *Roll* 75 · *Est. Harga* Rp 14.000; *Lokasi kirim* Jakarta; *Supplier Preferensi* (Tampilkan semua supplier) Latihan 34 · Pemasok Grey Peserta 34; *Alasan*; biarkan centang *Langsung ajukan persetujuan* → [[Simpan PR]]",
+      "expect": "Total Estimasi Rp 105.000.000; sesudah simpan: pesan \"PR-… dibuat.\", baris PR berstatus Menunggu Persetujuan (≥ Rp 50 juta → perlu Manajer)",
+      "ok": true,
+      "ms": 5434,
+      "info": "PR-00009 dibuat. × · PR-00009 pending_approval · Jakarta · Gudang Sukacita · peran pemutus manager"
+    },
+    {
+      "no": 3,
+      "role": "Manajer",
+      "action": "Login manager@ → Pembelian › Pengadaan › Permintaan Pembelian → baris PR → [[Detail →]] → [[Setujui]] → [[Setujui PR]]",
+      "expect": "Rincian PR: Persetujuan \"Perlu Manajer\", Total Estimasi; sesudah setuju status Disetujui dan panel \"Pemenuhan & Realisasi\" muncul",
+      "ok": true,
+      "ms": 25630,
+      "info": "Setujui PR-00009? Estimasi Rp 105.000.000. Setelah disetujui, PR bisa direalisasikan menjadi PO dan bahan untuk pesanan dicadangkan. Batal Setujui PR · disetujui oleh Dewi Manager"
+    },
+    {
+      "no": 4,
+      "role": "Manajer",
+      "action": "Di rincian PR klik [[Konversi ke PO]] → periksa *Supplier* (terisi dari supplier preferensi) & *Lokasi kirim* Jakarta → [[Buat PO]]",
+      "expect": "PO KSC/PO-… lahir dari PR (PR berstatus Jadi PO); nilai PO Rp 105.000.000 + PPN Rp 11.550.000 = Rp 116.550.000 → Menunggu persetujuan (≥ Rp 100 juta)",
+      "ok": true,
+      "ms": 11105,
+      "info": "KSC/PO-00047 status waiting_approval · persetujuan pending (manager) · DPP Rp 105.000.000 · PPN Rp 11.550.000 · total Rp 116.550.000"
+    },
+    {
+      "no": 5,
+      "role": "Manajer",
+      "action": "Pusat Persetujuan › tab Persetujuan Pembelian → cari nomor PO",
+      "expect": "Baris PO: Total (termasuk PPN) dan DPP, status Menunggu; kolom Aksi bergembok \"PO Anda — disetujui orang lain\" (pembuat ≠ penyetuju)",
+      "ok": true,
+      "ms": 5732,
+      "info": "KSC/PO-00047 Latihan 34 · Pemasok Grey Peserta 34 Jakarta · Gudang Sukacita · 1 item Rp 116.550.000 DPP Rp 105.000.000 MANAJER · PERSETUJUAN Tingkat 1 dari 1 Menunggu PO Anda — disetujui orang lain"
+    },
+    {
+      "no": 6,
+      "role": "Admin",
+      "action": "Login admin@ → Pusat Persetujuan › Persetujuan Pembelian → baris PO → [[Setujui]]",
+      "expect": "Pesan \"PO KSC/PO-… disetujui penuh…\"; PO pindah ke tab Disetujui; tugas Barang Masuk untuk Gudang Jakarta terbentuk (rencana 75 roll)",
+      "ok": true,
+      "ms": 47999,
+      "info": "PO KSC/PO-00047 disetujui penuh. Tugas Barang Masuk untuk gudang otomatis dibuat. × · disetujui oleh Budi Santoso · tugas waiting_goods 7500 yard rencana 75 roll di Jakarta · Gudang Sukacita"
+    },
+    {
+      "no": 7,
+      "role": "Gudang",
+      "action": "Login warehouse@ → Gudang › Operasi Gudang › tab Barang Masuk → tab Scan Terima per PO → cari nomor PO → klik tugasnya",
+      "expect": "Tugas PO: 0/7500 yard · rencana 75 roll, status Menunggu barang; panel kanan berisi pilihan Scan Label Supplier / Input Manual",
+      "ok": true,
+      "ms": 9872,
+      "info": "KSC/PO-00047 Menunggu barang Latihan 34 · Pemasok Grey Peserta 34 DMO-GRY-WVN-001 · Grey Woven Katun Poplin Jakarta · Gudang Sukacita 0/7.500 yard· rencana 75 roll 0%"
+    },
+    {
+      "no": 8,
+      "role": "Gudang",
+      "action": "Pilih [[Input Manual]] → *Qty diterima* 7500 (yard) · *Dye Lot* DL-A2-34 → [[Kirim Hasil Scan]]",
+      "expect": "Pesan \"Penerimaan tercatat — Diterima 7.500 dari 7.500 yard\"; muncul tombol [[Selesaikan]]",
+      "ok": true,
+      "ms": 3528,
+      "info": "tugas qc_check · diterima 7500"
+    },
+    {
+      "no": 9,
+      "role": "Gudang",
+      "action": "Klik [[Selesaikan]] → di pop-up \"Goods Receipt — Rincian Roll\" klik [[Buat 75 roll (bagi rata …)]] → isi *Lot supplier*, *No. SJ supplier* SJ-LTH34-YA5Z, Dye Lot tiap roll → [[Selesaikan Penerimaan]]",
+      "expect": "Form berisi 75 roll × 100 yard (Σ = 7.500 yard ✓); sesudah simpan: pesan \"Barang masuk gudang\", roll masuk karantina menunggu pemeriksaan kedatangan (SPK MD Quality)",
+      "ok": true,
+      "ms": 25643,
+      "info": "Σ 75 roll: 7500 yard · 0 kg(validasi panjang: 7500/7500 yard ✓) · tugas qc_pending · 75 roll (quarantine) · SPK KSC/INS-00052 draft md_only=true · jurnal GR posted"
+    },
+    {
+      "no": 10,
+      "role": "Buku",
+      "action": "Cek buku: jurnal penerimaan barang (GR)",
+      "expect": "Persediaan Barang 1-1300 (D) Rp 105.000.000 / Hutang Belum Ditagih (GR/IR) 2-1150 (K) Rp 105.000.000 — nilai PO tanpa PPN, seimbang",
+      "ok": true,
+      "ms": 1277,
+      "info": "KSC/JE-00376 seimbang D=K=105000000 [1-1300 Persediaan Barang D 105000000 · 2-1150 Hutang Belum Ditagih (GR/IR) K 105000000]"
+    },
+    {
+      "no": 11,
+      "role": "Kepala Gudang",
+      "action": "Login wh.admin@ → Kualitas › SPK Inspeksi → cari nomor SPK → buka → *Tugaskan ke petugas inspect* Lestari Wulandari (MD Quality) → [[Tugaskan]]",
+      "expect": "SPK kedatangan berstatus Draf berisi 75 roll; catatan \"SPK MD Quality (warna & handfeel)…\"; sesudah ditugaskan status Ditugaskan",
+      "ok": true,
+      "ms": 12863,
+      "info": "SPK KSC/INS-00052 assigned · 75 baris · md_only true · petugas "
+    },
+    {
+      "no": 12,
+      "role": "MD Quality",
+      "action": "Login mdquality@ → Kualitas › SPK Inspeksi → buka SPK → pada roll pertama klik [[MD Quality]] → *Hasil banding warna* Sesuai sample · *Hasil banding handfeel* Sesuai sample → [[Simpan hasil]]",
+      "expect": "Baris roll pertama: warna & handfeel Sesuai; \"Dicek MD Quality 1 dari 75 (sampling)\"",
+      "ok": true,
+      "ms": 14398,
+      "info": "roll RL-46694 · 1/75 roll dicek (wajib 1) roll yang tidak dicek lolos bertanda “MDQ sampling”"
+    },
+    {
+      "no": 13,
+      "role": "MD Quality",
+      "action": "Pada bagian Tindakan pilih *Keputusan akhir* Diterima seluruhnya → [[Tutup SPK]]",
+      "expect": "SPK Selesai · keputusan Diterima; 75 roll lepas karantina menjadi stok tersedia di Gudang Jakarta (roll yang tidak dicek ditandai \"lolos lewat sampling\")",
+      "ok": true,
+      "ms": 6872,
+      "info": "keputusan Diterima seluruhnya · roll {\"available\":75} · tugas completed · PO completed"
+    },
+    {
+      "no": 14,
+      "role": "Manajer",
+      "action": "Login manager@ → Keuangan › Hutang › Tagihan → [[Tagihan baru]] → *Pesanan Pembelian* PO peserta · *No. Faktur Supplier* INV-A2-34-JVKSM",
+      "expect": "Baris PO terisi otomatis: tagih 7.500 yard (= diterima) × Rp 14.000; pencocokan \"Cocok bersih\"; Subtotal (sebelum PPN) Rp 105.000.000",
+      "ok": true,
+      "ms": 20813,
+      "info": "Cocok Bersih toleransi qty 0% · harga ±5% · subtotal Rp 105.000.000 · tombol \"Kirim & Posting\""
+    },
+    {
+      "no": 15,
+      "role": "Manajer",
+      "action": "Klik [[Kirim & Posting]]",
+      "expect": "Pesan \"Tagihan VB-… dibuat — langsung terposting (cocok bersih).\"; rincian: Total Rp 116.550.000 = DPP Rp 105.000.000 + PPN Masukan Rp 11.550.000, Sisa Hutang Rp 116.550.000, jatuh tempo NET30",
+      "ok": true,
+      "ms": 2893,
+      "info": "Tagihan VB-00046 dibuat — langsung terposting (cocok bersih). × · VB-00046 jatuh tempo 2026-12-17 · DPP Rp 105.000.000 · PPN Rp 11.550.000 · total Rp 116.550.000"
+    },
+    {
+      "no": 16,
+      "role": "Buku",
+      "action": "Cek buku: jurnal tagihan pemasok",
+      "expect": "GR/IR 2-1150 (D) Rp 105.000.000 + PPN Masukan 1-1500 (D) Rp 11.550.000 / Hutang Usaha 2-1100 (K) Rp 116.550.000, seimbang; sisa GR/IR PO = 0",
+      "ok": true,
+      "ms": 1412,
+      "info": "KSC/JE-00381 seimbang D=K=116550000 [2-1150 Hutang Belum Ditagih (GR/IR) D 105000000 · 1-1500 PPN Masukan D 11550000 · 2-1100 Hutang Usaha K 116550000] · GR/IR PO: K Rp 105.000.000 − D Rp 105.000.000 = 0"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Login akun peserta (finance.latih34) → Keuangan › Hutang › Tagihan → cari \"Latihan 34\" → [[Detail →]]",
+      "expect": "Rincian: Terposting · Match Bersih · \"3-way match bersih\" (Pesan = Terima = Tagih 7.500, Harga PO = Harga Bill); Dokumen Terkait: PO & jurnal",
+      "ok": true,
+      "ms": 8843,
+      "info": "Grey Woven Katun Poplin DMO-GRY-WVN-001 7.500 7.500 7.500 Rp 14.000 Rp 14.000 Rp 105.000.000"
+    },
+    {
+      "no": 18,
+      "role": "Manajer",
+      "action": "Login manager@ → Keuangan › Hutang › tab Kontrabon → [[Kontrabon baru]] → *Supplier* Latihan 34 · Pemasok Grey Peserta 34 → [[Lanjut]] → centang tagihan VB → [[Lanjut]] → centang *Ajukan langsung* → [[Terbitkan kontrabon]]",
+      "expect": "Bilah hijau \"Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp 116.550.000\"; status Diajukan",
+      "ok": true,
+      "ms": 15001,
+      "info": "Kontrabon KSC/CB-00006 terbit — 1 faktur digabung, nilai bersih Rp 116.550.000."
+    },
+    {
+      "no": 19,
+      "role": "Manajer",
+      "action": "Di rincian kontrabon klik [[Verifikasi 3-way match]]",
+      "expect": "Status Terverifikasi (3-way match dijalankan ulang tanpa selisih)",
+      "ok": true,
+      "ms": 1322,
+      "info": "KSC/CB-00006 terverifikasi — 3-way match dijalankan ulang."
+    },
+    {
+      "no": 20,
+      "role": "Admin",
+      "action": "Login admin@ → Keuangan › Hutang › Kontrabon → buka kontrabon → [[Setujui kontrabon]]",
+      "expect": "Status Disetujui (kontrol dua orang: pembuat kontrabon tidak menyetujui sendiri)",
+      "ok": true,
+      "ms": 19215,
+      "info": "KSC/CB-00006 disetujui."
+    },
+    {
+      "no": 21,
+      "role": "Manajer",
+      "action": "Login manager@ → buka kontrabon → [[Jadwalkan pembayaran]] → *Rekening rencana* BCA Operasional KSC → [[Simpan jadwal bayar]]",
+      "expect": "Status Dijadwalkan bayar; tanggal rencana = jatuh tempo, rekening BCA",
+      "ok": true,
+      "ms": 17165,
+      "info": "jadwal 2026-12-17 (jatuh tempo 2026-12-17) · transfer"
+    },
+    {
+      "no": 22,
+      "role": "Finance",
+      "action": "Login akun peserta → Keuangan › Hutang › Kontrabon → buka kontrabon → [[Catat pembayaran]] → periksa rekening BCA Operasional KSC → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Form \"Bayar pemasok\": Kontrabon KSC/CB-…, sisa Rp 116.550.000; konfirmasi menyebut nominal, pemasok & rekening; sesudahnya status Sudah dibayar",
+      "ok": true,
+      "ms": 11137,
+      "info": "konfirmasi \"Bayar Rp 116.550.000 ke Latihan 34 · Pemasok Grey Peserta 34 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\""
+    },
+    {
+      "no": 23,
+      "role": "Buku",
+      "action": "Cek buku: jurnal pembayaran & status tagihan",
+      "expect": "Hutang Usaha 2-1100 (D) Rp 116.550.000 / Kas Besar / Bank 1-1100 (K) Rp 116.550.000, seimbang; tagihan Lunas; kas keluar dari BCA Operasional KSC",
+      "ok": true,
+      "ms": 2889,
+      "info": "KSC/JE-00383 seimbang D=K=116550000 [2-1100 Hutang Usaha D 116550000 · 1-1100 Kas Besar / Bank K 116550000] · kas KSC/CASH-00044 · tagihan paid"
+    },
+    {
+      "no": 24,
+      "role": "Finance",
+      "action": "Keuangan › Kas & Bank › Rekonsiliasi → rekening BCA Operasional KSC → [[Impor mutasi bank]] → template BCA (CSV) → tempel 1 baris \"TRSF E-BANKING DB … LATIHAN 34 PEMASOK GREY\" Rp 116.550.000 → [[Pratinjau]] → [[Impor]]",
+      "expect": "\"Terbaca 1 baris … keluar Rp 116.550.000\"; sesudah impor baris mutasi berstatus Perlu keputusan",
+      "ok": true,
+      "ms": 5597,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 116.550.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF E-BANKING DB KSC/CB-00006 LATIHAN 34 PEMASOK GREY KSC/CB-00006 Rp 116.550.000 Keluar · Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
+    },
+    {
+      "no": 25,
+      "role": "Finance",
+      "action": "Cari \"LATIHAN 34\" di daftar mutasi → pada baris itu klik [[Cocokkan]] → pada kandidat kas pembayaran (nominal sama) klik [[Tautkan]]",
+      "expect": "Kandidat = transaksi kas keluar pembayaran kontrabon (nominal sama, tanggal sama); sesudah Tautkan: \"Mutasi ditautkan …\" dan baris Tercocok — tanpa jurnal baru",
+      "ok": true,
+      "ms": 4546,
+      "info": "mutasi matched → kas KSC/CASH-00044"
+    },
+    {
+      "no": 26,
+      "role": "Finance",
+      "action": "Keuangan › Hutang › tab GR/IR (Diterima Belum Ditagih) → cari nomor PO → centang *Tampilkan yang sudah nol*",
+      "expect": "Baris PO: Nilai diterima Rp 105.000.000 = Sudah ditagih Rp 105.000.000, Sisa GR/IR Rp 0",
+      "ok": true,
+      "ms": 18065,
+      "info": "KSC/PO-00047 Latihan 34 · Pemasok Grey Peserta 34 Selesai Rp 105.000.000 Rp 105.000.000 Rp 0 Rp 0 Rp 0 0 —"
+    },
+    {
+      "no": 27,
+      "role": "Finance",
+      "action": "Pusat Dokumen › tab Jejak Dokumen → ketik KSC/PO-00047 → klik hasilnya",
+      "expect": "Rantai: PR → PO → tugas terima/penerimaan → SPK kedatangan → tagihan → kontrabon → kas pembayaran → jurnal (GR, tagihan, bayar)",
+      "ok": true,
+      "ms": 5482,
+      "info": "rantai memuat PR-00009 → KSC/PO-00047 → VB-00046 → KSC/CB-00006 → KSC/CASH-00044 → KSC/JE-00376 → KSC/JE-00381 → KSC/JE-00383"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+  ],
+  "notes": [
+    "Peserta 34 · Latihan 34 · Pemasok Grey Peserta 34 · Grey Woven Katun Poplin 7500 yard × Rp 14.000 = DPP Rp 105.000.000 · PPN Rp 11.550.000 · total Rp 116.550.000",
+    "403: mdquality GET /api/esign/signatures/inspection_spk/ins_67f039d95e09",
+    "kandidat: KSC/CASH-00044 · 17 Nov 2026 Pembayaran kontrabon KSC/CB-00006 — Latihan 34 · Pemasok Grey Peserta 34 (1 faktur, transfer) Nominal Rp 116.550.000 · sisa Rp 116.550.000 skor 93 Tautkan Nominal sama (+40) · Tanggal sama (+20) · nomor referensi 'KSC/CB-00006' ada di transaksi buku (+25) · nama agak mirip 'Latihan 34 · Pemasok Grey Peserta 34' (68%) (+8)"
+  ]
+}

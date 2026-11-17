@@ -75,6 +75,11 @@ export const DOC_STATUS_LABEL = {
   reversed: "Dibalik",
   disputed: "Disengketakan",
   scheduled: "Dijadwalkan",
+  // A2 (pelatihan 18 Nov) — kode yang masih mentah di Jejak Dokumen alur pengadaan (PR jadi PO, SPK ditugaskan,
+  // kontrabon dijadwalkan bayar).
+  converted: "Dikonversi",
+  assigned: "Ditugaskan",
+  scheduled_payment: "Dijadwalkan bayar",
   waiting: "Menunggu",
   new: "Baru",
 };
