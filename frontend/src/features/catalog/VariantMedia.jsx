@@ -5,6 +5,7 @@ import KNSelect from "../../components/KNSelect";
 import { askConfirm } from "../../services/confirmService";
 import { catalogApi, catalogError } from "./catalogApi";
 import { DesignMediaImport } from "./DesignMediaImport";
+import { HelpTip } from "../../components/ListPageParts";
 
 const KIND_LABEL = { photo: "Foto produk", detail: "Detail bahan", mockup: "Mockup", artwork: "Artwork" };
 const STATUS_LABEL = { draft: "Menunggu tinjauan", approved: "Disetujui", rejected: "Ditolak" };
@@ -25,7 +26,9 @@ export const VariantMedia = ({ product, meta, onChanged }) => {
   const approvedShown = shown.filter(m => m.status === "approved");
   return <section data-testid={`variant-media-${product.id}`} className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 className="font-semibold" data-testid="media-heading">Galeri varian <span className="ml-1 text-xs text-gray-500">{items.length} / {meta?.max_media || 30}</span></h3>
+      {/* Pola UI 16 Nov (M22) — keterangan galeri di "?" (dulu paragraf tetap di bawah pratinjau). */}
+      <h3 className="flex items-center gap-1 font-semibold" data-testid="media-heading">Galeri varian <span className="ml-1 text-fs-12 font-normal text-kn-text-2">{items.length} / {meta?.max_media || 30}</span>
+        <HelpTip testId="media-help" text="Foto utama & urutan di sini adalah yang dilihat tim sales. Hanya foto yang DISETUJUI yang tampil di katalog." /></h3>
       <div className="flex flex-wrap items-center gap-2">
         {caps.update && <><KNSelect data-testid="media-kind" className="field !w-36" value={kind} onValueChange={setKind} options={KIND_OPTIONS} />
           <button data-testid="media-upload-button" className="primary-button" disabled={busy} onClick={() => fileRef.current?.click()}><Upload size={14} />{busy ? "Memproses…" : "Unggah"}</button>
@@ -38,12 +41,13 @@ export const VariantMedia = ({ product, meta, onChanged }) => {
     {loading ? <div data-testid="media-loading" className="h-40 animate-pulse rounded-lg bg-gray-100" /> : <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
       <div>
         <ProductGallery product={product} items={approvedShown.length ? approvedShown : shown} coverId={cover} testId="media-preview" />
-        <p className="mt-2 text-[11px] text-[#737780]">Foto utama & urutan di sini adalah yang dilihat tim sales. Hanya foto <b>disetujui</b> yang tampil di katalog.</p>
       </div>
       <div className="space-y-3">
-        <div className="media-kind-tabs" data-testid="media-kind-filter">
-          {[["all", `Semua · ${items.length}`], ...Object.entries(KIND_LABEL).map(([k, l]) => [k, `${l} · ${counts[k] || 0}`])].map(([k, l]) => <button key={k} type="button" data-testid={`media-filter-${k}`} className={filter === k ? "active" : ""} onClick={() => setFilter(k)}>{l}</button>)}
-        </div>
+        {/* Pola UI 16 Nov (04_POLA_UI §1.2, M22) — saring jenis berkas = dropdown (dulu deret chip "Semua · 0, Foto produk · 0 …");
+            tidak dipajang saat galeri masih kosong. */}
+        {items.length > 0 && <KNSelect data-testid="media-kind-filter" aria-label="Saring jenis berkas" value={filter} onValueChange={(v) => setFilter(v || "all")}
+          className="!h-auto !w-auto min-w-[170px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13"
+          options={[{ value: "all", label: `Semua jenis · ${items.length}` }, ...Object.entries(KIND_LABEL).map(([k, l]) => ({ value: k, label: `${l} · ${counts[k] || 0}` }))]} />}
         {!shown.length && <p data-testid="media-empty" className="relation-empty">{items.length ? "Belum ada berkas untuk jenis ini." : "Belum ada foto untuk varian ini. Unggah foto produk, detail bahan, mockup, atau artwork."}</p>}
         <div className="media-grid">{shown.map(m => { const i = items.indexOf(m); return <figure data-testid={`media-item-${m.id}`} key={m.id} className={`media-tile ${m.status}`}>
           <img src={mediaUrl(m.url)} alt={m.filename} loading="lazy" />

@@ -13,6 +13,13 @@ const FALLBACK = {
   fabric_type: { woven: "Woven (Tenun)", knit: "Knit (Rajut)" },
   stage: { yarn: "Benang (Yarn)", grey: "Grey / Greige (Kain Mentah)", finished: "Finished (Jadi — dyed/printed)" },
 };
+// Pola UI 16 Nov (M22) — label RINGKAS untuk kepala rincian & kartu katalog. Dulu lencana di foto menulis label registri
+// lengkap ("Finished (Jadi — Dyed/Printed) · Woven (Tenun)") yang dibaca sebagai istilah teknis. Label lengkap tetap
+// dipakai di isian, saringan, dan tab Informasi; kode di luar peta ini memakai label registri.
+const SHORT = {
+  stage: { yarn: "Benang", grey: "Kain mentah", finished: "Kain jadi" },
+  fabric_type: { woven: "Tenun", knit: "Rajut" },
+};
 // Sumbu varian yang labelnya masih kunci Inggris.
 const AXIS_LABEL = {
   color: "Warna", colour: "Warna", warna: "Warna", size: "Ukuran", material: "Material", grade: "Grade",
@@ -34,8 +41,11 @@ export function useCatalogLabels() {
     const hit = labelOf(name, v);
     return hit && hit !== v ? hit : FALLBACK[name]?.[v] || v;
   };
+  const short = (name, v) => (v ? SHORT[name][v] || label(name, v) : "");
   return {
     stageLabel: (v) => label("stage", LEGACY_STAGE[v] || v),
     fabricLabel: (v) => label("fabric_type", v),
+    stageShort: (v) => short("stage", LEGACY_STAGE[v] || v),
+    fabricShort: (v) => short("fabric_type", v),
   };
 }

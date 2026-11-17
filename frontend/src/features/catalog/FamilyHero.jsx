@@ -1,12 +1,16 @@
-import { Boxes, Layers3, Ruler, Scale, Sparkles, Tag } from "lucide-react";
 import { mediaUrl } from "../../components/ProductGallery";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 
-import { axisLabel, useCatalogLabels } from "./catalogLabels";   // G4-19 — satu nama tahap/jenis kain (registri)
+import { axisLabel } from "./catalogLabels";   // G4-19 — nama sumbu varian dari registri
 
-/** Hero induk produk: foto utama + fakta kunci yang dibaca pemilik dalam 3 detik. */
-export const FamilyHero = ({ family, summary }) => {
-  const { stageLabel, fabricLabel } = useCatalogLabels();
+/**
+ * Ringkasan induk produk (pola UI 16 Nov · M22, templat C): foto kecil + SATU baris spesifikasi + deskripsi + atribut.
+ * Dulu enam kartu angka berikon selalu tampil walau kosong ("Gramasi —", "Lebar —", "Tersedia 0 roll", "Foto 0
+ * disetujui"), lencana tahap teknis di atas foto, dan teks pengisi "Belum ada deskripsi" / "belum ada atribut". Kini
+ * hanya nilai yang ADA yang tampil; nama tahap & jenis kain pindah ke kepala rincian (label ringkas); keadaan kosong
+ * tetap terbaca lengkap di tab Informasi. `children` = baris tambahan (mis. baris desain) di bawah ringkasan.
+ */
+export const FamilyHero = ({ family, summary, children }) => {
   const variants = family.variants || [];
   const cover = variants.find(v => v.cover_media_id && (v.media || []).some(m => m.id === v.cover_media_id && m.status === "approved"));
   const coverMedia = cover ? cover.media.find(m => m.id === cover.cover_media_id) : null;
@@ -18,35 +22,32 @@ export const FamilyHero = ({ family, summary }) => {
   const available = (summary?.variants || []).reduce((s, v) => s + Number(v.available || 0), 0);
   const rolls = (summary?.variants || []).reduce((s, v) => s + Number(v.rolls || 0), 0);
   const facts = [
-    { icon: Layers3, label: "Varian / SKU", value: `${family.variant_count} SKU`, testId: "hero-fact-sku" },
-    { icon: Tag, label: "Harga jual", value: max > min ? `${formatCurrency(min)} – ${formatCurrency(max)}` : formatCurrency(min), testId: "hero-fact-price" },
-    { icon: Scale, label: "Gramasi", value: family.gramasi ? `${family.gramasi} gsm` : "—", testId: "hero-fact-gsm" },
-    { icon: Ruler, label: "Lebar kain", value: family.lebar ? `${family.lebar} m` : "—", testId: "hero-fact-width" },
-    // FIX-2 (B3a STK-1) — angka dulu selalu 0; label "Stok" diganti "Tersedia" (angkanya memang Tersedia K-04).
-    { icon: Boxes, label: "Tersedia (PT aktif)", value: summary ? `${rolls} roll · ${formatQty(available)} ${family.base_unit}` : "Memuat…", testId: "hero-fact-stock" },
-    { icon: Sparkles, label: "Foto & mockup", value: `${totalMedia} disetujui`, testId: "hero-fact-media" },
-  ];
-  return <section className="catalog-hero" data-testid="catalog-family-hero">
-    <div className="catalog-hero-media">
-      {src ? <img src={src} alt={family.name} data-testid="catalog-hero-image" /> : <div className="catalog-hero-empty">Belum ada foto utama</div>}
-      <span className="catalog-hero-badge" data-testid="catalog-hero-stage">{stageLabel(family.stage)} · {fabricLabel(family.fabric_type)}</span>
-    </div>
+    { label: "Varian", value: `${family.variant_count || 0} SKU`, testId: "hero-fact-sku" },
+    { label: "Harga jual", value: min > 0 ? (max > min ? `${formatCurrency(min)} – ${formatCurrency(max)}` : formatCurrency(min)) : "", testId: "hero-fact-price" },
+    { label: "Gramasi", value: family.gramasi ? `${family.gramasi} gsm` : "", testId: "hero-fact-gsm" },
+    { label: "Lebar", value: family.lebar ? `${family.lebar} m` : "", testId: "hero-fact-width" },
+    // FIX-2 (B3a STK-1) — angkanya memang Tersedia (K-04), PT aktif. Nol tidak dipajang (stok per SKU tetap di panel SKU).
+    { label: "Tersedia (PT aktif)", value: rolls || available ? `${rolls} roll · ${formatQty(available)} ${family.base_unit}` : "", testId: "hero-fact-stock" },
+    { label: "Foto disetujui", value: totalMedia ? String(totalMedia) : "", testId: "hero-fact-media" },
+  ].filter(f => f.value);
+  const axes = (family.axes || []).map(a => ({ a, opts: (a.options || []).filter(o => o.code !== "XX" && (o.label || "").toLowerCase() !== "tidak ada") }))
+    .filter(x => x.opts.length);
+  return <section className={`catalog-hero${src ? "" : " no-media"}`} data-testid="catalog-family-hero">
+    {src && <div className="catalog-hero-media"><img src={src} alt={family.name} data-testid="catalog-hero-image" /></div>}
     <div className="catalog-hero-body">
-      <div className="catalog-hero-facts">{facts.map(f => <div key={f.label} className="catalog-fact" data-testid={f.testId}><f.icon size={14} /><span><small>{f.label}</small><b>{f.value}</b></span></div>)}</div>
-      <p className="catalog-hero-desc" data-testid="catalog-hero-description">{family.description || "Belum ada deskripsi produk."}</p>
-      <div className="catalog-hero-swatches" data-testid="catalog-hero-swatches">
-        {(family.axes || []).map(a => {
-          const opts = (a.options || []).filter(o => o.code !== "XX" && (o.label || "").toLowerCase() !== "tidak ada");
-          if (!opts.length) return null;
-          return (
-            <span key={a.key} className="inline-flex flex-wrap items-center gap-1" data-testid={`catalog-hero-axis-${a.key}`}>
-              <small className="mr-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{axisLabel(a)}</small>
-              {opts.map(o => <span key={`${a.key}-${o.code}`} className="catalog-swatch" title={`${axisLabel(a)}: ${o.label}`}>{o.hex && <i style={{ background: o.hex }} />}{o.label}</span>)}
-            </span>
-          );
-        })}
-        {!family.axes?.length && <span className="text-xs text-[#737780]">Produk satu varian — belum ada atribut warna/grade.</span>}
-      </div>
+      <dl className="catalog-hero-specs" data-testid="catalog-hero-specs">
+        {facts.map(f => <div key={f.testId} data-testid={f.testId}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
+      </dl>
+      {family.description && <p className="catalog-hero-desc" data-testid="catalog-hero-description">{family.description}</p>}
+      {axes.length > 0 && <div className="catalog-hero-swatches" data-testid="catalog-hero-swatches">
+        {axes.map(({ a, opts }) => (
+          <span key={a.key} className="inline-flex flex-wrap items-center gap-1" data-testid={`catalog-hero-axis-${a.key}`}>
+            <small className="catalog-hero-axis">{axisLabel(a)}</small>
+            {opts.map(o => <span key={`${a.key}-${o.code}`} className="catalog-swatch" title={`${axisLabel(a)}: ${o.label}`}>{o.hex && <i style={{ background: o.hex }} />}{o.label}</span>)}
+          </span>
+        ))}
+      </div>}
+      {children}
     </div>
   </section>;
 };

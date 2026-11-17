@@ -1,11 +1,11 @@
 import ProductColorTriad from "../../components/ProductColorTriad";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowUpRight, ChevronLeft, ChevronRight, Images, Layers3, Package, Pencil, Plus, Search } from "lucide-react";
-import { PageHeader } from "../../components/ListPageParts";
+import { ArrowUpRight, ChevronLeft, ChevronRight, Images, Layers3, Link2, MoreHorizontal, Package, Pencil, Plus, Wrench } from "lucide-react";
+import { ListToolbar, PageHeader, SearchInput } from "../../components/ListPageParts";
+import { DetailHeader } from "../../components/DetailParts";
+import StatusBadge from "../../components/StatusBadge";
 import { ProductGallery } from "../../components/ProductGallery";
-import { formatCurrency, formatQty } from "../../utils/formatters";
-import StockFigures from "../../components/StockFigures";
-import { variantLabel } from "../../utils/variants";
+import { formatCurrency } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import { openConfig } from "../settings/config/configDeepLink";
 import { openRnd } from "../rnd/rndDeepLink";
@@ -19,27 +19,39 @@ import { LinkExistingVariant } from "./LinkExistingVariant";
 import { FamilyHero } from "./FamilyHero";
 import FamilyDesignBar from "./FamilyDesignBar";
 import { VariantCard } from "./VariantCard";
+import { VariantHeader } from "./VariantHeader";
 import { FamilyInfoTab } from "./FamilyInfoTab";
-import ProductColorChip from "../../components/ProductColorChip";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
-import { MasterGovernancePanel } from "./MasterGovernancePanel";
-import MasterCleanupPanel from "./MasterCleanupPanel";   // PREP-A (K-OPN-06) — lembar perbaikan master
 import { CatalogFilters, emptyCatalogFilters } from "./CatalogFilters";
-import { MasterUsagePanel } from "./MasterUsagePanel";
-import RestockSourcePanel from "./RestockSourcePanel";
+import { CatalogMenu } from "./CatalogMenu";
+import MasterDataTools, { availableTools } from "./MasterDataTools";   // M20 — alat admin data master (bukan layar kerja)
 import FamilyRoutesTab from "./FamilyRoutesTab";   // MP-T1 — rute produk per artikel per PT
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { axesText, useCatalogLabels } from "./catalogLabels";   // G4-19
 import "./catalog.css";
 
+const PAGE = 24;
+
+/**
+ * Produk & Varian — katalog induk produk (artikel) + rincian induk.
+ *
+ * Pola UI 16 Nov (`docs/blueprint/04_POLA_UI.md`; masukan pemilik M20 "sangat kacau sekali, hancur" & M22 "UI rincian
+ * per produk masih sangat kacau"):
+ *  · DAFTAR (templat A): kepala satu baris (+ ?), SATU bilah daftar = cari · saringan dropdown · jumlah · "Alat data
+ *    master ▾" · "+ Tambah produk". Alat admin (Data SKU & impor, tata kelola/preview legacy, lembar kerja perbaikan,
+ *    sumber restock) tidak lagi terbuka di atas katalog — pindah ke halaman `MasterDataTools`, hanya untuk pemegang
+ *    izinnya (syarat sama dengan dulu).
+ *  · RINCIAN (templat C): kepala = nama · prefix SKU · status · aksi (aksi jarang di "Lainnya ▾"); ringkasan tanpa
+ *    kartu angka kosong; label tahap/jenis kain ringkas; peringatan mutu data satu baris kecil bertautan perbaikan.
+ */
 export default function CatalogWorkspace({ currentUser, selectedEntity, focus, legacyView }) {
-  const { fabricLabel } = useCatalogLabels();   // G4-19 — jenis kain berlabel (bukan "woven")
+  const { fabricShort, stageShort } = useCatalogLabels();   // G4-19 / M22 — label manusia (bukan "woven")
   const [meta, setMeta] = useState(null); const [items, setItems] = useState([]); const [total, setTotal] = useState(0);
   const [query, setQuery] = useState(""); const [page, setPage] = useState(0); const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState(null); const [selectedId, setSelectedId] = useState(""); const [summary, setSummary] = useState(null);
   const [error, setError] = useState(""); const [notice, setNotice] = useState(""); const [modal, setModal] = useState(""); const [tab, setTab] = useState("variants");
-  const [legacy, setLegacy] = useState(false);
+  const [tool, setTool] = useState("");
   const [filters, setFilters] = useState(emptyCatalogFilters); const [suppliers, setSuppliers] = useState([]);
   useEffect(() => { axios.get(`${API}/suppliers`).then(r => setSuppliers(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => setSuppliers([])); }, []);
   // PR-T7 (#9) — hapus permanen master = `product.view` + `product.retire` (DELETE /master/{kind}/{id}/purge → may_retire).
@@ -47,50 +59,76 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
   const caps = meta?.permissions || {};
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canExport = can(currentUser?.permissions, "product", "export");
-  const load = useCallback(async () => { setLoading(true); setError(""); try { const [m, d] = await Promise.all([catalogApi.meta(), catalogApi.list({ search: query, offset: page * 24, limit: 24, paginate: true, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) })]); setMeta(m); setItems(d.items); setTotal(d.total); } catch (e) { setError(catalogError(e)); } finally { setLoading(false); } }, [query, page, selectedEntity, filters]); // eslint-disable-line
+  const toolAccess = { canUpdate: !!caps.update, canExport, hasLegacy: !!legacyView };
+  const tools = availableTools(toolAccess);
+  const load = useCallback(async () => { setLoading(true); setError(""); try { const [m, d] = await Promise.all([catalogApi.meta(), catalogApi.list({ search: query, offset: page * PAGE, limit: PAGE, paginate: true, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) })]); setMeta(m); setItems(d.items); setTotal(d.total); } catch (e) { setError(catalogError(e)); } finally { setLoading(false); } }, [query, page, selectedEntity, filters]);
   useEffect(() => { const t = setTimeout(load, 200); return () => clearTimeout(t); }, [load]);
-  const open = useCallback(async (id, pid = "") => { setError(""); setSummary(null); try { const d = await catalogApi.detail(id); setFamily(d); setSelectedId(pid || d.variants[0]?.id || ""); const s = await catalogApi.summary(id); setSummary(s); } catch (e) { setError(catalogError(e)); } }, []);
+  const open = useCallback(async (id, pid = "") => { setTool(""); setError(""); setSummary(null); try { const d = await catalogApi.detail(id); setFamily(d); setSelectedId(pid || d.variants[0]?.id || ""); const s = await catalogApi.summary(id); setSummary(s); } catch (e) { setError(catalogError(e)); } }, []);
   useEffect(() => { setFamily(null); setSelectedId(""); setSummary(null); }, [selectedEntity]);
   useEffect(() => { if (focus?.templateId) open(focus.templateId, focus.productId); }, [focus, open]);
   const refresh = async () => { catalogChanged(); await load(); if (family) await open(family.id, selectedId); };
   const selected = family?.variants.find(v => v.id === selectedId) || family?.variants[0];
   const stock = summary?.variants.find(v => v.id === selected?.id);
-  if (legacy && legacyView) return <div data-testid="catalog-legacy-view"><button data-testid="catalog-back-from-legacy" className="secondary-button mb-4" onClick={() => { setLegacy(false); load(); }}><ArrowLeft size={14} />Kembali ke etalase</button>{legacyView}</div>;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+
+  if (tool && tools.some(t => t.key === tool)) return <MasterDataTools tool={tool} access={toolAccess} legacyView={legacyView} onTool={setTool} onBack={() => { setTool(""); load(); }} />;
+
+  const alerts = <>
+    {error && <div data-testid="catalog-error" role="alert" className="catalog-alert error">{error}<button type="button" data-testid="catalog-retry" className="secondary-button btn-sm" onClick={load}>Coba lagi</button></div>}
+    {notice && <div data-testid="catalog-notice" role="status" className="catalog-alert">{notice}<button type="button" data-testid="catalog-dismiss-notice" onClick={() => setNotice("")} className="link-button">Tutup</button></div>}
+  </>;
+
   return <div className="kn-catalog" data-testid="catalog-workspace">
-    {/* Fase 4 · R4 (L-02) — kepala halaman baku `PageHeader` (judul 18 px `view-title`; dulu h1 32/28 px + kicker
-        "KAIN NUSANTARA / MASTER PRODUK" di luar kartu — jejak menu sudah ada di breadcrumb atas). */}
-    <PageHeader icon={family ? Package : Layers3} testId="catalog-heading"
-      title={<span data-testid="catalog-title" className="min-w-0 break-words">{family ? family.name : "Produk & varian"}</span>}
-      subtitle={<span data-testid="catalog-subtitle">{family ? `${family.category} · ${fabricLabel(family.fabric_type)} · ${family.sku_prefix}` : `${total} induk produk · katalog bersama`}</span>}
-      actions={<>
-        {family && <button data-testid="catalog-back" className="secondary-button" onClick={() => { setFamily(null); setSelectedId(""); }}><ArrowLeft size={14} />Semua produk</button>}
-        {!family && legacyView && caps.update && <button data-testid="catalog-legacy" className="secondary-button" onClick={() => setLegacy(true)}>Data SKU & impor</button>}
-        {caps.create && !family && <button data-testid="catalog-create" className="primary-button" onClick={() => setModal("create")}><Plus size={15} />Produk baru</button>}
-        {caps.update && family && <button data-testid="catalog-edit-family" className="secondary-button" onClick={() => setModal("edit")}><Pencil size={14} />Ubah induk</button>}
-        {caps.update && family && <button data-testid="catalog-link-existing" className="secondary-button" onClick={() => setModal("link")}>Tautkan SKU lama</button>}
-        {caps.create && family && <button data-testid="catalog-generate" className="primary-button" onClick={() => setModal(family.axes?.length ? "generate" : "new-variant")}><Plus size={15} />Tambah varian</button>}
-      </>} />
-    {error && <div data-testid="catalog-error" role="alert" className="catalog-alert error">{error}<button data-testid="catalog-retry" className="secondary-button" onClick={load}>Coba lagi</button></div>}
-    {notice && <div data-testid="catalog-notice" role="status" className="catalog-alert">{notice}<button data-testid="catalog-dismiss-notice" onClick={() => setNotice("")} className="text-xs underline">Tutup</button></div>}
     {!family ? <>
-      {caps.update && <details data-testid="catalog-governance-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Tata kelola master (preview · batch · rollback)</summary><MasterGovernancePanel /></details>}
-      {(caps.update || canExport) && <details data-testid="catalog-cleanup-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Perbaikan master produk (lembar kerja · pratinjau · batalkan)</summary><MasterCleanupPanel canExport={canExport} canUpdate={!!caps.update} /></details>}
-      <details data-testid="catalog-restock-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Sumber restock artikel (supplier / makloon) — dipakai bila artikel belum punya rute</summary><RestockSourcePanel canEdit={!!caps.update} /></details>
-      <div className="catalog-toolbar"><div className="relative w-full max-w-md"><Search size={16} className="absolute left-3 top-3 text-gray-400" /><input data-testid="catalog-search" placeholder="Cari produk, kategori, atau prefix SKU" className="field !pl-9" value={query} onChange={e => { setPage(0); setQuery(e.target.value); }} /></div><span data-testid="catalog-result-count" className="text-xs text-gray-500">{items.length} dari {total} produk</span></div>
-      <div className="mb-3"><CatalogFilters value={filters} suppliers={suppliers} onChange={f => { setPage(0); setFilters(f); }} /></div>
-      {loading ? <div className="catalog-grid" data-testid="catalog-loading">{[0, 1, 2, 3].map(i => <div key={i} className="h-72 animate-pulse rounded-lg bg-gray-100" />)}</div> : !items.length ? <div data-testid="catalog-empty" className="catalog-empty"><Layers3 size={36} strokeWidth={1} /><h2>Belum ada produk{query ? " yang cocok" : ""}</h2>{caps.create && <button data-testid="catalog-empty-create" className="primary-button" onClick={() => setModal("create")}><Plus size={14} />Buat induk produk</button>}</div> : <div className="catalog-grid" data-testid="catalog-grid">{items.map(t => <article key={t.id} data-testid={`catalog-card-${t.id}`} className="catalog-card">
-        <div className="catalog-card-media"><ProductGallery product={t.cover_product || { name: t.name, image: t.image }} compact testId={`card-gallery-${t.id}`} /><span data-testid={`catalog-variant-count-${t.id}`} className="catalog-count">{t.variant_count} varian</span></div>
-        <button data-testid={`catalog-open-${t.id}`} className="catalog-card-content" onClick={() => { setTab("variants"); open(t.id); }}><span className="catalog-category" data-testid={`catalog-category-${t.id}`}>{[t.category, t.fabric_type && fabricLabel(t.fabric_type)].filter(Boolean).join(" · ") || "—"}</span><h2 data-testid={`catalog-name-${t.id}`}>{t.name}</h2><span className="catalog-axis-label" data-testid={`catalog-axes-${t.id}`}>{axesText(t.axes) || "Produk satu varian"}</span><span className="catalog-card-bottom"><strong data-testid={`catalog-price-${t.id}`}>{formatCurrency(t.price_min || 0)}{t.price_max > t.price_min ? ` – ${formatCurrency(t.price_max)}` : ""}</strong><ArrowUpRight size={17} /></span></button>
-      </article>)}</div>}
-      <footer className="catalog-pagination"><button data-testid="catalog-prev" className="secondary-button" disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft size={14} />Sebelumnya</button><span data-testid="catalog-page">{page + 1} / {Math.max(1, Math.ceil(total / 24))}</span><button data-testid="catalog-next" className="secondary-button" disabled={(page + 1) * 24 >= total} onClick={() => setPage(page + 1)}>Berikutnya<ChevronRight size={14} /></button></footer>
+      {/* Templat A — kepala SATU baris; keterangan di "?" (dulu subjudul + tombol "Data SKU & impor" & "Produk baru"
+          di kepala, jauh dari daftarnya). */}
+      <PageHeader icon={Layers3} testId="catalog-heading"
+        title={<span data-testid="catalog-title">Produk &amp; varian</span>}
+        help="Katalog bersama: induk produk (artikel) beserta variannya (SKU). Buka satu induk untuk melihat varian, foto, informasi, rute, dan riwayat perubahannya. Pemegang izin ubah/ekspor produk membuka alat admin data (Data SKU & impor, tata kelola, lembar kerja perbaikan, sumber restock) lewat tombol “Alat data master”." />
+      {alerts}
+      <ListToolbar testId="catalog-toolbar" actions={<>
+        <CatalogMenu testId="catalog-tools" label="Alat data master" labelClass="hidden 2xl:inline" icon={Wrench} title="Alat data master — alat admin data produk (hanya pemegang izin)"
+          items={tools.map(t => ({ key: t.key, label: t.label, hint: t.hint, icon: t.icon, testId: t.testId, onSelect: () => setTool(t.key) }))} />
+        {caps.create && <button type="button" data-testid="catalog-create" className="primary-button" onClick={() => setModal("create")}><Plus size={14} />Tambah produk</button>}
+      </>}>
+        <SearchInput testId="catalog-search" placeholder="Cari nama, kategori, prefix SKU…" ariaLabel="Cari produk, kategori, atau prefix SKU" value={query}
+          onChange={v => { setPage(0); setQuery(v); }} className="min-w-[200px] flex-1 !max-w-[240px]" />
+        <CatalogFilters value={filters} suppliers={suppliers} allowedLines={currentUser?.allowed_line_codes} onChange={f => { setPage(0); setFilters(f); }} />
+        <span data-testid="catalog-result-count" className="whitespace-nowrap text-fs-12 text-kn-text-2">{total} produk</span>
+      </ListToolbar>
+      {loading ? <div className="catalog-grid" data-testid="catalog-loading">{[0, 1, 2, 3].map(i => <div key={i} className="h-72 animate-pulse rounded-lg bg-kn-neutral-soft" />)}</div>
+        : !items.length ? <div data-testid="catalog-empty" className="catalog-empty"><Layers3 size={36} strokeWidth={1} /><h2>{error ? "Daftar produk gagal dimuat" : `Belum ada produk${query || Object.values(filters).some(Boolean) ? " yang cocok" : ""}`}</h2>{!error && caps.create && <button type="button" data-testid="catalog-empty-create" className="primary-button" onClick={() => setModal("create")}><Plus size={14} />Buat induk produk</button>}</div>
+        : <div className="catalog-grid" data-testid="catalog-grid">{items.map(t => <article key={t.id} data-testid={`catalog-card-${t.id}`} className="catalog-card">
+          <div className="catalog-card-media"><ProductGallery product={t.cover_product || { name: t.name, image: t.image }} compact testId={`card-gallery-${t.id}`} /><span data-testid={`catalog-variant-count-${t.id}`} className="catalog-count">{t.variant_count} varian</span></div>
+          <button type="button" data-testid={`catalog-open-${t.id}`} className="catalog-card-content" onClick={() => { setTab("variants"); open(t.id); }}><span className="catalog-category" data-testid={`catalog-category-${t.id}`}>{[t.category, fabricShort(t.fabric_type)].filter(Boolean).join(" · ") || "—"}</span><h2 data-testid={`catalog-name-${t.id}`}>{t.name}</h2><span className="catalog-axis-label" data-testid={`catalog-axes-${t.id}`}>{axesText(t.axes) || "Satu varian"}</span><span className="catalog-card-bottom"><strong data-testid={`catalog-price-${t.id}`}>{formatCurrency(t.price_min || 0)}{t.price_max > t.price_min ? ` – ${formatCurrency(t.price_max)}` : ""}</strong><ArrowUpRight size={17} /></span></button>
+        </article>)}</div>}
+      {pages > 1 && <footer className="catalog-pagination"><button type="button" data-testid="catalog-prev" className="secondary-button btn-sm" disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft size={14} />Sebelumnya</button><span data-testid="catalog-page">{page + 1} / {pages}</span><button type="button" data-testid="catalog-next" className="secondary-button btn-sm" disabled={(page + 1) * PAGE >= total} onClick={() => setPage(page + 1)}>Berikutnya<ChevronRight size={14} /></button></footer>}
     </> : <>
-      <FamilyHero family={family} summary={summary} />
-      <FamilyDesignBar family={family} canEdit={!!caps.update} onChanged={refresh} />
-      <div className="catalog-tabs" role="tablist">{[["variants", "Varian & galeri", family.variant_count], ["info", "Informasi produk", null], ["routes", "Rute", null], ...(caps.rnd_view ? [["rnd", "R&D & asal desain", null]] : []), ...(canAudit ? [["history", "Riwayat Perubahan", null]] : [])].map(([k, l, n]) => <button key={k} data-testid={`catalog-tab-${k}`} role="tab" aria-selected={tab === k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>{l}{n ? <span className="tab-count">{n}</span> : null}</button>)}</div>
+      {/* Templat C — kepala rincian: nama · prefix SKU · status · aksi. "Tautkan SKU lama" (jarang) di "Lainnya ▾". */}
+      <DetailHeader onBack={() => { setFamily(null); setSelectedId(""); }} backLabel="Semua produk" backTestId="catalog-back"
+        icon={Package} iconClass="text-kn-action" title={family.name} titleTestId="catalog-title"
+        badges={<>
+          {family.sku_prefix && <code data-testid="catalog-sku-prefix" className="catalog-prefix">{family.sku_prefix}</code>}
+          <StatusBadge testId="catalog-status" status={family.status === "archived" ? "archived" : "active"}
+            label={family.status === "archived" ? "Diarsipkan" : "Aktif"} />
+        </>}
+        subtitle={<span data-testid="catalog-subtitle">{[family.category, stageShort(family.stage), fabricShort(family.fabric_type)].filter(Boolean).join(" · ")}</span>}
+        actions={<>
+          {caps.update && <button type="button" data-testid="catalog-edit-family" className="secondary-button" onClick={() => setModal("edit")}><Pencil size={14} />Ubah induk</button>}
+          {caps.create && <button type="button" data-testid="catalog-generate" className="primary-button" onClick={() => setModal(family.axes?.length ? "generate" : "new-variant")}><Plus size={15} />Tambah varian</button>}
+          <CatalogMenu testId="catalog-more" label="Lainnya" icon={MoreHorizontal} items={[
+            caps.update && { key: "link", label: "Tautkan SKU lama", hint: "Masukkan SKU yang sudah ada ke induk ini tanpa mengganti ID & dokumennya", icon: Link2, testId: "catalog-link-existing", onSelect: () => setModal("link") },
+          ]} />
+        </>} />
+      {alerts}
+      <FamilyHero family={family} summary={summary}>
+        <FamilyDesignBar family={family} canEdit={!!caps.update} onChanged={refresh} />
+      </FamilyHero>
+      <div className="catalog-tabs" role="tablist">{[["variants", "Varian & galeri", family.variant_count], ["info", "Informasi produk", null], ["routes", "Rute", null], ...(caps.rnd_view ? [["rnd", "R&D & asal desain", null]] : []), ...(canAudit ? [["history", "Riwayat Perubahan", null]] : [])].map(([k, l, n]) => <button type="button" key={k} data-testid={`catalog-tab-${k}`} role="tab" aria-selected={tab === k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>{l}{n ? <span className="tab-count">{n}</span> : null}</button>)}</div>
       {tab === "routes" ? <FamilyRoutesTab family={family} currentUser={currentUser} selectedEntity={selectedEntity} /> : tab === "info" ? <FamilyInfoTab family={family} caps={caps} summary={summary} onPolicy={() => openConfig({ group: "rnd", key: "rnd.new_product_default_lifecycle" })} onArchive={async () => { if (!await askConfirm({ title: "Arsipkan induk ini?", message: family.name, confirmLabel: "Arsipkan", danger: true })) return; try { await catalogApi.archive(family.id); setFamily(null); load(); } catch (e) { setError(catalogError(e)); } }} /> : <div className="catalog-detail-grid">
-        <aside className="catalog-variant-list"><div className="variant-list-head"><h2 data-testid="catalog-variant-list-title">Kombinasi varian</h2><span>{family.variants.length} SKU</span></div>{family.variants.map(v => <VariantCard key={v.id} variant={v} active={selected?.id === v.id} stock={summary?.variants.find(s => s.id === v.id)} onSelect={() => setSelectedId(v.id)} />)}{!family.variants.length && <p data-testid="catalog-no-variants" className="text-sm text-gray-500">Belum ada SKU.</p>}{caps.create && !!family.axes?.length && <button data-testid="catalog-add-single" className="secondary-button mt-1 w-full justify-center" onClick={() => setModal("new-variant")}><Plus size={13} />Satu kombinasi</button>}</aside>
+        <aside className="catalog-variant-list"><div className="variant-list-head"><h2 data-testid="catalog-variant-list-title">Kombinasi varian</h2><span>{family.variants.length} SKU</span></div>{family.variants.map(v => <VariantCard key={v.id} variant={v} active={selected?.id === v.id} stock={summary?.variants.find(s => s.id === v.id)} onSelect={() => setSelectedId(v.id)} />)}{!family.variants.length && <p data-testid="catalog-no-variants" className="text-fs-13 text-kn-text-2">Belum ada SKU.</p>}{caps.create && !!family.axes?.length && <button type="button" data-testid="catalog-add-single" className="secondary-button btn-sm mt-1 w-full justify-center" onClick={() => setModal("new-variant")}><Plus size={13} />Satu kombinasi</button>}</aside>
         <div className="min-w-0">{selected ? <>
-          <div className="catalog-variant-header"><div className="flex items-start gap-3">{selected.color_hex && <span className="variant-header-dot" style={{ background: selected.color_hex }} />}<div><span data-testid="catalog-selected-sku" className="font-mono text-xs text-gray-500">{selected.sku}</span><h2 data-testid="catalog-selected-name">{variantLabel(selected)}</h2>{(selected.supplier_codes || []).length > 0 && <p data-testid="catalog-selected-supplier-alias" className="text-xs text-[#0058CC]">Versi supplier: {selected.supplier_codes.map(c => `${c.supplier_sku}${c.supplier_item_name ? ` — ${c.supplier_item_name}` : ""}${c.supplier_name ? ` (${c.supplier_name})` : ""}`).join(" · ")}</p>}{(selected.color_ref || selected.rnd_supplier) && <div data-testid="catalog-selected-colors" className="mt-1 flex flex-wrap items-center gap-1.5 text-xs"><ProductColorChip product={selected} />{selected.rnd_supplier && <span className="text-[#6B6B73]">· supplier pemenang R&amp;D <b className="text-[#1C1C1E]">{selected.rnd_supplier.name}</b>{selected.rnd_supplier.contract_number ? ` (kontrak ${selected.rnd_supplier.contract_number})` : ""}</span>}</div>}<p data-testid="catalog-selected-stock" className="variant-header-meta">{stock ? <><b>{stock.rolls} roll · {formatQty(stock.available)}</b> {family.base_unit} tersedia · dipesan {formatQty(stock.reserved)}</> : "Memuat stok…"}<span>·</span><b>{formatCurrency(selected.price)}</b>/{family.base_unit}</p>{stock?.stock_figures && <StockFigures className="mt-1 max-w-[420px]" testId="catalog-selected-figures" unit={stock.stock_figures.unit || family.base_unit} local={stock.stock_figures.local} global={stock.stock_figures.global} localLabel="Cakupan saya" globalLabel="Total grup (semua PT)" productIds={[selected.id]} />}{caps.update && <MasterUsagePanel kind="product" id={selected.id} canPurge={canPurge} onPurged={refresh} />}</div></div>{caps.update && <button data-testid="catalog-edit-variant" className="secondary-button" onClick={() => setModal("variant")}><Pencil size={13} />Ubah SKU</button>}</div>
+          <VariantHeader family={family} selected={selected} stock={stock} canUpdate={!!caps.update} canPurge={canPurge} onEdit={() => setModal("variant")} onPurged={refresh} />
           <ProductColorTriad product={selected} compact />
           {tab === "history" && canAudit ? <AuditHistoryPanel key={selected.id} entityType="product" entityId={selected.id} testIdPrefix="catalog-history" /> : tab === "rnd" ? <ProductRelations product={selected} caps={caps} onCreate={() => openRnd({ view: "rnd-specs", create: true, templateId: family.id, productId: selected.id })} /> : <VariantMedia key={`${selected.id}:${selectedEntity}`} product={selected} meta={meta} onChanged={refresh} />}
         </> : <div className="catalog-empty" data-testid="catalog-detail-empty"><Images size={30} strokeWidth={1} /><p>Tambahkan varian untuk mulai mengelola SKU dan fotonya.</p></div>}</div>
