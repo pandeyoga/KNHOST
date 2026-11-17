@@ -36,7 +36,7 @@ from db import db
 from services import gl_service
 from services import payment_plan_service as plans
 from services.config_resolver import resolve
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import role_in, role_label, setara_untuk  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 COLL = "penalties"
 EPS = 0.01
@@ -500,6 +500,17 @@ async def issue(penalty_id: str, actor: Dict[str, Any], auto: bool = False) -> D
     return await get(p["id"])
 
 
+def _pesan_penyetuju(aksi: str, peran: str) -> str:
+    """§3 Z6 — pesan untuk manusia: label peran (bukan id `manager`), dan langkah yang benar-benar ada (belum ada alur
+    "ajukan" untuk denda: yang membebaskan/mengubah harus pemegang peran penyetuju itu sendiri). Uji peran kustom
+    18 Nov (agen A): pesan lama "wajib disetujui manager — ajukan lewat penyetuju"."""
+    ids = [peran or "manager", "admin"]
+    labels = list(dict.fromkeys(role_label(x) for x in ids + setara_untuk(ids)))   # K-FIN-01: + peran setara
+    siapa = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " atau " + labels[-1]
+    return (f"{aksi} wajib diputus {siapa}. Minta pemegang peran itu yang melakukannya "
+            "(penyetujunya diatur Admin di Pengaturan: Pembayaran pelanggan › Denda telat bayar).")
+
+
 async def _needs_approval(p: Dict[str, Any]) -> Dict[str, Any]:
     policy = await penalty_policy(p.get("entity_id", ""), p.get("customer_id", ""))
     return {"required": bool(policy["waive_requires_approval"]),
@@ -520,8 +531,7 @@ async def waive(penalty_id: str, reason_code: str, note: str,
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
-        raise PenaltyError(
-            f"Pembebasan denda wajib disetujui {appr['role']} — ajukan lewat penyetuju.")
+        raise PenaltyError(_pesan_penyetuju("Pembebasan denda", appr["role"]))
     # PK-08 (FX-03) — yang dibebaskan hanya SISA yang belum dibayar; bagian terbayar tetap pendapatan denda.
     paid = round(float(p.get("paid_amount") or 0), 2)
     rest = round(float(p.get("amount") or 0) - paid, 2)
@@ -577,8 +587,7 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
-        raise PenaltyError(
-            f"Perubahan nominal denda wajib disetujui {appr['role']}.")
+        raise PenaltyError(_pesan_penyetuju("Perubahan nominal denda", appr["role"]))
     delta = round(float(p["amount"]) - amt, 2)
     je = None
     issued = p["status"] in ("issued", "adjusted")

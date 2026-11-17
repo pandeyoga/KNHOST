@@ -316,11 +316,19 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                     className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
                     <Eye size={13} /> Pratinjau
                   </button>
-                  <button data-testid="closing-close-btn" onClick={doClose} disabled={busy || !!notEndedText(preview)}
-                    title={notEndedText(preview) || undefined}
-                    className="btn-primary text-[12px] py-1.5 px-4 inline-flex items-center gap-1">
-                    <Lock size={13} /> Tutup Buku
-                  </button>
+                  {/* Uji peran kustom 18 Nov (agen A) — [Tutup Buku] = POST /finance/closing/close (`accounting.manage`).
+                      Dulu tampil untuk pemegang lihat saja lalu ditolak 403. */}
+                  {canManageClosing ? (
+                    <button data-testid="closing-close-btn" onClick={doClose} disabled={busy || !!notEndedText(preview)}
+                      title={notEndedText(preview) || undefined}
+                      className="btn-primary text-[12px] py-1.5 px-4 inline-flex items-center gap-1">
+                      <Lock size={13} /> Tutup Buku
+                    </button>
+                  ) : (
+                    <span className="text-fs-12 text-kn-text-2" data-testid="closing-close-noaccess">
+                      Menutup buku butuh akses kelola Akuntansi & Tutup Buku.
+                    </span>
+                  )}
                 </div>
 
                 <ClosingChecklistPanel {...ceklis} onOpenSection={seksi.buka} />

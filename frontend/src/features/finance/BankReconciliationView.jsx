@@ -91,6 +91,10 @@ export default function BankReconciliationView({ user = null }) {
   const [receiptFor, setReceiptFor] = useState(null);
   const { canWrite, writeBlockHint } = useEntityScope();
   const canRecordReceipt = can(user?.permissions || {}, "ar_receipt", "create");
+  // Uji peran kustom 18 Nov (agen A) — impor, cocokkan, lepas, abaikan, titipkan, biaya/bunga bank = `cash.create`
+  // (routers/bank_reconciliation.py). Dulu tampil untuk pemegang lihat saja lalu 403. Tanpa data izin (uji lama) = boleh;
+  // server tetap menegakkan (pola ChartOfAccounts `bolehUbah`).
+  const canEditCash = !user?.permissions || can(user.permissions, "cash", "create");
   const [acctId, setAcctId] = useState("");
   useViewPreset("bank-reconciliation", (p) => { if (p?.bank_account_id) setAcctId(p.bank_account_id); });   // PK-21
   const [tab, setTab] = useState("lines");
@@ -324,20 +328,22 @@ export default function BankReconciliationView({ user = null }) {
             <>
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 {/* Fase 4 · R2 (L-03) — impor kini pop-up (dulu panel diselipkan; tombol bergantian "Tutup panel impor"). */}
-                <button type="button" data-testid="recon-import-toggle" className="secondary-button"
-                  onClick={() => setShowImport(true)}>
-                  <Upload size={14} /> Impor mutasi bank
-                </button>
+                {canEditCash && (
+                  <button type="button" data-testid="recon-import-toggle" className="secondary-button"
+                    onClick={() => setShowImport(true)}>
+                    <Upload size={14} /> Impor mutasi bank
+                  </button>
+                )}
                 {/* M38 (pemilik 16 Nov) — dulu aktif walau belum ada mutasi diimpor: mencocokkan 0 baris lalu memberi pesan
                     sukses. Pencocokan butuh mutasi bank (impor berkas/tempel); tanpa itu tombol nonaktif + alasan. */}
-                <button type="button" data-testid="recon-auto-match" className="primary-button"
+                {canEditCash && <button type="button" data-testid="recon-auto-match" className="primary-button"
                   disabled={busy === "auto" || !acctId || noStatement} onClick={doAutoMatch}
                   title={noStatement ? "Impor mutasi bank dulu — pencocokan membandingkan mutasi bank dengan catatan kas." : undefined}
                   aria-describedby={noStatement ? "recon-auto-match-reason" : undefined}>
                   {busy === "auto" ? <RefreshCw size={14} className="spin" /> : <Wand2 size={14} />}
                   Cocokkan otomatis
-                </button>
-                {noStatement && (
+                </button>}
+                {canEditCash && noStatement && (
                   <span id="recon-auto-match-reason" className="text-fs-12 text-kn-text-2" data-testid="recon-auto-match-reason">
                     Impor mutasi bank dulu.
                   </span>
@@ -386,12 +392,12 @@ export default function BankReconciliationView({ user = null }) {
               <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
                 onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
                 onNotify={notify} onRecordReceipt={canRecordReceipt ? (line, hit) => setReceiptFor({ line, hit }) : null}
-                recordBlockReason={canWrite ? "" : writeBlockHint} perms={user?.permissions || {}} />
+                recordBlockReason={canWrite ? "" : writeBlockHint} perms={user?.permissions || {}} canEdit={canEditCash} />
             </>
           )}
 
           {tab === "holding" && (
-            <ReconHoldingPanel holding={holding} busy={busy}
+            <ReconHoldingPanel holding={holding} busy={busy} canEdit={canEditCash}
               onAction={lineAction} onReload={loadData} onError={fail} onNotify={notify} />
           )}
         </div>

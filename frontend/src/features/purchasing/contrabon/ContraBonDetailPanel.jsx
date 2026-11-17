@@ -32,8 +32,14 @@ import PaymentScheduleModal from "./PaymentScheduleModal";
 import ReasonNoteModal from "./ReasonNoteModal";
 import { STATUS_CLASS, fmtDate, nextStep, pendingExceptions, slaText } from "./contraBonApi";
 import { can } from "../../../config/roles";
+import { useCanDecideMap } from "../../../hooks/useCanDecide";   // KP-T4
 
 const EDITABLE = ["draft", "submitted", "disputed"];
+/** KP-T4 — "boleh menyetujui?" ditanyakan ke server (Aturan Persetujuan jenis `contra_bon_approve`, nilai bersih terutang),
+ *  sama dengan pintu `POST /contra-bons/{id}/approve`. Uji peran kustom 18 Nov (agen A): peran kustom tanpa peran dasar
+ *  dengan izin setujui kontrabon melihat [Setujui kontrabon] lalu ditolak 403 "Peran Anda belum tercantum…". */
+export const cbDecideParams = (c) => (c?.status === "verified"
+  ? { docKind: "contra_bon_approve", entityId: c.entity_id, amount: (c.totals || {}).net_payable || 0 } : null);
 
 export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabel,
   onClose, onChanged, onError, onNotify, onOpenDocument }) {
@@ -54,6 +60,10 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   const canEdit = canWrite && EDITABLE.includes(cb.status);
   const step = nextStep(cb);
   const pending = pendingExceptions(cb);
+  const decide = useCanDecideMap([cb], cbDecideParams)[cb.id];
+  // Langkah setujui: tombol hanya bila Aturan Persetujuan meloloskan pengguna ini; selama jawaban server belum datang
+  // tombol tidak ditampilkan (bukan "boleh" lalu ditolak).
+  const approveWait = step?.action === "approve" && !decide?.allowed;
 
   const loadReceipt = useCallback(async () => {
     setLoadingReceipt(true);
@@ -151,7 +161,13 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
 
         {/* ── Tombol siklus: langkah berikutnya menonjol, sisanya tindakan lain ── */}
         <div className="flex flex-wrap items-center gap-2" data-testid="cb-detail-actions">
-          {step && can(currentUser?.permissions, "contra_bon", STEP_PERM[step.action] || "update") && (
+          {step && can(currentUser?.permissions, "contra_bon", STEP_PERM[step.action] || "update") && approveWait
+            && decide && !decide.loading && (
+            <span className="text-[11px] text-[#6B6B73]" data-testid="cb-decide-hint">
+              {decide.message || "Menunggu persetujuan pemegang wewenang."}
+            </span>
+          )}
+          {step && can(currentUser?.permissions, "contra_bon", STEP_PERM[step.action] || "update") && !approveWait && (
             <button className="primary-button" data-testid="cb-action-primary"
               disabled={!!busy} onClick={primaryAction}>
               {busy ? <RefreshCw size={14} className="spin" /> : <CheckCircle2 size={14} />}

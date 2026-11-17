@@ -29,6 +29,7 @@ import { canonicalMethod, usePaymentMethods } from "../../../config/paymentMetho
 // PK-20 — "kembalikan dana" melahirkan kas keluar: rekening sumber wajib (rekening aktif PT kwitansi).
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../../components/CashAccountField";
 import { useEntityScope } from "../../../context/EntityScopeContext";
+import axios, { API } from "../../../services/apiClient";
 
 // PK-42 (UX-18) — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
 const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
@@ -117,10 +118,32 @@ export default function PaymentVarianceDialog({
     [alloc],
   );
 
+  // Uji peran kustom 18 Nov (agen A) — hapus sisa / pengembalian dana diputus Aturan Persetujuan
+  // (`payment_variance.hapus_sisa`, KP-T4), bukan "manager / admin". Dulu layar menulis id peran mentah ("wajib manager")
+  // dan menawarkan pilihan itu kepada peran kustom yang lalu ditolak server. Kini layar bertanya ke server; jawaban
+  // "tidak" yang jelas (ber-`code`) menonaktifkan pilihan dengan kalimat server. Gagal bertanya = perilaku lama.
+  const perluWewenang = options.some((o) => o.requires_role);
+  const [wewenang, setWewenang] = useState(null);
+  useEffect(() => {
+    if (!perluWewenang) { setWewenang(null); return undefined; }
+    let hidup = true;
+    Promise.resolve(axios.get(`${API}/approval-policies/can-decide/me`, { params: {
+      doc_kind: "payment_variance.hapus_sisa", entity_id: a.entity_id || undefined, amount: gap } }))
+      .then((r) => { if (hidup) setWewenang(r?.data?.allowed === false && r.data.code ? { message: r.data.message || "" } : null); })
+      .catch(() => { if (hidup) setWewenang(null); });
+    return () => { hidup = false; };
+  }, [perluWewenang, a.entity_id, gap]);
+  const ditolakWewenang = (o) => Boolean(o?.requires_role && wewenang);
+  useEffect(() => {   // pilihan bawaan yang ternyata di luar wewenang → pindah ke pilihan pertama yang boleh
+    if (!wewenang) return;
+    const cur = options.find((o) => o.value === kind);
+    if (cur && cur.requires_role) setKind((options.find((o) => o.available && !o.requires_role) || {}).value || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wewenang]);
   const picked = options.find((o) => o.value === kind);
   const allocInvalid = kind === "allocate" && (allocTotal <= 0 || allocTotal > gap + 0.01);
   const canSubmit = !!kind && !!reasonCode && !busy && !allocInvalid
-    && (kind !== "reschedule" || !!dueDate) && !refundBlocked;
+    && (kind !== "reschedule" || !!dueDate) && !refundBlocked && !ditolakWewenang(picked);
 
   function submit() {
     const payload = { kind, reason_code: reasonCode, note };
@@ -179,13 +202,14 @@ export default function PaymentVarianceDialog({
           {options.map((o) => {
             const Icon = ICONS[o.value] || Coins;
             const active = kind === o.value;
+            const bisa = o.available && !ditolakWewenang(o);
             return (
-              <button key={o.value} type="button" disabled={!o.available}
+              <button key={o.value} type="button" disabled={!bisa}
                 data-testid={`pv-option-${o.value}`} data-selected={active ? "1" : "0"}
-                onClick={() => o.available && setKind(o.value)}
+                onClick={() => bisa && setKind(o.value)}
                 className={`flex w-full items-start gap-2.5 rounded-lg border p-2.5 text-left transition-colors ${
                   active ? "border-[#0058CC] bg-[#F5F9FF]"
-                    : o.available ? "border-[#EDEEF1] bg-white hover:border-[#C9DBF7]"
+                    : bisa ? "border-[#EDEEF1] bg-white hover:border-[#C9DBF7]"
                       : "border-[#F0F0F2] bg-[#FAFAFB] opacity-60"}`}>
                 <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                   active ? "bg-[#0058CC] text-white" : "bg-[#F1F2F4] text-[#4A4B52]"}`}>
@@ -201,7 +225,7 @@ export default function PaymentVarianceDialog({
                     )}
                     {o.requires_role && (
                       <span className="rounded bg-[#FFF3CD] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#8A6D00]">
-                        wajib {o.requires_role}
+                        perlu wewenang
                       </span>
                     )}
                   </span>
@@ -210,6 +234,11 @@ export default function PaymentVarianceDialog({
                   {!o.available && o.unavailable_reason && (
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-[#9B1C1C]">
                       {o.unavailable_reason}
+                    </span>
+                  )}
+                  {o.available && ditolakWewenang(o) && wewenang.message && (
+                    <span className="mt-0.5 block text-[10.5px] font-semibold text-[#9B1C1C]" data-testid={`pv-option-wewenang-${o.value}`}>
+                      {wewenang.message}
                     </span>
                   )}
                 </span>
@@ -312,7 +341,7 @@ export default function PaymentVarianceDialog({
         )}
         {picked?.requires_role && (
           <p className="text-[10.5px] text-[#6B6B73]">
-            Keputusan ini hanya bisa disimpan oleh <b>{picked.requires_role}</b> / admin.
+            Keputusan ini hanya bisa disimpan pemegang wewenang menurut Aturan Persetujuan (Pengaturan › Persetujuan).
           </p>
         )}
         {/* PK-38 — batas pengurang piutang tanpa uang masuk dari server (satu angka untuk hapus sisa & kasus). */}

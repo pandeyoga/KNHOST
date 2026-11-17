@@ -36,7 +36,7 @@ from services.config_resolver import value_of
 from services.finance_case_playbooks import (
     BY_CODE, CASE_TYPES, PLAYBOOKS, action_or_fail, playbook_or_fail,
 )
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import role_in, role_label, setara_untuk  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -422,15 +422,19 @@ def _assert_authority(action: Dict[str, Any], amount: float, pol: Dict[str, Any]
     amt = _round(amount)
     if limit <= 0 or amt < limit:
         return ""
+    # §3 Z6 (uji peran kustom 18 Nov, agen A) — pesan memakai LABEL peran, bukan id (`manager`/`admin`).
+    ids = [need, "admin"]
+    labels = list(dict.fromkeys(role_label(x) for x in ids + setara_untuk(ids)))   # K-FIN-01: + peran setara
+    siapa = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " atau " + labels[-1]
     if not role_in(role, (need, "admin")):
         raise CaseError(
             f"Penyelesaian {_rp(amt)} melebihi ambang persetujuan {_rp(limit)} — "
-            f"wajib diputus {need} atau admin. Tugaskan kasus ini ke penyetuju.")
+            f"wajib diputus {siapa}. Tugaskan kasus ini ke penyetuju.")
     cap = float(pol["refund_max"] or 0)
     if action.get("sensitive") and cap > 0 and amt > cap + EPS and role != "admin":
         raise CaseError(
-            f"Nominal {_rp(amt)} melebihi batas keputusan {need} ({_rp(cap)}) — "
-            "harus admin/direksi.")
+            f"Nominal {_rp(amt)} melebihi batas keputusan {role_label(need)} ({_rp(cap)}) — "
+            f"harus {role_label('admin')}/direksi.")
     return need
 
 

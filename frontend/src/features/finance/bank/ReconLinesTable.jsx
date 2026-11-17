@@ -73,7 +73,9 @@ function ScoreBadge({ score, explain, testId }) {
 }
 
 export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, onReload,
-  onError, onNotify, onRecordReceipt = null, recordBlockReason = "", perms = {} }) {
+  onError, onNotify, onRecordReceipt = null, recordBlockReason = "", perms = {}, canEdit = true }) {
+  // Uji peran kustom 18 Nov (agen A) — cocokkan/lepas/abaikan/titipkan/biaya & bunga bank = `cash.create` di server
+  // (routers/bank_reconciliation.py). Pemegang lihat saja (`canEdit=false`) tidak lagi melihat tombol yang pasti 403.
   // MN-T3 — "Bayar pemasok" dari mutasi keluar hanya bagi pemegang izin bayar dokumennya.
   const canPaySupplier = (can(perms, "contra_bon", "pay") && can(perms, "contra_bon", "view"))
     || (can(perms, "vendor_bill", "pay") && can(perms, "vendor_bill", "view"));
@@ -203,7 +205,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                 <tr key={l.id} data-testid={`recon-line-${l.id}`}
                   className="border-b border-[#F5F5F7] last:border-0 align-top">
                   <td className="px-2 py-2">
-                    {l.status === "unmatched" && (
+                    {canEdit && l.status === "unmatched" && (
                       <input type="checkbox" data-testid={`recon-pick-${l.id}`}
                         checked={picked.includes(l.id)} onChange={() => toggle(l.id)} />
                     )}
@@ -245,7 +247,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                         )}
                       </div>
                     )}
-                    {sugs.length > 0 && (
+                    {canEdit && sugs.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1" data-testid={`recon-suggestions-${l.id}`}>
                         {sugs.map((s) => (
                           <button key={s.id} data-testid={`recon-accept-${l.id}-${s.id}`}
@@ -297,14 +299,14 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                     ) : <span className="text-[#C7C7CC]">—</span>}
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
-                    {l.status === "matched" && (
+                    {canEdit && l.status === "matched" && (
                       <button data-testid={`recon-unmatch-${l.id}`} className="link-button"
                         style={{ color: "#B4231F" }} disabled={busy === l.id + "unmatch"}
                         onClick={() => onAction(l.id, "unmatch", {}, "Tautan dilepas.")}>
                         <Unlink size={12} /> Lepas
                       </button>
                     )}
-                    {l.status === "ignored" && (
+                    {canEdit && l.status === "ignored" && (
                       <button data-testid={`recon-unignore-${l.id}`} className="link-button"
                         disabled={busy === l.id + "unignore"}
                         onClick={() => onAction(l.id, "unignore", {}, "Baris dikembalikan ke antrean.")}>
@@ -313,11 +315,13 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                     )}
                     {l.status === "unmatched" && (
                       <div className="flex items-center gap-2 justify-end flex-wrap">
-                        <button data-testid={`recon-matchbtn-${l.id}`} className="link-button"
-                          onClick={() => onOpenMatch(l)}>
-                          <Link2 size={12} /> Cocokkan
-                        </button>
-                        {l.direction === "in" && (
+                        {canEdit && (
+                          <button data-testid={`recon-matchbtn-${l.id}`} className="link-button"
+                            onClick={() => onOpenMatch(l)}>
+                            <Link2 size={12} /> Cocokkan
+                          </button>
+                        )}
+                        {canEdit && l.direction === "in" && (
                           <button data-testid={`recon-holding-${l.id}`} className="link-button"
                             style={{ color: "#0058CC" }} disabled={busy === l.id + "holding"}
                             onClick={() => jurnalBaris(l, "holding")}>
@@ -330,11 +334,13 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                             buku tidak pernah bisa nol. */}
                         {l.direction === "out" ? (
                           <>
-                            <button data-testid={`recon-charge-${l.id}`} className="link-button"
-                              style={{ color: "#B26A00" }} disabled={busy === l.id + "book-charge"}
-                              onClick={() => jurnalBaris(l, "charge")}>
-                              <Receipt size={12} /> Catat biaya bank
-                            </button>
+                            {canEdit && (
+                              <button data-testid={`recon-charge-${l.id}`} className="link-button"
+                                style={{ color: "#B26A00" }} disabled={busy === l.id + "book-charge"}
+                                onClick={() => jurnalBaris(l, "charge")}>
+                                <Receipt size={12} /> Catat biaya bank
+                              </button>
+                            )}
                             {/* FASE G-7 US8 + MN-T3 — uang keluar untuk pemasok: tunjuk kontrabon/tagihannya, lalu satu form
                                 Bayar pemasok (kas lahir + baris mutasi tertaut). */}
                             {canPaySupplier && (
@@ -344,18 +350,20 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                               </button>
                             )}
                           </>
-                        ) : (
+                        ) : canEdit && (
                           <button data-testid={`recon-interest-${l.id}`} className="link-button"
                             style={{ color: "#1B7F4B" }} disabled={busy === l.id + "book-charge"}
                             onClick={() => jurnalBaris(l, "interest")}>
                             <Percent size={12} /> Catat bunga bank
                           </button>
                         )}
-                        <button data-testid={`recon-ignore-${l.id}`} className="link-button"
-                          style={{ color: "#8E8E93" }} disabled={busy === l.id + "ignore"}
-                          onClick={() => onAction(l.id, "ignore", { note: "" }, "Baris diabaikan.")}>
-                          <EyeOff size={12} /> Abaikan
-                        </button>
+                        {canEdit && (
+                          <button data-testid={`recon-ignore-${l.id}`} className="link-button"
+                            style={{ color: "#8E8E93" }} disabled={busy === l.id + "ignore"}
+                            onClick={() => onAction(l.id, "ignore", { note: "" }, "Baris diabaikan.")}>
+                            <EyeOff size={12} /> Abaikan
+                          </button>
+                        )}
                         {/* AG-T3 — tanya asisten soal mutasi ini (Asisten Keuangan; tampil menurut izin). */}
                         <AskKnButton type="bank_line" id={l.id} label={`${formatDate(l.stmt_date)} · ${l.description || ""}`}
                           buttonLabel="Tanya asisten" className="link-button" />

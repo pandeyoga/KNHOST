@@ -38,7 +38,7 @@ const REASONS = [
 ];
 
 export default function ReconHoldingPanel({ holding, busy, onAction, onReload, onError,
-  onNotify }) {
+  onNotify, canEdit = true }) {   // uji peran kustom 18 Nov (agen A): alokasi & batal titipan = `cash.create`
   const [target, setTarget] = useState(null);      // baris titipan yang sedang dialokasikan
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState("");
@@ -222,11 +222,11 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <div className="flex justify-end gap-2 flex-wrap">
-                    <button data-testid={`recon-allocate-${h.id}`} className="link-button"
+                    {canEdit && <button data-testid={`recon-allocate-${h.id}`} className="link-button"
                       disabled={Number(h.remaining) <= 0}
                       onClick={() => { setMErr(""); setTarget(h); setAlloc({}); }}>
                       <HandCoins size={12} /> Alokasikan
-                    </button>
+                    </button>}
                     {/* FASE G-9 — titipan yang belum ketemu pemiliknya diserahkan ke Pusat
                         Kasus Keuangan supaya punya penanggung jawab & batas waktu, bukan
                         menganggur di layar ini. Kasusnya terisi otomatis dari mutasi bank
@@ -238,7 +238,7 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                         <Briefcase size={12} /> {opening === h.id ? "Membuka…" : "Buka kasus"}
                       </button>
                     )}
-                    {Number(h.allocated) <= 0 && (
+                    {canEdit && Number(h.allocated) <= 0 && (
                       <button data-testid={`recon-holding-cancel-${h.id}`} className="link-button"
                         style={{ color: "#B4231F" }} disabled={busy === h.id + "holding/cancel"}
                         onClick={async () => {

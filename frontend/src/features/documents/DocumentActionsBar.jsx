@@ -43,8 +43,17 @@ export default function DocumentActionsBar({
   const [err, setErr] = useState("");
 
   const canSign = can(currentUser?.permissions, "esign", "sign");   // PR-T7 (#7) — = POST /esign/request
+  // Uji peran kustom 18 Nov (agen A) — Pratinjau/Unduh PDF = GET /pdf/render (`document.print`), Kirim WA = `document_delivery
+  // .send`, status tanda tangan = GET /esign/signatures (`esign.view`). Dulu tampil/dipanggil untuk siapa pun: peran kustom
+  // tanpa modul Dokumen (mis. hanya Hutang) melihat tombol yang 403 ("Gagal mengunduh PDF."). Izin tidak dikirim = boleh
+  // (pemanggil lama tanpa `currentUser`); server tetap menegakkan.
+  const perms = currentUser?.permissions;
+  const boleh = (res, act) => !perms || can(perms, res, act);   // izin Admin memuat semua aksi (tanpa cek nama peran)
+  const canPrint = boleh("document", "print");
+  const canSend = boleh("document_delivery", "send");
+  const canSeeSign = boleh("esign", "view");
   const dead = ["cancelled", "canceled", "void", "voided", "rejected", "expired"].includes(String(status || "").toLowerCase());
-  const showWa = !hideWhatsapp && !dead;
+  const showWa = !hideWhatsapp && !dead && canSend;
   const showEsign = !hideEsign && !dead;
 
   useEffect(() => {
@@ -64,13 +73,13 @@ export default function DocumentActionsBar({
   // `force` melewati gate autoCheckSignature agar badge tetap muncul setelah
   // user menandatangani (aksi eksplisit tunggal, bukan fetch massal di list).
   const loadSignature = useCallback(async (force = false) => {
-    if (!sourceId || (!autoCheckSignature && !force)) return;
+    if (!sourceId || !canSeeSign || (!autoCheckSignature && !force)) return;
     try {
       const r = await axios.get(`${API}/esign/signatures/${docType}/${sourceId}`);
       const sigs = r.data?.signatures || [];
       setSigned(sigs.length ? { verification_code: sigs[0].verification_code } : null);
     } catch (e) { /* ignore */ }
-  }, [docType, sourceId, autoCheckSignature]);
+  }, [docType, sourceId, autoCheckSignature, canSeeSign]);
 
   useEffect(() => { loadSignature(); }, [loadSignature]);
 
@@ -112,14 +121,14 @@ export default function DocumentActionsBar({
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`} data-testid={`doc-actions-${docType}`}>
-      <button type="button" onClick={openPreview} title="Pratinjau"
+      {canPrint && <button type="button" onClick={openPreview} title="Pratinjau"
         className={`${btnCls} border-[#EDEEF1] text-[#4A4B52] hover:bg-[#F2F3F5]`} data-testid="doc-act-preview">
         <Eye size={15} />{!compact && "Pratinjau"}
-      </button>
-      <button type="button" onClick={downloadPdf} title="Unduh PDF" disabled={downloading}
+      </button>}
+      {canPrint && <button type="button" onClick={downloadPdf} title="Unduh PDF" disabled={downloading}
         className={`${btnCls} border-[#EDEEF1] text-[#4A4B52] hover:bg-[#F2F3F5]`} data-testid="doc-act-download">
         {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}{!compact && "Unduh PDF"}
-      </button>
+      </button>}
       {meta.esignable && canSign && showEsign && (
         <button type="button" onClick={() => setEsignOpen(true)} title="Tanda Tangan Elektronik"
           className={`${btnCls} border-[#BBD3FF] bg-[#EAF2FF] text-[#0058CC] hover:bg-[#DBEAFE]`} data-testid="doc-act-esign">

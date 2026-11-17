@@ -37,6 +37,7 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
   const [number, setNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [denied, setDenied] = useState(false);
 
   const load = useCallback(async () => {
     if (!docType || !docId) return;
@@ -46,7 +47,11 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
       setRows(res.refs || []);
       setNumber(res.number || "");
       setErr("");
+      setDenied(false);
     } catch (e) {
+      // Uji peran kustom 18 Nov (agen A) — tanpa izin `document.view` (mis. peran kustom hanya Hutang) panel ini dulu
+      // tampil sebagai galat merah + [Coba lagi] di setiap rincian tagihan/kontrabon. 403 = keterangan tenang, bukan galat.
+      setDenied(e?.response?.status === 403);
       setErr(errText(e, "Gagal memuat dokumen terkait."));
       setRows([]);
     } finally { setLoading(false); }
@@ -125,7 +130,10 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
           <p className="animate-pulse py-3 text-center text-fs-12 text-kn-text-2">Memuat dokumen terkait…</p>
         )}
 
-        {!loading && err && <ErrorNotice message={err} onRetry={load} testId="docrefs-error" />}
+        {!loading && err && denied && (
+          <p data-testid="docrefs-noaccess" className="py-2 text-fs-12 text-kn-text-2">{err}</p>
+        )}
+        {!loading && err && !denied && <ErrorNotice message={err} onRetry={load} testId="docrefs-error" />}
 
         {!loading && !err && rows.length === 0 && (
           <p data-testid="docrefs-empty" className="py-2 text-fs-12 text-kn-text-2">

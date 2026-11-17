@@ -64,6 +64,12 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   const [fOverdue, setFOverdue] = useState(false);
   const scanIntent = useIntentKey("fc-pindai");   // PK-12 — satu niat pindai = satu Idempotency-Key
   const canResolve = can(currentUser?.permissions, "finance_case", "resolve");
+  // Uji peran kustom 18 Nov (agen A) — [Kasus baru] & [Pindai temuan] = `finance_case.create` di server; daftar pelanggan,
+  // rekening, dan pemasok hanya dimuat bila izinnya dipegang (dulu satu 403 `/customers` mengosongkan playbook, alasan,
+  // dan kebijakan sekaligus → layar Kasus rusak untuk peran kustom tanpa modul Pelanggan). Tanpa data izin = boleh.
+  const perms = currentUser?.permissions;
+  const boleh = (res, act) => !perms || can(perms, res, act);
+  const canCreate = boleh("finance_case", "create");
   // Di bawah 1280 px rincian tidak lagi berdampingan dengan daftar → tampil sebagai pop-up (lihat kepala berkas).
   const stacked = useIsMobile(1279);   // Sisir lanjutan gerbang peran (2026-10-21) — POST /finance-cases/{id}/resolve
 
@@ -79,13 +85,15 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   const fail = useCallback((e) => setErr(apiErrorText(e)), []);
 
   const loadRefs = useCallback(async () => {
+    const ok = (res, act) => !perms || can(perms, res, act);
     try {
+      const kosong = Promise.resolve({ data: [] });
       const [pb, rs, pol, cust, acc] = await Promise.all([
         axios.get(`${API}/finance-cases/playbooks`),
         axios.get(`${API}/finance-cases/reasons`),
         axios.get(`${API}/finance-cases/policy`),
-        axios.get(`${API}/customers`),
-        axios.get(`${API}/bank-accounts`),
+        ok("customer", "view") ? axios.get(`${API}/customers`).catch(() => ({ data: [] })) : kosong,
+        ok("cash", "view") ? axios.get(`${API}/bank-accounts`).catch(() => ({ data: [] })) : kosong,
       ]);
       setPlaybooks(Array.isArray(pb.data) ? pb.data : []);
       setReasons(Array.isArray(rs.data) ? rs.data : []);
@@ -104,11 +112,12 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
      * Izinnya sekarang sudah diberikan (permissions_config.py), dan pemisahan ini
      * memastikan kelas cacat itu tak bisa lahir lagi dari daftar opsional lain.
      */
+    if (!ok("supplier", "view")) { setSuppliers([]); return; }
     try {
       const sup = await axios.get(`${API}/suppliers`);
       setSuppliers(Array.isArray(sup.data) ? sup.data : (sup.data?.items || []));
     } catch { setSuppliers([]); }
-  }, [fail]);
+  }, [fail, perms]);
 
   const loadData = useCallback(async () => {
     setLoading(true); setErr("");
@@ -226,13 +235,17 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
             <button type="button" className="secondary-button" data-testid="case-refresh" onClick={loadData}>
               <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
             </button>
-            <button type="button" className="secondary-button" data-testid="case-scan"
-              disabled={busy === "scan"} onClick={runScan}>
-              <ScanSearch size={14} className={busy === "scan" ? "spin" : ""} /> Pindai temuan
-            </button>
-            <button type="button" className="primary-button" data-testid="case-new" onClick={() => setCreating(true)}>
-              <Plus size={14} /> Kasus baru
-            </button>
+            {canCreate && (
+              <button type="button" className="secondary-button" data-testid="case-scan"
+                disabled={busy === "scan"} onClick={runScan}>
+                <ScanSearch size={14} className={busy === "scan" ? "spin" : ""} /> Pindai temuan
+              </button>
+            )}
+            {canCreate && (
+              <button type="button" className="primary-button" data-testid="case-new" onClick={() => setCreating(true)}>
+                <Plus size={14} /> Kasus baru
+              </button>
+            )}
           </>
         )} />
 
