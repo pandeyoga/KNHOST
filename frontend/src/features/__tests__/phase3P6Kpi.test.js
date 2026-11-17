@@ -101,7 +101,7 @@ test("D-08: Permintaan Desain (admin) — tanpa tab rapor; kartu tautan → KPI 
   expect(q("dsr-tab-report")).toBeNull();
   expect(q("dsr-tab-myreport")).toBeNull();
   expect(q("dsr-tab-board").getAttribute("role")).toBe("tab");
-  expect(q("dsr-chip-all").getAttribute("aria-pressed")).toBe("true");
+  expect(q("dsr-chips")).not.toBeNull();   // pola UI 16 Nov — status = dropdown (dulu chip "Semua" aktif)
   await click(q("dsr-report-link-open"));
   expect(nav).toHaveBeenCalledWith("designer-kpi", expect.objectContaining({ preset: { tab: "dsr" } }));
   expect(q("dsr-myreport-link")).toBeNull();

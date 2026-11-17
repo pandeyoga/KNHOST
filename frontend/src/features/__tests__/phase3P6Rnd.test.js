@@ -52,6 +52,17 @@ jest.mock("../../hooks/useCatalogMasters", () => ({
   __esModule: true, default: () => ({ categoryOptions: [], unitOptions: [{ value: "meter", label: "meter" }] }),
 }));
 jest.mock("../../components/BaseFabricPicker", () => () => null);
+// Pola UI 16 Nov — saringan jenis/tujuan/status kini dropdown (FilterSelect → KNSelect); di jsdom = <select> setara.
+jest.mock("../../components/KNSelect", () => {
+  const M = ({ value, onValueChange, options = [], "data-testid": tid, disabled }) => (
+    <select data-testid={tid} value={value ?? ""} disabled={disabled} onChange={(e) => onValueChange(e.target.value)}>
+      {!options.some((o) => o.value === "") && <option value="" />}
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return { __esModule: true, default: M, KNSelect: M };
+});
+const opt = (tid, v) => [...(document.querySelector(`[data-testid="${tid}"]`)?.options || [])].find((o) => o.value === v) || null;
 jest.mock("../catalog/SpecVariantFields", () => ({ SpecVariantFields: () => <div data-testid="spec-variant-link" /> }));
 jest.mock("../rnd/design/DesignImage", () => ({ __esModule: true, default: () => null, IMAGE_FAIL_TEXT: "" }));
 
@@ -118,8 +129,8 @@ test("D-24b: alias rnd-labdip (preset gallery+labdip+all) → Sample R&D mode Ga
     <RndSamplesView currentUser={{ role: "md", permissions: { rnd: ["view", "create", "submit", "assess", "decide", "manage", "pic_decide"] } }} selectedEntity="ent_ksc" purpose="new_development" />));
   expect(q("rnd-samples-view").getAttribute("data-mode")).toBe("gallery");
   expect(q("rnd-samples-tab-gallery").getAttribute("aria-selected")).toBe("true");
-  expect(q("rnd-samples-filter-labdip").getAttribute("aria-pressed")).toBe("true");
-  expect(q("rnd-samples-purpose-all").getAttribute("aria-pressed")).toBe("true");
+  expect(q("rnd-samples-filters").value).toBe("labdip");     // jenis Labdip terpilih (dulu chip aktif)
+  expect(q("rnd-samples-purpose").value).toBe("all");
   const params = mockListSamples.mock.calls[mockListSamples.mock.calls.length - 1][0];
   expect(params.sample_type).toBe("labdip");
   expect(params.purpose).toBeUndefined();
@@ -138,8 +149,8 @@ test("D-24b: Papan bawaan menu Produk Baru — tujuan dari menu, tanpa chip tuju
   expect(mockListSamples.mock.calls[0][0].purpose).toBe("new_development");
   expect(q("rnd-samples-purpose")).toBeNull();
   expect(q("rnd-samples-board")).toBeTruthy();
-  expect(q("rnd-samples-chip-all").getAttribute("aria-pressed")).toBe("true");
-  expect(q("rnd-samples-chip-all").textContent).toContain("3");
+  expect(q("rnd-samples-status").value).toBe("");             // "Semua" terpilih, berhitungan
+  expect(opt("rnd-samples-status", "").textContent).toContain("3");
   await click(q("rnd-samples-tab-list"));
   expect(q("rnd-sample-row-1")).toBeTruthy();
   expect(q("rnd-samples-kpi-total").textContent).toBe("3");
@@ -148,11 +159,11 @@ test("D-24b: Papan bawaan menu Produk Baru — tujuan dari menu, tanpa chip tuju
 test("D-24b: chip jenis lama mengikuti hak buka id lama (hidden_views / peran tanpa R&D) — tanpa provider tidak digerbang", async () => {
   mockListSamples.mockResolvedValue({ items: [], stats: {} });
   await mount(withNav("designer", null, <RndSamplesView currentUser={{ role: "md" }} selectedEntity="ent_ksc" purpose="new_development" />));
-  expect(q("rnd-samples-filter-all")).toBeTruthy();
-  expect(q("rnd-samples-filter-labdip")).toBeNull();
+  expect(opt("rnd-samples-filters", "")).toBeTruthy();
+  expect(opt("rnd-samples-filters", "labdip")).toBeNull();
   await act(async () => { root.unmount(); }); root = null;
   await mount(<RndSamplesView currentUser={{ role: "md" }} selectedEntity="ent_ksc" purpose="new_development" />);
-  expect(q("rnd-samples-filter-labdip")).toBeTruthy();
+  expect(opt("rnd-samples-filters", "labdip")).toBeTruthy();
 });
 
 test("D-24b: rute cadangan rnd-handfeel (SampleTypeGalleryView) = pembungkus → layar gabungan mode Galeri, chip Handfeel", async () => {
@@ -160,7 +171,7 @@ test("D-24b: rute cadangan rnd-handfeel (SampleTypeGalleryView) = pembungkus →
   await mount(withNav("md", null, <SampleTypeGalleryView code="handfeel" currentUser={{ role: "md" }} selectedEntity="ent_ksc" />));
   expect(q("sample-gallery-handfeel")).toBeTruthy();
   expect(q("rnd-samples-view").getAttribute("data-mode")).toBe("gallery");
-  expect(q("rnd-samples-filter-handfeel").getAttribute("aria-pressed")).toBe("true");
+  expect(q("rnd-samples-filters").value).toBe("handfeel");
   expect(mockListSamples.mock.calls[0][0]).toMatchObject({ sample_type: "handfeel" });
   expect(mockListSamples.mock.calls[0][0].purpose).toBeUndefined();
 });

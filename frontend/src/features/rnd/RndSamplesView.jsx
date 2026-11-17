@@ -19,7 +19,7 @@ import LineFilter from "../../components/LineFilter";
 import DetailModal from "../../components/DetailModal";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown
 import { REVISION_FILTER_OPTIONS } from "../../components/RevisionProgress";
 import { useAppNav } from "../../context/AppNavContext";
 import useViewPreset from "../../hooks/useViewPreset";
@@ -234,22 +234,23 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
       <div className="section-card">
         <PageTabs testId="rnd-samples-tabs" value={mode} onChange={setMode} tabs={SAMPLE_MODES} ariaLabel="Tampilan sample" className="!mb-0 px-3" />
         <div className="section-body space-y-2">
-          <FilterChips testId="rnd-samples-filters" ariaLabel="Jenis sampling" value={type} onChange={(v) => setType(v || "")} options={typeOptions} />
-          {gallery && (
-            <FilterChips testId="rnd-samples-purpose" ariaLabel="Tujuan sample" value={galleryPurpose} onChange={setGalleryPurpose}
-              options={PURPOSE_OPTIONS.map((p) => ({ ...p, testId: `rnd-samples-purpose-${p.key}` }))} />
-          )}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Pola UI 16 Nov (M24) — saringan jenis · tujuan · status = DROPDOWN dalam satu bilah (dulu tiga deret chip). */}
+          <div className="flex flex-wrap items-center gap-2" data-testid="rnd-samples-toolbar">
             <input data-testid="rnd-samples-search" className="field w-full sm:w-64 !py-1.5 !text-[11.5px]" value={q}
               onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor / judul / supplier / warna…" />
             <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="rnd-samples"
               allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="rnd-samples-line-filter" />
+            <FilterSelect testId="rnd-samples-filters" ariaLabel="Jenis sampling" value={type} onChange={(v) => setType(v || "")} options={typeOptions} />
+            {gallery && (
+              <FilterSelect testId="rnd-samples-purpose" ariaLabel="Tujuan sample" value={galleryPurpose} onChange={setGalleryPurpose}
+                options={PURPOSE_OPTIONS} />
+            )}
+            <FilterSelect testId="rnd-samples-status" ariaLabel="Status sample" value={statusFilter} onChange={(v) => setStatusFilter(v || "")} options={statusOptions} />
             <div className="w-[150px]" title="Saring dokumen yang berulang kali direvisi">
               <KNSelect data-testid="rnd-samples-revision-filter" className="field !py-1.5" value={minRevision}
                 options={REVISION_FILTER_OPTIONS} onValueChange={setMinRevision} />
             </div>
           </div>
-          <FilterChips testId="rnd-samples-status" ariaLabel="Status sample" value={statusFilter} onChange={(v) => setStatusFilter(v || "")} options={statusOptions} />
           {gallery && meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid="rnd-samples-type-notes">{cleanRndNote(meta.notes)}</p>}
         </div>
       </div>

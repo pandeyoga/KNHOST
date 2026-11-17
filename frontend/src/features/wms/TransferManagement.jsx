@@ -3,7 +3,7 @@ import { Truck, Plus, ArrowRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { rememberDocEntities } from "../../services/docEntityRegistry";
 import ErrorNotice from "../../components/ErrorNotice";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown
 import LineFilter from "../../components/LineFilter";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
@@ -338,22 +338,20 @@ export default function TransferManagement({
             </p>
           </div>
         </div>
-        <button data-testid="create-transfer-button" onClick={() => setShowCreateForm(true)} className="primary-button">
-          <Plus size={14} /> Buat Transfer
-        </button>
       </div>
 
-      {/* Saringan — Jenis (D-16), status, lini, cari. Saringan = chip, bukan tab (L-01). */}
+      {/* Pola UI 16 Nov (M24/M35) — satu bilah daftar: jenis · status (DROPDOWN, dulu dua deret chip) · lini · cari · urut ·
+          tampilan · unduh · + Buat Transfer di ujung kanan (dulu di kepala halaman). */}
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
-        <FilterChips testId="trf-kind" ariaLabel="Jenis transfer" value={kind} onChange={setKind}
-          options={[
-            { key: "all", label: "Semua jenis", count: kindCounts.all },
-            { key: "intra_entity", label: "Antar gudang", count: kindCounts.intra_entity },
-            { key: "inter_entity", label: "Antar PT", count: kindCounts.inter_entity },
-          ]} />
-        <FilterChips testId="filter-status" ariaLabel="Status transfer" value={filterStatus} onChange={setFilterStatus}
-          options={TRANSFER_STATUS_FILTERS.map((s) => ({ key: s, label: s === "all" ? "Semua status" : statusLabel(s) }))} />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" data-testid="trf-toolbar">
+          <FilterSelect testId="trf-kind" ariaLabel="Jenis transfer" value={kind} onChange={(v) => setKind(v || "all")}
+            options={[
+              { key: "all", label: "Semua jenis", count: kindCounts.all },
+              { key: "intra_entity", label: "Antar gudang", count: kindCounts.intra_entity },
+              { key: "inter_entity", label: "Antar PT", count: kindCounts.inter_entity },
+            ]} />
+          <FilterSelect testId="filter-status" ariaLabel="Status transfer" value={filterStatus} onChange={(v) => setFilterStatus(v || "all")}
+            options={TRANSFER_STATUS_FILTERS.map((st) => ({ key: st, label: st === "all" ? "Semua status" : statusLabel(st) }))} />
           <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="transfers"
             allowed={user?.allowed_line_codes} testId="trf-line-filter" />
           {/* FIX-8 — kotak cari baku (dulu isian buatan layar) */}
@@ -371,6 +369,9 @@ export default function TransferManagement({
               kind === "inter_entity" && ["transfer_kind", "eq", "inter_entity"],
               kind === "intra_entity" && ["transfer_kind", "ne", "inter_entity"], lineFilter && ["line_codes", "eq", lineFilter]]}
             sort={sort ? [sort] : [{ key: "created_at", dir: "desc" }]} />
+          <button data-testid="create-transfer-button" onClick={() => setShowCreateForm(true)} className="primary-button ml-auto">
+            <Plus size={14} /> Buat Transfer
+          </button>
         </div>
       </div>
 

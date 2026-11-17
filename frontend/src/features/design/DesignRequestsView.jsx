@@ -18,7 +18,7 @@
  *  · D-08 (keputusan pemilik 26 Okt) — tab "Rapor Desainer" & "Rapor Saya" dicabut dari sini. Penilaian tim =
  *    Desainer › KPI Desainer tab "Pekerjaan DSR"; angka milik sendiri = Profil Saya › KPI Saya. Di sini tinggal
  *    KARTU TAUTAN (`LinkCard`) ke keduanya — hanya tampil bila peran boleh membuka layar tujuannya.
- *  · L-01 — Papan/Daftar = PageTabs; status = FilterChips; revisi = KNSelect (dulu tombol-toggle + tab garis
+ *  · L-01 — Papan/Daftar = PageTabs; status = FilterSelect (dropdown, pola UI 16 Nov); revisi = KNSelect (dulu tombol-toggle + tab garis
  *    sebagai saringan + pil revisi = 3 lapis navigasi).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -30,7 +30,7 @@ import { REVISION_FILTER_OPTIONS, RevisionBadge } from "../../components/Revisio
 import LineFilter from "../../components/LineFilter";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
-import FilterChips from "../../components/FilterChips";
+import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown
 import LinkCard from "../../components/LinkCard";
 import ResponsiveTable from "../../components/ResponsiveTable";
 import PaginationBar from "../../components/PaginationBar";
@@ -263,8 +263,9 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
           tabs={[{ key: "board", label: "Papan", testId: "dsr-tab-board" }, { key: "list", label: "Daftar", testId: "dsr-tab-list" }]} />
         <div className="section-body space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <FilterChips testId="dsr-chips" ariaLabel="Status permintaan" value={statusFilter} onChange={(v) => setStatusFilter(v || "")}
-              options={chips.map((c) => ({ key: c.key, label: c.label, testId: `dsr-chip-${c.key || "all"}`,
+            {/* Pola UI 16 Nov (M24) — status = dropdown berhitungan (dulu deret chip). */}
+            <FilterSelect testId="dsr-chips" ariaLabel="Status permintaan" value={statusFilter} onChange={(v) => setStatusFilter(v || "")}
+              options={chips.map((c) => ({ key: c.key, label: c.label,
                 count: (c.key ? summary?.by_status?.[c.key] : summary?.total) ?? undefined }))} />
             <div className="ml-auto w-[150px]" title="Saring dokumen yang berulang kali direvisi">
               <KNSelect data-testid="dsr-revision-filter" className="field !py-1.5" value={minRevision}
