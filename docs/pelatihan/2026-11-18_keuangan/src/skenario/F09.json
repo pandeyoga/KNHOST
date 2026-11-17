@@ -126,15 +126,15 @@
  "cek_buku": [
   "Transaksi kas keluar, kategori Operasional (contoh): 6-4000 Beban Operasional Lainnya (D) Rp 310.000 · 1-1100 Kas Besar / Bank (K) Rp 310.000 — seimbang",
   "Kartu BCA turun sebesar nominal; transaksi muncul di mutasi BCA dengan status rekonsiliasi 'Belum'",
-  "Kategori menentukan akun lawan: Operasional atau Lain-lain (keluar) → 6-4000 · Gaji/Upah → 6-1000 · Pembelian → 1-1300 Persediaan · uang masuk selain 'Setoran Modal' → 1-9999 Akun Sementara (Suspense)"
+  "Kategori menentukan akun lawan: Operasional atau Lain-lain (keluar) → 6-4000 · Gaji/Upah → 6-1000 · Pembelian → 1-1300 Persediaan · Transfer / Top-up (keluar dan masuk) → 1-1150 Kas & Bank Transit · uang masuk lain (selain Setoran Modal dan Transfer / Top-up) → 1-9999 Akun Sementara (Suspense)"
  ],
  "kesalahan_umum": [
   "Membayar tagihan pemasok lewat Transaksi Kas. Hutang pemasok tidak berkurang; pakai Hutang › Tagihan › [[Bayar]].",
-  "Memindahkan uang Kas Toko ke bank dengan dua Transaksi Kas kategori 'Transfer / Top-up'. Sisi keluar menjadi beban dan sisi masuk menjadi Suspense, sehingga laba turun palsu. Jangan dipakai; laporkan ke Manajer Keuangan.",
+  "Memindahkan uang Kas Toko ke bank tetapi hanya mencatat satu sisi 'Transfer / Top-up', atau nominal kedua sisi berbeda. Kedua sisi lewat 1-1150 Kas & Bank Transit, jadi saldo 1-1150 tidak kembali nol; catat keluar dan masuk dengan nominal sama.",
   "Mencatat uang masuk lain-lain (misalnya jual kardus bekas) lewat Transaksi Kas. Uangnya jatuh ke akun Suspense dan harus direklasifikasi; tanya Manajer dulu.",
   "Salah *Jenis kas* (Kas Kecil padahal transfer) atau memilih kategori 'Pembelian' untuk barang habis pakai. Saldo dan akun jadi salah, dan mutasi bank tidak akan cocok di F10."
  ],
- "catatan_pelatih": "Saldo semua rekening dipakai bersama, jadi angka kartu bergerak karena peserta lain; minta peserta membuktikan lewat baris miliknya (nomor KSC/CASH-…, deskripsi 'Latihan NN'). Nominal dibuat berbeda per peserta supaya di F10 transaksi peserta lain tidak ikut menjadi kandidat cocok. Kotak cari Jurnal mencari nomor jurnal dan keterangan, bukan nomor KSC/CASH di kolom Sumber; karena itu cari dengan 'Latihan NN'. Pertanyaan untuk pemilik: kategori 'Transfer / Top-up' tidak memakai akun 1-1150 Kas & Bank Transit; penerimaan lain-lain jatuh ke Suspense; form tidak menampilkan akun lawan sebelum disimpan.",
+ "catatan_pelatih": "Saldo semua rekening dipakai bersama, jadi angka kartu bergerak karena peserta lain; minta peserta membuktikan lewat baris miliknya (nomor KSC/CASH-…, deskripsi 'Latihan NN'). Nominal dibuat berbeda per peserta supaya di F10 transaksi peserta lain tidak ikut menjadi kandidat cocok. Kotak cari Jurnal mencari nomor jurnal, keterangan, dan juga nomor dokumen sumber (mis. KSC/CASH-…); 'Latihan NN' tetap cara tercepat menemukan baris peserta. Kategori 'Transfer / Top-up' kini lewat akun 1-1150 Kas & Bank Transit (perbaikan 17 Nov). Pertanyaan untuk pemilik: penerimaan lain-lain jatuh ke Suspense; form tidak menampilkan akun lawan sebelum disimpan.",
  "uji": {
   "berkas": "uji/F09_rekening_transaksi_kas.js",
   "peserta_uji": "01"

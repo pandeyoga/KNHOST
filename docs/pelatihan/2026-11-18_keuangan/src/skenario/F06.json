@@ -127,7 +127,7 @@
   "Mencari tombol Setujui. Finance hanya memantau; keputusan ada di Manajer.",
   "Membaca 'PLAFON tanpa batas' sebagai plafon disetujui. Artinya plafon belum diatur atau belum disetujui.",
   "Mencari izin berlingkup pelanggan dengan nomor SO. Cari dengan nama pelanggan.",
-  "Ingin mencatat janji bayar dari antrean Jatuh tempo. Janji bayar dicatat lewat ikon telepon di Penagihan & Penerimaan."
+  "Ingin mencatat janji bayar dengan akun Finance. Janji bayar dicatat Sales atau Admin Sales lewat ikon telepon di Penagihan & Penerimaan; akun Finance belum punya izinnya (pertanyaan untuk pemilik)."
  ],
  "catatan_pelatih": "Finance sebenarnya boleh mengajukan perubahan profil kredit, tetapi tiap pelanggan latihan sudah punya satu pengajuan terbuka (hanya satu per pelanggan per PT), jadi tidak dilatih. Bila ingin memperlihatkan keputusan, masuk sebagai manager@ dan setujui izin seorang peserta di layar yang sama (demo opsional). Perbaikan 17 Nov: hasil pencarian antrean tidak lagi tertimpa daftar lama.",
  "uji": {

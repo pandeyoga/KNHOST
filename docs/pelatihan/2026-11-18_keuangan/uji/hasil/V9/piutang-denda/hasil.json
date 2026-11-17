@@ -1,0 +1,59 @@
+{
+  "code": "V9/piutang-denda",
+  "title": "V9 · Bukti klaim materi Piutang — nota denda (F05) · peserta 88",
+  "ok": true,
+  "at": "2026-11-17T12:41:04.709Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "F05 · Nota denda lahir sebagai usulan dan belum masuk buku; Finance hanya bisa menerbitkan",
+      "expect": "[Buat Nota Denda] → nota USULAN tanpa jurnal; di Antrean Denda Finance melihat [Terbitkan] tanpa [Ubah Nominal]/[Bebaskan]",
+      "ok": true,
+      "ms": 16994,
+      "info": "KSC/DN-DENDA-00002 Rp 21.893 usulan, 0 jurnal · tombol Finance {\"issue\":1,\"adjust\":0,\"waive\":0}"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "F05 · Saat kotak cari berisi nomor nota, kartu RENCANA AKTIF dan jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0",
+      "expect": "Kartu 'Rencana aktif' TIDAK ikut tersaring (sama dengan saat kotak cari kosong); hanya angka di tab Jadwal Pembayaran yang menjadi 0",
+      "ok": true,
+      "ms": 1770,
+      "info": "dicari KSC/DN-DENDA-00002: kartu 'RENCANA AKTIF 11', tab 'Jadwal Pembayaran 0' · kosong: kartu 'RENCANA AKTIF 11', tab 'Jadwal Pembayaran 11'"
+    },
+    {
+      "no": 3,
+      "role": "Manajer",
+      "action": "F05 · Selama masih usulan, nominal denda bisa diubah Manajer (tanpa jurnal)",
+      "expect": "Manajer: [Ubah Nominal] pada nota usulan → nominal baru tersimpan, status tetap usulan, belum ada jurnal",
+      "ok": true,
+      "ms": 13785,
+      "info": "KSC/DN-DENDA-00002: Rp 15.000 · status draft · jurnal 0"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "F05 · Setelah terbit, Finance tidak bisa mengubah atau membebaskan denda",
+      "expect": "Finance [Terbitkan] → jurnal 1-1270 (D) / 4-9300 (K) Rp 15.000; pada nota terbit Finance tidak melihat [Ubah Nominal]/[Bebaskan]",
+      "ok": true,
+      "ms": 2999,
+      "info": "KSC/DN-DENDA-00002 terbit · KSC/JE-00316: 1-1270 D 15000 · 4-9300 K 15000 · tombol ubah/bebaskan Finance: tidak ada"
+    },
+    {
+      "no": 5,
+      "role": "Manajer",
+      "action": "F05 · Membebaskan denda yang sudah terbit butuh Manajer dan jurnal pembalik",
+      "expect": "Manajer [Bebaskan] → status Dibebaskan; jurnal pembalik 4-9300 (D) / 1-1270 (K) Rp 15.000; jurnal terbit tetap ada",
+      "ok": true,
+      "ms": 20271,
+      "info": "KSC/DN-DENDA-00002 waived · asli KSC/JE-00316 (posted) · pembalik KSC/JE-00317: 4-9300 D 15000 · 1-1270 K 15000"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

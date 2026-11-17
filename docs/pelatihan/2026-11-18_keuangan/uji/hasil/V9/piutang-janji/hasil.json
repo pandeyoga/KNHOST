@@ -1,0 +1,32 @@
+{
+  "code": "V9/piutang-janji",
+  "title": "V9 · Bukti klaim materi Piutang — janji bayar (F06) · peserta 86",
+  "ok": true,
+  "at": "2026-11-17T12:39:48.553Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "F06 · Janji bayar dicatat lewat ikon telepon di Penagihan & Penerimaan — berlaku untuk Finance?",
+      "expect": "Teks lama SALAH untuk Finance: server menolak tindak lanjut/janji dari Finance (izin ubah pesanan). Sesudah perbaikan ikon telepon & lonceng tidak tampil bagi Finance; ikon Terima pembayaran tetap",
+      "ok": true,
+      "ms": 2177,
+      "info": "ikon Finance {\"telepon\":0,\"lonceng\":0,\"bayar\":1} · simpan janji lewat server: server 403: Anda belum punya akses untuk mengubah Pesanan Penjualan (SO). Minta Admin menambahkan akses 'Pesanan Penjualan'."
+    },
+    {
+      "no": 2,
+      "role": "Admin Sales",
+      "action": "F06 · Janji bayar dicatat pemegang izin ubah pesanan (Admin Sales) lewat ikon telepon di Penagihan & Penerimaan",
+      "expect": "Admin Sales: ikon telepon → Hasil 'Dijanjikan bayar' + tanggal + nominal → [Simpan] → pesan 'Tindak lanjut … dicatat.'; tercatat janji bertanggal & bernominal",
+      "ok": true,
+      "ms": 28813,
+      "info": "Tindak lanjut untuk Latihan 86 · Toko Kain Cicilan 86 dicatat. × · janji Rp 1.600.204 · 2026-11-24 oleh Rina Kartika"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

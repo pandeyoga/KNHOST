@@ -1,0 +1,68 @@
+{
+  "code": "V9/buku",
+  "title": "V9 · Bukti klaim materi Buku Besar, Laporan & Fondasi (K01–K05, A5)",
+  "ok": true,
+  "at": "2026-11-17T13:22:57.265Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Manajer",
+      "action": "A5 · Laba bersih di Laba-Rugi = perubahan laba ditahan di Neraca untuk periode yang sama",
+      "expect": "Laba-Rugi 1 Jan–hari ini: Laba Bersih = baris 'Laba Tahun Berjalan' (Ekuitas) di Neraca hari ini; Laba Ditahan 3-2000 baru berubah saat tutup buku (tahun ini tanpa jurnal penutup)",
+      "ok": true,
+      "ms": 7339,
+      "info": "L/R 1 Jan–hari ini: Laba Bersih Rp 35.219.086 = Neraca 'Laba Tahun Berjalan' Rp 35.219.086 · (3-2000 tidak tampil) · jurnal 2026 yang menyentuh 3-2000: 0"
+    },
+    {
+      "no": 2,
+      "role": "Manajer",
+      "action": "K01 · Menambah akun saat bilah atas memilih 'Semua PT': akun masuk Template Global dan dipakai semua PT",
+      "expect": "Bilah atas Semua PT → Bagan Akun → [Tambah Akun]: pop-up menulis 'Akun akan dibuat sebagai template global (semua PT).' (tidak disimpan); PT Sukacita → 'khusus untuk PT Sukacita'",
+      "ok": true,
+      "ms": 19193,
+      "info": "Semua PT: 'Akun akan dibuat sebagai template global (semua PT).' · Sukacita: 'Akun akan dibuat khusus untuk PT Sukacita.'"
+    },
+    {
+      "no": 3,
+      "role": "Manajer",
+      "action": "K02 · Finance boleh mengubah pemetaan (bersama Admin); Manajer hanya melihat",
+      "expect": "Pengaturan › Keuangan & Pajak › Pemetaan Akun: Manajer tidak punya tombol [Atur PT]/ubah; Finance punya",
+      "ok": true,
+      "ms": 13631,
+      "info": "tombol ubah pemetaan: Manajer 0 · Finance 60"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "K05 · Finance hanya melihat Pengaturan › Keuangan & Pajak › Pemetaan Akun (tidak melihat layar Aturan Keuangan & Pajak)",
+      "expect": "Menu Pengaturan › Keuangan & Pajak untuk Finance: tab yang tampil dicatat apa adanya; tab 'Aturan Keuangan & Pajak' tidak ada",
+      "ok": true,
+      "ms": 1424,
+      "info": "tab untuk Finance: (satu layar Pemetaan Akun) · layar: PENGATURAN · KEUANGAN Pemetaan Akun Tentukan akun pembukuan "
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "K04 · Saldo awal tidak bisa diubah lewat [Ubah rekening]: form ubah tidak memuat saldo awal",
+      "expect": "Kas & Bank › Rekening & Saldo › kartu BCA Operasional KSC › [Ubah rekening]: form tanpa isian Saldo Awal (tidak disimpan)",
+      "ok": true,
+      "ms": 5259,
+      "info": "form Ubah rekening BCA Operasional KSC: isian Saldo Awal tidak ada · Jenis tidak bisa diubah sesudah rekening dibuat."
+    },
+    {
+      "no": 6,
+      "role": "Admin",
+      "action": "K05 · Lupa mengisi alasan pada aturan berisiko tinggi — tombol Simpan tidak aktif",
+      "expect": "Aturan Keuangan & Pajak › Tarif PPN (risiko tinggi): ubah nilai tanpa alasan → [Simpan] mati; isi alasan → [Simpan] aktif. Tidak disimpan (halaman dimuat ulang)",
+      "ok": true,
+      "ms": 29886,
+      "info": "nilai 12 → 11: [Simpan] tanpa alasan mati, dengan alasan aktif · tidak disimpan (pengaturan tersimpan: [])"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

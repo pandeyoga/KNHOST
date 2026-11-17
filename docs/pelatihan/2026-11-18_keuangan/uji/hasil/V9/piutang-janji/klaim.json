@@ -1,0 +1,22 @@
+[
+ {
+  "kode": "F06",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "Janji bayar dicatat lewat ikon telepon di Penagihan & Penerimaan — berlaku untuk Finance?",
+  "harap": "Teks lama SALAH untuk Finance: server menolak tindak lanjut/janji dari Finance (izin ubah pesanan). Sesudah perbaikan ikon telepon & lonceng tidak tampil bagi Finance; ikon Terima pembayaran tetap",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "ikon Finance {\"telepon\":0,\"lonceng\":0,\"bayar\":1} · simpan janji lewat server: server 403: Anda belum punya akses untuk mengubah Pesanan Penjualan (SO). Minta Admin menambahkan akses 'Pesanan Penjualan'."
+ },
+ {
+  "kode": "F06",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "Janji bayar dicatat pemegang izin ubah pesanan (Admin Sales) lewat ikon telepon di Penagihan & Penerimaan",
+  "harap": "Admin Sales: ikon telepon → Hasil 'Dijanjikan bayar' + tanggal + nominal → [Simpan] → pesan 'Tindak lanjut … dicatat.'; tercatat janji bertanggal & bernominal",
+  "peran": "Admin Sales",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "Tindak lanjut untuk Latihan 86 · Toko Kain Cicilan 86 dicatat. × · janji Rp 1.600.204 · 2026-11-24 oleh Rina Kartika"
+ }
+]

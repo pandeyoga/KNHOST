@@ -1,0 +1,52 @@
+[
+ {
+  "kode": "F05",
+  "bagian": "konsep.2",
+  "klaim": "Nota denda lahir sebagai usulan dan belum masuk buku; Finance hanya bisa menerbitkan",
+  "harap": "[Buat Nota Denda] → nota USULAN tanpa jurnal; di Antrean Denda Finance melihat [Terbitkan] tanpa [Ubah Nominal]/[Bebaskan]",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "KSC/DN-DENDA-00002 Rp 21.893 usulan, 0 jurnal · tombol Finance {\"issue\":1,\"adjust\":0,\"waive\":0}"
+ },
+ {
+  "kode": "F05",
+  "bagian": "catatan_pelatih",
+  "klaim": "Saat kotak cari berisi nomor nota, kartu RENCANA AKTIF dan jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0",
+  "harap": "Kartu 'Rencana aktif' TIDAK ikut tersaring (sama dengan saat kotak cari kosong); hanya angka di tab Jadwal Pembayaran yang menjadi 0",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "dicari KSC/DN-DENDA-00002: kartu 'RENCANA AKTIF 11', tab 'Jadwal Pembayaran 0' · kosong: kartu 'RENCANA AKTIF 11', tab 'Jadwal Pembayaran 11'"
+ },
+ {
+  "kode": "F05",
+  "bagian": "konsep.2",
+  "klaim": "Selama masih usulan, nominal denda bisa diubah Manajer (tanpa jurnal)",
+  "harap": "Manajer: [Ubah Nominal] pada nota usulan → nominal baru tersimpan, status tetap usulan, belum ada jurnal",
+  "peran": "Manajer",
+  "langkah": 3,
+  "uji": "lulus",
+  "bukti": "KSC/DN-DENDA-00002: Rp 15.000 · status draft · jurnal 0"
+ },
+ {
+  "kode": "F05",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Setelah terbit, Finance tidak bisa mengubah atau membebaskan denda",
+  "harap": "Finance [Terbitkan] → jurnal 1-1270 (D) / 4-9300 (K) Rp 15.000; pada nota terbit Finance tidak melihat [Ubah Nominal]/[Bebaskan]",
+  "peran": "Finance",
+  "langkah": 4,
+  "uji": "lulus",
+  "bukti": "KSC/DN-DENDA-00002 terbit · KSC/JE-00316: 1-1270 D 15000 · 4-9300 K 15000 · tombol ubah/bebaskan Finance: tidak ada"
+ },
+ {
+  "kode": "F05",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Membebaskan denda yang sudah terbit butuh Manajer dan jurnal pembalik",
+  "harap": "Manajer [Bebaskan] → status Dibebaskan; jurnal pembalik 4-9300 (D) / 1-1270 (K) Rp 15.000; jurnal terbit tetap ada",
+  "peran": "Manajer",
+  "langkah": 5,
+  "uji": "lulus",
+  "bukti": "KSC/DN-DENDA-00002 waived · asli KSC/JE-00316 (posted) · pembalik KSC/JE-00317: 4-9300 D 15000 · 1-1270 K 15000"
+ }
+]

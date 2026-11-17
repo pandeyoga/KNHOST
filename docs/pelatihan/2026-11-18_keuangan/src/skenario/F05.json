@@ -205,7 +205,7 @@
  ],
  "cek_buku": [
   "Nota usulan (draf) belum berjurnal",
-  "Nota terbit (contoh, telat 20 hari): 1-1270 Piutang Denda Pelanggan (D) Rp 22.398,09 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 22.398,09 — seimbang. Hitungan: Rp 1.679.846 × 2% × 20/30",
+  "Nota terbit (contoh, telat 20 hari): 1-1270 Piutang Denda Pelanggan (D) Rp 22.397,95 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 22.397,95 — seimbang. Hitungan: Rp 1.679.846 × 2% × 20/30",
   "Piutang usaha SO tidak berubah; denda adalah piutang terpisah"
  ],
  "kesalahan_umum": [
@@ -214,7 +214,7 @@
   "Menerbitkan nota yang masih dinego. Setelah terbit, mengubah nominal atau membebaskan denda butuh Manajer dan jurnal pembalik.",
   "Mencoba membuat nota dua kali. Tombol mati sendiri bila tidak ada denda baru."
  ],
- "catatan_pelatih": "Tanggal Cicilan 1 dibuat 20 hari sebelum hari data latihan disiapkan, jadi nominal denda bertambah setiap hari (contoh: bila data disiapkan 17 Nov, pada 18 Nov telat 21 hari). Pelanggan cicilan sengaja pelanggan kedua peserta supaya tidak mengganggu alokasi [[Tertua dulu]] di F04. Saat kotak cari berisi nomor nota, kartu RENCANA AKTIF dan jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0 — beri tahu peserta supaya tidak bingung. Status rencana kini 'Aktif' (dulu 'Active').",
+ "catatan_pelatih": "Tanggal Cicilan 1 dibuat 20 hari sebelum hari data latihan disiapkan, jadi nominal denda bertambah setiap hari (contoh: bila data disiapkan 17 Nov, pada 18 Nov telat 21 hari). Pelanggan cicilan sengaja pelanggan kedua peserta supaya tidak mengganggu alokasi [[Tertua dulu]] di F04. Saat kotak cari berisi nomor nota, jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0, sedangkan kartu RENCANA AKTIF di atasnya tetap menghitung seluruh PT — beri tahu peserta supaya tidak bingung. Status rencana kini 'Aktif' (dulu 'Active').",
  "uji": {
   "berkas": "uji/F05_rencana_denda.js",
   "peserta_uji": "01"

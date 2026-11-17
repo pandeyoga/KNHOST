@@ -1,0 +1,4093 @@
+{
+ "judul": "V9 — Bukti untuk setiap klaim di teks materi pelatihan keuangan",
+ "lingkup": "konsep · cek_buku · kesalahan_umum · titik_kontrol · catatan_pelatih semua materi F01–F18, K01–K09, H01–H04, A1–A5 (S1–S4 dikerjakan agen lain). Nasihat umum tidak dimasukkan.",
+ "ringkasan": {
+  "klaim": 433,
+  "terbukti — uji lama": 317,
+  "perlu keputusan pemilik": 16,
+  "terbukti — uji V9": 47,
+  "diperbaiki teks": 20,
+  "terbukti — cek buku/izin": 4,
+  "diperbaiki aplikasi + teks": 1,
+  "terbukti — uji unit": 25,
+  "belum dibuktikan": 3,
+  "langkah_uji_V9": 61,
+  "langkah_uji_V9_lulus": 61
+ },
+ "klaim": [
+  {
+   "kode": "F01",
+   "bagian": "konsep.0",
+   "klaim": "Beranda Keuangan punya tiga tab: Perlu Tindakan, Posisi, Analisis",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "konsep.2",
+   "klaim": "Posisi Kas = saldo akun kas dan bank di buku besar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 8, 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "cek_buku.0",
+   "klaim": "POSISI KAS = 1-1100 + 1-1110 di Neraca Saldo, sama sampai rupiah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "cek_buku.1",
+   "klaim": "Piutang 'tercatat' = saldo 1-1200; 'belum dikirim' di luar buku",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "cek_buku.2",
+   "klaim": "Hutang = saldo 2-1100; modal kerja = kas + piutang tercatat − hutang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "cek_buku.3",
+   "klaim": "Pendapatan & Laba Bersih YTD = baris Sukacita di Analisis = jurnal tahun berjalan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 9, 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "[Terbitkan] di kartu 'Faktur pajak perlu terbit' langsung menerbitkan tanpa bertanya",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 2 (lulus)",
+    "uji/e2e/A1_order_to_cash.js · langkah 19 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-faktur langkah 1 (lulus)"
+   ],
+   "catatan": "Klik [Terbitkan] langsung memunculkan bilah hijau 'Faktur Pajak … diterbitkan'."
+  },
+  {
+   "kode": "F01",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "[Batal] di form Terima pembayaran tidak mencatat apa pun",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 5 (lulus)",
+    "uji variasi V1.21 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Yang sama dengan buku adalah piutang 'tercatat', bukan total PIUTANG (AR)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Cari 'Latihan NN' ikut memuat pelanggan 'Toko Kain Cicilan NN'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 4 (lulus)",
+    "LAPORAN_AUDIT B-29"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "catatan_pelatih",
+   "klaim": "Bilah Lokasi tampil untuk Finance karena izin lihat produk/logistik",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 2 (lulus)",
+    "LAPORAN_AUDIT B-06"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "catatan_pelatih",
+   "klaim": "Tidak ada fitur ganti sandi sendiri; sandi direset Admin",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 11 (lulus)"
+   ],
+   "catatan": "Pertanyaan pemilik K-01."
+  },
+  {
+   "kode": "F01",
+   "bagian": "catatan_pelatih",
+   "klaim": "'CHAT AI: Menunggu kunci penyedia model' — contoh laporan tetap jalan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 12 (lulus)"
+   ]
+  },
+  {
+   "kode": "F01",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kartu 'Selisih bayar' sudah diperbaiki (dulu Rp 0, tombol macet)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F01_orientasi.js · langkah 7 (lulus)"
+   ],
+   "catatan": "B-01."
+  },
+  {
+   "kode": "F02",
+   "bagian": "konsep.0",
+   "klaim": "Tagihan SO menjadi piutang saat barang dikirim; uang masuk mengurangi piutang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 16, 20, 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "konsep.1",
+   "klaim": "Kwitansi dialokasikan ke SO yang dibayar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 4–6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "konsep.2",
+   "klaim": "Jurnal otomatis: Kas/Bank (D) · Piutang Usaha (K)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal kwitansi 1-1100 D = 1-1200 K = total SO",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "cek_buku.1",
+   "klaim": "SO Lunas, sisa Rp 0, tanpa titipan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "cek_buku.2",
+   "klaim": "Kas kwitansi tercatat di BCA dan dipakai di rekonsiliasi (F10)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Dengan [Tertua dulu] uang masuk ke SO tertua lebih dulu, bukan ke SO yang dimaksud",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Cara bayar Tunai → uang masuk Kas Kecil, bukan bank",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 1 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "SO bernilai ,50: layar membulatkan, buku menyimpan ,50",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 4 (lulus)",
+    "LAPORAN_AUDIT B-19"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "catatan_pelatih",
+   "klaim": "Selisih Rp 0,50 di rekonsiliasi untuk SO bernilai ,50",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 4 (lulus)"
+   ],
+   "catatan": "Pertanyaan pemilik K-07."
+  },
+  {
+   "kode": "F02",
+   "bagian": "catatan_pelatih",
+   "klaim": "Nominal di kotak alokasi tidak ditolak, dibatasi ke sisa tagihan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.1 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji variasi V1.2 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F02",
+   "bagian": "catatan_pelatih",
+   "klaim": "Label 'Jurnal Terbit' bisa diklik membuka jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 7 (lulus)"
+   ],
+   "catatan": "B-13."
+  },
+  {
+   "kode": "F03",
+   "bagian": "konsep.0",
+   "klaim": "Bayar sebagian mengurangi piutang sebesar uang masuk; sisanya tetap piutang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 4, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "konsep.1",
+   "klaim": "Di atas toleransi Rp 5.000 wajib keputusan berlabel: sisa tetap piutang, ubah jadwal, atau hapus sisa (wajib Manajer)",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-toleransi langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "konsep.2",
+   "klaim": "Umur piutang dihitung dari jatuh tempo; belum jatuh tempo vs 1–30, 31–60 …",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 6, 7 (lulus)",
+    "uji/F05_rencana_denda.js · langkah 3 (lulus)",
+    "uji variasi V4.1 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "konsep.3",
+   "klaim": "Keputusan 'Sisa tetap jadi piutang' tidak membuat jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal kwitansi bayar sebagian seimbang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "cek_buku.1",
+   "klaim": "Keputusan 'Sisa tetap jadi piutang' hanya dokumen KSC/SLB-…, tanpa jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 4, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "cek_buku.2",
+   "klaim": "SO berstatus Sebagian; sisa = total − pembayaran",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "cek_buku.3",
+   "klaim": "Saldo & Umur: piutang tercatat = saldo akun piutang (selisih Rp 0)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 7 (lulus)",
+    "uji/F01_orientasi.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Label alasan bawaan 'Dipotong biaya bank' — untuk bayar sebagian pilih 'Bayar sebagian (disepakati)'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 3 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-toleransi langkah 2 (lulus)"
+   ],
+   "catatan": "Pertanyaan pemilik K-11 (bawaan alasan)."
+  },
+  {
+   "kode": "F03",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "'Hapus sisa kurang bayar' membebankan sisa ke beban dan wajib Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-toleransi langkah 3 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-toleransi langkah 4 (lulus)"
+   ],
+   "catatan": "Finance yang memilih Hapus sisa: kwitansi tersimpan, keputusan masuk antrean Selisih Bayar; Manajer memutus → 6-9100 (D) / 1-1200 (K)."
+  },
+  {
+   "kode": "F03",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "[Batal] di jendela selisih: kwitansi belum tersimpan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.20 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Kotak cari Saldo & Umur menerima nama pelanggan atau sales, bukan nomor SO",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-umur langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "catatan_pelatih",
+   "klaim": "Selisih dalam toleransi (Rp 5.000) diputus otomatis sebagai pembulatan",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-toleransi langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F03",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kalimat batas menyebut 'sisa tagihan pesanan tujuan, belum jatuh tempo'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F03_bayar_sebagian.js · langkah 2, 3 (lulus)"
+   ],
+   "catatan": "B-16."
+  },
+  {
+   "kode": "F03",
+   "bagian": "catatan_pelatih",
+   "klaim": "SO ,50: rincian bisa beda Rp 1 dari angka besar",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji/F02_pelunasan_penuh.js · langkah 4 (lulus)"
+   ],
+   "catatan": "Pertanyaan pemilik K-07."
+  },
+  {
+   "kode": "F04",
+   "bagian": "konsep.0",
+   "klaim": "Kelebihan bayar dicatat sebagai kewajiban 2-1400 Uang Muka Pelanggan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "konsep.1",
+   "klaim": "Di [Atur sendiri] nominal tidak bisa melebihi sisa SO",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.1 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji/F02_pelunasan_penuh.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "konsep.2",
+   "klaim": "[Tertua dulu] ke tagihan terbuka tertua; sisanya jadi titipan setelah diputus",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 2–5 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "konsep.3",
+   "klaim": "'Pakai titipan' menutup sebagian tagihan, sisanya dari transfer baru",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 8, 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "cek_buku.0",
+   "klaim": "Kwitansi lebih bayar: 1-1100 D Rp 2.000.000 = 1-1200 K + 2-1400 K Rp 45.290 — seimbang",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 5 (lulus)"
+   ],
+   "catatan": "Contoh lama menulis 1-1200 K Rp 1.980.517,50 (D ≠ K). Dikoreksi ke Rp 1.954.710 sesuai uji jalan (KSC/JE-00147)."
+  },
+  {
+   "kode": "F04",
+   "bagian": "cek_buku.1",
+   "klaim": "Saldo titipan = kolom Deposit; keputusan 'deposit' tidak menambah jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 5, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "cek_buku.2",
+   "klaim": "Kwitansi pakai titipan: Kas D + 2-1400 D = 1-1200 K; titipan kembali Rp 0",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Di [Atur sendiri] uang lebih tidak bisa dicatat; pilih [Tertua dulu]",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.1 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-08."
+  },
+  {
+   "kode": "F04",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "[Tertua dulu] saat ada tagihan terbuka lain: kelebihan melunasi tagihan itu, bukan jadi titipan",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "'Kembalikan ke pelanggan' wajib Manajer; Finance memilih deposit atau alokasi",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-kembalikan langkah 1 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-kembalikan langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F04",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kelebihan ≤ Rp 5.000 dianggap pembulatan dan TIDAK menjadi titipan",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 4 (lulus)"
+   ],
+   "catatan": "SALAH: kelebihan ≤ Rp 5.000 diputus otomatis sebagai pembulatan TANPA jendela keputusan, tetapi tetap MENJADI titipan (2-1400 K, saldo titipan naik). Aturan 'naikkan Rp 500.000' tetap perlu supaya jendela muncul. LAPORAN_AUDIT C-27 juga menulis 'titipan tidak terbentuk'."
+  },
+  {
+   "kode": "F04",
+   "bagian": "catatan_pelatih",
+   "klaim": "'Pakai titipan' di Atur sendiri melunasi SO; pesan lebih bayar menyebut uang diterima",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F04_lebih_bayar_titipan.js · langkah 4, 9 (lulus)"
+   ],
+   "catatan": "B-14, B-15."
+  },
+  {
+   "kode": "F05",
+   "bagian": "konsep.0",
+   "klaim": "Rencana pembayaran membagi SO menjadi cicilan bertanggal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 1, 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "konsep.1",
+   "klaim": "Denda = sisa × 2%/bulan × hari telat ÷ 30, tanpa tenggang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 6 (lulus)",
+    "uji variasi V4.2 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "konsep.2",
+   "klaim": "Nota denda lahir sebagai usulan tanpa jurnal; nominal bisa diubah/dibebaskan Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-denda langkah 1 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-denda langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "konsep.3",
+   "klaim": "Nota terbit → 1-1270 Piutang Denda / 4-9300 Pendapatan Denda",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "cek_buku.0",
+   "klaim": "Nota usulan belum berjurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "cek_buku.1",
+   "klaim": "Nota terbit contoh Rp 1.679.846 × 2% × 20/30",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 8 (lulus)"
+   ],
+   "catatan": "Contoh menulis Rp 22.398,09; hitungan & uji jalan = Rp 22.397,95 (KSC/JE-00151). Dikoreksi."
+  },
+  {
+   "kode": "F05",
+   "bagian": "cek_buku.2",
+   "klaim": "Piutang usaha SO tidak berubah; denda piutang terpisah (1-1270)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Finance tidak punya [Susun Jadwal]; rencana baru disusun Admin Penjualan/Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-umur langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "'est. — belum jadi nota' belum dokumen maupun jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 3, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Sesudah terbit, mengubah/membebaskan butuh Manajer dan jurnal pembalik",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-denda langkah 4 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-denda langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Tombol Buat Nota Denda mati bila tidak ada denda baru",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F05",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kotak cari berisi nomor nota: kartu RENCANA AKTIF dan jumlah tab Jadwal ikut tersaring",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-denda langkah 2 (lulus)"
+   ],
+   "catatan": "Sejak perbaikan C-25 kartu RENCANA AKTIF tetap seluruh PT; hanya angka di tab Jadwal Pembayaran yang tersaring."
+  },
+  {
+   "kode": "F05",
+   "bagian": "catatan_pelatih",
+   "klaim": "Status rencana 'Aktif' (dulu 'Active')",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F05_rencana_denda.js · langkah 1 (lulus)"
+   ],
+   "catatan": "B-17."
+  },
+  {
+   "kode": "F06",
+   "bagian": "konsep.0",
+   "klaim": "Izin kredit = tambahan batas sementara yang diajukan Sales",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 7, 8 (lulus)",
+    "uji/F06_kredit_plafon.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "konsep.1",
+   "klaim": "Eksposur = terkirim + belum dikirim + giro belum cair − titipan, dibanding plafon",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F06_kredit_plafon.js · langkah note",
+    "uji/e2e/A1_order_to_cash.js · langkah 4, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "konsep.2",
+   "klaim": "Finance hanya membaca antrean kredit; Manajer memutus",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F06_kredit_plafon.js · langkah 1 (lulus)",
+    "uji/e2e/A1_order_to_cash.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "konsep.3",
+   "klaim": "Plafon & izin kredit tidak mengubah buku besar",
+   "hasil": "terbukti — cek buku/izin",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 5, 9 (lulus)"
+   ],
+   "catatan": "Cek buku V9: jenis sumber jurnal di basis data tidak memuat izin kredit/profil kredit (tidak ada jalur posting)."
+  },
+  {
+   "kode": "F06",
+   "bagian": "cek_buku.2",
+   "klaim": "Izin kredit tetap 'Menunggu' sampai Manajer memutus",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F06_kredit_plafon.js · langkah 1 (lulus)",
+    "uji/e2e/A1_order_to_cash.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Finance tidak punya tombol Setujui",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F06_kredit_plafon.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "'PLAFON tanpa batas' = plafon belum diatur/disetujui",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 1 (lulus)"
+   ],
+   "catatan": "K-09."
+  },
+  {
+   "kode": "F06",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Janji bayar dicatat lewat ikon telepon di Penagihan & Penerimaan",
+   "hasil": "diperbaiki aplikasi + teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-janji langkah 1 (lulus)",
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-janji langkah 2 (lulus)",
+    "jest latihV9TindakLanjutIzin.test.js"
+   ],
+   "catatan": "Untuk Finance SALAH: server menolak (403, izin ubah pesanan). Ikon telepon & lonceng tampil untuk Finance padahal ditolak → kini disembunyikan bagi yang tanpa izin (CollectionWorklist.jsx). Teks dikoreksi: janji dicatat Sales/Admin Sales; pertanyaan pemilik K-10."
+  },
+  {
+   "kode": "F06",
+   "bagian": "catatan_pelatih",
+   "klaim": "Satu pengajuan profil kredit terbuka per pelanggan per PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F06",
+   "bagian": "catatan_pelatih",
+   "klaim": "Hasil pencarian antrean tidak tertimpa daftar lama",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest latihPiutangKredit.test.js"
+   ],
+   "catatan": "B-18."
+  },
+  {
+   "kode": "F07",
+   "bagian": "konsep.0",
+   "klaim": "PD disetujui berjenjang sebelum dicairkan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "konsep.1",
+   "klaim": "Pencairan dicatat sebagai uang muka 1-1400, belum beban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "konsep.2",
+   "klaim": "LPJ mengubah uang muka jadi beban per kategori",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "konsep.3",
+   "klaim": "Sisa dikembalikan → saldo uang muka PD nol",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal pencairan 1-1400 D / 1-1110 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal LPJ beban D / 1-1400 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 8 (lulus)",
+    "uji variasi V2.3 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "cek_buku.2",
+   "klaim": "Jurnal pengembalian sisa 1-1110 D / 1-1400 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "cek_buku.3",
+   "klaim": "Saldo uang muka PD 0; Kas Toko bersih turun sebesar biaya",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 10, 11 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "cek_buku.4",
+   "klaim": "Biaya > uang muka: LPJ mencatat 2-1650 Hutang Reimburse (K) dan muncul [Bayar Reimburse]",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 7 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 8 (lulus)",
+    "uji variasi V2.7 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Kategori LPJ menentukan akun beban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "LPJ tanpa [Ajukan] tetap Draf, Manajer tidak bisa menyetujui; bukti hanya bisa diunggah selama Draf",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 2 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 3 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance tidak bisa menyetujui PD maupun LPJ",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 4 (lulus)"
+   ],
+   "catatan": "LPJ di layar (V9). PD: izin Finance tanpa 'setujui' (server); jenjang Pimpinan & Bagian Keuangan = Admin (K-13)."
+  },
+  {
+   "kode": "F07",
+   "bagian": "catatan_pelatih",
+   "klaim": "[Tanda Terima] mencetak bukti serah",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "catatan_pelatih",
+   "klaim": "LPJ ditolak Manajer → pembuat klik [Perbaiki & Ajukan Lagi]",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 5 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F07",
+   "bagian": "catatan_pelatih",
+   "klaim": "LPJ yang diketik Finance tercatat atas nama pemohon PD",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F07_kas_kecil.js · langkah 7 (lulus)"
+   ],
+   "catatan": "B-25."
+  },
+  {
+   "kode": "F07",
+   "bagian": "catatan_pelatih",
+   "klaim": "'Lampiran wajib' menolak LPJ tanpa bukti",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V2.2 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-17."
+  },
+  {
+   "kode": "F08",
+   "bagian": "konsep.0",
+   "klaim": "Kwitansi tunai sales melunasi piutang; uang masih di sales",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "konsep.1",
+   "klaim": "Uang di sales dicatat 1-1280 Piutang Titipan Karyawan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "konsep.2",
+   "klaim": "Menjadi kas setelah Finance [Terima setoran]",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 4, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "konsep.3",
+   "klaim": "Uang kurang → setoran ditolak, titipan tetap atas nama sales",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "cek_buku.0",
+   "klaim": "Kwitansi tunai sales: 1-1280 D / 1-1200 K, belum ada kas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "cek_buku.1",
+   "klaim": "Terima setoran: 1-1110 D / 1-1280 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "cek_buku.2",
+   "klaim": "Titipan kwitansi ini Rp 0 setelah setoran diterima",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F08_titipan_sales.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Hitung dulu; bila berbeda [Tolak] + alasan",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Sales pemegang izin kas mencatat kas langsung, tanpa titipan",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PMT4_titipan_sales.py::U3"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "catatan_pelatih",
+   "klaim": "[Terima setoran] mati untuk penyetor sendiri",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest pmt4TitipanSales.test.js (cth-deposit-own)",
+    "tests_mem test_PMT4_titipan_sales.py::U7"
+   ]
+  },
+  {
+   "kode": "F08",
+   "bagian": "catatan_pelatih",
+   "klaim": "Pengaturan tunai sales = titipan dinyalakan skrip latihan",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-14."
+  },
+  {
+   "kode": "F09",
+   "bagian": "konsep.1",
+   "klaim": "Kategori menentukan akun lawan; Operasional keluar → 6-4000",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 6 (lulus)",
+    "uji variasi V2.8 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F09",
+   "bagian": "konsep.2",
+   "klaim": "Semua rekening bank & kas besar memakai 1-1100",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 6 (lulus)",
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F09",
+   "bagian": "konsep.3",
+   "klaim": "Transaksi bank baru berstatus rekonsiliasi 'Belum'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F09",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal kas keluar Operasional 6-4000 D / 1-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F09",
+   "bagian": "cek_buku.1",
+   "klaim": "Kartu BCA turun; mutasi 'Belum'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F09",
+   "bagian": "cek_buku.2",
+   "klaim": "Peta kategori: …; uang masuk selain 'Setoran Modal' → 1-9999",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji variasi V2.8–V2.19 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "Transfer / Top-up keluar → 1-1150 D, masuk → 1-1150 K (V2.14, V2.15), bukan 1-9999. Teks dikoreksi."
+  },
+  {
+   "kode": "F09",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "'Transfer / Top-up': sisi keluar jadi beban, sisi masuk Suspense → laba turun palsu",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji variasi V2.14 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji variasi V2.15 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "Usang sesudah perbaikan B-26: kedua sisi lewat 1-1150 Kas & Bank Transit. Kesalahan diganti: mencatat satu sisi saja/nominal beda → 1-1150 tidak nol."
+  },
+  {
+   "kode": "F09",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Uang masuk lain-lain jatuh ke Suspense",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V2.19 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-12."
+  },
+  {
+   "kode": "F09",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kotak cari Jurnal tidak mencari nomor KSC/CASH di kolom Sumber",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 10 (lulus)",
+    "uji variasi V8 (cari nomor kwitansi)"
+   ],
+   "catatan": "Usang sesudah perbaikan B-27: nomor KSC/CASH-… ditemukan."
+  },
+  {
+   "kode": "F09",
+   "bagian": "catatan_pelatih",
+   "klaim": "Pertanyaan pemilik: 'Transfer / Top-up' tidak memakai 1-1150",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji variasi V2.14 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "Sudah memakai 1-1150 (B-26); dihapus dari daftar pertanyaan."
+  },
+  {
+   "kode": "F09",
+   "bagian": "catatan_pelatih",
+   "klaim": "Form Transaksi Kas tidak menampilkan akun lawan sebelum disimpan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F09_rekening_transaksi_kas.js · langkah 3 (lulus)"
+   ],
+   "catatan": "K-15."
+  },
+  {
+   "kode": "F10",
+   "bagian": "konsep.1",
+   "klaim": "Mencocokkan tidak membuat jurnal baru",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 7 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 11 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "konsep.2",
+   "klaim": "Mutasi yang belum ada di buku dibukukan dari layar rekonsiliasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 6, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "konsep.3",
+   "klaim": "Skor ≥ 80 tertaut otomatis; ≥ 60 usulan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "cek_buku.0",
+   "klaim": "Pencocokan tanpa jurnal; kas berubah status 'Terekonsiliasi'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 7, 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "cek_buku.1",
+   "klaim": "Biaya bank 6-8000 D / 1-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "cek_buku.2",
+   "klaim": "Bunga bank → Pendapatan Bunga; Titipkan → 2-1950",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK15_titipan_biaya_bank.py"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "cek_buku.3",
+   "klaim": "Selisih per periode = mutasi bersih − buku bersih",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V3.23 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji/F10_rekonsiliasi_bank.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Nominal berkoma tanpa kutip → kolom bergeser, baris ditolak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V3.20 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Keterangan sama → dilewati sebagai duplikat",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V3.22 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "[Abaikan] tidak membukukan beban; salah cocok dibatalkan [Lepas]",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 11 (lulus)",
+    "uji/variasi/V9_klaim_kas.js · hasil/V9/kas langkah 12 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "catatan_pelatih",
+   "klaim": "Baris ekspedisi (skor 60) & biaya admin tidak tertaut otomatis",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "catatan_pelatih",
+   "klaim": "Sesudah beberapa cocok manual muncul '1 usulan menunggu' aturan pembelajaran",
+   "hasil": "belum dibuktikan",
+   "bukti": [],
+   "catatan": "Butuh beberapa peserta mencocokkan manual baris serupa; tidak diuji (perilaku kelas)."
+  },
+  {
+   "kode": "F10",
+   "bagian": "catatan_pelatih",
+   "klaim": "Bentuk nominal & pemisah TAB/titik koma terbaca",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V3.6–V3.15 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F10",
+   "bagian": "catatan_pelatih",
+   "klaim": "Impor tempel 'tempel baris', ringkasan berperiode, tiga tombol berjurnal minta konfirmasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 3, 6, 8 (lulus)"
+   ],
+   "catatan": "B-20–B-22."
+  },
+  {
+   "kode": "F11",
+   "bagian": "konsep.0",
+   "klaim": "Hutang lahir saat tagihan terposting; bayar mengurangi hutang & bank",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F11_bayar_tagihan.js · langkah 6 (lulus)",
+    "uji/e2e/A2_procure_to_pay.js · langkah 16, 23 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "konsep.1",
+   "klaim": "3-way match: jumlah dan harga harus sama sebelum dibayar",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 5 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 6 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 7 (lulus)"
+   ],
+   "catatan": "Tidak harus sama: harga ±5% dan selisih bernilai ≤ Rp 50.000 dianggap cocok; di luar itu tagihan menunggu persetujuan dan tidak bisa dibayar."
+  },
+  {
+   "kode": "F11",
+   "bagian": "konsep.2",
+   "klaim": "Sisa GR/IR nol setelah tagihan masuk",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F11_bayar_tagihan.js · langkah 7 (lulus)",
+    "uji/e2e/A2_procure_to_pay.js · langkah 26 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal bayar 2-1100 D / 1-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F11_bayar_tagihan.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal tagihan 2-1150 D + 1-1500 D / 2-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 5 (lulus)",
+    "uji/e2e/A2_procure_to_pay.js · langkah 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "cek_buku.2",
+   "klaim": "Sisa GR/IR PO = Rp 0",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F11_bayar_tagihan.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Tagihan berselisih jangan dibayar sebelum diputus Pembelian atau Manajer",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 7 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 8 (lulus)"
+   ],
+   "catatan": "Finance tidak punya [Bayar] pada tagihan 'Menunggu persetujuan'; pemutusnya Manajer/Admin (bukan Pembelian), dan bukan pembuat tagihan (kontrol dua orang)."
+  },
+  {
+   "kode": "F11",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Kurang ≤ Rp 5.000 ditutup otomatis",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V5 1.864.000 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "Kini diberitahukan di layar (V-07)."
+  },
+  {
+   "kode": "F11",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "GR/IR tanpa 'Tampilkan yang sudah nol' → 'Tidak ada sisa GR/IR yang cocok'",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F11",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance melihat & membayar; membuat & membatalkan tagihan wewenang Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 1 (lulus)",
+    "uji/F11_bayar_tagihan.js · langkah 3 (lulus)"
+   ],
+   "catatan": "B-08."
+  },
+  {
+   "kode": "F11",
+   "bagian": "catatan_pelatih",
+   "klaim": "Pita kuning 'Selisih harga pembelian belum diatur' di GR/IR",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 9 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-grir langkah 1 (lulus)",
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 4 (lulus)"
+   ],
+   "catatan": "K-26."
+  },
+  {
+   "kode": "F11",
+   "bagian": "catatan_pelatih",
+   "klaim": "Kalender Tanggal bayar mengizinkan bulan depan",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji variasi V5 2026-12-15 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-16."
+  },
+  {
+   "kode": "F12",
+   "bagian": "konsep.1",
+   "klaim": "Manajer membuat/memverifikasi/menjadwalkan; Admin menyetujui; Finance membayar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 1–9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "konsep.2",
+   "klaim": "Pengaju kontrabon tidak boleh menyetujuinya sendiri",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "konsep.3",
+   "klaim": "Kontrabon tidak membuat jurnal sampai dibayar",
+   "hasil": "terbukti — cek buku/izin",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 10 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 3 (lulus)"
+   ],
+   "catatan": "Cek buku V9: satu-satunya jurnal kontrabon adalah jurnal pembayaran (2-1100 D / 1-1100 K)."
+  },
+  {
+   "kode": "F12",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal bayar kontrabon seimbang, satu kas keluar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "cek_buku.1",
+   "klaim": "Tagihan di kontrabon Lunas, sisa Rp 0",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "cek_buku.2",
+   "klaim": "Membuat/verifikasi/setuju/jadwal tanpa jurnal",
+   "hasil": "terbukti — cek buku/izin",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 3 (lulus)"
+   ],
+   "catatan": "Lihat konsep.3."
+  },
+  {
+   "kode": "F12",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Finance tidak punya [Kontrabon baru]",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Manajer menyetujui kontrabon buatannya sendiri → ditolak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Tombol bayar baru ada sesudah 'Dijadwalkan bayar'",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 2 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 3 (lulus)"
+   ],
+   "catatan": "K-05."
+  },
+  {
+   "kode": "F12",
+   "bagian": "catatan_pelatih",
+   "klaim": "Satu faktur hanya boleh ada di satu kontrabon",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F12",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance membaca 'Langkah berikutnya — Jadwalkan pembayaran'",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-kontrabon langkah 2 (lulus)"
+   ],
+   "catatan": "B-09."
+  },
+  {
+   "kode": "F12",
+   "bagian": "catatan_pelatih",
+   "klaim": "Server mengizinkan bayar kontrabon 'Disetujui' tanpa jadwal",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-05."
+  },
+  {
+   "kode": "F13",
+   "bagian": "konsep.0",
+   "klaim": "Faktur pajak tidak membuat jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "konsep.1",
+   "klaim": "PPN keluaran dijurnal saat surat jalan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 6 (lulus)",
+    "uji/e2e/A1_order_to_cash.js · langkah 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "konsep.2",
+   "klaim": "PPN 12% × DPP nilai lain 11/12",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 5 (lulus)",
+    "uji variasi V6 DPP nilai lain (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "konsep.3",
+   "klaim": "NSFP diisi manual setelah terbit",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "cek_buku.1",
+   "klaim": "PPN faktur = 2-1200 K di jurnal pengiriman",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "cek_buku.2",
+   "klaim": "Status bayar & sisa piutang SO tidak berubah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "cek_buku.3",
+   "klaim": "Panel 'Pencocokan PPN keluaran' membandingkan faktur dengan 2-1200 per masa",
+   "hasil": "belum dibuktikan",
+   "bukti": [],
+   "catatan": "Panel ada di layar Pajak (TaxOutputRecon) tetapi angkanya belum dicocokkan oleh uji."
+  },
+  {
+   "kode": "F13",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Faktur yang terbit hanya bisa dibatalkan Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-faktur langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "NSFP kembar ditolak 'sudah dipakai'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V6 NSFP kembar (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Lencana 'Data Pajak Belum Lengkap' untuk pelanggan tanpa NPWP/NIK",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F13_faktur_pajak.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance boleh menerbitkan, isi NSFP, faktur pengganti; batal = Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-faktur langkah 1 (lulus)",
+    "uji/F13_faktur_pajak.js · langkah 2, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F13",
+   "bagian": "catatan_pelatih",
+   "klaim": "Faktur per pesanan tanpa NPWP boleh terbit; NSFP tanpa cek digit; e-Faktur hanya sakelar",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji variasi V6 NSFP (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-03, K-04, K-21."
+  },
+  {
+   "kode": "F14",
+   "bagian": "konsep.0",
+   "klaim": "Sample berbayar disetujui Finance/Admin Sample sebelum ke gudang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "konsep.2",
+   "klaim": "Uang sebelum kirim → 2-1400 Uang Muka",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "konsep.3",
+   "klaim": "PPN Rp 75.000 × 11/12 × 12% = Rp 8.250",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "cek_buku.0",
+   "klaim": "Kwitansi sample 1-1100 D / 2-1400 K Rp 83.250",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "cek_buku.1",
+   "klaim": "Persetujuan pembayaran tanpa jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "cek_buku.2",
+   "klaim": "Saat sample dikirim: jurnal penjualan terbit dan uang muka menutup piutang",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK32_nota_kredit.py::U3_U4 (dibayar sebelum kirim lalu kirim)"
+   ],
+   "catatan": "Diuji pada pesanan biasa (jalur sama); pengiriman sample sendiri tidak diuji di layar."
+  },
+  {
+   "kode": "F14",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Uang baru sebagian → 'kurang Rp …' dan jendela 'Uang belum lengkap'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V6 sample 50.000 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "catatan_pelatih",
+   "klaim": "Nilai potong berubah > ±5% → 'ACC ulang'",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest f15SamplePaymentReapproval.test.js"
+   ]
+  },
+  {
+   "kode": "F14",
+   "bagian": "catatan_pelatih",
+   "klaim": "Harga sample latihan Rp 25.000/yard",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F14_sample_berbayar.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "konsep.0",
+   "klaim": "Posting proses gaji → beban + Hutang Gaji, BPJS, PPh 21",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "konsep.1",
+   "klaim": "Bayar gaji = satu kas keluar dari rekening berperuntukan Gaji",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 3, 4 (lulus)",
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "konsep.2",
+   "klaim": "Setoran mengurangi hutang pajak; boleh sebagian",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 6, 7 (lulus)",
+    "uji variasi V7 setoran 36.945 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "cek_buku.0",
+   "klaim": "Bayar gaji 2-1600 D / 1-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "cek_buku.1",
+   "klaim": "Setoran PPh 21 2-1800 D / 1-1100 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "cek_buku.2",
+   "klaim": "Sisa = Kewajiban − setoran",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 5, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Masa gaji November → kartu Rp 0",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Setoran melebihi sisa ditolak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V7 sisa + 1.000 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "'Tanpa Rekening — Bayar Tunai' di daftar transfer",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "catatan_pelatih",
+   "klaim": "Proses reguler per PT & masa hanya satu",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "catatan_pelatih",
+   "klaim": "Membatalkan setoran butuh izin Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F15",
+   "bagian": "catatan_pelatih",
+   "klaim": "Isian nominal setoran memakai format rupiah baku",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V7 40.864,50 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "B-10."
+  },
+  {
+   "kode": "F15",
+   "bagian": "catatan_pelatih",
+   "klaim": "PPh 21 susulan bisa bersen",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji variasi V7 PPh 21 TER (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "K-06."
+  },
+  {
+   "kode": "F16",
+   "bagian": "konsep.0",
+   "klaim": "Setiap jurnal seimbang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 1, 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "konsep.1",
+   "klaim": "Neraca Saldo menampilkan saldo akhir semua akun",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "konsep.2",
+   "klaim": "SO → jurnal pendapatan & HPP saat kirim, penerimaan saat bayar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "konsep.3",
+   "klaim": "Jejak Dokumen: rantai SO sampai jurnal dengan nilai",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal penerimaan = kwitansi = kas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 2, 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal pendapatan contoh",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "cek_buku.2",
+   "klaim": "Jurnal HPP contoh",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "cek_buku.3",
+   "klaim": "Saldo 1-1200 buku besar = Neraca Saldo = piutang tercatat",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 5 (lulus)",
+    "uji/F01_orientasi.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Keterangan jurnal kas memuat nomor kwitansi, bukan nomor SO",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "TOTAL DEBIT di kartu = total kolom Neraca Saldo",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 1, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Rantai dokumen perlu digeser; ada 'Daftar relasi'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F16",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance hanya izin lihat; tombol tulis disembunyikan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 1, 7 (lulus)",
+    "jest latihBukuBesarIzin.test.js"
+   ],
+   "catatan": "B-02."
+  },
+  {
+   "kode": "F16",
+   "bagian": "catatan_pelatih",
+   "klaim": "Simpul jurnal di Jejak Dokumen bernilai",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 8 (lulus)"
+   ],
+   "catatan": "B-03."
+  },
+  {
+   "kode": "F16",
+   "bagian": "catatan_pelatih",
+   "klaim": "Jurnal kas lama 'Kas in', baru 'Kas masuk'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 2 (lulus)",
+    "uji dokumen D2"
+   ],
+   "catatan": "P-09."
+  },
+  {
+   "kode": "F17",
+   "bagian": "konsep.0",
+   "klaim": "Laba-Rugi = pendapatan − HPP − beban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "konsep.1",
+   "klaim": "Aset = Kewajiban + Ekuitas; laba tahun berjalan masuk ekuitas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 4 (lulus)",
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "konsep.2",
+   "klaim": "Arus Kas menjelaskan perubahan kas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "konsep.3",
+   "klaim": "Angka laporan dari jurnal; klik akun → buku besar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "cek_buku.0",
+   "klaim": "Laba-Rugi = saldo akun 4/5/6",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 2 (lulus)",
+    "uji variasi V8 Laba-Rugi (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "cek_buku.1",
+   "klaim": "Neraca seimbang dari saldo akun",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 4 (lulus)",
+    "uji variasi V8 Neraca (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "cek_buku.2",
+   "klaim": "Kas akhir Arus Kas = 1-1100 + 1-1110",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "cek_buku.3",
+   "klaim": "Profitabilitas: selisih belum dijelaskan Rp 0 (denda masuk)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 6 (lulus)"
+   ],
+   "catatan": "B-04."
+  },
+  {
+   "kode": "F17",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Laba bulan ini bisa beda tanda dengan Laba Tahun Berjalan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 2, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Saldo awal rekening yang didaftarkan tahun ini di baris terpisah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Suspense harus nol sebelum tutup buku",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK43_alur_layar.py::U11"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "catatan_pelatih",
+   "klaim": "Total Pendapatan termasuk denda 4-9300",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 2, 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "F17",
+   "bagian": "catatan_pelatih",
+   "klaim": "Denda/bunga/klaim di Pendapatan, bukan 'Pendapatan lain-lain'",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-02."
+  },
+  {
+   "kode": "F18",
+   "bagian": "konsep.0",
+   "klaim": "Tutup buku mengunci periode; jurnal di periode itu ditolak; laba/rugi → Laba Ditahan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 3–5 (lulus)",
+    "uji variasi V1.26 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji variasi V8 periode tertutup (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "konsep.1",
+   "klaim": "Daftar periksa memuat suspense & posting gagal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "konsep.2",
+   "klaim": "Buka Periode perlu dua orang; Buka Kembali khusus Admin",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 6, 9 (lulus)"
+   ],
+   "catatan": "Izin server: Manajer akuntansi tanpa 'buka kembali', Admin punya (izin peran)."
+  },
+  {
+   "kode": "F18",
+   "bagian": "konsep.3",
+   "klaim": "Posting Gagal harus kosong sebelum tutup buku",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "cek_buku.0",
+   "klaim": "Pratinjau Oktober (contoh) jurnal penutup seimbang",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 3 (lulus)"
+   ],
+   "catatan": "Contoh lama tidak seimbang (6-1000 Rp 45.300.000 · 6-5000 Rp 4.521.000 → K Rp 54.364.612 ≠ D Rp 61.741.612). Dikoreksi sesuai tangkapan layar uji: 53.300.000 · 4.543.612 · 3.898.000."
+  },
+  {
+   "kode": "F18",
+   "bagian": "cek_buku.1",
+   "klaim": "September terkunci sesudah Tutup, terbuka sesudah Buka Kembali",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 5, 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "cek_buku.2",
+   "klaim": "Usul buka periode Menunggu → Ditolak, tanpa jendela aktif",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 6, 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "cek_buku.3",
+   "klaim": "Akhir latihan: periode tertutup & usul sama dengan awal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Daftar periksa dimuat bersama Pratinjau",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Buka Periode = jendela sementara; batalkan penutupan = Buka Kembali (Admin)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 6, 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "F18",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Suspense tidak nol → penutupan diblokir",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK43_alur_layar.py::U11"
+   ],
+   "catatan": "Admin dapat menembus dengan alasan (K-15 di kode)."
+  },
+  {
+   "kode": "F18",
+   "bagian": "catatan_pelatih",
+   "klaim": "Jendela Buka Periode aktif memunculkan pita merah untuk semua pengguna",
+   "hasil": "belum dibuktikan",
+   "bukti": [],
+   "catatan": "Sengaja tidak diuji di layar (memengaruhi semua pengguna); dasar: komponen PeriodUnlockBanner."
+  },
+  {
+   "kode": "F18",
+   "bagian": "catatan_pelatih",
+   "klaim": "Penggajian belum diposting → 'Perlu Dilihat' + peringatan oranye; tutup tetap bisa",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest pk43AlurLayar.test.js"
+   ],
+   "catatan": "C-23."
+  },
+  {
+   "kode": "F18",
+   "bagian": "catatan_pelatih",
+   "klaim": "'Reopen' kini 'Buka Kembali'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 9 (lulus)"
+   ],
+   "catatan": "B-05."
+  },
+  {
+   "kode": "H01",
+   "bagian": "konsep.0",
+   "klaim": "PTKP menentukan kategori TER; rekening dipakai daftar transfer",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 2 (lulus)",
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "konsep.1",
+   "klaim": "Kompensasi bertanggal berlaku; perubahan disahkan Manajer",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H01_karyawan_baru.js · langkah 6 (lulus)",
+    "tests_mem test_PYT2_riwayat_kompensasi.py"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "cek_buku.0",
+   "klaim": "Data karyawan tidak membuat jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H01_karyawan_baru.js · langkah 5, 6 (lulus)",
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "TK1 → kategori A, K1 → B",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Tanggal masuk kosong → kompensasi berlaku sejak hari ini",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Gaji pokok tidak diubah lewat Ubah karyawan",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 2 (lulus)",
+    "jest pyt2RiwayatKompensasi.test.js"
+   ]
+  },
+  {
+   "kode": "H01",
+   "bagian": "catatan_pelatih",
+   "klaim": "Gaji pokok karyawan baru langsung disahkan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H01_karyawan_baru.js · langkah 6 (lulus)"
+   ],
+   "catatan": "K-32."
+  },
+  {
+   "kode": "H02",
+   "bagian": "konsep.0",
+   "klaim": "Masukan dihitung sesudah disahkan; susulan memuat semua masukan disahkan belum terpakai",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 1, 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "konsep.1",
+   "klaim": "Lembur = jam × (gaji pokok + tunjangan dasar) ÷ 173 × pengali, di proses reguler",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PYT3_aturan_hitung.py (lembur)"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "cek_buku.0",
+   "klaim": "Masukan & lembur tidak membuat jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H02_masukan_gaji.js · langkah 2–4 (lulus)",
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Nominal bersen ditolak (rupiah bulat)",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 3 (lulus)",
+    "jest pyt1KomponenMasukan.test.js"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Masukan disahkan ikut susulan siapa pun yang menghitung lebih dulu",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Lembur hanya dihitung di proses reguler",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PYT3_aturan_hitung.py"
+   ]
+  },
+  {
+   "kode": "H02",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance bisa menyetujui lembur yang ia ajukan",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-32."
+  },
+  {
+   "kode": "H03",
+   "bagian": "konsep.0",
+   "klaim": "Finance menghitung/mengajukan/memposting; Manajer mengesahkan & membatalkan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 4–6 (lulus)",
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "konsep.1",
+   "klaim": "Satu proses reguler per masa; susulan tanpa BPJS",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 3 (lulus)",
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "konsep.2",
+   "klaim": "PPh 21 gabungan sebulan × TER",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V7 PPh 21 TER (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal gaji susulan contoh",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Jenis Reguler membuka proses reguler yang ada",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "'Tidak ada masukan yang belum terpakai untuk Oktober 2026'",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "H03",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Anulir proses yang diposting hanya Manajer",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "konsep.0",
+   "klaim": "Bayar gaji satu kas keluar dari rekening Gaji",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 1, 2, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "konsep.1",
+   "klaim": "Tanggal bayar ≥ tanggal buku; gaji dibayar tidak bisa dianulir",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)",
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 8 (lulus)",
+    "jest pyt4BayarGaji.test.js",
+    "tests_mem test_PYT4_bayar_gaji.py::U6"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "konsep.2",
+   "klaim": "Hutang PPh 21 disetor lewat Setoran & Pajak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 6, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal bayar gaji",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal setoran PPh 21",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "cek_buku.2",
+   "klaim": "Saldo 2-1600 & 2-1800 proses ini nol",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 4, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "H04",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Tanggal bayar sebelum jurnal → tombol mati beralasan",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest pyt4BayarGaji.test.js"
+   ],
+   "catatan": "C-06."
+  },
+  {
+   "kode": "K01",
+   "bagian": "konsep.0",
+   "klaim": "Awalan kode per kelompok; 5 & 6 tampil di bawah Beban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "konsep.1",
+   "klaim": "Saldo normal Debit/Kredit per kelompok",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 2, 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "konsep.2",
+   "klaim": "Akun induk mengelompokkan; detail dijurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 2, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "konsep.3",
+   "klaim": "Akun sistem; akun kontrol hanya lewat dokumen",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 4 (lulus)",
+    "tests_mem test_PK36_akun_kontrol.py"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "konsep.4",
+   "klaim": "Finance hanya melihat; Manajer/Admin kelola; akun baru untuk PT terpilih",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 5, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "cek_buku.0",
+   "klaim": "Total akun di kartu = jumlah akun",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "cek_buku.1",
+   "klaim": "Akun detail punya induk",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "cek_buku.2",
+   "klaim": "Bagan sesudah latihan sama dengan sebelumnya",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Finance tidak punya tombol Tambah Akun",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K01_bagan_akun.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Tambah akun di 'Semua PT' → Template Global",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K01",
+   "bagian": "catatan_pelatih",
+   "klaim": "Ikon hapus hanya akun khusus PT, dengan konfirmasi",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest latihK01HapusAkun.test.js"
+   ],
+   "catatan": "C-01."
+  },
+  {
+   "kode": "K02",
+   "bagian": "konsep.0",
+   "klaim": "Dokumen menjurnal lewat pemetaan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 2, 3, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "konsep.1",
+   "klaim": "Lapisan Bawaan → Global → Khusus PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 2, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "konsep.3",
+   "klaim": "Ubah pemetaan hanya untuk jurnal baru; beralasan & tercatat",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 1, 6, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "konsep.4",
+   "klaim": "Finance boleh mengubah pemetaan; Manajer hanya melihat",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 3 (lulus)",
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal pendapatan kirim memakai akun pemetaan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal tagihan memakai akun pemetaan Pembelian",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "cek_buku.2",
+   "klaim": "Pemetaan sesudah peragaan sama; dua baris riwayat",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K02_pemetaan_akun.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K02",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "'Selisih harga pembelian' belum diatur → selisih tertinggal di GR/IR, kliring ditolak",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 9 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-grir langkah 1 (lulus)",
+    "tests_mem test_PK28_gr_ir.py::U4, U10b"
+   ],
+   "catatan": "K-26."
+  },
+  {
+   "kode": "K02",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Akun pengganti di riwayat tetap dihitung akun kontrol",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-28."
+  },
+  {
+   "kode": "K03",
+   "bagian": "konsep.0",
+   "klaim": "Profil PT sumber kop dokumen",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "konsep.1",
+   "klaim": "PKP; kode dokumen terkunci",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 1, 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "konsep.2",
+   "klaim": "Tahun buku Jan–Des, IDR",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 2, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "konsep.3",
+   "klaim": "Periode tertutup mengunci; membuka butuh usul & persetujuan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "cek_buku.0",
+   "klaim": "Kop faktur = Profil PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "cek_buku.1",
+   "klaim": "Bulan tutup 12, IDR, periode tertutup mengunci",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "cek_buku.2",
+   "klaim": "Periode tertutup layar = buku; pengaturan tidak berubah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 6, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Kode dokumen terkunci sesudah ada dokumen bernomor",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K03_profil_pt_periode.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Transaksi bertanggal di periode tertutup ditolak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.26 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji variasi V8 periode tertutup (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "K03",
+   "bagian": "catatan_pelatih",
+   "klaim": "Riwayat PT untuk Manajer: 'hanya bisa dibaca pemegang akses Riwayat Audit'",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest latihK03RiwayatPt.test.js"
+   ],
+   "catatan": "C-02."
+  },
+  {
+   "kode": "K04",
+   "bagian": "konsep.0",
+   "klaim": "Rekening rincian akun 1-1100 / 1-1110",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "konsep.1",
+   "klaim": "Saldo awal dijurnal 1-1100 D / 3-2900 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 3, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "konsep.2",
+   "klaim": "'Dipakai untuk' menentukan layar penawaran rekening",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "konsep.3",
+   "klaim": "Koreksi saldo awal lewat jurnal penyesuaian",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal saldo awal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "cek_buku.1",
+   "klaim": "Saldo kartu = saldo awal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "cek_buku.2",
+   "klaim": "Pembersihan: efek bersih Rp 0",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Form Ubah rekening tidak memuat saldo awal",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Semua rekening bank memakai 1-1100",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K04_rekening_kas_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K04",
+   "bagian": "catatan_pelatih",
+   "klaim": "Petunjuk Cara Bayar di Perusahaan (PT) › Master per PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [],
+   "catatan": "C-03 (BankAccountForm)."
+  },
+  {
+   "kode": "K04",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance belum punya menu Master per PT",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-30."
+  },
+  {
+   "kode": "K05",
+   "bagian": "konsep.0",
+   "klaim": "Nilai aturan berlapis: bawaan → grup → khusus PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "konsep.1",
+   "klaim": "PPN 12% DPP nilai lain 11/12",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "konsep.2",
+   "klaim": "Aturan pembayaran pelanggan, LPJ, cara bayar",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 3, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "konsep.3",
+   "klaim": "Ubah berlaku seketika; tercatat; Ikuti nilai grup mencabut",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 6–9 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "konsep.4",
+   "klaim": "Finance tidak membuka layar Aturan Keuangan & Pajak",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "cek_buku.0",
+   "klaim": "Pengaturan kembali seperti awal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "cek_buku.1",
+   "klaim": "Saldo piutang tidak berubah, hanya kolom umur",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K05_aturan_keuangan_pajak.js · langkah 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "cek_buku.2",
+   "klaim": "Contoh PPN 1.680.000 → 184.800",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F11_bayar_tagihan.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Aturan berisiko tinggi tanpa alasan → Simpan mati",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Finance hanya melihat Pemetaan Akun di Keuangan & Pajak",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K05",
+   "bagian": "catatan_pelatih",
+   "klaim": "Manajer hanya membaca; 'Kelompok umur' butuh izin kelola pengaturan",
+   "hasil": "terbukti — cek buku/izin",
+   "bukti": [],
+   "catatan": "Izin peran Manajer: pengaturan = lihat saja. K-27."
+  },
+  {
+   "kode": "K06",
+   "bagian": "konsep.0",
+   "klaim": "Profil kredit per pelanggan per PT, berlabel asal nilai",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "konsep.1",
+   "klaim": "Perubahan lewat pengajuan; satu terbuka per pelanggan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 2, 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "konsep.2",
+   "klaim": "Plafon dicek saat pesanan dibuat; termin di luar daftar ditolak",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 6 (lulus)",
+    "tests_mem test_CRT3_pemasangan.py::ganti_termin_di_luar_daftar_ditolak"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "konsep.3",
+   "klaim": "Daftar termin master per PT; termin pemasok → jatuh tempo",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 7, 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "cek_buku.0",
+   "klaim": "Profil kredit sesuai pengajuan yang disetujui",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 4, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "cek_buku.1",
+   "klaim": "Pengajuan bernomor KSC/PKR-…",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 2, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "cek_buku.2",
+   "klaim": "Aturan kredit PT tidak berubah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Plafon/termin tidak di form Ubah pelanggan",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest pk45KreditPelanggan.test.js (customer-credit-note)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Pengajuan kedua: tombol mati",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "'Termin bawaan belum dipakai saat pesanan dibuat'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K06",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Tanpa termin dicentang = semua termin aktif PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K06_termin_plafon.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "konsep.0",
+   "klaim": "Peran berisi modul dengan tingkat; menu mengikuti izin",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 2, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "konsep.1",
+   "klaim": "Contoh izin bawaan Finance (… Izin SDM & Penggajian sedang ditambahkan)",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 2, 7 (lulus)",
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 1 (lulus)",
+    "uji/sdm/H03_proses_gaji.js · langkah 2, 6 (lulus)"
+   ],
+   "catatan": "Izin SDM & Penggajian untuk Finance sudah aktif (Finance menyiapkan, memposting, membayar gaji). Teks diperbarui."
+  },
+  {
+   "kode": "K07",
+   "bagian": "konsep.2",
+   "klaim": "Admin memberi izin; ringkasan sebelum simpan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "konsep.3",
+   "klaim": "Aturan Persetujuan PO ≥ 100 jt, > 500 jt + Direksi; Coba nilai",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 5, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "konsep.4",
+   "klaim": "Kontrol dua orang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F12_kontrabon.js · langkah 6 (lulus)",
+    "uji/F18_tutup_buku.js · langkah 6 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "cek_buku.0",
+   "klaim": "Izin & aturan tidak berubah",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "cek_buku.1",
+   "klaim": "Izin sesi Finance: akuntansi lihat, pemetaan ubah, kas kelola",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah note"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "cek_buku.2",
+   "klaim": "Coba nilai PO Rp 600 jt dua jenjang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Menyimpan peran bawaan mengubah semua akun Finance",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K07",
+   "bagian": "catatan_pelatih",
+   "klaim": "Izin SDM & Penggajian untuk Finance sedang ditambahkan",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 1 (lulus)"
+   ],
+   "catatan": "Sudah ditambahkan; teks diperbarui."
+  },
+  {
+   "kode": "K08",
+   "bagian": "konsep.0",
+   "klaim": "Format nomor per PT; nomor tidak dipakai ulang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 1, 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "konsep.1",
+   "klaim": "Faktur Komersial mengikuti nomor pesanan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "konsep.2",
+   "klaim": "Desainer PDF berlapis; aturan PT terbatas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 3 (lulus)",
+    "uji dokumen D3"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "konsep.3",
+   "klaim": "Token terisi; berlaku pada cetak ulang dokumen lama",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "konsep.4",
+   "klaim": "Desainer PDF khusus Admin; Finance mencetak di Pusat Dokumen",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 4 (lulus)",
+    "uji dokumen D3"
+   ],
+   "catatan": "K-24."
+  },
+  {
+   "kode": "K08",
+   "bagian": "cek_buku.0",
+   "klaim": "Nomor kwitansi berikutnya > terakhir",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "cek_buku.1",
+   "klaim": "Teks penutup bertoken tercetak; sesudah kembali identik",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 4, 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "cek_buku.2",
+   "klaim": "Format & naskah sama dengan sebelumnya",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/konfigurasi/K08_nomor_naskah_dokumen.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "K08",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Token salah → peringatan & Simpan ditolak",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji dokumen D3"
+   ],
+   "catatan": "P-08."
+  },
+  {
+   "kode": "K08",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Kop dasar hanya tombol cetak lama",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji dokumen D3"
+   ],
+   "catatan": "K-24."
+  },
+  {
+   "kode": "K09",
+   "bagian": "konsep.1",
+   "klaim": "Komponen gaji = baris slip",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "konsep.2",
+   "klaim": "TER: TK0/TK1/K0 = A; TK2/TK3/K1/K2 = B; K3 = C",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "konsep.3",
+   "klaim": "BPJS di reguler; THR & susulan tanpa BPJS",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 3 (lulus)",
+    "tests_mem test_PYT1_komponen_gaji.py::U4, U5 (THR)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "konsep.4",
+   "klaim": "'Satu nilai untuk seluruh grup'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "cek_buku.0",
+   "klaim": "Konfigurasi tanpa jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 6, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "cek_buku.1",
+   "klaim": "Akun yang diisi proses gaji",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)",
+    "uji variasi V7 akrual insentif (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "cek_buku.2",
+   "klaim": "Potongan tidak hadir/terlambat/cuti tanpa gaji → 6-1000",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PYT3_aturan_hitung.py::U6, U7, U8"
+   ]
+  },
+  {
+   "kode": "K09",
+   "bagian": "catatan_pelatih",
+   "klaim": "Finance memegang izin aturan gaji (PTKP/TER/BPJS grup)",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/K09_konfigurasi_sdm.js · langkah 1 (lulus)"
+   ],
+   "catatan": "K-31."
+  },
+  {
+   "kode": "A1",
+   "bagian": "konsep.1",
+   "klaim": "Buku berubah hanya saat barang keluar & uang masuk",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 5, 17, 19, 22, 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "konsep.2",
+   "klaim": "Piutang lahir saat surat jalan; jatuh tempo dari tanggal SJ",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 16, 18 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "konsep.3",
+   "klaim": "Eksposur dicek saat SO; lewat plafon → tunggu izin Manajer",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 4, 6–9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "konsep.4",
+   "klaim": "PPN contoh DPP 2.356.000 → 259.160",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah note"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.0",
+   "klaim": "Lewat plafon: Buat SO terkunci sampai izin disetujui",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 6–9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.1",
+   "klaim": "Admin Sales memeriksa sebelum melepas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 10, 11 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.2",
+   "klaim": "Gudang hanya mengambil roll yang dicadangkan; jumlah = panjang roll",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 12, 13 (lulus)"
+   ],
+   "catatan": "Roll dicadangkan tampil & jumlah = panjang roll; scan roll lain tidak diuji."
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.3",
+   "klaim": "Roll tanpa RFID memblokir; pengecualian Manajer; Gudang ditolak saat menekan Override",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 14, 15 (lulus)",
+    "jest latihA1Gudang.test.js"
+   ],
+   "catatan": "Sesudah perbaikan C-12 Gudang tidak melihat tombol Override (bukan 'ditolak saat menekan'). Teks dikoreksi."
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.4",
+   "klaim": "Kwitansi tidak melebihi sisa; konfirmasi menyebut nominal, pelanggan, rekening, PT",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V1.1 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)",
+    "uji/e2e/A1_order_to_cash.js · langkah 20 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "titik_kontrol.5",
+   "klaim": "Mutasi bank ditautkan ke transaksi kas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 22 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal pendapatan kirim",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 16, 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal HPP; laba kotor",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 16, 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "cek_buku.2",
+   "klaim": "Jurnal kwitansi; piutang SO nol",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 20, 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "cek_buku.3",
+   "klaim": "Faktur & pencocokan bank tanpa jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 19, 22 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "cek_buku.4",
+   "klaim": "Nilai SO = faktur = kwitansi = kas = mutasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 24 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "[Kirim Pengambilan] hanya mencatat roll; SJ lewat [Kirim Semua]",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 13, 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Piutang & jurnal sudah lahir saat SJ, bukan 'Tandai Diterima'",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 16, 17 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Transfer dicatat Tunai → Kas Kecil",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_piutang.js · hasil/V9/piutang-tertua langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "catatan_pelatih",
+   "klaim": "Tanpa kode bayar skor 75 → cocok manual; dengan kode → otomatis",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A1_order_to_cash.js · langkah 22 (lulus)",
+    "uji/F10_rekonsiliasi_bank.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A1",
+   "bagian": "catatan_pelatih",
+   "klaim": "Perbaikan Periksa ulang kredit, pelacak dimuat ulang, kotak roll",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "jest a1AlurPesanan.test.js"
+   ],
+   "catatan": "C-09–C-11."
+  },
+  {
+   "kode": "A2",
+   "bagian": "konsep.0",
+   "klaim": "Rantai PR → PO → terima → SPK → tagihan → kontrabon → bayar → mutasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 27 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "konsep.1",
+   "klaim": "Hutang dua tahap: GR/IR saat terima, Hutang Usaha saat tagihan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 10, 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "konsep.2",
+   "klaim": "3-way match: cocok → terposting; selisih DALAM toleransi → perlu persetujuan; lebih tagih → ditolak",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 4 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 5 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 6 (lulus)"
+   ],
+   "catatan": "Selisih dalam toleransi (±5% harga, atau nilai ≤ Rp 50.000) dianggap COCOK dan langsung terposting; yang perlu persetujuan adalah selisih DI LUAR toleransi. Ambang Rp 50.000 ditambahkan ke teks."
+  },
+  {
+   "kode": "A2",
+   "bagian": "konsep.3",
+   "klaim": "PR ≥ 50 jt & PO ≥ 100 jt perlu persetujuan; pembuat tidak menyetujui sendiri",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 3–6 (lulus)",
+    "uji/konfigurasi/K07_hak_akses_persetujuan.js · langkah 5, 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "konsep.4",
+   "klaim": "PPN masukan 11% DPP; bayar & rekonsiliasi tanpa jurnal baru",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 16, 23, 25 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.0",
+   "klaim": "PR ≥ 50 jt disetujui sebelum jadi PO",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 3, 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.1",
+   "klaim": "Pembuat PO tidak menyetujui sendiri",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.2",
+   "klaim": "Barang karantina sampai SPK MD Quality ditutup",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 13 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.3",
+   "klaim": "Jumlah tagih tidak boleh melebihi diterima; selisih harga di atas toleransi butuh persetujuan",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 4 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 6 (lulus)",
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 8 (lulus)"
+   ],
+   "catatan": "Lebih tagih bernilai ≤ Rp 50.000 masih bisa dikirim dengan persetujuan; di atasnya tombol kirim mati. Persetujuan oleh orang kedua (pembuat tagihan tidak memutus sendiri)."
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.4",
+   "klaim": "Nomor faktur pemasok tidak boleh dipakai dua kali",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.5",
+   "klaim": "Kontrabon diverifikasi, disetujui orang kedua, dijadwalkan, dibayar Finance",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 18–22 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "titik_kontrol.6",
+   "klaim": "Pembayaran punya pasangan mutasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 24, 25 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal penerimaan barang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 10 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "cek_buku.1",
+   "klaim": "Jurnal tagihan pemasok",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "cek_buku.2",
+   "klaim": "Jurnal pembayaran",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 23 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "cek_buku.3",
+   "klaim": "Sisa GR/IR & hutang nol",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 23, 26 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "cek_buku.4",
+   "klaim": "Mutasi BCA tercocok tanpa jurnal baru",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 25 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "PPN Masukan baru saat tagihan, bukan saat barang datang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 10, 16 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Kontrabon disetujui ≠ hutang lunas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 20, 23 (lulus)"
+   ]
+  },
+  {
+   "kode": "A2",
+   "bagian": "catatan_pelatih",
+   "klaim": "Pembelian kecil disetujui otomatis; dua tombol PR → PO; MD Quality sampling",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A2_procure_to_pay.js · langkah 4, 12, 13 (lulus)"
+   ],
+   "catatan": "K-35."
+  },
+  {
+   "kode": "A2",
+   "bagian": "catatan_pelatih",
+   "klaim": "Keterangan jurnal sistem masih Inggris ('Goods Receipt', 'Vendor Bill')",
+   "hasil": "diperbaiki teks",
+   "bukti": [],
+   "catatan": "Cek buku V9: jurnal baru berketerangan 'Penerimaan barang …' dan 'Tagihan pemasok …' (C-17). Teks diperbarui."
+  },
+  {
+   "kode": "A2",
+   "bagian": "catatan_pelatih",
+   "klaim": "Nomor PR/VB tanpa awalan PT",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji/variasi/V9_klaim_hutang.js · hasil/V9/hutang-tagihan langkah 3 (lulus)"
+   ],
+   "catatan": "K-22."
+  },
+  {
+   "kode": "A2",
+   "bagian": "catatan_pelatih",
+   "klaim": "Pembayaran tidak dicek ke saldo bank",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-36."
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.0",
+   "klaim": "Retur dari pesanan terkirim per roll; persetujuan awal tanpa jurnal",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A2, A3 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.1",
+   "klaim": "Gudang scan terima; QC lewat SPK otomatis; nilai = harga neto × qty QC + PPN",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A5–A9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.2",
+   "klaim": "Manajer memilih outcome; satu Nota Kredit",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A8, B8 (lulus)",
+    "uji/e2e/A3_retur_tukar.js · langkah T8 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.3",
+   "klaim": "Potong tagihan SO asal dulu",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah B8, B9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.4",
+   "klaim": "Jurnal Nota Kredit membalik penjualan & HPP",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A9, B9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "konsep.5",
+   "klaim": "Nota Debit: Hutang D / Persediaan K + PPN Masukan K; memotong tagihan lewat kontrabon",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_pembelian.js · langkah 4, 5, 7, 12 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "titik_kontrol.1",
+   "klaim": "Pembuat retur tidak menyetujui sendiri; kontrabon orang kedua",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A2, A3 (lulus)",
+    "uji/e2e/A3_retur_pembelian.js · langkah 9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "titik_kontrol.2",
+   "klaim": "QC wajib sebelum selesai; roll belum di-scan belum bisa diperiksa",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A5–A8 (lulus)",
+    "jest latihA3Karantina.test.js"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "titik_kontrol.3",
+   "klaim": "Pratinjau = Nota Kredit yang terbit",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A8, B8 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "titik_kontrol.4",
+   "klaim": "Nota Debit dipotong sekali; potongan = nilai termasuk PPN",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "uji/e2e/A3_retur_pembelian.js · langkah 7 (lulus)",
+    "tests_mem test_A3_nota_debit_kontrabon.py"
+   ],
+   "catatan": "C-19."
+  },
+  {
+   "kode": "A3",
+   "bagian": "titik_kontrol.5",
+   "klaim": "Finance mencocokkan saldo, kas refund, sisa tagihan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A11, B10 (lulus)",
+    "uji/e2e/A3_retur_pembelian.js · langkah 11, 12 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "cek_buku.0",
+   "klaim": "Jurnal Nota Kredit Store Credit",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A9, A10 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "cek_buku.1",
+   "klaim": "Pemakaian saldo 2-1450 D / 1-1200 K",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A11 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "cek_buku.2",
+   "klaim": "Jurnal Nota Kredit Pengembalian Dana (contoh CN-00002)",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah B9 (lulus)"
+   ],
+   "catatan": "Contoh menulis 2-1200 (D) Rp 331.622,50 → D ≠ K. Uji jalan: PPN Rp 345.262,50 (KSC/JE-00139). Dikoreksi."
+  },
+  {
+   "kode": "A3",
+   "bagian": "cek_buku.3",
+   "klaim": "Jurnal Nota Debit",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_pembelian.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "cek_buku.4",
+   "klaim": "Bayar kontrabon = nilai bersih; hutang pemasok nol",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_pembelian.js · langkah 11, 12 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "kesalahan_umum.0",
+   "klaim": "Persetujuan awal belum berarti uang kembali",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah A3, A8 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Pengembalian Dana pada SO belum lunas memotong sisa tagihan dulu",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah B9 (lulus)"
+   ]
+  },
+  {
+   "kode": "A3",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "QC 'Rusak' → HPP tidak dibalik, stok tanpa nilai",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [],
+   "catatan": "K-40."
+  },
+  {
+   "kode": "A3",
+   "bagian": "kesalahan_umum.3",
+   "klaim": "Tagihan diretur dibayar penuh di luar kontrabon → Nota Debit tetap terbuka",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/e2e/A3_retur_pembelian.js · langkah 5 (lulus)"
+   ],
+   "catatan": "K-39."
+  },
+  {
+   "kode": "A3",
+   "bagian": "catatan_pelatih",
+   "klaim": "Refund langsung kas keluar saat Manajer menyimpan",
+   "hasil": "perlu keputusan pemilik",
+   "bukti": [
+    "uji/e2e/A3_retur_penjualan.js · langkah B8–B10 (lulus)"
+   ],
+   "catatan": "K-38."
+  },
+  {
+   "kode": "A3",
+   "bagian": "catatan_pelatih",
+   "klaim": "Perbaikan potongan ND termasuk PPN, Maks bersen, panel pesanan pengganti",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_A3_nota_debit_kontrabon.py",
+    "jest a3PakaiSaldoSen.test.js",
+    "jest a3TukarPerRoll.test.js",
+    "uji/e2e/A3_retur_tukar.js · langkah T10, T11 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "konsep.1",
+   "klaim": "Pemisahan tugas Finance/Manajer",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 1–6 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "konsep.2",
+   "klaim": "Jurnal hanya di posting, bayar, setoran",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)",
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 4, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "konsep.3",
+   "klaim": "Reguler sekali per masa; susulan/THR hanya masukan + PPh 21",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 4 (lulus)",
+    "uji/sdm/H03_proses_gaji.js · langkah 3 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "konsep.4",
+   "klaim": "Tanggal buku = akhir masa; bayar mulai tanggal itu",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 6 (lulus)",
+    "tests_mem test_PYT4_bayar_gaji.py::U6"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.0",
+   "klaim": "Manajer mengesahkan masukan",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 1 (lulus)",
+    "uji/sdm/H02_masukan_gaji.js · langkah 2 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.1",
+   "klaim": "Manajer mengesahkan perubahan gaji & penugasan",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PYT2_riwayat_kompensasi.py"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.2",
+   "klaim": "Finance tidak bisa mengesahkan proses gaji",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.3",
+   "klaim": "Kontrol dua orang penggajian (bila dinyalakan)",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK22_penggajian.py::kontrol_dua_orang_posting"
+   ],
+   "catatan": "K-33."
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.4",
+   "klaim": "Bayar hanya dari rekening Gaji, tidak sebelum tanggal jurnal",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 7 (lulus)",
+    "tests_mem test_PYT4_bayar_gaji.py::U3, U6"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.5",
+   "klaim": "Anulir hanya Manajer; gaji dibayar dikoreksi lewat susulan",
+   "hasil": "terbukti — uji V9",
+   "bukti": [
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 6 (lulus)",
+    "uji/variasi/V9_klaim_gaji.js · hasil/V9/gaji langkah 8 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "titik_kontrol.6",
+   "klaim": "Setoran tidak melebihi sisa kewajiban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji variasi V7 sisa + 1.000 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "cek_buku.0",
+   "klaim": "Hutang gaji/BPJS/PPh 21 nol sesudah satu daur",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 4, 7 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "cek_buku.1",
+   "klaim": "Contoh jurnal peserta 01",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/sdm/H03_proses_gaji.js · langkah 7 (lulus)",
+    "uji/sdm/H04_bayar_gaji_slip.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "kesalahan_umum.1",
+   "klaim": "Antrean Gaji siap dibayar hanya proses Diposting",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 1 (lulus)"
+   ]
+  },
+  {
+   "kode": "A4",
+   "bagian": "kesalahan_umum.2",
+   "klaim": "Kartu Setoran & Pajak menandai sisa kewajiban",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F15_setoran_gaji.js · langkah 5 (lulus)"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "konsep.3",
+   "klaim": "Laporan dari jurnal; Neraca seimbang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 2–5 (lulus)"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "konsep.4",
+   "klaim": "Membuka kembali periode butuh alasan dan persetujuan",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/F18_tutup_buku.js · langkah 6, 9 (lulus)",
+    "uji variasi V8 Buka Kembali (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ],
+   "catatan": "Tidak tepat: Buka Periode (jendela) butuh alasan + orang kedua; Buka Kembali (batalkan penutupan) oleh Admin tanpa isian alasan (K-19). Teks dirinci."
+  },
+  {
+   "kode": "A5",
+   "bagian": "titik_kontrol.0",
+   "klaim": "Neraca saldo seimbang",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F16_buku_besar_jejak.js · langkah 6 (lulus)"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "titik_kontrol.1",
+   "klaim": "Saldo bank buku = rekening koran sesudah rekonsiliasi",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F10_rekonsiliasi_bank.js · langkah 8 (lulus)",
+    "uji variasi V3.23 (src/variasi_piutang_kas.json / variasi_hutang_pajak_gaji.json)"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "titik_kontrol.2",
+   "klaim": "Akun sementara nol sebelum tutup buku",
+   "hasil": "terbukti — uji unit",
+   "bukti": [
+    "tests_mem test_PK43_alur_layar.py::U11"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "cek_buku.0",
+   "klaim": "Aset = Kewajiban + Ekuitas",
+   "hasil": "terbukti — uji lama",
+   "bukti": [
+    "uji/F17_laporan_keuangan.js · langkah 4 (lulus)"
+   ]
+  },
+  {
+   "kode": "A5",
+   "bagian": "cek_buku.1",
+   "klaim": "Laba bersih Laba-Rugi = perubahan laba ditahan di Neraca",
+   "hasil": "diperbaiki teks",
+   "bukti": [
+    "uji/variasi/V9_klaim_buku.js · hasil/V9/buku langkah 1 (lulus)"
+   ],
+   "catatan": "Laba Ditahan tidak berubah sebelum tutup buku; laba bersih 1 Jan–hari ini sama dengan baris 'Laba Tahun Berjalan' di Neraca. Teks dikoreksi."
+  }
+ ]
+}

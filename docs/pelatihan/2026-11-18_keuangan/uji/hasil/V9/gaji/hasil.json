@@ -1,0 +1,108 @@
+{
+  "code": "V9/gaji",
+  "title": "V9 · Bukti klaim materi SDM & Gaji (H01–H04, F15, A4) · peserta 86",
+  "ok": true,
+  "at": "2026-11-17T13:21:13.988Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "H01 · Tanggal masuk dikosongkan: kompensasi lalu berlaku sejak hari ini, bukan sejak tanggal masuk",
+      "expect": "Tambah Karyawan Latihan 86 · Andi Pratama tanpa Tanggal Masuk → tersimpan; Karyawan 360° › Riwayat Kompensasi: berlaku sejak 2026-11-17 (hari ini)",
+      "ok": true,
+      "ms": 9447,
+      "info": "isian Tanggal Masuk: 'Tanggal bergabung' (kosong) · EMP-00057 · kompensasi berlaku 2026-11-17 · layar: Riwayat Kompensasi Muat ulang Gaji pokok dan komponen tetap bertanggal berlaku. Proses gaji memakai baris yang berlaku pada periodenya; perubahan berl"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "H01 · Gaji pokok tidak diubah lewat Ubah karyawan; perubahan gaji diajukan di Riwayat Kompensasi",
+      "expect": "Ubah karyawan: kotak Gaji Pokok mati dengan petunjuk 'Ubah lewat Riwayat Kompensasi.'",
+      "ok": true,
+      "ms": 2051,
+      "info": "kotak Gaji Pokok mati · 'Ubah lewat Riwayat Kompensasi.'"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "H02 · Nominal masukan gaji: sen ditolak (rupiah bulat)",
+      "expect": "Tambah masukan Rapel '8.000.000,50' → pratinjau Rp 8.000.000,50 → [Simpan masukan] ditolak dengan pesan 'rupiah bulat'; tidak ada masukan tersimpan",
+      "ok": true,
+      "ms": 12049,
+      "info": "pesan: Nominal harus rupiah bulat dan tidak nol (boleh negatif untuk penyesuaian). · masukan tersimpan: 0"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "H03 · Memilih jenis Reguler: proses reguler Oktober sudah ada, layar membuka proses itu, bukan membuat baru",
+      "expect": "Proses Gaji › Oktober 2026 · Reguler → [Hitung gaji] → rincian proses reguler yang sudah ada (KSC/PAY-00001, Diposting) terbuka; jumlah proses reguler Oktober tetap satu",
+      "ok": true,
+      "ms": 4642,
+      "info": "Penggajian KSC/PAY-00001 (Reguler) siap (6 karyawan). × · proses reguler Oktober: KSC/PAY-00001 posted · rincian: KSC/PAY-00001 · Oktober 2026 · Reguler Diposting Bayar Daftar transfer Karyawan 6 Bruto Rp 45.300.00"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "H03 · \"Tidak ada masukan yang belum terpakai untuk Oktober 2026\": masukan belum disahkan atau periodenya salah",
+      "expect": "Jenis Susulan Oktober 2026 saat tidak ada masukan disahkan yang belum terpakai → [Hitung gaji] ditolak dengan pesan itu; tidak ada proses baru",
+      "ok": true,
+      "ms": 4360,
+      "info": "pesan: Tidak ada masukan yang belum terpakai untuk Oktober 2026. Coba lagi × · proses Oktober 19 → 19"
+    },
+    {
+      "no": 6,
+      "role": "Manajer",
+      "action": "H04 · Proses yang diposting (belum dibayar) masih bisa dianulir Manajer",
+      "expect": "Manajer membuka KSC/PAY-00009 (Diposting): tombol [Anulir] tersedia (tidak diklik)",
+      "ok": true,
+      "ms": 6295,
+      "info": "KSC/PAY-00009 Diposting · [Anulir] tersedia untuk Manajer"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "A4 · Bayar gaji hanya dari rekening berperuntukan Gaji",
+      "expect": "Setoran & Pajak › Gaji siap dibayar › [Bayar] KSC/PAY-00009: pilihan rekening hanya rekening berperuntukan Gaji (BCA Operasional KSC); bayar → status Dibayar",
+      "ok": true,
+      "ms": 6565,
+      "info": "pilihan rekening: BCA Operasional KSC · BCA · 7415595554 | Kas Toko KSC · Kas kecil (= rekening berperuntukan Gaji; BCA Operasional KSC: penerimaan_pelanggan,pembayaran_pemasok,gaji,operasional | Kas Toko KSC: penerimaan_pelanggan,pembayaran_pemasok,gaji,operasional) · petunjuk 'Hanya rekening yang ditandai untuk pembayaran gaji.' · KSC/PAY-00009 paid dari BCA Operasional KSC"
+    },
+    {
+      "no": 8,
+      "role": "Manajer",
+      "action": "H04 · Gaji yang sudah dibayar tidak bisa dianulir; koreksinya lewat proses susulan",
+      "expect": "Manajer membuka KSC/PAY-00009 (Dibayar): tombol [Anulir] tidak ada lagi",
+      "ok": true,
+      "ms": 4958,
+      "info": "KSC/PAY-00009 Dibayar · [Anulir] tidak ada"
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "F15 · Membiarkan Masa gaji di bulan berjalan (November): kartu menunjukkan Rp 0",
+      "expect": "Setoran & Pajak › Masa gaji November 2026 → kartu PPh 21 & BPJS: Kewajiban Rp 0 (gaji November belum diposting); Oktober 2026 → kewajiban > 0",
+      "ok": true,
+      "ms": 5939,
+      "info": "November: PPh 21 Kewajiban Rp 0 Sudah disetor Rp 0 Sisa Rp 0 | BPJS Kewajiban Rp 0 Sudah disetor Rp 0 Sisa Rp 0 · Oktober: PPh 21 Masih Ada Sisa Kewajiban Rp 2.126.228 Sudah disetor Rp 48.981 Sisa Rp 2.077.247"
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "F15 · Membatalkan setoran butuh izin Manajer",
+      "expect": "Finance [Catat Setoran] PPh 21 Rp 104.479 masa Oktober → tercatat; di Riwayat setoran Finance tidak punya [Batalkan]; Manajer punya",
+      "ok": true,
+      "ms": 42379,
+      "info": "KSC/STR-00003 PPh 21 Rp 104.479 · [Batalkan]: Finance tidak ada · Manajer ada (tidak diklik)"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+  ],
+  "notes": [
+    "Peserta 86 · Latihan 86 · Andi Pratama · proses susulan KSC/PAY-00009 (posted) bersih Rp 731.521 PPh 21 Rp 104.479"
+  ]
+}

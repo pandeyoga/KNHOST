@@ -22,6 +22,9 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
   // lalu server menolak 403 di dalam modal — penolakan yang tak pernah dilihat
   // pengguna sebagai "bukan tugas saya", melainkan sebagai "sistemnya rusak".
   const canTakeMoney = can(currentUser?.permissions || {}, "ar_receipt", "create");
+  // Pelatihan 18 Nov (V9) — "Tandai sudah diingatkan" & "Catat tindak lanjut" (termasuk janji bayar) disimpan server
+  // dengan izin `order.update` (routers/crm.py). Dulu kedua ikon tampil untuk Finance lalu ditolak 403 saat disimpan.
+  const canFollowUp = can(currentUser?.permissions || {}, "order", "update");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -120,7 +123,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                     <div className="flex gap-1">
                       {r.reminded ? (
                         <span className="icon-button text-[#1E8E5A]" title="Sudah diingatkan" data-testid={`collection-reminded-${r.order_id}`}><CheckCircle2 size={15} /></span>
-                      ) : (
+                      ) : canFollowUp && (
                         <button data-testid={`collection-mark-${r.order_id}`} disabled={marking === r.order_id}
                           onClick={() => markReminded(r)} className="icon-button text-[#B45309]" title="Tandai sudah diingatkan">
                           {marking === r.order_id ? <BellOff size={15} /> : <BellRing size={15} />}
@@ -129,7 +132,9 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                       {canTakeMoney && (
                         <button data-testid={`collection-pay-${r.order_id}`} onClick={() => setPayRow(r)} className="icon-button text-[#1B7F4B]" title="Terima pembayaran" aria-label="Terima pembayaran"><Wallet size={14} /></button>
                       )}
-                      <button data-testid={`collection-followup-${r.order_id}`} onClick={() => setFu(r)} className="icon-button text-[#0058CC]" title="Catat tindak lanjut" aria-label="Catat tindak lanjut"><PhoneCall size={14} /></button>
+                      {canFollowUp && (
+                        <button data-testid={`collection-followup-${r.order_id}`} onClick={() => setFu(r)} className="icon-button text-[#0058CC]" title="Catat tindak lanjut" aria-label="Catat tindak lanjut"><PhoneCall size={14} /></button>
+                      )}
                     </div>
                   </div>
                 ))}

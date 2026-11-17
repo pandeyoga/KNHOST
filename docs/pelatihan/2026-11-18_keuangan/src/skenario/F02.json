@@ -91,7 +91,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Cari baris SO Anda. Klik ikon dompet (Terima pembayaran) di kolom Aksi.",
    "isi": "",
-   "hasil": "Baris SO menunjukkan Belum Lunas, Jatuh Tempo, dan Telat '30h Lagi' (contoh: Rp 3.374.123, 17 Des 2026). Tiga ikon Aksi: lonceng (tandai sudah diingatkan), dompet (terima pembayaran), telepon (catat tindak lanjut).",
+   "hasil": "Baris SO menunjukkan Belum Lunas, Jatuh Tempo, dan Telat '30h Lagi' (contoh: Rp 3.374.123, 17 Des 2026). Di kolom Aksi tampil ikon dompet (Terima pembayaran). Ikon pengingat dan janji bayar hanya untuk Sales/Admin Sales.",
    "gambar": "uji/hasil/F02/04-penagihan-baris-so.png"
   },
   {

@@ -1,0 +1,12 @@
+[
+ {
+  "kode": "K02",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Selama 'Selisih harga pembelian' belum dipilih, selisih harga tagihan tertinggal di GR/IR dan kliring tidak tersedia",
+  "harap": "GR/IR KSC/PO-00058: sisa = diterima Rp 28.000 − ditagih Rp 28.420 = −Rp 420 'termasuk selisih harga'; pita 'Akun \"Selisih harga pembelian\" belum diatur…'; tanpa tombol [Kliring]",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "sisa -Rp 420 termasuk selisih harga Rp 420 · termasuk selisih harga Rp 420 · pita: Akun “Selisih harga pembelian” belum diatur untuk PT ini: selisih harga faktur tetap di GR/IR dan kliring belum bisa dil · tombol Kliring: tidak ada"
+ }
+]

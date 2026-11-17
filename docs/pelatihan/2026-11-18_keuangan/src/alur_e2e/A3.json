@@ -444,7 +444,7 @@
  "cek_buku": [
   "Nota Kredit Store Credit (contoh CN-00001, jurnal KSC/JE-00137): 4-1000 Pendapatan Penjualan (D) Rp 3.099.250 · 2-1200 PPN Keluaran (D) Rp 340.917,50 / 2-1450 Saldo Kredit Pelanggan (K) Rp 3.440.167,50; 1-1300 Persediaan Barang (D) Rp 2.231.460 / 5-1000 HPP (K) Rp 2.231.460 — seimbang.",
   "Pemakaian saldo (SCR-…): 2-1450 (D) / 1-1200 Piutang Usaha (K) Rp 3.440.167,50; sisa tagihan KSC/SO-00017 turun sebesar itu.",
-  "Nota Kredit Pengembalian Dana (contoh CN-00002, jurnal KSC/JE-00139): 4-1000 (D) Rp 3.138.750 · 2-1200 (D) Rp 331.622,50 / 1-1200 Piutang (K) Rp 43.845 · 1-1100 Kas Besar / Bank (K) Rp 3.440.167,50; 1-1300 (D) / 5-1000 (K) Rp 2.259.900. Transaksi kas keluar KSC/CASH-00023 Rp 3.440.167,50 di BCA Operasional KSC.",
+  "Nota Kredit Pengembalian Dana (contoh CN-00002, jurnal KSC/JE-00139): 4-1000 (D) Rp 3.138.750 · 2-1200 (D) Rp 345.262,50 / 1-1200 Piutang (K) Rp 43.845 · 1-1100 Kas Besar / Bank (K) Rp 3.440.167,50; 1-1300 (D) / 5-1000 (K) Rp 2.259.900. Transaksi kas keluar KSC/CASH-00023 Rp 3.440.167,50 di BCA Operasional KSC.",
   "Nota Debit (contoh DN-00001, jurnal KSC/JE-00140): 2-1100 Hutang Usaha (D) Rp 1.287.600 / 1-1300 Persediaan Barang (K) Rp 1.160.000 · 1-1500 PPN Masukan (K) Rp 127.600.",
   "Pembayaran kontrabon: 2-1100 Hutang Usaha (D) / 1-1100 Kas Besar / Bank (K) Rp 1.864.800. Total debit Hutang (Nota Debit + bayar) = total kedua tagihan Rp 3.152.400 → hutang pemasok nol."
  ],

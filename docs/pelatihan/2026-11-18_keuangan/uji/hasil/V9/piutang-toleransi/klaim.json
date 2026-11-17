@@ -1,0 +1,42 @@
+[
+ {
+  "kode": "F03",
+  "bagian": "catatan_pelatih",
+  "klaim": "Selisih di dalam toleransi (bawaan Rp 5.000) diputus otomatis sebagai pembulatan",
+  "harap": "Bayar KSC/SO-00060 kurang Rp 3.000 → tanpa jendela selisih; SO lunas; keputusan 'Pembulatan' otomatis; jurnal hapus sisa receh 6-9100 (D) / 1-1200 (K) Rp 3.000",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "petunjuk: Selisih Rp 3.000 masih di dalam toleransi Rp 5.000 — diselesaikan otomatis sebagai pembulatan (tetap tercatat). · Kwitansi KSC/AR-00046 (Rp 3.444.383) dicatat untuk Latihan 89 · Toko Kain Peserta 89. Selisih diputus: Pembulatan / biaya transfer (KSC/SLB-00006). × · KSC/SLB-00006 rounding_writeoff · KSC/JE-00319: 6-9100 D 3000 · 1-1200 K 3000"
+ },
+ {
+  "kode": "F03",
+  "bagian": "konsep.1",
+  "klaim": "Selisih di atas toleransi meminta keputusan berlabel: sisa tetap piutang, ubah jadwal, atau hapus sisa (wajib Manajer)",
+  "harap": "Jendela 'Selisih Pembayaran · Kurang bayar' berisi tiga pilihan; 'Hapus sisa kurang bayar' berlencana WAJIB MANAGER; 'Ubah jadwal' mati bila pesanan belum punya rencana",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "outstanding: Sisa tetap jadi piutang DISARANKAN Sisa Rp 50.000 tetap ditagih seperti biasa — jadwal tidak berubah. Dampak:  | reschedule (mati): Ubah jadwal — sisa jadi tempo baru Sisa Rp 50.000 dijadwalkan ulang ke 1 Des 2026 sehingga tidak tercatat seba | writeoff: Hapus sisa kurang bayar WAJIB MANAGER Sisa Rp 50.000 dihapus dari piutang dan dibebankan ke Beban Selisih Pemb"
+ },
+ {
+  "kode": "F03",
+  "bagian": "kesalahan_umum.1",
+  "klaim": "'Hapus sisa kurang bayar' membebankan sisa piutang ke beban dan wajib Manajer",
+  "harap": "Finance memilih Hapus sisa → kwitansi tetap tercatat, keputusan TIDAK dijalankan (perlu penyetuju) dan selisih masuk antrean Selisih Bayar; belum ada jurnal beban; sisa SO tetap Rp 50.000",
+  "peran": "Finance",
+  "langkah": 3,
+  "uji": "lulus",
+  "bukti": "Kwitansi KSC/AR-00047 (Rp 3.317.185) dicatat untuk Latihan 89 · Toko Kain Peserta 89. Selisihnya masuk antrean Selisih Bayar untuk diputus. Catatan: Keputusan 'Hapus sisa kurang bayar': Selisih pembayaran — hapus sisa / refund senilai Rp50.000 pada jenjang 1 diputus oleh Admin atau Manajer. Peran Anda belum tercantum di Aturan Persetujuan. Ajukan ke penyetuju. × · sisa KSC/SO-00061 Rp 50.000"
+ },
+ {
+  "kode": "F03",
+  "bagian": "kesalahan_umum.1",
+  "klaim": "Hapus sisa diputus Manajer: sisa dibebankan ke Beban Selisih Pembayaran, pesanan lunas",
+  "harap": "Manajer: Piutang › Rencana & Denda › tab Selisih Bayar → [Putuskan] → Hapus sisa → jurnal 6-9100 (D) / 1-1200 (K) Rp 50.000; SO lunas",
+  "peran": "Manajer",
+  "langkah": 4,
+  "uji": "lulus",
+  "bukti": "KSC/SLB-00007 oleh Dewi Manager · KSC/JE-00321: 6-9100 D 50000 · 1-1200 K 50000 · KSC/SO-00061 lunas"
+ }
+]

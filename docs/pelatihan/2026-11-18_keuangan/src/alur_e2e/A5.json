@@ -10,7 +10,7 @@
   "Rekonsiliasi bank memastikan saldo rekening di buku sama dengan rekening koran bank. Selisih (biaya admin, bunga, transfer yang belum dicatat) dibukukan saat rekonsiliasi.",
   "Akun sementara (suspense) dan GR/IR harus diperiksa sebelum tutup buku: akun sementara diisi transaksi yang belum jelas akunnya, GR/IR diisi barang yang sudah diterima tetapi tagihannya belum datang.",
   "Laporan Laba-Rugi, Neraca, dan Arus Kas dihitung langsung dari jurnal. Neraca selalu seimbang: Aset = Kewajiban + Ekuitas.",
-  "Tutup buku mengunci periode. Membuka kembali periode butuh alasan dan persetujuan, dan tercatat di jejak audit."
+  "Tutup buku mengunci periode. Membuka periode yang sudah ditutup lewat Buka Periode butuh alasan dan persetujuan orang kedua; membatalkan penutupan (Buka Kembali) hanya Admin. Keduanya tercatat di riwayat."
  ],
  "peran": "Finance · Manajer",
  "menit": 15,
@@ -38,7 +38,7 @@
  ],
  "cek_buku": [
   "Neraca: Aset = Kewajiban + Ekuitas.",
-  "Laba bersih di Laba-Rugi = perubahan laba ditahan di Neraca untuk periode yang sama."
+  "Laba bersih di Laba-Rugi (1 Januari sampai tanggal Neraca) = baris 'Laba Tahun Berjalan' di Ekuitas Neraca; Laba Ditahan baru berubah saat tutup buku."
  ],
  "kesalahan_umum": [
   "Menutup periode sebelum rekonsiliasi bank selesai — selisih baru ketahuan sesudah periode terkunci.",

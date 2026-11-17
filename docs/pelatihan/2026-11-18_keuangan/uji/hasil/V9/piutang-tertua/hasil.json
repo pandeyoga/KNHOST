@@ -1,0 +1,53 @@
+{
+  "code": "V9/piutang-tertua",
+  "title": "V9 · Bukti klaim materi Piutang — Tertua dulu, Tunai, kelebihan receh (F02, F04) · peserta 88",
+  "ok": true,
+  "at": "2026-11-17T12:49:00.693Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "F02 · Dengan Tertua dulu, uang dialokasikan ke SO tertua lebih dulu, bukan ke SO yang dimaksud",
+      "expect": "Form dibuka dari baris KSC/SO-00090 → [Tertua dulu] → nominal Rp 1.000.000 → kwitansi teralokasi ke KSC/SO-00089 (lebih tua); KSC/SO-00090 tetap utuh",
+      "ok": true,
+      "ms": 20373,
+      "info": "Kwitansi KSC/AR-00058 (Rp 1.000.000) dicatat untuk Latihan 88 · Toko Kain Peserta 88. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00013). × · alokasi KSC/SO-00089 1.000.000 · KSC/SO-00090 (yang dibuka) menerima Rp 0 · sisa KSC/SO-00089 Rp 2.436.560 · KSC/SO-00090 Rp 3.381.338"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "F02 · Cara bayar Tunai: uang tercatat masuk Kas Kecil, bukan bank",
+      "expect": "Kwitansi Tunai (langkah sebelumnya): petunjuk 'Tunai → masuk Kas Kecil'; rekening Kas Toko KSC; jurnal 1-1110 Kas Kecil (D) / 1-1200 Piutang (K), tanpa 1-1100",
+      "ok": true,
+      "ms": 3102,
+      "info": "KSC/AR-00058 metode cash · kas KSC/CASH-00067 kas_kecil · rekening Kas Toko KSC · KSC/JE-00364: 1-1110 D 1000000 · 1-1200 K 1000000"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "F04 · Tertua dulu saat masih ada tagihan terbuka lain: uang dipakai melunasi tagihan itu lebih dulu, bukan menjadi titipan",
+      "expect": "[Tertua dulu] nominal = sisa KSC/SO-00089 + sisa KSC/SO-00090 + Rp 3.000 → satu kwitansi melunasi KEDUA SO; yang tersisa hanya Rp 3.000",
+      "ok": true,
+      "ms": 16472,
+      "info": "Kwitansi KSC/AR-00059 (Rp 5.820.898) dicatat untuk Latihan 88 · Toko Kain Peserta 88. Rp 5.817.898 melunasi tagihan, Rp 3.000 menjadi titipan pelanggan. Selisih diputus: Pembulatan / biaya transfer (KSC/SLB-00014). × · alokasi KSC/SO-00089 2.436.560, KSC/SO-00090 3.381.337,5"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "F04 · Kelebihan bayar Rp 5.000 atau kurang dianggap pembulatan (toleransi) dan tidak menjadi titipan",
+      "expect": "Fakta (teks dikoreksi): kelebihan ≤ Rp 5.000 diputus OTOMATIS sebagai pembulatan — tanpa jendela keputusan — lalu MENJADI titipan pelanggan (2-1400 kredit Rp 3.000)",
+      "ok": true,
+      "ms": 3495,
+      "info": "petunjuk: Kurang bayar Rp 2.436.560 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.817.898) — akan diminta keputusan saat disimpan. Putuskan · KSC/SLB-00014 rounding_deposit (otomatis) · titipan Rp 3.000 → Rp 6.000 · KSC/JE-00366: 1-1100 D 5820897.5 · 1-1200 K 5817897.5 · 2-1400 K 3000"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 88: KSC/SO-00089 3436560 · KSC/SO-00090 3381337.5",
+    "Tunai: Tunai → masuk Kas Kecil (per PT). · REKENING PENERIMA Kas Toko KSC · Kas Toko KSC Satu-satunya rekening penerimaan PT ini untuk cara bayar ini. NO. REFERENS"
+  ]
+}

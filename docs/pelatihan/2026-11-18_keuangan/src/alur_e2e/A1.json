@@ -439,7 +439,7 @@
   "Plafon kredit diperiksa saat SO dibuat. Lewat plafon = tombol Buat Sales Order terkunci sampai Manajer menyetujui izin kredit di Kredit & Plafon. Plafon khusus pelanggan juga diajukan satu orang dan disetujui orang lain.",
   "Admin Sales memeriksa alamat, termin, isi pesanan, PPN, NPWP (bila minta faktur pajak), dan kredit sebelum melepas pesanan ke gudang.",
   "Gudang hanya bisa mengambil roll yang dicadangkan untuk SO itu. Jumlah diambil = panjang roll; tidak diketik.",
-  "Final Loading Check: roll tanpa tag RFID memblokir pengiriman. Pengecualian hanya oleh pemegang izin (Manajer), wajib beralasan, dan tercatat. Gudang sendiri ditolak saat menekan Override.",
+  "Final Loading Check: roll tanpa tag RFID memblokir pengiriman. Pengecualian hanya oleh pemegang izin (Manajer), wajib beralasan, dan tercatat. Gudang tidak melihat tombol Override (bukan wewenangnya).",
   "Kwitansi tidak bisa dialokasikan melebihi sisa tagihan. Konfirmasi menyebut nominal, pelanggan, rekening, dan PT sebelum disimpan.",
   "Setiap mutasi bank masuk ditautkan ke transaksi kas yang sudah ada, sehingga saldo buku = rekening koran."
  ],

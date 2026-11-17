@@ -7,7 +7,7 @@
  "kapan": "Setiap hari bayar pemasok, misalnya sesuai jadwal transfer. Untuk banyak faktur dari satu pemasok sekaligus, pakai kontrabon (F12).",
  "konsep": [
   "Hutang usaha lahir saat tagihan pemasok terposting. Membayar tagihan mengurangi hutang dan saldo bank.",
-  "3-way match membandingkan tiga dokumen: pesanan pembelian (PO), penerimaan barang, dan tagihan pemasok. Jumlah dan harga harus sama sebelum dibayar.",
+  "3-way match membandingkan tiga dokumen: pesanan pembelian (PO), penerimaan barang, dan tagihan pemasok. Jumlah dan harga harus cocok (toleransi harga ±5%; selisih yang nilainya sampai Rp 50.000 diabaikan). Tagihan yang berselisih di luar toleransi harus disetujui dulu sebelum bisa dibayar.",
   "GR/IR (barang diterima, belum ditagih) menampung nilai barang yang sudah diterima tetapi tagihannya belum datang. Setelah tagihan masuk, sisanya nol."
  ],
  "peran": "Finance (akun peserta)",
@@ -119,7 +119,7 @@
   "TOTAL HUTANG (AP) turun sebesar pembayaran; baris pencocokan tetap 'Cocok dengan saldo akun hutang'"
  ],
  "kesalahan_umum": [
-  "Membayar tanpa membuka [[Detail →]]. Cek dulu 'Match Bersih' dan Pesan = Terima = Tagih; tagihan berselisih jangan dibayar sebelum diputus Pembelian atau Manajer.",
+  "Membayar tanpa membuka [[Detail →]]. Cek dulu 'Match Bersih' dan Pesan = Terima = Tagih; tagihan berselisih menunggu persetujuan Manajer (atau Admin) dan belum bisa dibayar.",
   "Membayar tagihan kedua (untuk kontrabon) di sini. Tagihan itu dipakai di F12.",
   "Mengetik nominal sedikit di bawah sisa hutang. Selisih Rp 5.000 atau kurang ditutup otomatis, tidak tinggal sebagai hutang; biarkan nominal penuh.",
   "Mencari PO di GR/IR tanpa mencentang *Tampilkan yang sudah nol*. Muncul 'Tidak ada sisa GR/IR yang cocok', dan itu justru tanda sudah beres."

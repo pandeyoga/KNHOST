@@ -181,7 +181,7 @@
   }
  ],
  "cek_buku": [
-  "Kwitansi lebih bayar (contoh): 1-1100 Kas Besar / Bank (D) Rp 2.000.000 · 1-1200 Piutang Usaha (K) Rp 1.980.517,50 · 2-1400 Uang Muka Pelanggan (K) Rp 45.290 — seimbang",
+  "Kwitansi lebih bayar (contoh): 1-1100 Kas Besar / Bank (D) Rp 2.000.000 · 1-1200 Piutang Usaha (K) Rp 1.954.710 · 2-1400 Uang Muka Pelanggan (K) Rp 45.290 — seimbang",
   "Saldo titipan pelanggan = kolom Deposit di Titipan & Saldo Kredit; keputusan 'deposit' tidak menambah jurnal",
   "Kwitansi pakai titipan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.360.745 · 2-1400 Uang Muka Pelanggan (D) Rp 45.290 · 1-1200 Piutang Usaha (K) Rp 3.406.035 — seimbang; titipan kembali Rp 0"
  ],
@@ -191,7 +191,7 @@
   "Memilih 'Kembalikan ke pelanggan'. Pilihan itu wajib Manajer; Finance memilih deposit atau alokasi.",
   "Lupa mencentang 'Pakai titipan' saat tagihan berikutnya dibayar. Titipan menganggur dan pelanggan merasa ditagih dua kali."
  ],
- "catatan_pelatih": "Kerjakan sesudah F02 dan F03. Langkah 9 dijalankan pelatih sekali, setelah semua peserta selesai langkah 8: `cd backend && python -m scripts.latih_keuangan.b_piutang --berikut 1-6` (di VPS, di dalam container backend; ganti 1-6 dengan nomor peserta). Tagihan berikutnya sengaja tidak dibuat sejak awal: bila sudah ada, [[Tertua dulu]] menyerap kelebihan bayar ke tagihan itu dan titipan tidak terbentuk. Kelebihan bayar Rp 5.000 atau kurang dianggap pembulatan (toleransi) dan tidak menjadi titipan. Karena itu aturan nominal transfer: bila kelebihan kurang dari Rp 10.000, naikkan Rp 500.000 lagi (uji jalan memakai aturan yang sama). Perbaikan 17 Nov: 'Pakai titipan' di mode Atur sendiri kini benar-benar melunasi SO, dan pesan hasil lebih bayar menyebut uang yang diterima beserta rinciannya.",
+ "catatan_pelatih": "Kerjakan sesudah F02 dan F03. Langkah 9 dijalankan pelatih sekali, setelah semua peserta selesai langkah 8: `cd backend && python -m scripts.latih_keuangan.b_piutang --berikut 1-6` (di VPS, di dalam container backend; ganti 1-6 dengan nomor peserta). Tagihan berikutnya sengaja tidak dibuat sejak awal: bila sudah ada, [[Tertua dulu]] menyerap kelebihan bayar ke tagihan itu dan titipan tidak terbentuk. Kelebihan bayar Rp 5.000 atau kurang diputus otomatis sebagai pembulatan (toleransi): jendela 'Selisih Pembayaran' tidak muncul dan kelebihannya langsung menjadi titipan pelanggan. Karena langkah 3 melatih jendela itu, aturan nominal transfer: bila kelebihan kurang dari Rp 10.000, naikkan Rp 500.000 lagi (uji jalan memakai aturan yang sama). Perbaikan 17 Nov: 'Pakai titipan' di mode Atur sendiri kini benar-benar melunasi SO, dan pesan hasil lebih bayar menyebut uang yang diterima beserta rinciannya.",
  "uji": {
   "berkas": "uji/F04_lebih_bayar_titipan.js",
   "peserta_uji": "01"

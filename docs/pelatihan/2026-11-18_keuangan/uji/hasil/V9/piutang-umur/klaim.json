@@ -1,0 +1,22 @@
+[
+ {
+  "kode": "F03",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "Kotak cari Saldo & Umur menerima nama pelanggan atau sales, bukan nomor SO",
+  "harap": "Cari 'KSC/SO-00042' → 'Tidak ada piutang terbuka.'; cari 'Cicilan 86' → baris pelanggan tampil; petunjuk kotak 'Cari pelanggan / sales...'",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "petunjuk 'Cari pelanggan / sales...' · cari KSC/SO-00042 → 0 baris · cari 'Cicilan 86' → 1 baris"
+ },
+ {
+  "kode": "F05",
+  "bagian": "kesalahan_umum.0",
+  "klaim": "Rencana baru disusun Admin Penjualan atau Manajer; Finance tidak punya tombol Susun Jadwal",
+  "harap": "Rincian KSC/SO-00040 (belum berencana) untuk Finance: panel 'Jadwal Pembayaran & Denda' tanpa tombol [Susun Jadwal]; Admin Sales & Manajer melihat tombol itu",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "Finance: tanpa tombol (…) · Admin Sales: [Susun Jadwal] · Manajer: [Susun Jadwal]"
+ }
+]

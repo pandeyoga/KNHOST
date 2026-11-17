@@ -1,0 +1,32 @@
+[
+ {
+  "kode": "F12",
+  "bagian": "catatan_pelatih",
+  "klaim": "Satu faktur hanya boleh ada di satu kontrabon",
+  "harap": "Kontrabon baru untuk pemasok yang sama: VB-00025 (sudah di KSC/CB-00002) tidak ditawarkan lagi",
+  "peran": "Manajer",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "ringkasan pemasok: TAGIHAN SIAP 1 Rp 1.864.800 POTONGAN TERSEDIA 0 Rp 0 BELUM DITAGIH Rp 0 0 PO TERMIN NET30 jatuh tempo diusulkan 17 Des 2 · VB-00025 ditawarkan: tidak"
+ },
+ {
+  "kode": "F12",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Finance tidak menemukan tombol bayar pada kontrabon 'Disetujui'; kontrabon harus 'Dijadwalkan bayar' dulu",
+  "harap": "Finance membuka KSC/CB-00002 (Disetujui): tidak ada [Catat pembayaran]; tertulis langkah berikutnya 'Jadwalkan pembayaran'",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "status Disetujui · tombol utama '—' · Langkah berikutnya — Jadwalkan pembayaran — dikerjakan pemegang izin kontrabon (bawaan: Manajer)"
+ },
+ {
+  "kode": "F12",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Sesudah 'Dijadwalkan bayar', Finance mencatat pembayaran kontrabon",
+  "harap": "Finance: tombol [Catat pembayaran] tampil → bayar dari BCA → status Sudah dibayar; jurnal Hutang Usaha (D) / Bank (K) Rp 1.287.600",
+  "peran": "Finance",
+  "langkah": 3,
+  "uji": "lulus",
+  "bukti": "KSC/CB-00002 paid · KSC/JE-00487: 2-1100 D 1287600 · 1-1100 K 1287600"
+ }
+]

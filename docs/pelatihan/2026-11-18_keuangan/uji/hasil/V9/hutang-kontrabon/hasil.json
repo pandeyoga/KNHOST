@@ -1,0 +1,45 @@
+{
+  "code": "V9/hutang-kontrabon",
+  "title": "V9 · Bukti klaim materi Hutang & Pajak — kontrabon (F12) · peserta 90",
+  "ok": true,
+  "at": "2026-11-17T13:05:10.071Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Manajer",
+      "action": "F12 · Satu faktur hanya boleh ada di satu kontrabon",
+      "expect": "Kontrabon baru untuk pemasok yang sama: VB-00025 (sudah di KSC/CB-00002) tidak ditawarkan lagi",
+      "ok": true,
+      "ms": 12366,
+      "info": "ringkasan pemasok: TAGIHAN SIAP 1 Rp 1.864.800 POTONGAN TERSEDIA 0 Rp 0 BELUM DITAGIH Rp 0 0 PO TERMIN NET30 jatuh tempo diusulkan 17 Des 2 · VB-00025 ditawarkan: tidak"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "F12 · Finance tidak menemukan tombol bayar pada kontrabon 'Disetujui'; kontrabon harus 'Dijadwalkan bayar' dulu",
+      "expect": "Finance membuka KSC/CB-00002 (Disetujui): tidak ada [Catat pembayaran]; tertulis langkah berikutnya 'Jadwalkan pembayaran'",
+      "ok": true,
+      "ms": 20622,
+      "info": "status Disetujui · tombol utama '—' · Langkah berikutnya — Jadwalkan pembayaran — dikerjakan pemegang izin kontrabon (bawaan: Manajer)"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "F12 · Sesudah 'Dijadwalkan bayar', Finance mencatat pembayaran kontrabon",
+      "expect": "Finance: tombol [Catat pembayaran] tampil → bayar dari BCA → status Sudah dibayar; jurnal Hutang Usaha (D) / Bank (K) Rp 1.287.600",
+      "ok": true,
+      "ms": 26505,
+      "info": "KSC/CB-00002 paid · KSC/JE-00487: 2-1100 D 1287600 · 1-1100 K 1287600"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Persiapan: KSC/CB-00002 (VB-00025) dibuat & diverifikasi Manajer",
+    "Persiapan: KSC/CB-00002 disetujui Admin (orang kedua)",
+    "Penutup: KSC/CB-00002 dijadwalkan Manajer"
+  ]
+}

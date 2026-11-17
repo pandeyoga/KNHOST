@@ -1,0 +1,32 @@
+{
+  "code": "V9/piutang-umur",
+  "title": "V9 · Bukti klaim materi Piutang — Saldo & Umur, Susun Jadwal (F03, F05) · peserta 86",
+  "ok": true,
+  "at": "2026-11-17T12:39:12.737Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "F03 · Kotak cari Saldo & Umur menerima nama pelanggan atau sales, bukan nomor SO",
+      "expect": "Cari 'KSC/SO-00042' → 'Tidak ada piutang terbuka.'; cari 'Cicilan 86' → baris pelanggan tampil; petunjuk kotak 'Cari pelanggan / sales...'",
+      "ok": true,
+      "ms": 2579,
+      "info": "petunjuk 'Cari pelanggan / sales...' · cari KSC/SO-00042 → 0 baris · cari 'Cicilan 86' → 1 baris"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "F05 · Rencana baru disusun Admin Penjualan atau Manajer; Finance tidak punya tombol Susun Jadwal",
+      "expect": "Rincian KSC/SO-00040 (belum berencana) untuk Finance: panel 'Jadwal Pembayaran & Denda' tanpa tombol [Susun Jadwal]; Admin Sales & Manajer melihat tombol itu",
+      "ok": true,
+      "ms": 36359,
+      "info": "Finance: tanpa tombol (…) · Admin Sales: [Susun Jadwal] · Manajer: [Susun Jadwal]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

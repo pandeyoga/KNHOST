@@ -1,0 +1,22 @@
+[
+ {
+  "kode": "F04",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "'Kembalikan ke pelanggan' wajib Manajer; Finance memilih deposit atau alokasi",
+  "harap": "Lebih bayar Rp 100.000 → pilihan 'Kembalikan ke pelanggan (kas keluar)' berlencana WAJIB MANAGER; Finance memilihnya → kwitansi tersimpan, keputusan tidak dijalankan (perlu penyetuju), selisih masuk antrean",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "Dibayar Rp 3.355.075, seharusnya Rp 3.255.075 (sisa tagihan pesanan tujuan). Lebih Rp 100.000 — mau bagaimana? · pilihan: Kembalikan ke pelanggan (kas keluar) WAJIB MANAGER Kelebihan Rp 100.000 dikembalikan ke pe · Kwitansi KSC/AR-00054 (Rp 3.355.075) dicatat untuk Latihan 90 · Toko Kain Peserta 90. Rp 3.255.075 melunasi tagihan, Rp 100.000 menjadi titipan pelanggan. Selisihnya masuk antrean Selisih Bayar untuk diputus. Catatan: Keputusan 'Kembalikan ke pelanggan (kas keluar)': Selisih pembayaran — hapus sisa / refund senilai Rp100.000 pada jenjang 1 diputus oleh Admin atau Manajer. Peran Anda belum tercantum di Aturan Persetujuan. Ajukan ke penyetuju. ×"
+ },
+ {
+  "kode": "F04",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Kelebihan yang menunggu diputus Manajer (di sini: disimpan sebagai deposit)",
+  "harap": "Manajer: Selisih Bayar → [Putuskan] → Simpan sebagai deposit → titipan pelanggan +Rp 100.000; antrean bersih",
+  "peran": "Manajer",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "KSC/SLB-00011 deposit oleh Dewi Manager · titipan Rp 0 → Rp 100.000"
+ }
+]

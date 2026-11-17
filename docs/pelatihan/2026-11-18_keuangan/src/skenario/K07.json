@@ -7,7 +7,7 @@
  "kapan": "Saat tombol yang diharapkan tidak tampil atau layar menolak dengan pesan 'belum punya akses', dan saat bertanya siapa yang harus menyetujui sebuah dokumen.",
  "konsep": [
   "Wewenang ditentukan izin, bukan nama peran. Peran Finance berisi daftar modul dengan tingkat: Tidak ada, Lihat saja, Semua aksi, atau Sebagian (aksi tertentu saja). Menu dan tombol di layar mengikuti izin itu.",
-  "Contoh izin bawaan Finance: Akuntansi & Tutup Buku = lihat saja (Bagan Akun dan Jurnal tanpa tombol tulis); Pemetaan Akun = lihat & ubah; Kas & Bank = termasuk kelola rekening; Hutang = lihat & bayar; Pusat Pengaturan = tidak ada. Izin SDM & Penggajian untuk Finance sedang ditambahkan (keputusan pemilik 17 Nov).",
+  "Contoh izin bawaan Finance: Akuntansi & Tutup Buku = lihat saja (Bagan Akun dan Jurnal tanpa tombol tulis); Pemetaan Akun = lihat & ubah; Kas & Bank = termasuk kelola rekening; Hutang = lihat & bayar; Pusat Pengaturan = tidak ada. SDM & Penggajian = menyiapkan data, menghitung, memposting, dan membayar gaji (keputusan pemilik 17 Nov).",
   "Admin memberi izin di Pengaturan › Pengguna & Hak Akses › Peran & Hak Akses: pilih tingkat per modul, klik Simpan, baca ringkasan perubahan, lalu konfirmasi. Peran bawaan dipakai semua akun berperan itu, jadi perubahan berlaku untuk semua orang Finance sekaligus.",
   "Aturan Persetujuan menentukan dokumen mana yang butuh persetujuan, mulai nominal berapa, dan oleh siapa. Contoh Sukacita: pesanan pembelian mulai Rp 100.000.000 butuh persetujuan, dan di atas Rp 500.000.000 ditambah jenjang Direksi. 'Coba nilai' menunjukkan siapa yang harus menyetujui tanpa membuat dokumen.",
   "Kontrol dua orang: pengaju tidak boleh memutuskan pengajuannya sendiri bila aturan PT memintanya (mis. perubahan rekening, uang muka di atas batas)."
@@ -148,7 +148,7 @@
   "Mengira penyetuju ditentukan nama jabatan di dokumen: penyetuju ditentukan Aturan Persetujuan PT dan izin persetujuan di peran.",
   "Melapor 'tombol hilang' tanpa menyebut layarnya: sebut menu, tombol, dan pesan yang muncul supaya Admin bisa memeriksa izinnya di Cek Peran."
  ],
- "catatan_pelatih": "Seluruh skenario selain langkah 9 diperagakan pelatih dengan akun Admin; peserta tidak punya menu ini. Jangan menyimpan perubahan peran bawaan — peran Finance dipakai semua akun peserta dan pengguna nyata. Izin SDM & Penggajian untuk Finance sedang ditambahkan (keputusan pemilik 17 Nov): bila hitungan modul di kartu Finance berbeda dengan gambar, itu wajar; tunjukkan baris 'SDM & Penggajian' di editor. Jumlah akun Finance termasuk akun latihan peserta.",
+ "catatan_pelatih": "Seluruh skenario selain langkah 9 diperagakan pelatih dengan akun Admin; peserta tidak punya menu ini. Jangan menyimpan perubahan peran bawaan — peran Finance dipakai semua akun peserta dan pengguna nyata. Izin SDM & Penggajian untuk Finance sudah ditambahkan (keputusan pemilik 17 Nov), jadi hitungan modul di kartu Finance bisa berbeda dengan gambar; tunjukkan baris 'SDM & Penggajian' di editor. Jumlah akun Finance termasuk akun latihan peserta.",
  "uji": {
   "berkas": "uji/konfigurasi/K07_hak_akses_persetujuan.js",
   "peserta_uji": "01"

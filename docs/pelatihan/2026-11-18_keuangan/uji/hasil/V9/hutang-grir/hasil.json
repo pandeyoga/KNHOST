@@ -1,0 +1,23 @@
+{
+  "code": "V9/hutang-grir",
+  "title": "V9 · Bukti klaim materi Hutang & Pajak — GR/IR selisih harga (K02) · peserta 88",
+  "ok": true,
+  "at": "2026-11-17T13:26:09.999Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "K02 · Selama 'Selisih harga pembelian' belum dipilih, selisih harga tagihan tertinggal di GR/IR dan kliring tidak tersedia",
+      "expect": "GR/IR KSC/PO-00058: sisa = diterima Rp 28.000 − ditagih Rp 28.420 = −Rp 420 'termasuk selisih harga'; pita 'Akun \"Selisih harga pembelian\" belum diatur…'; tanpa tombol [Kliring]",
+      "ok": true,
+      "ms": 21605,
+      "info": "sisa -Rp 420 termasuk selisih harga Rp 420 · termasuk selisih harga Rp 420 · pita: Akun “Selisih harga pembelian” belum diatur untuk PT ini: selisih harga faktur tetap di GR/IR dan kliring belum bisa dil · tombol Kliring: tidak ada"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

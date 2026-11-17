@@ -1,0 +1,12 @@
+[
+ {
+  "kode": "F13",
+  "bagian": "kesalahan_umum.0",
+  "klaim": "Faktur yang sudah terbit hanya bisa dibatalkan Manajer; Finance boleh menerbitkan dan membuat faktur pengganti",
+  "harap": "Finance [Terbitkan] faktur KSC/SO-00066 di Beranda Keuangan → di Pajak › Faktur Keluaran Finance melihat [Terbitkan Pengganti] tanpa [Batalkan]; Manajer melihat [Batalkan]",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "KSC/FKT-00010 · Finance {\"pengganti\":1,\"batal\":0} · Manajer {\"batal\":1}"
+ }
+]

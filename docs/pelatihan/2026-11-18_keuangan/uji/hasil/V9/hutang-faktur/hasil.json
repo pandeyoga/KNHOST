@@ -1,0 +1,23 @@
+{
+  "code": "V9/hutang-faktur",
+  "title": "V9 · Bukti klaim materi Hutang & Pajak — faktur pajak (F13) · peserta 90",
+  "ok": true,
+  "at": "2026-11-17T13:06:10.806Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "F13 · Faktur yang sudah terbit hanya bisa dibatalkan Manajer; Finance boleh menerbitkan dan membuat faktur pengganti",
+      "expect": "Finance [Terbitkan] faktur KSC/SO-00066 di Beranda Keuangan → di Pajak › Faktur Keluaran Finance melihat [Terbitkan Pengganti] tanpa [Batalkan]; Manajer melihat [Batalkan]",
+      "ok": true,
+      "ms": 43161,
+      "info": "KSC/FKT-00010 · Finance {\"pengganti\":1,\"batal\":0} · Manajer {\"batal\":1}"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

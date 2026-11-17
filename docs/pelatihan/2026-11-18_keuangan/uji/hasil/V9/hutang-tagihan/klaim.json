@@ -1,0 +1,92 @@
+[
+ {
+  "kode": "F11",
+  "bagian": "catatan_pelatih",
+  "klaim": "Finance boleh melihat dan membayar tagihan; membuat dan membatalkan tagihan tetap wewenang Manajer",
+  "harap": "Daftar Tagihan untuk Finance: tanpa [Buat Tagihan]; rincian tagihan Terposting: hanya [Bayar], tanpa [Batalkan]. Manajer melihat [Buat Tagihan]",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "Finance: [Buat Tagihan] tidak ada · rincian VB-00024: {\"bayar\":1,\"batal\":0}"
+ },
+ {
+  "kode": "F11",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "Mencari PO di GR/IR tanpa centang 'Tampilkan yang sudah nol' memunculkan 'Tidak ada sisa GR/IR yang cocok' — tanda sudah beres",
+  "harap": "GR/IR cari KSC/PO-00024: tanpa centang → 'Tidak ada sisa GR/IR yang cocok dengan saringan.'; dicentang → baris PO dengan Sisa GR/IR Rp 0",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "tanpa centang: 'Tidak ada sisa GR/IR yang cocok dengan saringan.' · dicentang: KSC/PO-00024 sisa Rp 0"
+ },
+ {
+  "kode": "A2",
+  "bagian": "titik_kontrol.4",
+  "klaim": "Nomor faktur pemasok tidak boleh dipakai dua kali untuk pemasok yang sama (cegah tagihan ganda)",
+  "harap": "Tagihan baru KSC/PO-00066 dengan No. faktur INV-LTH90-A73DC (sudah dipakai VB-00024) → ditolak 'No. invoice supplier … sudah dipakai pada VB-00024'; tidak ada tagihan baru",
+  "peran": "Manajer",
+  "langkah": 3,
+  "uji": "lulus",
+  "bukti": "Cocok Bersih toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan · No. invoice supplier 'INV-LTH90-A73DC' sudah dipakai pada VB-00024."
+ },
+ {
+  "kode": "A2",
+  "bagian": "titik_kontrol.3",
+  "klaim": "3-way match: jumlah tagih tidak boleh melebihi jumlah diterima (lebih tagih ditolak)",
+  "harap": "Tagih 6 yard padahal diterima 2 (lebih 4 yard = Rp 56.000, di atas ambang Rp 50.000) → label 'Lebih tagih (tidak bisa dikirim)'; tombol kirim mati 'Perbaiki Kelebihan Tagih Dulu'",
+  "peran": "Manajer",
+  "langkah": 4,
+  "uji": "lulus",
+  "bukti": "Lebih Tagih (Tidak Bisa Dikirim) toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan · tombol [Perbaiki Kelebihan Tagih Dulu] mati · toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan"
+ },
+ {
+  "kode": "A2",
+  "bagian": "konsep.2",
+  "klaim": "Cocok bersih → tagihan langsung terposting; selisih DALAM toleransi (±5% harga, atau nilainya ≤ ambang Rp 50.000) dianggap cocok, bukan 'perlu persetujuan'",
+  "harap": "Tagih 1 yard Rp 14.420 (+3% dari harga PO Rp 14.000) → label 'Cocok bersih' → [Kirim & Posting] → tagihan langsung Terposting tanpa persetujuan",
+  "peran": "Manajer",
+  "langkah": 5,
+  "uji": "lulus",
+  "bukti": "Cocok Bersih toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan (toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan) → VB-00065 posted · match matched"
+ },
+ {
+  "kode": "A2",
+  "bagian": "titik_kontrol.3",
+  "klaim": "Selisih harga di atas toleransi butuh persetujuan",
+  "harap": "Tagih 1 yard Rp 70.000 (harga PO Rp 14.000; selisih Rp 56.000 melewati ±5% DAN ambang Rp 50.000) → label 'Ada selisih (perlu persetujuan)' → [Kirim (minta persetujuan)] → status Menunggu persetujuan, belum berjurnal",
+  "peran": "Manajer",
+  "langkah": 6,
+  "uji": "lulus",
+  "bukti": "Ada Selisih (Perlu Persetujuan) toleransi qty 0% · harga ±5% · selisih ≤ Rp 50.000 diabaikan → VB-00066 pending_approval · Harga Rp 70.000 menyimpang +400% dari harga PO Rp 14.000 (toleransi ±5%)"
+ },
+ {
+  "kode": "F11",
+  "bagian": "kesalahan_umum.0",
+  "klaim": "Tagihan berselisih jangan dibayar sebelum diputus — siapa yang memutus?",
+  "harap": "Finance membuka tagihan 'Menunggu persetujuan': tidak ada tombol [Bayar]; tombol putus mengikuti Aturan Persetujuan (dicatat apa adanya)",
+  "peran": "Finance",
+  "langkah": 7,
+  "uji": "lulus",
+  "bukti": "Finance pada VB-00066: {\"bayar\":0,\"setujui\":0,\"tolak\":0,\"petunjuk\":\"Tagihan pemasok senilai Rp77.700 pada jenjang 1 diputus oleh Admin atau Manajer. Peran Anda belum tercantum di Aturan Persetujuan.\"}"
+ },
+ {
+  "kode": "A2",
+  "bagian": "titik_kontrol.3",
+  "klaim": "Tagihan berselisih harga diputus orang kedua: pembuat tagihan (Manajer) tidak memutus sendiri; Admin menolak, tidak dijurnal",
+  "harap": "Manajer (pembuat) membuka tagihan: tanpa [Setujui]/[Tolak], tertulis 'Tagihan Anda — disetujui orang lain (kontrol dua orang)'; Admin [Tolak] + alasan → status Ditolak; tidak ada jurnal",
+  "peran": "Manajer → Admin",
+  "langkah": 8,
+  "uji": "lulus",
+  "bukti": "Manajer (pembuat): {\"setujui\":0,\"tolak\":0,\"catatan\":\"Tagihan Anda — disetujui orang lain (kontrol dua orang).\"} · Admin menolak → VB-00066 cancelled · jurnal 0"
+ },
+ {
+  "kode": "K02",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "Selama 'Selisih harga pembelian' belum dipilih, selisih harga tagihan tertinggal di GR/IR dan kliring tidak tersedia",
+  "harap": "GR/IR KSC/PO-00066: sisa = diterima Rp 28.000 − ditagih Rp 28.420 = −Rp 420 'termasuk selisih harga'; pita 'Akun \"Selisih harga pembelian\" belum diatur…'; tanpa tombol [Kliring]",
+  "peran": "Finance",
+  "langkah": 9,
+  "uji": "lulus",
+  "bukti": "sisa -Rp 420 termasuk selisih harga Rp 420 · termasuk selisih harga Rp 420 · pita: Akun “Selisih harga pembelian” belum diatur untuk PT ini: selisih harga faktur tetap di GR/IR dan kliring belum bisa dil · tombol Kliring: tidak ada"
+ }
+]

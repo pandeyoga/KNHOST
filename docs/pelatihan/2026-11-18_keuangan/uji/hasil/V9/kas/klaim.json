@@ -1,0 +1,122 @@
+[
+ {
+  "kode": "F07",
+  "bagian": "catatan_pelatih",
+  "klaim": "Sesudah pencairan, tombol [Tanda Terima] mencetak bukti serah uang ke karyawan",
+  "harap": "PD dicairkan (Kas Toko KSC) → tombol [Tanda Terima] tampil di rincian PD dan membuka cetakan 'Tanda Terima' bernominal PD",
+  "peran": "Finance",
+  "langkah": 1,
+  "uji": "lulus",
+  "bukti": "tombol [Tanda Terima] tampil sesudah cair · cetakan: Sukacita TANDA TERIMA Telah diterima dari Sukacita Nama Penerima Ayu Marketing Berupa Uang Tunai (Pencairan PD) Jumlah Rp 500.000 Terbilang: Lima ratus ribu rup"
+ },
+ {
+  "kode": "F07",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "LPJ yang belum [Ajukan] tetap Draf; bukti hanya bisa diunggah selama Draf",
+  "harap": "[Simpan LPJ] (2 nota, total Rp 550.000) → status Draf, tombol [Ajukan] & [Unggah Bukti] tampil",
+  "peran": "Finance",
+  "langkah": 2,
+  "uji": "lulus",
+  "bukti": "KSC/STL-00003 Draf · total Rp 550.000 · tombol {\"ajukan\":1,\"unggah\":1,\"setujui\":0}"
+ },
+ {
+  "kode": "F07",
+  "bagian": "kesalahan_umum.2",
+  "klaim": "LPJ yang masih Draf tidak bisa disetujui Manajer",
+  "harap": "Manajer membuka PD yang LPJ-nya Draf: tidak ada [Setujui & Posting GL] maupun [Tolak]",
+  "peran": "Manajer",
+  "langkah": 3,
+  "uji": "lulus",
+  "bukti": "Manajer melihat KSC/STL-00003 Draf · tombol {\"setujui\":0,\"tolak\":0}"
+ },
+ {
+  "kode": "F07",
+  "bagian": "catatan_pelatih",
+  "klaim": "Finance tidak bisa menyetujui LPJ; sesudah diajukan bukti tidak bisa diunggah lagi",
+  "harap": "Finance [Ajukan] → status Diajukan; Finance tidak melihat [Setujui & Posting GL]/[Tolak]; tombol [Unggah Bukti] hilang",
+  "peran": "Finance",
+  "langkah": 4,
+  "uji": "lulus",
+  "bukti": "KSC/STL-00003 Diajukan · tombol Finance {\"setujui\":0,\"tolak\":0,\"unggah\":0}"
+ },
+ {
+  "kode": "F07",
+  "bagian": "catatan_pelatih",
+  "klaim": "Manajer bisa menolak LPJ dengan alasan",
+  "harap": "Manajer [Tolak] → isi alasan → status Ditolak; alasan tampil di rincian; belum ada jurnal",
+  "peran": "Manajer",
+  "langkah": 5,
+  "uji": "lulus",
+  "bukti": "KSC/STL-00003 Ditolak · Alasan ditolak: Nota sewa mobil belum dilampirkan"
+ },
+ {
+  "kode": "F07",
+  "bagian": "catatan_pelatih",
+  "klaim": "Bila LPJ ditolak Manajer, pembuat LPJ klik [Perbaiki & Ajukan Lagi]",
+  "harap": "Finance (pembuat LPJ) melihat [Perbaiki & Ajukan Lagi] → form terbuka dengan pesan penolakan → [Simpan & Ajukan Lagi] → status Diajukan",
+  "peran": "Finance",
+  "langkah": 6,
+  "uji": "lulus",
+  "bukti": "form: 'Alasan ditolak: Nota sewa mobil belum dilampirkan' · tombol [Simpan & Ajukan Lagi] → KSC/STL-00003 submitted"
+ },
+ {
+  "kode": "F07",
+  "bagian": "cek_buku.4",
+  "klaim": "Bila biaya lebih besar dari uang muka: LPJ mencatat 2-1650 Hutang Reimburse Karyawan (K)",
+  "harap": "Manajer [Setujui & Posting GL] → jurnal beban (D) Rp 550.000 = 1-1400 Uang Muka (K) Rp 500.000 + 2-1650 Hutang Reimburse (K) Rp 50.000",
+  "peran": "Manajer",
+  "langkah": 7,
+  "uji": "lulus",
+  "bukti": "KSC/JE-00414: 6-4600 Beban Transportasi & BBM (D) Rp 400.000 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 150.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 500.000 · 2-1650 Hutang Reimburse Karyawan (K) Rp 50.000"
+ },
+ {
+  "kode": "F07",
+  "bagian": "cek_buku.4",
+  "klaim": "Kelebihan pengeluaran memunculkan tombol [Bayar Reimburse]",
+  "harap": "Finance: daftar Kas Kecil berisi [Bayar]; rincian: bilah 'Kelebihan pengeluaran Rp 50.000 harus dibayar ke …' + [Bayar Reimburse] → kas keluar; jurnal 2-1650 (D) / Kas-Bank (K) Rp 50.000",
+  "peran": "Finance",
+  "langkah": 8,
+  "uji": "lulus",
+  "bukti": "daftar: [Bayar] · rincian: Kelebihan pengeluaran Rp 50.000 harus dibayar ke Ayu Marketing. Bayar Reimburse Rp 50.000 · [Bayar Reimburse Rp 50.000] → KSC/CASH-00079 · KSC/JE-00415: 2-1650 Hutang Reimburse Karyawan (D) Rp 50.000 · 1-1100 Kas Besar / Bank (K) Rp 50.000"
+ },
+ {
+  "kode": "F08",
+  "bagian": "konsep.3",
+  "klaim": "Bila uangnya kurang, setoran ditolak ([Tolak] + alasan) dan titipan tetap tercatat atas nama sales",
+  "harap": "Titipan Sales › Setoran menunggu: [Tolak] KSC/STT-00010 + alasan → status Ditolak; titipan KSC/TTP-00010 tetap 'Dipegang'; tidak ada kas masuk & jurnal",
+  "peran": "Finance",
+  "langkah": 9,
+  "uji": "lulus",
+  "bukti": "setoran KSC/STT-00010 ditolak (note: Setoran tunai Latihan 89 · Toko Kain Peserta 89; decision_reason: Uang dihitung kurang Rp 50.000 — Latihan 89) · titipan KSC/TTP-00010 dipegang Rp 3.285.045 · kas & jurnal: tidak ada"
+ },
+ {
+  "kode": "F09",
+  "bagian": "catatan_pelatih",
+  "klaim": "Kotak cari Jurnal mencari nomor jurnal dan keterangan, bukan nomor KSC/CASH di kolom Sumber",
+  "harap": "Fakta (teks dikoreksi): ketik KSC/CASH-00033 di kotak cari Jurnal → jurnal kwitansi transfer KSC/AR-00031 ditemukan (pencarian kini membaca nomor sumber)",
+  "peran": "Finance",
+  "langkah": 10,
+  "uji": "lulus",
+  "bukti": "cari 'KSC/CASH-00033' → 1 jurnal · KSC/JE-00242 17 Nov 2026 KasKSC/CASH-00033 Kas masuk · Penerimaan KSC/AR-00031 — Latihan 89 · Toko Kain Peserta 89 · Ref TRF-LTH89-00064 · Kode KN-9UHFY Rp 3.18"
+ },
+ {
+  "kode": "F10",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "Salah pencocokan dibatalkan dengan [Lepas]",
+  "harap": "Impor 2 baris → [Cocokkan] mutasi CR ke KSC/CASH-00033 → Tercocok, kas 'Terekonsiliasi' → [Lepas] → baris kembali 'Perlu keputusan', kas kembali belum terekonsiliasi; tanpa jurnal",
+  "peran": "Finance",
+  "langkah": 11,
+  "uji": "lulus",
+  "bukti": "TRSF E-BANKING CR V9 LATIHAN 89 TOKO KAIN PESERTA 89: Tercocok ke KSC/CASH-00033 → [Lepas] → unmatched; kas terekonsiliasi Rp 3.184.868 → Rp 0"
+ },
+ {
+  "kode": "F10",
+  "bagian": "kesalahan_umum.3",
+  "klaim": "[Abaikan] pada baris biaya admin tidak membukukan beban bank (pakai [Catat biaya bank])",
+  "harap": "[Abaikan] baris BIAYA ADM → status Diabaikan, tanpa transaksi kas & jurnal beban; [Batal abaikan] mengembalikannya ke antrean",
+  "peran": "Finance",
+  "langkah": 12,
+  "uji": "lulus",
+  "bukti": "BIAYA ADM Rp 15.000: [Abaikan] → ignored, kas baru 0, jurnal 0 · [Batal abaikan] → unmatched"
+ }
+]
