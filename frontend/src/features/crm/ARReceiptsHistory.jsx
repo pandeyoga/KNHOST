@@ -73,8 +73,13 @@ const receiptCsvColumns = (labelOf, isCash) => [
   { header: "Tidak sesuai instruksi", get: (r) => (r.instruction_mismatch ? `Ya — ${r.mismatch_note || ""}` : "") },
 ];
 
-function VarianceCell({ v = {} }) {
+export function VarianceCell({ v = {}, isVoid = false }) {
   if (!v.direction || v.direction === "none") return <span className="text-kn-text-2">—</span>;
+  // S4 (pelatihan 18 Nov) — kwitansi dianulir: keputusan selisihnya ikut dibatalkan dan tidak ada yang perlu diputus.
+  // Dulu tampil "Kurang Bayar · Perlu Diputus" (merah) pada kwitansi yang sudah batal.
+  if (isVoid && !v.decision_kind) {
+    return <span className="text-fs-12 text-kn-text-2" title="Kwitansi dianulir — keputusan selisihnya ikut dibatalkan">Ikut dianulir</span>;
+  }
   if (v.decision_kind) {
     const km = varianceKindMeta(v.decision_kind);
     return (
@@ -218,7 +223,7 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
                       <td className="font-mono text-fs-12" data-testid={`ar-history-ref-${r.id}`}>{r.reference_no || "—"}</td>
                       <td className={`text-right tabular-nums font-semibold ${isVoid ? "line-through text-kn-text-2" : "text-kn-success-text"}`}>{formatCurrency(r.amount)}</td>
                       <td className="text-fs-12 text-kn-text-2">{(r.allocations || []).map((a) => a.order_number).join(", ") || "—"}</td>
-                      <td data-testid={`ar-history-variance-${r.id}`}><VarianceCell v={r.variance} /></td>
+                      <td data-testid={`ar-history-variance-${r.id}`}><VarianceCell v={r.variance} isVoid={isVoid} /></td>
                       <td>
                         <div className="flex flex-col items-start gap-1">
                           <span data-testid={`ar-history-status-${r.id}`} data-status={st.key} className={`status-pill ${st.cls}`}>

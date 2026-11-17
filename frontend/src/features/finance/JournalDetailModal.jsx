@@ -3,7 +3,7 @@
  *
  * Fase 4 · R2 (L-03) — diekstrak dari `GeneralLedger.jsx`; `div fixed inset-0` buatan sendiri → `DetailModal`
  * framed (Esc lewat tumpukan lapisan, klik latar gestur utuh, layar penuh di HP).
- *  · "Anulir Jurnal" dulu langsung memanggil API tanpa bertanya → kini `askConfirm` (danger).
+ *  · "Anulir Jurnal" dulu langsung memanggil API tanpa bertanya → kini `askReason` (danger, alasan wajib — S4 / N5).
  *  · Galat anulir dulu dilempar ke bilah galat HALAMAN (di belakang pop-up, tak terlihat) → kini tampil di DALAM
  *    pop-up (`gl-journal-detail-error`).
  * Testid lama tetap: `gl-journal-detail`, `gl-journal-detail-close`, `gl-reverse-*`, `gl-print-*`, `gl-journal-void`,
@@ -19,7 +19,7 @@ import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNDatePicker from "../../components/KNDatePicker";
-import { askConfirm } from "../../services/confirmService";
+import { askReason } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint";
 import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
@@ -75,15 +75,22 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
   // Jurnal tanpa baris kas/bank (mis. pendapatan, HPP, penyesuaian) tidak punya bukti kas — tombol disembunyikan.
   const adaKas = cashLines.length > 0;
 
+  // S4 (pelatihan 18 Nov, standar N5) — pembatalan meminta alasan dan menyebut nominal & PT. Dulu hanya "Ya/Batal":
+  // jurnal hilang dari buku besar tanpa alasan tercatat (Balik Jurnal sudah wajib alasan).
   const doVoid = async () => {
-    if (!(await askConfirm({
+    const reason = await askReason({
       title: `Anulir jurnal ${je.number}?`,
-      message: "Jurnal manual ini ditandai Anulir dan tidak lagi dihitung di buku besar.",
+      message: `Jurnal manual ${formatCurrency(je.total_debit)}${entityName ? ` di buku ${entityName}` : ""} ditandai Anulir dan `
+        + "tidak lagi dihitung di buku besar (tanpa jurnal pembalik). Untuk jurnal yang sudah dibaca di laporan, pakai Balik Jurnal.",
+      reasonLabel: "Alasan anulir",
+      reasonPlaceholder: "Contoh: salah ketik nominal, dicatat ulang",
       confirmLabel: "Anulir Jurnal",
       danger: true,
-    }))) return;
+      testId: "gl-void-confirm",
+    });
+    if (reason == null) return;   // batal di dialog
     setVoidBusy(true); setErr("");
-    try { await onVoid(je); } catch (e) { setErr(apiErrorText(e, "Gagal void jurnal.")); } finally { setVoidBusy(false); }
+    try { await onVoid(je, reason); } catch (e) { setErr(apiErrorText(e, "Gagal void jurnal.")); } finally { setVoidBusy(false); }
   };
 
   return (
@@ -148,6 +155,9 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
       {(je.reversed_by_entry_id || je.reversed) && (
         <p data-testid="gl-journal-reversed-note" className="mt-2 text-[12px] font-semibold text-[#0058CC]">
           Sudah dibalik oleh {je.reversed_by_entry_number || je.reversed_by_entry_id || je.reversal_id}{je.reversal_reason ? ` · ${je.reversal_reason}` : ""}</p>)}
+      {je.status === "void" && (
+        <p data-testid="gl-journal-void-note" className="mt-2 text-[12px] font-semibold text-[#C0392B]">
+          Dianulir{je.voided_by ? ` oleh ${je.voided_by}` : ""}{je.voided_at ? ` · ${formatDate(je.voided_at)}` : ""}{je.void_reason ? ` · ${je.void_reason}` : ""}</p>)}
       {je.ref?.reverses_entry_number && (
         <p data-testid="gl-journal-reverses-note" className="mt-2 text-[12px] font-semibold text-[#0058CC]">
           Jurnal pembalik atas {je.ref.reverses_entry_number}{je.ref.reason ? ` · ${je.ref.reason}` : ""}</p>)}

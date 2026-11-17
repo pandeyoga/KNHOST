@@ -1,0 +1,392 @@
+{
+  "code": "S4",
+  "title": "Koreksi & pembatalan — kas, hutang, piutang, gaji, jurnal",
+  "ok": false,
+  "at": "2026-11-17T13:19:37.912Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Bayar tagihan VB-00048 dari rekening yang SALAH: Keuangan › Hutang → cari \"Latihan 80\" → [[Detail →]] → [[Bayar]] → *Rekening sumber* Kas Toko KSC → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Konfirmasi menyebut Kas Toko KSC; tagihan berstatus Lunas, Sisa Hutang Rp 0 (kesalahan belum terlihat dari layar tagihan)",
+      "ok": true,
+      "ms": 12922,
+      "info": "konfirmasi \"Bayar Rp 1.864.800 ke Latihan 80 · Pemasok Grey Peserta 80 dari Kas Toko KSC untuk Sukacita?\" · VB-00048 Lunas · kas KSC/CASH-00118"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Cek buku: jurnal pembayaran yang salah",
+      "expect": "2-1100 Hutang Usaha (D) Rp 1.864.800 · 1-1110 Kas Kecil (K) Rp 1.864.800 — uang tercatat keluar dari Kas Toko, bukan dari bank",
+      "ok": true,
+      "ms": 2871,
+      "info": "KSC/JE-00552: 2-1100 Hutang Usaha (D) Rp 1.864.800 · 1-1110 Kas Kecil (K) Rp 1.864.800 · KSC/CASH-00118 dari Kas Toko KSC"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Di bagian Pembayaran klik [[Batalkan]] → isi *Alasan* \"Salah rekening: dibayar dari Kas Toko, seharusnya transfer BCA\" → [[Batalkan pembayaran]]",
+      "expect": "Dialog \"Batalkan pembayaran Rp 1.864.800?\" menyebut nomor kas yang dianulir; sesudahnya pesan \"VB-00048: pembayaran dibatalkan, jurnalnya dibalik — hutang terbuka kembali.\", baris pembayaran dicoret dengan tanda Dibatalkan + alasan + nama pembatal, status Terposting, Sisa Hutang Rp 1.864.800, tombol [[Bayar]] muncul lagi; Riwayat: \"Pembayaran dicatat … transfer dari Kas Toko KSC\" lalu \"Pembayaran dibatalkan · Peserta Keuangan 80 — <alasan>\"",
+      "ok": true,
+      "ms": 1835,
+      "info": "dialog \"Kas KSC/CASH-00118 dianulir dan jurnalnya dibalik; hutang kembali terbuka.\" · pesan halaman \"VB-00048: pembayaran dibatalkan, jurnalnya dibalik — hutang terbuka kembali. ×\" · riwayat …ri Kas Toko KSC · kas KSC/CASH-00118 Pembayaran dibatalkan · Peserta Keuangan 80 — Rp 1.864.800 · Salah rekening: dibayar dari Kas Toko, seharusnya transfer BCA"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Cek buku: jurnal pembalik, kas, hutang, jejak audit",
+      "expect": "Jurnal pembalik bertanggal hari ini = cermin jurnal bayar: 1-1110 Kas Kecil (D) · 2-1100 Hutang Usaha (K) Rp 1.864.800; kas Kas Toko berstatus dianulir; jejak audit: Peserta Keuangan 80, alasan tersimpan",
+      "ok": true,
+      "ms": 4485,
+      "info": "KSC/JE-00553 (2026-11-17) membalik KSC/JE-00552: 2-1100 Hutang Usaha (K) Rp 1.864.800 · 1-1110 Kas Kecil (D) Rp 1.864.800 · kas KSC/CASH-00118 void · audit Peserta Keuangan 80 (finance) 2026-11-17T13:12:41 \"Salah rekening: dibayar dari Kas Toko, seharusnya transfer BCA\""
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Bayar ulang dengan benar: [[Bayar]] → *Rekening sumber* BCA Operasional KSC → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Tagihan Lunas lagi; daftar Pembayaran: satu baris dicoret (Kas Toko, dibatalkan) + satu baris aktif (BCA)",
+      "ok": false,
+      "ms": 15649,
+      "info": "locator.waitFor: Timeout 15000ms exceeded.",
+      "shot": "/home/user/KNHOST/docs/pelatihan/2026-11-18_keuangan/uji/hasil/S4/06-GAGAL-5.png"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Cek buku: jurnal bayar ulang & saldo hutang tagihan ini",
+      "expect": "2-1100 Hutang Usaha (D) · 1-1100 Kas Besar / Bank (K) Rp 1.864.800; mutasi Hutang Usaha tagihan ini: tagihan (K) − bayar salah (D) + pembalik (K) − bayar benar (D) = 0",
+      "ok": false,
+      "ms": 498,
+      "info": "Cannot read properties of null (reading 'cash_txn_id')",
+      "shot": "/home/user/KNHOST/docs/pelatihan/2026-11-18_keuangan/uji/hasil/S4/07-GAGAL-6.png"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Catat kwitansi dengan nominal SALAH: Keuangan › Piutang › Penagihan & Penerimaan → baris KSC/SO-00121 → ikon dompet → ganti alokasi menjadi 3.148.138 → [[Simpan kwitansi]] → \"Sisa tetap jadi piutang\" → [[Ya, simpan]]",
+      "expect": "Kwitansi tercatat; KSC/SO-00121 berstatus bayar Sebagian dengan sisa ±Rp 100.000",
+      "ok": true,
+      "ms": 27294,
+      "info": "Kwitansi KSC/AR-00088 (Rp 3.148.138) dicatat untuk Latihan 80 · Toko Kain Peserta 80. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00020). × · sisa Rp 100.000"
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Rekening koran BCA menunjukkan transfer Rp 3.248.138, bukan Rp 3.148.138. Di Riwayat Pembayaran (AR) ketik nomor kwitansi",
+      "expect": "Baris kwitansi tampil dengan nominal salah; Finance TIDAK melihat ikon Batalkan (membatalkan kwitansi = izin Manajer) — minta Manajer membatalkan",
+      "ok": true,
+      "ms": 1530,
+      "info": "KSC/AR-00088 Rp 3.148.138 · jurnal KSC/JE-00554 Kas/Bank (D) = Piutang (K) Rp 3.148.138"
+    },
+    {
+      "no": 9,
+      "role": "Manajer",
+      "action": "Login Manajer → Keuangan › Piutang › Penagihan & Penerimaan → Riwayat Pembayaran (AR) → cari nomor kwitansi → ikon [[Batalkan]] → *Alasan* \"Salah nominal: mutasi BCA Rp 3.248.138, tercatat Rp 3.148.138\" → [[Batalkan Penerimaan]]",
+      "expect": "Dialog menyebut nominal yang dibalik (pembayaran pesanan, kas, titipan); kwitansi berstatus Dianulir (nominal dicoret), kolom Selisih \"Ikut dianulir\"; baris KSC/SO-00121 kembali di daftar penagihan dengan sisa penuh",
+      "ok": true,
+      "ms": 27406,
+      "info": "dialog \"Nominal Rp 3.148.138 akan dibalik: pembayaran pada order, catatan kas, dan deposit pelanggan dikoreksi kembali.\""
+    },
+    {
+      "no": 10,
+      "role": "Manajer",
+      "action": "Cek buku: jurnal pembalik kwitansi, piutang pesanan, jejak audit",
+      "expect": "Jurnal pembalik hari ini: 1-1200 Piutang Usaha (D) · 1-1100 Kas Besar / Bank (K) Rp 3.148.138; KSC/SO-00121 kembali Belum Bayar dengan sisa Rp 3.248.138; keputusan selisih ikut dibatalkan; jejak audit Manajer + alasan",
+      "ok": true,
+      "ms": 9387,
+      "info": "KSC/JE-00556 (2026-11-17) membalik KSC/JE-00554: 1-1100 Kas Besar / Bank (K) Rp 3.148.138 · 1-1200 Piutang Usaha (D) Rp 3.148.138 · KSC/SO-00121 unpaid sisa Rp 3.248.138 · keputusan selisih KSC/SLB-00020 reversed · audit Dewi Manager 2026-11-17T13:13:59 \"Salah nominal: mutasi BCA Rp 3.248.138, tercatat Rp 3.148.138\""
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Login Finance → catat ulang kwitansi yang benar: baris KSC/SO-00121 → ikon dompet → alokasi 3.248.138 → [[Simpan kwitansi]] → [[Ya, simpan]]",
+      "expect": "\"Nominal sesuai tagihan — tidak ada selisih\"; kwitansi baru tercatat; KSC/SO-00121 Lunas",
+      "ok": true,
+      "ms": 18546,
+      "info": "Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan. · Kwitansi KSC/AR-00089 (Rp 3.248.138) dicatat untuk Latihan 80 · Toko Kain Peserta 80. ×"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Cek buku: kwitansi benar & piutang",
+      "expect": "Jurnal 1-1100 Kas Besar / Bank (D) · 1-1200 Piutang Usaha (K) Rp 3.248.138; KSC/SO-00121 Lunas, sisa Rp 0; neto piutang pesanan dari tiga jurnal kwitansi = pelunasan penuh",
+      "ok": true,
+      "ms": 3953,
+      "info": "KSC/AR-00089 Rp 3.248.138 · KSC/JE-00562 · KSC/SO-00121 paid"
+    },
+    {
+      "no": 13,
+      "role": "Manajer",
+      "action": "Login Manajer → SDM › Penggajian › Proses Gaji → pilih KSC/PAY-00019 (Diposting) → [[Anulir]] → *Alasan* \"Nominal insentif salah, seharusnya Rp 800.000\" → [[Anulir]]",
+      "expect": "Dialog menyebut periode, jenis Susulan, jumlah karyawan, gaji bersih, PT dan \"Jurnal gaji akan dibalik\"; status Dianulir dengan bilah \"Dianulir oleh … · jurnal pembalik KSC/JE-…: <alasan>\"",
+      "ok": true,
+      "ms": 14948,
+      "info": "dialog \"Oktober 2026 · proses Susulan · 1 karyawan · gaji bersih Rp 713.266 · Sukacita Textile. Jurnal gaji akan dibalik.\" · Dianulir oleh Dewi Manager · jurnal pembalik KSC/JE-00566: Nominal insentif salah, seharusnya Rp 800.000"
+    },
+    {
+      "no": 14,
+      "role": "Manajer",
+      "action": "Cek buku: jurnal pembalik gaji, masukan, jejak audit",
+      "expect": "Jurnal pembalik bertanggal 31 Okt 2026 (tanggal jurnal gaji asal, bukan hari ini) = cermin jurnal gaji: Hutang Gaji 2-1600 (D) + Hutang PPh 21 2-1800 (D) · beban (K); masukan insentif kembali \"Disahkan\" (bisa dipakai lagi)",
+      "ok": true,
+      "ms": 4491,
+      "info": "asli KSC/JE-00545: 2-1500 Hutang Insentif Penjualan (D) Rp 830.000 · 2-1600 Hutang Gaji (K) Rp 713.266 · 2-1800 Hutang PPh 21 (K) Rp 116.734 · KSC/JE-00566 (2026-10-31) membalik KSC/JE-00545: 2-1500 Hutang Insentif Penjualan (K) Rp 830.000 · 2-1600 Hutang Gaji (D) Rp 713.266 · 2-1800 Hutang PPh 21 (D) Rp 116.734 · masukan approved · audit Dewi Manager 2026-11-17T13:14:48"
+    },
+    {
+      "no": 15,
+      "role": "Manajer",
+      "action": "Tab Komponen & Masukan → *Periode bayar* Oktober 2026 → masukan \"Insentif tertinggal (susulan)\" Rp 830.000 (Disahkan) → [[Batalkan]] → *Alasan* \"Nominal salah, diganti Rp 800.000\" → [[Batalkan masukan]]",
+      "expect": "Pesan \"Masukan … dibatalkan.\"; status Dibatalkan (tidak ikut proses gaji)",
+      "ok": true,
+      "ms": 11367,
+      "info": "masukan Insentif tertinggal (susulan) Rp 830.000 → cancelled"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Login Finance → tab Komponen & Masukan → [[Tambah masukan]]: *Karyawan* Dewi Manager · *Komponen* Insentif (Pendapatan) — bukan \"Komisi / insentif penjualan\" · *Periode bayar* Oktober 2026 · *Nominal* 800.000 · *Keterangan* Insentif tertinggal (koreksi) · *Alasan* Koreksi proses KSC/PAY-00019 → [[Simpan masukan]]",
+      "expect": "Pesan \"… dicatat, menunggu disahkan.\"; status Menunggu disahkan",
+      "ok": true,
+      "ms": 11860,
+      "info": "Insentif tertinggal (koreksi) Rp 800.000 · pending"
+    },
+    {
+      "no": 17,
+      "role": "Manajer",
+      "action": "Login Manajer → Komponen & Masukan → Oktober 2026 → [[Sahkan]] masukan koreksi → konfirmasi",
+      "expect": "Status Disahkan — siap dimuat proses gaji susulan",
+      "ok": true,
+      "ms": 14065,
+      "info": "Disahkan"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Login Finance → Proses Gaji → *Periode* Oktober 2026 · *Jenis* Susulan → [[Hitung Susulan Oktober 2026]] → [[Ajukan]]",
+      "expect": "Proses baru 1 karyawan, bruto Rp 800.000; status Diajukan",
+      "ok": true,
+      "ms": 11153,
+      "info": "KSC/PAY-00020 bruto Rp 800.000 · PPh 21 Rp 115.234 · bersih Rp 684.766"
+    },
+    {
+      "no": 19,
+      "role": "Manajer",
+      "action": "Login Manajer → Proses Gaji → pilih proses baru → [[Sahkan]] → konfirmasi",
+      "expect": "Status Disahkan",
+      "ok": true,
+      "ms": 32561,
+      "info": "approved"
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Login Finance → Proses Gaji → pilih proses baru → [[Posting Jurnal]] → konfirmasi",
+      "expect": "Status Diposting; jurnal gaji baru bertanggal buku 31 Okt 2026, bruto Rp 800.000",
+      "ok": true,
+      "ms": 12237,
+      "info": "KSC/JE-00568: 2-1500 Hutang Insentif Penjualan (D) Rp 800.000 · 2-1600 Hutang Gaji (K) Rp 684.766 · 2-1800 Hutang PPh 21 (K) Rp 115.234 · tanggal 2026-10-31"
+    },
+    {
+      "no": 21,
+      "role": "Finance",
+      "action": "[[Bayar]] → *Rekening* BCA Operasional KSC → [[Bayar gaji]] → konfirmasi",
+      "expect": "Status Dibayar; tombol Anulir TIDAK ada; tertulis \"Gaji yang sudah dibayar tidak bisa dianulir; koreksinya lewat proses susulan.\"",
+      "ok": true,
+      "ms": 3165,
+      "info": "Gaji yang sudah dibayar tidak bisa dianulir; koreksinya lewat proses susulan. · Dibayar 17 Nov 2026 dari BCA Operasional KSC · 1 penerima. Daftar transfer Lihat jurnal"
+    },
+    {
+      "no": 22,
+      "role": "Manajer",
+      "action": "Login Manajer → buka proses yang sudah Dibayar; lalu Keuangan › Kas & Bank › Transaksi Kas → cari nomor kas bayar gaji",
+      "expect": "Manajer juga tidak melihat Anulir pada proses Dibayar; kas bayar gaji bertuliskan \"Anulir lewat Proses Gaji\" (tidak bisa dianulir dari layar kas). Koreksi gaji yang sudah dibayar = masukan penyesuaian (boleh minus) di proses gaji berikutnya",
+      "ok": true,
+      "ms": 23143,
+      "info": "kas KSC/CASH-00123: \"Anulir lewat Proses Gaji\" · server: 409 \"Penggajian KSC/PAY-00020 berstatus Dibayar, jadi tidak bisa dianulir.\""
+    },
+    {
+      "no": 23,
+      "role": "Manajer",
+      "action": "Login Manajer (PT Sukacita) → Akuntansi & Pajak › Buku Besar › Jurnal → [[Jurnal Baru]] → *Keterangan* \"Sewa gudang tambahan November — Latihan 80\" · baris 1 *Akun* 6-3000 Beban Utilitas (SALAH) *Debit* 1.280.000 · baris 2 *Akun* 2-1900 Kewajiban Lancar Lainnya *Kredit* 1.280.000 → [[Posting Jurnal]]",
+      "expect": "Pesan \"Jurnal manual berhasil diposting.\"; jurnal bersumber Manual, seimbang",
+      "ok": true,
+      "ms": 16357,
+      "info": "Jurnal manual berhasil diposting. · KSC/JE-00574: 6-3000 Beban Utilitas (D) Rp 1.280.000 · 2-1900 Kewajiban Lancar Lainnya (K) Rp 1.280.000"
+    },
+    {
+      "no": 24,
+      "role": "Manajer",
+      "action": "Ketik \"Latihan 80\" di kotak cari → klik jurnal itu → [[Balik Jurnal]] → *Tanggal* hari ini · *Alasan* \"Salah akun: sewa gudang tercatat di Beban Utilitas\" → [[Buat Jurnal Pembalik]]",
+      "expect": "Rincian jurnal punya dua tombol: [[Anulir Jurnal]] (khusus jurnal manual) dan [[Balik Jurnal]]; form pembalik: tanggal wajib di periode terbuka, jurnal asli tidak diubah. Sesudahnya muncul jurnal Pembalik baru",
+      "ok": true,
+      "ms": 3649,
+      "info": "KSC/JE-00575 (2026-11-17) membalik KSC/JE-00574: 6-3000 Beban Utilitas (K) Rp 1.280.000 · 2-1900 Kewajiban Lancar Lainnya (D) Rp 1.280.000"
+    },
+    {
+      "no": 25,
+      "role": "Manajer",
+      "action": "[[Jurnal Baru]] koreksi, tetapi SALAH KETIK nominal: *Keterangan* sama · baris 1 *Akun* 6-2000 Beban Sewa *Debit* 1.271.000 · baris 2 *Akun* 2-1900 *Kredit* 1.271.000 → [[Posting Jurnal]]",
+      "expect": "Jurnal terposting; di daftar terlihat nominalnya tidak sama dengan jurnal yang dibalik (salah ketik, ketahuan hari itu juga)",
+      "ok": true,
+      "ms": 3347,
+      "info": "Jurnal manual berhasil diposting. · KSC/JE-00576: 6-2000 Beban Sewa (D) Rp 1.271.000 · 2-1900 Kewajiban Lancar Lainnya (K) Rp 1.271.000"
+    },
+    {
+      "no": 26,
+      "role": "Manajer",
+      "action": "Klik jurnal salah ketik itu → [[Anulir Jurnal]] → *Alasan anulir* \"Salah ketik nominal, dicatat ulang\" → [[Anulir Jurnal]]",
+      "expect": "Dialog meminta alasan dan menyebut nominal Rp 1.271.000 & buku Sukacita (\"tanpa jurnal pembalik\"); jurnal berstatus Anulir, rincian bertuliskan \"Dianulir oleh … · Salah ketik nominal, dicatat ulang\"; tidak lagi dihitung di buku besar",
+      "ok": true,
+      "ms": 5604,
+      "info": "dialog \"Jurnal manual Rp 1.271.000 di buku Sukacita ditandai Anulir dan tidak lagi dihitung di buku besar (tanpa jurnal pembalik). Untuk jurnal yang sudah dibaca di laporan, pakai Balik Jurnal.\" · Dianulir oleh Dewi Manager · 17 Nov 2026 · Salah ketik nominal, dicatat ulang · audit Dewi Manager \"Salah ketik nominal, dicatat ulang\""
+    },
+    {
+      "no": 27,
+      "role": "Manajer",
+      "action": "[[Jurnal Baru]] koreksi yang benar: baris 1 *Akun* 6-2000 Beban Sewa *Debit* 1.280.000 · baris 2 *Akun* 2-1900 *Kredit* 1.280.000 → [[Posting Jurnal]]",
+      "expect": "Jurnal koreksi terposting. Cari nomor jurnal yang salah → tampil jurnal itu + jurnal Pembalik-nya (keterangan \"Pembalik KSC/JE-…: alasan\"); cari \"Latihan NN\" → jurnal salah, jurnal salah ketik (Anulir), jurnal koreksi",
+      "ok": true,
+      "ms": 7682,
+      "info": "Jurnal manual berhasil diposting. · KSC/JE-00578: 6-2000 Beban Sewa (D) Rp 1.280.000 · 2-1900 Kewajiban Lancar Lainnya (K) Rp 1.280.000 · cari \"KSC/JE-00574\" → KSC/JE-00574 + KSC/JE-00575; cari \"Latihan 80\" → KSC/JE-00574, KSC/JE-00576 (Anulir), KSC/JE-00578"
+    },
+    {
+      "no": 28,
+      "role": "Finance",
+      "action": "Login Finance → Buku Besar › Jurnal → cari \"Latihan 80\" → klik jurnal yang salah",
+      "expect": "Finance melihat semua jurnal itu; rincian jurnal salah bertuliskan \"Sudah dibalik oleh KSC/JE-… · <alasan>\"; tidak ada tombol Jurnal Baru, Anulir, atau Balik (Finance hanya melihat)",
+      "ok": true,
+      "ms": 8816,
+      "info": "Sudah dibalik oleh KSC/JE-00575 · Salah akun: sewa gudang tercatat di Beban Utilitas"
+    },
+    {
+      "no": 29,
+      "role": "Finance",
+      "action": "Cek buku: empat jurnal & jejak audit",
+      "expect": "Jurnal salah ketik (Anulir) tidak dihitung; neto akun dari tiga jurnal lainnya: 6-3000 Beban Utilitas Rp 0 · 6-2000 Beban Sewa Rp 1.280.000 (D) · 2-1900 Rp 1.280.000 (K); jurnal asli tidak diubah (status Terposting, ditandai sudah dibalik); jejak audit pembalikan: Manajer + alasan",
+      "ok": true,
+      "ms": 2007,
+      "info": "neto {\"6-2000\":1280000,\"2-1900\":-1280000,\"6-3000\":0} · audit Dewi Manager 2026-11-17T13:17:12 \"Salah akun: sewa gudang tercatat di Beban Utilitas\""
+    },
+    {
+      "no": 30,
+      "role": "Finance",
+      "action": "Keuangan › Kas & Bank › Transaksi Kas → [[Catat Transaksi]]: *Jenis Kas* Kas Besar / Bank · *Arah* Masuk · *Nominal* 190.000 · *Kategori* Lain-lain · *Deskripsi* \"Penjualan kardus bekas — Latihan 80\" → [[Catat Transaksi]]",
+      "expect": "Transaksi tercatat; jurnalnya 1-1100 Kas Besar / Bank (D) · 1-9999 Akun Sementara (K) — kas masuk \"Lain-lain\" belum punya akun pendapatan, jadi ditampung dulu",
+      "ok": true,
+      "ms": 6672,
+      "info": "Transaksi KSC/CASH-00124 (masuk) dicatat. · KSC/JE-00579: 1-1100 Kas Besar / Bank (D) Rp 190.000 · 1-9999 Akun Sementara (Suspense) (K) Rp 190.000"
+    },
+    {
+      "no": 31,
+      "role": "Manajer",
+      "action": "Login Manajer → Akuntansi & Pajak › Tutup Buku → buka seksi [[Akun sementara]]",
+      "expect": "Bilah oranye \"Akun Suspense (1-9999): −Rp … · Belum nol — reklasifikasi ke akun yang benar sebelum tutup buku\"; daftar jurnal yang menyentuh 1-9999 memuat kas masuk peserta",
+      "ok": true,
+      "ms": 15063,
+      "info": "saldo 1-9999 PT Sukacita -Rp 2.190.000 (buku Rp -2.190.000) · baris KSC/JE-00579"
+    },
+    {
+      "no": 32,
+      "role": "Manajer",
+      "action": "Isi Reklasifikasi: *Entitas* Sukacita · *Posisi Saldo* Kredit · *Nominal* 190.000 (hanya transaksi ini — jangan saldo seluruhnya) · *Akun Tujuan* 4-9000 Pendapatan Lain-lain · *Catatan* \"Penjualan kardus bekas — Latihan 80\" → [[Reklasifikasi]]",
+      "expect": "Pesan \"Reklasifikasi suspense berhasil. Jurnal: KSC/JE-…\"; saldo 1-9999 berkurang Rp 190.000",
+      "ok": true,
+      "ms": 5333,
+      "info": "Reklasifikasi suspense berhasil. Jurnal: KSC/JE-00580 · tanggal 17 Nov 2026. ✕ · KSC/JE-00580: 1-9999 Akun Sementara (Suspense) (D) Rp 190.000 · 4-9000 Pendapatan Lain-lain (K) Rp 190.000 · saldo 1-9999 Rp -2.190.000 → Rp -2.000.000 (tanggal jurnal 2026-11-17)"
+    },
+    {
+      "no": 33,
+      "role": "Finance",
+      "action": "Login Finance → Kas & Bank › Transaksi Kas → [[Catat Transaksi]]: Kas Besar / Bank · Keluar · *Nominal* 418.000 · *Kategori* Pembelian (SALAH — seharusnya Operasional) · *Deskripsi* \"Ongkos ekspedisi kirim kain — S4 Latihan 80\" → [[Catat Transaksi]]",
+      "expect": "Transaksi tercatat; jurnalnya 1-1300 Persediaan Barang (D) · 1-1100 Kas Besar / Bank (K) — ongkos kirim salah masuk nilai persediaan",
+      "ok": true,
+      "ms": 11436,
+      "info": "Transaksi KSC/CASH-00125 (keluar) dicatat. · KSC/JE-00581: 1-1300 Persediaan Barang (D) Rp 418.000 · 1-1100 Kas Besar / Bank (K) Rp 418.000"
+    },
+    {
+      "no": 34,
+      "role": "Finance",
+      "action": "Kas & Bank › Rekonsiliasi → rekening BCA Operasional KSC → [[Impor mutasi bank]] → template BCA (CSV) → tempel baris rekening koran ongkos ekspedisi → [[Pratinjau]] → [[Impor]] → pada baris itu [[Cocokkan]] → [[Tautkan]] kandidat KSC/CASH-…",
+      "expect": "Baris mutasi berstatus Tercocok dan tertaut ke kas yang salah kategori (kesalahan belum terlihat di rekonsiliasi — nominal sama)",
+      "ok": true,
+      "ms": 9654,
+      "info": "Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk). · Mutasi ditautkan (skor 68). · kandidat KSC/CASH-00125 · 17 Nov 2026 Ongkos ekspedisi kirim kain — S4 Latihan 80 Nominal Rp 418.000 · sisa Rp 418.000 skor 68 Tautkan Nominal sama (+40) · Tanggal sama (+20) · nama agak mirip 'Ongkos ekspedisi kirim kain — S4 Latihan' (69%) (+8)"
+    },
+    {
+      "no": 35,
+      "role": "Manajer",
+      "action": "Manajer memeriksa jurnal persediaan dan menemukan ongkos kirim di 1-1300. Login Manajer → Kas & Bank › Transaksi Kas → cari nomor kas → ikon [[Anulir]] → *Alasan* \"Salah kategori: ongkos kirim bukan pembelian\" → [[Anulir Transaksi]]",
+      "expect": "Ditolak dengan pesan merah \"Transaksi sudah dicocokkan dengan mutasi bank — lepaskan dulu.\"; kas tetap aktif",
+      "ok": true,
+      "ms": 16022,
+      "info": "Transaksi sudah dicocokkan dengan mutasi bank — lepaskan dulu. Coba lagi ×"
+    },
+    {
+      "no": 36,
+      "role": "Finance",
+      "action": "Login Finance → Kas & Bank › Rekonsiliasi → cari \"S4 LATIHAN NN\" → pada baris Tercocok klik [[Lepas]]",
+      "expect": "Pesan \"Tautan dilepas.\"; baris kembali \"Perlu keputusan\"; kas kembali Belum direkonsiliasi",
+      "ok": true,
+      "ms": 10036,
+      "info": "Tautan dilepas."
+    },
+    {
+      "no": 37,
+      "role": "Manajer",
+      "action": "Login Manajer → Transaksi Kas → cari nomor kas → [[Anulir]] → alasan → [[Anulir Transaksi]]",
+      "expect": "Pesan \"Transaksi … dianulir.\"; baris hilang dari daftar transaksi kas aktif",
+      "ok": true,
+      "ms": 14911,
+      "info": "dialog \"Kas keluar Rp 418.000 (Kas Besar · Ongkos ekspedisi kirim kain — S4 Latihan 80) dibatalkan dan jurnal pembalik dibuat; saldo kas berubah. Tindakan tidak dapat dibatalkan.\" · Transaksi KSC/CASH-00125 dianulir."
+    },
+    {
+      "no": 38,
+      "role": "Manajer",
+      "action": "Cek buku: jurnal pembalik kas & jejak",
+      "expect": "Jurnal pembalik hari ini: 1-1100 Kas Besar / Bank (D) · 1-1300 Persediaan Barang (K) Rp 418.000; kas berstatus dianulir dengan alasan & nama Manajer; jejak audit tersimpan",
+      "ok": true,
+      "ms": 3310,
+      "info": "KSC/JE-00592 (2026-11-17) membalik KSC/JE-00581: 1-1300 Persediaan Barang (K) Rp 418.000 · 1-1100 Kas Besar / Bank (D) Rp 418.000 · KSC/CASH-00125 void oleh Dewi Manager \"Salah kategori: ongkos kirim bukan pembelian\" · audit 2026-11-17T13:19:09"
+    },
+    {
+      "no": 39,
+      "role": "Finance",
+      "action": "Login Finance → catat ulang dengan kategori benar: Transaksi Kas → [[Catat Transaksi]] Kas Besar / Bank · Keluar · 418.000 · *Kategori* Operasional · deskripsi sama → [[Catat Transaksi]]",
+      "expect": "Jurnal 6-4000 Beban Operasional Lainnya (D) · 1-1100 Kas Besar / Bank (K) Rp 418.000",
+      "ok": true,
+      "ms": 14763,
+      "info": "Transaksi KSC/CASH-00127 (keluar) dicatat. · KSC/JE-00594: 6-4000 Beban Operasional Lainnya (D) Rp 418.000 · 1-1100 Kas Besar / Bank (K) Rp 418.000"
+    },
+    {
+      "no": 40,
+      "role": "Finance",
+      "action": "Rekonsiliasi → cari \"S4 LATIHAN NN\" → [[Cocokkan]] → [[Tautkan]] kandidat kas yang baru",
+      "expect": "Kandidat hanya kas yang baru (kas yang dianulir tidak ditawarkan); baris Tercocok lagi",
+      "ok": true,
+      "ms": 8147,
+      "info": "Mutasi ditautkan (skor 68). · kandidat KSC/CASH-00127 · 17 Nov 2026 Ongkos ekspedisi kirim kain — S4 Latihan 80 Nominal Rp 418.000 · sisa Rp 418.000 skor 68 Tautkan Nominal sama (+40) · Tanggal sama (+20) · nama agak mirip 'Ongkos ekspedisi kirim kain — S4 Latihan' (69%) (+8)"
+    },
+    {
+      "no": 41,
+      "role": "Finance",
+      "action": "Cek buku: neto empat jurnal kas",
+      "expect": "1-1300 Persediaan neto Rp 0 · 6-4000 Beban Operasional Rp 418.000 (D) · 1-1100 Kas Besar / Bank Rp 418.000 (K) sekali saja — sama dengan mutasi bank",
+      "ok": true,
+      "ms": 1995,
+      "info": "KSC/JE-00581, KSC/JE-00592, KSC/JE-00594 · neto {\"1-1300\":0,\"1-1100\":-418000,\"6-4000\":418000}"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "notes": [
+    "Peserta 80 (finance.latih80, Peserta Keuangan 80) · bagian ABCDE",
+    "B: KSC/SO-00121 sisa 3248137.5 · transfer 3248138 · tercatat salah 3148138",
+    "Teks rekening koran S4 peserta 80:\nTanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF E-BANKING DB EKSPEDISI S4 LATIHAN 80,0000,\"418.000,00\",DB,0"
+  ]
+}

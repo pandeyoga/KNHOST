@@ -67,12 +67,15 @@ const CASH_CSV_COLUMNS = [
   { key: "amount", header: "Nominal", type: "num" },
 ];
 
-const REF_LABEL = {
+export const REF_LABEL = {
   ar_receipt: "kwitansi piutang", customer_advance: "uang muka pelanggan", sales_return: "retur penjualan",
   vendor_bill_payment: "pembayaran tagihan supplier", purchase_return: "retur pembelian", interco_settlement: "pelunasan antar-PT",
   cash_advance: "pengajuan dana", petty_cash_settlement: "LPJ kas kecil", refund: "pengembalian dana",
   // PK-24 — kas dari LPJ: pengembalian sisa uang muka (masuk) dan bayar hutang reimburse (keluar).
   cash_advance_return: "pengembalian sisa uang muka", reimburse_payable: "bayar reimburse karyawan",
+  // S4 (pelatihan 18 Nov) — kas bayar gaji & setoran PPh 21/BPJS tidak membawa nomor dokumen: dulu "Anulir lewat dokumen lain".
+  // Label pendek: kolom aksi tidak turun baris (teks panjang terpotong).
+  payroll_run: "Proses Gaji", statutory_remittance: "Setoran gaji",
 };
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {

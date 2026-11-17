@@ -25,7 +25,7 @@ import RecordDetailModal from "../documents/RecordDetailModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import ExportCenterView from "../export/ExportCenterView";
 import GroupConsolidationView from "../finance/GroupConsolidationView";
-import { askConfirm } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn(() => Promise.resolve({ data: {} }));
@@ -96,6 +96,7 @@ function expectStdDialog(host, testId) {
 const realMatchMedia = window.matchMedia;
 afterEach(() => {
   mockGet.mockReset(); mockPost.mockClear(); askConfirm.mockReset(); askConfirm.mockImplementation(async () => false);
+  askReason.mockReset(); askReason.mockImplementation(async () => null);
   window.matchMedia = realMatchMedia;
   document.body.innerHTML = "";
 });
@@ -128,7 +129,7 @@ test("Kontrabon: 4 pop-up keputusan = FormModal (dialog, Esc menutup), testid to
   expect(q(host, "cb-dispute-submit").disabled).toBe(true);
 });
 
-test("Jurnal: Jurnal Manual = FormModal; rincian = DetailModal, Anulir minta konfirmasi & galatnya di dalam pop-up", async () => {
+test("Jurnal: Jurnal Manual = FormModal; rincian = DetailModal, Anulir minta alasan (S4/N5) & galatnya di dalam pop-up", async () => {
   routeGet({ "/finance/closing/status": { closed: false } });
   const { host } = await mount(<JournalEntryModal accounts={[]} onClose={() => {}} onSaved={() => {}} />);
   expectStdDialog(host, "je-modal");
@@ -141,12 +142,13 @@ test("Jurnal: Jurnal Manual = FormModal; rincian = DetailModal, Anulir minta kon
   const { host: h2 } = await mount(<JournalDetailModal je={je} sourceMeta={() => ({ label: "Manual", tone: "" })}
     onClose={() => {}} onVoid={onVoid} onReverse={async () => {}} />);
   expect(q(h2, "gl-journal-detail").getAttribute("role")).toBe("dialog");
+  askReason.mockImplementation(async () => null);               // CRA resetMocks: implementasi dipasang di dalam uji
   await click(q(h2, "gl-journal-void"));
-  expect(askConfirm).toHaveBeenCalled();
-  expect(onVoid).not.toHaveBeenCalled();                        // dibatalkan di dialog konfirmasi
-  askConfirm.mockImplementation(async () => true);
+  expect(askReason).toHaveBeenCalled();                         // S4 — pembatalan meminta alasan (standar N5)
+  expect(onVoid).not.toHaveBeenCalled();                        // dibatalkan di dialog alasan
+  askReason.mockImplementation(async () => "Salah ketik nominal");
   await click(q(h2, "gl-journal-void"));
-  expect(onVoid).toHaveBeenCalled();
+  expect(onVoid).toHaveBeenCalledWith(je, "Salah ketik nominal");
   expect(q(h2, "gl-journal-detail-error").textContent).toMatch(/Periode sudah ditutup/);
 });
 

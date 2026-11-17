@@ -426,6 +426,20 @@ async def _set_step(intent: Dict[str, Any], step: str) -> None:
     await db[COLL].update_one({"id": intent["id"]}, {"$set": {"step": step, "error": "", "updated_at": now_iso()}})
 
 
+_CARA_BAYAR = {"transfer": "transfer", "cash": "tunai", "tunai": "tunai", "giro": "giro", "qris": "QRIS"}
+
+
+async def _catatan_bayar(intent: Dict[str, Any], amt: float) -> str:
+    """S4 (pelatihan 18 Nov) — catatan Riwayat tagihan: "Rp 1.864.800 · transfer dari BCA Operasional KSC · kas KSC/CASH-…".
+    Dulu "Rp … via transfer (kas_kecil)" — istilah teknis dan tanpa nama rekening, padahal rekening yang salah justru
+    alasan pembayaran dibatalkan."""
+    acc = await db.bank_accounts.find_one({"id": intent.get("bank_account_id") or "__none__"}, {"_id": 0, "name": 1}) or {}
+    cara = _CARA_BAYAR.get(str(intent.get("method") or "").lower(), intent.get("method") or "")
+    rek = acc.get("name") or {"kas_kecil": "kas kecil", "kas_besar": "kas besar/bank"}.get(intent.get("cash_type") or "", "")
+    return (f"{rupiah(amt)}" + (f" · {cara}" if cara else "") + (f" dari {rek}" if rek else "")
+            + (f" · kas {intent['cash_txn_number']}" if intent.get("cash_txn_number") else ""))
+
+
 async def _apply_allocations(intent: Dict[str, Any], actor: Dict[str, Any]) -> None:
     from pymongo import ReturnDocument
     statuses = ["posted"] if intent["kind"] == "vendor_bill" else ["posted", "paid"]
@@ -449,7 +463,7 @@ async def _apply_allocations(intent: Dict[str, Any], actor: Dict[str, Any]) -> N
                           "notes": f"Pelunasan lewat kontrabon {intent['target_number']}"
                                    + ("" if al["source"] == "cash" else " (potongan non-kas)")})
         note = (f"{rupiah(amt)} · {intent['target_number']}" + ("" if al["source"] == "cash" else " (potongan)")) \
-            if via_cb else f"{rupiah(amt)} via {intent.get('method')} ({intent.get('cash_type')})"
+            if via_cb else await _catatan_bayar(intent, amt)
         res = await db.vendor_bills.find_one_and_update(
             {"id": al["bill_id"], "status": {"$in": statuses}, "payments.id": {"$ne": pid},
              "$expr": {"$lte": [{"$add": [{"$ifNull": ["$amount_paid", 0]}, amt]},

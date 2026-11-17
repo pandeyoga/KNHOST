@@ -93,6 +93,10 @@ class SuspenseReclassInput(BaseModel):
     target_account: str                # akun tujuan reklasifikasi (bukan 1-9999)
     note: str = ""
     entity_id: Optional[str] = None    # entitas spesifik (default: entitas aktif)
+    # S4 (pelatihan 18 Nov) — tanggal buku jurnal reklas (YYYY-MM-DD, ≤ hari ini, periode terbuka). Kosong = hari ini.
+    # Saldo suspense bulan lalu harus bisa dibersihkan DI bulan itu sebelum bulan itu ditutup (gerbang K-15 membaca
+    # saldo per akhir periode).
+    date: str = ""
 
 
 # ─── EPIC7 — Pusat Pajak (PPh manual record) ─────────────────────────────────

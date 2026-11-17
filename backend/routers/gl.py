@@ -325,10 +325,18 @@ async def reverse_journal(entry_id: str, payload: ReversePayload, request: Reque
     return rev
 
 
+class VoidPayload(BaseModel):
+    reason: str = ""
+
+
 @router.post("/gl/journal/{entry_id}/void")
-async def void_journal(entry_id: str, request: Request) -> Dict[str, Any]:
-    """Void jurnal manual."""
+async def void_journal(entry_id: str, request: Request, payload: Optional[VoidPayload] = None) -> Dict[str, Any]:
+    """Void jurnal manual.
+
+    S4 (pelatihan 18 Nov, standar N5 "pembatalan meminta alasan") — `{"reason": "..."}` disimpan di jurnal
+    (`void_reason`) dan di kolom alasan jejak audit. Opsional demi klien lama; layar rincian jurnal selalu memintanya."""
     actor = await require_permission(request, "accounting", "void")
+    reason = ((payload.reason if payload else "") or "").strip()[:500]
     # KN-A01 — void jurnal wajib dijaga entitas seketat GET-nya.
     prev = await gl_service.get_entry(entry_id)
     await guard_doc(request, "journal_entries", prev, not_found="Jurnal tidak ditemukan")
@@ -336,7 +344,7 @@ async def void_journal(entry_id: str, request: Request) -> Dict[str, Any]:
     matrix = await permission_matrix()
     can_backdate = "backdate" in matrix.get(actor.get("role"), {}).get("period", [])
     try:
-        je = await gl_service.void_entry(entry_id, actor, can_backdate=can_backdate)
+        je = await gl_service.void_entry(entry_id, actor, can_backdate=can_backdate, reason=reason)
     except gl_service.ClosedPeriodError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
@@ -344,7 +352,7 @@ async def void_journal(entry_id: str, request: Request) -> Dict[str, Any]:
     if je is None:
         raise HTTPException(status_code=404, detail="Jurnal tidak ditemukan")
     await audit(actor["name"], "journal_entry_voided", "journal_entry", entry_id,
-                {"status": je.get("status"), "total_debit": je.get("total_debit")},
+                {"status": je.get("status"), "total_debit": je.get("total_debit")}, reason=reason,
                 before={"status": (prev or {}).get("status"), "total_debit": (prev or {}).get("total_debit")})
     return je
 
@@ -490,11 +498,14 @@ async def gl_suspense_reclass(payload: SuspenseReclassInput, request: Request) -
     try:
         je = await gl_service.reclass_suspense(
             amount=payload.amount, side=payload.side, target_account=payload.target_account,
-            note=payload.note, entity_id=eid, actor_name=actor.get("name", "system"))
+            note=payload.note, entity_id=eid, actor_name=actor.get("name", "system"), date=payload.date or "")
     except gl_service.ControlAccountError as e:   # PK-36 — akun tujuan akun kontrol: 422
         raise HTTPException(status_code=422, detail=str(e))
+    except gl_service.ClosedPeriodError as e:   # S4 — tanggal reklas di periode tertutup
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "suspense_reclass", "journal_entry", je["id"],
-                {"amount": payload.amount, "target": payload.target_account, "side": payload.side})
+                {"amount": payload.amount, "target": payload.target_account, "side": payload.side,
+                 "date": je.get("date", "")})
     return je

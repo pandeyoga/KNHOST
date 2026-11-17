@@ -28,9 +28,11 @@ export default function useJournalActions(onDone) {
   const voidIntent = useIntentKey("jev");
   const reverseIntent = useIntentKey("jer");
 
-  const voidEntry = async (je) => {
-    await voidIntent.send({ id: je.id, aksi: "void" },
-      (k) => moneyPost(`${API}/gl/journal/${je.id}/void`, undefined, k));
+  // S4 (pelatihan 18 Nov) — alasan anulir (wajib di layar, standar N5) ikut dikirim dan tersimpan di jurnal + jejak audit.
+  const voidEntry = async (je, reason = "") => {
+    const body = { reason };
+    await voidIntent.send({ id: je.id, aksi: "void", ...body },
+      (k) => moneyPost(`${API}/gl/journal/${je.id}/void`, body, k));
     onDone?.();
   };
 

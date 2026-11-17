@@ -995,7 +995,7 @@ async def get_entry(entry_id: str) -> Optional[Dict[str, Any]]:
 
 
 async def void_entry(entry_id: str, actor: Dict[str, Any],
-                     can_backdate: bool = True) -> Optional[Dict[str, Any]]:
+                     can_backdate: bool = True, reason: str = "") -> Optional[Dict[str, Any]]:
     je = await db.journal_entries.find_one({"id": entry_id}, {"_id": 0})
     if not je:
         return None
@@ -1012,6 +1012,7 @@ async def void_entry(entry_id: str, actor: Dict[str, Any],
         {"id": entry_id, "status": {"$ne": "void"}, "reversed_by_entry_id": {"$exists": False}},
         {"$set": {"status": "void", "voided_by": actor.get("name", "system"),
                   "voided_at": now_iso(), "updated_at": now_iso(),
+                  **({"void_reason": reason.strip()[:500]} if (reason or "").strip() else {}),   # S4 — N5
                   **({"voided_in_unlock": plu["id"]} if plu else {})}},
     )
     if res.modified_count != 1:
@@ -1814,11 +1815,22 @@ async def suspense_balance(entity_id: str, as_of: str = "") -> float:
 
 
 async def reclass_suspense(*, amount: float, side: str, target_account: str, note: str,
-                           entity_id: str, actor_name: str) -> Dict[str, Any]:
+                           entity_id: str, actor_name: str, date: str = "") -> Dict[str, Any]:
     """F-8 — reklasifikasi saldo suspense ke akun yang benar (JE source suspense_reclass).
 
     side = posisi saldo suspense SAAT INI yang mau dibersihkan:
-    'credit' (kas masuk tak dikenal) → Dr Suspense / Cr target; 'debit' → sebaliknya."""
+    'credit' (kas masuk tak dikenal) → Dr Suspense / Cr target; 'debit' → sebaliknya.
+
+    S4 (pelatihan 18 Nov) — `date` (YYYY-MM-DD, opsional, ≤ hari ini) = tanggal buku jurnal reklas. Dulu selalu hari
+    ini: saldo suspense Oktober yang ditemukan awal November direklas ke NOVEMBER, sehingga gerbang tutup buku Oktober
+    (K-15, saldo per akhir periode) tetap terblokir. Periode tertutup tetap ditolak `_insert_entry`."""
+    from services.book_date import tanggal_buku
+    try:
+        tgl = tanggal_buku(date or None)
+    except ValueError:
+        raise ValueError("Tanggal reklasifikasi tidak dikenali (YYYY-MM-DD).")
+    if tgl > tanggal_buku():
+        raise ValueError("Tanggal reklasifikasi tidak boleh di masa depan.")
     amount = round(float(amount or 0), 2)
     if amount <= 0:
         raise ValueError("Nominal reklasifikasi harus lebih dari 0.")
@@ -1842,7 +1854,7 @@ async def reclass_suspense(*, amount: float, side: str, target_account: str, not
                  {"account_code": ACC_SUSPENSE, "debit": 0.0, "credit": amount, "description": desc}]
     return await _insert_entry(
         lines=lines, description=f"Reklas suspense → {target_account} · {desc}",
-        date=now_iso(), source_type="suspense_reclass", source_id=new_id("reclass"),
+        date=tgl if date else now_iso(), source_type="suspense_reclass", source_id=new_id("reclass"),
         entity_id=entity_id, created_by=actor_name, source_label="Suspense")
 
 

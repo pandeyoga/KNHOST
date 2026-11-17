@@ -10,7 +10,8 @@ import { RefreshCw, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-r
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
+import KNDatePicker from "../../components/KNDatePicker";
 import { parseDecimal } from "../../utils/decimalInput";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
@@ -36,7 +37,11 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
     [accounts]);
 
   const initialEntity = (selectedEntity && selectedEntity !== "all") ? selectedEntity : (entityOptions[0]?.value || "");
-  const [form, setForm] = useState({ entity_id: initialEntity, amount: "", side: "credit", target_account: "", note: "" });
+  // S4 (pelatihan 18 Nov) — tanggal jurnal reklas (bawaan hari ini, maks. hari ini). Saldo suspense bulan lalu yang
+  // ditemukan sebelum bulan itu ditutup direklas bertanggal di bulan itu — gerbang tutup buku membaca saldo per akhir
+  // periode; reklas bertanggal hari ini tidak membersihkannya.
+  const [form, setForm] = useState({ entity_id: initialEntity, amount: "", side: "credit", target_account: "", note: "",
+    date: todayWib() });
   const setF = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const load = useCallback(async () => {
@@ -82,10 +87,10 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
       const amt = amtNum;
       const body = {
         amount: amt, side: form.side, target_account: form.target_account,
-        note: form.note, entity_id: form.entity_id,
+        note: form.note, entity_id: form.entity_id, date: form.date || todayWib(),
       };
       const res = await intent.send(body, (k) => moneyPost(`${API}/gl/suspense/reclass`, body, k));
-      onNotice && onNotice(`Reklasifikasi suspense berhasil. Jurnal: ${res.data?.number || "—"}.`);
+      onNotice && onNotice(`Reklasifikasi suspense berhasil. Jurnal: ${res.data?.number || "—"} · tanggal ${fmtDate(res.data?.date)}.`);
       setForm((p) => ({ ...p, amount: "", note: "" }));
       setTouched(false);
       await load();
@@ -137,6 +142,12 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
             <Field label="Akun Tujuan" required error={touched ? fieldErr.target_account : ""}>
               <KNSelect data-testid="suspense-target" className="field py-1.5 text-[12px]" value={form.target_account}
                 onValueChange={(v) => setF("target_account", v)} placeholder="Pilih akun" options={targetOptions} />
+            </Field>
+            <Field label="Tanggal jurnal">
+              <KNDatePicker data-testid="suspense-date" clearable={false} max={todayWib()} value={form.date}
+                onChange={(v) => setF("date", v)} />
+              <span className="text-[10.5px] text-[#8E8E93]" data-testid="suspense-date-hint">
+                Saldo bulan lalu yang belum ditutup: pilih tanggal di bulan itu.</span>
             </Field>
             <Field label="Catatan (opsional)" className="md:col-span-2">
               <input data-testid="suspense-note" className="field py-1.5 text-[12px] w-full" value={form.note}

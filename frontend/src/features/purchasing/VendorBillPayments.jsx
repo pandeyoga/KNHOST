@@ -55,9 +55,16 @@ export default function VendorBillPayments({ bill, canVoid, onAction, onError })
             <span className={`font-bold tabular-nums ${p.voided ? "line-through text-kn-text-2" : ""}`}>{formatCurrency(p.amount)}</span>
             <span className="text-kn-text-2">{p.method} · {p.cash_txn_number}</span>
             {p.voided && (
-              <span className="status-pill bg-kn-danger-soft text-kn-danger-text" data-testid={`vb-payment-voided-${p.id}`}>
-                <Ban size={12} aria-hidden="true" /> Dibatalkan — {p.void_reason}
-              </span>
+              <>
+                <span className="status-pill bg-kn-danger-soft text-kn-danger-text" data-testid={`vb-payment-voided-${p.id}`}>
+                  <Ban size={12} aria-hidden="true" /> Dibatalkan
+                </span>
+                {/* S4 (pelatihan 18 Nov) — alasan & pembatal di luar pil: pil status berhuruf kapital tiap kata dan tidak
+                    turun baris, jadi alasan tampil "Salah Rekening: Dibayar Dari Kas Toko…" dan terpotong. */}
+                <span className="min-w-0 break-words text-fs-12 text-kn-text-2" data-testid={`vb-payment-void-reason-${p.id}`}>
+                  {p.void_reason}{p.voided_by ? ` · ${p.voided_by}` : ""}
+                </span>
+              </>
             )}
             {!p.voided && canVoid && (
               <button type="button" className="ghost-button btn-sm ml-auto" disabled={!!busy}
