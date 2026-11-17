@@ -15,7 +15,7 @@
   "/api/desks/me": [
    200,
    {
-    "antrean": 9,
+    "antrean": 10,
     "item": 4,
     "judul": "Meja Admin"
    }
@@ -185,7 +185,7 @@
   "/api/desks/me": [
    200,
    {
-    "antrean": 5,
+    "antrean": 6,
     "item": 4,
     "judul": "Meja Manajer"
    }

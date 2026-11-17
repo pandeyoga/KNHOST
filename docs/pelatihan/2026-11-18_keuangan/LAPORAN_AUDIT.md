@@ -6,6 +6,17 @@ dicatat sebagai keputusan pemilik. Rekap hasil uji per skenario ada di panduan (
 
 Status: **D** = diperbaiki (berkas · uji) · **K** = perlu keputusan pemilik · **C** = catatan untuk pelatih/data.
 
+## 0. Hasil uji akhir (pohon akhir, data acuan dipulihkan dari nol)
+
+| Uji | Hasil |
+|---|---|
+| Pemulihan data acuan (12 skrip, sama dengan `deploy/setup_demo_lengkap.sh`) | 12/12 lulus (sebelumnya 3 gagal — A-01…A-03) |
+| Data latihan peserta 01–06 (`seed_pelatihan_keuangan_kn.py`) | lulus; diuji juga dengan sandi akun demo yang sudah diganti & akun demo yang belum ada (kondisi VPS) |
+| Uji jalan layar + buku, 18 skenario (`uji/jalankan_semua.sh`) | **142/142 langkah lulus**, 0 galat 5xx. F01 & F05 diulang pada peserta 06 sesudah perbaikan B-28/B-29; 16 lainnya peserta 01 |
+| Jest penuh | 1.535 lulus · 9 gagal = himpunan lama yang sama (phase3P3, roleGateSweep2, phase4R1, fe07ReturnErrors, phase3P8Activation); suite terkait Daftar Pesanan diulang sesudah B-28: 58/58 |
+| Backend `tests_mem` penuh | 2.421 lulus · 1 gagal = garis dasar `isi_sebelum_PRT4.json` belum mencatat antrean "Eskalasi" (M30, 16 Nov) di meja Admin & Manajer → garis dasar diperbarui (hanya 2 angka antrean) |
+| Gate `--ci` | keluar 1 (merah lama: pagar gudang E4.1). Dibanding garis dasar pagi (`2026-11-17_pola_ui_gate_ci.log`): 1 pelanggaran baru — `useJournalActions.js` memutuskan dari nama peran (perbaikan B-02) → diperbaiki (izin `accounting` saja), `verify_role_gate_ui.py` 0 pelanggaran, `latihBukuBesarIzin.test.js` 6/6. Log: `docs/blueprint/garis-dasar-gate/2026-11-17_latih_keuangan_gate_ci.log` |
+
 ## 1. Data acuan & data demo
 
 | # | Temuan | Akar masalah | Status |

@@ -20,7 +20,7 @@ import { can } from "../../config/roles";
 export function izinAkuntansi(aksi) {
   let u = null;
   try { u = JSON.parse(localStorage.getItem("kn_user") || "null"); } catch { u = null; }
-  if (!u || !u.permissions || u.role === "admin") return true;
+  if (!u || !u.permissions) return true;   // izin Admin bawaan memuat semua aksi `accounting` — tanpa cek nama peran
   return can(u.permissions, "accounting", aksi);
 }
 
