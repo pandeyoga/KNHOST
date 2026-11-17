@@ -287,6 +287,19 @@ pembalik); nominal 0/negatif/teks/tiga desimal ditolak; bayar sebagian ber-sen t
 tertutup menolak kwitansi/bayar/kas/jurnal tanpa residu; mode Semua PT mematikan form uang dengan alasan; Hutang per Pemasok =
 Σ tagihan = kartu pemasok; rekening koran = Σ sisa SO.
 
+### Merah lama di gate (dulu hanya dibandingkan dengan garis dasar)
+
+| # | Butir gate | Klasifikasi · status |
+|---|---|---|
+| G-1 | INV-BAL-02 "piutang terkirim ≠ saldo akun piutang ent_ksc Δ6,500" | Bug **pemeriksa** (jurnal kasus keuangan dihitung dua kali) · D · `customer_balance_service.reconcile_gl` · `test_agF_inv_bal02_kasus.py` |
+| G-2 | INV-BAL-02 di data latihan "Δ−3.349.147,50" (= D-O1) | **Bug posting: tebus saldo retur ke SO belum/sebagian dikirim mengkredit 1-1200** · D · `gl_service.post_store_credit_redemption`, `store_credit_service._redeem_locked/reverse_redemption` (2-1400 + reklas seketika untuk porsi yang sudah dikirim) · `test_agF_saldo_kredit_uang_muka.py`, `test_latih_adv_tebus_store_credit.py`. **Data lama tidak dikoreksi** (K-56) |
+| G-3 | INV-REF-02 grn→makloon_order & amandemen satu arah | Bug kode (salinan utuh menimpa `refs`) · D · `makloon_order_service._receive_final_set`, `amendment_service._apply` · `test_agF_makloon/amandemen_refs_dua_arah.py`. Sisa pola sama di `makloon_order_service.py:923,1169,1778,2092`, `makloon_loss_service.py:233,274` — terbuka |
+| G-4 | Koleksi ber-entitas tak terdaftar (3 + 6 lagi di data latihan); router `auth.py` menyentuh `hr_employees` tanpa scoping | Drift registri / pagar statik (bukan kebocoran — sapuan runtime hijau) · D · `entity_scope.py`, `ENTITY_REGISTRY.md`, `hr_service.employee_id_of_user` |
+| G-5 | POC E-4 "gudang baru khusus PT aktif" | Uji usang (K-GDG-07: gedung dipakai bersama) · POC diperbarui |
+| G-6 | audit_endpoint_sweep 10 GET "Server disconnected" | Lingkungan: server dimuat ulang (`--reload`) saat sapuan; dipanggil satu per satu semua 200, maks 2,9 dtk. Catatan: `/home/admin` naik 1,8 → 6–7 dtk di bawah 12 permintaan paralel |
+| G-7 | backorder KANDA/SO-00001, INV-KM-3, POC FASE I/U/P/T/S/L, validate_compliance | Artefak seed / uji usang (mode GRN, resep wajib, pelaksana wajib) / lingkungan (`frontend/.env`) — terbuka, rinci di laporan agen |
+| G-8 | guard numeric_bounds (`SoOverrideLineIn`, `RemittanceInput`, `PayInputCreate` tanpa batas), approval_queues (9 pintu keputusan baru tanpa antrean), qty_dual (4 layar tanpa `<QtyDual/>`), line_scope (penjaga usang) | Bug kode/validasi sedang–rendah · terbuka (perlu putusan: qty 0 = hapus baris? masukan gaji negatif = potongan?) |
+
 ## 3. Perlu keputusan pemilik
 
 | # | Pertanyaan |
@@ -323,6 +336,7 @@ tertutup menolak kwitansi/bayar/kas/jurnal tanpa residu; mode Semua PT mematikan
 | K-53 | **Akun Finance kini lintas PT (K-FIN-01) — `allowed_entity_ids` diabaikan untuk semua akun Finance**, termasuk akun latihan yang ditugaskan ke Sukacita saja (terbukti: finance.latih01 membaca dan bisa menulis di semua PT). Bila pembatasan PT harus tetap, Admin mematikan "lintas PT" untuk peran Finance di Peran & Hak Akses (berlaku untuk semua akun Finance) atau memakai peran kustom. Mohon keputusan. |
 | K-54 | Sesudah gerbang nama peran Desainer PDF dicabut (E-T1), Manajer dan Finance (pemegang `pdf_template.manage`) membuka Desainer PDF. Bila desainer harus khusus Admin, cabut izin itu dari peran Manajer/Finance di Peran & Hak Akses (bukan memasang lagi gerbang nama peran). |
 | K-55 | **Kwitansi dengan nomor referensi transfer yang sama** (pelanggan, PT, rekening sama) saat ini diterima tanpa peringatan (D-O2). Ditolak (409) atau diperingatkan di konfirmasi ("Nomor referensi … sudah dipakai kwitansi KSC/AR-…") dengan isian "transfer berbeda"? |
+| K-56 | **Koreksi data lama tebus saldo retur (G-2)**: penebusan ke pesanan yang belum dikirim yang sudah terjadi sebelum perbaikan tetap ber-Cr 1-1200. Di VPS perlu dicek (kueri: `store_credit_redemptions` yang pesanannya belum terkirim saat ditebus) lalu dikoreksi dengan jurnal Dr 1-1200 / Cr 2-1400 + penanda uang muka pada baris bayar. Jalankan koreksi? (Data nyata = STOP & ASK.) |
 | K-26 | Akun "Selisih harga pembelian" dan "Selisih nilai retur beli" belum dipetakan: kliring GR/IR ditolak dan Kesiapan PT kurang "Pemetaan akun". Akun mana yang dipakai? |
 | K-27 | Finance boleh **membaca** Aturan Keuangan & Pajak (izin `settings.view`)? Manajer tidak bisa mengubah "Kelompok umur piutang" (butuh `settings.manage`) — disengaja? |
 | K-28 | Akun yang pernah dipakai di riwayat pemetaan tetap dihitung akun kontrol walau pemetaannya sudah dikembalikan. Disengaja? |
