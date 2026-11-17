@@ -33,16 +33,34 @@ async def claim(collection: str, doc_id: str, action: str, *, precondition: Opti
     cur = await db[collection].find_one({"id": doc_id}, {"_id": 0, "status": 1, LOCK: 1}) or {}
     lock = cur.get(LOCK)
     if lock:
+        # Uji adversarial pelatihan 18 Nov — yang KALAH balapan (dua pengguna membayar tagihan yang sama) dulu membaca kode
+        # aksi mentah + jam UTC mentah ("Aksi 'ap_pay_vendor_bill' … mulai 2026-11-17T19:05:45.335365+00:00 …"). Kini:
+        # siapa yang sedang memproses, jam WIB, dan langkahnya. `code` dan `lock` tetap untuk layar Kunci Saga.
+        oleh = f" oleh {lock['by']}" if lock.get("by") else ""
         raise HTTPException(status_code=409, detail={
             "code": "SAGA_IN_PROGRESS",
-            "message": (f"Aksi '{lock.get('action')}' atas dokumen ini sedang/pernah berjalan "
-                        f"(mulai {lock.get('started_at')}) dan belum selesai. Muat ulang; bila tetap "
-                        "menggantung, admin dapat melepasnya lewat Kunci Saga."),
+            "message": (f"Dokumen ini sedang diproses{oleh} sejak {_jam_wib(lock.get('started_at'))}. Tunggu sebentar "
+                        "lalu muat ulang untuk melihat hasilnya. Bila beberapa menit kemudian masih tertahan, minta "
+                        "admin melepas kuncinya di Pengaturan › Kunci Saga."),
             "lock": lock})
     raise HTTPException(status_code=409, detail=detail or {
         "code": "STATE_CHANGED",
-        "message": f"Dokumen sudah berubah (status '{cur.get('status')}') sebelum aksi '{action}' dijalankan. Muat ulang layar.",
+        "message": "Dokumen ini sudah diubah lebih dulu (mungkin oleh pengguna lain) sehingga aksi ini tidak dijalankan. "
+                   "Muat ulang layar lalu periksa keadaannya.",
         "current_status": cur.get("status")})
+
+
+def _jam_wib(iso: Any) -> str:
+    """'2026-11-17T19:05:45+00:00' → '02.05 WIB, 18/11' (jam buku WIB); bentuk lain apa adanya."""
+    from datetime import datetime, timedelta, timezone
+    try:
+        dt = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        w = dt.astimezone(timezone(timedelta(hours=7)))
+        return f"{w:%H.%M} WIB, {w:%d/%m}"
+    except (TypeError, ValueError):
+        return str(iso or "tadi")
 
 
 def finish_set(set_fields: Dict[str, Any]) -> Dict[str, Any]:

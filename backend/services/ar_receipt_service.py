@@ -768,9 +768,9 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
     bertanda. `reason` (FASE P5) disimpan sebagai `voided_reason`."""
     r = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
     if not r:
-        raise HTTPException(status_code=404, detail="Receipt tidak ditemukan")
+        raise HTTPException(status_code=404, detail="Kwitansi tidak ditemukan.")
     if r.get("status") == "void":
-        raise HTTPException(status_code=409, detail="Receipt sudah di-void")
+        raise HTTPException(status_code=409, detail="Kwitansi ini sudah dibatalkan.")
     # PM-T3 — kwitansi yang kasnya sudah dicocokkan dengan mutasi bank (penuh = terverifikasi, atau sebagian) tidak
     # dibatalkan diam-diam: pencocokannya dilepas dulu di Rekonsiliasi Bank (baris mutasi tidak menunjuk kas batal).
     if r.get("bank_verified") or await db.cash_transactions.find_one(
@@ -782,7 +782,9 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
     await _cth.periksa_batal_kwitansi(r)
     # PERIKSA — periode buku hari ini (tanggal jurnal pembalik) sebelum apa pun dibalik (`02` §1 P2).
     from services.book_date import periksa_periode_dokumen_409
-    await periksa_periode_dokumen_409(r.get("entity_id") or "", None, jenis="pembatalan kwitansi")
+    from services.posting_registry import tanggal_pembalik
+    await periksa_periode_dokumen_409(r.get("entity_id") or "", tanggal_pembalik(r.get("receipt_date")) or None,
+                                      jenis="pembatalan kwitansi")
     dep_delta = round(float(r.get("deposit_delta", 0) or 0), 2)
     if dep_delta > EPS and not ((r.get("void_intent") or {}).get("steps") or {}).get("deposit_pulled") \
             and await get_deposit_balance(r.get("customer_id") or "") < dep_delta - EPS:
@@ -832,7 +834,10 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
 
         # EFEK 3 — baris pembayaran tiap pesanan dibalik (tidak dihapus); periode lalu tidak berubah mundur.
         from services import ar_allocation_service as _aas
-        hari_ini = now_iso()
+        # Pelatihan 18 Nov (uji adversarial, kelas V-09) — kwitansi bertanggal MAJU: baris pembalik tidak boleh mendahului
+        # baris pembayaran aslinya (umur piutang / rekening koran); tanggal sama dengan pembalik jurnal kasnya.
+        from services.posting_registry import tanggal_pembalik
+        hari_ini = r.get("receipt_date") if tanggal_pembalik(r.get("receipt_date")) else now_iso()
         done_orders = set(steps.get("orders") or [])
         for alloc in r.get("allocations") or []:
             oid = alloc.get("order_id")

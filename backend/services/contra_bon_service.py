@@ -653,6 +653,31 @@ async def _bill_match(bill: Dict[str, Any], pol: Dict[str, Any]) -> Dict[str, An
             "evaluated_at": now_iso()}
 
 
+async def _mundur_bila_bentrok(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Uji adversarial pelatihan 18 Nov (agen D) — dua kontrabon dibuat BERSAMAAN untuk tagihan yang sama (Finance +
+    Manajer) sama-sama lolos `occupied_bills()` (baca-lalu-tulis) dan dulu sama-sama terbit. Diperiksa ulang SESUDAH
+    tersimpan: bila kontrabon aktif lain memegang salah satu tagihannya, kontrabon INI mundur — dibatalkan otomatis
+    (jejak & nomor tetap) lalu `ContraBonError`. Yang menyimpan belakangan selalu melihat yang lebih dulu, jadi paling
+    banyak satu yang bertahan (bila keduanya saling melihat, keduanya mundur dan pengguna mengulang)."""
+    ids = [b["bill_id"] for b in doc.get("bills") or []]
+    lawan = await db[COLL].find_one(
+        {"id": {"$ne": doc["id"]}, "status": {"$in": list(HOLDING_STATUSES)}, "bills.bill_id": {"$in": ids}},
+        {"_id": 0, "number": 1, "created_by": 1, "bills": 1})
+    if not lawan:
+        return
+    sama = next((b.get("bill_number") or b.get("bill_id") for b in doc["bills"]
+                 if b["bill_id"] in {x.get("bill_id") for x in lawan.get("bills") or []}), "")
+    alasan = (f"Dibatalkan otomatis: tagihan {sama} pada saat yang sama dimasukkan ke kontrabon "
+              f"{lawan.get('number', '')}{' oleh ' + lawan['created_by'] if lawan.get('created_by') else ''}.")
+    await db[COLL].update_one({"id": doc["id"], "status": "draft"}, {
+        "$set": {"status": "cancelled", "cancelled_at": now_iso(), "cancel_note": alasan, "updated_at": now_iso()},
+        "$push": {"timeline": _tl("dibatalkan", "Kontrabon dibatalkan otomatis", actor.get("name", ""), alasan)}})
+    raise ContraBonError(
+        f"Tagihan {sama} baru saja dimasukkan ke kontrabon {lawan.get('number', '')}"
+        f"{' oleh ' + lawan['created_by'] if lawan.get('created_by') else ''} — satu faktur tidak boleh masuk dua "
+        f"kontrabon. Kontrabon {doc.get('number', '')} tidak diterbitkan; muat ulang daftar kontrabon.")
+
+
 async def create(payload: Dict[str, Any], actor: Dict[str, Any],
                  entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     supplier_id = (payload.get("supplier_id") or "").strip()
@@ -753,6 +778,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
     }
     recompute(doc)
     await db[COLL].insert_one(dict(doc))
+    await _mundur_bila_bentrok(doc, actor)
 
     # FASE G-4 — relasi dua arah: kontrabon ↔ tagihan ↔ PO.
     from services import doc_refs_service as refs

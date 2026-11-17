@@ -237,7 +237,7 @@ async def void_cash_transaction(txn_id: str, request: Request,
     # KN-A03 — void kas dijaga entitas (dulu tanpa penjaga: saldo PT lain bisa diturunkan).
     await guard_doc(request, "cash_transactions", txn, not_found="Transaksi kas tidak ditemukan")
     if txn.get("status") == "void":
-        raise HTTPException(status_code=409, detail="Transaksi sudah di-void")
+        raise HTTPException(status_code=409, detail="Transaksi kas ini sudah dibatalkan.")
     # FN-07 — kas turunan dokumen (kwitansi, uang muka, retur, AP, dll.) hanya dibatalkan lewat
     # dokumen asalnya supaya subledger sumber ikut di-unwind.
     # PK-20 — kas manual kini ber-`ref_type="manual"` (ref_id = kunci permintaan): tetap kas manual, bukan turunan dokumen.
@@ -251,13 +251,17 @@ async def void_cash_transaction(txn_id: str, request: Request,
     if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Transaksi sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
     from services import gl_service as _gl
+    # Pelatihan 18 Nov (uji adversarial, kelas V-09) — kas bertanggal MAJU dibalik pada tanggal kasnya, bukan hari ini
+    # (pembalik tidak boleh mendahului jurnal aslinya); kas hari ini/lampau tetap dibalik hari ini.
+    from services.posting_registry import tanggal_pembalik
+    tgl_balik = tanggal_pembalik(txn.get("txn_date"))
     try:
-        await _gl.preflight_posting(txn.get("entity_id", ""), now_iso())
+        await _gl.preflight_posting(txn.get("entity_id", ""), tgl_balik or now_iso())
         claimed = await db.cash_transactions.find_one_and_update(
             {"id": txn_id, "status": {"$ne": "void"}, "voiding": {"$ne": True}},
             {"$set": {"voiding": True}}, projection={"_id": 0})
         if not claimed:
-            raise HTTPException(status_code=409, detail="Transaksi sedang/sudah di-void")
+            raise HTTPException(status_code=409, detail="Transaksi kas ini sedang atau sudah dibatalkan.")
         # Pastikan jurnal asli ada (kas lama pra-FN-07 / jurnal gagal) lalu balik — pembalik idempotent.
         from services import cash_ledger
         try:
@@ -268,7 +272,7 @@ async def void_cash_transaction(txn_id: str, request: Request,
         # (kas TIDAK di-void, penanda `voiding` dilepas di bawah).
         res = await _gl.post_durable(
             "cash_transactions", txn_id,
-            lambda: _gl.post_cash_void(txn_id, label=txn.get("number", ""), created_by=actor["name"]),
+            lambda: _gl.post_cash_void(txn_id, label=txn.get("number", ""), created_by=actor["name"], date=tgl_balik),
             source_type="cash_transaction_void", source_id=txn_id, field="void_gl_status", raise_on_fail=True)
         rev = res.get("journal") or ({"id": res["journal_entry_id"]} if res.get("journal_entry_id") else None)
     except _gl.ClosedPeriodError as exc:

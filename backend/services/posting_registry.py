@@ -198,11 +198,30 @@ async def _receipt_cash_ids(receipt_id: str) -> List[str]:
         {"ref_type": "ar_receipt", "ref_id": receipt_id}, {"_id": 0, "id": 1}).sort("id", 1)]
 
 
+def tanggal_pembalik(nilai: Any) -> str:
+    """Pelatihan 18 Nov (uji adversarial, kelas V-09) — tanggal jurnal pembalik dokumen yang dibatalkan: tanggal dokumen
+    asal bila masih DI DEPAN tanggal buku hari ini (pembalik tidak boleh mendahului jurnal aslinya — aturan yang sama
+    dengan `gl_service.reverse_entry` dan batal-bayar tagihan supplier), selain itu "" = hari ini (perilaku lama).
+    Hasilnya tanggal buku WIB `YYYY-MM-DD` (sama dengan tanggal jurnal asal; teks ISO ber-zona dari pemilih tanggal
+    layar, mis. "2026-12-15T00:00:00.000Z", tidak dipotong mentah)."""
+    from services.book_date import tanggal_buku
+    if not nilai:
+        return ""
+    try:
+        tgl = tanggal_buku(nilai)
+    except (TypeError, ValueError):
+        return ""
+    return tgl if tgl > tanggal_buku() else ""
+
+
 async def post_receipt_void(receipt: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
     """Pembalik kwitansi yang dibatalkan: (PK-19) pembalik reklas uang muka tiap pesanan yang uang mukanya sudah
     direklas ke Piutang (KEB-PDPT), jurnal pembalik tiap kas kwitansi, lalu pembalik reklas deposit. → jurnal
     pembalik pertama (termasuk pembalik yang SUDAH ada, mis. dibalik manual lebih dulu — PK-10). Semua fungsinya
-    idempoten per sumber, jadi ulang dari panel tidak menggandakan jurnal."""
+    idempoten per sumber, jadi ulang dari panel tidak menggandakan jurnal.
+
+    Pelatihan 18 Nov (uji adversarial) — kas kwitansi bertanggal MAJU dibalik pada tanggal kasnya (`tanggal_pembalik`);
+    dulu selalu hari ini → bulan berjalan mendapat Dr Piutang / Cr Bank tanpa jurnal asalnya."""
     from services import gl_service as gl
     label = f"void {receipt.get('number', '')}"
     hasil: List[Optional[Dict[str, Any]]] = []
@@ -215,8 +234,10 @@ async def post_receipt_void(receipt: Dict[str, Any], created_by: str = "system")
                         and float(p.get("amount") or 0) > 0 and not p.get("reverses")), 2)
         if adv > 0.01:
             hasil.append(await gl.post_advance_reclass_reversal(order, receipt["id"], adv, label=label))
-    hasil += [await gl.post_cash_void(cid, label=label, created_by=created_by)
-              for cid in await _receipt_cash_ids(receipt["id"])]
+    for cid in await _receipt_cash_ids(receipt["id"]):
+        kas = await db.cash_transactions.find_one({"id": cid}, {"_id": 0, "txn_date": 1}) or {}
+        hasil.append(await gl.post_cash_void(cid, label=label, created_by=created_by,
+                                             date=tanggal_pembalik(kas.get("txn_date"))))
     if receipt.get("cash_holding_id"):   # PM-T4 — kwitansi titipan: pembalik jurnal titipannya (bukan kas)
         hasil.append(await gl.reverse_cash_holding(receipt["cash_holding_id"], label=label, created_by=created_by))
     hasil.append(await gl.reverse_deposit_only_receipt(receipt["id"], label=label, created_by=created_by))
