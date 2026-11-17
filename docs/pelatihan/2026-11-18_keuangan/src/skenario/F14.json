@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › Pesanan sample berbayar: Sales sudah membuat pesanan sample berbayar (contoh: KSC/SOS-00002, 3 yard, Rp 83.250 = Rp 75.000 + PPN Rp 8.250) untuk pelanggan 'Latihan NN · Butik Sample Peserta NN', berstatus Menunggu ACC Bayar. Pelanggan ini berbeda dari pelanggan F02–F04. Anggap pelanggan sudah mentransfer Rp 83.250 ke BCA Operasional KSC dengan referensi TRF-SAMPLE-NN.",
+ "data_awal": "Kartu Peserta › Pesanan sample berbayar: Sales sudah membuat pesanan sample berbayar (contoh: KSC/SOS-00001, 3 yard, Rp 83.250 = Rp 75.000 + PPN Rp 8.250) untuk pelanggan 'Latihan NN · Butik Sample Peserta NN', berstatus Menunggu ACC Bayar. Pelanggan ini berbeda dari pelanggan F02–F04. Anggap pelanggan sudah mentransfer Rp 83.250 ke BCA Operasional KSC dengan referensi TRF-SAMPLE-NN.",
  "alur": [
   {
    "peran": "Sales",
@@ -123,6 +123,6 @@
  "catatan_pelatih": "Pelanggan sample sengaja pelanggan kedua peserta supaya kwitansi [[Tertua dulu]] di F02–F04 tidak teralokasi ke SOS (daftar tagihan terbuka memuat semua pesanan hidup pelanggan, termasuk sample yang belum dikirim). Finance boleh melihat pesanan sample dan menyetujui pembayarannya, bersama Admin Sample. Bila nilai potong aktual berubah lebih dari ±5% sesudah dipotong, sample muncul lagi sebagai 'ACC ulang' (tombol [[Setujui Ulang Pembayaran]]) — cukup disebutkan. Kwitansi untuk pesanan yang belum dikirim dijurnal ke Uang Muka Pelanggan (2-1400), bukan Piutang. Harga sample latihan Rp 25.000/yard dari master harga sample.",
  "uji": {
   "berkas": "uji/F14_sample_berbayar.js",
-  "peserta_uji": "04"
+  "peserta_uji": "01"
  }
 }

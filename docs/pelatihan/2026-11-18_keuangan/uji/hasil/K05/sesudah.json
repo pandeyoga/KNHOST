@@ -1,7 +1,7 @@
 {
   "system_settings": [
     {
-      "id": "set_5af7b8c26c5d",
+      "id": "set_a7cf7acda69b",
       "pembayaran": {
         "sales_terima_tunai": "titipan"
       },
@@ -60,7 +60,7 @@
         "default_payment_term_code": "NET30",
         "fiscal_year_end_month": 12
       },
-      "id": "set_64d34df03b92",
+      "id": "set_b4c2028886f8",
       "interco_payment": {
         "allow_netting": false,
         "basis": "",

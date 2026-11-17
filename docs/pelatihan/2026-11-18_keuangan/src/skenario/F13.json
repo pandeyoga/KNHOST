@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › SO untuk pelunasan penuh: SO yang sudah dikirim untuk 'Latihan NN · Toko Kain Peserta NN' (contoh: KSC/SO-00010, Rp 3.336.105). Faktur boleh diterbitkan sebelum atau sesudah F02 karena tidak mengubah piutang. NSFP latihan: 01002611180000NN (NN = nomor peserta; contoh peserta 02: 0100261118000002).",
+ "data_awal": "Kartu Peserta › SO untuk pelunasan penuh: SO yang sudah dikirim untuk 'Latihan NN · Toko Kain Peserta NN' (contoh: KSC/SO-00004, Rp 3.374.123). Faktur boleh diterbitkan sebelum atau sesudah F02 karena tidak mengubah piutang. NSFP latihan: 01002611180000NN (NN = nomor peserta; contoh peserta 01: 0100261118000001).",
  "alur": [
   {
    "peran": "Sales",
@@ -102,7 +102,7 @@
  ],
  "cek_buku": [
   "Faktur pajak tidak membuat jurnal",
-  "PPN di faktur = 2-1200 PPN Keluaran (K) pada jurnal 'Pengakuan penjualan KSC/SO-… · KSC/SJ-…' saat barang dikirim: 1-1200 Piutang Usaha (D) = 4-1000 Pendapatan Penjualan (K) + 2-1200 PPN Keluaran (K). Contoh PPN: Rp 330.605",
+  "PPN di faktur = 2-1200 PPN Keluaran (K) pada jurnal 'Pengakuan penjualan KSC/SO-… · KSC/SJ-…' saat barang dikirim: 1-1200 Piutang Usaha (D) = 4-1000 Pendapatan Penjualan (K) + 2-1200 PPN Keluaran (K). Contoh PPN: Rp 334.373",
   "Status bayar dan sisa piutang SO tidak berubah",
   "Di bawah daftar faktur, 'Pencocokan PPN keluaran' membandingkan PPN faktur dengan akun 2-1200 per masa"
  ],
@@ -115,6 +115,6 @@
  "catatan_pelatih": "PT Sukacita menerbitkan faktur per pesanan, sehingga kartu 'Faktur pajak perlu terbit' memuat semua SO ber-PPN yang belum berfaktur, milik semua peserta dan data demo; minta peserta selalu mencari nomor SO sendiri dulu. Finance boleh menerbitkan, mengisi NSFP, dan membuat faktur pengganti; membatalkan faktur adalah wewenang Manajer. Ekspor e-Faktur/Coretax belum ada, jadi NSFP diisi manual. Untuk pemilik: (1) faktur per pesanan boleh terbit walau pembeli tanpa NPWP/NIK (hanya lencana), sedangkan draf faktur per surat jalan ditolak 'Lengkapi data pajak pelanggan dulu' — samakan aturannya?; (2) isian NSFP tidak memeriksa jumlah digit (label '16 digit', Coretax kini 17 digit); (3) pengaturan 'Terbitkan e-Faktur' hanya sakelar. Tombol cetak 'format lama' tidak tampil di lingkungan lokal tanpa proxy; di VPS normal.",
  "uji": {
   "berkas": "uji/F13_faktur_pajak.js",
-  "peserta_uji": "04"
+  "peserta_uji": "01"
  }
 }

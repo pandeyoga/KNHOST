@@ -14,7 +14,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Tidak perlu data khusus. Tanggal libur latihan ada di Kartu Peserta › Karyawan baru (contoh peserta 54: 19 Desember 2026).",
+ "data_awal": "Tidak perlu data khusus. Tanggal libur latihan ada di Kartu Peserta › Karyawan baru (contoh peserta 01: 11 Desember 2026).",
  "alur": [
   {
    "peran": "Finance",
@@ -138,6 +138,6 @@
  "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Sejak keputusan itu Finance memegang izin mengatur aturan gaji (36 pengaturan Gaji & SDM, termasuk tabel PTKP/TER dan tarif BPJS yang berlaku untuk seluruh grup PT). Peragakan sebagai bacaan saja. Untuk pemilik: apakah aturan bersama grup (PTKP, TER, BPJS) boleh diubah Finance satu PT, atau dikunci ke Manajer/Admin? Kalender libur dan shift diubah lewat izin kehadiran (Finance juga memegangnya).",
  "uji": {
   "berkas": "uji/sdm/K09_konfigurasi_sdm.js",
-  "peserta_uji": "54"
+  "peserta_uji": "01"
  }
 }

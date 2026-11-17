@@ -2,7 +2,7 @@
   "code": "H01",
   "title": "Data karyawan baru",
   "ok": true,
-  "at": "2026-11-17T10:47:20.187Z",
+  "at": "2026-11-17T11:33:57.656Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,34 +11,34 @@
       "action": "Login → SDM › [[Karyawan]] → [[Tambah Karyawan]]",
       "expect": "Form \"Tambah Karyawan\" empat bagian: Data Pribadi · Kepegawaian · Pajak & Statutory · Bank & Komponen Gaji",
       "ok": true,
-      "ms": 5645,
+      "ms": 5496,
       "info": "Tambah Karyawan"
     },
     {
       "no": 2,
       "role": "Finance",
-      "action": "Bagian Data Pribadi & Kepegawaian: *Nama Lengkap* Latihan 54 · Andi Pratama · *NIK* 3273011508900054 · *Status Kepegawaian* Tetap · *Tanggal Masuk* 1 Okt 2026 · *PT* Sukacita",
+      "action": "Bagian Data Pribadi & Kepegawaian: *Nama Lengkap* Latihan 01 · Andi Pratama · *NIK* 3273011508900001 · *Status Kepegawaian* Tetap · *Tanggal Masuk* 1 Okt 2026 · *PT* Sukacita",
       "expect": "Isian terisi; PT terkunci ke PT Anda",
       "ok": true,
-      "ms": 1445,
+      "ms": 1507,
       "info": "PT Sukacita · masuk Kam, 01 Okt 2026"
     },
     {
       "no": 3,
       "role": "Finance",
-      "action": "Bagian Pajak & Statutory: *NPWP* 09.254.294.3-454.000 · *Status PTKP* K1 (kawin, 1 tanggungan)",
+      "action": "Bagian Pajak & Statutory: *NPWP* 09.254.294.3-401.000 · *Status PTKP* K1 (kawin, 1 tanggungan)",
       "expect": "PTKP K1 → PPh 21 memakai tarif efektif kategori B",
       "ok": true,
-      "ms": 1098,
+      "ms": 865,
       "info": "PTKP K1"
     },
     {
       "no": 4,
       "role": "Finance",
-      "action": "Bagian Bank & Komponen Gaji: *Nama Bank* BCA · *No. Rekening* 8800000054 · *Atas Nama* Andi Pratama · *Gaji Pokok* Rp 7.500.000 · [[+]] tunjangan *Tunjangan transport* Rp 500.000",
+      "action": "Bagian Bank & Komponen Gaji: *Nama Bank* BCA · *No. Rekening* 8800000001 · *Atas Nama* Andi Pratama · *Gaji Pokok* Rp 7.500.000 · [[+]] tunjangan *Tunjangan transport* Rp 500.000",
       "expect": "Pratinjau di bawah kotak gaji: Rp 7.500.000",
       "ok": true,
-      "ms": 991,
+      "ms": 565,
       "info": "pratinjau Rp 7.500.000"
     },
     {
@@ -47,8 +47,8 @@
       "action": "Klik [[Simpan]]",
       "expect": "Pesan \"Karyawan baru dibuat.\"; baris baru EMP-… di daftar dengan gaji pokok Rp 7.500.000, status Aktif",
       "ok": true,
-      "ms": 979,
-      "info": "EMP-00058 Latihan 54 · Andi Pratama — Sukacita — tanpa akun Tetap Rp 7.500.000 Aktif"
+      "ms": 1031,
+      "info": "EMP-00007 Latihan 01 · Andi Pratama — Sukacita — tanpa akun Tetap Rp 7.500.000 Aktif"
     },
     {
       "no": 6,
@@ -56,16 +56,15 @@
       "action": "Cek data: buka [[Karyawan 360°]] (ikon grafik) pada baris itu → bagian Riwayat kompensasi",
       "expect": "Kompensasi berlaku 1 Okt 2026: gaji pokok Rp 7.500.000 + tunjangan transport Rp 500.000, status Disahkan; penugasan PT Sukacita",
       "ok": true,
-      "ms": 2500,
-      "info": "EMP-00058 · kompensasi 1 baris (approved) · penugasan 1 · Riwayat Kompensasi Muat ulang Gaji pokok dan komponen tetap bertanggal berlaku. Proses gaji memakai baris yang berlaku pada periodenya; perubahan berlaku sesudah disahkan. Ajukan perubahan BERLAKU SEJ"
+      "ms": 1963,
+      "info": "EMP-00007 · kompensasi 1 baris (approved) · penugasan 1 · Riwayat Kompensasi Muat ulang Gaji pokok dan komponen tetap bertanggal berlaku. Proses gaji memakai baris yang berlaku pada periodenya; perubahan berlaku sesudah disahkan. Ajukan perubahan BERLAKU SEJ"
     }
   ],
   "http_5xx": [],
   "console_errors": [
-    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
-    "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 54 · Latihan 54 · Andi Pratama · masuk 2026-10-01 · PTKP K/1 · gaji pokok Rp 7.500.000 + Tunjangan transport Rp 500.000"
+    "Peserta 01 · Latihan 01 · Andi Pratama · masuk 2026-10-01 · PTKP K/1 · gaji pokok Rp 7.500.000 + Tunjangan transport Rp 500.000"
   ]
 }

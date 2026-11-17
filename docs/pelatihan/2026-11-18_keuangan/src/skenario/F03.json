@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › SO untuk bayar sebagian: SO kedua pelanggan 'Latihan NN · Toko Kain Peserta NN', belum dibayar, tempo 30 hari (contoh: KSC/SO-00011, Rp 3.300.863). Pelanggan mentransfer 40% dari total SO, dibulatkan ke rupiah (contoh: Rp 1.320.345).",
+ "data_awal": "Kartu Peserta › SO untuk bayar sebagian: SO kedua pelanggan 'Latihan NN · Toko Kain Peserta NN', belum dibayar, tempo 30 hari (contoh: KSC/SO-00005, Rp 3.257.850). Pelanggan mentransfer 40% dari total SO, dibulatkan ke rupiah (contoh: Rp 1.303.140).",
  "alur": [
   {
    "peran": "Gudang",
@@ -60,7 +60,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Cari baris SO kedua Anda. Klik ikon dompet (Terima pembayaran).",
    "isi": "",
-   "hasil": "Baris SO menunjukkan Belum Lunas sebesar total SO dan Telat '30h Lagi' (contoh: Rp 3.300.863, jatuh tempo 17 Des 2026).",
+   "hasil": "Baris SO menunjukkan Belum Lunas sebesar total SO dan Telat '30h Lagi' (contoh: Rp 3.257.850, jatuh tempo 17 Des 2026).",
    "gambar": "uji/hasil/F03/01-penagihan-baris-so.png"
   },
   {
@@ -96,7 +96,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Baca pesan hasil dan baris SO.",
    "isi": "",
-   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat … Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-…).' Baris SO tetap ada dengan Belum Lunas = sisa (contoh: Rp 1.980.518).",
+   "hasil": "Pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat … Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-…).' Baris SO tetap ada dengan Belum Lunas = sisa (contoh: Rp 1.954.710).",
    "gambar": "uji/hasil/F03/05-penagihan-sisa-baru.png"
   },
   {
@@ -128,9 +128,9 @@
   }
  ],
  "cek_buku": [
-  "Jurnal kwitansi (contoh): 1-1100 Kas Besar / Bank (D) Rp 1.320.345 · 1-1200 Piutang Usaha (K) Rp 1.320.345 — seimbang",
+  "Jurnal kwitansi (contoh): 1-1100 Kas Besar / Bank (D) Rp 1.303.140 · 1-1200 Piutang Usaha (K) Rp 1.303.140 — seimbang",
   "Keputusan 'Sisa tetap jadi piutang' tidak berjurnal; hanya tercatat sebagai dokumen keputusan KSC/SLB-…",
-  "SO berstatus bayar Sebagian; sisa = total SO − pembayaran (contoh: Rp 1.980.518)",
+  "SO berstatus bayar Sebagian; sisa = total SO − pembayaran (contoh: Rp 1.954.710)",
   "Di Saldo & Umur, baris 'Piutang tercatat … Saldo akun piutang' menunjukkan selisih Rp 0"
  ],
  "kesalahan_umum": [
@@ -142,6 +142,6 @@
  "catatan_pelatih": "Kerjakan F03 sesudah F02 dan sebelum F04. Selisih di dalam toleransi (bawaan Rp 5.000) diputus otomatis sebagai pembulatan; di atasnya wajib keputusan berlabel. Kalimat batas kini menyebut 'sisa tagihan pesanan tujuan, belum jatuh tempo' (perbaikan 17 Nov). Untuk SO bernilai ,50 rupiah, angka di daftar rincian bisa berbeda Rp 1 dari angka besar di atasnya karena pembulatan (pertanyaan untuk pemilik).",
  "uji": {
   "berkas": "uji/F03_bayar_sebagian.js",
-  "peserta_uji": "02"
+  "peserta_uji": "01"
  }
 }

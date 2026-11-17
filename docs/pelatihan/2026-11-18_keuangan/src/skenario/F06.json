@@ -132,6 +132,6 @@
  "catatan_pelatih": "Finance sebenarnya boleh mengajukan perubahan profil kredit, tetapi tiap pelanggan latihan sudah punya satu pengajuan terbuka (hanya satu per pelanggan per PT), jadi tidak dilatih. Bila ingin memperlihatkan keputusan, masuk sebagai manager@ dan setujui izin seorang peserta di layar yang sama (demo opsional). Perbaikan 17 Nov: hasil pencarian antrean tidak lagi tertimpa daftar lama.",
  "uji": {
   "berkas": "uji/F06_kredit_plafon.js",
-  "peserta_uji": "02"
+  "peserta_uji": "01"
  }
 }

@@ -12,7 +12,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 25,
- "data_awal": "Kartu Peserta › Gaji susulan: proses gaji susulan milik Anda, masa Oktober 2026, satu karyawan, sudah disahkan dan diposting Manajer (contoh: KSC/PAY-00004, total bersih Rp 721.920). Kartu itu juga mencantumkan PPh 21 proses Anda. Proses reguler Oktober 2026 (KSC/PAY-00001, 6 karyawan) milik pelatih.",
+ "data_awal": "Kartu Peserta › Gaji susulan: proses gaji susulan milik Anda, masa Oktober 2026, satu karyawan, sudah disahkan dan diposting Manajer (contoh: KSC/PAY-00003, total bersih Rp 713.450). Kartu itu juga mencantumkan PPh 21 proses Anda. Proses reguler Oktober 2026 (KSC/PAY-00001, 6 karyawan) milik pelatih.",
  "alur": [
   {
    "peran": "HR",
@@ -104,8 +104,8 @@
   }
  ],
  "cek_buku": [
-  "Bayar gaji (contoh): 2-1600 Hutang Gaji (D) Rp 721.920 · 1-1100 Kas Besar / Bank (K) Rp 721.920 — seimbang; satu kas keluar dari BCA Operasional KSC",
-  "Setoran PPh 21 (contoh): 2-1800 Hutang PPh 21 (D) Rp 30.080 · 1-1100 Kas Besar / Bank (K) Rp 30.080 — seimbang",
+  "Bayar gaji (contoh): 2-1600 Hutang Gaji (D) Rp 713.450 · 1-1100 Kas Besar / Bank (K) Rp 713.450 — seimbang; satu kas keluar dari BCA Operasional KSC",
+  "Setoran PPh 21 (contoh): 2-1800 Hutang PPh 21 (D) Rp 37.550 · 1-1100 Kas Besar / Bank (K) Rp 37.550 — seimbang",
   "Kewajiban masa = PPh 21/BPJS dari gaji yang sudah diposting; Sisa = Kewajiban − setoran"
  ],
  "kesalahan_umum": [
@@ -117,6 +117,6 @@
  "catatan_pelatih": "Proses gaji per PT dan masa hanya satu dan dipakai bersama, jadi tiap peserta diberi proses susulan sendiri (masukan 'Insentif tertinggal' untuk satu karyawan; dibuat, disahkan, dan diposting Manajer oleh skrip data latihan). Peserta menyetor PPh 21 sebesar PPh proses susulannya; jumlah semua peserta tidak melebihi sisa kewajiban. Peragaan pelatih di akhir sesi (sekali, dengan akun Finance pelatih): (1) [[Bayar]] proses reguler KSC/PAY-00001 Oktober 2026; (2) [[Catat Setoran]] BPJS Oktober 2026 sebesar sisa penuh; (3) setoran sisa PPh 21. Efek bersama: proses reguler Oktober 2026 sudah diposting oleh skrip, sehingga jurnal gaji Oktober terbit dan 'Gaji siap dibayar' berisi 7 proses atau lebih. Membatalkan setoran butuh izin Manajer. Perbaikan 17 Nov: isian nominal setoran kini memakai format rupiah baku (koma desimal dan pratinjau). Untuk pemilik: PPh 21 proses susulan bisa bersen (misalnya Rp 40.864,50) — perlu dibulatkan ke rupiah penuh?; karyawan tanpa nomor rekening tetap ikut satu kas keluar bank, tetapi daftar transfer menulis 'dibayar tunai'.",
  "uji": {
   "berkas": "uji/F15_setoran_gaji.js",
-  "peserta_uji": "04"
+  "peserta_uji": "01"
  }
 }

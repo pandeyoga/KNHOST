@@ -2,17 +2,17 @@
   "code": "F06",
   "title": "Kredit & Plafon — membaca antrean & kartu pelanggan",
   "ok": true,
-  "at": "2026-11-17T09:13:26.157Z",
+  "at": "2026-11-17T11:29:50.457Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
       "action": "Masuk → Keuangan › Piutang › Kredit & Plafon; antrean 'Menunggu keputusan', cari 'Latihan NN'",
-      "expect": "Baris 'Izin kredit' Rp 50.000.000 (pengaju Ayu Marketing) dan 'Ubah Profil' Rp 300.000.000; tidak ada tombol Setujui/Tolak",
+      "expect": "Baris 'Izin kredit' Rp 50.000.000 (pengaju Ayu Marketing); tidak ada tombol Setujui/Tolak",
       "ok": true,
-      "ms": 22629,
-      "info": "Izin Kredit Latihan 02 · Toko Kain Peserta 02 Buka kartu pelanggan Rp 50.000.000 Ayu Marketing hari ini Riwayat bayar baik — Latihan 02: pelanggan minta tambahan plafon sementara untuk pesanan musim ramai"
+      "ms": 23119,
+      "info": "Izin Kredit Latihan 01 · Toko Kain Peserta 01 Buka kartu pelanggan Rp 50.000.000 Ayu Marketing hari ini Riwayat bayar baik — Latihan 01: pelanggan minta tambahan plafon sementara untuk pesanan musim ramai"
     },
     {
       "no": 2,
@@ -20,8 +20,8 @@
       "action": "Klik tautan [Buka kartu pelanggan] pada baris izin kredit",
       "expect": "Kartu pelanggan terbuka: plafon kredit berlaku, piutang/eksposur, status kredit; pengajuan yang menunggu tercantum",
       "ok": true,
-      "ms": 1999,
-      "info": "Skip to content Kain Nusantara ERP · WMS · Sales Cari menu… Ctrl+K KERJA SAYA Beranda MODUL Tanya KN PENJUALAN Retur PEMBELIAN GUDANG & LOGISTIK KEUANGAN Beranda Keuangan Piutang Hutang Kas & Bank Antar-PT AKUNTANSI & PAJAK SDM ALAT Pusat Export Pusat Dokumen PENGATURAN AKUN Profil Saya PE Peserta Keuangan 02 Finance Keluar BERANDA › KEUANGAN › PIUTANG › KREDIT & PLAFON › SUKACITA Kredit & Plafon "
+      "ms": 1988,
+      "info": "Skip to content Kain Nusantara ERP · WMS · Sales Cari menu… Ctrl+K KERJA SAYA Beranda MODUL Tanya KN PENJUALAN Retur PEMBELIAN GUDANG & LOGISTIK KEUANGAN Beranda Keuangan Piutang Hutang Kas & Bank Antar-PT AKUNTANSI & PAJAK SDM ALAT Pusat Export Pusat Dokumen PENGATURAN AKUN Profil Saya PE Peserta Keuangan 01 Finance Keluar BERANDA › KEUANGAN › PIUTANG › KREDIT & PLAFON › SUKACITA Kredit & Plafon "
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "[Kembali ke daftar] → ganti antrean ke 'Jatuh tempo' → cari 'Cicilan NN'",
       "expect": "Pelanggan Cicilan tampil 'Telat 20 hari' dengan nominal cicilan yang lewat jatuh tempo",
       "ok": true,
-      "ms": 3612,
-      "info": "PELANGGAN TAGIHAN TOTAL SISA TELAT TERLAMA AKSI Latihan 02 · Toko Kain Cicilan 02 Buka kartu pelanggan 1 tagihan Rp 1.615.882 Telat 20 Hari Salin pengingat Catat janji bayar Mencatat janji butuh akses ubah pesanan."
+      "ms": 3546,
+      "info": "PELANGGAN TAGIHAN TOTAL SISA TELAT TERLAMA AKSI Latihan 01 · Toko Kain Cicilan 01 Buka kartu pelanggan 1 tagihan Rp 1.679.846 Telat 20 Hari Salin pengingat Catat janji bayar Mencatat janji butuh akses ubah pesanan."
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Buka 'Riwayat izin kredit & pengajuan profil' di bawah daftar",
       "expect": "Riwayat keputusan kredit PT (hanya baca)",
       "ok": true,
-      "ms": 1126,
-      "info": "Izin Kredit Menunggu Disetujui Ditolak Semua PELANGGAN · LINGKUP NOMINAL · SISA · BERLAKU SAMPAI ALASAN · PEMOHON STATUS KEPUTUSAN Latihan 06 · Toko Kain Peserta 06 Sukacita Pelanggan ini Rp 50.000.00"
+      "ms": 1140,
+      "info": "Izin Kredit Menunggu Disetujui Ditolak Semua PELANGGAN · LINGKUP NOMINAL · SISA · BERLAKU SAMPAI ALASAN · PEMOHON STATUS KEPUTUSAN Latihan 43 · Toko Kain Peserta 43 Sukacita Pelanggan ini Rp 50.000.00"
     }
   ],
   "http_5xx": [],
@@ -47,6 +47,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "eksposur API: {\"customer_id\":\"cust_0ea124cc9ec6\",\"entity_id\":\"ent_ksc\",\"entity\":{\"id\":\"ent_ksc\",\"short_name\":\"Sukacita\",\"legal_name\":\"Sukacita Textile\"},\"rows\":[{\"key\":\"terkirim\",\"label\":\"Piutang barang terkirim\",\"amount\":0,\"counted\":true,\"sign\":\"+\",\"note\":\"\"},{\"key\":\"belum_kirim\",\"label\":\"Pesanan belum dikirim\",\"amount\":0,\"counted\":true,\"sign\":\"+\",\"note\":\"\"},{\"key\":\"giro\",\"label\":\"Giro belum cair\",\"amount\":0,\""
+    "eksposur API: {\"customer_id\":\"cust_9848b645412d\",\"entity_id\":\"ent_ksc\",\"entity\":{\"id\":\"ent_ksc\",\"short_name\":\"Sukacita\",\"legal_name\":\"Sukacita Textile\"},\"rows\":[{\"key\":\"terkirim\",\"label\":\"Piutang barang terkirim\",\"amount\":0,\"counted\":true,\"sign\":\"+\",\"note\":\"\"},{\"key\":\"belum_kirim\",\"label\":\"Pesanan belum dikirim\",\"amount\":0,\"counted\":true,\"sign\":\"+\",\"note\":\"\"},{\"key\":\"giro\",\"label\":\"Giro belum cair\",\"amount\":0,\""
   ]
 }

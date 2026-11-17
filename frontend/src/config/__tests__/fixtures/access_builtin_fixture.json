@@ -1718,6 +1718,9 @@
     "view",
     "print"
    ],
+   "esign": [
+    "view"
+   ],
    "field_visibility": [
     "grade",
     "lot",

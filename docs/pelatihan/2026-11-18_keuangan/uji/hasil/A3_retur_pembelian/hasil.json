@@ -2,7 +2,7 @@
   "code": "A3_retur_pembelian",
   "title": "A3 Retur pembelian: nota debit memotong hutang lewat kontrabon",
   "ok": true,
-  "at": "2026-11-17T10:52:23.388Z",
+  "at": "2026-11-17T11:25:27.167Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,17 +11,17 @@
       "action": "Masuk sebagai warehouse@ → menu [[Retur]] → tab [[Retur ke Supplier (Nota Debit)]] → [[Buat Retur]]",
       "expect": "Pop-up 'Buat Retur ke Supplier' terbuka (Supplier, PO Referensi, Gudang, baris barang)",
       "ok": true,
-      "ms": 7396,
+      "ms": 6434,
       "info": ""
     },
     {
       "no": 2,
       "role": "Gudang",
-      "action": "Pilih *Supplier* Latihan 48 · Pemasok Grey Peserta 48 → *PO Referensi* KSC/PO-00039 → [[Pilih roll]] → centang roll RL-46612 → [[Pakai]] → isi *Alasan roll ini* → [[Buat Retur]]",
+      "action": "Pilih *Supplier* Latihan 42 · Pemasok Grey Peserta 42 → *PO Referensi* KSC/PO-00009 → [[Pilih roll]] → centang roll RL-46506 → [[Pakai]] → isi *Alasan roll ini* → [[Buat Retur]]",
       "expect": "Pesan hijau 'Retur PRET-… dibuat (menunggu persetujuan)'; baris retur berstatus Menunggu Persetujuan",
       "ok": true,
-      "ms": 10047,
-      "info": "Retur PRET-00004 dibuat (menunggu persetujuan). · PRET-00004 80 yard × Rp 14.500 = DPP Rp 1.160.000 + PPN Rp 127.600 = Rp 1.287.600"
+      "ms": 10918,
+      "info": "Retur PRET-00001 dibuat (menunggu persetujuan). · PRET-00001 80 yard × Rp 14.500 = DPP Rp 1.160.000 + PPN Rp 127.600 = Rp 1.287.600"
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "Masuk sebagai manager@ → Retur › Retur ke Supplier → baris retur → [[Setujui]] → [[Setujui retur]]",
       "expect": "Pesan 'Retur PRET-… disetujui. Nota debit: DN-…'; status Disetujui",
       "ok": true,
-      "ms": 13659,
-      "info": "Retur PRET-00004 disetujui. Nota debit: DN-00004"
+      "ms": 8522,
+      "info": "Retur PRET-00001 disetujui. Nota debit: DN-00001"
     },
     {
       "no": 4,
@@ -38,34 +38,34 @@
       "action": "Cek buku: Nota Debit, stok, jurnal retur beli",
       "expect": "Roll keluar stok (dikembalikan ke supplier); jurnal: 2-1100 Hutang Usaha (D) = DPP + PPN / 1-1300 Persediaan (K) = DPP · PPN Masukan (K) = PPN; PO mencatat nilai retur",
       "ok": true,
-      "ms": 2663,
-      "info": "DN-00004 Rp 1.287.600 · KSC/JE-00491 seimbang D=K=1287600 [2-1100 Hutang Usaha D 1287600 · 1-1300 Persediaan Barang K 1160000 · 1-1500 PPN Masukan K 127600]"
+      "ms": 1701,
+      "info": "DN-00001 Rp 1.287.600 · KSC/JE-00140 seimbang D=K=1287600 [2-1100 Hutang Usaha D 1287600 · 1-1300 Persediaan Barang K 1160000 · 1-1500 PPN Masukan K 127600]"
     },
     {
       "no": 5,
       "role": "Finance",
-      "action": "Akun Finance peserta → Keuangan › [[Hutang]] › tab Tagihan → cari VB-00038",
-      "expect": "Tagihan VB-00038 MASIH Rp 1.287.600 belum dibayar — Nota Debit belum memotong tagihan sampai dipakai di kontrabon/pembayaran",
+      "action": "Akun Finance peserta → Keuangan › [[Hutang]] › tab Tagihan → cari VB-00009",
+      "expect": "Tagihan VB-00009 MASIH Rp 1.287.600 belum dibayar — Nota Debit belum memotong tagihan sampai dipakai di kontrabon/pembayaran",
       "ok": true,
-      "ms": 11334,
-      "info": "baris: VB-00038 Latihan 48 · Pemasok Grey Peserta 48 Sukacita KSC/PO-00039 · 1 item Rp 1.287.600 Rp 1.287.600 Cocok Terposting INV-LTH48-3E141 Bayar Detail → · pencocokan hutang: Tagihan belum lunas Rp 75.657.600 + Biaya masuk belum dibayar Rp 0 − Nota debit belum dipotong Rp 3.862.800 = Rp 71.794.800 · Saldo akun hutang Rp 71.794.800 Cocok dengan saldo akun hutang."
+      "ms": 6602,
+      "info": "baris: VB-00009 Latihan 42 · Pemasok Grey Peserta 42 Sukacita KSC/PO-00009 · 1 item Rp 1.287.600 Rp 1.287.600 Cocok Terposting INV-LTH42-DAF66 Bayar Detail → · pencocokan hutang: Tagihan belum lunas Rp 15.762.000 + Biaya masuk belum dibayar Rp 0 − Nota debit belum dipotong Rp 1.287.600 = Rp 14.474.400 · Saldo akun hutang Rp 14.474.400 Cocok dengan saldo akun hutang."
     },
     {
       "no": 6,
       "role": "Manajer",
-      "action": "manager@ → Keuangan › Hutang › [[Kontrabon]] › [[Kontrabon baru]] → *Supplier* Latihan 48 · Pemasok Grey Peserta 48 → [[Lanjut]] → centang VB-00037 & VB-00038 → [[Lanjut]] → centang *Ajukan langsung* → [[Terbitkan kontrabon]]",
+      "action": "manager@ → Keuangan › Hutang › [[Kontrabon]] › [[Kontrabon baru]] → *Supplier* Latihan 42 · Pemasok Grey Peserta 42 → [[Lanjut]] → centang VB-00008 & VB-00009 → [[Lanjut]] → centang *Ajukan langsung* → [[Terbitkan kontrabon]]",
       "expect": "Kontrabon KSC/CB-… terbit berisi 2 faktur (Σ Rp 3.152.400), status Diajukan",
       "ok": true,
-      "ms": 24136,
-      "info": "Kontrabon KSC/CB-00008 terbit — 2 faktur digabung, nilai bersih Rp 3.152.400."
+      "ms": 12987,
+      "info": "Kontrabon KSC/CB-00002 terbit — 2 faktur digabung, nilai bersih Rp 3.152.400."
     },
     {
       "no": 7,
       "role": "Manajer",
-      "action": "Di rincian kontrabon klik [[+ Tambah potongan]] → *Jenis* Retur beli (nota debit) → *Dokumen* Nota debit DN-00004 → biarkan nominal (= sisa nota) → [[Simpan potongan]]",
+      "action": "Di rincian kontrabon klik [[+ Tambah potongan]] → *Jenis* Retur beli (nota debit) → *Dokumen* Nota debit DN-00001 → biarkan nominal (= sisa nota) → [[Simpan potongan]]",
       "expect": "Potongan tercatat; nilai bersih kontrabon = Σ faktur − Nota Debit (DPP + PPN)",
       "ok": true,
-      "ms": 6387,
+      "ms": 5348,
       "info": "potongan Rp 1.287.600 · nilai bersih Rp 1.864.800"
     },
     {
@@ -74,7 +74,7 @@
       "action": "Klik [[Verifikasi 3-way match]]",
       "expect": "Status Terverifikasi",
       "ok": true,
-      "ms": 1312,
+      "ms": 1134,
       "info": ""
     },
     {
@@ -83,7 +83,7 @@
       "action": "admin@ (penyetuju kedua) buka kontrabon → [[Setujui kontrabon]]",
       "expect": "Status Disetujui",
       "ok": true,
-      "ms": 19629,
+      "ms": 10589,
       "info": ""
     },
     {
@@ -92,8 +92,8 @@
       "action": "manager@ buka kontrabon → [[Jadwalkan pembayaran]] → *Rekening rencana* BCA Operasional KSC → [[Simpan jadwal bayar]]",
       "expect": "Status Dijadwalkan bayar",
       "ok": true,
-      "ms": 51208,
-      "info": "(diulang) "
+      "ms": 11050,
+      "info": ""
     },
     {
       "no": 11,
@@ -101,7 +101,7 @@
       "action": "Akun Finance peserta → Keuangan › Hutang › Kontrabon → buka kontrabon → [[Catat pembayaran]] → periksa *Sisa* = nilai bersih → [[Bayar]] → [[Ya, bayar]]",
       "expect": "Status Sudah dibayar; kas keluar = nilai bersih (bukan Σ faktur)",
       "ok": true,
-      "ms": 9754,
+      "ms": 9552,
       "info": "bayar Rp 1.864.800"
     },
     {
@@ -110,17 +110,17 @@
       "action": "Cek buku: kedua tagihan lunas; jurnal bayar = nilai bersih; akun Hutang pemasok kembali nol",
       "expect": "Tagihan retur lunas lewat potongan non-kas, tagihan lain lunas lewat kas; Hutang Usaha (D) / Kas Besar / Bank (K) = nilai bersih; Σ debit Hutang (nota debit + bayar) = Σ tagihan",
       "ok": true,
-      "ms": 1971,
-      "info": "KSC/JE-00494 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · Hutang 2-1100 dari 4 jurnal: D Rp 3.152.400 / K Rp 3.152.400 → sisa Rp 0 (pemasok sup_9b3a4031e19a)"
+      "ms": 2137,
+      "info": "KSC/JE-00141 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · Hutang 2-1100 dari 4 jurnal: D Rp 3.152.400 / K Rp 3.152.400 → sisa Rp 0 (pemasok sup_03f8af6042eb)"
     },
     {
       "no": 13,
       "role": "Finance",
-      "action": "Menu [[Pusat Dokumen]] › tab [[Jejak Dokumen]] → ketik KSC/PO-00039 → klik hasilnya",
-      "expect": "Rantai: KSC/PO-00039 → penerimaan → tagihan VB-00038; retur PRET-… (Nota Debit) → kontrabon KSC/CB-…",
+      "action": "Menu [[Pusat Dokumen]] › tab [[Jejak Dokumen]] → ketik KSC/PO-00009 → klik hasilnya",
+      "expect": "Rantai: KSC/PO-00009 → penerimaan → tagihan VB-00009; retur PRET-… (Nota Debit) → kontrabon KSC/CB-…",
       "ok": true,
-      "ms": 3664,
-      "info": "DOKUMEN TERKAIT 17 RELASI 18 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 1.287.600 · Rantai dokumen 17 dokumen · 18 relasi · kedalaman 4 PESANAN PEMBELIAN (PO) 2 KSC/PO-00038 Sukacita Latihan 48 · Pemasok Grey Peserta 48 17 Nov 2026 Selesai Rp 1.864.800 Pratinjau PDF KSC/PO-00039 Sukacita Latihan 48 · Pemasok Grey Peserta 48 17 Nov 2026 Selesai TITIK MULAI Rp 1.287.600 Pratinjau PDF"
+      "ms": 4115,
+      "info": "DOKUMEN TERKAIT 17 RELASI 18 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 1.287.600 · Rantai dokumen 17 dokumen · 18 relasi · kedalaman 4 PESANAN PEMBELIAN (PO) 2 KSC/PO-00008 Sukacita Latihan 42 · Pemasok Grey Peserta 42 17 Nov 2026 Selesai Rp 1.864.800 Pratinjau PDF KSC/PO-00009 Sukacita Latihan 42 · Pemasok Grey Peserta 42 17 Nov 2026 Selesai TITIK MULAI Rp 1.287.600 Pratinjau PDF"
     }
   ],
   "http_5xx": [],
@@ -128,7 +128,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 48: pemasok Latihan 48 · Pemasok Grey Peserta 48 · PO KSC/PO-00039 (Rp 1.287.600) roll RL-46612 80 yard · tagihan VB-00038 Rp 1.287.600 + VB-00037 Rp 1.864.800",
-    "10: percobaan pertama gagal (locator.waitFor: Timeout 8000ms exceeded.) — diulang sekali"
+    "Peserta 42: pemasok Latihan 42 · Pemasok Grey Peserta 42 · PO KSC/PO-00009 (Rp 1.287.600) roll RL-46506 80 yard · tagihan VB-00009 Rp 1.287.600 + VB-00008 Rp 1.864.800"
   ]
 }

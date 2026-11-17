@@ -63,7 +63,7 @@ class Ctx:
         """Produk jadi hasil migrasi yang punya stok tersedia ≥ min_qty untuk entitas pemilik."""
         rows = await db.inventory_rolls.aggregate([
             {"$match": {"owner_entity_id": owner, "status": "available", "grade": "A", "stage": "finished",
-                        "line_code": line}},
+                        "line_code": line, "reserved_ref": None, "length_reserved": {"$in": [None, 0]}}},
             {"$group": {"_id": "$product_id", "q": {"$sum": "$length_remaining"}}},
             {"$match": {"q": {"$gte": min_qty}}}, {"$sort": {"q": -1}}, {"$limit": 40}]).to_list(40)
         out = []
@@ -234,8 +234,11 @@ async def make_so(c: Ctx, sales_key: str, cust_name: str, entity: str, line: str
         raise RuntimeError(f"tidak ada stok {line} untuk {entity}")
     items = []
     for p in prods:  # beli per ROLL UTUH (tanpa potong) — roll FEFO yang belum dicadangkan
+        # Pelatihan 18 Nov — roll yang sebagian panjangnya sudah dipesan (reservasi potong, `length_reserved` > 0) dilewati:
+        # beli roll utuh = sisa fisik; dulu SO ditolak "Qty roll … melebihi panjang bebas" sesudah ada aktivitas kelas.
         rolls = await db.inventory_rolls.find({"product_id": p["id"], "owner_entity_id": entity, "status": "available",
-                                              "grade": "A", "reserved_ref": None}, {"_id": 0, "id": 1, "length_remaining": 1}
+                                              "grade": "A", "reserved_ref": None, "length_reserved": {"$in": [None, 0]}},
+                                             {"_id": 0, "id": 1, "length_remaining": 1}
                                              ).sort("created_at", 1).to_list(int(rolls_n))
         q = round(sum(r["length_remaining"] for r in rolls), 2)
         items.append({"product_id": p["id"], "quantity": q, "unit": p["base_unit"], "purchase_mode": "roll",

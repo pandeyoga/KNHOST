@@ -1,0 +1,48 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                                           TANDA TERIMA KONTRABON
+                                                                      No. KSC/CB-00003 · 17 Nov 2026 · LUNAS
+
+            REFERENSI DOKUMEN
+            Merujuk: KSC/PO-00003 · VB-00003 · KSC/CASH-00032
+            Berasal dari Pesanan Pembelian (PO) KSC/PO-00003 · Melunasi Tagihan Pemasok VB-00003 ·
+            Melunasi Transaksi Kas / Bank KSC/CASH-00032
+            Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                       SUPPLIER
+Sukacita Textile                                                          Latihan 01 · Pemasok Grey Peserta 01
+Jl. Soekarno Hatta No. 100, Bandung                                              Kawasan Industri Majalaya Blok 1
+                                                                                                  622277700001
+Tanggal Tukar       17 Nov 2026                               Jatuh Tempo           17 Des 2026
+Faktur                                                        Bayar
+Jumlah Faktur       1                                         Termin                NET30
+NPWP                -                                         Penyerah dari         Bagian Penjualan
+                                                              Supplier
+
+  NO    NO. FAKTUR SUPPLIER                  NO. TAGIHAN     NO. PO               TANGGAL                     NILAI
+
+    1   INV-LTH01-28F25                      VB-00003        KSC/PO-00003         17 Nov 2026          Rp 1.287.600
+
+                                                                 Total Faktur                           Rp 1.287.600
+                                                                 Total Potongan                                 Rp 0
+
+                                                                   Nilai Bersih Dibayar              Rp 1.287.600
+Terbilang: Satu juta dua ratus delapan puluh tujuh ribu enam ratus rupiah
+
+
+                    Diterima oleh                                                 Diserahkan oleh
+
+
+
+
+                     ( ................. )                                        Bagian Penjualan
+                      Accounting                                                      Supplier
+
+
+
+
+                                                                                                             Hal. 1 / 1
+

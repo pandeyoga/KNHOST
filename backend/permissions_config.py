@@ -1107,9 +1107,10 @@ for _role, _mods in KSDM01_DEFAULT_PAIRS.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
 
-# A2 (pelatihan 18 Nov) — MD Quality membuka layar SPK penerimaan; panel tanda tangan elektronik memanggil
-# `GET /esign/signatures/…` (izin `esign.view`) dan ditolak 403 (layar tetap jalan, tetapi galat tercatat). Hanya lihat.
-A2_DEFAULT_PAIRS = {"md_quality": {"esign": ("view",)}}
+# A2/A3 (pelatihan 18 Nov) — MD Quality (SPK penerimaan) dan QC (SPK inspeksi retur) membuka layar SPK; panel tanda
+# tangan elektronik memanggil `GET /esign/signatures/…` (izin `esign.view`) dan ditolak 403 (layar tetap jalan, tetapi
+# galat tercatat). Hanya lihat.
+A2_DEFAULT_PAIRS = {"md_quality": {"esign": ("view",)}, "qc": {"esign": ("view",)}}
 for _role, _mods in A2_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])

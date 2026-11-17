@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta) + Pelatih (menyiapkan tagihan berikutnya)",
  "menit": 25,
- "data_awal": "Sesudah F02 dan F03, pelanggan 'Latihan NN · Toko Kain Peserta NN' hanya punya satu tagihan terbuka: sisa SO untuk bayar sebagian (contoh: Rp 1.980.518). Pelanggan mentransfer sisa itu dibulatkan ke atas ke kelipatan Rp 500.000 (contoh: Rp 2.000.000). Bila kelebihannya kurang dari Rp 10.000, naikkan Rp 500.000 lagi ke BCA Operasional KSC. Tagihan berikutnya (langkah 10) dibuat pelatih sesudah langkah 8 dan muncul di Kartu Peserta › Tagihan berikutnya.",
+ "data_awal": "Sesudah F02 dan F03, pelanggan 'Latihan NN · Toko Kain Peserta NN' hanya punya satu tagihan terbuka: sisa SO untuk bayar sebagian (contoh: Rp 1.954.710). Pelanggan mentransfer sisa itu dibulatkan ke atas ke kelipatan Rp 500.000 (contoh: Rp 2.000.000). Bila kelebihannya kurang dari Rp 10.000, naikkan Rp 500.000 lagi ke BCA Operasional KSC. Tagihan berikutnya (langkah 10) dibuat pelatih sesudah langkah 8 dan muncul di Kartu Peserta › Tagihan berikutnya.",
  "alur": [
   {
    "peran": "Pelanggan",
@@ -68,7 +68,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Cari baris SO kedua Anda (sisa sesudah F03). Klik ikon dompet (Terima pembayaran).",
    "isi": "",
-   "hasil": "Baris SO menunjukkan Belum Lunas = sisa (contoh: Rp 1.980.518). Form terbuka dengan pilihan [[Atur sendiri]].",
+   "hasil": "Baris SO menunjukkan Belum Lunas = sisa (contoh: Rp 1.954.710). Form terbuka dengan pilihan [[Atur sendiri]].",
    "gambar": "uji/hasil/F04/01-penagihan-baris-so.png"
   },
   {
@@ -131,7 +131,7 @@
    "menu": "Keuangan › Piutang › Titipan & Saldo Kredit",
    "aksi": "Cari nama pelanggan Anda.",
    "isi": "*Cari pelanggan*: Latihan NN · Toko Kain Peserta",
-   "hasil": "Kolom Deposit dan Jumlah berisi kelebihan bayar (contoh: Rp 19.483). Ini uang pelanggan yang kita pegang.",
+   "hasil": "Kolom Deposit dan Jumlah berisi kelebihan bayar (contoh: Rp 45.290). Ini uang pelanggan yang kita pegang.",
    "gambar": "uji/hasil/F04/08-titipan-pelanggan.png"
   },
   {
@@ -149,7 +149,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Klik tab [[Penagihan & Penerimaan]]. Pada baris SO baru, klik ikon dompet (Terima pembayaran).",
    "isi": "",
-   "hasil": "Baris SO baru tampil (contoh: KSC/SO-00041, Rp 3.302.528). Di form muncul kotak hijau 'Pakai titipan (tersedia Rp …)'.",
+   "hasil": "Baris SO baru tampil (contoh: KSC/SO-00037, Rp 3.406.035). Di form muncul kotak hijau 'Pakai titipan (tersedia Rp …)'.",
    "gambar": "uji/hasil/F04/09-penagihan-so-berikut.png"
   },
   {
@@ -181,9 +181,9 @@
   }
  ],
  "cek_buku": [
-  "Kwitansi lebih bayar (contoh): 1-1100 Kas Besar / Bank (D) Rp 2.000.000 · 1-1200 Piutang Usaha (K) Rp 1.980.517,50 · 2-1400 Uang Muka Pelanggan (K) Rp 19.482,50 — seimbang",
+  "Kwitansi lebih bayar (contoh): 1-1100 Kas Besar / Bank (D) Rp 2.000.000 · 1-1200 Piutang Usaha (K) Rp 1.980.517,50 · 2-1400 Uang Muka Pelanggan (K) Rp 45.290 — seimbang",
   "Saldo titipan pelanggan = kolom Deposit di Titipan & Saldo Kredit; keputusan 'deposit' tidak menambah jurnal",
-  "Kwitansi pakai titipan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.283.045 · 2-1400 Uang Muka Pelanggan (D) Rp 19.482,50 · 1-1200 Piutang Usaha (K) Rp 3.302.527,50 — seimbang; titipan kembali Rp 0"
+  "Kwitansi pakai titipan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.360.745 · 2-1400 Uang Muka Pelanggan (D) Rp 45.290 · 1-1200 Piutang Usaha (K) Rp 3.406.035 — seimbang; titipan kembali Rp 0"
  ],
  "kesalahan_umum": [
   "Tetap di [[Atur sendiri]] saat uang lebih. Nominal tidak bisa melebihi sisa SO; pilih [[Tertua dulu]].",
@@ -194,6 +194,6 @@
  "catatan_pelatih": "Kerjakan sesudah F02 dan F03. Langkah 9 dijalankan pelatih sekali, setelah semua peserta selesai langkah 8: `cd backend && python -m scripts.latih_keuangan.b_piutang --berikut 1-6` (di VPS, di dalam container backend; ganti 1-6 dengan nomor peserta). Tagihan berikutnya sengaja tidak dibuat sejak awal: bila sudah ada, [[Tertua dulu]] menyerap kelebihan bayar ke tagihan itu dan titipan tidak terbentuk. Kelebihan bayar Rp 5.000 atau kurang dianggap pembulatan (toleransi) dan tidak menjadi titipan. Karena itu aturan nominal transfer: bila kelebihan kurang dari Rp 10.000, naikkan Rp 500.000 lagi (uji jalan memakai aturan yang sama). Perbaikan 17 Nov: 'Pakai titipan' di mode Atur sendiri kini benar-benar melunasi SO, dan pesan hasil lebih bayar menyebut uang yang diterima beserta rinciannya.",
  "uji": {
   "berkas": "uji/F04_lebih_bayar_titipan.js",
-  "peserta_uji": "02"
+  "peserta_uji": "01"
  }
 }

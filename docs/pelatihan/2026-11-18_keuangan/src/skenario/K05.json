@@ -168,6 +168,6 @@
  "catatan_pelatih": "Seluruh perubahan aturan diperagakan pelatih dengan akun Admin (Manajer hanya bisa membaca aturan umum; mengubah 'Kelompok umur piutang' butuh izin kelola pengaturan). Ubah hanya untuk Sukacita dan kembalikan dengan 'Ikuti nilai grup' sebelum lanjut — pengaturan dipakai semua peserta. Selama ± 1 menit kolom umur di layar Piutang semua peserta ikut berubah; itu justru bagian demo. Jangan peragakan perubahan PPN atau toleransi selisih bayar di kelas (berisiko tinggi dan memengaruhi pembayaran yang sedang dicatat peserta lain).",
  "uji": {
   "berkas": "uji/konfigurasi/K05_aturan_keuangan_pajak.js",
-  "peserta_uji": "11"
+  "peserta_uji": "01"
  }
 }

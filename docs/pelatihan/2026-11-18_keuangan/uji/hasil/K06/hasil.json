@@ -2,17 +2,17 @@
   "code": "K06",
   "title": "Termin & plafon kredit",
   "ok": true,
-  "at": "2026-11-17T10:53:38.466Z",
+  "at": "2026-11-17T11:14:02.793Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
-      "action": "Masuk dengan akun peserta → Penjualan › CRM & Pelanggan → cari 'Latihan 11' → klik pelanggan Anda → bagian [[Kredit]]",
+      "action": "Masuk dengan akun peserta → Penjualan › CRM & Pelanggan → cari 'Latihan 01' → klik pelanggan Anda → bagian [[Kredit]]",
       "expect": "Profil kredit Sukacita: Jenis plafon/Plafon kredit, Termin yang diizinkan, Termin bawaan, Tahan pesanan bila telat lebih dari (hari), Status kredit — tiap nilai berlencana asal (bawaan PT / khusus pelanggan)",
       "ok": true,
-      "ms": 9974,
-      "info": "Plafon kredit Rp 300.000.000 Khusus Berlaku sampai Tanpa batas waktu Khusus Termin yang diizinkan Kredit NET 30 Hari Khusus Termin bawaan Kredit NET 30 Hari Khusus belum dipakai saat pesanan dibuat Tahan pesanan bila telat lebih dari 14 hari Ikut PT Status kre"
+      "ms": 9025,
+      "info": "Plafon kredit Tanpa batas Ikut PT Berlaku sampai — Ikut PT Termin yang diizinkan Semua termin aktif PT Ikut PT Termin bawaan — Ikut PT belum dipakai saat pesanan dibuat Tahan pesanan bila telat lebih dari 14 hari Ikut PT Status kredit Normal Ikut PT"
     },
     {
       "no": 2,
@@ -20,17 +20,17 @@
       "action": "Bila belum ada pengajuan menunggu: klik [[Ajukan perubahan]] → *Jenis plafon* Plafon khusus pelanggan ini · *Plafon kredit* Rp 300.000.000 · *Alasan* → [[Ajukan]]. Bila sudah ada (usulan saat pelanggan dibuat): baca kotak 'Menunggu keputusan'",
       "expect": "Kotak 'Menunggu keputusan' memuat perubahan Plafon kredit → Rp 300.000.000; tombol [[Ajukan perubahan]] mati ('Masih ada pengajuan yang menunggu keputusan'); Finance tidak punya tombol Setujui",
       "ok": true,
-      "ms": 2190,
-      "info": "KSC/PKR-00075 oleh Peserta Keuangan 11: Plafon kredit → 250000000"
+      "ms": 197,
+      "info": "KSC/PKR-00002 oleh Budi Santoso: Jenis plafon → khusus, Plafon kredit → 300000000"
     },
     {
       "no": 3,
       "role": "Manajer (pelatih)",
-      "action": "Masuk sebagai Manajer → Keuangan › Piutang › tab [[Kredit & Plafon]] → ketik 'Latihan 11' di kotak cari → baris 'Ubah Profil' pelanggan latihan → [[Setujui]] → [[Setujui]]",
+      "action": "Masuk sebagai Manajer → Keuangan › Piutang › tab [[Kredit & Plafon]] → ketik 'Latihan 01' di kotak cari → baris 'Ubah Profil' pelanggan latihan → [[Setujui]] → [[Setujui]]",
       "expect": "Antrean 'Menunggu keputusan' memuat baris Ubah Profil (pengaju, isi perubahan, alasan); konfirmasi menyebut pelanggan & PT; sesudah disetujui baris hilang dari antrean",
       "ok": true,
-      "ms": 14501,
-      "info": "Ubah Profil Latihan 11 · Toko Kain Peserta 11 Buka kartu pelanggan Rp 250.000.000 Peserta Keuangan 11 hari ini Plafon kredit: Rp 250.000.000 · Pelatihan K06 — p · konfirmasi: Setujui pengajuan profil kredit Latihan 11 · Toko Kain Peserta 11 · Sukacita · Rp 250.000.000 CATATAN KEPUTUSAN Batal Se · status disetujui oleh Dewi Manager"
+      "ms": 10828,
+      "info": "Ubah Profil Latihan 01 · Toko Kain Peserta 01 Buka kartu pelanggan Rp 300.000.000 Budi Santoso hari ini Jenis plafon: khusus · Plafon kredit: Rp 300.000.000 · P · konfirmasi: Setujui pengajuan profil kredit Latihan 01 · Toko Kain Peserta 01 · Sukacita · Rp 300.000.000 CATATAN KEPUTUSAN Batal Se · status disetujui oleh Dewi Manager"
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Kembali ke kartu pelanggan Anda → bagian [[Kredit]] (muat ulang)",
       "expect": "Plafon kredit berubah sesuai pengajuan dan berlencana 'khusus pelanggan'; riwayat perubahan kredit mencatat pengaju & penyetuju",
       "ok": true,
-      "ms": 24333,
-      "info": "plafon Rp 250.000.000 (khusus)"
+      "ms": 23530,
+      "info": "plafon Rp 300.000.000 (khusus)"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Klik [[Ajukan perubahan]] → bagian Termin pembayaran: centang NET14 & NET30 · *Termin bawaan* Kredit NET 30 Hari · *Alasan* → [[Ajukan]]",
       "expect": "Form menulis 'Termin di luar daftar ditolak saat pesanan dibuat'; sesudah diajukan muncul kotak 'Menunggu keputusan' berisi Termin yang diizinkan & Termin bawaan",
       "ok": true,
-      "ms": 1497,
-      "info": "KSC/PKR-00076: Termin yang diizinkan → [\"NET30\",\"NET14\"]"
+      "ms": 1751,
+      "info": "KSC/PKR-00018: Termin yang diizinkan → [\"NET14\",\"NET30\"], Termin bawaan → \"NET30\""
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Masuk sebagai Manajer → CRM & Pelanggan → pelanggan latihan → bagian [[Kredit]] → [[Setujui]] di kotak 'Menunggu keputusan' → [[Setujui]]",
       "expect": "Termin yang diizinkan & termin bawaan langsung berlaku untuk pesanan baru pelanggan ini di Sukacita",
       "ok": true,
-      "ms": 14275,
-      "info": "termin diizinkan NET30, NET14 · bawaan NET30"
+      "ms": 13251,
+      "info": "termin diizinkan NET14, NET30 · bawaan NET30"
     },
     {
       "no": 7,
@@ -65,17 +65,17 @@
       "action": "Pengaturan › Perusahaan (PT) › tab [[Master per PT]] → kelompok [[Syarat Pembayaran]]",
       "expect": "Daftar syarat bayar (CASH, NET7, NET14, NET30, DP50, Bertahap 3x, CBD, NET60, NET90) dengan jumlah hari; asal Global atau khusus PT",
       "ok": true,
-      "ms": 4314,
+      "ms": 4251,
       "info": "9 syarat bayar: CASH, NET7, NET14, NET30, DP50, INST3, CBD, NET60, NET90"
     },
     {
       "no": 8,
       "role": "Manajer (pelatih)",
-      "action": "Pembelian › Master Pembelian › Pemasok → cari 'Latihan 11' → klik ikon rincian pada pemasok latihan",
+      "action": "Pembelian › Master Pembelian › Pemasok → cari 'Latihan 01' → klik ikon rincian pada pemasok latihan",
       "expect": "Rincian pemasok memuat termin bayar (contoh NET30 = jatuh tempo tagihan 30 hari sesudah tanggal tagihan)",
       "ok": true,
-      "ms": 6295,
-      "info": "Latihan 11 · Pemasok Grey Peserta 11: termin NET30 (Kredit NET 30 Hari, 30 hari)"
+      "ms": 5947,
+      "info": "Latihan 01 · Pemasok Grey Peserta 01: termin NET30 (Kredit NET 30 Hari, 30 hari)"
     },
     {
       "no": 9,
@@ -83,7 +83,7 @@
       "action": "Pastikan pengaturan bersama tidak berubah",
       "expect": "Aturan kredit PT (plafon bawaan, periksa kredit, blokir telat) sama dengan sebelum skenario — yang berubah hanya profil pelanggan latihan",
       "ok": true,
-      "ms": 515,
+      "ms": 506,
       "info": "system_settings global & Sukacita tidak berubah"
     }
   ],
@@ -92,6 +92,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Pelanggan Latihan 11 · Toko Kain Peserta 11 · plafon Rp 300.000.000 (khusus) · pengajuan terbuka - · termin sasaran NET14,NET30"
+    "Pelanggan Latihan 01 · Toko Kain Peserta 01 · plafon Rp 0 (ikut_pt) · pengajuan terbuka KSC/PKR-00002 · termin sasaran NET14,NET30"
   ]
 }

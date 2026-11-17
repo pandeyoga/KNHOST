@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta) + Manajer (manager@) + Admin (admin@)",
  "menit": 30,
- "data_awal": "Kartu Peserta › Tagihan untuk kontrabon: tagihan kedua pemasok Anda, terposting dan belum dibayar (contoh: VB-00005, Rp 1.287.600). Akun Manajer manager@kainnusantara.id dan akun Admin admin@kainnusantara.id, sandi demo12345. Kerjakan sesudah F11.",
+ "data_awal": "Kartu Peserta › Tagihan untuk kontrabon: tagihan kedua pemasok Anda, terposting dan belum dibayar (contoh: VB-00003, Rp 1.287.600). Akun Manajer manager@kainnusantara.id dan akun Admin admin@kainnusantara.id, sandi demo12345. Kerjakan sesudah F11.",
  "alur": [
   {
    "peran": "Pemasok",
@@ -158,6 +158,6 @@
  "catatan_pelatih": "Pembagian izin bawaan: Finance melihat dan membayar kontrabon; Manajer membuat, mengubah, memverifikasi, menyetujui, dan menjadwalkan. Kontrol dua orang untuk kontrabon aktif, jadi penyetuju harus berbeda dari pembuat (di data demo: Admin). Dua cara menjalankan: (a) peserta berganti akun sendiri (manager@ dan admin@ dipakai bersama, sesi paralel aman), atau (b) pelatih memperagakan langkah 2–8 di proyektor, lalu peserta mengerjakan langkah Finance. Di wizard, hanya tagihan kontrabon peserta yang boleh dicentang; satu faktur hanya boleh ada di satu kontrabon. Jangan pakai [[Sengketakan]] atau [[Batalkan]] pada kontrabon latihan. Perbaikan 17 Nov: Finance yang membuka kontrabon belum dijadwalkan kini membaca 'Langkah berikutnya — Jadwalkan pembayaran — dikerjakan pemegang izin kontrabon'. Pertanyaan untuk pemilik: server mengizinkan bayar kontrabon berstatus 'Disetujui' tanpa jadwal, sedangkan layar baru menampilkan tombol bayar setelah dijadwalkan — tetap begitu?",
  "uji": {
   "berkas": "uji/F12_kontrabon.js",
-  "peserta_uji": "04"
+  "peserta_uji": "01"
  }
 }

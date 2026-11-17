@@ -6,9 +6,9 @@ Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
                                                                       No. KSC/INV-00004 · 17 Nov 2026 · LUNAS
 
              REFERENSI DOKUMEN
-             Merujuk: PICK-083BE8 · KSC/SJ-00005 · KSC/FKT-00001 · KSC/AR-00021
-             Menurunkan Tugas Pengambilan PICK-083BE8 · Menurunkan Surat Jalan / Pengiriman KSC/
-             SJ-00005 · Menurunkan Faktur Pajak KSC/FKT-00001 · Dilunasi oleh Kwitansi Pelanggan KSC/
+             Merujuk: PICK-81C9EA · KSC/SJ-00005 · KSC/FKT-00002 · KSC/AR-00021
+             Menurunkan Tugas Pengambilan PICK-81C9EA · Menurunkan Surat Jalan / Pengiriman KSC/
+             SJ-00005 · Menurunkan Faktur Pajak KSC/FKT-00002 · Dilunasi oleh Kwitansi Pelanggan KSC/
              AR-00021
              Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
 

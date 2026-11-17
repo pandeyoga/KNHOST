@@ -105,7 +105,7 @@
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Buka menu [[Buku Besar]]. Ketik nomor surat jalan dari pelatih di kotak cari.",
-   "isi": "*Cari nomor jurnal / keterangan…*: KSC/SJ-… (contoh KSC/SJ-00072)",
+   "isi": "*Cari nomor jurnal / keterangan…*: KSC/SJ-… (contoh: surat jalan Sukacita terakhir)",
    "hasil": "Baris jurnal 'Pendapatan Kirim' surat jalan itu tampil di daftar jurnal.",
    "gambar": "uji/hasil/K02/08-cari-jurnal-kirim.png"
   },
@@ -156,7 +156,7 @@
   }
  ],
  "cek_buku": [
-  "Jurnal pendapatan kirim (contoh KSC/JE-00263): 1-1200 Piutang Usaha (D) Rp 3.494.280 · 4-1000 Pendapatan Penjualan (K) Rp 3.148.000 · 2-1200 PPN Keluaran (K) Rp 346.280 — seimbang, akun = pemetaan Penjualan.",
+  "Jurnal pendapatan kirim (contoh KSC/JE-00125): 1-1200 Piutang Usaha (D) Rp 3.277.553 · 4-1000 Pendapatan Penjualan (K) Rp 2.952.750 · 2-1200 PPN Keluaran (K) Rp 324.803 — seimbang, akun = pemetaan Penjualan.",
   "Jurnal tagihan pemasok terakhir Sukacita memakai 2-1150 GR/IR (D) + 1-1500 PPN Masukan (D) / 2-1100 Hutang Usaha (K) — akun = pemetaan Pembelian.",
   "Sesudah peragaan, pemetaan tersimpan Sukacita sama persis dengan sebelum latihan; yang tersisa hanya dua baris riwayat (ubah dan kembali)."
  ],
@@ -169,6 +169,6 @@
  "catatan_pelatih": "Langkah 8–11 diperagakan pelatih dengan akun Finance pelatih (Finance memang boleh mengubah pemetaan; Manajer hanya melihat). Peserta jangan menyimpan perubahan — pemetaan berlaku untuk semua orang di Sukacita. Selama peragaan (± 1 menit) jurnal biaya administrasi bank yang terbit memakai 6-9000; kembalikan segera. Dua kebutuhan 'Belum diatur' (Selisih harga pembelian, Selisih nilai retur beli) adalah keputusan pemilik dan juga membuat Kesiapan PT Sukacita kurang 'Pemetaan akun' (lihat K03). Pita kuning di Hutang › GR/IR berasal dari kebutuhan yang sama.",
  "uji": {
   "berkas": "uji/konfigurasi/K02_pemetaan_akun.js",
-  "peserta_uji": "11"
+  "peserta_uji": "01"
  }
 }

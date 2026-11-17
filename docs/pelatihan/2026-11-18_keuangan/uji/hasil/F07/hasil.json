@@ -2,17 +2,17 @@
   "code": "F07",
   "title": "Kas Kecil — cairkan PD, LPJ dengan bukti, terima sisa",
   "ok": true,
-  "at": "2026-11-17T09:14:10.416Z",
+  "at": "2026-11-17T11:32:37.578Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
       "action": "Login akun peserta, buka Keuangan › Kas & Bank › Kas Kecil, ketik \"Latihan NN\" di kotak cari",
-      "expect": "Baris KSC/PD-00002: Keperluan \"Latihan 02 · Kunjungan Toko Kain Peserta 02\", pemohon Ayu Marketing, Jumlah Rp 500.000, Tahap \"Diajukan\" dengan keterangan \"Disetujui\"",
+      "expect": "Baris KSC/PD-00001: Keperluan \"Latihan 01 · Kunjungan Toko Kain Peserta 01\", pemohon Ayu Marketing, Jumlah Rp 500.000, Tahap \"Diajukan\" dengan keterangan \"Disetujui\"",
       "ok": true,
-      "ms": 5845,
-      "info": "KSC/PD-00002 · saldo Kas Toko awal Rp 36.398.128"
+      "ms": 6086,
+      "info": "KSC/PD-00001 · saldo Kas Toko awal Rp 33.150.000"
     },
     {
       "no": 2,
@@ -20,26 +20,26 @@
       "action": "Klik [[Buka]] pada PD → periksa rincian & Riwayat Persetujuan",
       "expect": "Status PD Disetujui, Total Pengajuan Rp 500.000; Riwayat Persetujuan: Atasan Langsung, Pimpinan, Bagian Keuangan — Disetujui; tombol [[Cairkan]] tersedia",
       "ok": true,
-      "ms": 480,
+      "ms": 482,
       "info": ""
     },
     {
       "no": 3,
       "role": "Finance",
       "action": "Klik [[Cairkan]] → *Sumber Kas*: Kas Kecil (tunai) · *Rekening*: Kas Toko KSC (terisi otomatis) → [[Cairkan Dana]] → di dialog konfirmasi klik [[Cairkan Dana]]",
-      "expect": "Dialog konfirmasi menyebut Rp 500.000, Kas Toko KSC dan Sukacita Textile; lalu notifikasi \"KSC/PD-00002 dicairkan (Rp 500.000).\"; status Dicairkan; baris \"Kas Keluar KSC/CASH-… · Kas Kecil\"",
+      "expect": "Dialog konfirmasi menyebut Rp 500.000, Kas Toko KSC dan Sukacita Textile; lalu notifikasi \"KSC/PD-00001 dicairkan (Rp 500.000).\"; status Dicairkan; baris \"Kas Keluar KSC/CASH-… · Kas Kecil\"",
       "ok": true,
-      "ms": 2363,
-      "info": "KSC/CASH-00040"
+      "ms": 2533,
+      "info": "KSC/CASH-00033"
     },
     {
       "no": 4,
       "role": "Finance",
-      "action": "Cek jurnal pencairan: Akuntansi & Pajak › Buku Besar › Jurnal → ketik nomor PD (KSC/PD-00002) di kotak cari → klik baris jurnal sumber \"Kas\"",
-      "expect": "Jurnal \"Kas keluar · Pencairan KSC/PD-00002 …\": 1-1400 Uang Muka & Biaya Dibayar Dimuka Debit Rp 500.000 · 1-1110 Kas Kecil Kredit Rp 500.000; total debit = total kredit",
+      "action": "Cek jurnal pencairan: Akuntansi & Pajak › Buku Besar › Jurnal → ketik nomor PD (KSC/PD-00001) di kotak cari → klik baris jurnal sumber \"Kas\"",
+      "expect": "Jurnal \"Kas keluar · Pencairan KSC/PD-00001 …\": 1-1400 Uang Muka & Biaya Dibayar Dimuka Debit Rp 500.000 · 1-1110 Kas Kecil Kredit Rp 500.000; total debit = total kredit",
       "ok": true,
-      "ms": 3399,
-      "info": "KSC/JE-00174: 1-1400 Uang Muka & Biaya Dibayar Dimuka (D) Rp 500.000 · 1-1110 Kas Kecil (K) Rp 500.000"
+      "ms": 3435,
+      "info": "KSC/JE-00155: 1-1400 Uang Muka & Biaya Dibayar Dimuka (D) Rp 500.000 · 1-1110 Kas Kecil (K) Rp 500.000"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Kembali ke Kas Kecil → buka PD → klik [[Pertanggungjawabkan]] → isi dua baris pengeluaran (Tanggal, Uraian, Kategori, Nominal; baris kedua lewat [[Tambah Baris]]) → [[Simpan LPJ]]",
       "expect": "Ringkasan per Kategori tampil; Total Pengeluaran Rp 232.000, Sisa Uang Muka (dikembalikan sesudah disetujui) Rp 268.000; notifikasi \"KSC/STL-… disimpan.\"; LPJ berstatus Draf",
       "ok": true,
-      "ms": 4946,
-      "info": "KSC/STL-00002"
+      "ms": 5130,
+      "info": "KSC/STL-00001"
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "Di rincian LPJ (bawah) klik [[Unggah Bukti]] → pilih foto nota → lalu klik [[Ajukan]] (atas kartu LPJ)",
       "expect": "\"Lampiran bukti (1)\" berisi nama berkas + gambar kecil; notifikasi \"KSC/STL-… diajukan.\"; status LPJ Diajukan",
       "ok": true,
-      "ms": 1604,
+      "ms": 1619,
       "info": ""
     },
     {
@@ -65,17 +65,17 @@
       "action": "Login manager@ → Kas & Bank › Kas Kecil → buka PD peserta → di kartu LPJ klik [[Setujui & Posting GL]] → konfirmasi [[Setujui & Posting]]",
       "expect": "Notifikasi \"KSC/STL-… disetujui & diposting ke GL.\"; status LPJ Terposting GL; bilah kuning \"Sisa uang muka Rp 268.000 harus dikembalikan Ayu Marketing.\"",
       "ok": true,
-      "ms": 8575,
+      "ms": 8582,
       "info": ""
     },
     {
       "no": 8,
       "role": "Finance",
       "action": "Login akun peserta → cek jurnal LPJ: Buku Besar › Jurnal → ketik nomor LPJ (KSC/STL-…) → klik baris \"LPJ Kas Kecil\"",
-      "expect": "Jurnal \"Pertanggungjawaban petty cash KSC/STL-…\": Debit 6-4600 Beban Transportasi & BBM Rp 185.000 · Debit 6-4300 Beban Cetak, Fotokopi & Materai Rp 47.000 · Kredit 1-1400 Uang Muka Rp 232.000",
+      "expect": "Jurnal \"Pertanggungjawaban kas kecil KSC/STL-…\": Debit 6-4600 Beban Transportasi & BBM Rp 185.000 · Debit 6-4300 Beban Cetak, Fotokopi & Materai Rp 47.000 · Kredit 1-1400 Uang Muka Rp 232.000",
       "ok": true,
-      "ms": 6231,
-      "info": "KSC/JE-00175: 6-4600 Beban Transportasi & BBM (D) Rp 185.000 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 232.000"
+      "ms": 7223,
+      "info": "KSC/JE-00156: 6-4600 Beban Transportasi & BBM (D) Rp 185.000 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 232.000"
     },
     {
       "no": 9,
@@ -83,8 +83,8 @@
       "action": "Kas & Bank › Kas Kecil → buka PD → klik [[Terima Pengembalian Sisa Rp …]] → *Jenis kas*: Kas Kecil (tunai) · *Rekening*: Kas Toko KSC · *Tanggal*: hari ini → [[Terima Pengembalian]] → konfirmasi [[Terima Pengembalian]]",
       "expect": "Notifikasi \"Sisa uang muka KSC/STL-… diterima (KSC/CASH-…).\"; ringkasan LPJ \"Sisa Dikembalikan · KSC/CASH-…\" Rp 268.000; di daftar Kas Kecil tahap PD menjadi \"Selesai\"",
       "ok": true,
-      "ms": 3870,
-      "info": "Sisa Dikembalikan · KSC/CASH-00041"
+      "ms": 4084,
+      "info": "Sisa Dikembalikan · KSC/CASH-00034"
     },
     {
       "no": 10,
@@ -92,17 +92,17 @@
       "action": "Cek jurnal pengembalian sisa: Buku Besar › Jurnal → ketik nomor LPJ → klik baris sumber \"Kas\" (Kas masuk · Pengembalian sisa uang muka …)",
       "expect": "Jurnal: 1-1110 Kas Kecil Debit Rp 268.000 · 1-1400 Uang Muka Kredit Rp 268.000. Uang muka PD kembali nol: Rp 500.000 (cair) − Rp 232.000 (LPJ) − Rp 268.000 (sisa) = Rp 0",
       "ok": true,
-      "ms": 4148,
-      "info": "KSC/JE-00176: 1-1110 Kas Kecil (D) Rp 268.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 268.000 · saldo uang muka PD = Rp 0"
+      "ms": 4625,
+      "info": "KSC/JE-00157: 1-1110 Kas Kecil (D) Rp 268.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 268.000 · saldo uang muka PD = Rp 0"
     },
     {
       "no": 11,
       "role": "Finance",
       "action": "Keuangan › Kas & Bank › Rekening & Saldo → klik kartu Kas Toko KSC → tab Mutasi",
-      "expect": "Ada baris keluar Rp 500.000 (Pencairan KSC/PD-00002) dan baris masuk Rp 268.000 (Pengembalian sisa uang muka) — bersih Kas Toko turun Rp 232.000 karena transaksi Anda",
+      "expect": "Ada baris keluar Rp 500.000 (Pencairan KSC/PD-00001) dan baris masuk Rp 268.000 (Pengembalian sisa uang muka) — bersih Kas Toko turun Rp 232.000 karena transaksi Anda",
       "ok": true,
-      "ms": 1734,
-      "info": "saldo Kas Toko Rp 36.398.128 → Rp 36.166.128 (selisih Rp -232.000; termasuk transaksi peserta lain bila ada)"
+      "ms": 1885,
+      "info": "saldo Kas Toko Rp 33.150.000 → Rp 32.918.000 (selisih Rp -232.000; termasuk transaksi peserta lain bila ada)"
     }
   ],
   "http_5xx": [],

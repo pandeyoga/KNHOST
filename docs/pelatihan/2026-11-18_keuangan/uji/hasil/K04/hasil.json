@@ -2,7 +2,7 @@
   "code": "K04",
   "title": "Rekening kas & bank",
   "ok": true,
-  "at": "2026-11-17T10:43:27.640Z",
+  "at": "2026-11-17T11:11:32.031Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,26 +11,26 @@
       "action": "Masuk dengan akun peserta → menu Keuangan › Kas & Bank (tab Rekening & Saldo)",
       "expect": "Lima kartu: Kas & Bank (buku besar) · Total Saldo Rekening · Saldo Bank · Saldo Kas · Mutasi Belum Dicocokkan; lalu kartu per rekening",
       "ok": true,
-      "ms": 6753,
-      "info": "buku besar Rp 661.214.226 · total rekening Rp 661.214.226 · bank Rp 628.064.226 · kas Rp 33.150.000"
+      "ms": 5665,
+      "info": "buku besar Rp 943.580.543 · total rekening Rp 943.580.543 · bank Rp 910.430.543 · kas Rp 33.150.000"
     },
     {
       "no": 2,
       "role": "Finance",
-      "action": "Klik [[Tambah Akun]] → isi rekening bank 'Rekening Latihan 11' dengan saldo awal Rp 1.000.000; *Dipakai untuk* hanya Operasional",
+      "action": "Klik [[Tambah Akun]] → isi rekening bank 'Rekening Latihan 01' dengan saldo awal Rp 1.000.000; *Dipakai untuk* hanya Operasional",
       "expect": "Form 'Tambah Akun Kas / Bank' untuk PT Sukacita: 1 Identitas rekening (nama, jenis, bank, nomor, atas nama, saldo awal), 2 Dipakai untuk, 3 Cara bayar, 4 Catatan untuk penyetuju",
       "ok": true,
-      "ms": 1178,
+      "ms": 888,
       "info": "saldo awal Rp 1.000.000"
     },
     {
       "no": 3,
       "role": "Finance",
       "action": "Klik [[Simpan Akun]]",
-      "expect": "Pesan 'Akun kas/bank ditambahkan.'; kartu 'Rekening Latihan 11' (Bank Mandiri · nomor) bersaldo Rp 1.000.000; kartu Total Saldo Rekening dan Kas & Bank (buku besar) naik Rp 1.000.000",
+      "expect": "Pesan 'Akun kas/bank ditambahkan.'; kartu 'Rekening Latihan 01' (Bank Mandiri · nomor) bersaldo Rp 1.000.000; kartu Total Saldo Rekening dan Kas & Bank (buku besar) naik Rp 1.000.000",
       "ok": true,
-      "ms": 1502,
-      "info": "Akun kas/bank ditambahkan. · Rekening Latihan 11 · Bank Mandiri 1300000011 · total rekening Rp 562.214.226"
+      "ms": 1362,
+      "info": "Akun kas/bank ditambahkan. · Rekening Latihan 01 · Bank Mandiri 1300000001 · total rekening Rp 844.580.543"
     },
     {
       "no": 4,
@@ -38,17 +38,17 @@
       "action": "Cek buku: Akuntansi & Pajak › Buku Besar → ketik nama rekening di kotak cari → klik jurnal 'Saldo awal rekening …'",
       "expect": "Jurnal saldo awal: 1-1100 Kas Besar / Bank (D) Rp 1.000.000 · 3-2900 Ekuitas Saldo Awal (K) Rp 1.000.000 — seimbang",
       "ok": true,
-      "ms": 4365,
-      "info": "KSC/JE-00438 seimbang D=K=1000000 [1-1100 Kas Besar / Bank D 1000000 · 3-2900 Ekuitas Saldo Awal K 1000000]"
+      "ms": 4039,
+      "info": "KSC/JE-00128 seimbang D=K=1000000 [1-1100 Kas Besar / Bank D 1000000 · 3-2900 Ekuitas Saldo Awal K 1000000]"
     },
     {
       "no": 5,
       "role": "Finance",
-      "action": "Kembali ke Kas & Bank › Rekening & Saldo → klik kartu 'Rekening Latihan 11'",
+      "action": "Kembali ke Kas & Bank › Rekening & Saldo → klik kartu 'Rekening Latihan 01'",
       "expect": "Pop-up mutasi rekening: belum ada transaksi; saldo kartu = saldo awal. Rekening ini hanya ditawarkan di layar Operasional (tidak muncul di pilihan rekening penerimaan pelanggan)",
       "ok": true,
-      "ms": 2394,
-      "info": "Rekening Latihan 11 · Saldo Rp 1.000.000 · Terekonsiliasi Rp 1.000.000 Ubah rekening Cocokkan di Rekonsiliasi Bank Belum ada transaksi pada akun ini. · tidak ada di daftar rekening penerima"
+      "ms": 2130,
+      "info": "Rekening Latihan 01 · Saldo Rp 1.000.000 · Terekonsiliasi Rp 1.000.000 Ubah rekening Cocokkan di Rekonsiliasi Bank Belum ada transaksi pada akun ini. · tidak ada di daftar rekening penerima"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Sesudah kelas: nolkan saldo awal rekening latihan lalu nonaktifkan (Ubah rekening › hapus centang Aktif)",
       "expect": "Jurnal penyesuaian 3-2900 (D) / 1-1100 (K) Rp 1.000.000; rekening nonaktif; efek bersih rekening latihan di buku = nol, jumlah rekening aktif sama dengan sebelum latihan",
       "ok": true,
-      "ms": 4045,
-      "info": "KSC/JE-00439 seimbang D=K=1000000 [3-2900 Ekuitas Saldo Awal D 1000000 · 1-1100 Kas Besar / Bank K 1000000] · efek bersih {\"3-2900\":0,\"1-1100\":0} · rekening aktif 2"
+      "ms": 2047,
+      "info": "KSC/JE-00129 seimbang D=K=1000000 [3-2900 Ekuitas Saldo Awal D 1000000 · 1-1100 Kas Besar / Bank K 1000000] · efek bersih {\"3-2900\":0,\"1-1100\":0} · rekening aktif 2"
     }
   ],
   "http_5xx": [],
@@ -65,6 +65,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Sebelum: 1-1100 Rp 628.064.226 · 3-2900 Rp -23.156.668.634 · rekening aktif 2"
+    "Sebelum: 1-1100 Rp 910.430.543 · 3-2900 Rp -23.156.668.634 · rekening aktif 2"
   ]
 }

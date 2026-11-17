@@ -6,6 +6,7 @@
  *  R4: teruskan barang cacat ke SUPPLIER (buat Retur Beli tertaut) — hormati kebijakan impor. */
 import { useState, useEffect, useCallback } from "react";
 import axios, { API } from "../../services/apiClient";
+import { canCurrent } from "../../config/roles";
 import {
   ShieldAlert, Loader2, PackageCheck, Building2, MapPin, ArrowLeftRight, X, CheckCircle2, Store, Link2, FileMinus, RotateCcw,
 } from "lucide-react";
@@ -76,7 +77,9 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
       try {
         const [eRes, sRes] = await Promise.all([
           axios.get(`${API}/entities`).catch(() => ({ data: [] })),
-          axios.get(`${API}/suppliers`).catch(() => ({ data: [] })),
+          // Pelatihan 18 Nov (A3): daftar supplier hanya untuk pemegang `supplier.view` — Sales membuka panel ini dan dulu
+          // mendapat 403 di setiap muat. Tanpa izin = pilihan "Otomatis per roll" saja (server tetap menegakkan).
+          canCurrent("supplier", "view") ? axios.get(`${API}/suppliers`).catch(() => ({ data: [] })) : { data: [] },
         ]);
         if (!active) return;
         setEntities(Array.isArray(eRes.data) ? eRes.data : (eRes.data?.items || []));

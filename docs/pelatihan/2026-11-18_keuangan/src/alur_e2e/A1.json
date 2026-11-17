@@ -10,11 +10,11 @@
   "Buku hanya berubah saat barang keluar dan saat uang masuk. SO, izin kredit, pelepasan ke gudang, tandai diterima, faktur pajak, dan pencocokan bank tidak membuat jurnal. Surat jalan membuat dua jurnal: pendapatan + PPN (Pajak Pertambahan Nilai) keluaran lawan piutang, dan HPP (harga pokok penjualan) lawan persediaan. Kwitansi membuat jurnal bank lawan piutang.",
   "Piutang lahir saat surat jalan terbit, bukan saat 'Tandai Diterima'. Jatuh tempo NET 30 dihitung dari tanggal surat jalan.",
   "Kredit dijaga di depan. Saat SO dibuat, aplikasi menghitung eksposur pelanggan: piutang barang terkirim + pesanan belum dikirim + giro belum cair − titipan + pesanan ini. Bila eksposur melewati plafon, SO tidak bisa dibuat sampai Manajer menyetujui izin kredit.",
-  "Harga belum termasuk PPN. Dasarnya DPP (dasar pengenaan pajak) = harga × jumlah. PPN 12% dihitung dari DPP nilai lain (11/12 × DPP), jadi efektif 11% dari DPP. Contoh: DPP Rp 2.408.400 → DPP nilai lain Rp 2.207.700 → PPN Rp 264.924 → total Rp 2.673.324."
+  "Harga belum termasuk PPN. Dasarnya DPP (dasar pengenaan pajak) = harga × jumlah. PPN 12% dihitung dari DPP nilai lain (11/12 × DPP), jadi efektif 11% dari DPP. Contoh: DPP Rp 2.356.000 → DPP nilai lain Rp 2.159.667 → PPN Rp 259.160 → total Rp 2.615.160."
  ],
  "peran": "Sales · Manajer · Admin Sales · Gudang · Finance (akun peserta)",
  "menit": 45,
- "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30, alamat Bandung) dengan plafon khusus yang sudah disetujui Manajer: cukup untuk satu roll, tidak cukup untuk dua roll berikutnya (contoh peserta 24: plafon Rp 13.000.000, piutang terkirim Rp 6.585.630). Produk DENIM TENCEL HITAM A, Rp 20.000/yard, dijual per roll dari gudang Jakarta. Rekening penerimaan PT Sukacita: BCA Operasional KSC · BCA 7415595554. Peran: sales@, manager@, salesadmin@, warehouse@ (sandi demo12345) dan akun Finance peserta.",
+ "data_awal": "Pelanggan 'Latihan NN · Toko Kain Peserta NN' (termin NET 30, alamat Bandung) dengan plafon khusus yang sudah disetujui Manajer: cukup untuk satu roll, tidak cukup untuk dua roll berikutnya (contoh peserta 21: plafon Rp 13.000.000, piutang terkirim Rp 6.636.968). Produk DENIM TENCEL HITAM A, Rp 20.000/yard, dijual per roll dari gudang Jakarta. Rekening penerimaan PT Sukacita: BCA Operasional KSC · BCA 7415595554. Peran: sales@, manager@, salesadmin@, warehouse@ (sandi demo12345) dan akun Finance peserta.",
  "alur": [
   {
    "peran": "Sales",
@@ -137,7 +137,7 @@
    "menu": "Penjualan › POS",
    "aksi": "Pilih lokasi gudang dan pelanggan. Klik [[Buka katalog]].",
    "isi": "*Lokasi gudang*: Jakarta · *Pelanggan*: ketik 'Latihan NN · Toko Kain Peserta' lalu pilih pelanggan Anda",
-   "hasil": "Katalog terbuka. Di bilah pelanggan tertulis 'Plafon Rp 13.000.000 · terpakai Rp 6.585.630 · sisa Rp 6.414.370' (contoh peserta 24).",
+   "hasil": "Katalog terbuka. Di bilah pelanggan tertulis 'Plafon Rp 13.000.000 · terpakai Rp 6.636.968 · sisa Rp 6.363.033' (contoh peserta 21).",
    "gambar": "uji/hasil/A1/03-pos-pelanggan.png"
   },
   {
@@ -155,7 +155,7 @@
    "menu": "Jendela produk",
    "aksi": "Klik [[Beli per Roll]]. Centang roll teratas lalu klik tombol tambah ke keranjang di bawah daftar roll.",
    "isi": "",
-   "hasil": "Daftar 'Pilih Roll (FEFO — tertua dulu)'. Sesudah dicentang: 1 roll, panjang dan subtotal tampil (contoh 120,42 yard · Rp 2.408.400).",
+   "hasil": "Daftar 'Pilih Roll (FEFO — tertua dulu)'. Sesudah dicentang: 1 roll, panjang dan subtotal tampil (contoh 117,8 yard · Rp 2.356.000).",
    "gambar": "uji/hasil/A1/05-so1-pilih-roll.png"
   },
   {
@@ -182,7 +182,7 @@
    "menu": "Checkout › Review",
    "aksi": "Nyalakan [[Minta Faktur Pajak]]. Baca Ringkasan dan kotak kredit.",
    "isi": "",
-   "hasil": "Ringkasan: Subtotal Rp 2.408.400 · PPN 12% (DPP 11/12) Rp 264.924 · GRAND TOTAL Rp 2.673.324 (contoh). Kotak kredit 'Kredit Aman': Eksposur Rp 9.258.954, Plafon Rp 13.000.000, Sisa plafon Rp 3.741.046.",
+   "hasil": "Ringkasan: Subtotal Rp 2.356.000 · PPN 12% (DPP 11/12) Rp 259.160 · GRAND TOTAL Rp 2.615.160 (contoh). Kotak kredit 'Kredit Aman': Eksposur Rp 9.252.128, Plafon Rp 13.000.000, Sisa plafon Rp 3.747.873.",
    "gambar": "uji/hasil/A1/08-so1-review-kredit.png"
   },
   {
@@ -191,7 +191,7 @@
    "menu": "Checkout › Review",
    "aksi": "Klik [[Buat Sales Order]].",
    "isi": "",
-   "hasil": "Pesan di atas: 'KSC/SO-… dibuat (Dipesan · Siap disahkan) · PPN 264.924. Grand total Rp 2.673.324.' Layar pindah ke daftar Pesanan. Roll yang dipilih kini dicadangkan.",
+   "hasil": "Pesan di atas: 'KSC/SO-… dibuat (Dipesan · Siap disahkan) · PPN 259.160. Grand total Rp 2.615.160.' Layar pindah ke daftar Pesanan. Roll yang dipilih kini dicadangkan.",
    "gambar": "uji/hasil/A1/10-so1-dibuat.png"
   },
   {
@@ -200,7 +200,7 @@
    "menu": "Penjualan › POS",
    "aksi": "Kasus kedua: buat pesanan baru untuk pelanggan yang sama. Pilih 2 roll, lalu Checkout sampai Review.",
    "isi": "*Cara bayar*: Transfer bank",
-   "hasil": "Kotak kredit merah 'Kredit Tertahan': 'Eksposur Rp 14.467.740 melewati plafon Rp 13.000.000.' (contoh) Tombol bawah berbunyi 'Kredit Tertahan' dan tidak bisa diklik.",
+   "hasil": "Kotak kredit merah 'Kredit Tertahan': 'Eksposur Rp 14.634.740 melewati plafon Rp 13.000.000.' (contoh) Tombol bawah berbunyi 'Kredit Tertahan' dan tidak bisa diklik.",
    "gambar": "uji/hasil/A1/13-so2-kredit-tertahan.png"
   },
   {
@@ -209,7 +209,7 @@
    "menu": "Checkout › Review",
    "aksi": "Klik [[Ajukan izin kredit (Rp …)]]. Pilih alasan, isi catatan, lalu klik [[Ajukan izin]].",
    "isi": "*Lingkup*: Pelanggan ini · *Nominal*: terisi nilai pesanan · *Alasan*: Riwayat bayar baik · *Catatan*: pesanan musim ramai, pelanggan selalu bayar tepat waktu",
-   "hasil": "Pesan hijau 'Izin kredit Rp 5.208.786 untuk Latihan NN · Toko Kain Peserta NN diajukan — menunggu keputusan.' Keranjang tetap terbuka.",
+   "hasil": "Pesan hijau 'Izin kredit Rp 5.382.612 untuk Latihan NN · Toko Kain Peserta NN diajukan — menunggu keputusan.' Keranjang tetap terbuka.",
    "gambar": "uji/hasil/A1/15-so2-izin-diajukan.png"
   },
   {
@@ -218,7 +218,7 @@
    "menu": "Keuangan › Piutang › Kredit & Plafon",
    "aksi": "Di komputer lain, masuk sebagai Manajer. Buka Kredit & Plafon dan ketik nama pelanggan di kotak cari.",
    "isi": "*Email*: manager@kainnusantara.id · *Cari*: Latihan NN · Toko Kain Peserta",
-   "hasil": "Antrean 'Menunggu keputusan' memuat baris 'Izin Kredit' Rp 5.208.786 dari Ayu Marketing dengan alasan dan catatannya.",
+   "hasil": "Antrean 'Menunggu keputusan' memuat baris 'Izin Kredit' Rp 5.382.612 dari Ayu Marketing dengan alasan dan catatannya.",
    "gambar": "uji/hasil/A1/18-mgr-izin-setujui.png"
   },
   {
@@ -245,7 +245,7 @@
    "menu": "Checkout › Review",
    "aksi": "Klik [[Buat Sales Order]].",
    "isi": "",
-   "hasil": "Pesan 'KSC/SO-… dibuat (Dipesan · Siap disahkan) · PPN 516.186. Grand total Rp 5.208.786.' (contoh). SO kedua mencatat izin kredit yang dipakai; sisa izin Rp 0. Pesanan ini tidak dipakai lagi di latihan.",
+   "hasil": "Pesan 'KSC/SO-… dibuat (Dipesan · Siap disahkan) · PPN 533.412. Grand total Rp 5.382.612.' (contoh). SO kedua mencatat izin kredit yang dipakai; sisa izin Rp 0. Pesanan ini tidak dipakai lagi di latihan.",
    "gambar": "uji/hasil/A1/23-so2-dibuat.png"
   },
   {
@@ -335,7 +335,7 @@
    "menu": "Keuangan › Piutang › Penagihan & Penerimaan",
    "aksi": "Masuk dengan akun peserta. Buka Piutang, tab [[Penagihan & Penerimaan]], lalu cari baris SO Anda.",
    "isi": "*Email*: finance.latihNN@kainnusantara.id",
-   "hasil": "Baris SO: Belum Lunas Rp 2.673.324, Jatuh Tempo 17 Des 2026, Telat '30h Lagi' (contoh).",
+   "hasil": "Baris SO: Belum Lunas Rp 2.615.160, Jatuh Tempo 17 Des 2026, Telat '30h Lagi' (contoh).",
    "gambar": "uji/hasil/A1/43-fin-baris-piutang.png"
   },
   {
@@ -362,7 +362,7 @@
    "menu": "Jendela Simpan kwitansi",
    "aksi": "Klik [[Simpan kwitansi]]. Baca kalimat konfirmasi lalu klik [[Ya, simpan]].",
    "isi": "",
-   "hasil": "Konfirmasi menyebut nominal, pelanggan, rekening BCA, dan PT Sukacita. Sesudahnya pesan hijau 'Kwitansi KSC/AR-… (Rp 2.673.324) dicatat …' dan baris SO hilang.",
+   "hasil": "Konfirmasi menyebut nominal, pelanggan, rekening BCA, dan PT Sukacita. Sesudahnya pesan hijau 'Kwitansi KSC/AR-… (Rp 2.615.160) dicatat …' dan baris SO hilang.",
    "gambar": "uji/hasil/A1/49-fin-kwitansi-tercatat.png"
   },
   {
@@ -371,7 +371,7 @@
    "menu": "Keuangan › Kas & Bank › Rekonsiliasi",
    "aksi": "Pilih rekening BCA Operasional KSC. Klik [[Impor mutasi bank]], pilih template BCA, tempel baris mutasi, lalu klik [[Pratinjau]] dan [[Impor]].",
    "isi": "*Template bank*: BCA — Rekening Koran (CSV) · *Teks*: baris judul + satu baris 'TRSF E-BANKING CR SO-… A1 LATIHAN NN …' sebesar total SO (CR)",
-   "hasil": "'Terbaca 1 baris … masuk Rp 2.673.324'. Sesudah impor: 'Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati'.",
+   "hasil": "'Terbaca 1 baris … masuk Rp 2.615.160'. Sesudah impor: 'Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati'.",
    "gambar": "uji/hasil/A1/50-fin-rekon-pratinjau.png"
   },
   {
@@ -407,12 +407,12 @@
   {
    "tahap": "Surat jalan dikirim — pendapatan",
    "dokumen": "Surat jalan (Pendapatan Kirim)",
-   "jurnal": "1-1200 Piutang Usaha (D) Rp 2.673.324 · 4-1000 Pendapatan Penjualan (K) Rp 2.408.400 · 2-1200 PPN Keluaran (K) Rp 264.924"
+   "jurnal": "1-1200 Piutang Usaha (D) Rp 2.615.160 · 4-1000 Pendapatan Penjualan (K) Rp 2.356.000 · 2-1200 PPN Keluaran (K) Rp 259.160"
   },
   {
    "tahap": "Surat jalan dikirim — harga pokok",
    "dokumen": "Surat jalan (HPP Kirim)",
-   "jurnal": "5-1000 Harga Pokok Penjualan (D) Rp 1.734.048 · 1-1300 Persediaan Barang (K) Rp 1.734.048 (120,42 yard × Rp 14.400)"
+   "jurnal": "5-1000 Harga Pokok Penjualan (D) Rp 1.696.320 · 1-1300 Persediaan Barang (K) Rp 1.696.320 (117,8 yard × Rp 14.400)"
   },
   {
    "tahap": "Tandai diterima pelanggan",
@@ -427,7 +427,7 @@
   {
    "tahap": "Transfer pelanggan dicatat",
    "dokumen": "Kwitansi → transaksi kas",
-   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 2.673.324 · 1-1200 Piutang Usaha (K) Rp 2.673.324"
+   "jurnal": "1-1100 Kas Besar / Bank (D) Rp 2.615.160 · 1-1200 Piutang Usaha (K) Rp 2.615.160"
   },
   {
    "tahap": "Mutasi bank dicocokkan",
@@ -444,11 +444,11 @@
   "Setiap mutasi bank masuk ditautkan ke transaksi kas yang sudah ada, sehingga saldo buku = rekening koran."
  ],
  "cek_buku": [
-  "Jurnal Pendapatan Kirim (contoh KSC/JE-00431): 1-1200 Piutang Usaha (D) Rp 2.673.324 = 4-1000 Pendapatan Penjualan (K) Rp 2.408.400 + 2-1200 PPN Keluaran (K) Rp 264.924 — seimbang.",
-  "Jurnal HPP Kirim (contoh KSC/JE-00432): 5-1000 Harga Pokok Penjualan (D) Rp 1.734.048 · 1-1300 Persediaan Barang (K) Rp 1.734.048 — seimbang. Laba kotor pesanan = Rp 2.408.400 − Rp 1.734.048 = Rp 674.352.",
-  "Jurnal kwitansi (contoh KSC/JE-00434): 1-1100 Kas Besar / Bank (D) Rp 2.673.324 · 1-1200 Piutang Usaha (K) Rp 2.673.324. Piutang SO: debit saat kirim − kredit saat bayar = Rp 0.",
-  "Faktur pajak dan pencocokan bank tidak membuat jurnal. PPN faktur = PPN Keluaran di jurnal pengiriman = Rp 264.924 (DPP nilai lain Rp 2.207.700).",
-  "Nilai SO = faktur = kwitansi = transaksi kas = mutasi bank = Rp 2.673.324 (contoh peserta 24)."
+  "Jurnal Pendapatan Kirim (contoh KSC/JE-00130): 1-1200 Piutang Usaha (D) Rp 2.615.160 = 4-1000 Pendapatan Penjualan (K) Rp 2.356.000 + 2-1200 PPN Keluaran (K) Rp 259.160 — seimbang.",
+  "Jurnal HPP Kirim (contoh KSC/JE-00131): 5-1000 Harga Pokok Penjualan (D) Rp 1.696.320 · 1-1300 Persediaan Barang (K) Rp 1.696.320 — seimbang. Laba kotor pesanan = Rp 2.356.000 − Rp 1.696.320 = Rp 659.680.",
+  "Jurnal kwitansi (contoh KSC/JE-00132): 1-1100 Kas Besar / Bank (D) Rp 2.615.160 · 1-1200 Piutang Usaha (K) Rp 2.615.160. Piutang SO: debit saat kirim − kredit saat bayar = Rp 0.",
+  "Faktur pajak dan pencocokan bank tidak membuat jurnal. PPN faktur = PPN Keluaran di jurnal pengiriman = Rp 259.160 (DPP nilai lain Rp 2.159.667).",
+  "Nilai SO = faktur = kwitansi = transaksi kas = mutasi bank = Rp 2.615.160 (contoh peserta 21)."
  ],
  "kesalahan_umum": [
   "Memilih [[Per yard]] dan mengetik jumlah yang tidak sama dengan panjang roll: gudang harus memotong roll dulu sebelum bisa mengirim. Untuk latihan pakai [[Beli per Roll]].",
@@ -459,6 +459,6 @@
  "catatan_pelatih": "Siapkan peserta segar untuk peragaan (pelanggan yang belum pernah dipakai alur ini). Persiapan plafon khusus dilakukan sebelum kelas oleh uji otomatis atau oleh pelatih: Finance mengajukan plafon di kartu pelanggan, Manajer menyetujui. Jangan setujui izin kredit Rp 50.000.000 bawaan latihan F06 sebelum peragaan ini — izin itu ikut melepas kasus lewat plafon. Pakai dua jendela peramban: jendela Sales tetap membuka keranjang sementara Manajer menyetujui izin kredit di jendela lain. Roll latihan tidak bertag RFID, jadi pengiriman selalu butuh pengecualian Manajer; di gudang bergate RFID langkah ini tidak muncul. Rekonsiliasi: transaksi kas kwitansi memuat kode bayar KN-… (tercetak di instruksi pembayaran); bila pelanggan menulis kode itu di berita transfer, [[Cocokkan otomatis]] menautkannya sendiri. Tanpa kode, skornya 75 (nominal + tanggal + nama) — di bawah ambang otomatis 80 — sehingga dicocokkan manual seperti langkah 29. Perbaikan 17 Nov dari uji alur ini: (1) checkout kini punya [[Periksa ulang kredit]] — dulu tombol tetap 'Kredit Tertahan' walau izin sudah disetujui; (2) Pelacak SO dan Keep & Pending di Meja Admin Sales ikut dimuat ulang sesudah [[Periksa & lepas ke gudang]] — dulu SO tetap tampil 'Periksa & lepas'; (3) kotak roll hijau tidak muncul lagi sesudah pengambilan tercatat — dulu muncul kembali sehingga [[Kirim Pengambilan]] bisa ditekan ulang. SO kedua (kasus lewat plafon) dibiarkan menunggu Admin Sales; batalkan bila stoknya dibutuhkan. Waktu: ±45 menit bila setiap peran diperagakan.",
  "uji": {
   "berkas": "uji/e2e/A1_order_to_cash.js",
-  "peserta_uji": "24"
+  "peserta_uji": "21 (peserta peraga)"
  }
 }

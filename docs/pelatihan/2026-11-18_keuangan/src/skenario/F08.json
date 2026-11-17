@@ -111,8 +111,8 @@
   }
  ],
  "cek_buku": [
-  "Sales membuat kwitansi tunai (contoh): 1-1280 Piutang Titipan Karyawan (D) Rp 3.230.378 · 1-1200 Piutang Usaha (K) Rp 3.230.378 — belum ada kas",
-  "Finance menerima setoran (contoh): 1-1110 Kas Kecil (D) Rp 3.230.378 · 1-1280 Piutang Titipan Karyawan (K) Rp 3.230.378; kas masuk ke Kas Toko KSC",
+  "Sales membuat kwitansi tunai (contoh): 1-1280 Piutang Titipan Karyawan (D) Rp 3.480.128 · 1-1200 Piutang Usaha (K) Rp 3.480.128 — belum ada kas",
+  "Finance menerima setoran (contoh): 1-1110 Kas Kecil (D) Rp 3.480.128 · 1-1280 Piutang Titipan Karyawan (K) Rp 3.480.128; kas masuk ke Kas Toko KSC",
   "Pesanan pelanggan lunas sejak kwitansi dibuat; saldo titipan untuk kwitansi ini Rp 0 setelah setoran diterima"
  ],
  "kesalahan_umum": [
@@ -123,6 +123,6 @@
  "catatan_pelatih": "Skrip persiapan menyalakan pengaturan PT Sukacita 'Tunai yang diterima sales dicatat sebagai: titipan di tangan sales sampai disetor' (Pengaturan › Uang masuk › Kwitansi). Untuk data nyata, ini keputusan pemilik. Semua setoran latihan berasal dari akun sales@ yang sama, jadi daftar 'Setoran menunggu diterima' berisi setoran semua peserta; peserta memilih baris dengan catatan 'Latihan NN' miliknya. Tombol [[Terima setoran]] mati untuk penyetor sendiri (setoran harus diterima orang lain). Sisi sales bisa diperagakan dengan akun sales@ di HP: Titipan Saya › Ajukan setoran.",
  "uji": {
   "berkas": "uji/F08_titipan_sales.js",
-  "peserta_uji": "35"
+  "peserta_uji": "01"
  }
 }

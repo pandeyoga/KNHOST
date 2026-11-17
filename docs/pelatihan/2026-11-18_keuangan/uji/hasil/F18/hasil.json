@@ -2,7 +2,7 @@
   "code": "F18",
   "title": "Tutup Buku — daftar periksa, tutup, buka periode, posting gagal (Manajer)",
   "ok": true,
-  "at": "2026-11-17T09:18:45.161Z",
+  "at": "2026-11-17T11:37:06.625Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Masuk sebagai manajer, PT Sukacita → Akuntansi & Pajak › Tutup Buku (tab Daftar Periksa & Tutup)",
       "expect": "Tiga tab: Daftar Periksa & Tutup · Buka Periode · Posting Gagal; kartu PERIODE TERTUTUP & TOTAL RIWAYAT; label PT 'Sukacita'",
       "ok": true,
-      "ms": 6498,
-      "info": "Sukacita · PERIODE TERTUTUP 0 TOTAL RIWAYAT 1"
+      "ms": 6771,
+      "info": "Sukacita · PERIODE TERTUTUP 0 TOTAL RIWAYAT 0"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Pilih *Jenis Periode* Bulanan · *Bulan* Oktober · *Tahun* 2026 → [Pratinjau] → baca 'Daftar Periksa Sebelum Tutup Buku'",
       "expect": "Daftar butir (status Siap / Perlu dilihat / …) dengan angka dari sistem: persediaan vs buku besar, akun sementara (suspense), posting gagal, dokumen belum terjurnal, dll. Butir 'Perlu dilihat' tidak menghalangi, tetapi ikut disebut di dialog konfirmasi",
       "ok": true,
-      "ms": 3767,
+      "ms": 3706,
       "info": "11 beres · 0 perlu dilihat · 0 harus diselesaikan · Periode sudah berakhir: Beres | Tidak bentrok dengan penutupan lain: Beres | Saldo akun penampung nol: Beres | Tidak ada jurnal yang gagal diposting: Beres | Neraca saldo seimbang: Beres | Nilai stok sama dengan akun persediaan: Beres | Mutasi bank sampai akhir periode sudah dicocokkan: Beres | Saldo antar-PT di buku besar sama dengan dokumennya: Beres | Tidak ada izin Buka Periode yang masih berlaku: Beres | Penyusutan aset periode ini sudah dijalankan: Beres | Penggajian periode ini sudah diposting: Beres"
     },
     {
@@ -29,8 +29,8 @@
       "action": "Gulir ke hasil Pratinjau Oktober 2026 di bawah daftar periksa — JANGAN klik [Tutup Buku] untuk bulan ini",
       "expect": "Kotak Pendapatan · Beban · Laba/Rugi Bersih → Laba Ditahan = laba-rugi jurnal Oktober 2026; tabel 'Jurnal Penutup (Pratinjau)' menutup tiap akun pendapatan/beban ke Laba Ditahan (tombol [Tutup Buku] yang disorot TIDAK diklik)",
       "ok": true,
-      "ms": 1491,
-      "info": "pendapatan Rp 0 · beban Rp 54.364.612 · laba/rugi Rp -54.364.612 · 4 baris jurnal penutup"
+      "ms": 1523,
+      "info": "pendapatan Rp 0 · beban Rp 61.741.612 · laba/rugi Rp -61.741.612 · 4 baris jurnal penutup"
     },
     {
       "no": 4,
@@ -38,7 +38,7 @@
       "action": "Pilih *Bulan* September · *Tahun* 2026 → [Pratinjau] → [Tutup Buku]",
       "expect": "Pratinjau 'Tidak ada saldo laba/rugi untuk ditutup pada periode ini.'; dialog merah 'Tutup buku September 2026 — Sukacita?' menjelaskan jurnal penutup → Laba Ditahan dan periode terkunci",
       "ok": true,
-      "ms": 3207,
+      "ms": 3167,
       "info": "Tutup buku September 2026 — Sukacita? Jurnal penutup (laba/rugi Rp 0 → Laba Ditahan) akan dibuat dan periode terkunci: jurnal baru pada periode ini ditolak. Membuka lagi hanya lewat Buka Kembali (Admin, di Riwayat) atau "
     },
     {
@@ -47,8 +47,8 @@
       "action": "Di dialog klik [Tutup Buku]",
       "expect": "Pesan hijau 'Periode September 2026 berhasil ditutup. Jurnal penutup: —' (bulan kosong → tanpa jurnal penutup); Riwayat Tutup Buku: September 2026 · Bulanan · Rp 0 · Tertutup; kartu PERIODE TERTUTUP bertambah 1. Jurnal bertanggal September 2026 kini ditolak",
       "ok": true,
-      "ms": 394,
-      "info": "Periode September 2026 berhasil ditutup. Jurnal penutup: —. ✕ · riwayat: September 2026 Bulanan Rp 0 — Tertutup Dewi Manager 17 Nov 2026, 16.18 WIB —"
+      "ms": 445,
+      "info": "Periode September 2026 berhasil ditutup. Jurnal penutup: —. ✕ · riwayat: September 2026 Bulanan Rp 0 — Tertutup Dewi Manager 17 Nov 2026, 18.36 WIB —"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Tab [Buka Periode] → *Periode Tertutup* September 2026 · *Alasan (wajib)* 'Latihan F18 — contoh koreksi salah akun beban' → [Ajukan Usul]",
       "expect": "Pesan hijau 'Usul buka periode dikirim. Perlu disetujui admin/manager LAIN (kontrol ganda)…'; baris usul berstatus Menunggu; tombol [Setujui] milik Anda abu-abu + tulisan 'perlu orang lain'",
       "ok": true,
-      "ms": 2794,
-      "info": "Usul buka periode dikirim. Perlu disetujui admin/manager LAIN (kontrol ganda) agar jendela terbuka. ✕ · September 2026 Latihan F18 — contoh koreksi salah akun beban Menunggu Persetujuan Dewi Manager 17 Nov 2026, 16.18 WIB — — — Setujui Tolak perlu orang lain"
+      "ms": 2197,
+      "info": "Usul buka periode dikirim. Perlu disetujui admin/manager LAIN (kontrol ganda) agar jendela terbuka. ✕ · September 2026 Latihan F18 — contoh koreksi salah akun beban Menunggu Persetujuan Dewi Manager 17 Nov 2026, 18.36 WIB — — — Setujui Tolak perlu orang lain"
     },
     {
       "no": 7,
@@ -65,7 +65,7 @@
       "action": "Tab [Posting Gagal]",
       "expect": "Daftar dokumen yang jurnalnya gagal tercatat (bila ada: jenis, nomor, penyebab, tombol [Ulang Posting]); kosong = 'Tidak ada dokumen dengan jurnal gagal. Semua posting tercatat.' Jumlahnya sama dengan kartu 'Posting gagal' di Beranda Keuangan",
       "ok": true,
-      "ms": 2251,
+      "ms": 1644,
       "info": "0 dokumen gagal · Semua (0)"
     },
     {
@@ -74,8 +74,8 @@
       "action": "Masuk sebagai admin, PT Sukacita → Tutup Buku › Buka Periode → baris usul → [Tolak] → alasan → [Tolak Usul]",
       "expect": "Status usul berubah menjadi Ditolak dengan alasannya; periode tetap tertutup (tidak ada jendela buka). Bila [Setujui]: pita merah 'periode dibuka' tampil untuk SEMUA pengguna selama jendela — karena itu tidak dilakukan saat latihan",
       "ok": true,
-      "ms": 10416,
-      "info": "September 2026 Latihan F18 — contoh koreksi salah akun beban Ditolak: Latihan selesai — tidak ada koreksi Ditolak Dewi Manager 17 Nov 2026, 16.18 WIB — — — —"
+      "ms": 11190,
+      "info": "September 2026 Latihan F18 — contoh koreksi salah akun beban Ditolak: Latihan selesai — tidak ada koreksi Ditolak Dewi Manager 17 Nov 2026, 18.36 WIB — — — —"
     },
     {
       "no": 9,
@@ -83,8 +83,8 @@
       "action": "Tab [Daftar Periksa & Tutup] → Riwayat Tutup Buku: baris September 2026 → [Buka Kembali] → dialog [Buka Kembali]",
       "expect": "Pesan 'Periode September 2026 dibuka kembali (jurnal penutup dianulir).'; status baris menjadi 'Dibuka'; kartu PERIODE TERTUTUP kembali seperti semula. Hanya Admin (izin Buka kembali tutup buku) yang melihat tombol [Buka Kembali]",
       "ok": true,
-      "ms": 1290,
-      "info": "Periode September 2026 dibuka kembali (jurnal penutup dianulir). ✕ · September 2026 Bulanan Rp 0 — Dibuka Dewi Manager 17 Nov 2026, 16.18 WIB —"
+      "ms": 1462,
+      "info": "Periode September 2026 dibuka kembali (jurnal penutup dianulir). ✕ · September 2026 Bulanan Rp 0 — Dibuka Dewi Manager 17 Nov 2026, 18.36 WIB —"
     },
     {
       "no": 10,
@@ -92,7 +92,7 @@
       "action": "Bandingkan keadaan periode PT Sukacita dengan sebelum latihan",
       "expect": "Daftar periode tertutup dan usul buka periode yang hidup SAMA dengan sebelum uji (tidak ada periode tertinggal tertutup)",
       "ok": true,
-      "ms": 547,
+      "ms": 549,
       "info": "tertutup [—] · usul hidup [—] — sama dengan awal"
     }
   ],

@@ -2,62 +2,62 @@
   "code": "F04",
   "title": "Lebih bayar → titipan pelanggan → dipakai",
   "ok": true,
-  "at": "2026-11-17T09:12:26.645Z",
+  "at": "2026-11-17T11:28:49.906Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
       "action": "Penagihan & Penerimaan → ikon dompet [Terima pembayaran] pada SO kedua → pilih [Tertua dulu]",
-      "expect": "Form terbuka; 'Nominal diterima' bisa diisi (awal = sisa Rp 1.980.518)",
+      "expect": "Form terbuka; 'Nominal diterima' bisa diisi (awal = sisa Rp 1.954.710)",
       "ok": true,
-      "ms": 6838,
-      "info": "1980517.5"
+      "ms": 6549,
+      "info": "1954710"
     },
     {
       "no": 2,
       "role": "Finance",
       "action": "Isi *Nominal diterima* 2000000 (sesuai mutasi bank) + No. referensi, klik [Simpan kwitansi]",
-      "expect": "Petunjuk kuning 'Lebih bayar Rp 19.483 dari sisa tagihan pesanan tujuan (Rp 1.980.518)'",
+      "expect": "Petunjuk kuning 'Lebih bayar Rp 45.290 dari sisa tagihan pesanan tujuan (Rp 1.954.710)'",
       "ok": true,
-      "ms": 1102,
-      "info": "Lebih bayar Rp 19.483 dari sisa tagihan pesanan tujuan (Rp 1.980.518) — akan diminta keputusan saat disimpan. Putuskan"
+      "ms": 1168,
+      "info": "Lebih bayar Rp 45.290 dari sisa tagihan pesanan tujuan (Rp 1.954.710) — akan diminta keputusan saat disimpan. Putuskan"
     },
     {
       "no": 3,
       "role": "Finance",
       "action": "Jendela 'Selisih Pembayaran · Lebih bayar' → pilih 'Simpan sebagai deposit pelanggan', alasan 'Pelanggan transfer berlebih' → [Lanjutkan & simpan kwitansi]",
-      "expect": "Kalimat 'Dibayar Rp 2.000.000, seharusnya Rp 1.980.518 … Lebih Rp 19.483'",
+      "expect": "Kalimat 'Dibayar Rp 2.000.000, seharusnya Rp 1.954.710 … Lebih Rp 45.290'",
       "ok": true,
-      "ms": 888,
-      "info": "Dibayar Rp 2.000.000, seharusnya Rp 1.980.518 (sisa tagihan pesanan tujuan). Lebih Rp 19.483 — mau bagaimana?"
+      "ms": 1031,
+      "info": "Dibayar Rp 2.000.000, seharusnya Rp 1.954.710 (sisa tagihan pesanan tujuan). Lebih Rp 45.290 — mau bagaimana?"
     },
     {
       "no": 4,
       "role": "Finance",
       "action": "Konfirmasi [Ya, simpan]",
-      "expect": "Pesan 'Kwitansi … (Rp 2.000.000) … Rp 1.980.518 melunasi tagihan, Rp 19.483 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (SLB-…)'; baris SO hilang",
+      "expect": "Pesan 'Kwitansi … (Rp 2.000.000) … Rp 1.954.710 melunasi tagihan, Rp 45.290 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (SLB-…)'; baris SO hilang",
       "ok": true,
-      "ms": 2270,
-      "info": "Kwitansi KSC/AR-00028 (Rp 2.000.000) dicatat untuk Latihan 02 · Toko Kain Peserta 02. Rp 1.980.518 melunasi tagihan, Rp 19.483 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00004). ×"
+      "ms": 2369,
+      "info": "Kwitansi KSC/AR-00023 (Rp 2.000.000) dicatat untuk Latihan 01 · Toko Kain Peserta 01. Rp 1.954.710 melunasi tagihan, Rp 45.290 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00002). ×"
     },
     {
       "no": 5,
       "role": "Finance",
       "action": "Cek buku: SO lunas, titipan pelanggan, jurnal kwitansi",
-      "expect": "Titipan pelanggan Rp 19.483 · jurnal: Kas Besar/Bank (D) Rp 2.000.000 = Piutang Usaha (K) Rp 1.980.518 + Uang Muka Pelanggan (K) Rp 19.483",
+      "expect": "Titipan pelanggan Rp 45.290 · jurnal: Kas Besar/Bank (D) Rp 2.000.000 = Piutang Usaha (K) Rp 1.954.710 + Uang Muka Pelanggan (K) Rp 45.290",
       "ok": true,
-      "ms": 2655,
-      "info": "KSC/AR-00028 · KSC/JE-00169: 1-1100 D2000000 K0 · 1-1200 D0 K1980517.5 · 2-1400 D0 K19482.5"
+      "ms": 3043,
+      "info": "KSC/AR-00023 · KSC/JE-00147: 1-1100 D2000000 K0 · 1-1200 D0 K1954710 · 2-1400 D0 K45290"
     },
     {
       "no": 6,
       "role": "Finance",
       "action": "Klik tab Titipan & Saldo Kredit → cari 'Latihan NN'",
-      "expect": "Baris pelanggan: kolom Deposit Rp 19.483, Jumlah Rp 19.483",
+      "expect": "Baris pelanggan: kolom Deposit Rp 45.290, Jumlah Rp 45.290",
       "ok": true,
-      "ms": 1974,
-      "info": "Latihan 02 · Toko Kain Peserta 02 Rp 0 Rp 19.483 Rp 0 Rp 19.483 —"
+      "ms": 2038,
+      "info": "Latihan 01 · Toko Kain Peserta 01 Rp 0 Rp 45.290 Rp 0 Rp 45.290 —"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Susulan: tagihan berikutnya pelanggan (python -m scripts.latih_keuangan.b_piutang --berikut NN)",
       "expect": "Pesanan baru terkirim (belum dibayar) muncul di Penagihan & Penerimaan",
       "ok": true,
-      "ms": 8461,
-      "info": "KSC/SO-00041 · Rp 3.302.528"
+      "ms": 9468,
+      "info": "KSC/SO-00037 · Rp 3.406.035"
     },
     {
       "no": 8,
@@ -74,8 +74,8 @@
       "action": "Tab Penagihan & Penerimaan → [Terima pembayaran] SO baru → centang 'Pakai titipan' → [Simpan kwitansi]",
       "expect": "'Nominal diterima' = total − titipan; Total diterima = total SO (uang + titipan); 'Nominal sesuai tagihan'",
       "ok": true,
-      "ms": 3978,
-      "info": "Rp 3.283.045 · Total diterima: Rp 3.302.528(uang Rp 3.283.045 + titipan Rp 19.483)"
+      "ms": 3938,
+      "info": "Rp 3.360.745 · Total diterima: Rp 3.406.035(uang Rp 3.360.745 + titipan Rp 45.290)"
     },
     {
       "no": 9,
@@ -83,8 +83,8 @@
       "action": "Konfirmasi [Ya, simpan]; cek buku",
       "expect": "SO baru lunas, titipan Rp 0; jurnal: Kas/Bank (D) uang baru + Uang Muka Pelanggan (D) titipan = Piutang (K) total SO",
       "ok": true,
-      "ms": 4624,
-      "info": "Kwitansi KSC/AR-00029 (Rp 3.302.528) dicatat untuk Latihan 02 · Toko Kain Peserta 02. × · KSC/JE-00172: 1-1100 D3283045 K0 · 2-1400 D19482.5 K0 · 1-1200 D0 K3302527.5"
+      "ms": 4879,
+      "info": "Kwitansi KSC/AR-00024 (Rp 3.406.035) dicatat untuk Latihan 01 · Toko Kain Peserta 01. × · KSC/JE-00150: 1-1100 D3360745 K0 · 2-1400 D45290 K0 · 1-1200 D0 K3406035"
     }
   ],
   "http_5xx": [],
@@ -92,6 +92,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 02 · KSC/SO-00011 sisa 1980517.5 · transfer 2000000 · lebih 19482.5"
+    "Peserta 01 · KSC/SO-00005 sisa 1954710 · transfer 2000000 · lebih 45290"
   ]
 }

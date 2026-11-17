@@ -162,6 +162,6 @@
  "catatan_pelatih": "Rekening BCA dipakai bersama: [[Cocokkan otomatis]] oleh satu peserta ikut mencocokkan baris transfer peserta lain yang kode bayarnya cocok, jadi wajar bila baris seseorang sudah 'Tercocok' sebelum ia menekan tombol. Baris ekspedisi (skor 60) dan biaya admin tidak pernah tertaut otomatis. Kartu 'Selisih rekening vs buku' tidak nol di kelas karena transaksi buku peserta lain hari ini belum punya mutasi; di kantor, dengan rekening koran lengkap, selisih Rp 0 dan tulisan 'Terekonsiliasi penuh ✓' berarti beres. Setelah beberapa peserta mencocokkan manual, muncul '1 usulan menunggu' aturan pembelajaran (Pengaturan › Keuangan & Pajak › Bank) — jangan diaktifkan selama latihan. Bila kwitansi disiapkan sehari sebelumnya, tanggal mutasi tetap hari ini. Aturan teks rekening koran: satu baris kepala dan tiga baris mutasi; nominal dalam tanda kutip dengan titik ribuan dan koma desimal (3240090 → \"3.240.090,00\"); bentuk lain (3240090 · 3.240.090 · 3240090.00) dan pemisah TAB atau titik koma (salinan dari Excel) juga terbaca. Perbaikan 17 Nov: impor tempel tercatat 'tempel baris', ringkasan sisi buku ikut periode, dan tiga tombol yang menerbitkan jurnal (biaya bank, bunga, titipkan) meminta konfirmasi bernominal.",
  "uji": {
   "berkas": "uji/F10_rekonsiliasi_bank.js",
-  "peserta_uji": "35"
+  "peserta_uji": "01"
  }
 }

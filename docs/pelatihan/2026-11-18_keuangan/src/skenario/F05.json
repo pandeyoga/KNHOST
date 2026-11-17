@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 25,
- "data_awal": "Kartu Peserta › Pelanggan cicilan: pelanggan kedua Anda 'Latihan NN · Toko Kain Cicilan NN' dengan SO terkirim dan rencana pembayaran KSC/RPB-… yang disusun Admin Penjualan (contoh: KSC/SO-00012, Rp 3.231.765). Cicilan 1 (50%) jatuh tempo 28 Okt 2026 dan belum dibayar (telat sekitar 20 hari). Cicilan 2 (pelunasan) jatuh tempo 27 Nov 2026.",
+ "data_awal": "Kartu Peserta › Pelanggan cicilan: pelanggan kedua Anda 'Latihan NN · Toko Kain Cicilan NN' dengan SO terkirim dan rencana pembayaran KSC/RPB-… yang disusun Admin Penjualan (contoh: KSC/SO-00006, Rp 3.359.693). Cicilan 1 (50%) jatuh tempo 28 Okt 2026 dan belum dibayar (telat sekitar 20 hari). Cicilan 2 (pelunasan) jatuh tempo 27 Nov 2026.",
  "alur": [
   {
    "peran": "Sales",
@@ -172,7 +172,7 @@
    "menu": "Keuangan › Piutang › Rencana & Denda",
    "aksi": "Tutup rincian, lalu klik tab [[Rencana & Denda]].",
    "isi": "Di [[Antrean Denda]]: saring [[Usulan (draf)]] · *Cari*: nomor nota KSC/DN-DENDA-…",
-   "hasil": "Kartu USULAN DENDA berisi nominal nota Anda (contoh: Rp 21.545).",
+   "hasil": "Kartu USULAN DENDA berisi nominal nota Anda (contoh: Rp 22.398).",
    "gambar": "uji/hasil/F05/13-tab-rencana-denda.png"
   },
   {
@@ -205,7 +205,7 @@
  ],
  "cek_buku": [
   "Nota usulan (draf) belum berjurnal",
-  "Nota terbit (contoh, telat 20 hari): 1-1270 Piutang Denda Pelanggan (D) Rp 21.545,09 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 21.545,09 — seimbang. Hitungan: Rp 1.615.882 × 2% × 20/30",
+  "Nota terbit (contoh, telat 20 hari): 1-1270 Piutang Denda Pelanggan (D) Rp 22.398,09 · 4-9300 Pendapatan Denda Keterlambatan (K) Rp 22.398,09 — seimbang. Hitungan: Rp 1.679.846 × 2% × 20/30",
   "Piutang usaha SO tidak berubah; denda adalah piutang terpisah"
  ],
  "kesalahan_umum": [
@@ -217,6 +217,6 @@
  "catatan_pelatih": "Tanggal Cicilan 1 dibuat 20 hari sebelum hari data latihan disiapkan, jadi nominal denda bertambah setiap hari (contoh: bila data disiapkan 17 Nov, pada 18 Nov telat 21 hari). Pelanggan cicilan sengaja pelanggan kedua peserta supaya tidak mengganggu alokasi [[Tertua dulu]] di F04. Saat kotak cari berisi nomor nota, kartu RENCANA AKTIF dan jumlah di tab Jadwal Pembayaran ikut tersaring dan bisa menunjukkan 0 — beri tahu peserta supaya tidak bingung. Status rencana kini 'Aktif' (dulu 'Active').",
  "uji": {
   "berkas": "uji/F05_rencana_denda.js",
-  "peserta_uji": "02"
+  "peserta_uji": "01"
  }
 }

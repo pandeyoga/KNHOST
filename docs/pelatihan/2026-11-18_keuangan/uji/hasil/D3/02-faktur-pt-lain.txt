@@ -6,9 +6,9 @@ CV Cipta Sandang Textile
                                                             No. CST/INV-00001 · 17 Nov 2026 · DIBAYAR SEBAGIAN
 
              REFERENSI DOKUMEN
-             Merujuk: PICK-C245F7 · PICK-A453F1 · CST/SJ-00001 · CST/SJ-00002 · CST/
+             Merujuk: PICK-976BAB · PICK-BE4CEF · CST/SJ-00001 · CST/SJ-00002 · CST/
              AR-00001
-             Menurunkan Tugas Pengambilan PICK-C245F7 · Menurunkan Tugas Pengambilan PICK-A453F1 ·
+             Menurunkan Tugas Pengambilan PICK-976BAB · Menurunkan Tugas Pengambilan PICK-BE4CEF ·
              Menurunkan Surat Jalan / Pengiriman CST/SJ-00001 · Menurunkan Surat Jalan / Pengiriman CST/
              SJ-00002 · Dilunasi oleh Kwitansi Pelanggan CST/AR-00001
              Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).

@@ -1,14 +1,15 @@
 Sukacita                                                                                                                  BUKTI KAS MASUK
 Kas / Bank Masuk                                                                                                                   No. KSC/JE-00043
 
-Tanggal               17 November 2026                                           Sumber                     KSC/CASH-00011
-Keterangan Kas in · Penerimaan KSC/AR-00005 — Latihan                            Dibuat oleh                Peserta Keuangan 01
-           01 · Toko Kain Peserta 01 · Kode KN-JJMK2
+Tanggal                17 November 2026                                          Sumber                     KSC/CASH-00011
+Keterangan Kas masuk · Penerimaan KSC/AR-00005 —                                 Dibuat oleh                Peserta Keuangan 01
+           Latihan 01 · Toko Kain Peserta 01 · Kode KN-
+           XEYS2
 Metode:            Tunai     ✓ Bank / Transfer               Kas Kecil
 
  AKUN                      MEMO                                                                                            DEBIT                     KREDIT
  1-1100 — Kas              KSC/CASH-00011 · Penerimaan KSC/AR-00005 — Latihan 01 ·                         Rp 3.405.757,50                                    -
- Besar / Bank              Toko Kain Peserta 01 · Kode KN-JJMK2
+ Besar / Bank              Toko Kain Peserta 01 · Kode KN-XEYS2
  1-1200 — Piutang          KSC/CASH-00011 · pelunasan AR                                                                      -    Rp 3.405.757,50
  Usaha
  TOTAL                                                                                                     Rp 3.405.757,50         Rp 3.405.757,50

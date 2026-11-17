@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › SO lunas untuk penelusuran: satu SO latihan yang sudah dikirim dan dilunasi oleh akun Finance Anda. Kartu memuat nomor SO, surat jalan, kwitansi, transaksi kas, jurnal pengiriman, dan jurnal penerimaan (contoh: KSC/SO-00015 Rp 3.287.820 · KSC/SJ-00016 · KSC/AR-00008 · KSC/CASH-00013 · KSC/JE-00062/63/64). Skenario ini hanya membaca.",
+ "data_awal": "Kartu Peserta › SO lunas untuk penelusuran: satu SO latihan yang sudah dikirim dan dilunasi oleh akun Finance Anda. Kartu memuat nomor SO, surat jalan, kwitansi, transaksi kas, jurnal pengiriman, dan jurnal penerimaan (contoh: KSC/SO-00009 Rp 3.405.758 · KSC/SJ-00010 · KSC/AR-00005 · KSC/CASH-00011 · KSC/JE-00041/63/64). Skenario ini hanya membaca.",
  "langkah": [
   {
    "no": 1,
@@ -98,9 +98,9 @@
   }
  ],
  "cek_buku": [
-  "Jurnal penerimaan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.287.820 · 1-1200 Piutang Usaha (K) Rp 3.287.820 = nilai kwitansi = nilai transaksi kas",
-  "Jurnal pendapatan (contoh): 1-1200 Piutang Usaha (D) Rp 3.287.820 · 4-1000 Pendapatan Penjualan (K) Rp 2.962.000 · 2-1200 PPN Keluaran (K) Rp 325.820",
-  "Jurnal HPP (contoh): 5-1000 HPP (D) Rp 2.132.640 · 1-1300 Persediaan (K) Rp 2.132.640",
+  "Jurnal penerimaan (contoh): 1-1100 Kas Besar / Bank (D) Rp 3.405.758 · 1-1200 Piutang Usaha (K) Rp 3.405.758 = nilai kwitansi = nilai transaksi kas",
+  "Jurnal pendapatan (contoh): 1-1200 Piutang Usaha (D) Rp 3.405.758 · 4-1000 Pendapatan Penjualan (K) Rp 3.068.250 · 2-1200 PPN Keluaran (K) Rp 337.508",
+  "Jurnal HPP (contoh): 5-1000 HPP (D) Rp 2.209.140 · 1-1300 Persediaan (K) Rp 2.209.140",
   "Saldo akhir buku besar 1-1200 = saldo Piutang Usaha di Neraca Saldo = 'piutang tercatat' di Beranda Keuangan › Posisi"
  ],
  "kesalahan_umum": [
@@ -112,7 +112,7 @@
  "catatan_pelatih": "Data skenario dibuat skrip data latihan: SO tersendiri yang dilunasi akun Finance peserta, sehingga F16 tidak bergantung pada urutan F02. Finance hanya punya izin lihat akuntansi: tombol tulis (Jurnal Baru, Sinkronkan, Balik/Anulir, Tambah/Ubah/Hapus akun) disembunyikan. 'Akun kontrol' berarti saldonya hanya berubah lewat dokumen, bukan lewat jurnal manual. Simpul jurnal di Jejak Dokumen kini menampilkan nilai jurnal (dulu kosong). Jurnal kas yang dibuat sebelum 17 Nov masih berketerangan 'Kas in · …' (seperti di tangkapan layar); data yang disiapkan ulang memakai 'Kas masuk · …'.",
  "uji": {
   "berkas": "uji/F16_buku_besar_jejak.js",
-  "peserta_uji": "05"
+  "peserta_uji": "01"
  },
  "alur": [
   {

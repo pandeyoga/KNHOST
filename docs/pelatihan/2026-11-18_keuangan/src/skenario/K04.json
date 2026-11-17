@@ -119,6 +119,6 @@
  "catatan_pelatih": "Setiap peserta membuat rekeningnya sendiri (nama berisi nomor peserta) dengan saldo awal Rp 1.000.000 — Ekuitas Saldo Awal dan Kas & Bank Sukacita naik selama kelas. Sesudah kelas pelatih membersihkan tiap rekening latihan: saldo awal dinolkan (membuat jurnal penyesuaian) lalu rekening dinonaktifkan (uji jalan K04 langkah 6 melakukannya otomatis). Form [[Ubah rekening]] tidak memuat saldo awal, jadi penolan dikerjakan pelatih dengan cara yang sama. Petunjuk bagian 3 form kini benar: daftar Cara Bayar ada di Pengaturan › Perusahaan (PT) › Master per PT › Cara Bayar (dulu tertulis Keuangan & Pajak). Finance belum punya menu ke Master per PT walau izinnya ada — lihat laporan audit.",
  "uji": {
   "berkas": "uji/konfigurasi/K04_rekening_kas_bank.js",
-  "peserta_uji": "11"
+  "peserta_uji": "01"
  }
 }

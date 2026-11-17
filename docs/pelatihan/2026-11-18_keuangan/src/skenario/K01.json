@@ -16,14 +16,34 @@
  "menit": 20,
  "data_awal": "Bagan Akun PT Sukacita (77 akun pada data latihan). Tidak perlu dokumen dari Kartu Peserta.",
  "alur": [
-  {"peran": "Finance", "label": "Buka Bagan Akun"},
-  {"peran": "Finance", "label": "Baca kelompok & saldo normal"},
-  {"peran": "Finance", "label": "Saring tipe, buka rincian akun"},
-  {"peran": "Manajer", "label": "Tambah akun khusus Sukacita", "cabang": "Hanya pemegang izin kelola akuntansi"},
-  {"peran": "Manajer", "label": "Hapus akun latihan"}
+  {
+   "peran": "Finance",
+   "label": "Buka Bagan Akun"
+  },
+  {
+   "peran": "Finance",
+   "label": "Baca kelompok & saldo normal"
+  },
+  {
+   "peran": "Finance",
+   "label": "Saring tipe, buka rincian akun"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Tambah akun khusus Sukacita",
+   "cabang": "Hanya pemegang izin kelola akuntansi"
+  },
+  {
+   "peran": "Manajer",
+   "label": "Hapus akun latihan"
+  }
  ],
  "navigasi": [
-  {"menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun", "nav_id": "ledger", "tab": "chart-of-accounts"}
+  {
+   "menu": "Akuntansi & Pajak › Buku Besar › Bagan Akun",
+   "nav_id": "ledger",
+   "tab": "chart-of-accounts"
+  }
  ],
  "langkah": [
   {
@@ -120,5 +140,8 @@
   "Menghapus akun yang sudah dipakai: sistem menolak. Akun yang tidak dipakai lagi dinonaktifkan, bukan dihapus."
  ],
  "catatan_pelatih": "Langkah 7–9 diperagakan pelatih (akun Manajer); peserta cukup menonton dan memuat ulang Bagan Akun mereka. Jangan biarkan peserta menambah akun di bagan bersama. Kalau akun latihan sudah dipakai jurnal, akun itu tidak bisa dihapus — pakai kode yang belum ada (6-4950) dan hapus segera sesudah peragaan. Sejak perbaikan 17 Nov, ikon hapus di bagan satu PT hanya muncul pada akun 'khusus PT' (dulu juga muncul pada akun warisan Template Global) dan selalu didahului konfirmasi. Hubungkan ke K02: akun yang dipakai setiap transaksi ditentukan Pemetaan Akun.",
- "uji": {"berkas": "uji/konfigurasi/K01_bagan_akun.js", "peserta_uji": "11"}
+ "uji": {
+  "berkas": "uji/konfigurasi/K01_bagan_akun.js",
+  "peserta_uji": "01"
+ }
 }

@@ -2,7 +2,7 @@
   "code": "A1",
   "title": "Alur ujung ke ujung: pesanan sampai uang masuk (order to cash)",
   "ok": true,
-  "at": "2026-11-17T10:41:28.051Z",
+  "at": "2026-11-17T11:17:34.871Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Persiapan: pelanggan latihan segar + plafon khusus (Finance mengajukan, Manajer menyetujui) + produk ber-stok",
       "expect": "Plafon khusus berlaku; sisa plafon cukup untuk 1 roll, tidak cukup untuk 2 roll berikutnya",
       "ok": true,
-      "ms": 16290,
-      "info": "plafon Rp 13.000.000 · eksposur awal Rp 6.585.630 · DENIM TENCEL HITAM A"
+      "ms": 2542,
+      "info": "plafon Rp 13.000.000 · eksposur awal Rp 6.636.968 · DENIM TENCEL HITAM A"
     },
     {
       "no": 1,
@@ -20,8 +20,8 @@
       "action": "Masuk sebagai Sales → Penjualan › POS → pilih Lokasi gudang Jakarta & pelanggan latihan → [Buka katalog]",
       "expect": "Bilah pelanggan: nama pelanggan, 'Plafon Rp … · terpakai Rp … · sisa Rp …', lokasi Jakarta",
       "ok": true,
-      "ms": 33981,
-      "info": "Plafon Rp 13.000.000 · terpakai Rp 6.585.630 · sisa Rp 6.414.370"
+      "ms": 10932,
+      "info": "Plafon Rp 13.000.000 · terpakai Rp 6.636.968 · sisa Rp 6.363.033"
     },
     {
       "no": 2,
@@ -29,8 +29,8 @@
       "action": "Cari produk → buka kartunya → [Beli per Roll] → centang 1 roll teratas (FEFO) → [Tambah ke Keranjang]",
       "expect": "Pemilih roll: 1 roll · panjang roll · subtotal = panjang × harga",
       "ok": true,
-      "ms": 3845,
-      "info": "1 roll · subtotal Rp 2.408.400"
+      "ms": 3610,
+      "info": "1 roll · subtotal Rp 2.356.000"
     },
     {
       "no": 3,
@@ -38,7 +38,7 @@
       "action": "Buka keranjang → Checkout: periksa pelanggan & alamat → [Lanjut]; termin 'Kredit NET 30 Hari', *Cara bayar* Transfer bank → [Lanjut]",
       "expect": "Termin bawaan pelanggan NET 30; rekening tujuan BCA terkunci (satu-satunya rekening penerimaan PT)",
       "ok": true,
-      "ms": 2070,
+      "ms": 2051,
       "info": "Kredit NET 30 Hari · CARA BAYAR Transfer bank REKENING TUJUAN BCA 7415595554 Satu-satunya rekening penerimaan PT ini untuk cara bayar ini."
     },
     {
@@ -47,8 +47,8 @@
       "action": "Review: nyalakan [Minta Faktur Pajak]; baca Ringkasan (DPP, PPN 12% DPP 11/12, Grand total) dan kotak kredit",
       "expect": "Kotak kredit 'Kredit Aman': Eksposur = piutang terkirim + pesanan ini, Plafon, Sisa plafon > 0",
       "ok": true,
-      "ms": 658,
-      "info": "grand Rp 2.673.324 · eksposur Rp 9.258.954 · plafon Rp 13.000.000 · sisa Rp 3.741.046"
+      "ms": 656,
+      "info": "grand Rp 2.615.160 · eksposur Rp 9.252.128 · plafon Rp 13.000.000 · sisa Rp 3.747.873"
     },
     {
       "no": 5,
@@ -56,8 +56,8 @@
       "action": "Klik [Buat Sales Order]",
       "expect": "Pesan 'KSC/SO-… dibuat (Dipesan · Siap disahkan) · PPN … Grand total Rp …'; layar pindah ke daftar Pesanan. Buku: belum ada jurnal (stok baru dicadangkan)",
       "ok": true,
-      "ms": 2323,
-      "info": "KSC/SO-00110 dibuat (Dipesan · Siap disahkan) · PPN 264.924. Grand total Rp 2.673.324. · roll RL-35771 dicadangkan · jurnal 0"
+      "ms": 1967,
+      "info": "KSC/SO-00034 dibuat (Dipesan · Siap disahkan) · PPN 259.160. Grand total Rp 2.615.160. · roll RL-35766 dicadangkan · jurnal 0"
     },
     {
       "no": 6,
@@ -65,8 +65,8 @@
       "action": "Kasus kedua: pesanan baru 2 roll untuk pelanggan yang sama → Checkout sampai Review",
       "expect": "Kotak kredit 'Kredit Tertahan': 'Eksposur Rp … melewati plafon Rp …'; tombol bawah 'Kredit Tertahan' mati",
       "ok": true,
-      "ms": 6717,
-      "info": "2 roll subtotal Rp 4.692.600 · grand Rp 5.208.786 · Eksposur Rp 14.467.740 melewati plafon Rp 13.000.000."
+      "ms": 6507,
+      "info": "2 roll subtotal Rp 4.849.200 · grand Rp 5.382.612 · Eksposur Rp 14.634.740 melewati plafon Rp 13.000.000."
     },
     {
       "no": 7,
@@ -74,8 +74,8 @@
       "action": "Klik [Ajukan izin kredit (Rp …)] → *Alasan*: Riwayat bayar baik · *Catatan* → [Ajukan izin]",
       "expect": "Pesan hijau 'Izin kredit Rp … untuk Latihan NN … diajukan — menunggu keputusan … tekan Periksa ulang kredit lalu Buat Sales Order'",
       "ok": true,
-      "ms": 3300,
-      "info": "Izin kredit Rp 5.208.786 untuk Latihan 24 · Toko Kain Peserta 24 diajukan — menunggu keputusan. Isi keranjang tetap di layar ini; setelah izin disetujui, tekan Periksa ulang kredit lalu Buat Sales Order."
+      "ms": 3051,
+      "info": "Izin kredit Rp 5.382.612 untuk Latihan 21 · Toko Kain Peserta 21 diajukan — menunggu keputusan. Isi keranjang tetap di layar ini; setelah izin disetujui, tekan Periksa ulang kredit lalu Buat Sales Order."
     },
     {
       "no": 8,
@@ -83,8 +83,8 @@
       "action": "(jendela Manajer) Keuangan › Piutang › Kredit & Plafon → cari pelanggan → baris 'Izin Kredit Rp …' → [Setujui] → isi catatan → [Setujui]",
       "expect": "Pesan 'Izin kredit Latihan NN · … disetujui.'; baris hilang dari antrean Menunggu keputusan",
       "ok": true,
-      "ms": 15529,
-      "info": "Izin kredit Latihan 24 · Toko Kain Peserta 24 disetujui. × · oleh Dewi Manager"
+      "ms": 9629,
+      "info": "Izin kredit Latihan 21 · Toko Kain Peserta 21 disetujui. × · oleh Dewi Manager"
     },
     {
       "no": 9,
@@ -92,8 +92,8 @@
       "action": "Kembali ke layar Sales (keranjang masih terbuka) → [Periksa ulang kredit] → [Buat Sales Order]",
       "expect": "Kotak kredit 'Kredit Aman' + 'Izin kredit disetujui dipakai pesanan ini'; SO kedua dibuat dan mencatat izin yang dipakai",
       "ok": true,
-      "ms": 3342,
-      "info": "KSC/SO-00111 dibuat (Dipesan · Siap disahkan) · PPN 516.186. Grand total Rp 5.208.786. · izin dipakai, sisa Rp 0"
+      "ms": 2422,
+      "info": "KSC/SO-00035 dibuat (Dipesan · Siap disahkan) · PPN 533.412. Grand total Rp 5.382.612. · izin dipakai, sisa Rp 0"
     },
     {
       "no": 10,
@@ -101,7 +101,7 @@
       "action": "Masuk sebagai Admin Sales → Meja Admin Sales → Pelacak SO aktif: cari nomor SO pertama → [Periksa & lepas]",
       "expect": "Jendela 'Periksa & lepas ke gudang · KSC/SO-…': data pesanan (kiri) + daftar periksa (kanan); catatan kuning NPWP (tidak menghalangi)",
       "ok": true,
-      "ms": 5509,
+      "ms": 4368,
       "info": "DAFTAR PERIKSA Alamat & penerima lengkap Lengkap Surat jalan tanpa nama penerima & telepon membuat kurir menelepon sales. Syarat pembayaran dipilih Kredit NET 30 Hari Tanpa syarat bayar, jatuh tempo & penagihan tidak bisa dihitung. Isi pesanan wajar (ada item, jumlah > 0) 1 baris Pesanan tanpa baris"
     },
     {
@@ -110,8 +110,8 @@
       "action": "Isi *Catatan pemeriksaan* → klik [Periksa & lepas ke gudang]",
       "expect": "Pesan 'KSC/SO-… diperiksa & dilepas ke gudang — tugas ambil sudah lahir.'; Pelacak SO kini 'Dikonfirmasi' dan menunggu Gudang",
       "ok": true,
-      "ms": 2387,
-      "info": "KSC/SO-00110 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. × · pelacak: KSC/SO-00110 Latihan 24 · Toko Kain Peserta 24 · Ayu Marketing Dikonfirmasi Diambil, dicek muat & diberangkatkan oleh Admin Gudang / Staf Gudang Dibuat 17 Nov, "
+      "ms": 1897,
+      "info": "KSC/SO-00034 diperiksa & dilepas ke gudang — tugas ambil sudah lahir. × · pelacak: KSC/SO-00034 Latihan 21 · Toko Kain Peserta 21 · Ayu Marketing Dikonfirmasi Diambil, dicek muat & diberangkatkan oleh Admin Gudang / Staf Gudang Dibuat 17 Nov, "
     },
     {
       "no": 12,
@@ -119,8 +119,8 @@
       "action": "Masuk sebagai Gudang (Jakarta) → Gudang & Logistik › Operasi Gudang › tab Barang Keluar → cari nomor SO → klik tugasnya",
       "expect": "Panel 'Ambil & Kirim · Siap diambil': SO, gudang Jakarta, progres 0/…; 'Roll yang harus diambil' menyebut nomor roll yang dicadangkan",
       "ok": true,
-      "ms": 7184,
-      "info": "Ambil & Kirim Siap diambil SO KSC/SO-00110 GUDANG Jakarta · Gudang Sukacita PROGRESS 0/120,42 DENIM TENCEL HITAM A SKU: KNWVN0015-L-HTMX-XA-XX-XX · Customer: Latihan 24 · Toko Kain Peserta 24 ROLL YANG HARUS DIAMBIL RL-35771 · LOT KSC/LOT-2611-0108 · lokasi — "
+      "ms": 7347,
+      "info": "Ambil & Kirim Siap diambil SO KSC/SO-00034 GUDANG Jakarta · Gudang Sukacita PROGRESS 0/117,8 DENIM TENCEL HITAM A SKU: KNWVN0015-L-HTMX-XA-XX-XX · Customer: Latihan 21 · Toko Kain Peserta 21 ROLL YANG HARUS DIAMBIL RL-35766 · LOT KSC/LOT-2611-0108 · lokasi — ·"
     },
     {
       "no": 13,
@@ -128,8 +128,8 @@
       "action": "Ketik nomor roll di kotak *Kode roll (scan / ketik lalu Enter)* → Enter → klik [Kirim Pengambilan]",
       "expect": "Kotak hijau 'Roll RL-… · panjang · Lot · Bin' lalu notifikasi 'Pengambilan tercatat · Terkumpul … dari …'; status tugas 'Pengemasan' (siap kirim), progres 100%",
       "ok": true,
-      "ms": 2714,
-      "info": "Roll RL-35771 110,11 m ≈ 120,42 yd Lot KSC/LOT-2611-0108 Bin bin_sim_wh_jkt_w05_l2_05 Grade A Jumlah diambil = panjang r → status packing 120.42/120.42"
+      "ms": 2507,
+      "info": "Roll RL-35766 107,72 m ≈ 117,8 yd Lot KSC/LOT-2611-0108 Bin bin_sim_wh_jkt_w05_l2_03 Grade A Jumlah diambil = panjang ro → status packing 117.8/117.8"
     },
     {
       "no": 14,
@@ -137,8 +137,8 @@
       "action": "Coba [Kirim Semua] → [Kirim Sekarang] (roll latihan belum bertag RFID)",
       "expect": "Ditolak: '1 roll belum bertag RFID aktif (RL-…) — … jalankan Final Loading Check dengan pengecualian berizin.' Gudang sendiri tidak berwenang [Override]",
       "ok": true,
-      "ms": 1226,
-      "info": "1 roll belum bertag RFID aktif (RL-35771) — cetak/verifikasi tag, atau jalankan Final Loading Check dengan pengecualian berizin. Coba lagi ×"
+      "ms": 1067,
+      "info": "1 roll belum bertag RFID aktif (RL-35766) — cetak/verifikasi tag, atau jalankan Final Loading Check dengan pengecualian berizin. Coba lagi ×"
     },
     {
       "no": 15,
@@ -146,7 +146,7 @@
       "action": "Masuk sebagai Manajer → Operasi Gudang › Barang Keluar → tugas SO → *Pemeriksaan Muat Akhir*: isi alasan → [Override]",
       "expect": "Kotak oranye 'OVERRIDE oleh Dewi Manager: … — berlaku untuk 1 roll saat ini.' (tercatat di audit)",
       "ok": true,
-      "ms": 12248,
+      "ms": 9068,
       "info": "OVERRIDE oleh Dewi Manager: Roll latihan belum bertag RFID, muatan dicek manual oleh supervisor — berlaku untuk 1 roll saat ini."
     },
     {
@@ -155,8 +155,8 @@
       "action": "Masuk lagi sebagai Gudang → tugas SO → [Kirim Semua] → [Kirim Sekarang]",
       "expect": "Notifikasi 'Barang terkirim · No. Surat Jalan KSC/SJ-…'; panel 'Terkirim Penuh!' + tombol [Surat Jalan]. Buku: jurnal pendapatan (Piutang D = Pendapatan K + PPN Keluaran K) dan jurnal HPP (HPP D = Persediaan K)",
       "ok": true,
-      "ms": 12992,
-      "info": "KSC/SJ-00109 · KSC/JE-00431 1-1200 D Rp 2.673.324 · 4-1000 K Rp 2.408.400 · 2-1200 K Rp 264.924 · KSC/JE-00432 5-1000 D Rp 1.734.048 · 1-1300 K Rp 1.734.048"
+      "ms": 10365,
+      "info": "KSC/SJ-00035 · KSC/JE-00130 1-1200 D Rp 2.615.160 · 4-1000 K Rp 2.356.000 · 2-1200 K Rp 259.160 · KSC/JE-00131 5-1000 D Rp 1.696.320 · 1-1300 K Rp 1.696.320"
     },
     {
       "no": 17,
@@ -164,8 +164,8 @@
       "action": "Masuk sebagai Admin Sales → Penjualan › Pesanan → cari nomor SO → [Lihat detail & aksi] → [Tandai Diterima (Selesai)]",
       "expect": "Pesan 'Order KSC/SO-… ditandai DITERIMA (Selesai).'; tahap SO 'Selesai'. Buku: tidak ada jurnal baru (piutang sudah lahir saat surat jalan)",
       "ok": true,
-      "ms": 10061,
-      "info": "Order KSC/SO-00110 ditandai DITERIMA (Selesai). · status done"
+      "ms": 8971,
+      "info": "Order KSC/SO-00034 ditandai DITERIMA (Selesai). · status done"
     },
     {
       "no": 18,
@@ -173,8 +173,8 @@
       "action": "Masuk dengan akun Finance peserta → Keuangan › Piutang › Penagihan & Penerimaan → cari baris SO",
       "expect": "Baris SO: Belum Lunas = total SO, Jatuh Tempo = tanggal surat jalan + 30 hari ('30h Lagi')",
       "ok": true,
-      "ms": 11522,
-      "info": "Latihan 24 · Toko Kain Peserta 24 Ayu Marketing KSC/SO-00110 Rp 2.673.324 17 Des 2026 30h Lagi"
+      "ms": 6156,
+      "info": "Latihan 21 · Toko Kain Peserta 21 Ayu Marketing KSC/SO-00034 Rp 2.615.160 17 Des 2026 30h Lagi"
     },
     {
       "no": 19,
@@ -182,8 +182,8 @@
       "action": "Keuangan › Beranda Keuangan › Perlu Tindakan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
       "expect": "Bilah hijau 'Faktur Pajak KSC/FKT-… diterbitkan untuk KSC/SO-…'. Buku: faktur TIDAK membuat jurnal; PPN faktur = PPN Keluaran di jurnal pengiriman",
       "ok": true,
-      "ms": 4123,
-      "info": "Faktur Pajak KSC/FKT-00002 diterbitkan untuk KSC/SO-00110. × · DPP nilai lain Rp 2.207.700 · PPN Rp 264.924 · jurnal faktur 0"
+      "ms": 2610,
+      "info": "Faktur Pajak KSC/FKT-00001 diterbitkan untuk KSC/SO-00034. × · DPP nilai lain Rp 2.159.667 · PPN Rp 259.160 · jurnal faktur 0"
     },
     {
       "no": 20,
@@ -191,8 +191,8 @@
       "action": "Keuangan › Piutang › Penagihan & Penerimaan → ikon dompet [Terima pembayaran] pada baris SO → isi *No. referensi* → [Simpan kwitansi] → [Ya, simpan]",
       "expect": "Pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat untuk Latihan NN …'; baris SO hilang. Buku: Kas Besar / Bank (D) = Piutang Usaha (K) = total SO",
       "ok": true,
-      "ms": 10164,
-      "info": "Kwitansi KSC/AR-00051 (Rp 2.673.324) dicatat untuk Latihan 24 · Toko Kain Peserta 24. × · KSC/JE-00434 1-1100 D Rp 2.673.324 · 1-1200 K Rp 2.673.324 · kas KSC/CASH-00052"
+      "ms": 8690,
+      "info": "Kwitansi KSC/AR-00018 (Rp 2.615.160) dicatat untuk Latihan 21 · Toko Kain Peserta 21. × · KSC/JE-00132 1-1100 D Rp 2.615.160 · 1-1200 K Rp 2.615.160 · kas KSC/CASH-00020"
     },
     {
       "no": 21,
@@ -200,8 +200,8 @@
       "action": "Keuangan › Kas & Bank › Rekonsiliasi → rekening BCA Operasional KSC → [Impor mutasi bank] → tempel baris mutasi transfer pelanggan → [Pratinjau] → [Impor]",
       "expect": "Pesan 'Impor BCA — Rekening Koran (CSV): 1 baris baru …'; baris mutasi masuk berstatus belum tercocok",
       "ok": true,
-      "ms": 4613,
-      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 2.673.324 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF E-BANKING CR SO-00110 A1 LATIHAN 24 TOKO KAIN PESERTA 24 SO-00110 Rp 2.673.324 Masuk · Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
+      "ms": 4096,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 2.615.160 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF E-BANKING CR SO-00034 A1 LATIHAN 21 TOKO KAIN PESERTA 21 SO-00034 Rp 2.615.160 Masuk · Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
     },
     {
       "no": 22,
@@ -209,8 +209,8 @@
       "action": "Cari baris mutasi (ketik 'A1 LATIHAN NN') → [Cocokkan] → pada kandidat transaksi kas kwitansi (nominal sama) klik [Tautkan]",
       "expect": "Pop-up 'Cocokkan mutasi bank' berisi kandidat KSC/CASH-… dengan nominal sama; sesudah Tautkan baris 'Tercocok'. Buku: tidak ada jurnal baru, kas kwitansi 'Terekonsiliasi'",
       "ok": true,
-      "ms": 7063,
-      "info": "mutasi Rp 2.673.324 ↔ KSC/CASH-00052 · terekonsiliasi Rp 2.673.324 · jurnal tetap 1"
+      "ms": 4547,
+      "info": "mutasi Rp 2.615.160 ↔ KSC/CASH-00020 · terekonsiliasi Rp 2.615.160 · jurnal tetap 1"
     },
     {
       "no": 23,
@@ -218,8 +218,8 @@
       "action": "Pusat Dokumen › tab Jejak Dokumen → ketik nomor SO → klik hasilnya",
       "expect": "Rantai: SO → tugas ambil → surat jalan → jurnal Pendapatan & HPP; SO 'Dilunasi oleh' kwitansi → transaksi kas → jurnal penerimaan",
       "ok": true,
-      "ms": 4492,
-      "info": "KSC/SO-00110 → KSC/SJ-00109 → KSC/JE-00431 → KSC/JE-00432 → KSC/AR-00051 → KSC/CASH-00052 → KSC/JE-00434 · faktur KSC/FKT-00002"
+      "ms": 3392,
+      "info": "KSC/SO-00034 → KSC/SJ-00035 → KSC/JE-00130 → KSC/JE-00131 → KSC/AR-00018 → KSC/CASH-00020 → KSC/JE-00132 · faktur KSC/FKT-00001"
     },
     {
       "no": 24,
@@ -227,8 +227,8 @@
       "action": "Cek buku akhir: semua jurnal SO seimbang; piutang SO kembali nol; nilai SO = SJ = faktur = kwitansi = kas",
       "expect": "1-1200 Piutang Usaha: D (pengiriman) − K (kwitansi) = 0; laba kotor = Pendapatan − HPP",
       "ok": true,
-      "ms": 717,
-      "info": "KSC/JE-00431 1-1200 D Rp 2.673.324 · 4-1000 K Rp 2.408.400 · 2-1200 K Rp 264.924 | KSC/JE-00432 5-1000 D Rp 1.734.048 · 1-1300 K Rp 1.734.048 | KSC/JE-00434 1-1100 D Rp 2.673.324 · 1-1200 K Rp 2.673.324 · piutang SO Rp 0 · laba kotor Rp 674.352 · faktur total Rp 2.673.324"
+      "ms": 494,
+      "info": "KSC/JE-00130 1-1200 D Rp 2.615.160 · 4-1000 K Rp 2.356.000 · 2-1200 K Rp 259.160 | KSC/JE-00131 5-1000 D Rp 1.696.320 · 1-1300 K Rp 1.696.320 | KSC/JE-00132 1-1100 D Rp 2.615.160 · 1-1200 K Rp 2.615.160 · piutang SO Rp 0 · laba kotor Rp 659.680 · faktur total Rp 2.615.160"
     }
   ],
   "http_5xx": [],
@@ -237,11 +237,11 @@
     "Failed to load resource: the server responded with a status of 400 (Bad Request)"
   ],
   "notes": [
-    "Peserta 24 · Latihan 24 · Toko Kain Peserta 24 · plafon Rp 13.000.000 · eksposur awal Rp 6.585.630 · produk DENIM TENCEL HITAM A (KNWVN0015-L-HTMX-XA-XX-XX) Rp 20.000/yard · 533 roll bebas",
-    "SO1 KSC/SO-00110: 120.42 yard × Rp 20.000 = DPP Rp 2.408.400 · PPN Rp 264.924 · total Rp 2.673.324 · roll RL-35771",
-    "SO2 KSC/SO-00111 (lewat plafon) memakai izin kredit cro_eae72997b4ce · sisa izin Rp 0",
-    "SJ KSC/SJ-00109 · KSC/JE-00431 1-1200 D Rp 2.673.324 · 4-1000 K Rp 2.408.400 · 2-1200 K Rp 264.924 | KSC/JE-00432 5-1000 D Rp 1.734.048 · 1-1300 K Rp 1.734.048 · laba kotor Rp 674.352",
-    "RINGKAS A1 KSC/SO-00110: DPP Rp 2.408.400 + PPN Rp 264.924 = Rp 2.673.324 · HPP Rp 1.734.048 · laba kotor Rp 674.352 · SJ KSC/SJ-00109 · KSC/FKT-00002 · KSC/AR-00051 · KSC/CASH-00052 · SO2 KSC/SO-00111",
-    "respons 4xx di layar: 400 POST /api/outbound/tasks/wms_15951a6c1676/dispatch (warehouse@kainnusantara.id)"
+    "Peserta 21 · Latihan 21 · Toko Kain Peserta 21 · plafon Rp 13.000.000 · eksposur awal Rp 6.636.968 · produk DENIM TENCEL HITAM A (KNWVN0015-L-HTMX-XA-XX-XX) Rp 20.000/yard · 538 roll bebas",
+    "SO1 KSC/SO-00034: 117.8 yard × Rp 20.000 = DPP Rp 2.356.000 · PPN Rp 259.160 · total Rp 2.615.160 · roll RL-35766",
+    "SO2 KSC/SO-00035 (lewat plafon) memakai izin kredit cro_99edb15ddbec · sisa izin Rp 0",
+    "SJ KSC/SJ-00035 · KSC/JE-00130 1-1200 D Rp 2.615.160 · 4-1000 K Rp 2.356.000 · 2-1200 K Rp 259.160 | KSC/JE-00131 5-1000 D Rp 1.696.320 · 1-1300 K Rp 1.696.320 · laba kotor Rp 659.680",
+    "RINGKAS A1 KSC/SO-00034: DPP Rp 2.356.000 + PPN Rp 259.160 = Rp 2.615.160 · HPP Rp 1.696.320 · laba kotor Rp 659.680 · SJ KSC/SJ-00035 · KSC/FKT-00001 · KSC/AR-00018 · KSC/CASH-00020 · SO2 KSC/SO-00035",
+    "respons 4xx di layar: 400 POST /api/outbound/tasks/wms_8a68d5dbca3a/dispatch (warehouse@kainnusantara.id)"
   ]
 }

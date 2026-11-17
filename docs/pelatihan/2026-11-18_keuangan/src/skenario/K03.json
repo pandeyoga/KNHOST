@@ -13,7 +13,7 @@
  ],
  "peran": "Manajer (pelatih) · Finance (akun peserta)",
  "menit": 15,
- "data_awal": "Profil PT Sukacita Textile (NPWP 01.234.567.8-901.000, PKP, kode KSC) dan satu pesanan penjualan Sukacita yang sudah terkirim (nomor dari pelatih, contoh KSC/SO-00072). Tidak ada pengaturan yang diubah.",
+ "data_awal": "Profil PT Sukacita Textile (NPWP 01.234.567.8-901.000, PKP, kode KSC) dan satu pesanan penjualan Sukacita yang sudah terkirim (nomor dari pelatih, contoh KSC/SO-00033). Tidak ada pengaturan yang diubah.",
  "alur": [
   {
    "peran": "Manajer",
@@ -143,6 +143,6 @@
  "catatan_pelatih": "Finance tidak punya menu Pengaturan › Perusahaan (PT), Aturan Keuangan & Pajak, maupun Tutup Buku; langkah 1–3, 6, 7 diperagakan pelatih dengan akun Manajer, peserta mengerjakan langkah 4–5. Butir Kesiapan PT yang kurang (alamat lengkap, kop surat & logo, penanda tangan, pemetaan akun) adalah data PT nyata yang perlu dilengkapi pemilik — jangan diisi saat kelas. Hubungkan ke Modul 4 (F18 Tutup Buku). Rincian PT yang dibuka Manajer kini menulis 'Riwayat perubahan hanya bisa dibaca pemegang akses Riwayat Audit.' (dulu 'Belum ada perubahan tercatat' walau riwayatnya ada).",
  "uji": {
   "berkas": "uji/konfigurasi/K03_profil_pt_periode.js",
-  "peserta_uji": "11"
+  "peserta_uji": "01"
  }
 }

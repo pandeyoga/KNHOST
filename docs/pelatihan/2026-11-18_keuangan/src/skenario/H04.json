@@ -117,6 +117,6 @@
  "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Perbaikan 17 Nov: (1) pop-up Bayar gaji kini mematikan tombol bila tanggal bayar sebelum tanggal jurnal gaji — dulu ditolak server sesudah konfirmasi; (2) slip PDF menulis masa \"Oktober 2026\", dulu \"2026-10\". Kop slip baru berisi nama PT (tanpa alamat, NPWP, logo) — untuk pemilik: perlukah kop lengkap seperti faktur? Setoran BPJS reguler dan sisa PPh 21 tetap peragaan pelatih (F15).",
  "uji": {
   "berkas": "uji/sdm/H04_bayar_gaji_slip.js",
-  "peserta_uji": "54"
+  "peserta_uji": "01"
  }
 }

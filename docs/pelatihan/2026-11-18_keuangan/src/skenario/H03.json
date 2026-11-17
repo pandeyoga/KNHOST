@@ -120,6 +120,6 @@
  "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Keputusan penyelenggaraan: tiap peserta memakai proses SUSULAN masa Oktober 2026 untuk karyawan barunya. Alasannya: proses reguler per PT per masa hanya satu (Oktober sudah dipakai F15; November adalah penggajian nyata akhir bulan), dan gaji masa November bertanggal buku 30 Nov sehingga belum bisa dibayar pada hari pelatihan. Proses susulan memuat SEMUA masukan disahkan yang belum terpakai: sahkan masukan satu peserta, minta peserta itu langsung [[Hitung gaji]], baru sahkan masukan peserta berikutnya. Peragaan proses reguler (BPJS, lembur, absensi) memakai proses reguler Oktober yang sudah diposting (KSC/PAY-00001) — buka rinciannya saja.",
  "uji": {
   "berkas": "uji/sdm/H03_proses_gaji.js",
-  "peserta_uji": "54"
+  "peserta_uji": "01"
  }
 }

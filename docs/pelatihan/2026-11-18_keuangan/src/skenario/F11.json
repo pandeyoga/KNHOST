@@ -12,7 +12,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 20,
- "data_awal": "Kartu Peserta › Tagihan pemasok untuk dibayar: nomor tagihan, PO, dan faktur pemasok (contoh: VB-00004, KSC/PO-00004, INV-LTH02-…, total Rp 1.864.800 = DPP Rp 1.680.000 + PPN Rp 184.800). Pemasok 'Latihan NN · Pemasok Grey Peserta NN'. Barang sudah diterima dan tagihan sudah terposting.",
+ "data_awal": "Kartu Peserta › Tagihan pemasok untuk dibayar: nomor tagihan, PO, dan faktur pemasok (contoh: VB-00002, KSC/PO-00002, INV-LTH02-…, total Rp 1.864.800 = DPP Rp 1.680.000 + PPN Rp 184.800). Pemasok 'Latihan NN · Pemasok Grey Peserta NN'. Barang sudah diterima dan tagihan sudah terposting.",
  "alur": [
   {
    "peran": "Manajer",
@@ -127,6 +127,6 @@
  "catatan_pelatih": "Jalankan F11 sebelum F12: wizard kontrabon menawarkan semua tagihan terbuka pemasok, jadi bila F11 belum dibayar peserta harus menghapus centang tagihan itu. Finance boleh melihat dan membayar tagihan; membuat dan membatalkan tagihan tetap wewenang Manajer (sejak 17 Nov tombol batalkan tagihan tidak lagi tampil untuk Finance). Di tab GR/IR ada pita kuning 'Akun “Selisih harga pembelian” belum diatur untuk PT ini…' — data acuan belum memetakan akun itu; tidak menghalangi latihan. Rincian tagihan menulis 'Belum ada kedatangan (GRN) tertutup…' karena data latihan memakai jalur penerimaan lama — normal. Kalender *Tanggal bayar* mengizinkan tanggal bulan depan; minta peserta memakai tanggal hari ini. Semua peserta membayar dari BCA Operasional KSC yang sama, jadi saldo dan total hutang bergerak selama sesi.",
  "uji": {
   "berkas": "uji/F11_bayar_tagihan.js",
-  "peserta_uji": "04"
+  "peserta_uji": "01"
  }
 }

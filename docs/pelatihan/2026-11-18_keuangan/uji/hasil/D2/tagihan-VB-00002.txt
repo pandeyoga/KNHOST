@@ -16,7 +16,7 @@ DARI                                                                            
 Sukacita Textile                                                           Latihan 01 · Pemasok Grey Peserta 01
 Jl. Soekarno Hatta No. 100, Bandung                                               Kawasan Industri Majalaya Blok 1
                                                                                                    622277700001
-No. Faktur           INV-LTH01-BF02B                             Ref PO              KSC/PO-00002
+No. Faktur           INV-LTH01-0464D                             Ref PO              KSC/PO-00002
 Supplier
 Jatuh Tempo          17 Des 2026                                 NPWP Supplier       -
 Status Bayar         Lunas

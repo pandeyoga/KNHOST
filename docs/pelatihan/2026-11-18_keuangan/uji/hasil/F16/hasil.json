@@ -2,7 +2,7 @@
   "code": "F16",
   "title": "Buku Besar & Jejak Dokumen — menelusuri jurnal transaksi",
   "ok": true,
-  "at": "2026-11-17T09:17:48.995Z",
+  "at": "2026-11-17T11:36:10.320Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,44 +11,44 @@
       "action": "Masuk dengan akun peserta → menu Akuntansi & Pajak › Buku Besar (tab Jurnal)",
       "expect": "Kartu atas: TOTAL JURNAL, TOTAL DEBIT = TOTAL KREDIT, STATUS BUKU 'Seimbang'. Tidak ada tombol [Jurnal Baru]/[Sinkronkan] — Finance hanya melihat",
       "ok": true,
-      "ms": 5341,
-      "info": "debit Rp 23.503.001.302 · kredit Rp 23.503.001.302 · Seimbang (buku: D Rp 23.503.001.302 / K Rp 23.503.001.302)"
+      "ms": 5848,
+      "info": "debit Rp 23.468.851.660 · kredit Rp 23.468.851.660 · Seimbang (buku: D Rp 23.468.851.660 / K Rp 23.468.851.660)"
     },
     {
       "no": 2,
       "role": "Finance",
-      "action": "Ketik nomor kwitansi KSC/AR-00008 di kotak *Cari nomor jurnal / keterangan…*",
-      "expect": "Tinggal satu baris: KSC/JE-00064 · sumber 'Transaksi Kas' KSC/CASH-00013 · keterangan 'Kas masuk · Penerimaan KSC/AR-00008 — Latihan 02 …' · nilai Rp 3.287.820 · Terposting",
+      "action": "Ketik nomor kwitansi KSC/AR-00005 di kotak *Cari nomor jurnal / keterangan…*",
+      "expect": "Tinggal satu baris: KSC/JE-00043 · sumber 'Transaksi Kas' KSC/CASH-00011 · keterangan 'Kas masuk · Penerimaan KSC/AR-00005 — Latihan 01 …' · nilai Rp 3.405.758 · Terposting",
       "ok": true,
-      "ms": 1003,
-      "info": "KSC/JE-00064 17 Nov 2026 KasKSC/CASH-00013 Kas in · Penerimaan KSC/AR-00008 — Latihan 02 · Toko Kain Peserta 02 · Kode KN-ZJGFP Rp 3.287.820 Terposting"
+      "ms": 1136,
+      "info": "KSC/JE-00043 17 Nov 2026 KasKSC/CASH-00011 Kas masuk · Penerimaan KSC/AR-00005 — Latihan 01 · Toko Kain Peserta 01 · Kode KN-XEYS2 Rp 3.405.758 Terposting"
     },
     {
       "no": 3,
       "role": "Finance",
-      "action": "Klik baris KSC/JE-00064 → pop-up rincian jurnal",
-      "expect": "Dua baris: 1-1100 Kas Besar / Bank DEBIT Rp 3.287.820 · 1-1200 Piutang Usaha KREDIT Rp 3.287.820; Total debit = total kredit; 'Dokumen sumber Transaksi Kas KSC/CASH-00013'",
+      "action": "Klik baris KSC/JE-00043 → pop-up rincian jurnal",
+      "expect": "Dua baris: 1-1100 Kas Besar / Bank DEBIT Rp 3.405.758 · 1-1200 Piutang Usaha KREDIT Rp 3.405.758; Total debit = total kredit; 'Dokumen sumber Transaksi Kas KSC/CASH-00011'",
       "ok": true,
-      "ms": 1760,
-      "info": "D 1-1100 Rp 3.287.820 / K 1-1200 Rp 3.287.820 · Dokumen sumber Transaksi Kas / Bank KSC/CASH-00013 Buka Dokumen Sumber"
+      "ms": 1796,
+      "info": "D 1-1100 Rp 3.405.758 / K 1-1200 Rp 3.405.758 · Dokumen sumber Transaksi Kas / Bank KSC/CASH-00011 Buka Dokumen Sumber"
     },
     {
       "no": 4,
       "role": "Finance",
-      "action": "Ganti isi *Cari* dengan nomor SO KSC/SO-00015 → buka jurnal 'Pendapatan Kirim'",
-      "expect": "Dua jurnal surat jalan KSC/SJ-00016: Pendapatan Kirim KSC/JE-00062 (Dr 1-1200 Piutang Rp 3.287.820 · Cr 4-1000 Pendapatan + Cr 2-1200 PPN Keluaran) dan HPP Kirim KSC/JE-00063 (Dr 5-1000 HPP · Cr 1-1300 Persediaan)",
+      "action": "Ganti isi *Cari* dengan nomor SO KSC/SO-00009 → buka jurnal 'Pendapatan Kirim'",
+      "expect": "Dua jurnal surat jalan KSC/SJ-00010: Pendapatan Kirim KSC/JE-00041 (Dr 1-1200 Piutang Rp 3.405.758 · Cr 4-1000 Pendapatan + Cr 2-1200 PPN Keluaran) dan HPP Kirim KSC/JE-00042 (Dr 5-1000 HPP · Cr 1-1300 Persediaan)",
       "ok": true,
-      "ms": 2581,
-      "info": "KSC/JE-00062: D piutang Rp 3.287.820 = K pendapatan Rp 2.962.000 + K PPN Rp 325.820 · KSC/JE-00063: HPP Rp 2.132.640"
+      "ms": 2677,
+      "info": "KSC/JE-00041: D piutang Rp 3.405.758 = K pendapatan Rp 3.068.250 + K PPN Rp 337.508 · KSC/JE-00042: HPP Rp 2.209.140"
     },
     {
       "no": 5,
       "role": "Finance",
       "action": "Tab [Buku Besar] → *Akun*: ketik '1-1200', pilih '1-1200 — Piutang Usaha'",
-      "expect": "Daftar mutasi Piutang Usaha memuat KSC/JE-00062 di kolom Debit dan KSC/JE-00064 di kolom Kredit (nilai sama → piutang SO ini nol); 'Saldo akhir' = saldo akun 1-1200 di buku",
+      "expect": "Daftar mutasi Piutang Usaha memuat KSC/JE-00041 di kolom Debit dan KSC/JE-00043 di kolom Kredit (nilai sama → piutang SO ini nol); 'Saldo akhir' = saldo akun 1-1200 di buku",
       "ok": true,
-      "ms": 2213,
-      "info": "KSC/JE-00062 debit · KSC/JE-00064 kredit · Saldo akhir Rp 61.237.501 (buku 1-1200 Rp 61.237.501)"
+      "ms": 2130,
+      "info": "KSC/JE-00041 debit · KSC/JE-00043 kredit · Saldo akhir Rp 44.243.401 (buku 1-1200 Rp 44.243.401)"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Tab [Neraca Saldo]",
       "expect": "Semua akun bersaldo; baris Total: kolom Debit = kolom Kredit",
       "ok": true,
-      "ms": 866,
-      "info": "debit Rp 23.503.001.302 = kredit Rp 23.503.001.302"
+      "ms": 887,
+      "info": "debit Rp 23.468.851.660 = kredit Rp 23.468.851.660"
     },
     {
       "no": 7,
@@ -65,26 +65,26 @@
       "action": "Tab hub [Bagan Akun] → *Cari kode / nama akun…*: ketik 'piutang'",
       "expect": "Akun 1-1200 Piutang Usaha · global · 'Akun kontrol' · 'Dipakai Sukacita' · Detail · Debit. Finance hanya melihat: tidak ada [Tambah Akun], ikon ubah/hapus",
       "ok": true,
-      "ms": 1500,
+      "ms": 1527,
       "info": "1-1200 Piutang Usaha global Akun kontrol Dipakai Sukacita Detail · Debit "
     },
     {
       "no": 8,
       "role": "Finance",
-      "action": "Menu Pusat Dokumen › tab Jejak Dokumen → ketik KSC/SO-00015 di *Cari dokumen* → klik hasilnya → geser 'Rantai dokumen' ke kanan",
-      "expect": "Rantai lengkap: KSC/SO-00015 → tugas ambil → surat jalan KSC/SJ-00016 → jurnal KSC/JE-00062 & KSC/JE-00063; KSC/SO-00015 'Dilunasi oleh' kwitansi KSC/AR-00008 → transaksi kas KSC/CASH-00013 → jurnal KSC/JE-00064. Nilai SO = kwitansi = kas = jurnal penerimaan = Rp 3.287.820",
+      "action": "Menu Pusat Dokumen › tab Jejak Dokumen → ketik KSC/SO-00009 di *Cari dokumen* → klik hasilnya → geser 'Rantai dokumen' ke kanan",
+      "expect": "Rantai lengkap: KSC/SO-00009 → tugas ambil → surat jalan KSC/SJ-00010 → jurnal KSC/JE-00041 & KSC/JE-00042; KSC/SO-00009 'Dilunasi oleh' kwitansi KSC/AR-00005 → transaksi kas KSC/CASH-00011 → jurnal KSC/JE-00043. Nilai SO = kwitansi = kas = jurnal penerimaan = Rp 3.405.758",
       "ok": true,
-      "ms": 6235,
-      "info": "DOKUMEN TERKAIT 8 RELASI 8 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 3.287.820"
+      "ms": 6528,
+      "info": "DOKUMEN TERKAIT 8 RELASI 8 KEDALAMAN 4 STATUS DOKUMEN Selesai NILAI DOKUMEN Rp 3.405.758"
     },
     {
       "no": 9,
       "role": "Finance",
-      "action": "Pada kotak jurnal KSC/JE-00064 klik ikon buka (↗)",
-      "expect": "Layar pindah ke Buku Besar dan pop-up rincian KSC/JE-00064 langsung terbuka; tombol [Kembali ke Jejak KSC/SO-00015] membawa kembali ke jejak",
+      "action": "Pada kotak jurnal KSC/JE-00043 klik ikon buka (↗)",
+      "expect": "Layar pindah ke Buku Besar dan pop-up rincian KSC/JE-00043 langsung terbuka; tombol [Kembali ke Jejak KSC/SO-00009] membawa kembali ke jejak",
       "ok": true,
-      "ms": 1934,
-      "info": "KSC/JE-00064 → kembali ke KSC/SO-00015"
+      "ms": 2115,
+      "info": "KSC/JE-00043 → kembali ke KSC/SO-00009"
     }
   ],
   "http_5xx": [],
@@ -92,6 +92,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 02 · KSC/SO-00015 (Rp 3.287.820) · KSC/SJ-00016 · KSC/AR-00008 · jurnal KSC/JE-00062, KSC/JE-00063, KSC/JE-00064"
+    "Peserta 01 · KSC/SO-00009 (Rp 3.405.758) · KSC/SJ-00010 · KSC/AR-00005 · jurnal KSC/JE-00041, KSC/JE-00042, KSC/JE-00043"
   ]
 }

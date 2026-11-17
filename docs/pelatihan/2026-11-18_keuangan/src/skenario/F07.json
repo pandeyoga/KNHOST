@@ -179,6 +179,6 @@
  "catatan_pelatih": "Langkah 7 dikerjakan pelatih dengan akun manager@ (sandi demo12345) untuk tiap peserta; minta peserta menyebut nomor PD atau LPJ-nya. Finance tidak bisa menyetujui PD maupun LPJ: jenjang Pimpinan dan Bagian Keuangan dipegang admin, sedangkan LPJ disetujui Manajer. Sesudah pencairan, uang diserahkan ke karyawan; tombol [[Tanda Terima]] mencetak bukti serah. Bila LPJ ditolak Manajer, pembuat LPJ klik [[Perbaiki & Ajukan Lagi]]. Kas Toko KSC dipakai bersama semua peserta, jadi saldo kartunya terus bergerak; yang dicek adalah baris mutasi milik peserta. LPJ yang diketik Finance tercatat atas nama pemohon PD (perbaikan 17 Nov). Jangan menyalakan 'Lampiran wajib' di Pengaturan selama latihan, kecuali ingin menunjukkan penolakan tanpa bukti.",
  "uji": {
   "berkas": "uji/F07_kas_kecil.js",
-  "peserta_uji": "35"
+  "peserta_uji": "01"
  }
 }

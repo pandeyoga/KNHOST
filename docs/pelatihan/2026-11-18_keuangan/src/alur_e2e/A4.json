@@ -128,7 +128,7 @@
    "aksi": "Setor PPh 21 dan BPJS masa itu (F15, H04 langkah 6).",
    "isi": "",
    "hasil": "Sisa kewajiban turun sebesar setoran; riwayat setoran bertambah.",
-   "gambar": "uji/hasil/ksdm01/F15/10-setoran-tercatat.png"
+   "gambar": "uji/hasil/F15/10-setoran-tercatat.png"
   }
  ],
  "jurnal_per_tahap": [
@@ -184,7 +184,7 @@
  ],
  "cek_buku": [
   "Sesudah satu daur selesai: 2-1600 Hutang Gaji, 2-1700 Hutang BPJS, dan 2-1800 Hutang PPh 21 dari masa itu bersaldo nol; 6-1000 dan 6-1100 menyimpan beban masa gaji.",
-  "Contoh peserta 54: KSC/JE-00484 (gaji, 31 Okt 2026) · KSC/JE-00485 (bayar) · KSC/JE-00486 (setoran PPh 21)."
+  "Contoh peserta 01: KSC/JE-00161 (gaji, 31 Okt 2026) · KSC/JE-00162 (bayar) · KSC/JE-00163 (setoran PPh 21)."
  ],
  "kesalahan_umum": [
   "Mengira slip gaji bisa diketik. Slip selalu hasil hitung proses gaji dari data dan aturan.",
@@ -194,6 +194,6 @@
  "catatan_pelatih": "K-SDM-01 (keputusan pemilik 17 Nov 2026): SDM dipegang Finance. Finance menyiapkan dan memposting; Manajer mengesahkan dan membatalkan. Gambar langkah 6 dari uji F15 peserta 55 sesudah perubahan izin (Finance kini membuka hub Penggajian di tab Proses Gaji, lalu tab Setoran & Pajak). Angka contoh jurnal reguler dari data acuan KSC/PAY-00001.",
  "uji": {
   "berkas": "uji/sdm/K09_konfigurasi_sdm.js · uji/sdm/H01_karyawan_baru.js … H04_bayar_gaji_slip.js · uji/F15_setoran_gaji.js",
-  "peserta_uji": "54 (K09, H01–H04) · 55 (F15)"
+  "peserta_uji": "01 (K09, H01–H04, F15)"
  }
 }

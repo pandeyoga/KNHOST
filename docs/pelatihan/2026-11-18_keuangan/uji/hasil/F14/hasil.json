@@ -2,7 +2,7 @@
   "code": "F14",
   "title": "Pesanan Sample berbayar — terima uang & setujui bayar",
   "ok": true,
-  "at": "2026-11-17T09:17:07.090Z",
+  "at": "2026-11-17T11:30:20.777Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,8 +11,8 @@
       "action": "Login akun Finance peserta → Meja Finance. Pada kartu [[Sample berbayar menunggu ACC bayar]] cari nomor SOS",
       "expect": "Baris SOS peserta: pelanggan Butik Sample, nilai = total sample, tombol [[Tinjau]]",
       "ok": true,
-      "ms": 4112,
-      "info": "KSC/SOS-00002 Latihan 02 · Butik Sample Peserta 02 ACC bayar sample berbayar baru menunggu < 1 hari · masuk 17 Nov, 15.50 Rp 83.250 Tinjau"
+      "ms": 4137,
+      "info": "KSC/SOS-00001 Latihan 01 · Butik Sample Peserta 01 ACC bayar sample berbayar baru menunggu < 1 hari · masuk 17 Nov, 18.07 Rp 83.250 Tinjau"
     },
     {
       "no": 2,
@@ -20,7 +20,7 @@
       "action": "Klik [[Tinjau]]",
       "expect": "Penjualan › Pesanan Sample terbuka di SOS itu: BERBAYAR, Menunggu ACC bayar, rincian Subtotal · PPN · Total, catatan \"Pembayaran belum disetujui Finance/Admin Sample.\"",
       "ok": true,
-      "ms": 602,
+      "ms": 610,
       "info": "Subtotal Rp 75.000 PPN 12% Rp 8.250 Total Rp 83.250"
     },
     {
@@ -29,17 +29,17 @@
       "action": "Pastikan uang sudah masuk: Penjualan › Pelanggan, cari \"Butik Sample Peserta\" + nomor peserta, buka pelanggan → [[Terima pembayaran]]",
       "expect": "Form Terima pembayaran: pelanggan Butik Sample, tagihan terbuka = SOS (Belum lunas = total sample)",
       "ok": true,
-      "ms": 3106,
-      "info": "KSC/SOS-00002 Belum lunas Rp 83.250 Rp 83.250"
+      "ms": 3163,
+      "info": "KSC/SOS-00001 Belum lunas Rp 83.250 Rp 83.250"
     },
     {
       "no": 4,
       "role": "Finance",
-      "action": "Isi *Nominal diterima* Rp 83.250 · *Cara bayar* Transfer bank · *Rekening penerima* BCA Operasional KSC · *No. referensi* TRF-SAMPLE-02 · alokasi [[Tertua dulu]] → [[Simpan kwitansi]] → [[Ya, simpan]]",
+      "action": "Isi *Nominal diterima* Rp 83.250 · *Cara bayar* Transfer bank · *Rekening penerima* BCA Operasional KSC · *No. referensi* TRF-SAMPLE-01 · alokasi [[Tertua dulu]] → [[Simpan kwitansi]] → [[Ya, simpan]]",
       "expect": "Kwitansi KSC/AR-… tercatat; SOS berstatus bayar Lunas",
       "ok": true,
-      "ms": 3591,
-      "info": "konfirmasi \"Catat penerimaan Rp 83.250 dari Latihan 02 · Butik Sample Peserta 02 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?\" → KSC/AR-00030 · SOS waiting_approval/paid"
+      "ms": 3789,
+      "info": "konfirmasi \"Catat penerimaan Rp 83.250 dari Latihan 01 · Butik Sample Peserta 01 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita?\" → KSC/AR-00025 · SOS waiting_approval/paid"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Penjualan › Pesanan Sample, cari nomor SOS, pilih barisnya → [[Setujui Pembayaran]]",
       "expect": "Bilah hijau \"KSC/SOS-…: pembayaran disetujui.\"; status Siap ke gudang; \"Pembayaran disetujui <nama Anda>\"",
       "ok": true,
-      "ms": 1629,
-      "info": "KSC/SOS-00002: pembayaran disetujui. · DB approved oleh Peserta Keuangan 02 (Rp 83.250)"
+      "ms": 2904,
+      "info": "KSC/SOS-00001: pembayaran disetujui. · DB approved oleh Peserta Keuangan 01 (Rp 83.250)"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Cek buku: jurnal kwitansi sample",
       "expect": "Kas Besar / Bank (D) = Uang Muka Pelanggan (K) = total sample (barang belum dikirim → uang muka, belum pendapatan); persetujuan bayar tidak membuat jurnal",
       "ok": true,
-      "ms": 1169,
-      "info": "KSC/JE-00182 seimbang D=K=83250 [1-1100 Kas Besar / Bank D 83250 · 2-1400 Uang Muka Pelanggan K 83250] · jurnal atas SOS: 0"
+      "ms": 1293,
+      "info": "KSC/JE-00152 seimbang D=K=83250 [1-1100 Kas Besar / Bank D 83250 · 2-1400 Uang Muka Pelanggan K 83250] · jurnal atas SOS: 0"
     }
   ],
   "http_5xx": [],
@@ -65,6 +65,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 02 · KSC/SOS-00002 · Latihan 02 · Butik Sample Peserta 02 · Rp 83.250 · waiting_approval/awaiting_approval"
+    "Peserta 01 · KSC/SOS-00001 · Latihan 01 · Butik Sample Peserta 01 · Rp 83.250 · waiting_approval/awaiting_approval"
   ]
 }

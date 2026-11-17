@@ -14,7 +14,7 @@
  ],
  "peran": "Gudang · Manajer · Admin · Kepala Gudang · MD Quality · Finance (akun peserta)",
  "menit": 60,
- "data_awal": "Pemasok 'Latihan NN · Pemasok Grey Peserta NN' (termin NET30) dan akun Finance peserta. Barang: Grey Woven Katun Poplin (DMO-GRY-WVN-001, warna Natural) 7.500 yard (75 roll × 100 yard) × Rp 14.000 = DPP Rp 105.000.000, PPN Rp 11.550.000, total Rp 116.550.000, dikirim ke Gudang Sukacita Jakarta. Langkah Gudang, Manajer, Admin, Kepala Gudang, dan MD Quality diperagakan pelatih; peserta mengerjakan langkah Finance. Nomor dokumen berbeda per peserta (contoh peserta 34: PR-00009, KSC/PO-00047, VB-00046, KSC/CB-00006).",
+ "data_awal": "Pemasok 'Latihan NN · Pemasok Grey Peserta NN' (termin NET30) dan akun Finance peserta. Barang: Grey Woven Katun Poplin (DMO-GRY-WVN-001, warna Natural) 7.500 yard (75 roll × 100 yard) × Rp 14.000 = DPP Rp 105.000.000, PPN Rp 11.550.000, total Rp 116.550.000, dikirim ke Gudang Sukacita Jakarta. Langkah Gudang, Manajer, Admin, Kepala Gudang, dan MD Quality diperagakan pelatih; peserta mengerjakan langkah Finance. Nomor dokumen berbeda per peserta (contoh peserta 31: PR-00006, KSC/PO-00012, VB-00012, KSC/CB-00001).",
  "alur": [
   {
    "peran": "Gudang",
@@ -160,7 +160,7 @@
    "menu": "Pop-up Buat Permintaan Pembelian",
    "aksi": "Isi jumlah, lokasi, dan pemasok. Klik [[Simpan PR]].",
    "isi": "*Qty*: 7500 · *Roll*: 75 · *Est. Harga*: 14000 · *Lokasi kirim*: Jakarta · *Supplier Preferensi*: klik \"Tampilkan semua supplier\", pilih Latihan NN · Pemasok Grey Peserta NN · *Alasan*: stok grey untuk celup · biarkan centang *Langsung ajukan persetujuan*",
-   "hasil": "Total Estimasi Rp 105.000.000. Sesudah disimpan muncul \"PR-… dibuat.\" dan PR berstatus Menunggu Persetujuan (contoh peserta 34: PR-00009).",
+   "hasil": "Total Estimasi Rp 105.000.000. Sesudah disimpan muncul \"PR-… dibuat.\" dan PR berstatus Menunggu Persetujuan (contoh peserta 31: PR-00006).",
    "gambar": "uji/hasil/A2/03-gudang-isi-pr.png"
   },
   {
@@ -187,7 +187,7 @@
    "menu": "Rincian PR",
    "aksi": "Klik [[Konversi ke PO]]. Periksa pemasok dan lokasi, lalu klik [[Buat PO]].",
    "isi": "*Supplier*: terisi dari supplier preferensi · *Lokasi kirim*: Jakarta · *Estimasi tanggal terima*: opsional",
-   "hasil": "PR berstatus Jadi PO dengan \"PO terkait: KSC/PO-00047\" (contoh peserta 34). PO bernilai Rp 116.550.000 (DPP Rp 105.000.000 + PPN Rp 11.550.000) dan menunggu persetujuan.",
+   "hasil": "PR berstatus Jadi PO dengan \"PO terkait: KSC/PO-00012\" (contoh peserta 31). PO bernilai Rp 116.550.000 (DPP Rp 105.000.000 + PPN Rp 11.550.000) dan menunggu persetujuan.",
    "gambar": "uji/hasil/A2/08-manajer-konversi-po.png"
   },
   {
@@ -241,7 +241,7 @@
    "menu": "Kualitas › SPK Inspeksi",
    "aksi": "Masuk sebagai Kepala Gudang (wh.admin@). Ketik nomor SPK, lalu buka SPK-nya.",
    "isi": "",
-   "hasil": "SPK Inspeksi Penerimaan PO berstatus Draf berisi 75 roll (contoh peserta 34: KSC/INS-00052).",
+   "hasil": "SPK Inspeksi Penerimaan PO berstatus Draf berisi 75 roll (contoh peserta 31: KSC/INS-00011).",
    "gambar": "uji/hasil/A2/18-kepala-gudang-daftar-spk.png"
   },
   {
@@ -295,7 +295,7 @@
    "menu": "Pop-up Tagihan baru",
    "aksi": "Klik [[Kirim & Posting]].",
    "isi": "",
-   "hasil": "Pesan \"Tagihan VB-… dibuat — langsung terposting (cocok bersih).\" Rincian: Total Rp 116.550.000, PPN Masukan Rp 11.550.000, Sisa Hutang Rp 116.550.000 (contoh peserta 34: VB-00046).",
+   "hasil": "Pesan \"Tagihan VB-… dibuat — langsung terposting (cocok bersih).\" Rincian: Total Rp 116.550.000, PPN Masukan Rp 11.550.000, Sisa Hutang Rp 116.550.000 (contoh peserta 31: VB-00012).",
    "gambar": "uji/hasil/A2/26-tagihan-terposting.png"
   },
   {
@@ -322,7 +322,7 @@
    "menu": "Wizard Kontrabon",
    "aksi": "Centang *Ajukan langsung*, lalu klik [[Terbitkan kontrabon]].",
    "isi": "",
-   "hasil": "Bilah hijau \"Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp 116.550.000.\"; status Diajukan (contoh peserta 34: KSC/CB-00006).",
+   "hasil": "Bilah hijau \"Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp 116.550.000.\"; status Diajukan (contoh peserta 31: KSC/CB-00001).",
    "gambar": "uji/hasil/A2/32-manajer-kontrabon-periksa.png"
   },
   {
@@ -403,44 +403,44 @@
    "menu": "Pusat Dokumen › Jejak Dokumen",
    "aksi": "Ketik nomor PO di *Cari dokumen*, lalu klik hasilnya.",
    "isi": "",
-   "hasil": "Rantai & daftar relasi: PR-00009 → KSC/PO-00047 → penerimaan & SPK → VB-00046 → KSC/CB-00006 → KSC/CASH-00044 → jurnal KSC/JE-00376, KSC/JE-00381, KSC/JE-00383 (contoh peserta 34).",
+   "hasil": "Rantai & daftar relasi: PR-00006 → KSC/PO-00012 → penerimaan & SPK → VB-00012 → KSC/CB-00001 → KSC/CASH-00021 → jurnal KSC/JE-00133, KSC/JE-00134, KSC/JE-00135 (contoh peserta 31).",
    "gambar": "uji/hasil/A2/47-finance-jejak-dokumen.png"
   }
  ],
  "jurnal_per_tahap": [
   {
    "tahap": "PR diajukan & disetujui",
-   "dokumen": "PR (contoh peserta 34: PR-00009)",
+   "dokumen": "PR (contoh peserta 31: PR-00006)",
    "jurnal": "Tidak ada jurnal (baru rencana kebutuhan)"
   },
   {
    "tahap": "PO dibuat & disetujui",
-   "dokumen": "PO (KSC/PO-00047)",
+   "dokumen": "PO (KSC/PO-00012)",
    "jurnal": "Tidak ada jurnal (janji beli; dipakai untuk pencocokan)"
   },
   {
    "tahap": "Barang diterima gudang (75 roll, masuk karantina)",
-   "dokumen": "Penerimaan barang · jurnal KSC/JE-00376",
+   "dokumen": "Penerimaan barang · jurnal KSC/JE-00133",
    "jurnal": "1-1300 Persediaan Barang (D) Rp 105.000.000 · 2-1150 Hutang Belum Ditagih (GR/IR) (K) Rp 105.000.000"
   },
   {
    "tahap": "SPK kedatangan diterima MD Quality",
-   "dokumen": "SPK KSC/INS-00052",
+   "dokumen": "SPK KSC/INS-00011",
    "jurnal": "Tidak ada jurnal (status roll: karantina → tersedia)"
   },
   {
    "tahap": "Tagihan pemasok terposting (3-way match bersih)",
-   "dokumen": "Tagihan VB-00046 · jurnal KSC/JE-00381",
+   "dokumen": "Tagihan VB-00012 · jurnal KSC/JE-00134",
    "jurnal": "2-1150 GR/IR (D) Rp 105.000.000 · 1-1500 PPN Masukan (D) Rp 11.550.000 · 2-1100 Hutang Usaha (K) Rp 116.550.000"
   },
   {
    "tahap": "Kontrabon diajukan, diverifikasi, disetujui, dijadwalkan",
-   "dokumen": "Kontrabon KSC/CB-00006",
+   "dokumen": "Kontrabon KSC/CB-00001",
    "jurnal": "Tidak ada jurnal (tanda terima faktur & rencana bayar)"
   },
   {
    "tahap": "Kontrabon dibayar Finance",
-   "dokumen": "Transaksi kas KSC/CASH-00044 · jurnal KSC/JE-00383",
+   "dokumen": "Transaksi kas KSC/CASH-00021 · jurnal KSC/JE-00135",
    "jurnal": "2-1100 Hutang Usaha (D) Rp 116.550.000 · 1-1100 Kas Besar / Bank (K) Rp 116.550.000"
   },
   {
@@ -459,9 +459,9 @@
   "Rekonsiliasi bank: setiap pembayaran harus punya pasangan mutasi di rekening koran."
  ],
  "cek_buku": [
-  "Jurnal penerimaan barang (contoh peserta 34: KSC/JE-00376): 1-1300 Persediaan Barang (D) Rp 105.000.000 · 2-1150 Hutang Belum Ditagih (GR/IR) (K) Rp 105.000.000 — seimbang.",
-  "Jurnal tagihan pemasok (KSC/JE-00381): 2-1150 GR/IR (D) Rp 105.000.000 + 1-1500 PPN Masukan (D) Rp 11.550.000 · 2-1100 Hutang Usaha (K) Rp 116.550.000 — seimbang.",
-  "Jurnal pembayaran (KSC/JE-00383, sumber kas KSC/CASH-00044): 2-1100 Hutang Usaha (D) Rp 116.550.000 · 1-1100 Kas Besar / Bank (K) Rp 116.550.000 — seimbang; kas keluar dari BCA Operasional KSC.",
+  "Jurnal penerimaan barang (contoh peserta 31: KSC/JE-00133): 1-1300 Persediaan Barang (D) Rp 105.000.000 · 2-1150 Hutang Belum Ditagih (GR/IR) (K) Rp 105.000.000 — seimbang.",
+  "Jurnal tagihan pemasok (KSC/JE-00134): 2-1150 GR/IR (D) Rp 105.000.000 + 1-1500 PPN Masukan (D) Rp 11.550.000 · 2-1100 Hutang Usaha (K) Rp 116.550.000 — seimbang.",
+  "Jurnal pembayaran (KSC/JE-00135, sumber kas KSC/CASH-00021): 2-1100 Hutang Usaha (D) Rp 116.550.000 · 1-1100 Kas Besar / Bank (K) Rp 116.550.000 — seimbang; kas keluar dari BCA Operasional KSC.",
   "Sisa GR/IR PO = diterima Rp 105.000.000 − ditagih Rp 105.000.000 = Rp 0. Sisa Hutang Usaha tagihan = Rp 0 (Lunas).",
   "Mutasi BCA 'TRSF E-BANKING DB … LATIHAN NN PEMASOK GREY' Rp 116.550.000 berstatus Tercocok ke kas pembayaran; tidak ada jurnal baru."
  ],
@@ -474,6 +474,6 @@
  "catatan_pelatih": "Langkah non-Finance diperagakan pelatih dengan akun peran (warehouse@, manager@, admin@, wh.admin@, mdquality@; sandi demo12345); peserta mengikuti di layar lalu mengerjakan langkah Finance (periksa tagihan, bayar kontrabon, rekonsiliasi, GR/IR, Jejak Dokumen). Supaya tiap peserta punya kontrabon sendiri, siapkan rantainya lewat layar sebelum kelas: `KN_SAMPAI=21 KN_PESERTA=NN node docs/pelatihan/2026-11-18_keuangan/uji/e2e/A2_procure_to_pay.js` (± 6 menit per peserta; berhenti saat kontrabon Dijadwalkan bayar), atau peragakan satu rantai lengkap di depan kelas. Nilai sengaja Rp 105 juta supaya persetujuan PR (≥ Rp 50 juta) dan PO (≥ Rp 100 juta) benar-benar muncul; pembelian kecil (mis. F11 Rp 1,68 juta) disetujui otomatis. Di rincian PR ada dua tombol ke PO: [[Konversi ke PO]] (seluruh PR) dan [[Realisasi ke PO]] di panel Pemenuhan & Realisasi (bisa pilih baris) — hasilnya sama untuk PR satu baris. Tulisan \"Roll langsung ke gedung simpan\" di panel penerimaan hanya soal gedung penempatan rak; pemeriksaan kedatangan MD Quality tetap berlaku. MD Quality cukup memeriksa contoh (minimal 1 roll); roll lain ditandai \"lolos lewat sampling\". Rincian tagihan menampilkan \"Belum ada kedatangan (GRN) tertutup\" karena PT Sukacita masih memakai penerimaan Scan Terima per PO — normal. Label \"PPN 12%\" di kaki tagihan = tarif 12% atas DPP nilai lain (11/12), jadi nilainya 11% dari DPP. Nomor PR dan tagihan (PR-…, VB-…) belum memakai awalan PT seperti PO (KSC/PO-…). Keterangan jurnal sistem masih berbahasa Inggris (\"Goods Receipt …\", \"Vendor Bill …\"). Penting: setiap rantai mengeluarkan Rp 116.550.000 dari BCA Operasional KSC (saldo buku 17 Nov sore ± Rp 620 juta) dan sistem tidak menolak pembayaran walau saldo menjadi minus — siapkan paling banyak 4 rantai, sisanya peragakan bersama. Semua peserta memakai rekening yang sama; saldo bergerak selama sesi.",
  "uji": {
   "berkas": "uji/e2e/A2_procure_to_pay.js",
-  "peserta_uji": "34"
+  "peserta_uji": "31 (peserta peraga)"
  }
 }

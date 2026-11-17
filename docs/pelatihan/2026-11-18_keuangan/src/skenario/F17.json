@@ -85,7 +85,7 @@
  "catatan_pelatih": "Semua angka bergerak selama pelatihan karena peserta lain memposting di PT Sukacita yang sama. Laba tahun berjalan di Neraca bisa negatif walau Laba-Rugi November positif, karena jurnal gaji latihan bertanggal 31 Okt. Saldo minus di 1-9999 Akun Sementara (Suspense) dan 1-1150 Kas & Bank Transit berasal dari kas demo, bukan dari peserta (di tangkapan layar −Rp 2.000.000 dan −Rp 10.000.000). Total Pendapatan di Laba-Rugi termasuk denda (4-9300), jadi lebih besar daripada saldo 4-1000 saja. Baris 'Pendapatan lain di Laba-Rugi' di Profitabilitas baru ditambahkan; dulu denda membuat 'Selisih belum dijelaskan' tidak nol. Pertanyaan untuk pemilik: apakah denda, bunga, dan klaim (4-9xxx) seharusnya tampil sebagai 'Pendapatan lain-lain' di bawah laba kotor, bukan di Pendapatan?",
  "uji": {
   "berkas": "uji/F17_laporan_keuangan.js",
-  "peserta_uji": "05"
+  "peserta_uji": "01"
  },
  "alur": [
   {

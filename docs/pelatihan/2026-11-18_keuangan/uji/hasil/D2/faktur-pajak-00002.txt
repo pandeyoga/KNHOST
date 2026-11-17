@@ -6,31 +6,32 @@ Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
                                                                    No. KSC/FKT-00002 · 17 Nov 2026 · NORMAL
 
              REFERENSI DOKUMEN
-             Merujuk: KSC/SO-00010
-             Berasal dari Pesanan Penjualan (SO) KSC/SO-00010
+             Merujuk: KSC/SO-00004
+             Berasal dari Pesanan Penjualan (SO) KSC/SO-00004
              Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
 
 
 DARI                                                                                                         PEMBELI
-Sukacita Textile                                                              Latihan 02 · Toko Kain Peserta 02
-Jl. Soekarno Hatta No. 100, Bandung                            Jl. Latihan Keuangan No. 2, Bandung, Kota Bandung
+Sukacita Textile                                                              Latihan 01 · Toko Kain Peserta 01
+Jl. Soekarno Hatta No. 100, Bandung                            Jl. Latihan Keuangan No. 1, Bandung, Kota Bandung
                                                                                                          NPWP: -
-NSFP               0100261118000002                            Kode Transaksi         04
-Penjual        Sukacita Textile · NPWP                         No. Referensi SO       KSC/SO-00010
+NSFP               0100261118000001                            Kode Transaksi         04
+Penjual        Sukacita Textile · NPWP                         No. Referensi SO       KSC/SO-00004
                01.234.567.8-901.000
 
  NO    SKU                              NAMA BKP/JKP                 ROLL          JUMLAH     HARGA           TOTAL
 
        KNWVN0015-L-TAUX-XA-             DENIM TENCEL
-   1                                                                     —    120,22 yard   Rp 25.000   Rp 3.005.500
+   1                                                                     —    121,59 yard   Rp 25.000   Rp 3.039.750
        XX-XX                            TAUPE A
 
-                                                                  DPP (harga sebelum PPN)               Rp 3.005.500
-                                                                  DPP nilai lain (11/12)            Rp 2.755.041,67
-                                                                  PPN 12% × DPP nilai lain                Rp 330.605
+                                                                  DPP (harga sebelum PPN)                Rp 3.039.750
+                                                                  DPP nilai lain (11/12)            Rp 2.786.437,50
+                                                                  PPN 12% × DPP nilai lain              Rp 334.372,50
 
-                                                                    Total (termasuk PPN)           Rp 3.336.105
-Terbilang: Tiga juta tiga ratus tiga puluh enam ribu seratus lima rupiah
+                                                                    Total (termasuk            Rp 3.374.122,50
+                                                                    PPN)
+Terbilang: Tiga juta tiga ratus tujuh puluh empat ribu seratus dua puluh dua rupiah lima puluh sen
 
 
                                                      Penjual / PKP
@@ -38,7 +39,7 @@ Terbilang: Tiga juta tiga ratus tiga puluh enam ribu seratus lima rupiah
 
 
 
-                                                  Peserta Keuangan 02
+                                                  Peserta Keuangan 01
                                                     Sukacita Textile
 
 

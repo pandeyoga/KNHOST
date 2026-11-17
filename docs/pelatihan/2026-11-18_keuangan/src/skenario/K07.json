@@ -151,6 +151,6 @@
  "catatan_pelatih": "Seluruh skenario selain langkah 9 diperagakan pelatih dengan akun Admin; peserta tidak punya menu ini. Jangan menyimpan perubahan peran bawaan — peran Finance dipakai semua akun peserta dan pengguna nyata. Izin SDM & Penggajian untuk Finance sedang ditambahkan (keputusan pemilik 17 Nov): bila hitungan modul di kartu Finance berbeda dengan gambar, itu wajar; tunjukkan baris 'SDM & Penggajian' di editor. Jumlah akun Finance termasuk akun latihan peserta.",
  "uji": {
   "berkas": "uji/konfigurasi/K07_hak_akses_persetujuan.js",
-  "peserta_uji": "11"
+  "peserta_uji": "01"
  }
 }

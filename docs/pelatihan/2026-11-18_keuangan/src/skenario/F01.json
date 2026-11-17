@@ -48,7 +48,7 @@
    "menu": "Keuangan › Beranda Keuangan › Perlu Tindakan",
    "aksi": "Di kartu 'Uang masuk perlu dicatat', ketik nama pelanggan Anda di kotak cari.",
    "isi": "*Cari nomor dokumen / pelanggan / keterangan…*: Toko Kain Peserta NN",
-   "hasil": "Tinggal dua baris SO milik Anda, masing-masing dengan tombol [[Terima pembayaran]]. Nilainya sama dengan sisa tagihan SO (contoh: KSC/SO-00010 Rp 3.336.105).",
+   "hasil": "Tinggal dua baris SO milik Anda, masing-masing dengan tombol [[Terima pembayaran]]. Nilainya sama dengan sisa tagihan SO (contoh: KSC/SO-00004 Rp 3.374.123).",
    "gambar": "uji/hasil/F01/04-cari-uang-masuk.png"
   },
   {
@@ -139,7 +139,7 @@
  "catatan_pelatih": "Semua peserta memakai PT Sukacita yang sama, jadi angka Posisi, Analisis, dan isi kartu Perlu Tindakan bergerak selama latihan. Minta peserta menekan tombol muat ulang sebelum membandingkan angka. Hal yang perlu diketahui: (1) bilah Lokasi tampil untuk Finance karena izin lihat produk dan logistik — abaikan; (2) tidak ada fitur ganti sandi sendiri, sandi direset Admin di Pengaturan › Pengguna & Hak Akses; (3) kotak 'CHAT AI: Menunggu kunci penyedia model' di Tanya KN berarti chat bebas belum aktif, tetapi contoh laporan tetap jalan. Kartu 'Selisih bayar' sudah diperbaiki (dulu menampilkan Rp 0 dan tombol macet 'Memproses…').",
  "uji": {
   "berkas": "uji/F01_orientasi.js",
-  "peserta_uji": "05"
+  "peserta_uji": "01"
  },
  "alur": [
   {

@@ -6,9 +6,9 @@ Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
                                                                                No. KSC/SJ-00005 · 17 Nov 2026 · SELESAI
 
               REFERENSI DOKUMEN
-              Merujuk: PICK-083BE8 · KSC/SJ-00005 · KSC/FKT-00001 · KSC/AR-00021
-              Menurunkan Tugas Pengambilan PICK-083BE8 · Menurunkan Surat Jalan / Pengiriman KSC/
-              SJ-00005 · Menurunkan Faktur Pajak KSC/FKT-00001 · Dilunasi oleh Kwitansi Pelanggan KSC/
+              Merujuk: PICK-81C9EA · KSC/SJ-00005 · KSC/FKT-00002 · KSC/AR-00021
+              Menurunkan Tugas Pengambilan PICK-81C9EA · Menurunkan Surat Jalan / Pengiriman KSC/
+              SJ-00005 · Menurunkan Faktur Pajak KSC/FKT-00002 · Dilunasi oleh Kwitansi Pelanggan KSC/
               AR-00021
               Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
 
@@ -19,7 +19,7 @@ Jl. Soekarno Hatta No. 100, Bandung                                Jl. Latihan K
                                                                                                      6281377700001
 No. Pesanan             KSC/SO-00004                                Sales                  Ayu Marketing
 Penjualan
-Ekspedisi /             -                                           Dicetak                17 Nov 2026 16.05.39 WIB
+Ekspedisi /             -                                           Dicetak                17 Nov 2026 18.41.18 WIB
 Kendaraan
 
  NO    NAMA KAIN                          WARNA       KODE BRG                                     ROLL           JUMLAH

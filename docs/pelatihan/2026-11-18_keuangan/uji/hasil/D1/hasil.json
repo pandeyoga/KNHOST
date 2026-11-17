@@ -1,8 +1,8 @@
 {
   "code": "D1",
-  "title": "Dokumen penjualan peserta 02 — isi & format",
+  "title": "Dokumen penjualan peserta 01 — isi & format",
   "ok": true,
-  "at": "2026-11-17T09:22:06.148Z",
+  "at": "2026-11-17T11:41:19.488Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,107 +11,107 @@
       "action": "Login akun peserta → Pusat Dokumen (Cetak PDF): pilih jenis [[Faktur Komersial]], cari nomor SO, klik ikon [[Unduh PDF]]",
       "expect": "Berkas PDF terunduh; isinya sama dengan cetak API (selain stempel 'Dicetak')",
       "ok": true,
-      "ms": 9472,
-      "info": "invoice-KSC_SO-00010.pdf · 1 hlm"
+      "ms": 9414,
+      "info": "invoice-KSC_SO-00004.pdf · 1 hlm"
     },
     {
       "no": "2",
       "role": "Finance",
-      "action": "Faktur Komersial KSC/SO-00010 (paid)",
+      "action": "Faktur Komersial KSC/SO-00004 (paid)",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 459,
-      "info": "1 hlm · faktur-00010-1.png"
+      "ms": 502,
+      "info": "1 hlm · faktur-00004-1.png"
     },
     {
       "no": "3",
       "role": "Finance",
-      "action": "Faktur Komersial KSC/SO-00011 (paid)",
+      "action": "Faktur Komersial KSC/SO-00005 (paid)",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 483,
-      "info": "1 hlm · faktur-00011-1.png"
+      "ms": 588,
+      "info": "1 hlm · faktur-00005-1.png"
     },
     {
       "no": "4",
       "role": "Finance",
-      "action": "Faktur Komersial KSC/SO-00012 (pending)",
+      "action": "Faktur Komersial KSC/SO-00006 (pending)",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 982,
-      "info": "1 hlm · faktur-00012-1.png"
+      "ms": 714,
+      "info": "1 hlm · faktur-00006-1.png"
     },
     {
       "no": "5",
       "role": "Finance",
-      "action": "Konfirmasi Pesanan KSC/SO-00011",
+      "action": "Konfirmasi Pesanan KSC/SO-00005",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 570,
-      "info": "1 hlm · pesanan-KSC-SO-00011-1.png"
+      "ms": 507,
+      "info": "1 hlm · pesanan-KSC-SO-00005-1.png"
     },
     {
       "no": "6",
       "role": "Finance",
-      "action": "Konfirmasi Pesanan KSC/SOS-00002",
+      "action": "Konfirmasi Pesanan KSC/SOS-00001",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 477,
-      "info": "1 hlm · pesanan-KSC-SOS-00002-1.png"
+      "ms": 496,
+      "info": "1 hlm · pesanan-KSC-SOS-00001-1.png"
     },
     {
       "no": "7a",
       "role": "Finance",
-      "action": "Surat Jalan KSC/SJ-00016 (KSC/SO-00015)",
+      "action": "Surat Jalan KSC/SJ-00010 (KSC/SO-00009)",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 417,
-      "info": "1 hlm · surat-jalan-00015-1.png"
+      "ms": 457,
+      "info": "1 hlm · surat-jalan-00009-1.png"
     },
     {
       "no": "7b",
       "role": "Finance",
-      "action": "Daftar Kemasan KSC/SO-00015",
+      "action": "Daftar Kemasan KSC/SO-00009",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 372,
-      "info": "1 hlm · daftar-kemasan-00015-1.png"
+      "ms": 493,
+      "info": "1 hlm · daftar-kemasan-00009-1.png"
     },
     {
       "no": "7c",
       "role": "Finance",
-      "action": "Surat Pengambilan KSC/SO-00015",
+      "action": "Surat Pengambilan KSC/SO-00009",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 434,
-      "info": "1 hlm · surat-pengambilan-00015-1.png"
+      "ms": 1360,
+      "info": "1 hlm · surat-pengambilan-00009-1.png"
     },
     {
       "no": "8a",
       "role": "Finance",
-      "action": "Surat Jalan KSC/SJ-00011 (KSC/SO-00010)",
+      "action": "Surat Jalan KSC/SJ-00005 (KSC/SO-00004)",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 386,
-      "info": "1 hlm · surat-jalan-00010-1.png"
+      "ms": 439,
+      "info": "1 hlm · surat-jalan-00004-1.png"
     },
     {
       "no": "8b",
       "role": "Finance",
-      "action": "Daftar Kemasan KSC/SO-00010",
+      "action": "Daftar Kemasan KSC/SO-00004",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 366,
-      "info": "1 hlm · daftar-kemasan-00010-1.png"
+      "ms": 403,
+      "info": "1 hlm · daftar-kemasan-00004-1.png"
     },
     {
       "no": "8c",
       "role": "Finance",
-      "action": "Surat Pengambilan KSC/SO-00010",
+      "action": "Surat Pengambilan KSC/SO-00004",
       "expect": "PDF A4 · kop PT dari Profil PT · nomor/tanggal/pihak/baris/total = database · terbilang = total · tanpa label Inggris",
       "ok": true,
-      "ms": 592,
-      "info": "1 hlm · surat-pengambilan-00010-1.png"
+      "ms": 464,
+      "info": "1 hlm · surat-pengambilan-00004-1.png"
     }
   ],
   "http_5xx": [],
@@ -119,6 +119,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Rangkuman per dokumen: {\"faktur-00010\":\"lulus\",\"faktur-00011\":\"lulus\",\"faktur-00012\":\"lulus\",\"pesanan-KSC-SO-00011\":\"lulus\",\"pesanan-KSC-SOS-00002\":\"lulus\",\"surat-jalan-00015\":\"lulus\",\"daftar-kemasan-00015\":\"lulus\",\"surat-pengambilan-00015\":\"lulus\",\"surat-jalan-00010\":\"lulus\",\"daftar-kemasan-00010\":\"lulus\",\"surat-pengambilan-00010\":\"lulus\"}"
+    "Rangkuman per dokumen: {\"faktur-00004\":\"lulus\",\"faktur-00005\":\"lulus\",\"faktur-00006\":\"lulus\",\"pesanan-KSC-SO-00005\":\"lulus\",\"pesanan-KSC-SOS-00001\":\"lulus\",\"surat-jalan-00009\":\"lulus\",\"daftar-kemasan-00009\":\"lulus\",\"surat-pengambilan-00009\":\"lulus\",\"surat-jalan-00004\":\"lulus\",\"daftar-kemasan-00004\":\"lulus\",\"surat-pengambilan-00004\":\"lulus\"}"
   ]
 }

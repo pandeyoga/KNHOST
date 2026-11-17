@@ -13,7 +13,7 @@
  ],
  "peran": "Finance (akun peserta)",
  "menit": 15,
- "data_awal": "Rekening PT Sukacita 'BCA Operasional KSC' (bank) dan 'Kas Toko KSC' (kas kecil) dipakai bersama semua peserta. Nominal latihan berbeda per peserta: Rp 300.000 + nomor peserta × Rp 10.000 (contoh: peserta 02 = Rp 320.000). Catat nominal dan nomor KSC/CASH-… yang terbit; keduanya dipakai di F10.",
+ "data_awal": "Rekening PT Sukacita 'BCA Operasional KSC' (bank) dan 'Kas Toko KSC' (kas kecil) dipakai bersama semua peserta. Nominal latihan berbeda per peserta: Rp 300.000 + nomor peserta × Rp 10.000 (contoh: peserta 01 = Rp 310.000). Catat nominal dan nomor KSC/CASH-… yang terbit; keduanya dipakai di F10.",
  "alur": [
   {
    "peran": "Finance",
@@ -101,7 +101,7 @@
    "menu": "Transaksi Kas › daftar",
    "aksi": "Ketik nomor KSC/CASH-… di kotak cari daftar.",
    "isi": "*Cari nomor / keterangan / kategori…*: nomor dari langkah 4",
-   "hasil": "Satu baris: nomor, tanggal hari ini, deskripsi dengan kategori 'Operasional', 'Kas Besar · Sukacita', dan nominal merah −Rp … (contoh: −Rp 320.000).",
+   "hasil": "Satu baris: nomor, tanggal hari ini, deskripsi dengan kategori 'Operasional', 'Kas Besar · Sukacita', dan nominal merah −Rp … (contoh: −Rp 310.000).",
    "gambar": "uji/hasil/F09/05-daftar-transaksi-kas.png"
   },
   {
@@ -124,7 +124,7 @@
   }
  ],
  "cek_buku": [
-  "Transaksi kas keluar, kategori Operasional (contoh): 6-4000 Beban Operasional Lainnya (D) Rp 320.000 · 1-1100 Kas Besar / Bank (K) Rp 320.000 — seimbang",
+  "Transaksi kas keluar, kategori Operasional (contoh): 6-4000 Beban Operasional Lainnya (D) Rp 310.000 · 1-1100 Kas Besar / Bank (K) Rp 310.000 — seimbang",
   "Kartu BCA turun sebesar nominal; transaksi muncul di mutasi BCA dengan status rekonsiliasi 'Belum'",
   "Kategori menentukan akun lawan: Operasional atau Lain-lain (keluar) → 6-4000 · Gaji/Upah → 6-1000 · Pembelian → 1-1300 Persediaan · uang masuk selain 'Setoran Modal' → 1-9999 Akun Sementara (Suspense)"
  ],
@@ -137,6 +137,6 @@
  "catatan_pelatih": "Saldo semua rekening dipakai bersama, jadi angka kartu bergerak karena peserta lain; minta peserta membuktikan lewat baris miliknya (nomor KSC/CASH-…, deskripsi 'Latihan NN'). Nominal dibuat berbeda per peserta supaya di F10 transaksi peserta lain tidak ikut menjadi kandidat cocok. Kotak cari Jurnal mencari nomor jurnal dan keterangan, bukan nomor KSC/CASH di kolom Sumber; karena itu cari dengan 'Latihan NN'. Pertanyaan untuk pemilik: kategori 'Transfer / Top-up' tidak memakai akun 1-1150 Kas & Bank Transit; penerimaan lain-lain jatuh ke Suspense; form tidak menampilkan akun lawan sebelum disimpan.",
  "uji": {
   "berkas": "uji/F09_rekening_transaksi_kas.js",
-  "peserta_uji": "35"
+  "peserta_uji": "01"
  }
 }

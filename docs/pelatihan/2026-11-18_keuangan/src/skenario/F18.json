@@ -107,7 +107,7 @@
   }
  ],
  "cek_buku": [
-  "Pratinjau Oktober (contoh): 6-1000 Beban Gaji (K) Rp 45.300.000 · 6-1100 Beban BPJS (Perusahaan) (K) Rp 4.543.612 · 6-5000 Beban Insentif Penjualan (K) Rp 4.521.000 · 3-2000 Laba Ditahan (D) Rp 54.364.612 — seimbang; angkanya = jurnal akun 4-…, 5-…, 6-… bertanggal 1–31 Okt",
+  "Pratinjau Oktober (contoh): 6-1000 Beban Gaji (K) Rp 45.300.000 · 6-1100 Beban BPJS (Perusahaan) (K) Rp 4.543.612 · 6-5000 Beban Insentif Penjualan (K) Rp 4.521.000 · 3-2000 Laba Ditahan (D) Rp 61.741.612 — seimbang; angkanya = jurnal akun 4-…, 5-…, 6-… bertanggal 1–31 Okt",
   "Sesudah Tutup Buku, September 2026 terkunci; sesudah Buka Kembali, tidak terkunci lagi",
   "Usul buka periode tercatat 'Menunggu Persetujuan' lalu 'Ditolak'; tidak ada jendela buka yang aktif",
   "Akhir latihan: daftar periode tertutup dan usul aktif PT Sukacita sama dengan sebelum latihan"
@@ -118,10 +118,10 @@
   "Mengira Buka Periode sama dengan membatalkan penutupan. Buka Periode hanya jendela sementara; membatalkan penutupan = [[Buka Kembali]] oleh Admin.",
   "Menutup bulan dengan saldo Suspense tidak nol. Penutupan diblokir; reklasifikasi dulu di bagian 'Akun sementara'."
  ],
- "catatan_pelatih": "Penting di VPS: tutup buku berlaku untuk semua pengguna PT Sukacita, jadi langkah 4–9 diperagakan pelatih (peserta menonton), bukan dikerjakan tiap peserta. Pakai bulan kosong (September 2026) dan segera Buka Kembali. Jangan menutup Oktober selama latihan penggajian berjalan, dan jangan pernah menutup November (bulan berjalan). Jangan menyetujui usul Buka Periode saat latihan: jendela aktif memunculkan pita merah untuk semua pengguna selama berjam-jam. Riwayat (penutupan 'Dibuka', usul 'Ditolak') tetap tersimpan sebagai jejak audit; itu wajar, dan baris dari uji sebelumnya bisa sudah ada. Data latihan berisi penggajian September (KSC/PAY-00002) yang masih menunggu pengesahan, sehingga daftar periksa September menulis 'Perlu Dilihat' dan jendela tutup buku menampilkan peringatan oranye; penutupan tetap bisa dilakukan. Tombol 'Reopen' sudah berganti label menjadi 'Buka Kembali'.",
+ "catatan_pelatih": "Penting di VPS: tutup buku berlaku untuk semua pengguna PT Sukacita, jadi langkah 4–9 diperagakan pelatih (peserta menonton), bukan dikerjakan tiap peserta. Pakai bulan kosong (September 2026) dan segera Buka Kembali. Jangan menutup Oktober selama latihan penggajian berjalan, dan jangan pernah menutup November (bulan berjalan). Jangan menyetujui usul Buka Periode saat latihan: jendela aktif memunculkan pita merah untuk semua pengguna selama berjam-jam. Riwayat (penutupan 'Dibuka', usul 'Ditolak') tetap tersimpan sebagai jejak audit; itu wajar, dan baris dari uji sebelumnya bisa sudah ada. Pada data latihan bersih daftar periksa September 'beres' semua. Bila ada penggajian bulan itu yang belum diposting, butir penggajian menulis 'Perlu Dilihat' dan jendela tutup buku menampilkan peringatan oranye berisi rinciannya; penutupan tetap bisa dilakukan. Tombol 'Reopen' sudah berganti label menjadi 'Buka Kembali'.",
  "uji": {
   "berkas": "uji/F18_tutup_buku.js",
-  "peserta_uji": "05"
+  "peserta_uji": "01"
  },
  "alur": [
   {

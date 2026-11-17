@@ -5,29 +5,18 @@
       "active": true,
       "doc_type": "purchase_order",
       "entity_id": "all",
-      "id": "aprule_04428ecdeff5",
+      "id": "aprule_38a9b9fc9c93",
       "is_percent": false,
-      "max_amount": 100000000,
-      "min_amount": 0,
-      "required_role": "",
-      "sort": 1
+      "max_amount": null,
+      "min_amount": 100000000,
+      "required_role": "manager",
+      "sort": 2
     },
     {
       "active": true,
       "doc_type": "purchase_requisition",
       "entity_id": "all",
-      "id": "aprule_245d3669a31b",
-      "is_percent": false,
-      "max_amount": 50000000,
-      "min_amount": 0,
-      "required_role": "",
-      "sort": 1
-    },
-    {
-      "active": true,
-      "doc_type": "purchase_requisition",
-      "entity_id": "all",
-      "id": "aprule_7ff29604956c",
+      "id": "aprule_459e5bf7e387",
       "is_percent": false,
       "max_amount": null,
       "min_amount": 50000000,
@@ -38,7 +27,7 @@
       "active": true,
       "doc_type": "sales_order",
       "entity_id": "all",
-      "id": "aprule_d8d32da4e770",
+      "id": "aprule_832ed8421124",
       "is_percent": false,
       "max_amount": null,
       "min_amount": 0,
@@ -49,12 +38,23 @@
       "active": true,
       "doc_type": "purchase_order",
       "entity_id": "all",
-      "id": "aprule_e81076669dc5",
+      "id": "aprule_d6a4c9ec5f97",
       "is_percent": false,
-      "max_amount": null,
-      "min_amount": 100000000,
-      "required_role": "manager",
-      "sort": 2
+      "max_amount": 100000000,
+      "min_amount": 0,
+      "required_role": "",
+      "sort": 1
+    },
+    {
+      "active": true,
+      "doc_type": "purchase_requisition",
+      "entity_id": "all",
+      "id": "aprule_ea635dd1b651",
+      "is_percent": false,
+      "max_amount": 50000000,
+      "min_amount": 0,
+      "required_role": "",
+      "sort": 1
     }
   ],
   "permission_settings": [
@@ -1724,6 +1724,9 @@
           "document": [
             "view",
             "print"
+          ],
+          "esign": [
+            "view"
           ],
           "field_visibility": [
             "grade",
@@ -4266,6 +4269,9 @@
           "document": [
             "view",
             "print"
+          ],
+          "esign": [
+            "view"
           ],
           "field_visibility": [
             "grade",
