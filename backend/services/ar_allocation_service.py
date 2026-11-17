@@ -247,10 +247,11 @@ async def allocate(*, kind: str, order_id: str, amount: float, source_id: str, s
 
 async def withdraw(*, kind: str, order_id: str, amount: float, source_id: str, source_number: str, customer_id: str,
                    entity_id: str, date: str, actor: Any, method: str = "", seq: str = "",
-                   note: str = "") -> Dict[str, Any]:
+                   note: str = "", extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Tarik `amount` yang sudah terbayar dari pesanan `order_id` lewat baris NEGATIF ber-sumber `source_id` (bukan
     pembalik baris tertentu). Dipakai kasus "realokasi pesanan" (pembayaran dipindah ke pesanan lain pelanggan yang
-    sama). Syarat bersyarat `Σ payments − amount ≥ 0`; id tetap → aman diulang."""
+    sama) dan pesanan batal yang uang mukanya dipindah ke titipan (S3). Syarat bersyarat `Σ payments − amount ≥ 0`;
+    id tetap → aman diulang. `extra` = field tambahan baris (tidak bisa menimpa field inti), mis. `gl_bucket`."""
     amt = round(float(amount or 0), 2)
     if amt <= EPS:
         raise HTTPException(status_code=400, detail="Nominal penarikan harus lebih dari 0.")
@@ -275,9 +276,10 @@ async def withdraw(*, kind: str, order_id: str, amount: float, source_id: str, s
         raise HTTPException(status_code=400, detail=(
             f"Penarikan {rupiah(amt)} melebihi yang sudah dibayar di pesanan {no} ({rupiah(paid)})."))
     tgl = date or now_iso()
-    row = {"id": pid, "kind": kind, "amount": -amt, "receipt_id": source_id,
-           "receipt_number": source_number or source_id, "method": method or METODE_BAWAAN[kind],
-           "date": tgl, "created_at": tgl, "created_by": _nama(actor), "withdrawal": True}
+    row: Dict[str, Any] = {k: v for k, v in (extra or {}).items() if k not in _FIELD_INTI}
+    row.update({"id": pid, "kind": kind, "amount": -amt, "receipt_id": source_id,
+                "receipt_number": source_number or source_id, "method": method or METODE_BAWAAN[kind],
+                "date": tgl, "created_at": tgl, "created_by": _nama(actor), "withdrawal": True})
     if note:
         row["note"] = note
     updated = await db.sales_orders.find_one_and_update(

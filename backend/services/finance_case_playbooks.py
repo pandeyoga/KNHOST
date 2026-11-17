@@ -21,6 +21,9 @@ def _A(code: str, label: str, effect: str, needs: List[str],
 
     `needs` = field yang wajib diisi wizard · `produces` = dokumen turunan yang lahir ·
     `sensitive` = uang keluar/hangus ⇒ ikut ambang persetujuan.
+    S3 (pelatihan 18 Nov) — `account_id` = rekening kas/bank tempat uang keluar/masuk (wizard menampilkan pemilihnya). Dulu
+    tidak diminta: pelaksana memakai rekening tunggal PT, sehingga PT dengan dua rekening bank atau lebih ditolak
+    "Pilih rekening kas/bank" tanpa ada isian untuk memilihnya.
     """
     return {"code": code, "label": label, "effect": effect, "needs": needs,
             "produces": produces, "sensitive": sensitive}
@@ -77,7 +80,7 @@ PLAYBOOKS: List[Dict[str, Any]] = [
            "Jurnal Dr 2-1400 Uang Muka Pelanggan / Cr 1-1200 Piutang + pembayaran menempel"),
         _A("refund_pelanggan", "Kembalikan uangnya ke pelanggan",
            "Uang muka pelanggan dikembalikan lewat kas/bank.",
-           ["customer_id", "amount"],
+           ["customer_id", "amount", "account_id"],
            "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
            sensitive=True)],
        source_kinds=["ar_receipt"], auto="kwitansi kembar",
@@ -112,7 +115,7 @@ PLAYBOOKS: List[Dict[str, Any]] = [
            "pembayaran menempel di pesanan"),
         _A("setor_dari_karyawan", "Langkah 2 — catat setoran karyawan",
            "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
-           ["amount"],
+           ["amount", "account_id"],
            "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan")],
        needs_evidence=True, source_kinds=["manual"],
        reason_codes=["case_employee_account"]),
@@ -177,12 +180,12 @@ PLAYBOOKS: List[Dict[str, Any]] = [
         "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."],
        [_A("refund_pelanggan", "Kembalikan dari uang muka pelanggan",
            "Kas keluar mengurangi kewajiban uang muka pelanggan.",
-           ["customer_id", "amount"],
+           ["customer_id", "amount", "account_id"],
            "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
            sensitive=True),
         _A("refund_store_credit", "Kembalikan dari saldo kredit toko",
            "Saldo kredit toko pelanggan dicairkan menjadi uang.",
-           ["customer_id", "amount"],
+           ["customer_id", "amount", "account_id"],
            "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank "
            "+ baris buku store credit",
            sensitive=True)],
@@ -216,7 +219,7 @@ PLAYBOOKS: List[Dict[str, Any]] = [
            "Jurnal Dr 1-1400 Uang Muka / Cr 2-1100 Utang Usaha + saldo uang muka supplier"),
         _A("terima_refund_supplier", "Catat pengembalian dana dari supplier",
            "Supplier mengembalikan uangnya; uang muka supplier berkurang.",
-           ["supplier_id", "amount"],
+           ["supplier_id", "amount", "account_id"],
            "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1400 Uang Muka")],
        source_kinds=["vendor_bill", "manual"],
        reason_codes=["supplier_advance"]),

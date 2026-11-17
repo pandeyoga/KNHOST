@@ -171,7 +171,10 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
         }
       } else if (pre) {
         setMode("manual");
-        const take = hintAmount ? Math.min(Number(hintAmount) || 0, Number(pre.outstanding) || 0) : pre.outstanding;
+        // S3 (pelatihan 18 Nov) — termin DP: isian bawaan = yang DITAGIH sekarang (uang muka, `due_now` server — angka
+        // baris Penagihan), bukan seluruh sisa pesanan yang belum dikirim.
+        const ditagih = Number(pre.due_now) > 0 ? Math.min(Number(pre.due_now), Number(pre.outstanding) || 0) : pre.outstanding;
+        const take = hintAmount ? Math.min(Number(hintAmount) || 0, Number(pre.outstanding) || 0) : ditagih;
         setAlloc({ [pre.order_id]: take });
         setAmount(String(take));
       } else if (hintAmount) {
@@ -438,6 +441,11 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                             )}
                           </p>
                           <p className="tabular-nums text-kn-text-2">Belum lunas {formatCurrency(o.outstanding)}</p>
+                          {Number(o.due_now) > 0 && Number(o.due_now) < Number(o.outstanding) - 0.005 && (
+                            <p className="tabular-nums font-semibold text-kn-warning-text" data-testid={`ar-receipt-due-now-${o.order_id}`}>
+                              Ditagih sekarang (uang muka) {formatCurrency(o.due_now)}
+                            </p>
+                          )}
                           {(o.receiving_account?.account_number || o.payment_code) && (
                             <p className="text-kn-text-2" data-testid={`ar-receipt-instruction-${o.order_id}`}>
                               {o.receiving_account?.account_number

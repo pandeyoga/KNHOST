@@ -56,7 +56,8 @@ async def open_orders(request: Request, customer_id: str = Query(...)) -> List[D
     """Order AR terbuka customer (untuk alokasi pembayaran)."""
     await require_permission(request, "ar_receipt", "view")
     from entity_scope import entity_ctx, resolve_scope_ids  # CX-02
-    return await ar_receipt_service.list_open_orders(customer_id, resolve_scope_ids(await entity_ctx(request), None))
+    rows = await ar_receipt_service.list_open_orders(customer_id, resolve_scope_ids(await entity_ctx(request), None))
+    return await ar_receipt_service.isi_tagih_sekarang(rows)   # S3 — `due_now` uang muka termin DP (isian bawaan form)
 
 
 @router.get("/ar-receipts/deposit")

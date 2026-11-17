@@ -42,6 +42,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
   const [fromOrderId, setFromOrderId] = useState("");
   const [toOrderId, setToOrderId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
+  const [accountId, setAccountId] = useState("");   // S3 — rekening kas/bank tempat uang keluar/masuk
   const [ownerEntityId, setOwnerEntityId] = useState("");
   const [employeeName, setEmployeeName] = useState("");
   const [withPenalty, setWithPenalty] = useState(false);
@@ -94,6 +95,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
     label: `${o.number} · sisa ${formatCurrency(o.outstanding)}`,
   })), [orders]);
   const accountOptions = useMemo(() => accounts
+    .filter((a) => a.is_active !== false)   // S3 — rekening nonaktif tidak bisa menerima/mengeluarkan uang
     .filter((a) => !caseData.entity_id || !a.entity_id || a.entity_id === "all"
       || a.entity_id === caseData.entity_id)
     .map((a) => ({ value: a.id, label: a.name || a.bank_name || a.id })),
@@ -101,6 +103,12 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
   const entityOptions = useMemo(() => (entities || [])
     .filter((e) => e.id !== caseData.entity_id)
     .map((e) => ({ value: e.id, label: entityFull(e) })), [entities, caseData.entity_id]);
+
+  // S3 (pelatihan 18 Nov) — aksi yang memindahkan uang lewat rekening (`needs` memuat `account_id`): satu rekening PT →
+  // terisi sendiri; lebih dari satu → wajib dipilih (dulu tidak ada isiannya dan server menolak "Pilih rekening").
+  useEffect(() => {
+    if (accountOptions.length === 1 && !accountId) setAccountId(accountOptions[0].value);
+  }, [accountOptions, accountId]);
 
   const allocTotal = useMemo(
     () => Object.values(alloc).reduce((a, v) => a + amt(v), 0), [alloc]);
@@ -118,6 +126,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
   if (need("from_order_id") && !fromOrderId) missing.push("pesanan asal");
   if (need("to_order_id") && !toOrderId) missing.push("pesanan tujuan");
   if (need("to_account_id") && !toAccountId) missing.push("rekening tujuan");
+  if (need("account_id") && !accountId && accountOptions.length > 1) missing.push("rekening kas/bank");
   if (need("owner_entity_id") && !ownerEntityId) missing.push("PT pemilik tagihan");
   if (need("employee_name") && !employeeName.trim()) missing.push("nama karyawan");
   const needEvidence = caseData.needs_evidence && !(caseData.attachments || []).length;
@@ -137,6 +146,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
         supplier_id: supplierId || caseData.supplier_id || "",
         order_id: orderId, from_order_id: fromOrderId, to_order_id: toOrderId,
         to_account_id: toAccountId, owner_entity_id: ownerEntityId,
+        ...(need("account_id") && accountId ? { account_id: accountId } : {}),
         employee_name: employeeName, with_penalty: withPenalty,
         receipt_id: caseData.source?.kind === "ar_receipt" ? caseData.source.id : "",
         allocations: Object.entries(alloc)
@@ -256,6 +266,16 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
               <KNSelect data-testid="case-field-to-account" value={toAccountId}
                 onValueChange={setToAccountId} options={accountOptions}
                 placeholder="Pilih rekening" />
+            </div>
+          )}
+          {need("account_id") && (
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                Rekening kas/bank
+              </label>
+              <KNSelect data-testid="case-field-account" value={accountId}
+                onValueChange={setAccountId} options={accountOptions}
+                placeholder="Pilih rekening tempat uang keluar/masuk" />
             </div>
           )}
           {need("order_id") && (

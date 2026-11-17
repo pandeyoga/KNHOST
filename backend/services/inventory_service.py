@@ -88,6 +88,14 @@ async def expire_old_reservations() -> int:
         except Exception as exc:  # noqa: BLE001
             import logging
             logging.getLogger(__name__).error("Gagal reversal GL utk order expired %s: %s", order["id"], exc)
+        # S3 (pelatihan 18 Nov) — uang muka yang sudah diterima pesanan kedaluwarsa menjadi titipan pelanggan (sama
+        # dengan pembatalan; tanpa jurnal, aman diulang).
+        try:
+            from services import ar_receipt_service as _ar
+            await _ar.uang_muka_pesanan_batal_ke_titipan(order["id"], {"name": "system"}, "reservasi kedaluwarsa")
+        except Exception as exc:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).error("Uang muka order expired %s gagal dipindah ke titipan: %s", order["id"], exc)
         expired += 1
     return expired
 

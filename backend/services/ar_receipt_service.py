@@ -343,6 +343,57 @@ async def adjust_deposit(customer_id: str, delta: float) -> None:
     await _adjust_deposit(customer_id, delta)
 
 
+async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: str = "") -> float:
+    """S3 (pelatihan 18 Nov) — pesanan BATAL / kedaluwarsa yang sudah menerima uang muka: uang muka yang masih tertahan
+    untuk pesanan itu (pembayaran ber-`gl_bucket=advance` yang belum direklas ke Piutang) dipindah menjadi TITIPAN
+    pelanggan (`customers.deposit_balance`), supaya bisa dikembalikan (Kasus › Pengembalian dana ke pelanggan) atau dipakai
+    pesanan lain. Dulu uang itu tertinggal di pesanan mati: tidak tampil di titipan maupun Laporan Uang Muka, padahal akun
+    2-1400 masih memegangnya.
+
+    Tanpa jurnal: uang muka pesanan dan titipan sama-sama 2-1400 Uang Muka Pelanggan. Di pesanan ditulis baris penarikan
+    (`ar_allocation_service.withdraw`, jenis `deposit`, `gl_bucket=advance`) → terbayar pesanan dan uang muka tertahan = 0,
+    dan kwitansi asalnya tidak bisa lagi dibatalkan tanpa menarik titipannya (`reverse_check` menolak, 409).
+    Aman diulang: penanda `advance_to_deposit` diklaim sebelum titipan ditambah. → nominal yang dipindah (0 = tidak ada
+    uang muka / sudah dipindah)."""
+    from services import ar_allocation_service as _alloc
+    from services import gl_service as _gl
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order.get("status") not in DEAD_STATUSES:
+        return 0.0
+    tanda = order.get("advance_to_deposit") or {}
+    if not tanda:
+        held = round(min(await _gl.order_advance_unrecognized(order), order_paid(order)), 2)
+        if held <= EPS:
+            return 0.0
+        tanda = {"amount": held, "deposit_done": False, "at": now_iso(), "reason": reason,
+                 "by": (actor or {}).get("name", "system") if isinstance(actor, dict) else str(actor or "system")}
+        res = await db.sales_orders.update_one({"id": order_id, "advance_to_deposit": {"$exists": False}},
+                                               {"$set": {"advance_to_deposit": tanda}})
+        if not res.modified_count:   # proses lain lebih dulu menandai — ikuti penandanya
+            tanda = ((await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "advance_to_deposit": 1})) or {}) \
+                .get("advance_to_deposit") or {}
+    held = round(float(tanda.get("amount") or 0), 2)
+    if held <= EPS or tanda.get("deposit_done"):
+        return 0.0
+    await _alloc.withdraw(
+        kind="deposit", order_id=order_id, amount=held, source_id=f"batal_titipan:{order_id}",
+        source_number=order.get("number") or order_id, customer_id=order.get("customer_id") or "",
+        entity_id=order.get("entity_id") or "", date=now_iso(), actor=actor, method="deposit",
+        note=f"Uang muka pesanan batal dipindah ke titipan pelanggan{(': ' + reason) if reason else ''}",
+        extra={"gl_bucket": _gl.ADVANCE_BUCKET, "moved_to_deposit": True})
+    klaim = await db.sales_orders.update_one(
+        {"id": order_id, "advance_to_deposit.deposit_done": False},
+        {"$set": {"advance_to_deposit.deposit_done": True, "advance_to_deposit.done_at": now_iso()}})
+    if not klaim.modified_count:
+        return 0.0
+    try:
+        await _adjust_deposit(order.get("customer_id") or "", held)
+    except Exception:
+        await db.sales_orders.update_one({"id": order_id}, {"$set": {"advance_to_deposit.deposit_done": False}})
+        raise
+    return held
+
+
 async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict[str, Any]]:
     """Order AR terbuka (ada outstanding) untuk customer, tertua dulu (FIFO).
     `entity_id` str atau list scope (CX-02 — alokasi/daftar tidak lintas badan usaha)."""
@@ -385,6 +436,33 @@ async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict
             "payment_code": o.get("payment_code") or "",
         })
     rows.sort(key=lambda r: str(r.get("created_at") or ""))
+    return rows
+
+
+async def isi_tagih_sekarang(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """S3 (pelatihan 18 Nov) — tagihan terbuka bertermin DP: `due_now` = yang ditagih SEKARANG menurut jadwal tagihan
+    (uang muka "sebelum kirim"), angka yang sama dengan baris Penagihan & Penerimaan. Bahan isian bawaan alokasi form
+    Terima pembayaran — dulu terisi seluruh sisa pesanan, padahal yang ditransfer pelanggan baru uang mukanya.
+    Pesanan bukan termin DP / tidak ada baris jatuh tempo: tanpa `due_now` (perilaku lama). Hanya untuk daftar layar."""
+    from services import entity_master_service as ems
+    from services.payment_variance_service import tagihan_uang_muka
+    kode = {r["order_id"]: r for r in rows}
+    orders = [o async for o in db.sales_orders.find({"id": {"$in": list(kode)}},
+                                                    {"_id": 0, "id": 1, "payment_term_code": 1, "entity_id": 1})]
+    dp_cache: Dict[Any, float] = {}
+    for o in orders:
+        code = o.get("payment_term_code") or ""
+        key = (code, o.get("entity_id") or "")
+        if not code:
+            continue
+        if key not in dp_cache:
+            row = await ems.resolve_row("payment-terms", code, key[1], include_inactive=True)
+            dp_cache[key] = float((row or {}).get("dp_percent") or 0)
+        if dp_cache[key] <= 0:
+            continue
+        um = await tagihan_uang_muka(o)
+        if um and um["due_now"] > EPS:
+            kode[o["id"]]["due_now"] = round(min(um["due_now"], kode[o["id"]]["outstanding"]), 2)
     return rows
 
 

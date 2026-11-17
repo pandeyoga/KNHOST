@@ -925,6 +925,19 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     await release_order_rolls(order_id, return_to_rack_ids=picked_ids, why=f"SO dibatalkan: {reason}")
     result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled",
                                {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso()})
+    # S3 (pelatihan 18 Nov) — uang muka yang sudah diterima pesanan ini menjadi TITIPAN pelanggan (tanpa jurnal:
+    # sama-sama 2-1400). Dulu tertinggal di pesanan mati: tidak bisa dikembalikan maupun dipakai pesanan lain.
+    from services import ar_receipt_service as _ar
+    try:
+        result["advance_to_deposit"] = await _ar.uang_muka_pesanan_batal_ke_titipan(order_id, actor, reason)
+    except Exception as exc:  # noqa: BLE001 — pesanan sudah batal; pemindahan aman diulang (dicatat untuk Finance)
+        logging.getLogger(__name__).error("Uang muka pesanan batal %s gagal dipindah ke titipan: %s", order_id, exc)
+        result["advance_to_deposit"] = 0.0
+        result["advance_to_deposit_error"] = "Uang muka pesanan ini belum terpindah ke titipan pelanggan — hubungi Finance."
+    if result.get("advance_to_deposit"):
+        await audit(actor["name"], "advance_moved_to_deposit", "sales_order", order_id,
+                    {"amount": result["advance_to_deposit"], "customer_id": order.get("customer_id", ""),
+                     "reason": reason})
     # 2026-10 — dokumen pemenuhan (transfer/PR) dari keputusan Admin Sales TIDAK ikut batal otomatis:
     # disebut di respons agar ditindaklanjuti, dan sales pemilik diberi tahu di aplikasi.
     result["open_fulfillment_refs"] = sorted({p.get("ref_number") for d in (order.get("fulfillment_decisions") or [])

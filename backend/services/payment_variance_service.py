@@ -204,6 +204,39 @@ def classify(delta: float, tolerance: float) -> str:
 
 
 # ── Sisi AR: apa yang "seharusnya dibayar sekarang" ────────────────────────
+async def tagihan_uang_muka(order: Dict[str, Any], as_of: str = "",
+                            customer: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """S3 (pelatihan 18 Nov) — pesanan bertermin ber-DP (`payment_terms.dp_percent` > 0) tanpa rencana manual: yang
+    jatuh tempo SEKARANG dibaca dari JADWAL TAGIHAN (`billing_schedule_service.lines_for_orders`, pembaca yang sama dengan
+    Penagihan & Umur Piutang) — baris uang muka jatuh tempo saat pesanan dikonfirmasi ("sebelum kirim"), baris surat
+    jalan menurut termin. Dulu jatuh tempo dihitung dari tanggal pesanan + hari termin: belum jatuh tempo → harapan =
+    seluruh sisa pesanan, sehingga membayar TEPAT uang muka dinilai "Kurang bayar" dan wajib diputus.
+    → `{due_now, due_lines, next_due_date}`, atau None (bukan termin DP / tidak ada baris yang jatuh tempo → aturan lama)."""
+    oid = order.get("id") or ""
+    if not oid or not (order.get("payment_term_code") or order.get("payment_term")):
+        return None
+    from services import billing_schedule_service as bss
+    full = await db.sales_orders.find_one({"id": oid}, {"_id": 0}) or {}
+    if not full:
+        return None
+    if customer is None:
+        customer = await db.customers.find_one({"id": full.get("customer_id")}, {"_id": 0, "payment_profile": 1}) or {}
+    if float((await bss.termin_pesanan(full, customer)).get("dp_percent") or 0) <= 0:
+        return None
+    day = str(as_of or now_iso())[:10]
+    rows = ((await bss.lines_for_orders([full], {full.get("customer_id") or "": customer}, per=day)).get(oid)
+            or {}).get("rows") or []
+    due = [r for r in rows if r.get("due_date") and str(r["due_date"]) <= day and float(r.get("outstanding") or 0) > EPS]
+    if not due:
+        return None
+    nxt = sorted(str(r["due_date"]) for r in rows if r.get("due_date") and str(r["due_date"]) > day)
+    return {"due_now": round(sum(float(r["outstanding"]) for r in due), 2),
+            "due_lines": [{"seq": r.get("seq"), "label": r.get("label"), "due_date": r.get("due_date"),
+                           "amount": r.get("amount"), "paid_amount": r.get("paid_amount"),
+                           "remaining": r.get("outstanding")} for r in due],
+            "next_due_date": nxt[0] if nxt else ""}
+
+
 async def _order_due_now(order: Dict[str, Any], outstanding: float,
                          as_of: str) -> Dict[str, Any]:
     """Berapa yang jatuh tempo untuk satu pesanan + dari mana angkanya.
@@ -233,6 +266,10 @@ async def _order_due_now(order: Dict[str, Any], outstanding: float,
     from services.report_basis import hari_termin as term_days   # CR-T2 — aturan hari termin pindah (D8)
     cust = await db.customers.find_one({"id": order.get("customer_id")},
                                        {"_id": 0, "payment_profile": 1}) or {}
+    um = await tagihan_uang_muka(order, as_of, cust)
+    if um:
+        return {"plan_id": "", "plan_number": "", "due_now": min(um["due_now"], outstanding), "basis": "uang_muka",
+                "due_lines": um["due_lines"], "next_due_date": um["next_due_date"]}
     created = parse_dt(order.get("created_at")) or datetime.now(timezone.utc)
     due = created + timedelta(days=term_days(cust, order))
     day = str(as_of or now_iso())[:10]
