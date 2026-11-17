@@ -81,10 +81,15 @@ table.grid tr { break-inside:avoid; }
 .cover .meta .lbl { display:block; font-size:7pt; letter-spacing:.8px; text-transform:uppercase; opacity:.7; margin-bottom:1mm; }
 .cover .band { position:absolute; right:-40mm; top:-30mm; width:170mm; height:170mm; border-radius:50%; background:radial-gradient(circle at 30% 30%, #0F766E 0%, rgba(15,118,110,0) 70%); opacity:.6; }
 .toc div { display:flex; justify-content:space-between; padding:1mm 0; border-bottom:1px dotted #CBD5E1; break-inside:avoid; }
+.toc div.tocmod { border-bottom:1.5px solid #0F172A; margin-top:2.5mm; font-size:10pt; }
 .toc b { display:inline-block; min-width:12mm; }
 .kartu td { height:7.5mm; }
 svg.flow { width:100%; height:auto; display:block; margin:1mm 0 2.5mm; break-inside:avoid; }
 .box.n { border-left-color:#DC2626; margin:2mm 0; } .box.n b.t { color:#991B1B; }
+.box.k { border-left-color:#0F766E; background:#F0FDFA; margin:2mm 0; } .box.k b.t { color:#115E59; }
+.modhead { background:#0F172A; color:#FFFFFF; border-radius:2mm; padding:12mm 10mm; margin-bottom:5mm; }
+.modhead .no { font-size:40pt; font-weight:800; color:#5EEAD4; line-height:1; } .modhead h2 { color:#FFFFFF; font-size:22pt; margin:2mm 0; }
+.modhead p { color:#CBD5E1; font-size:10pt; margin:0; }
 ol.navsteps { margin:.8mm 0 0; padding-left:5mm; } ol.navsteps li { margin:.4mm 0; }
 .navgrid { display:grid; grid-template-columns:1fr 1fr; gap:2.4mm; margin:1mm 0 2.5mm; }
 .navgrid figure { margin:0; } .navgrid img { max-height:none; }
@@ -111,29 +116,35 @@ KARTU = [
 ]
 
 MENU = [
-    ("Keuangan › Beranda Keuangan", "Perlu Tindakan (antrean kerja uang: faktur pajak perlu terbit, uang masuk perlu dicatat, selisih bayar) · Posisi (kas, bank, piutang, hutang) · Analisis"),
-    ("Keuangan › Piutang", "Saldo & Umur · Penagihan & Penerimaan (catat uang masuk pelanggan) · Rencana & Denda (cicilan, denda telat) · Titipan & Saldo Kredit (lebih bayar / uang muka) · Kredit & Plafon · Kasus"),
-    ("Keuangan › Hutang", "Tagihan supplier (3-way: PO ↔ penerimaan ↔ faktur, bayar) · Kontrabon (tukar faktur) · GR/IR (barang diterima belum ditagih)"),
-    ("Keuangan › Kas & Bank", "Rekening & Saldo · Transaksi Kas · Rekonsiliasi (cocokkan mutasi bank dengan buku) · Kas Kecil · Titipan Sales (setoran tunai dari sales)"),
-    ("Keuangan › Antar-PT", "Saldo & transaksi antar perusahaan dalam grup (lihat)"),
-    ("Akuntansi & Pajak › Buku Besar", "Jurnal (lihat) · Bagan Akun"),
-    ("Akuntansi & Pajak › Pajak", "Faktur Keluaran (Finance) · ◆ Faktur Masukan · ◆ PPN & PPh"),
-    ("◆ Akuntansi & Pajak › Tutup Buku · Laporan · Aset Tetap", "Daftar periksa & tutup periode · Buka periode · Posting gagal · Laba-Rugi, Neraca & Arus Kas · Profitabilitas · Proyeksi Kas · Anggaran · Konsolidasi"),
+    ("Keuangan › Beranda Keuangan", "Perlu Tindakan (antrean kerja: faktur pajak perlu terbit, uang masuk perlu dicatat, selisih bayar) · Posisi (kas, bank, piutang, hutang) · Analisis"),
+    ("Keuangan › Piutang", "Saldo & Umur · Penagihan & Penerimaan (catat uang masuk) · Rencana & Denda · Titipan & Saldo Kredit · Kredit & Plafon · Kasus"),
+    ("Keuangan › Hutang", "Tagihan (pencocokan PO, penerimaan, dan faktur pemasok; bayar) · Kontrabon (tukar faktur) · GR/IR (barang diterima belum ditagih)"),
+    ("Keuangan › Kas & Bank", "Rekening & Saldo · Transaksi Kas · Rekonsiliasi (cocokkan mutasi bank dengan buku) · Kas Kecil · Titipan Sales"),
+    ("Keuangan › Antar-PT", "Saldo dan transaksi antar perusahaan dalam grup (lihat)"),
+    ("Akuntansi & Pajak › Buku Besar", "Jurnal · Neraca Saldo · Bagan Akun (COA)"),
+    ("Akuntansi & Pajak › Pajak", "Faktur Keluaran (Finance) · Faktur Masukan dan PPN & PPh (Manajer)"),
+    ("Akuntansi & Pajak › Tutup Buku · Laporan · Aset Tetap (Manajer)", "Daftar periksa & tutup periode · Buka periode · Posting gagal · Laba-Rugi, Neraca & Arus Kas · Profitabilitas · Anggaran"),
+    ("SDM › Karyawan · Kehadiran · Penggajian", "Data karyawan · kehadiran, cuti & lembur · proses gaji (disusun Finance, disahkan Manajer) · bayar gaji · setoran PPh 21 & BPJS"),
     ("Penjualan › Pesanan · Pesanan Sample", "Melihat pesanan (untuk menagih) · menyetujui pembayaran sample berbayar"),
-    ("SDM › Penggajian › Setoran & Pajak", "Membayar gaji bersih, setor BPJS & PPh 21 dari proses gaji yang sudah disetujui"),
-    ("Pusat Dokumen › Jejak Dokumen", "Menelusuri rantai SO → surat jalan → faktur → pembayaran → jurnal"),
+    ("Retur", "Retur pelanggan (kompensasi uang kembali, saldo, atau barang pengganti) · retur ke pemasok (nota debit)"),
+    ("Pengaturan › Keuangan & Pajak", "Pemetaan akun · aturan keuangan & pajak · kategori beban · aturan bank (perubahan oleh Manajer/Admin)"),
+    ("Pusat Dokumen", "Daftar dokumen · Jejak Dokumen (SO → surat jalan → faktur → pembayaran → jurnal) · cetak PDF"),
 ]
 ISTILAH = [
-    ("Piutang (AR)", "Uang pelanggan yang belum diterima. Lahir saat barang terkirim dengan termin tempo; berkurang saat pembayaran dialokasikan ke pesanan."),
-    ("Alokasi", "Menempelkan uang masuk ke pesanan/tagihan tertentu. Uang yang belum dialokasikan menjadi saldo/titipan pelanggan."),
-    ("Umur piutang", "Lama piutang sejak jatuh tempo (belum jatuh tempo, 1–30, 31–60, 61–90, >90 hari)."),
-    ("Hutang (AP)", "Kewajiban ke supplier. Lahir dari tagihan supplier yang dicocokkan dengan PO dan penerimaan barang (3-way match)."),
-    ("GR/IR", "Barang sudah diterima (GR) tetapi tagihannya belum datang (IR). Nilai ini menunggu tagihan supplier."),
-    ("Kontrabon", "Tanda terima tukar faktur: supplier menyerahkan faktur, kita memberi tanggal janji bayar."),
-    ("Rekonsiliasi bank", "Mencocokkan mutasi rekening koran dengan catatan buku; selisih (biaya admin, bunga) dibukukan."),
-    ("Jurnal seimbang", "Setiap transaksi mencatat debit = kredit. Sistem membuat jurnal otomatis dari dokumen; Finance memeriksanya."),
-    ("Tutup buku", "Mengunci periode supaya tidak ada transaksi bertanggal di periode itu lagi; dibuka kembali hanya dengan alasan."),
-    ("Faktur pajak keluaran", "Faktur PPN untuk penjualan ber-PPN; nomornya diterbitkan dan diekspor ke e-Faktur."),
+    ("Bagan Akun (COA)", "Daftar semua akun buku besar: 1 aset, 2 kewajiban, 3 ekuitas, 4 pendapatan, 5 harga pokok, 6 beban."),
+    ("Pemetaan akun", "Aturan akun debit dan kredit untuk setiap jenis transaksi. Dokumen membuat jurnal lewat pemetaan ini."),
+    ("Jurnal seimbang", "Setiap jurnal mencatat debit sama dengan kredit. Jurnal dibuat otomatis dari dokumen."),
+    ("Piutang", "Uang pelanggan yang belum diterima. Lahir saat barang terkirim dengan termin; berkurang saat pembayaran dialokasikan."),
+    ("Alokasi", "Menempelkan uang masuk ke pesanan atau tagihan tertentu. Uang yang belum dialokasikan menjadi titipan pelanggan."),
+    ("Umur piutang", "Lama piutang sejak jatuh tempo: belum jatuh tempo, 1–30, 31–60, 61–90, lebih dari 90 hari."),
+    ("Hutang", "Kewajiban ke pemasok. Lahir dari tagihan pemasok yang cocok dengan PO dan penerimaan barang."),
+    ("GR/IR", "Barang sudah diterima tetapi tagihannya belum datang. Nilai ini menunggu tagihan pemasok."),
+    ("Kontrabon", "Tanda terima tukar faktur: pemasok menyerahkan faktur, kita memberi tanggal janji bayar."),
+    ("Retur, nota kredit, nota debit", "Retur penjualan mengurangi piutang (nota kredit) atau dikembalikan uangnya; retur ke pemasok mengurangi hutang (nota debit)."),
+    ("Rekonsiliasi bank", "Mencocokkan mutasi rekening koran dengan catatan buku; selisih seperti biaya admin dibukukan."),
+    ("PTKP, TER, BPJS", "Dasar potongan pajak gaji (PPh 21) dan iuran jaminan sosial yang dihitung saat proses gaji."),
+    ("Tutup buku", "Mengunci periode supaya tidak ada transaksi bertanggal di periode itu; dibuka kembali hanya dengan alasan."),
+    ("Faktur pajak keluaran", "Faktur PPN untuk penjualan ber-PPN; nomornya diterbitkan dan dilaporkan ke pajak."),
 ]
 
 
@@ -152,20 +163,60 @@ def role(r: str) -> str:
     return f'<span class="role" style="background:{col}">{escape(r or "")}</span>'
 
 
+KUR = json.load(open(os.path.join(HERE, "kurikulum.json"), encoding="utf-8"))
+
+
+def _urutan():
+    """[(modul, sub-modul atau None, kode)] menurut kurikulum.json."""
+    out = []
+    for m in KUR["modul"]:
+        for k in m.get("kode", []):
+            out.append((m, None, k))
+        for sb in m.get("sub", []):
+            for k in sb["kode"]:
+                out.append((m, sb, k))
+    return out
+
+
+def _hasil_uji(kode: str):
+    """Gabungan hasil uji jalan untuk satu kode (mis. A3 = A3_retur_penjualan + A3_retur_pembelian)."""
+    base = os.path.join(ROOT, "uji", "hasil")
+    dirs = sorted(x for x in (os.listdir(base) if os.path.isdir(base) else [])
+                  if x == kode or re.match(re.escape(kode) + r"[^0-9]", x))
+    res = [json.load(open(os.path.join(base, x, "hasil.json"), encoding="utf-8"))
+           for x in dirs if os.path.exists(os.path.join(base, x, "hasil.json"))]
+    if not res:
+        return None
+    return {"ok": all(r.get("ok") for r in res), "steps": [s for r in res for s in r.get("steps", [])],
+            "http_5xx": [e for r in res for e in r.get("http_5xx") or []],
+            "console_errors": [e for r in res for e in r.get("console_errors") or []],
+            "at": max(r.get("at") or "" for r in res)}
+
+
 def load():
-    sc = []
-    for f in sorted(glob.glob(os.path.join(HERE, "skenario", "F*.json"))):
+    semua = {}
+    for f in sorted(glob.glob(os.path.join(HERE, "skenario", "*.json")) + glob.glob(os.path.join(HERE, "alur_e2e", "*.json"))):
         with open(f, encoding="utf-8") as fh:
             d = json.load(fh)
-        res = os.path.join(ROOT, "uji", "hasil", d["kode"], "hasil.json")
-        d["_uji"] = json.load(open(res, encoding="utf-8")) if os.path.exists(res) else None
+        d["_uji"] = _hasil_uji(d["kode"])
+        semua[d["kode"]] = d
+    sc, nomor = [], {}
+    for m, sb, k in _urutan():
+        if k not in semua:
+            continue
+        grp = (sb or m)["no"]
+        nomor[grp] = nomor.get(grp, 0) + 1
+        d = dict(semua[k])
+        d["_modul"], d["_sub"], d["_no"] = m, sb, f"{grp}.{nomor[grp]}"
         sc.append(d)
-    sc.sort(key=lambda d: (d.get("bagian", "A"), int(re.sub(r"\D", "", d["kode"]) or 0)))
     return sc
 
 
 def uji_chip(d) -> str:
     u = d.get("_uji")
+    if not u and not d.get("langkah"):
+        return '<span class="chip">Ringkasan — langkahnya diuji pada skenario terkait</span>'
+
     if not u:
         return '<span class="chip a">Uji jalan: belum</span>'
     n, ok = len(u["steps"]), sum(1 for s in u["steps"] if s["ok"])
@@ -203,19 +254,27 @@ def img(path: str, cap: str) -> str:
 
 def schedule(sc):
     h, m = START
-    rows, lunch = [], False
+    hari, rows, lunch, mod_now = 1, [], False, None
+    rows.append('<tr><td colspan="4"><b>Hari 1</b></td></tr>')
     for d in sc:
+        mins = int(d.get("menit") or 20)
+        if (h * 60 + m + mins) > 17 * 60:
+            hari += 1
+            h, m, lunch = START[0], START[1], False
+            rows.append(f'<tr><td colspan="4"><b>Hari {hari}</b></td></tr>')
         if not lunch and h >= 12:
             rows.append(f'<tr><td>{h:02d}.{m:02d}</td><td colspan="3" class="muted"><i>Istirahat & makan siang (60 menit)</i></td></tr>')
             h += 1
             lunch = True
-        mins = int(d.get("menit") or 20)
-        rows.append(f"<tr><td>{h:02d}.{m:02d}</td><td><b>{escape(d['kode'])}</b></td><td>{fmt(d['judul'])}</td>"
+        if d["_modul"]["no"] != mod_now:
+            mod_now = d["_modul"]["no"]
+            rows.append(f'<tr><td></td><td colspan="3" class="muted"><b>Bagian {escape(mod_now)} · {escape(d["_modul"]["judul"])}</b></td></tr>')
+        rows.append(f"<tr><td>{h:02d}.{m:02d}</td><td><b>{escape(d['_no'])}</b></td><td>{fmt(d['judul'])}</td>"
                     f"<td>{mins} mnt · {escape(d.get('peran', ''))}</td></tr>")
         m += mins
         h, m = h + m // 60, m % 60
     rows.append(f'<tr><td>{h:02d}.{m:02d}</td><td colspan="3"><i>Tanya jawab, evaluasi & penutupan (30 menit)</i></td></tr>')
-    return "".join(rows)
+    return "".join(rows), hari
 
 
 FLOW_COLOR = {"finance": "#0F766E", "manajer": "#7C3AED", "manager": "#7C3AED", "sistem": "#475569", "sales": "#2563EB",
@@ -349,15 +408,15 @@ def money_map() -> str:
             B.append(f'<text x="{(x1 + x2) / 2}" y="{(y1 + y2) / 2 - 6}" text-anchor="middle" font-size="11" fill="#475569">{escape(label)}</text>')
 
     S, P, K, G, L = "#2563EB", "#9A3412", "#0F766E", "#475569", "#7C3AED"
-    box(10, 20, 190, 80, "Penjualan", ["SO terkirim (Sales/Gudang)", "pajak keluaran · F13"], S)
-    box(290, 20, 220, 80, "Piutang · F02–F06", ["terima bayar · sebagian ·", "lebih bayar · cicilan · plafon"], S)
-    box(10, 140, 190, 80, "Pembelian", ["PO → barang diterima (GR)", "sample berbayar · F14"], P)
-    box(290, 140, 220, 80, "Hutang · F11–F12", ["tagihan 3-way · bayar ·", "kontrabon · GR/IR"], P)
-    box(590, 80, 200, 100, "Kas & Bank · F07–F10", ["rekening & saldo · kas kecil", "titipan sales · transaksi kas", "rekonsiliasi bank"], K)
-    box(290, 260, 220, 70, "Penggajian · F15", ["setoran gaji, BPJS & PPh 21"], "#A21CAF")
-    box(860, 20, 200, 80, "Buku Besar · F16", ["jurnal otomatis tiap dokumen", "jejak dokumen"], G)
-    box(860, 140, 200, 80, "Laporan · F17", ["Laba-Rugi · Neraca", "Arus Kas · Profitabilitas"], L)
-    box(860, 260, 200, 70, "Tutup Buku · F18", ["kunci periode · buka kembali"], L)
+    box(10, 20, 190, 80, "Penjualan · A1", ["pesanan → kirim barang", "retur penjualan · A3"], S)
+    box(290, 20, 220, 80, "Piutang · 3.1", ["terima bayar · titipan · cicilan", "faktur pajak · plafon kredit"], S)
+    box(10, 140, 190, 80, "Pengadaan · A2", ["PR → PO → barang diterima", "retur pembelian · A3"], P)
+    box(290, 140, 220, 80, "Hutang · 3.2", ["tagihan 3-way · kontrabon", "bayar · GR/IR"], P)
+    box(590, 80, 200, 100, "Kas & Bank · 3.3", ["rekening & saldo · kas kecil", "titipan sales · transaksi kas", "rekonsiliasi bank"], K)
+    box(290, 260, 220, 70, "SDM & Gaji · A4 · 3.4", ["karyawan → gaji → setoran pajak"], "#A21CAF")
+    box(860, 20, 200, 80, "Buku Besar · 1 · 3.5", ["akun (COA) & pemetaan", "jurnal otomatis · jejak"], G)
+    box(860, 140, 200, 80, "Laporan · 4", ["Laba-Rugi · Neraca", "Arus Kas · Profitabilitas"], L)
+    box(860, 260, 200, 70, "Tutup Buku · 4", ["kunci periode · buka kembali"], L)
     arrow(200, 60, 288, 60, "piutang lahir")
     arrow(200, 180, 288, 180, "hutang lahir")
     arrow(510, 70, 588, 110, "uang masuk")
@@ -381,27 +440,44 @@ def scenario_html(d) -> str:
                      f'<td>{fmt(s.get("aksi"))}{isi}</td><td>{fmt(s.get("hasil"))}</td><td><span class="cb"></span></td></tr>')
         if s.get("gambar") and not RINGKAS:
             aksi = re.sub(r"[\[\]*`]", "", str(s.get("aksi") or ""))[:110]
-            figs.append(img(s["gambar"], f"{d['kode']} langkah {s.get('no')} — {aksi}"))
+            figs.append(img(s["gambar"], f"{d.get('_no', d['kode'])} langkah {s.get('no')} — {aksi}"))
     def lst(items):
         return "<ul>" + "".join(f"<li>{fmt(x)}</li>" for x in items or []) + "</ul>"
     cek = f'<div class="box g"><b class="t">Cek di buku (jurnal & saldo)</b>{lst(d.get("cek_buku"))}</div>' if d.get("cek_buku") else ""
     salah = f'<div class="box a"><b class="t">Kesalahan yang sering terjadi</b>{lst(d.get("kesalahan_umum"))}</div>' if d.get("kesalahan_umum") else ""
     pel = f'<div class="box p"><b class="t">Catatan pelatih</b>{fmt(d.get("catatan_pelatih"))}</div>' if d.get("catatan_pelatih") else ""
+    modul = d.get("_modul") or {}
+    kicker = f"Bagian {modul.get('no', '')} · {modul.get('judul', '')}" + (f" › {d['_sub']['judul']}" if d.get("_sub") else "")
+    konsep = (f'<div class="box k"><b class="t">Konsep inti</b>{lst(d.get("konsep"))}</div>') if d.get("konsep") else ""
+    jpt = ""
+    if d.get("jurnal_per_tahap"):
+        rows = "".join(f"<tr><td><b>{fmt(r.get('tahap'))}</b></td><td>{fmt(r.get('dokumen'))}</td><td>{fmt(r.get('jurnal'))}</td></tr>"
+                       for r in d["jurnal_per_tahap"])
+        jpt = ('<h3>Jurnal di setiap tahap</h3><table class="grid"><colgroup><col style="width:30%"><col style="width:22%"><col style="width:48%"></colgroup>'
+               f'<thead><tr><th>Tahap</th><th>Dokumen</th><th>Jurnal otomatis (D = debit, K = kredit)</th></tr></thead><tbody>{rows}</tbody></table>')
+    kontrol = (f'<div class="box n"><b class="t">Titik kontrol</b>{lst(d.get("titik_kontrol"))}</div>') if d.get("titik_kontrol") else ""
+    data_awal = f'<div class="box"><b class="t">Data yang dipakai</b>{fmt(d.get("data_awal"))}</div>' if d.get("data_awal") else ""
+    tabel = ""
+    if steps:
+        tabel = f"""<h3>Langkah</h3>
+  <table class="steps"><colgroup><col style="width:6%"><col style="width:11%"><col style="width:19%"><col style="width:33%"><col style="width:27%"><col style="width:4%"></colgroup>
+  <thead><tr><th>No</th><th>Peran</th><th>Di mana</th><th>Lakukan</th><th>Yang harus terlihat</th><th>✓</th></tr></thead>
+  <tbody>{''.join(steps)}</tbody></table>"""
     return f"""
 <section class="sec" id="{escape(d['kode'])}">
-  <div class="head"><div><div class="kicker">{escape(BAGIAN.get(d.get('bagian', 'A'), ''))}</div>
-    <h2>{escape(d['kode'])} · {fmt(d['judul'])}</h2></div>
+  <div class="head"><div><div class="kicker">{escape(kicker)}</div>
+    <h2>{escape(d.get('_no', ''))} · {fmt(d['judul'])} <span class="muted" style="font-size:8pt">({escape(d['kode'])})</span></h2></div>
     <div class="right"><div class="chips"><span class="chip">{escape(d.get('peran', ''))}</span><span class="chip">{escape(str(d.get('menit', '')))} menit</span></div>
     <div class="chips">{uji_chip(d)}</div></div></div>
   <div class="grid2"><div class="box"><b class="t">Tujuan</b>{fmt(d.get('tujuan'))}</div>
     <div class="box"><b class="t">Kapan dipakai</b>{fmt(d.get('kapan'))}</div></div>
+  {konsep}
   {('<h3>Alur</h3>' + flow_svg(d.get('alur'))) if d.get('alur') else ''}
+  {jpt}
+  {kontrol}
   {nav_html(d)}
-  <div class="box"><b class="t">Data awal (Kartu Peserta)</b>{fmt(d.get('data_awal'))}</div>
-  <h3>Langkah</h3>
-  <table class="steps"><colgroup><col style="width:6%"><col style="width:11%"><col style="width:19%"><col style="width:33%"><col style="width:27%"><col style="width:4%"></colgroup>
-  <thead><tr><th>No</th><th>Peran</th><th>Di mana</th><th>Lakukan</th><th>Yang harus terlihat</th><th>✓</th></tr></thead>
-  <tbody>{''.join(steps)}</tbody></table>
+  {data_awal}
+  {tabel}
   <div class="grid2">{cek}{salah}</div>
   {pel}
   {('<h3>Tangkapan layar per langkah</h3>' + ''.join(figs)) if figs else ''}
@@ -419,7 +495,7 @@ def rekap(sc) -> str:
             fail = "; ".join(f"{s['no']}: {s['info'][:120]}" for s in u["steps"] if not s["ok"])
         else:
             st, det, fail = '<span class="muted">belum diuji</span>', "", ""
-        rows.append(f"<tr><td><b>{escape(d['kode'])}</b></td><td>{fmt(d['judul'])}</td><td>{st}</td><td>{escape(det)}"
+        rows.append(f"<tr><td><b>{escape(d.get('_no', ''))}</b><br><span class='muted'>{escape(d['kode'])}</span></td><td>{fmt(d['judul'])}</td><td>{st}</td><td>{escape(det)}"
                     f"{'<br><span class=bad>' + escape(fail) + '</span>' if fail else ''}</td>"
                     f"<td class='muted'>{escape((d.get('uji') or {}).get('berkas', ''))}</td></tr>")
     return "".join(rows)
@@ -485,102 +561,118 @@ def lampiran() -> str:
     return "".join(out)
 
 
+def modul_html(m, isi) -> str:
+    """Halaman pembuka bagian: nomor, judul, pengantar, daftar isi bagian."""
+    daftar = "".join(f'<div><span><b>{escape(d["_no"])}</b> {fmt(d["judul"])}</span><span class="muted">{escape(d.get("peran", ""))}'
+                     f' · {d.get("menit", "")} mnt</span></div>' for d in isi)
+    intro = "".join(f"<p>{fmt(x)}</p>" for x in m.get("intro") or [])
+    return (f'<section class="sec"><div class="modhead"><div class="no">{escape(m["no"])}</div><h2>{escape(m["judul"])}</h2>'
+            f'<p>{fmt(m.get("ringkas"))}</p></div>{intro}<h3>Isi bagian ini</h3><div class="toc">{daftar}</div></section>')
+
+
 def build_html(sc) -> str:
-    KARTU_ROWS = "".join(f'<tr><td>{escape(lbl)} <span class="muted">({escape(sk)})</span><br><span class="nav">{escape(k)}</span></td><td></td></tr>'  # noqa: N806
-                         for k, lbl, sk in KARTU)
+    KARTU_ROWS = "".join(f'<tr><td>{escape(lbl)} <span class="muted">(dipakai di {escape(sk)})</span></td><td></td></tr>'  # noqa: N806
+                         for _k, lbl, sk in KARTU)
     MENU_ROWS = "".join(f'<tr><td><span class="nav">{escape(m)}</span></td><td>{escape(t)}</td></tr>' for m, t in MENU)  # noqa: N806
     ISTILAH_ROWS = "".join(f"<tr><td><b>{escape(k)}</b></td><td>{escape(v)}</td></tr>" for k, v in ISTILAH)  # noqa: N806
+    PERAN_ROWS = "".join(f"<tr><td><b>{escape(k)}</b></td><td>{escape(v)}</td></tr>" for k, v in KUR.get("peran", []))  # noqa: N806
     NAV_FIGS = "".join(  # noqa: N806
         f'<figure class="navfig"><img src="{escape(opt(v["file"], 900))}" alt=""><figcaption>{escape(v.get("menu") or k)}'
         f'{" (Manajer)" if v.get("role") == "manager" else ""}</figcaption></figure>'
         for k, v in sorted(_nav_index().items(), key=lambda kv: (kv[1].get("role") != "finance", kv[1].get("menu") or ""))
         if os.path.exists(os.path.join(ROOT, v["file"])))
-    toc ="".join(f'<div><span><b>{escape(d["kode"])}</b>{fmt(d["judul"])}</span><span class="muted">{escape(d.get("peran", ""))} · {d.get("menit", "")} mnt</span></div>' for d in sc)
-    a = [d for d in sc if d.get("bagian", "A") == "A"]
-    b = [d for d in sc if d.get("bagian") == "B"]
+    toc = "".join(
+        f'<div class="tocmod"><span><b>Bagian {escape(m["no"])}</b> {escape(m["judul"])}</span></div>' +
+        "".join(f'<div><span><b>{escape(d["_no"])}</b> {fmt(d["judul"])}</span><span class="muted">{d.get("menit", "")} mnt</span></div>'
+                for d in sc if d["_modul"]["no"] == m["no"])
+        for m in KUR["modul"])
     total = sum(int(d.get("menit") or 0) for d in sc)
+    jadwal, hari = schedule(sc)
     gen = datetime.now().strftime("%d-%m-%Y %H:%M")
+    m0 = KUR["modul"][0]
     body = f"""
 <div class="cover"><div class="band"></div>
   <div class="kicker" style="color:#99F6E4">ERP Kain Nusantara · {DOC_ID}</div>
   <h1>Pelatihan Keuangan{'<br><span style="font-size:15pt;color:#99F6E4">Versi ringkas untuk dicetak</span>' if RINGKAS else ''}</h1>
-  <div class="sub">Panduan langkah demi langkah untuk petugas keuangan dan manajer: uang masuk & piutang, kas & bank,
-  hutang & pajak, buku besar, laporan, dan tutup buku — setiap skenario sudah dijalankan di layar dan dicocokkan dengan buku.</div>
-  <div class="meta"><div><span class="lbl">Tanggal</span>{DATE}</div><div><span class="lbl">Isi</span>{len(sc)} skenario · ±{total // 60} jam {total % 60} menit praktik</div>
+  <div class="sub">Dari fondasi (bagan akun dan konfigurasi) ke alur transaksi ujung ke ujung, praktik harian Finance termasuk SDM
+  dan gaji, sampai laporan dan tutup buku. Setiap langkah sudah dijalankan di layar dan dicocokkan dengan buku.</div>
+  <div class="meta"><div><span class="lbl">Tanggal</span>{DATE}</div><div><span class="lbl">Isi</span>{len(sc)} materi · ±{total // 60} jam {total % 60} menit · {hari} hari</div>
   <div><span class="lbl">Disusun</span>{gen} WIB</div></div></div>
 
-<section class="sec"><div class="head"><div><div class="kicker">Mulai di sini</div><h2>Cara memakai panduan ini</h2></div></div>
-  <div class="grid2">
-   <div class="box"><b class="t">Satu peserta = satu akun</b>Setiap peserta masuk dengan akun Finance sendiri
-     <span class="nav">finance.latihNN@kainnusantara.id</span> (NN = nomor peserta, sandi dibagikan pelatih) dan hanya melihat
-     PT Sukacita. Dokumen latihan Anda memakai nama <b>Latihan NN</b>: pelanggan <i>Latihan NN · Toko Kain Peserta NN</i>
-     dan pemasok <i>Latihan NN · Pemasok Grey Peserta NN</i>. Cari dokumen Anda dengan nama itu — jangan memproses dokumen peserta lain.</div>
-   <div class="box"><b class="t">Cara membaca tabel langkah</b><span class="nav">Menu › Sub-menu › Tab</span> = tempat layar ·
-     <span class="btn">Tombol</span> = tombol yang diklik persis seperti tulisannya · <span class="fld">Isian</span> = kolom yang diisi ·
-     kolom <b>Yang harus terlihat</b> = bukti langkah berhasil. Centang <span class="cb"></span> bila sudah sama.</div>
-   <div class="box g"><b class="t">Sudah diuji</b>Setiap skenario dijalankan otomatis di layar (browser) dengan akun peran yang sama,
-     lalu angkanya dicocokkan dengan jurnal & saldo. Hasilnya tertera di kepala tiap skenario dan di Rekap Uji.</div>
-   <div class="box a"><b class="t">Bila hasil berbeda</b>Jangan ulangi langkah berkali-kali. Catat nomor dokumen + tangkapan layar
-     di Lembar Latihan (kolom Temuan) dan beri tahu pelatih. Uang yang sudah tercatat tidak dihapus — dikoreksi dengan dokumen pembalik.</div>
-  </div>
-  <h3>Daftar skenario</h3><div class="toc">{toc}</div>
+<section class="sec"><div class="head"><div><div class="kicker">Daftar isi</div><h2>Susunan pelatihan</h2></div></div>
+  <p>Urutannya mengikuti cara kerja keuangan: fondasi dulu, lalu alur transaksi, lalu praktik, lalu laporan dan tutup buku.</p>
+  <div class="toc">{toc}</div>
 </section>
 
-<section class="sec"><div class="head"><div><div class="kicker">Jadwal</div><h2>Jadwal satu hari (mulai {START[0]:02d}.{START[1]:02d} WIB)</h2></div></div>
-  <table class="grid"><colgroup><col style="width:12%"><col style="width:9%"><col style="width:52%"><col style="width:27%"></colgroup>
-  <thead><tr><th>Jam</th><th>Kode</th><th>Skenario</th><th>Durasi · peran</th></tr></thead><tbody>{schedule(sc)}</tbody></table>
-  <h3>Kartu Peserta (diisi saat pembukaan)</h3>
-  <p class="muted">Nomor dokumen awal setiap peserta dicetak pelatih dari sistem (Kartu Peserta). Baris abu-abu = nama kunci di kartu. Salin nomornya ke sini supaya mudah dicari.</p>
-  <table class="grid kartu"><colgroup><col style="width:34%"><col style="width:66%"></colgroup><tbody>
+{modul_html(m0, [d for d in sc if d["_modul"]["no"] == "0"])}
+
+<section class="sec"><div class="head"><div><div class="kicker">Bagian 0 · Pengantar</div><h2>Siapa mengerjakan apa</h2></div></div>
+  <p>Satu transaksi melewati beberapa peran. Finance perlu tahu siapa membuat dokumen sebelumnya supaya bisa menelusuri angka.</p>
+  <table class="grid"><colgroup><col style="width:24%"><col style="width:76%"></colgroup><tbody>{PERAN_ROWS}</tbody></table>
+  <h3>Gambaran besar: alur uang di aplikasi</h3>
+  {money_map()}
+  <p class="muted">Angka di kotak = nomor bagian di panduan ini (A1–A4 = alur ujung ke ujung, 3.x = praktik Finance, 4 = Manajer).</p>
+</section>
+
+<section class="sec"><div class="head"><div><div class="kicker">Bagian 0 · Pengantar</div><h2>Cara memakai panduan ini</h2></div></div>
+  <div class="grid2">
+   <div class="box"><b class="t">Satu peserta, satu akun</b>Setiap peserta masuk dengan akun Finance sendiri
+     <span class="nav">finance.latihNN@kainnusantara.id</span> (NN = nomor peserta). Akun hanya melihat PT Sukacita. Dokumen latihan
+     memakai nama <b>Latihan NN</b>, misalnya pelanggan <i>Latihan NN · Toko Kain Peserta NN</i> dan pemasok <i>Latihan NN · Pemasok Grey Peserta NN</i>.
+     Cari dokumen Anda dengan nama itu.</div>
+   <div class="box"><b class="t">Cara membaca tabel langkah</b><span class="nav">Menu › Sub-menu › Tab</span> = tempat layar.
+     <span class="btn">Tombol</span> = tombol yang diklik, tertulis persis seperti di layar. <span class="fld">Isian</span> = kolom yang diisi.
+     Kolom <b>Yang harus terlihat</b> = bukti langkah berhasil. Centang <span class="cb"></span> bila sudah sama.</div>
+   <div class="box k"><b class="t">Setiap materi berisi</b>Tujuan · Konsep inti · Alur · Cara menuju layar · Langkah · Cek di buku ·
+     Kesalahan yang sering terjadi. Alur ujung ke ujung ditambah tabel jurnal di setiap tahap dan titik kontrol.</div>
+   <div class="box a"><b class="t">Bila hasil berbeda</b>Jangan mengulang langkah berkali-kali. Catat nomor dokumen dan apa yang
+     terlihat di Lembar Latihan, lalu beri tahu pelatih. Transaksi yang sudah tercatat dikoreksi dengan dokumen pembalik, tidak dihapus.</div>
+  </div>
+  <h3>Kartu Peserta</h3>
+  <p class="muted">Pelatih membagikan nomor dokumen awal setiap peserta. Salin ke sini supaya mudah dicari.</p>
+  <table class="grid kartu"><colgroup><col style="width:44%"><col style="width:56%"></colgroup><tbody>
    <tr><td>Nomor peserta · akun</td><td>finance.latih____@kainnusantara.id</td></tr>
    <tr><td>Pelanggan latihan</td><td>Latihan ____ · Toko Kain Peserta ____</td></tr>
    <tr><td>Pemasok latihan</td><td>Latihan ____ · Pemasok Grey Peserta ____</td></tr>
 {KARTU_ROWS}</tbody></table>
 </section>
 
-<section class="sec"><div class="head"><div><div class="kicker">Gambaran besar</div><h2>Alur uang di ERP — di mana tiap skenario terjadi</h2></div></div>
-  <p>Setiap dokumen operasional (pesanan, penerimaan barang, tagihan, kas) otomatis membuat jurnal. Tugas keuangan: mencatat uang
-  masuk/keluar, mencocokkannya dengan dokumen dan bank, lalu memastikan buku seimbang sebelum laporan dan tutup buku.</p>
-  {money_map()}
-  <div class="grid2"><div class="box"><b class="t">Siklus penjualan → piutang</b>Barang terkirim dengan termin tempo → piutang lahir →
-   Finance mencatat uang masuk & mengalokasikannya → piutang turun, kas/bank naik → jurnal otomatis.</div>
-   <div class="box"><b class="t">Siklus pembelian → hutang</b>Barang diterima gudang (GR) → tagihan supplier dicocokkan PO & penerimaan
-   (3-way) → hutang lahir → dibayar langsung atau lewat kontrabon → jurnal otomatis.</div></div>
+<section class="sec"><div class="head"><div><div class="kicker">Bagian 0 · Pengantar</div><h2>Jadwal ({hari} hari, mulai {START[0]:02d}.{START[1]:02d} WIB)</h2></div></div>
+  <table class="grid"><colgroup><col style="width:12%"><col style="width:9%"><col style="width:52%"><col style="width:27%"></colgroup>
+  <thead><tr><th>Jam</th><th>No</th><th>Materi</th><th>Durasi · peran</th></tr></thead><tbody>{jadwal}</tbody></table>
 </section>
 
-<section class="sec"><div class="head"><div><div class="kicker">Panduan navigasi</div><h2>Cara menuju layar keuangan</h2></div></div>
+<section class="sec"><div class="head"><div><div class="kicker">Bagian 0 · Pengantar</div><h2>Cara menuju layar</h2></div></div>
   <p>Menu ada di sisi kiri. Klik nama grup (tanda <b>①</b>) supaya isinya terbuka, klik menu (<b>②</b>), lalu pilih tab di bagian atas
-  layar (<b>③</b>). Kolom <span class="fld">Cari menu…</span> di atas menu (Ctrl+K) juga bisa dipakai: ketik nama layar, tekan Enter.
-  Di kiri atas layar ada jejak lokasi (Beranda › grup › menu) — klik untuk kembali.</p>
+  layar (<b>③</b>). Kolom <span class="fld">Cari menu…</span> di atas menu (Ctrl+K) juga bisa dipakai: ketik nama layar, lalu tekan Enter.
+  Jejak lokasi di kiri atas (Beranda › grup › menu) bisa diklik untuk kembali.</p>
   <div class="navgrid">{NAV_FIGS}</div>
 </section>
 
-<section class="sec"><div class="head"><div><div class="kicker">Orientasi</div><h2>Peta menu keuangan</h2></div></div>
-  <p>Menu di sisi kiri mengikuti izin akun. Akun Finance melihat menu berikut (Manajer melihat semuanya ditambah yang bertanda ◆).</p>
+<section class="sec"><div class="head"><div><div class="kicker">Bagian 0 · Pengantar</div><h2>Peta menu & istilah</h2></div></div>
   <table class="grid"><colgroup><col style="width:30%"><col style="width:70%"></colgroup>
   <thead><tr><th>Menu</th><th>Tab · dipakai untuk</th></tr></thead><tbody>{MENU_ROWS}</tbody></table>
-  <h3>Istilah yang sering muncul</h3>
+  <h3>Istilah</h3>
   <table class="grid"><colgroup><col style="width:24%"><col style="width:76%"></colgroup><tbody>{ISTILAH_ROWS}</tbody></table>
 </section>
 """
-    if a:
-        body += f'<section class="sec"><div class="head"><div><div class="kicker">Bagian A</div><h2>{escape(BAGIAN["A"])}</h2></div></div>' \
-                f'<p>{len(a)} skenario untuk petugas keuangan harian. Dikerjakan dengan akun Finance peserta.</p></section>'
-        body += "".join(scenario_html(d) for d in a)
-    if b:
-        body += f'<section class="sec"><div class="head"><div><div class="kicker">Bagian B</div><h2>{escape(BAGIAN["B"])}</h2></div></div>' \
-                f'<p>{len(b)} skenario untuk manajer. Penutupan periode memengaruhi semua pengguna — di pelatihan diperagakan pelatih.</p></section>'
-        body += "".join(scenario_html(d) for d in b)
+    body += "".join(scenario_html(d) for d in sc if d["_modul"]["no"] == "0")
+    for m in KUR["modul"][1:]:
+        isi = [d for d in sc if d["_modul"]["no"] == m["no"]]
+        if not isi:
+            continue
+        body += modul_html(m, isi)
+        body += "".join(scenario_html(d) for d in isi)
     body += f"""
 {lampiran()}
 <section class="sec"><div class="head"><div><div class="kicker">Bukti</div><h2>Rekap uji jalan (layar + buku)</h2></div></div>
-  <p>Setiap baris = satu skenario yang dijalankan otomatis di browser (Playwright) dengan akun peran, lalu dicocokkan dengan jurnal,
+  <p>Setiap baris adalah satu materi yang dijalankan otomatis di browser dengan akun peran, lalu dicocokkan dengan jurnal,
   saldo, dan status di server. Galat 5xx = galat server selama uji.</p>
-  <table class="grid"><colgroup><col style="width:8%"><col style="width:34%"><col style="width:10%"><col style="width:30%"><col style="width:18%"></colgroup>
-  <thead><tr><th>Kode</th><th>Skenario</th><th>Hasil</th><th>Rincian</th><th>Skrip uji</th></tr></thead><tbody>{rekap(sc)}</tbody></table>
+  <table class="grid"><colgroup><col style="width:9%"><col style="width:33%"><col style="width:10%"><col style="width:30%"><col style="width:18%"></colgroup>
+  <thead><tr><th>No</th><th>Materi</th><th>Hasil</th><th>Rincian</th><th>Skrip uji</th></tr></thead><tbody>{rekap(sc)}</tbody></table>
   <h3>Evaluasi pelatihan</h3>
-  <table class="grid kartu"><tbody><tr><td style="width:40%">Skenario yang paling membantu</td><td></td></tr>
-   <tr><td>Skenario yang masih membingungkan</td><td></td></tr><tr><td>Temuan / usulan perbaikan layar</td><td></td></tr></tbody></table>
+  <table class="grid kartu"><tbody><tr><td style="width:40%">Materi yang paling membantu</td><td></td></tr>
+   <tr><td>Materi yang masih membingungkan</td><td></td></tr><tr><td>Temuan atau usulan perbaikan layar</td><td></td></tr></tbody></table>
   <div class="sign"><div>Peserta</div><div>Pelatih</div><div>Pemilik / Manajer Keuangan</div></div>
 </section>"""
     return (f'<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -593,7 +685,7 @@ def lembar(sc) -> str:
            "Centang langkah yang hasilnya sama dengan kolom *Yang harus terlihat*. Bila berbeda, tulis nomor dokumen & apa yang terlihat.", ""]
     for d in sc:
         judul = re.sub(r"[\[\]*`]", "", d["judul"])
-        out += [f"## {d['kode']} · {judul}", "", "| No | Lakukan | Yang harus terlihat | Sama? | Temuan |", "|---|---|---|---|---|"]
+        out += [f"## {d.get('_no', '')} · {judul} ({d['kode']})", "", "| No | Lakukan | Yang harus terlihat | Sama? | Temuan |", "|---|---|---|---|---|"]
         for s in d.get("langkah", []):
             clean = lambda x: re.sub(r"[\[\]*`]", "", str(x or "")).replace("|", "/").replace("\n", " ")
             out.append(f"| {s.get('no')} | {clean(s.get('aksi'))} | {clean(s.get('hasil'))} | ☐ | |")

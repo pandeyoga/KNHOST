@@ -97,20 +97,30 @@ def main() -> None:
     idx = B._nav_index()
     out = {"tanggal": B.DATE, "doc_id": B.DOC_ID, "menu": B.MENU, "istilah": B.ISTILAH, "kartu": B.KARTU,
            "jadwal": [], "skenario": []}
-    # jadwal (jam mulai per skenario) — sama dengan manual
+    # jadwal per bagian, dibagi ke hari berikutnya bila lewat 17.00 — sama dengan manual
     h, m = B.START
-    lunch = False
+    hari, lunch, mod_now = 1, False, None
+    out["jadwal"].append({"jam": "", "kode": "", "judul": "Hari 1", "menit": "", "hari": True})
     for d in sc:
+        mins = int(d.get("menit") or 20)
+        if (h * 60 + m + mins) > 17 * 60:
+            hari += 1
+            h, m, lunch = B.START[0], B.START[1], False
+            out["jadwal"].append({"jam": "", "kode": "", "judul": f"Hari {hari}", "menit": "", "hari": True})
         if not lunch and h >= 12:
             out["jadwal"].append({"jam": f"{h:02d}.{m:02d}", "kode": "", "judul": "Istirahat & makan siang", "menit": 60})
             h += 1
             lunch = True
         mins = int(d.get("menit") or 20)
-        out["jadwal"].append({"jam": f"{h:02d}.{m:02d}", "kode": d["kode"], "judul": bersih(d["judul"]), "menit": mins,
+        out["jadwal"].append({"jam": f"{h:02d}.{m:02d}", "kode": d["_no"], "judul": bersih(d["judul"]), "menit": mins,
                               "peran": bersih(d.get("peran"))})
         m += mins
         h, m = h + m // 60, m % 60
     out["jadwal"].append({"jam": f"{h:02d}.{m:02d}", "kode": "", "judul": "Tanya jawab, evaluasi & penutupan", "menit": 30})
+    out["hari"] = hari
+    out["modul"] = [{"no": x["no"], "judul": x["judul"], "ringkas": x.get("ringkas", ""), "intro": x.get("intro", []),
+                     "sub": [{"no": s["no"], "judul": s["judul"]} for s in x.get("sub", [])]} for x in B.KUR["modul"]]
+    out["peran"] = B.KUR.get("peran", [])
     # peta alur uang
     with open(os.path.join(HERE, "alur", "peta_uang.html"), "w", encoding="utf-8") as fh:
         fh.write(svg_html(B.money_map()))
@@ -118,7 +128,7 @@ def main() -> None:
     out["nav_contoh"] = [{"menu": v.get("menu"), "img": B.opt(v["file"], 1400)} for k, v in sorted(idx.items())
                          if v.get("role") == "finance" and k.endswith("|ar-aging|collection-worklist")][:1]
     for d in sc:
-        role_key = "manager" if d.get("bagian") == "B" else "finance"
+        role_key = "manager" if d.get("bagian") == "B" or d["_modul"]["no"] == "4" else "finance"
         if d.get("alur"):
             with open(os.path.join(HERE, "alur", f"{d['kode']}.html"), "w", encoding="utf-8") as fh:
                 fh.write(svg_html(B.flow_svg(d["alur"])))
@@ -136,6 +146,12 @@ def main() -> None:
                             "hasil": bersih(s.get("hasil")), "img": rel, "wh": ukuran(rel) if rel else None})
         u = d.get("_uji") or {}
         out["skenario"].append({
+            "no": d["_no"], "modul": d["_modul"]["no"], "modul_judul": d["_modul"]["judul"],
+            "sub_judul": (d.get("_sub") or {}).get("judul", ""),
+            "konsep": [bersih(x) for x in d.get("konsep") or []],
+            "jurnal_per_tahap": [{"tahap": bersih(r.get("tahap")), "dokumen": bersih(r.get("dokumen")), "jurnal": bersih(r.get("jurnal"))}
+                                 for r in d.get("jurnal_per_tahap") or []],
+            "titik_kontrol": [bersih(x) for x in d.get("titik_kontrol") or []],
             "kode": d["kode"], "judul": bersih(d["judul"]), "bagian": d.get("bagian", "A"), "peran": bersih(d.get("peran")),
             "menit": d.get("menit"), "tujuan": bersih(d.get("tujuan")), "kapan": bersih(d.get("kapan")),
             "data_awal": bersih(d.get("data_awal")), "alur": [{"peran": a.get("peran"), "label": a.get("label"),

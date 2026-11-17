@@ -1,0 +1,49 @@
+{
+ "kode": "A5",
+ "modul": "2",
+ "judul": "Dari Jurnal sampai Laporan & Tutup Buku",
+ "bagian": "B",
+ "tujuan": "Peserta memahami bagaimana semua siklus bermuara di buku besar, dicocokkan dengan bank, lalu menjadi laporan dan ditutup per periode.",
+ "kapan": "Setiap akhir hari (cocokkan bank), setiap akhir bulan (periksa akun sementara, laporan, tutup buku).",
+ "konsep": [
+  "Setiap dokumen di siklus Pesanan, Pengadaan, Retur, Kas, dan Gaji membuat jurnal otomatis. Buku besar adalah kumpulan semua jurnal itu.",
+  "Rekonsiliasi bank memastikan saldo rekening di buku sama dengan rekening koran bank. Selisih (biaya admin, bunga, transfer yang belum dicatat) dibukukan saat rekonsiliasi.",
+  "Akun sementara (suspense) dan GR/IR harus diperiksa sebelum tutup buku: akun sementara diisi transaksi yang belum jelas akunnya, GR/IR diisi barang yang sudah diterima tetapi tagihannya belum datang.",
+  "Laporan Laba-Rugi, Neraca, dan Arus Kas dihitung langsung dari jurnal. Neraca selalu seimbang: Aset = Kewajiban + Ekuitas.",
+  "Tutup buku mengunci periode. Membuka kembali periode butuh alasan dan persetujuan, dan tercatat di jejak audit."
+ ],
+ "peran": "Finance · Manajer",
+ "menit": 15,
+ "data_awal": "Jurnal dari semua siklus yang sudah dipraktikkan.",
+ "alur": [
+  {"peran": "Semua siklus", "label": "Dokumen membuat jurnal"},
+  {"peran": "Finance", "label": "Rekonsiliasi bank harian"},
+  {"peran": "Finance", "label": "Periksa jurnal & jejak dokumen"},
+  {"peran": "Manajer", "label": "Periksa akun sementara & GR/IR", "cabang": "Ada saldo → reklasifikasi dulu"},
+  {"peran": "Manajer", "label": "Baca Laba-Rugi, Neraca, Arus Kas"},
+  {"peran": "Manajer", "label": "Tutup periode"}
+ ],
+ "navigasi": [],
+ "langkah": [],
+ "jurnal_per_tahap": [
+  {"tahap": "Rekonsiliasi bank — biaya admin bank", "dokumen": "Transaksi kas (dari rekonsiliasi)", "jurnal": "6-8000 Beban Administrasi Bank (D) · 1-1100 Kas Besar / Bank (K)"},
+  {"tahap": "Reklasifikasi akun sementara", "dokumen": "Jurnal umum (Manajer)", "jurnal": "Akun tujuan yang benar (D/K) · 1-9999 Akun Sementara (K/D)"},
+  {"tahap": "Tutup buku", "dokumen": "Penutupan periode", "jurnal": "Tidak ada jurnal baru — periode dikunci"}
+ ],
+ "titik_kontrol": [
+  "Neraca saldo seimbang (total debit = total kredit) — terlihat di Buku Besar › Neraca Saldo.",
+  "Saldo bank di buku = rekening koran sesudah rekonsiliasi (Kas & Bank › Rekonsiliasi).",
+  "Akun sementara 1-9999 bersaldo nol sebelum tutup buku.",
+  "Daftar periksa tutup buku hijau semua sebelum menekan Tutup."
+ ],
+ "cek_buku": [
+  "Neraca: Aset = Kewajiban + Ekuitas.",
+  "Laba bersih di Laba-Rugi = perubahan laba ditahan di Neraca untuk periode yang sama."
+ ],
+ "kesalahan_umum": [
+  "Menutup periode sebelum rekonsiliasi bank selesai — selisih baru ketahuan sesudah periode terkunci.",
+  "Membiarkan saldo di akun sementara — laporan jadi tidak akurat."
+ ],
+ "catatan_pelatih": "Ringkasan ini menghubungkan praktik 3.3 (Rekonsiliasi), 3.5 (Buku Besar & Jejak Dokumen), dan bagian 4 (Laporan, Tutup Buku). Tidak ada praktik tersendiri di sini.",
+ "uji": {"berkas": "uji/F10_rekonsiliasi_bank.js · uji/F16_buku_besar_jejak.js · uji/F17_laporan_keuangan.js · uji/F18_tutup_buku.js", "peserta_uji": "—"}
+}

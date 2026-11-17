@@ -119,29 +119,97 @@ const circ = ["①", "②", "③", "④", "⑤"];
 const menuLangkah = (menu) => String(menu || "").split("›").map((s) => s.trim()).filter(Boolean)
   .map((p, i) => `${circ[i] || i + 1} ${p}`).join("  →  ");
 
-// ── 1. Pembuka ─────────────────────────────────────────────────────────────────────────────────────────────────────
-pres.addSection({ title: "Pembuka" });
-let s = pres.addSlide({ masterName: "JUDUL", sectionTitle: "Pembuka" });
+const head = (t) => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: HEX.navy } } });
+const TBL = { fontFace: THEME.bodyFontFace, border: { type: "solid", pt: 0.5, color: HEX.line }, valign: "middle" };
+const potongan = (arr, n) => {        // bagi rata: paling banyak n baris per slide, jumlah baris tiap slide seimbang
+  const k = Math.max(1, Math.ceil(arr.length / n)), m = Math.ceil(arr.length / k), out = [];
+  for (let i = 0; i < arr.length; i += m) out.push(arr.slice(i, i + m));
+  return out;
+};
+const MODUL = Object.fromEntries(D.modul.map((m) => [m.no, m]));
+const skenarioModul = (no) => D.skenario.filter((x) => x.modul === no);
+const ujiTeks = (x) => (x.uji.langkah ? `${x.uji.lulus}/${x.uji.langkah} langkah lulus uji layar & buku`
+  : "ringkasan — langkahnya diuji di skenario terkait");
+const SEC0 = "0 · Pengantar";
+
+// Halaman pembuka bagian: judul besar + ringkasan, lalu satu slide isi bagian (pengantar + daftar skenario)
+function halamanModul(m, sec) {
+  let t = pres.addSlide({ masterName: "JUDUL", sectionTitle: sec });
+  t.addText(`Bagian ${m.no} · ${m.judul}`, { placeholder: "title" });
+  t.addText(m.ringkas, { placeholder: "body" });
+  t.addNotes((m.intro || []).join("\n\n"));
+  const daftar = skenarioModul(m.no);
+  if (!daftar.length && !(m.intro || []).length) return;
+  t = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
+  t.addText(`Bagian ${m.no} · ${m.judul}`, { placeholder: "kicker" });
+  t.addText("Isi bagian ini", { placeholder: "title" });
+  kartuTeks(t, { x: 0.6, y: 1.45, w: 5.6, h: 5.35, judul: "Mengapa bagian ini penting", fill: HEX.tealSoft, color: HEX.teal,
+    name: `modul-${m.no}-intro`, isi: m.intro || [], size: 15 });
+  const baris = [];
+  let subNow = "";
+  for (const x of daftar) {
+    if (x.sub_judul && x.sub_judul !== subNow) {
+      subNow = x.sub_judul;
+      baris.push([{ text: subNow, options: { colspan: 3, bold: true, color: HEX.teal, fill: { color: HEX.soft } } }]);
+    }
+    baris.push([{ text: x.no, options: { bold: true, color: HEX.teal } }, { text: potong(x.judul, 70), options: { color: HEX.navy } },
+      { text: `${x.menit}′`, options: { color: HEX.muted, align: "right" } }]);
+  }
+  if (baris.length) {
+    t.addTable([[head("No"), head("Materi"), head("Menit")]].concat(baris), { ...TBL, x: 6.45, y: 1.45, w: 6.25, colW: [0.75, 4.75, 0.75],
+      fontSize: baris.length > 16 ? 9.5 : 11.5, margin: [0.02, 0.06, 0.02, 0.06], autoPage: false });
+  }
+}
+
+// ── 0. Pengantar ───────────────────────────────────────────────────────────────────────────────────────────────────
+pres.addSection({ title: SEC0 });
+let s = pres.addSlide({ masterName: "JUDUL", sectionTitle: SEC0 });
 s.addText("Pelatihan Keuangan ERP Kain Nusantara", { placeholder: "title" });
-s.addText(`${D.tanggal} · ${D.skenario.length} skenario praktik · alur, navigasi & layar setiap langkah`, { placeholder: "body" });
+s.addText(`${D.tanggal} · fondasi & konfigurasi → alur ujung ke ujung → praktik Finance per siklus → laporan & tutup buku`,
+  { placeholder: "body" });
+const praktik = D.skenario.filter((x) => x.uji.langkah);
 const nLangkah = D.skenario.reduce((a, x) => a + x.langkah.length, 0);
-const nLulus = D.skenario.reduce((a, x) => a + x.uji.lulus, 0), nUji = D.skenario.reduce((a, x) => a + x.uji.langkah, 0);
-[[String(D.skenario.length), "skenario praktik"], [String(nLangkah), "langkah bergambar"], [`${nLulus}/${nUji}`, "langkah lulus uji layar & buku"]]
+const nLulus = praktik.reduce((a, x) => a + x.uji.lulus, 0), nUji = praktik.reduce((a, x) => a + x.uji.langkah, 0);
+[[String(D.skenario.length), "materi (5 bagian)"], [String(nLangkah), "langkah bergambar"], [`${nLulus}/${nUji}`, "langkah lulus uji layar & buku"]]
   .forEach(([v, l], i) => {
     const x = 0.8 + i * 3.6;
     s.addText(v, { x, y: 5.55, w: 3.3, h: 0.8, fontSize: 40, bold: true, color: "5EEAD4", fontFace: THEME.headFontFace, margin: 0,
       isTextBox: true, objectName: `judul-angka-${i}` });
     s.addText(l, { x, y: 6.35, w: 3.3, h: 0.4, fontSize: 14, color: "CBD5E1", margin: 0, isTextBox: true, objectName: `judul-label-${i}` });
   });
-s.addNotes("Pembukaan. Slide ini menunjukkan alur, cara menuju layar, dan tangkapan layar setiap langkah. Rincian isian, " +
-  "hasil yang harus terlihat, dan cek buku ada di manual (Panduan Pelatihan Keuangan, PDF) dan lembar latihan.");
+s.addNotes("Pembukaan. Slide berisi alur, cara menuju layar, dan tangkapan layar setiap langkah. Rincian isian, hasil yang harus " +
+  "terlihat, dan cek buku ada di manual (Panduan Pelatihan Keuangan, PDF) dan lembar latihan.");
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
-s.addText("Cara belajar hari ini", { placeholder: "title" });
-[["1", "Slide (layar besar)", "Alur bisnis, cara menuju layar, dan tangkapan layar tiap langkah — tombol yang diklik ditandai merah."],
+// urutan pelatihan
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+s.addText("Urutan pelatihan", { placeholder: "title" });
+D.modul.forEach((m, i) => {
+  const y = 1.35 + i * 1.08;
+  s.addText(m.no, { shape: pres.shapes.OVAL, x: 0.6, y: y + 0.12, w: 0.66, h: 0.66, fill: { color: i === 1 ? HEX.amber : HEX.teal },
+    color: "FFFFFF", fontSize: 22, bold: true, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: `urut-${m.no}-no` });
+  s.addText([{ text: m.judul, options: { bold: true, fontSize: 19, color: HEX.navy, breakLine: true, fontFace: THEME.headFontFace } },
+    { text: m.ringkas, options: { fontSize: 13.5, color: HEX.slate } }], { x: 1.5, y, w: 11.2, h: 0.95, valign: "middle", margin: 0,
+    isTextBox: true, objectName: `urut-${m.no}-teks`, fit: "shrink" });
+});
+s.addNotes("Urutan mengikuti cara kerja keuangan: fondasi dulu (akun & aturan) supaya peserta tahu akun apa yang akan terisi, lalu alur " +
+  "transaksi utuh dari ujung ke ujung, lalu praktik harian Finance, terakhir laporan & tutup buku oleh Manajer.");
+
+// siapa mengerjakan apa
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+s.addText("Siapa mengerjakan apa", { placeholder: "title" });
+s.addTable([[head("Peran"), head("Tugas di aplikasi")]].concat(D.peran.map(([p, t]) => [
+  { text: p, options: { bold: true, color: roleColor(p) } }, { text: t, options: { color: HEX.navy } }])),
+{ ...TBL, x: 0.6, y: 1.35, w: 12.1, colW: [2.8, 9.3], fontSize: 14, margin: [0.05, 0.1, 0.05, 0.1] });
+s.addNotes("Finance bekerja di ujung setiap siklus, tetapi angkanya lahir dari pekerjaan peran lain. Karena itu alur ujung ke ujung " +
+  "(Bagian 2) dijalankan dengan akun setiap peran.");
+
+// cara belajar
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+s.addText("Cara belajar", { placeholder: "title" });
+[["1", "Slide (layar besar)", "Konsep, alur, cara menuju layar, dan tangkapan layar tiap langkah. Tombol yang diklik ditandai merah."],
   ["2", "Manual (PDF)", "Rincian tiap langkah: isian, yang harus terlihat, cek buku (jurnal & saldo), kesalahan umum."],
   ["3", "Praktik di akun sendiri", "Setiap peserta memakai akun Finance sendiri dan dokumen bernama “Latihan NN” (NN = nomor peserta)."],
-  ["4", "Lembar latihan", "Centang langkah yang hasilnya sama; tulis nomor dokumen bila berbeda dan beri tahu pelatih."]]
+  ["4", "Lembar latihan", "Centang langkah yang hasilnya sama. Bila berbeda, tulis nomor dokumen dan beri tahu pelatih."]]
   .forEach(([n, j, t], i) => {
     const x = 0.6 + (i % 2) * 6.15, y = 1.45 + Math.floor(i / 2) * 2.7;
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: 5.95, h: 2.45, rectRadius: 0.12, fill: { color: HEX.soft },
@@ -154,32 +222,43 @@ s.addText("Cara belajar hari ini", { placeholder: "title" });
       isTextBox: true, objectName: `cara-${n}-isi` });
   });
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
-s.addText("Jadwal satu hari", { placeholder: "title" });
-const head = (t) => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: HEX.navy } } });
-const rows = [[head("Jam"), head("Kode"), head("Skenario"), head("Menit")]].concat(D.jadwal.map((j) => {
-  const isBreak = !j.kode;
-  const o = isBreak ? { italic: true, color: HEX.muted, fill: { color: HEX.soft } } : { color: HEX.navy };
-  return [{ text: j.jam, options: { ...o, bold: true } }, { text: j.kode || "", options: { ...o, bold: true } },
-    { text: j.judul, options: o }, { text: String(j.menit), options: o }];
-}));
-s.addTable(rows, { x: 0.6, y: 1.3, w: 12.1, colW: [1.0, 0.9, 9.3, 0.9], fontSize: 11, fontFace: THEME.bodyFontFace,
-  rowH: 0.24, border: { type: "solid", pt: 0.5, color: HEX.line }, margin: [0.02, 0.08, 0.02, 0.08], valign: "middle" });
+// jadwal: satu slide per hari
+const hariBlok = [];
+for (const j of D.jadwal) {
+  if (j.hari) hariBlok.push({ judul: j.judul, baris: [] });
+  else { if (!hariBlok.length) hariBlok.push({ judul: "", baris: [] }); hariBlok[hariBlok.length - 1].baris.push(j); }
+}
+hariBlok.forEach((h) => {
+  potongan(h.baris, 18).forEach((bar, k, all) => {
+    s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+    const judul = hariBlok.length > 1 ? `Jadwal · ${h.judul}` : "Jadwal";
+    s.addText(all.length > 1 ? `${judul} (${k + 1}/${all.length})` : judul, { placeholder: "title" });
+    s.addTable([[head("Jam"), head("No"), head("Materi"), head("Menit")]].concat(bar.map((j) => {
+      const isMod = j.modul_baris || (!j.menit && j.judul && !j.kode);
+      const isBreak = !j.kode && !isMod;
+      const o = isMod ? { bold: true, color: HEX.teal, fill: { color: HEX.tealSoft } }
+        : isBreak ? { italic: true, color: HEX.muted, fill: { color: HEX.soft } } : { color: HEX.navy };
+      return [{ text: j.jam || "", options: { ...o, bold: true } }, { text: j.kode || "", options: { ...o, bold: true } },
+        { text: potong(j.judul, 105), options: o }, { text: j.menit ? String(j.menit) : "", options: o }];
+    })), { ...TBL, x: 0.6, y: 1.3, w: 12.1, colW: [1.0, 0.9, 9.3, 0.9], fontSize: 11, rowH: 0.26, margin: [0.02, 0.08, 0.02, 0.08] });
+  });
+});
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
-s.addText("Alur uang — di mana tiap skenario terjadi", { placeholder: "title" });
+// peta alur uang
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+s.addText("Alur uang — di mana tiap bagian terjadi", { placeholder: "title" });
 gambar(s, "src/ppt/alur/peta_uang.png", pngSize(path.join(HERE, "alur", "peta_uang.png")), { x: 0.6, y: 1.35, w: 12.1, h: 4.4 },
   "peta-alur-uang");
-s.addText("Setiap dokumen operasional otomatis membuat jurnal. Tugas keuangan: mencatat uang masuk/keluar, mencocokkannya dengan " +
+s.addText("Setiap dokumen operasional otomatis membuat jurnal. Tugas Finance: mencatat uang masuk dan keluar, mencocokkannya dengan " +
   "dokumen dan bank, lalu memastikan buku seimbang sebelum laporan dan tutup buku.", { x: 0.6, y: 6.0, w: 12.1, h: 0.8,
   fontSize: 15, color: HEX.slate, margin: 0, isTextBox: true, objectName: "peta-alur-keterangan" });
 
 if (D.nav_contoh.length) {
-  s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
+  s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
   s.addText("Cara menuju layar", { placeholder: "title" });
   gambar(s, D.nav_contoh[0].img, [1366, 900], { x: 0.6, y: 1.35, w: 8.0, h: 5.4 }, "navigasi-contoh");
   [["①", "Klik nama grup di menu kiri", "Isinya terbuka (mis. KEUANGAN)."],
-    ["②", "Klik menunya", "Mis. Piutang — layar terbuka di kanan."],
+    ["②", "Klik menunya", "Mis. Piutang. Layar terbuka di kanan."],
     ["③", "Pilih tab di atas layar", "Mis. Penagihan & Penerimaan."],
     ["⌕", "Atau ketik di Cari menu… (Ctrl+K)", "Ketik nama layar, tekan Enter."]].forEach(([n, j, t], i) => {
     const y = 1.45 + i * 1.32;
@@ -188,90 +267,121 @@ if (D.nav_contoh.length) {
     s.addText([{ text: j, options: { bold: true, breakLine: true, color: HEX.navy } }, { text: t, options: { color: HEX.slate } }],
       { x: 9.7, y: y - 0.05, w: 3.05, h: 1.1, fontSize: 14, valign: "top", margin: 0, isTextBox: true, objectName: `nav-${i}-teks` });
   });
-  s.addNotes("Tanda merah bernomor pada gambar navigasi di tiap skenario mengikuti urutan ini: ① grup, ② menu, ③ tab. " +
+  s.addNotes("Tanda merah bernomor pada gambar navigasi di tiap materi mengikuti urutan ini: ① grup, ② menu, ③ tab. " +
     "Jejak lokasi di kiri atas (Beranda › grup › menu) bisa diklik untuk kembali.");
 }
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
-s.addText("Peta menu keuangan", { placeholder: "title" });
-s.addTable([[head("Menu"), head("Tab · dipakai untuk")]].concat(D.menu.map(([m, t]) => [
-  { text: m, options: { bold: true, color: HEX.teal } }, { text: t, options: { color: HEX.navy } }])),
-{ x: 0.6, y: 1.3, w: 12.1, colW: [3.6, 8.5], fontSize: 11.5, fontFace: THEME.bodyFontFace, border: { type: "solid", pt: 0.5,
-  color: HEX.line }, margin: [0.03, 0.08, 0.03, 0.08], valign: "middle" });
-s.addNotes("◆ = hanya Manajer. Finance melihat menu sesuai izinnya.");
+potongan(D.menu, 14).forEach((bar, k, all) => {
+  s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+  s.addText(all.length > 1 ? `Peta menu keuangan (${k + 1}/${all.length})` : "Peta menu keuangan", { placeholder: "title" });
+  s.addTable([[head("Menu"), head("Tab · dipakai untuk")]].concat(bar.map(([m, t]) => [
+    { text: m, options: { bold: true, color: HEX.teal } }, { text: t, options: { color: HEX.navy } }])),
+  { ...TBL, x: 0.6, y: 1.3, w: 12.1, colW: [3.6, 8.5], fontSize: 11.5, margin: [0.03, 0.08, 0.03, 0.08] });
+  s.addNotes("◆ = hanya Manajer. Finance melihat menu sesuai izinnya.");
+});
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
 s.addText("Akun & Kartu Peserta", { placeholder: "title" });
 kartuTeks(s, { x: 0.6, y: 1.35, w: 5.6, h: 5.4, judul: "Akun & data latihan Anda", fill: HEX.tealSoft, color: HEX.teal, name: "akun",
   isi: ["Masuk: finance.latihNN@kainnusantara.id (NN = nomor Anda)", "Hanya PT Sukacita",
-    "Pelanggan: Latihan NN · Toko Kain Peserta NN", "Pelanggan kedua: Latihan NN · Toko Kain Cicilan NN (F05) dan · Butik Sample (F14)",
-    "Pemasok: Latihan NN · Pemasok Grey Peserta NN", "Cari dokumen Anda dengan nama itu — jangan memproses dokumen peserta lain"] });
-s.addTable([[head("Kartu Peserta (nomor dokumen awal)"), head("Skenario")]].concat(D.kartu.map(([k, l, sk]) => [
+    "Pelanggan: Latihan NN · Toko Kain Peserta NN", "Pelanggan cicilan dan pelanggan butik juga berawalan Latihan NN",
+    "Pemasok: Latihan NN · Pemasok Grey Peserta NN", "Cari dokumen Anda dengan nama itu. Jangan memproses dokumen peserta lain."] });
+s.addTable([[head("Kartu Peserta (nomor dokumen awal)"), head("Materi")]].concat(D.kartu.map(([k, l, sk]) => [
   { text: l, options: { color: HEX.navy } }, { text: sk, options: { bold: true, color: HEX.teal } }])),
-{ x: 6.5, y: 1.35, w: 6.2, colW: [4.7, 1.5], fontSize: 12, fontFace: THEME.bodyFontFace, border: { type: "solid", pt: 0.5,
-  color: HEX.line }, margin: [0.03, 0.08, 0.03, 0.08], valign: "middle" });
+{ ...TBL, x: 6.5, y: 1.35, w: 6.2, colW: [4.7, 1.5], fontSize: D.kartu.length > 14 ? 10.5 : 12, margin: [0.03, 0.08, 0.03, 0.08] });
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
+s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
 s.addText("Cara mengetik nominal & menyimpan", { placeholder: "title" });
 kartuTeks(s, { x: 0.6, y: 1.35, w: 5.95, h: 5.4, judul: "Nominal — semua benar", fill: HEX.tealSoft, color: HEX.teal, name: "tips-nominal",
-  size: 16, isi: ["3.374.122,50  ·  3374122,5  ·  Rp 3.374.123  ·  3374123", "Selalu baca PRATINJAU di bawah kotak (mis. Rp 3.374.122,50)",
-    "Baca kalimat konfirmasi sebelum [Ya, simpan] — nominal, rekening, PT", "Nominal minus, kosong, atau huruf ditolak dengan pesan"] });
+  size: 16, isi: ["3.374.122,50  ·  3374122,5  ·  Rp 3.374.123  ·  3374123", "Selalu baca pratinjau di bawah kotak (mis. Rp 3.374.122,50).",
+    "Baca kalimat konfirmasi sebelum [Ya, simpan]: nominal, rekening, PT.", "Nominal minus, kosong, atau huruf ditolak dengan pesan."] });
 kartuTeks(s, { x: 6.75, y: 1.35, w: 5.95, h: 5.4, judul: "Kebiasaan aman", fill: HEX.amberSoft, color: HEX.amber, name: "tips-aman", size: 16,
-  isi: ["Klik tombol simpan SEKALI, tunggu pesan hasil", "Pakai tanggal hari ini", "Bayar tagihan: ketik nominal penuh (kurang ≤ Rp 5.000 menutup tagihan)",
-    "Bila daftar tetap abu-abu, tekan muat ulang", "Tempel mutasi bank: salin langsung dari Excel"] });
-s.addNotes("Hasil uji variasi isian: format nominal gaya Indonesia, Inggris, dengan 'Rp' dan spasi semuanya terbaca benar sesudah " +
-  "perbaikan; klik ganda tidak membuat kwitansi/pembayaran ganda. Rinciannya di Lampiran A manual dan LAPORAN_AUDIT.md.");
+  isi: ["Klik tombol simpan sekali, lalu tunggu pesan hasil.", "Pakai tanggal hari ini.",
+    "Bayar tagihan: ketik nominal penuh (kurang ≤ Rp 5.000 menutup tagihan).", "Bila daftar tetap abu-abu, muat ulang halaman.",
+    "Tempel mutasi bank: salin langsung dari Excel."] });
+s.addNotes("Hasil uji variasi isian: format nominal gaya Indonesia, Inggris, dengan 'Rp' dan spasi semuanya terbaca benar; klik " +
+  "ganda tidak membuat kwitansi atau pembayaran ganda. Rinciannya di Lampiran A manual dan LAPORAN_AUDIT.md.");
 
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
-s.addText("Istilah yang sering muncul", { placeholder: "title" });
-s.addTable(D.istilah.map(([k, v]) => [{ text: k, options: { bold: true, color: HEX.teal } }, { text: v, options: { color: HEX.navy } }]),
-  { x: 0.6, y: 1.3, w: 12.1, colW: [2.6, 9.5], fontSize: 13, fontFace: THEME.bodyFontFace, border: { type: "solid", pt: 0.5,
-    color: HEX.line }, margin: [0.04, 0.08, 0.04, 0.08], valign: "middle" });
+potongan(D.istilah, 13).forEach((bar, k, all) => {
+  s = pres.addSlide({ masterName: "ISI", sectionTitle: SEC0 });
+  s.addText(all.length > 1 ? `Istilah yang sering muncul (${k + 1}/${all.length})` : "Istilah yang sering muncul", { placeholder: "title" });
+  s.addTable(bar.map(([a, b]) => [{ text: a, options: { bold: true, color: HEX.teal } }, { text: b, options: { color: HEX.navy } }]),
+    { ...TBL, x: 0.6, y: 1.3, w: 12.1, colW: [2.6, 9.5], fontSize: 13, margin: [0.04, 0.08, 0.04, 0.08] });
+});
 
-// ── 2. Skenario ────────────────────────────────────────────────────────────────────────────────────────────────────
-const BAGIAN = { A: "Bagian A · Petugas Keuangan", B: "Bagian B · Manajer Keuangan" };
-let bagianNow = "";
+// ── 1–4. Materi per bagian ─────────────────────────────────────────────────────────────────────────────────────────
+let modulNow = "0";
 for (const sc of D.skenario) {
-  const sec = `${sc.kode} · ${potong(sc.judul, 46)}`;
-  if (sc.bagian !== bagianNow) {
-    bagianNow = sc.bagian;
-    pres.addSection({ title: BAGIAN[bagianNow] });
-    s = pres.addSlide({ masterName: "JUDUL", sectionTitle: BAGIAN[bagianNow] });
-    s.addText(BAGIAN[bagianNow], { placeholder: "title" });
-    s.addText(bagianNow === "A" ? "Dikerjakan peserta dengan akun Finance masing-masing."
-      : "Diperagakan pelatih dengan akun Manajer — tutup buku memengaruhi semua pengguna.", { placeholder: "body" });
+  if (sc.modul !== modulNow) {
+    modulNow = sc.modul;
+    const m = MODUL[modulNow];
+    const secM = `${m.no} · ${m.judul}`;
+    pres.addSection({ title: secM });
+    halamanModul(m, secM);
   }
+  const sec = `${sc.no} · ${potong(sc.judul, 46)}`;
+  const kicker = `Bagian ${sc.modul} · ${sc.modul_judul}${sc.sub_judul ? ` › ${sc.sub_judul}` : ""}`;
+  const judulPendek = `${sc.no} · ${potong(sc.judul, 60)}`;
   pres.addSection({ title: sec });
-  // a. pembuka skenario
+  // a. pembuka materi
   s = pres.addSlide({ masterName: "SEKSI", sectionTitle: sec });
-  s.addText(`${sc.kode} · ${sc.judul}`, { placeholder: "title" });
+  s.addText(`${sc.no} · ${sc.judul}`, { placeholder: "title" });
   s.addText([
+    { text: kicker, options: { bold: true, breakLine: true, color: "99F6E4", fontSize: 13, paraSpaceAfter: 10 } },
     { text: "Tujuan", options: { bold: true, breakLine: true, color: "CCFBF1", fontSize: 14 } },
     { text: potong(sc.tujuan, 300), options: { breakLine: true, paraSpaceAfter: 12 } },
     { text: "Kapan dipakai", options: { bold: true, breakLine: true, color: "CCFBF1", fontSize: 14 } },
     { text: potong(sc.kapan, 260), options: { breakLine: true, paraSpaceAfter: 12 } },
-    { text: `${sc.peran} · ${sc.menit} menit · teruji di layar & buku: ${sc.uji.lulus}/${sc.uji.langkah} langkah lulus`,
-      options: { fontSize: 14, color: "CCFBF1" } }], { placeholder: "body" });
+    { text: `${sc.peran} · ${sc.menit} menit · ${ujiTeks(sc)}`, options: { fontSize: 14, color: "CCFBF1" } }], { placeholder: "body" });
   s.addNotes(`TUJUAN: ${sc.tujuan}\n\nKAPAN DIPAKAI: ${sc.kapan}\n\nDATA AWAL: ${sc.data_awal}`);
-  // b. alur
+  // b. konsep inti
+  if ((sc.konsep || []).length) {
+    s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
+    s.addText(judulPendek, { placeholder: "kicker" });
+    s.addText("Konsep inti", { placeholder: "title" });
+    const k = sc.konsep.slice(0, 6);
+    s.addText(k.map((t, i) => ({ text: potong(t, 260), options: { bullet: { type: "number" }, breakLine: i < k.length - 1,
+      paraSpaceAfter: 10, color: HEX.navy } })), { x: 0.6, y: 1.5, w: 12.1, h: 5.3, fontSize: k.length > 4 ? 16 : 18, valign: "top",
+      margin: 0, isTextBox: true, objectName: `${sc.kode}-konsep`, fit: "shrink" });
+    s.addNotes("KONSEP INTI:\n- " + sc.konsep.join("\n- "));
+  }
+  // c. alur
   const alurPng = path.join(HERE, "alur", `${sc.kode}.png`);
   if (fs.existsSync(alurPng)) {
     s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
-    s.addText(`${sc.kode} · ${sc.judul}`, { placeholder: "kicker" });
+    s.addText(judulPendek, { placeholder: "kicker" });
     s.addText("Alur", { placeholder: "title" });
     gambar(s, path.relative(ROOT, alurPng), pngSize(alurPng), { x: 0.6, y: 1.45, w: 12.1, h: 4.3 }, `${sc.kode}-alur`);
-    const cab = sc.alur.filter((a) => a.cabang).map((a) => `${a.label}: ${a.cabang}`);
     s.addText(sc.alur.map((a, i) => `${i + 1}. ${a.peran} — ${a.label}`).join("   ·   "), { x: 0.6, y: 5.95, w: 12.1, h: 0.85,
       fontSize: 12.5, color: HEX.slate, margin: 0, isTextBox: true, valign: "top", objectName: `${sc.kode}-alur-teks`, fit: "shrink" });
-    s.addNotes(`Alur ${sc.kode}: ` + sc.alur.map((a, i) => `${i + 1}) ${a.peran}: ${a.label}${a.cabang ? ` (cabang: ${a.cabang})` : ""}`).join("; ")
-      + (cab.length ? `\nCabang: ${cab.join("; ")}` : ""));
+    s.addNotes(`Alur ${sc.no}: ` + sc.alur.map((a, i) => `${i + 1}) ${a.peran}: ${a.label}${a.cabang ? ` (cabang: ${a.cabang})` : ""}`).join("; "));
   }
-  // c. navigasi (paling banyak 2 gambar per slide)
+  // d. jurnal di setiap tahap + titik kontrol (alur ujung ke ujung)
+  const jt = sc.jurnal_per_tahap || [];
+  potongan(jt, 8).forEach((bar, k, all) => {
+    s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
+    s.addText(judulPendek, { placeholder: "kicker" });
+    s.addText(all.length > 1 ? `Jurnal di setiap tahap (${k + 1}/${all.length})` : "Jurnal di setiap tahap", { placeholder: "title" });
+    const adaKontrol = (sc.titik_kontrol || []).length && k === all.length - 1;
+    const w = adaKontrol ? 8.3 : 12.1;
+    s.addTable([[head("Tahap"), head("Dokumen"), head("Jurnal (D = debit, K = kredit)")]].concat(bar.map((r) => [
+      { text: r.tahap, options: { bold: true, color: HEX.navy } }, { text: r.dokumen, options: { color: HEX.slate } },
+      { text: r.jurnal, options: { color: HEX.teal } }])),
+    { ...TBL, x: 0.6, y: 1.45, w, colW: adaKontrol ? [2.3, 1.9, 4.1] : [3.2, 2.6, 6.3], fontSize: bar.length > 6 ? 10.5 : 12,
+      margin: [0.04, 0.07, 0.04, 0.07] });
+    if (adaKontrol) {
+      kartuTeks(s, { x: 9.1, y: 1.45, w: 3.6, h: 5.35, judul: "Titik kontrol", fill: HEX.amberSoft, color: HEX.amber,
+        name: `${sc.kode}-kontrol`, isi: sc.titik_kontrol.map((x) => potong(x, 150)), size: 12 });
+    }
+    s.addNotes("JURNAL DI SETIAP TAHAP:\n" + bar.map((r) => `- ${r.tahap} (${r.dokumen}): ${r.jurnal}`).join("\n") +
+      ((sc.titik_kontrol || []).length ? "\n\nTITIK KONTROL:\n- " + sc.titik_kontrol.join("\n- ") : ""));
+  });
+  // e. navigasi (paling banyak 2 gambar per slide)
   const navs = sc.navigasi.filter((n) => n.img);
   for (let i = 0; i < navs.length; i += 2) {
     const pair = navs.slice(i, i + 2);
     s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
-    s.addText(`${sc.kode} · ${sc.judul}`, { placeholder: "kicker" });
+    s.addText(judulPendek, { placeholder: "kicker" });
     s.addText(navs.length > 2 ? `Cara menuju layar (${i / 2 + 1}/${Math.ceil(navs.length / 2)})` : "Cara menuju layar", { placeholder: "title" });
     if (pair.length === 1) {
       gambar(s, pair[0].img, pair[0].wh, { x: 0.6, y: 1.45, w: 8.4, h: 5.35 }, `${sc.kode}-nav-${i}`);
@@ -289,11 +399,11 @@ for (const sc of D.skenario) {
     }
     s.addNotes(pair.map((n) => `Cara menuju layar: ${n.menu}`).join("\n"));
   }
-  // d. satu slide per langkah
+  // f. satu slide per langkah
   const n = sc.langkah.length;
   for (const L of sc.langkah) {
     s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
-    s.addText(`${sc.kode} · ${sc.judul} · langkah ${L.no} dari ${n}`, { placeholder: "kicker" });
+    s.addText(`${judulPendek} · langkah ${L.no} dari ${n}`, { placeholder: "kicker" });
     s.addText(`${L.no}. ${L.judul}`, { placeholder: "title" });
     if (L.img) gambar(s, L.img, L.wh, { x: 0.6, y: 1.45, w: 8.35, h: 5.35 }, `${sc.kode}-L${L.no}-gambar`);
     const px = L.img ? 9.25 : 0.6, pw = L.img ? 3.5 : 12.1;
@@ -308,29 +418,31 @@ for (const sc of D.skenario) {
       { text: potong(L.hasil, L.isi ? 230 : 300), options: { color: HEX.navy } });
     s.addText(blok, { x: px, y: 2.45, w: pw, h: 4.35, fontSize: 14, valign: "top", margin: 0, isTextBox: true,
       objectName: `${sc.kode}-L${L.no}-teks`, fit: "shrink" });
-    s.addNotes(`${sc.kode} langkah ${L.no} · ${L.peran}\nDI MANA: ${L.menu}\nLAKUKAN: ${L.aksi}` + (L.isi ? `\nISI: ${L.isi}` : "")
+    s.addNotes(`${sc.no} langkah ${L.no} · ${L.peran}\nDI MANA: ${L.menu}\nLAKUKAN: ${L.aksi}` + (L.isi ? `\nISI: ${L.isi}` : "")
       + `\nYANG HARUS TERLIHAT: ${L.hasil}`);
   }
-  // e. hasil di buku & kesalahan umum
-  s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
-  s.addText(`${sc.kode} · ${sc.judul}`, { placeholder: "kicker" });
-  s.addText("Hasil di buku & kesalahan umum", { placeholder: "title" });
-  kartuTeks(s, { x: 0.6, y: 1.45, w: 5.95, h: 5.35, judul: "Cek di buku (jurnal & saldo)", fill: HEX.greenSoft, color: HEX.green,
-    name: `${sc.kode}-buku`, isi: (sc.cek_buku.length ? sc.cek_buku : ["Tidak ada jurnal baru di skenario ini."]).map((x) => potong(x, 230)), size: 14 });
-  kartuTeks(s, { x: 6.75, y: 1.45, w: 5.95, h: 5.35, judul: "Kesalahan yang sering terjadi", fill: HEX.amberSoft, color: HEX.amber,
-    name: `${sc.kode}-salah`, isi: (sc.kesalahan_umum.length ? sc.kesalahan_umum : ["—"]).map((x) => potong(x, 230)), size: 14 });
-  s.addNotes(`CEK BUKU:\n- ${sc.cek_buku.join("\n- ")}\n\nKESALAHAN UMUM:\n- ${sc.kesalahan_umum.join("\n- ")}` +
-    (sc.catatan_pelatih ? `\n\nCATATAN PELATIH: ${sc.catatan_pelatih}` : ""));
+  // g. hasil di buku & kesalahan umum
+  if ((sc.cek_buku || []).length || (sc.kesalahan_umum || []).length) {
+    s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: sec });
+    s.addText(judulPendek, { placeholder: "kicker" });
+    s.addText("Hasil di buku & kesalahan umum", { placeholder: "title" });
+    kartuTeks(s, { x: 0.6, y: 1.45, w: 5.95, h: 5.35, judul: "Cek di buku (jurnal & saldo)", fill: HEX.greenSoft, color: HEX.green,
+      name: `${sc.kode}-buku`, isi: (sc.cek_buku.length ? sc.cek_buku : ["Tidak ada jurnal baru di materi ini."]).map((x) => potong(x, 230)), size: 14 });
+    kartuTeks(s, { x: 6.75, y: 1.45, w: 5.95, h: 5.35, judul: "Kesalahan yang sering terjadi", fill: HEX.amberSoft, color: HEX.amber,
+      name: `${sc.kode}-salah`, isi: (sc.kesalahan_umum.length ? sc.kesalahan_umum : ["—"]).map((x) => potong(x, 230)), size: 14 });
+    s.addNotes(`CEK BUKU:\n- ${sc.cek_buku.join("\n- ")}\n\nKESALAHAN UMUM:\n- ${sc.kesalahan_umum.join("\n- ")}` +
+      (sc.catatan_pelatih ? `\n\nCATATAN PELATIH: ${sc.catatan_pelatih}` : ""));
+  }
 }
 
-// ── 2b. Dokumen yang terbit ───────────────────────────────────────────────────────────────────────────────────────
+// ── Dokumen yang terbit ────────────────────────────────────────────────────────────────────────────────────────────
 if ((D.dokumen || []).length) {
-  const SECD = "Dokumen yang terbit";
+  const SECD = "Lampiran · Dokumen yang terbit";
   pres.addSection({ title: SECD });
   s = pres.addSlide({ masterName: "JUDUL", sectionTitle: SECD });
   s.addText("Dokumen yang terbit", { placeholder: "title" });
   s.addText("Setiap dokumen dicetak dari data latihan, lalu isinya (nomor, tanggal, PT, barang, DPP, PPN, total, terbilang) dicocokkan " +
-    "dengan transaksi. Pengaturan naskah dokumen diuji: ubah → tercetak → dikembalikan.", { placeholder: "body" });
+    "dengan transaksi. Pengaturan naskah dokumen diuji: ubah, cetak, kembalikan.", { placeholder: "body" });
   const HASIL = { lulus: ["Lulus", HEX.green], diperbaiki: ["Diperbaiki & diuji ulang", HEX.green], keputusan: ["Perlu keputusan pemilik", HEX.amber] };
   for (const d of D.dokumen) {
     s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: SECD });
@@ -351,21 +463,24 @@ if ((D.dokumen || []).length) {
   }
 }
 
-// ── 3. Penutup ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── Penutup ────────────────────────────────────────────────────────────────────────────────────────────────────────
 pres.addSection({ title: "Penutup" });
-s = pres.addSlide({ masterName: "ISI", sectionTitle: "Penutup" });
-s.addText("Semua skenario sudah diuji di layar & di buku", { placeholder: "title" });
-s.addTable([[head("Kode"), head("Skenario"), head("Hasil uji")]].concat(D.skenario.map((x) => [
-  { text: x.kode, options: { bold: true, color: HEX.teal } }, { text: x.judul, options: { color: HEX.navy } },
-  { text: `${x.uji.lulus}/${x.uji.langkah} lulus`, options: { bold: true, color: x.uji.ok ? HEX.green : HEX.red } }])),
-{ x: 0.6, y: 1.3, w: 12.1, colW: [0.9, 9.4, 1.8], fontSize: 11, fontFace: THEME.bodyFontFace, rowH: 0.27,
-  border: { type: "solid", pt: 0.5, color: HEX.line }, margin: [0.02, 0.08, 0.02, 0.08], valign: "middle" });
-s.addNotes("Tiap skenario dijalankan otomatis di browser dengan akun peran yang sama dengan peserta, lalu angkanya dicocokkan " +
-  "dengan jurnal, saldo, dan status di server. Rincian temuan & perbaikan: LAPORAN_AUDIT.md.");
+potongan(D.skenario, 17).forEach((bar, k, all) => {
+  s = pres.addSlide({ masterName: "ISI", sectionTitle: "Penutup" });
+  s.addText(all.length > 1 ? `Semua materi sudah diuji di layar & di buku (${k + 1}/${all.length})`
+    : "Semua materi sudah diuji di layar & di buku", { placeholder: "title" });
+  s.addTable([[head("No"), head("Materi"), head("Hasil uji")]].concat(bar.map((x) => [
+    { text: x.no, options: { bold: true, color: HEX.teal } }, { text: x.judul, options: { color: HEX.navy } },
+    x.uji.langkah ? { text: `${x.uji.lulus}/${x.uji.langkah} lulus`, options: { bold: true, color: x.uji.ok ? HEX.green : HEX.red } }
+      : { text: "ringkasan", options: { italic: true, color: HEX.muted } }])),
+  { ...TBL, x: 0.6, y: 1.3, w: 12.1, colW: [0.9, 9.4, 1.8], fontSize: 11, rowH: 0.27, margin: [0.02, 0.08, 0.02, 0.08] });
+  s.addNotes("Tiap materi dijalankan otomatis di browser dengan akun peran yang sama dengan peserta, lalu angkanya dicocokkan " +
+    "dengan jurnal, saldo, dan status di server. Rincian temuan & perbaikan: LAPORAN_AUDIT.md.");
+});
 s = pres.addSlide({ masterName: "JUDUL", sectionTitle: "Penutup" });
 s.addText("Tanya jawab & evaluasi", { placeholder: "title" });
-s.addText("Isi lembar evaluasi di manual. Temuan layar atau angka yang berbeda: catat nomor dokumen + tangkapan layar, " +
-  "serahkan ke pelatih.", { placeholder: "body" });
+s.addText("Isi lembar evaluasi di manual. Bila layar atau angka berbeda, catat nomor dokumen dan ambil tangkapan layar, " +
+  "lalu serahkan ke pelatih.", { placeholder: "body" });
 
 (async () => {
   await pres.writeFile({ fileName: OUT });
