@@ -48,6 +48,7 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc, rupiah
 from ai_card_context import card_field
 from services import bank_statement_parser as parser
+from services.book_date import tanggal_buku
 from services.config_resolver import value_of
 logger = logging.getLogger(__name__)
 
@@ -103,12 +104,17 @@ async def load_cfg(entity_id: str = "") -> Dict[str, Any]:
 #  UTILITAS
 # ═════════════════════════════════════════════════════════════════════════════
 def _d(s: Any) -> Optional[datetime]:
+    """Tanggal buku WIB. Dulu `str(s)[:10]`: transaksi kas bercap waktu UTC (`txn_date` 2026-11-17T18:17Z = 18 Nov WIB)
+    dinilai "Tanggal beda 1 hari" terhadap mutasi bank 18 Nov bila dicatat pukul 00.00–07.00 WIB (uji F10, 18 Nov)."""
     if not s:
         return None
     try:
-        return datetime.fromisoformat(str(s)[:10])
+        return datetime.fromisoformat(tanggal_buku(s))
     except Exception:  # noqa: BLE001
-        return None
+        try:
+            return datetime.fromisoformat(str(s)[:10])
+        except Exception:  # noqa: BLE001
+            return None
 
 
 def _norm_dir(v: str) -> str:
