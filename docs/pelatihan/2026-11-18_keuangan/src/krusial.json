@@ -1,0 +1,172 @@
+{
+ "judul": "Flow Krusial Keuangan",
+ "subjudul": "Piutang · Hutang · per Pelanggan & Pemasok · Kas & Bank · Koreksi · Tutup bulan",
+ "catatan_akses": "Mulai 17 Nov 2026 akun Finance memiliki akses yang sama dengan Manajer (keputusan pemilik K-FIN-01). Langkah yang di manual lengkap ditulis 'Manajer' kini juga bisa dikerjakan Finance. Kontrol dua orang tetap: pembuat dokumen tidak bisa menyetujui dokumennya sendiri.",
+ "rutinitas": [
+  [
+   "Pagi",
+   "Beranda Keuangan › Perlu Tindakan: uang masuk perlu dicatat, faktur pajak perlu terbit, selisih bayar."
+  ],
+  [
+   "Setiap ada transfer masuk",
+   "Piutang › Penagihan & Penerimaan atau Piutang per Pelanggan → Terima pembayaran → kwitansi."
+  ],
+  [
+   "Jadwal bayar pemasok",
+   "Hutang per Pemasok → centang tagihan yang jatuh tempo → Bayar → konfirmasi."
+  ],
+  [
+   "Sore",
+   "Kas & Bank › Rekonsiliasi: impor mutasi bank, cocokkan, bukukan biaya bank."
+  ],
+  [
+   "Akhir bulan",
+   "Periksa akun sementara & GR/IR, baca Laba-Rugi & Neraca, tutup buku."
+  ]
+ ],
+ "alur": [
+  {
+   "judul": "Piutang — dari pesanan sampai uang masuk",
+   "dasar": "A1",
+   "pengantar": "Piutang lahir saat surat jalan terbit, lalu ditutup oleh kwitansi. Finance mencatat uang masuk ke SO yang benar dan memastikan sisa piutang sesuai.",
+   "langkah": [
+    [
+     "A1",
+     [
+      8,
+      19
+     ]
+    ],
+    [
+     "F02",
+     [
+      4,
+      6,
+      7,
+      8,
+      10
+     ]
+    ],
+    [
+     "F03",
+     [
+      2,
+      6,
+      8
+     ]
+    ],
+    [
+     "F04",
+     [
+      4,
+      7,
+      11
+     ]
+    ]
+   ]
+  },
+  {
+   "judul": "Hutang — dari pengadaan sampai bayar",
+   "dasar": "A2",
+   "pengantar": "Hutang lahir saat tagihan pemasok diposting sesudah 3-way match (PO · penerimaan · faktur). Finance membayar dari rekening yang benar, langsung atau lewat kontrabon.",
+   "langkah": [
+    [
+     "A2",
+     [
+      18
+     ]
+    ],
+    [
+     "F11",
+     [
+      2,
+      3,
+      4,
+      5
+     ]
+    ],
+    [
+     "F12",
+     [
+      3,
+      5,
+      10
+     ]
+    ]
+   ]
+  },
+  {
+   "judul": "Hutang & Piutang per Pelanggan dan Pemasok",
+   "dasar": "S5",
+   "opsional": true,
+   "pengantar": "Satu layar per pihak: semua tagihan seorang pelanggan atau pemasok terlihat bersama umurnya, dan bisa langsung dibayar atau diterima dari sana.",
+   "langkah": [
+    [
+     "S5",
+     "semua"
+    ]
+   ]
+  },
+  {
+   "judul": "Kas & Bank — rekonsiliasi harian",
+   "dasar": "F10",
+   "pengantar": "Saldo rekening di buku harus sama dengan rekening koran. Rekonsiliasi mencocokkan setiap mutasi bank dengan transaksi di buku dan membukukan biaya bank.",
+   "langkah": [
+    [
+     "F09",
+     [
+      4
+     ]
+    ],
+    [
+     "F10",
+     [
+      2,
+      3,
+      4,
+      5,
+      6,
+      9
+     ]
+    ]
+   ]
+  },
+  {
+   "judul": "Koreksi yang paling sering",
+   "dasar": "S4",
+   "pengantar": "Angka yang sudah terbit tidak diubah diam-diam. Pembatalan selalu membuat jurnal pembalik dengan alasan, lalu dicatat ulang dengan benar.",
+   "langkah": [
+    [
+     "S4",
+     [
+      3,
+      4,
+      5,
+      6
+     ]
+    ]
+   ]
+  },
+  {
+   "judul": "Buku besar & tutup bulan",
+   "dasar": "A5",
+   "pengantar": "Semua alur bermuara di buku besar. Jejak Dokumen menelusuri angka sampai ke dokumennya; tutup buku mengunci periode sesudah daftar periksa hijau.",
+   "langkah": [
+    [
+     "F16",
+     [
+      3,
+      8
+     ]
+    ],
+    [
+     "F18",
+     [
+      3,
+      5
+     ]
+    ]
+   ]
+  }
+ ]
+}
