@@ -1,0 +1,45 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                                                   VENDOR BILL / TAGIHAN
+                                                                        No. VB-00030 · 17 Nov 2026 · DIPOSTING
+
+             REFERENSI DOKUMEN
+             Merujuk: KSC/PO-00030
+             Berasal dari Pesanan Pembelian (PO) KSC/PO-00030
+             Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                               SUPPLIER
+Sukacita Textile                                                           Latihan 81 · Pemasok Grey Peserta 81
+Jl. Soekarno Hatta No. 100, Bandung                                              Kawasan Industri Majalaya Blok 81
+                                                                                                   622277700081
+No. Faktur           INV-LTH81-C0BD8                            Tipe                 -
+Supplier
+Ref PO               po_991fc9fc0bd8                            NPWP
+
+ NO    URAIAN                                             REF                      DPP                  PPN          TOTAL
+
+   1   Tagihan atas pembelian po_991fc9fc0bd8             INV-LTH81-C0BD8          Rp 0     Rp 184.800         Rp 1.864.800
+
+                                                                  DPP (harga sebelum PPN)                               Rp 0
+                                                                  PPN                                            Rp 184.800
+
+                                                                    Total (termasuk PPN)                     Rp 1.864.800
+Terbilang: Satu juta delapan ratus enam puluh empat ribu delapan ratus rupiah
+
+
+                        Diperiksa                                                         Disetujui
+
+
+
+
+                      ( ................. )                                          ( ................. )
+                       Accounting                                                       Manager
+
+
+
+
+                                                                                                                     Hal. 1 / 1
+

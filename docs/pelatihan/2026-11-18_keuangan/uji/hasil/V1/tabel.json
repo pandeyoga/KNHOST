@@ -1,0 +1,292 @@
+[
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan (Atur sendiri)",
+  "masukan": "ketik 9.999.999 (di atas sisa)",
+  "harap": "Kotak dibatasi = sisa Rp 2.673.324; 'Nominal sesuai tagihan — tidak ada selisih'",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "2673324 · Rp 2.673.324"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "tempel 'Rp 9.999.999'",
+  "harap": "Diterima, dibatasi = sisa Rp 2.673.324",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu tempelan bertitik/berawalan Rp ditolak diam-diam (kotak tetap 0).",
+  "uji": "lulus",
+  "bukti": "Rp 2.673.324"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik 1.000.000,50",
+  "harap": "Total diterima Rp 1.000.001 (1.000.000,50); petunjuk 'Kurang bayar …'",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu koma membuat kotak jadi 0 lalu digit berikutnya → Rp 50 (nominal salah). Kini MoneyInput membaca koma desimal.",
+  "uji": "lulus",
+  "bukti": "Kurang bayar Rp 1.673.324 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 2.673.324) — akan diminta keputusan saat disimpan. Putuskan"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik 1,500,000 (gaya Inggris)",
+  "harap": "Dibaca Rp 1.500.000",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu tiap koma me-nol-kan kotak → Rp 0/Rp 123.",
+  "uji": "lulus",
+  "bukti": "Rp 1.500.000"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik sisa persis bergaya Indonesia 2.673.324,00",
+  "harap": "Total = Rp 2.673.324; tidak ada selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu → Rp 50.",
+  "uji": "lulus",
+  "bukti": "2.673.324,00 · Rp 2.673.324"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "0",
+  "harap": "Tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "\"0\" · Isi nominal diterima."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "(kosongkan)",
+  "harap": "Tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "\"0\" · Isi nominal diterima."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "abc",
+  "harap": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "\"0\" · Isi nominal diterima."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik -100",
+  "harap": "Minus tidak bisa masuk kotak alokasi (tidak pernah tersimpan negatif); yang tampil & dihitung Rp 100",
+  "hasil": "lulus",
+  "catatan": "Tanda minus diabaikan → Rp 100 terlihat di Total & petunjuk Kurang bayar.",
+  "uji": "lulus",
+  "bukti": "Rp 100"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3.374.123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu terketik '3.374123' = Rp 3 (nominal salah tanpa peringatan).",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3374123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3374123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3,374,123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3,374,123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu '3,374123' → Rp 0, tombol mati.",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3374122,5",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3374122,5' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu pratinjau Rp 3.374.123 tetapi Total Rp 0 & 'Isi nominal diterima.'",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.477 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3.374.122,50",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.122,50' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu → Rp 3.",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.477 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel Rp 3.374.123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu tempelan ditolak diam-diam.",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel Rp 3 374 123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3 374 123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu ditolak / Rp 0.",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel 3.374.123,-",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123,-' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "Gaya kwitansi 'Rp …,-'.",
+  "uji": "lulus",
+  "bukti": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik -100",
+  "harap": "Kotak bergaris merah, tombol mati + 'Nominal tidak boleh minus.'",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu alasannya 'Isi nominal diterima.' padahal nominal sudah diisi.",
+  "uji": "lulus",
+  "bukti": "Nominal tidak boleh minus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik abc",
+  "harap": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Isi nominal diterima."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik 99.999.999.999 → [Simpan kwitansi] → [Batal] di dialog selisih",
+  "harap": "Total Rp 99.999.999.999; petunjuk 'Lebih bayar …'; Simpan → dialog 'Lebih bayar' wajib diputus; Batal → tidak ada kwitansi",
+  "hasil": "keputusan",
+  "catatan": "Dulu terketik Rp 100. Kini terbaca benar, tetapi TIDAK ada batas atas/peringatan khusus untuk lebih bayar raksasa (salah ketik nol) — hanya dialog selisih + kalimat konfirmasi. Pertanyaan pemilik: perlu batas/peringatan lebih bayar > X?",
+  "uji": "lulus",
+  "bukti": "Lebih bayar Rp 99.994.049.400 dari sisa tagihan pesanan tujuan (Rp 5.950.599) —  · dialog: Dibayar Rp 99.999.999.999, seharusnya Rp 5.950.599 (sisa tagihan pesanan tujuan). Lebih Rp 99.994.049.400 — mau bagaiman"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tombol [Batal] form",
+  "masukan": "isi 1.000.000 lalu klik [Batal]",
+  "harap": "Form tertutup, tidak ada kwitansi baru",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "form tertutup"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "No. referensi",
+  "masukan": "(kosong)",
+  "harap": "Boleh kosong (pengaturan 'payment.wajib_nomor_referensi' bawaan mati) — tombol tetap aktif",
+  "hasil": "lulus",
+  "catatan": "Catatan kode: form membaca `settings/effective → payment.wajib_nomor_referensi`, kunci itu tidak dikirim endpoint (penanda 'wajib' di layar tidak pernah menyala); backend tetap menolak dengan pesan Indonesia bila pengaturan dinyalakan.",
+  "uji": "lulus",
+  "bukti": "aktif"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi SO kedua + keputusan 'Sisa tetap jadi piutang'",
+  "masukan": "ketik 1.000.000,50",
+  "harap": "Kwitansi tepat Rp 1.000.000,50; jurnal 1-1100 D = 1-1200 K = 1.000.000,50; sisa SO = total − 1.000.000,50",
+  "hasil": "diperbaiki",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Kwitansi KSC/AR-00101 (Rp 1.000.001) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00019). × · sisa 2277274.5"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi SO lunas + klik ganda [Simpan kwitansi] & [Ya, simpan]",
+  "masukan": "tempel 'Rp 2.673.324,00'",
+  "harap": "Tepat SATU kwitansi = sisa; SO lunas; jurnal seimbang",
+  "hasil": "lulus",
+  "catatan": "Tidak pernah dobel (inFlight + kunci idempotensi). Tetapi klik ganda [Simpan kwitansi] membuat klik ke-2 jatuh di latar dialog konfirmasi → dialog langsung tertutup (= Batal), peserta harus klik lagi. Akar: utils/overlayDismiss.js (di luar area perbaikan) — usulan patch di laporan.",
+  "uji": "lulus",
+  "bukti": "klik ganda menutup dialog konfirmasi (tidak tersimpan) → klik sekali lagi · Kwitansi KSC/AR-00102 (Rp 2.673.324) dicatat untuk Latihan 69 · Toko Kain Peserta 69. ×"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tanggal terima di MASA DEPAN",
+  "masukan": "2026-12-22 · alokasi 200.000",
+  "harap": "Ditolak dengan pesan jelas ATAU diterima bertanggal itu (aturan pemilik)",
+  "hasil": "keputusan",
+  "catatan": "Tidak ada penjaga tanggal masa depan di form maupun backend (kalender tidak membatasi). Kwitansi & jurnal bertanggal masa depan. Pertanyaan pemilik: tolak/peringatkan tanggal > hari ini?",
+  "uji": "lulus",
+  "bukti": "DITERIMA: Kwitansi KSC/AR-00103 (Rp 200.000) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00020). × · tanggal kwitansi 2026-12-22 · jurnal KSC/JE-00658 2026-12-22"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tanggal terima di periode TERTUTUP",
+  "masukan": "15 Sep 2026 (periode Sep 2026 ditutup sementara untuk uji) · alokasi 100.000",
+  "harap": "Ditolak di dalam form: 'Periode … sudah DITUTUP …'; tidak ada kwitansi; tombol tidak macet",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Periode September 2026 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu) di atas sisa → 'Simpan sebagai deposit'",
+  "masukan": "ketik 2.327.274,50",
+  "harap": "Kwitansi Rp 2.327.275: jurnal 1-1100 D 2.327.274,50 · 1-1200 K 2.077.274,50 · 2-1400 K 250.000,00; titipan pelanggan +250.000,00",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu '…,xx' bertitik terketik salah (Rp 3/0).",
+  "uji": "lulus",
+  "bukti": "Kwitansi KSC/AR-00104 (Rp 2.327.275) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Rp 2.077.275 melunasi tagihan, Rp 250.000 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00021). × · titipan 250000 (hitung ulang 250000)"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Pakai titipan — nominal titipan",
+  "masukan": "centang 'Pakai titipan', ketik 999.999 (di atas tersedia)",
+  "harap": "Kotak titipan dibatasi = tersedia Rp 250.000",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "KSC/SO-00157 · kotak titipan 250000"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Pakai titipan sebagian",
+  "masukan": "ketik 100.000 di kotak titipan",
+  "harap": "Nominal diterima = total SO − 100.000; jurnal 1-1100 D + 2-1400 D 100.000 = 1-1200 K total; titipan tersisa Rp 150.000",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Kwitansi KSC/AR-00105 (Rp 3.329.723) dicatat untuk Latihan 69 · Toko Kain Peserta 69. × · titipan 150000"
+ }
+]

@@ -1,0 +1,50 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                                                               TAGIHAN SUPPLIER
+                                                                             No. VB-00003 · 17 Nov 2026 · LUNAS
+
+             REFERENSI DOKUMEN
+             Merujuk: KSC/PO-00003 · KSC/CB-00001
+             Berasal dari Pesanan Pembelian (PO) KSC/PO-00003 · Dilunasi oleh Kontrabon (Tukar Faktur) KSC/
+             CB-00001
+             Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                                SUPPLIER
+Sukacita Textile                                                           Latihan 01 · Pemasok Grey Peserta 01
+Jl. Soekarno Hatta No. 100, Bandung                                               Kawasan Industri Majalaya Blok 1
+                                                                                                   622277700001
+No. Faktur           INV-LTH01-AD634                             Ref PO              KSC/PO-00003
+Supplier
+Jatuh Tempo          17 Des 2026                                 NPWP Supplier       -
+Status Bayar         Lunas
+
+ NO    SKU                             BARANG / JASA                  JUMLAH         HARGA            DISC        SUBTOTAL
+
+   1   DMO-GRY-WVN-001                 Grey Woven Katun Poplin         80 yard     Rp 14.500             0%     Rp 1.160.000
+
+                                                                   DPP (harga sebelum PPN)                      Rp 1.160.000
+                                                                   DPP nilai lain (11/12)                     Rp 1.063.333,33
+                                                                   PPN 12% × DPP nilai lain                       Rp 127.600
+
+                                                                    Total (termasuk PPN)                     Rp 1.287.600
+                                                                   Sudah dibayar                                Rp 1.287.600
+                                                                   Sisa hutang                                           Rp 0
+Terbilang: Satu juta dua ratus delapan puluh tujuh ribu enam ratus rupiah
+
+
+                        Diperiksa                                                        Disetujui
+
+
+
+
+                      ( ................. )                                          ( ................. )
+                       Accounting                                                       Manager
+
+
+
+
+                                                                                                                      Hal. 1 / 1
+

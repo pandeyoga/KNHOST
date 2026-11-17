@@ -84,7 +84,7 @@
    "menu": "Rincian tagihan",
    "aksi": "Klik [[Bayar]], lalu pilih rekening sumber",
    "isi": "*Nominal dibayar*: biarkan (terisi penuh = Sisa hutang) · *Tanggal bayar*: hari ini · *Cara bayar*: Transfer bank · *Rekening sumber*: BCA Operasional KSC · *Catatan*: opsional (mis. nomor bukti transfer)",
-   "hasil": "Form 'Bayar pemasok' dengan pita 'PT: Sukacita', Pemasok, Dokumen 'Tagihan pemasok VB-…', Sisa hutang Rp 1.864.800; tulisan 'Bayar sebagian diizinkan; sisanya tetap hutang.'",
+   "hasil": "Form 'Bayar pemasok' dengan pita 'PT: Sukacita', Pemasok, Dokumen 'Tagihan pemasok VB-…', Sisa hutang Rp 1.864.800; tulisan 'Bayar sebagian diizinkan; sisanya tetap hutang (kecuali selisih receh ≤ Rp 5.000: ditutup otomatis).'",
    "gambar": "uji/hasil/F11/05-form-bayar.png"
   },
   {
@@ -117,7 +117,9 @@
   "Lupa memilih *Rekening sumber* — tombol Bayar mati dan muncul 'Pilih rekening atau kas sumber pembayaran.'",
   "Membayar tagihan kontrabon (VB kedua) di sini — tagihan itu dipakai di F12; bayar hanya tagihan baris *tagihan_bayar*.",
   "Mengira jurnal bank memakai akun per rekening: di buku besar semua rekening bank/kas besar PT memakai akun 1-1100 'Kas Besar / Bank'; rinciannya per rekening ada di Kas & Bank.",
-  "Mencari PO di GR/IR tanpa mencentang 'Tampilkan yang sudah nol' → 'Tidak ada sisa GR/IR yang cocok' (itu justru tanda sudah beres)."
+  "Mencari PO di GR/IR tanpa mencentang 'Tampilkan yang sudah nol' → 'Tidak ada sisa GR/IR yang cocok' (itu justru tanda sudah beres).",
+  "Mengetik nominal lebih dari sisa hutang (mis. salah ketik 1.864.900) — tombol Bayar mati: 'Nominal Rp … melebihi sisa hutang Rp …'. Kurang bayar ≤ Rp 5.000 (toleransi selisih) TIDAK tinggal sebagai hutang: form menulis 'sisa itu DITUTUP otomatis' — ketik nominal penuh bila ingin membayar persis.",
+  "Memilih *Tanggal bayar* bulan depan: kalender mengizinkan dan jurnal kas lahir di bulan itu — pakai tanggal hari ini kecuali diminta pelatih."
  ],
  "catatan_pelatih": "Izin Finance = lihat & bayar tagihan (K-17); membuat/membatalkan tagihan tetap Manajer — sejak perbaikan 17 Nov tombol [[Batalkan]] tidak lagi tampil untuk Finance (dulu tampil lalu ditolak). Di GR/IR ada pita kuning 'Akun “Selisih harga pembelian” belum diatur untuk PT ini…' — data acuan belum memetakan akun itu; tidak menghalangi latihan (kliring tidak dipakai), sebutkan saja. Rincian tagihan menampilkan 'Belum ada kedatangan (GRN) tertutup…' karena data latihan menerima barang lewat jalur penerimaan lama — normal. Semua peserta membayar dari BCA Operasional KSC yang sama: saldo rekening & total hutang bergerak selama sesi. Jalankan F11 SEBELUM F12 (wizard kontrabon menawarkan semua tagihan terbuka pemasok; bila F11 belum dibayar, peserta harus menghapus centang tagihan bayar).",
  "uji": {

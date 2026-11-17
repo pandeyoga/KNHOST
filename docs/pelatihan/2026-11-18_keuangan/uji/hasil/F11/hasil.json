@@ -2,7 +2,7 @@
   "code": "F11",
   "title": "Bayar tagihan supplier",
   "ok": true,
-  "at": "2026-11-17T06:30:10.392Z",
+  "at": "2026-11-17T09:15:45.276Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,17 +11,17 @@
       "action": "Login dengan akun Finance peserta, buka Keuangan › Hutang",
       "expect": "Tab Tagihan tampil: kartu umur hutang + daftar tagihan PT Sukacita",
       "ok": true,
-      "ms": 8761,
-      "info": "Total hutang TOTAL HUTANG (AP) Rp 18.914.400 belum dibayar"
+      "ms": 5452,
+      "info": "Total hutang TOTAL HUTANG (AP) Rp 15.762.000 belum dibayar"
     },
     {
       "no": 2,
       "role": "Finance",
-      "action": "Ketik \"Latihan 01\" di kotak cari",
+      "action": "Ketik \"Latihan 02\" di kotak cari",
       "expect": "Hanya tagihan pemasok peserta yang tampil; tagihan bayar berstatus Terposting dengan Sisa = Total",
       "ok": true,
-      "ms": 1375,
-      "info": "2 tagihan pemasok Latihan 01: VB-00002 Latihan 01 · Pemasok Grey Peserta 01 Sukacita KSC/PO-00002 · 1 item Rp 1.864.800 Rp 1.864.800 Cocok Terposting INV-LTH01-BDA5B Baya"
+      "ms": 1350,
+      "info": "2 tagihan pemasok Latihan 02: VB-00004 Latihan 02 · Pemasok Grey Peserta 02 Sukacita KSC/PO-00004 · 1 item Rp 1.864.800 Rp 1.864.800 Cocok Terposting INV-LTH02-AE4FB Baya"
     },
     {
       "no": 3,
@@ -29,7 +29,7 @@
       "action": "Klik [[Detail →]] pada tagihan bayar",
       "expect": "Rincian: Terposting · Match Bersih, \"3-way match bersih: qty & harga sesuai PO/penerimaan\" (Pesan = Terima = Tagih, Harga PO = Harga Bill), Dokumen Terkait: PO & jurnal; di kaki hanya tombol [[Bayar]]",
       "ok": true,
-      "ms": 1105,
+      "ms": 1101,
       "info": "baris: Grey Woven Katun Poplin DMO-GRY-WVN-001 120 120 120 Rp 14.000 Rp 14.000 Rp 1.680.000 · PPN PPN MASUKAN Rp 184.800"
     },
     {
@@ -38,7 +38,7 @@
       "action": "Klik [[Bayar]] → pilih *Rekening sumber* BCA Operasional KSC",
       "expect": "Form Bayar pemasok: Sisa hutang = total tagihan, Nominal terisi penuh, Cara bayar Transfer",
       "ok": true,
-      "ms": 1090,
+      "ms": 1251,
       "info": "nominal 1864800 · cara Transfer bank · PT PT: Sukacita"
     },
     {
@@ -47,8 +47,8 @@
       "action": "Klik [[Bayar]] lalu [[Ya, bayar]] pada konfirmasi",
       "expect": "Konfirmasi menyebut nominal, pemasok, rekening & PT; sesudahnya rincian berstatus Lunas, Sisa Hutang Rp 0",
       "ok": true,
-      "ms": 1771,
-      "info": "konfirmasi: \"Bayar Rp 1.864.800 ke Latihan 01 · Pemasok Grey Peserta 01 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · DB paid · kas KSC/CASH-00031"
+      "ms": 1477,
+      "info": "konfirmasi: \"Bayar Rp 1.864.800 ke Latihan 02 · Pemasok Grey Peserta 02 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · DB paid · kas KSC/CASH-00045"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Cek buku: jurnal pembayaran",
       "expect": "Hutang Usaha (D) / Bank BCA Operasional (K) sebesar total tagihan, seimbang",
       "ok": true,
-      "ms": 1600,
-      "info": "KSC/JE-00162 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · kas KSC/CASH-00031 dari BCA Operasional KSC"
+      "ms": 1500,
+      "info": "KSC/JE-00180 seimbang D=K=1864800 [2-1100 Hutang Usaha D 1864800 · 1-1100 Kas Besar / Bank K 1864800] · kas KSC/CASH-00045 dari BCA Operasional KSC"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Tutup rincian, buka tab [[GR/IR (Diterima Belum Ditagih)]], cari nomor PO, centang *Tampilkan yang sudah nol*",
       "expect": "Baris PO: Nilai diterima = Sudah ditagih (DPP), Sisa GR/IR Rp 0",
       "ok": true,
-      "ms": 17238,
-      "info": "KSC/PO-00002 Latihan 01 · Pemasok Grey Peserta 01 Selesai Rp 1.680.000 Rp 1.680.000 Rp 0 Rp 0 Rp 0 0 —"
+      "ms": 17172,
+      "info": "KSC/PO-00004 Latihan 02 · Pemasok Grey Peserta 02 Selesai Rp 1.680.000 Rp 1.680.000 Rp 0 Rp 0 Rp 0 0 —"
     }
   ],
   "http_5xx": [],
@@ -74,6 +74,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 01 · VB-00002 · PO KSC/PO-00002 · total Rp 1.864.800 · status awal posted"
+    "Peserta 02 · VB-00004 · PO KSC/PO-00004 · total Rp 1.864.800 · status awal posted"
   ]
 }

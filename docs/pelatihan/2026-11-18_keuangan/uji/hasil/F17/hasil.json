@@ -2,7 +2,7 @@
   "code": "F17",
   "title": "Laporan Keuangan — Laba-Rugi, Neraca, Arus Kas, Profitabilitas (Manajer)",
   "ok": true,
-  "at": "2026-11-17T06:32:35.819Z",
+  "at": "2026-11-17T09:18:10.808Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Masuk sebagai manajer → kotak PT di bilah atas: pilih 'Sukacita' → menu Akuntansi & Pajak › Laporan",
       "expect": "Tab hub 'Laba-Rugi, Neraca & Arus Kas' terbuka; pita 'Angka untuk Sukacita Textile'; empat tab: Laba-Rugi · Neraca · Arus Kas · Perubahan Ekuitas",
       "ok": true,
-      "ms": 6543,
+      "ms": 7141,
       "info": "Angka untuk Sukacita Textile · Laba-Rugi Neraca Arus Kas Perubahan Ekuitas"
     },
     {
@@ -20,8 +20,8 @@
       "action": "Tab Laba-Rugi → [Periode (Bulan/Tahun)] → *Tipe Periode* Bulanan · *Bulan* November · *Tahun* 2026",
       "expect": "Keterangan periode '01 … s/d 30 …'; tabel: Pendapatan (4-1000) · Beban Pokok Penjualan (5-1000) · Beban Operasional (6-…) · Laba Kotor · Laba Bersih — sama dengan jumlah jurnal bulan ini per kelompok akun",
       "ok": true,
-      "ms": 4233,
-      "info": "01 Nov 2026 s/d 30 Nov 2026 · pendapatan Rp 148.984.998 − HPP Rp 107.253.072 = laba kotor Rp 41.731.926 − beban Rp 3.657.000 = laba bersih Rp 38.074.926 (jurnal: Rp 148.984.998 / Rp 107.253.072 / Rp 3.657.000 / Rp 38.074.926)"
+      "ms": 4355,
+      "info": "01 Nov 2026 s/d 30 Nov 2026 · pendapatan Rp 151.981.793 − HPP Rp 109.395.252 = laba kotor Rp 42.586.541 − beban Rp 4.224.000 = laba bersih Rp 38.362.541 (jurnal: Rp 151.981.793 / Rp 109.395.252 / Rp 4.224.000 / Rp 38.362.541)"
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "Klik nama akun '4-1000 Pendapatan Penjualan' di tabel",
       "expect": "Pindah ke Buku Besar › tab Buku Besar akun 4-1000 dengan rentang bulan ini; tombol [← Kembali ke Laporan Keuangan]. Jumlah kredit di sana = angka pendapatan di Laba-Rugi",
       "ok": true,
-      "ms": 2809,
-      "info": "Saldo awal Rp 0 · Saldo akhir Rp 148.962.600 · jurnal 4-1000 bulan ini Rp 148.962.600 · layar L/R Rp 148.984.998"
+      "ms": 3166,
+      "info": "Saldo awal Rp 0 · Saldo akhir Rp 151.937.850 · jurnal 4-1000 bulan ini Rp 151.937.850 · layar L/R Rp 151.981.793"
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Tab [Neraca] (per hari ini)",
       "expect": "TOTAL ASET = TOTAL KEWAJIBAN + EKUITAS (✓, kartu 'Status Neraca: Seimbang'). Ekuitas memuat 'Laba Tahun Berjalan'. Baris 1-9999 Akun Sementara (Suspense) bernilai minus — wajib nol sebelum tutup buku",
       "ok": true,
-      "ms": 2222,
-      "info": "aset Rp 23.326.223.696 = kewajiban Rp 82.079.748 + ekuitas Rp 23.244.143.948 (Rp 23.326.223.696) · Seimbang · jurnal: aset Rp 23.326.223.696, kewajiban Rp 82.079.748, ekuitas Rp 23.256.668.634 + laba berjalan Rp -12.524.686"
+      "ms": 2330,
+      "info": "aset Rp 23.323.017.438 = kewajiban Rp 82.350.876 + ekuitas Rp 23.240.666.563 (Rp 23.323.017.438) · Seimbang · jurnal: aset Rp 23.323.017.438, kewajiban Rp 82.350.876, ekuitas Rp 23.256.668.634 + laba berjalan Rp -16.002.071"
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Tab [Arus Kas] (rentang bawaan awal tahun s/d hari ini)",
       "expect": "Kas Awal Periode + 'Saldo awal rekening yang didaftarkan periode ini' (baris di tabel / tulisan kecil di kartu Kas Awal) + Perubahan Kas Bersih = Kas Akhir Periode; Kas Akhir = saldo akun kas & bank (1-1100 + 1-1110) di buku; lencana hijau 'Terekonsiliasi'",
       "ok": true,
-      "ms": 1784,
-      "info": "kas awal Rp 0 + saldo awal rekening baru Rp 775.000.000 + perubahan Rp 184.387.078 = kas akhir Rp 959.387.078 · buku kas Rp 959.387.078 · Terekonsiliasi"
+      "ms": 1839,
+      "info": "kas awal Rp 0 + saldo awal rekening baru Rp 775.000.000 + perubahan Rp 193.168.800 = kas akhir Rp 968.168.800 · buku kas Rp 968.168.800 · Terekonsiliasi"
     },
     {
       "no": 6,
@@ -56,8 +56,8 @@
       "action": "Tab hub [Profitabilitas] → tab Realisasi (bawaan awal tahun s/d hari ini)",
       "expect": "Kartu Pendapatan (realisasi · terkirim), HPP, Marjin Kotor, Marjin %; tabel 'Pencocokan ke Laba-Rugi': marjin layar + penyesuaian persediaan + antar-PT + 'Pendapatan lain di Laba-Rugi (denda, bunga, klaim …)' = 'Laba kotor menurut Laba-Rugi', dengan 'Selisih belum dijelaskan Rp 0'",
       "ok": true,
-      "ms": 2529,
-      "info": "marjin kotor layar Rp 41.709.528 · laba kotor L/R Rp 41.731.926 (jurnal Rp 41.731.926) · selisih belum dijelaskan Rp 0"
+      "ms": 2520,
+      "info": "marjin kotor layar Rp 42.542.598 · laba kotor L/R Rp 42.586.541 (jurnal Rp 42.586.541) · selisih belum dijelaskan Rp 0"
     }
   ],
   "http_5xx": [],

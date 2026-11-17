@@ -1,0 +1,690 @@
+[
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan (Atur sendiri)",
+  "masukan": "ketik 9.999.999 (di atas sisa)",
+  "harap": "Kotak dibatasi = sisa Rp 2.673.324; 'Nominal sesuai tagihan — tidak ada selisih'",
+  "hasil": "lulus",
+  "catatan": "[V1.1] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "tempel 'Rp 9.999.999'",
+  "harap": "Diterima, dibatasi = sisa Rp 2.673.324",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.2] uji jalan lulus. Dulu tempelan bertitik/berawalan Rp ditolak diam-diam (kotak tetap 0)."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik 1.000.000,50",
+  "harap": "Total diterima Rp 1.000.001 (1.000.000,50); petunjuk 'Kurang bayar …'",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.3] uji jalan lulus. Dulu koma membuat kotak jadi 0 lalu digit berikutnya → Rp 50 (nominal salah). Kini MoneyInput membaca koma desimal."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik 1,500,000 (gaya Inggris)",
+  "harap": "Dibaca Rp 1.500.000",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.4] uji jalan lulus. Dulu tiap koma me-nol-kan kotak → Rp 0/Rp 123."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik sisa persis bergaya Indonesia 2.673.324,00",
+  "harap": "Total = Rp 2.673.324; tidak ada selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.5] uji jalan lulus. Dulu → Rp 50."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "0",
+  "harap": "Tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "[V1.6] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "(kosongkan)",
+  "harap": "Tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "[V1.7] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "abc",
+  "harap": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "[V1.8] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi ke tagihan",
+  "masukan": "ketik -100",
+  "harap": "Minus tidak bisa masuk kotak alokasi (tidak pernah tersimpan negatif); yang tampil & dihitung Rp 100",
+  "hasil": "lulus",
+  "catatan": "[V1.9] uji jalan lulus. Tanda minus diabaikan → Rp 100 terlihat di Total & petunjuk Kurang bayar."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3.374.123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.10] uji jalan lulus. Dulu terketik '3.374123' = Rp 3 (nominal salah tanpa peringatan)."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3374123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3374123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "lulus",
+  "catatan": "[V1.11] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3,374,123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3,374,123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.12] uji jalan lulus. Dulu '3,374123' → Rp 0, tombol mati."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3374122,5",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3374122,5' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.13] uji jalan lulus. Dulu pratinjau Rp 3.374.123 tetapi Total Rp 0 & 'Isi nominal diterima.'"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "ketik 3.374.122,50",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.122,50' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.14] uji jalan lulus. Dulu → Rp 3."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel Rp 3.374.123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.15] uji jalan lulus. Dulu tempelan ditolak diam-diam."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel Rp 3 374 123",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3 374 123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.16] uji jalan lulus. Dulu ditolak / Rp 0."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu)",
+  "masukan": "tempel 3.374.123,-",
+  "harap": "Total diterima Rp 3.374.123; kotak berisi '3.374.123,-' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.17] uji jalan lulus. Gaya kwitansi 'Rp …,-'."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik -100",
+  "harap": "Kotak bergaris merah, tombol mati + 'Nominal tidak boleh minus.'",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.18] uji jalan lulus. Dulu alasannya 'Isi nominal diterima.' padahal nominal sudah diisi."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik abc",
+  "harap": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+  "hasil": "lulus",
+  "catatan": "[V1.19] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima",
+  "masukan": "ketik 99.999.999.999 → [Simpan kwitansi] → [Batal] di dialog selisih",
+  "harap": "Total Rp 99.999.999.999; petunjuk 'Lebih bayar …'; Simpan → dialog 'Lebih bayar' wajib diputus; Batal → tidak ada kwitansi",
+  "hasil": "keputusan",
+  "catatan": "[V1.20] uji jalan lulus. Dulu terketik Rp 100. Kini terbaca benar, tetapi TIDAK ada batas atas/peringatan khusus untuk lebih bayar raksasa (salah ketik nol) — hanya dialog selisih + kalimat konfirmasi. Pertanyaan pemilik: perlu batas/peringatan lebih bayar > X?"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tombol [Batal] form",
+  "masukan": "isi 1.000.000 lalu klik [Batal]",
+  "harap": "Form tertutup, tidak ada kwitansi baru",
+  "hasil": "lulus",
+  "catatan": "[V1.21] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "No. referensi",
+  "masukan": "(kosong)",
+  "harap": "Boleh kosong (pengaturan 'payment.wajib_nomor_referensi' bawaan mati) — tombol tetap aktif",
+  "hasil": "lulus",
+  "catatan": "[V1.22] uji jalan lulus. Catatan kode: form membaca `settings/effective → payment.wajib_nomor_referensi`, kunci itu tidak dikirim endpoint (penanda 'wajib' di layar tidak pernah menyala); backend tetap menolak dengan pesan Indonesia bila pengaturan dinyalakan."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi SO kedua + keputusan 'Sisa tetap jadi piutang'",
+  "masukan": "ketik 1.000.000,50",
+  "harap": "Kwitansi tepat Rp 1.000.000,50; jurnal 1-1100 D = 1-1200 K = 1.000.000,50; sisa SO = total − 1.000.000,50",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.23] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Alokasi SO lunas + klik ganda [Simpan kwitansi] & [Ya, simpan]",
+  "masukan": "tempel 'Rp 2.673.324,00'",
+  "harap": "Tepat SATU kwitansi = sisa; SO lunas; jurnal seimbang",
+  "hasil": "lulus",
+  "catatan": "[V1.24] uji jalan lulus. Tidak pernah dobel (inFlight + kunci idempotensi). Tetapi klik ganda [Simpan kwitansi] membuat klik ke-2 jatuh di latar dialog konfirmasi → dialog langsung tertutup (= Batal), peserta harus klik lagi. Akar: utils/overlayDismiss.js (di luar area perbaikan) — usulan patch di laporan."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tanggal terima di MASA DEPAN",
+  "masukan": "2026-12-22 · alokasi 200.000",
+  "harap": "Ditolak dengan pesan jelas ATAU diterima bertanggal itu (aturan pemilik)",
+  "hasil": "keputusan",
+  "catatan": "[V1.25] uji jalan lulus. Tidak ada penjaga tanggal masa depan di form maupun backend (kalender tidak membatasi). Kwitansi & jurnal bertanggal masa depan. Pertanyaan pemilik: tolak/peringatkan tanggal > hari ini?"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Tanggal terima di periode TERTUTUP",
+  "masukan": "15 Sep 2026 (periode Sep 2026 ditutup sementara untuk uji) · alokasi 100.000",
+  "harap": "Ditolak di dalam form: 'Periode … sudah DITUTUP …'; tidak ada kwitansi; tombol tidak macet",
+  "hasil": "lulus",
+  "catatan": "[V1.26] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima (Tertua dulu) di atas sisa → 'Simpan sebagai deposit'",
+  "masukan": "ketik 2.327.274,50",
+  "harap": "Kwitansi Rp 2.327.275: jurnal 1-1100 D 2.327.274,50 · 1-1200 K 2.077.274,50 · 2-1400 K 250.000,00; titipan pelanggan +250.000,00",
+  "hasil": "diperbaiki",
+  "catatan": "[V1.27] uji jalan lulus. Dulu '…,xx' bertitik terketik salah (Rp 3/0)."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Pakai titipan — nominal titipan",
+  "masukan": "centang 'Pakai titipan', ketik 999.999 (di atas tersedia)",
+  "harap": "Kotak titipan dibatasi = tersedia Rp 250.000",
+  "hasil": "lulus",
+  "catatan": "[V1.28] uji jalan lulus."
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Pakai titipan sebagian",
+  "masukan": "ketik 100.000 di kotak titipan",
+  "harap": "Nominal diterima = total SO − 100.000; jurnal 1-1100 D + 2-1400 D 100.000 = 1-1200 K total; titipan tersisa Rp 150.000",
+  "hasil": "lulus",
+  "catatan": "[V1.29] uji jalan lulus."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Nominal baris LPJ",
+  "masukan": "185.000,50 dan 47.000 (dua nota)",
+  "harap": "Total Pengeluaran Rp 232.001 (232.000,50); Sisa Rp 268.000; LPJ tersimpan persis 232.000,50",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.1] uji jalan lulus. Dulu '185.000,50' diketik → '185.00050' / koma membuat Number() = NaN → baris DIBUANG diam-diam saat simpan."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Tombol [Ajukan] tanpa foto nota",
+  "masukan": "(tidak ada lampiran)",
+  "harap": "Pengaturan 'finance.lpj_wajib_lampiran' MENYALA → ditolak 'Lampirkan minimal satu bukti …'; MATI (bawaan) → LPJ terajukan tanpa bukti",
+  "hasil": "keputusan",
+  "catatan": "[V2.2] uji jalan lulus. Di lingkungan uji pengaturan MATI (bawaan): LPJ bisa diajukan TANPA foto nota. Pertanyaan pemilik: nyalakan wajib bukti LPJ untuk PT? (F07 mengajarkan unggah bukti, tetapi sistem tidak memaksanya.) Bila menyala, penolakannya berbahasa Indonesia (pesan di atas, `cash_advance_service.submit_settlement`)."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "LPJ disetujui manajer → jurnal",
+  "masukan": "lampirkan nota → Ajukan → manager Setujui & Posting GL",
+  "harap": "Jurnal: 6-4600 D 185.000,50 · 6-4300 D 47.000 · 1-1400 K 232.000,50 (seimbang)",
+  "hasil": "lulus",
+  "catatan": "[V2.3] uji jalan lulus."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Terima pengembalian sisa (nominal sen)",
+  "masukan": "sisa Rp 268.000 (267.999,50)",
+  "harap": "Kas masuk persis 267.999,50; uang muka PD bersih 0; saldo Kas Toko = hitung ulang (saldo awal + Σ masuk − Σ keluar)",
+  "hasil": "lulus",
+  "catatan": "[V2.4] uji jalan lulus."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Nominal baris LPJ",
+  "masukan": "baris 2 diketik -5.000",
+  "harap": "Ditolak: 'Periksa baris 2: nominal tidak boleh minus.'; tidak ada LPJ",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.5] uji jalan lulus. Dulu baris minus dibuang diam-diam saat simpan, padahal Total di layar ikut dikurangi (tersimpan ≠ terlihat)."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Baris beruraian tanpa nominal",
+  "masukan": "baris 2 'Parkir' nominal kosong",
+  "harap": "Ditolak: 'Periksa baris 2: isi nominalnya atau hapus barisnya.'",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.6] uji jalan lulus. Dulu baris dibuang diam-diam."
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "LPJ melebihi PD + uraian kosong",
+  "masukan": "baris 1 (uraian kosong) 400.000 · baris 2 'Parkir' 150.000,00 (Σ 550.000 > PD 500.000)",
+  "harap": "Form: 'Kekurangan Dana Rp 50.000'; daftar manajer: 'Perkiraan hutang reimburse Rp 50.000' + tombol [Buka]; disetujui → jurnal beban D 550.000 = 1-1400 K 500.000 + 2-1650 Hutang Reimburse K 50.000",
+  "hasil": "keputusan",
+  "catatan": "[V2.7] uji jalan lulus. Uraian kosong DITERIMA (tidak wajib) — pertanyaan pemilik: wajibkan uraian per nota? DIPERBAIKI: dulu baris PD di daftar menampilkan 'Hutang reimburse Rp 50.000' + tombol [Bayar] (ditolak server) MENGGANTIKAN [Buka] sebelum LPJ disetujui → manajer tidak bisa membuka PD dari barisnya."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori operasional · Keluar · Nominal",
+  "masukan": "12.345,50",
+  "harap": "Kas tersimpan persis 12345.5; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.8] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori operasional · Masuk · Nominal",
+  "masukan": "12345",
+  "harap": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.9] uji jalan lulus. Masuk 'operasional' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori pembelian · Keluar · Nominal",
+  "masukan": "Rp 1.250",
+  "harap": "Kas tersimpan persis 1250; jurnal 1-1300 D / 1-1110 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.10] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Kas keluar 'Pembelian' mendebit 1-1300 Persediaan tanpa barang masuk (persediaan buku ≠ stok) — pertanyaan pemilik."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori pembelian · Masuk · Nominal",
+  "masukan": "1,500,000",
+  "harap": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.11] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'pembelian' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori gaji · Keluar · Nominal",
+  "masukan": "2.000",
+  "harap": "Kas tersimpan persis 2000; jurnal 6-1000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.12] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori gaji · Masuk · Nominal",
+  "masukan": "3.374.122,50",
+  "harap": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.13] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'gaji' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori transfer · Keluar · Nominal",
+  "masukan": "12.345,50",
+  "harap": "Kas tersimpan persis 12345.5; jurnal 1-1150 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.14] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Lewat 1-1150 Kas Transit (perbaikan 17 Nov)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori transfer · Masuk · Nominal",
+  "masukan": "12345",
+  "harap": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-1150 K",
+  "hasil": "lulus",
+  "catatan": "[V2.15] uji jalan lulus."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori modal · Keluar · Nominal",
+  "masukan": "Rp 1.250",
+  "harap": "Kas tersimpan persis 1250; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.16] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Keluar 'Setoran Modal' (prive/penarikan) jatuh ke 6-4000 BEBAN — seharusnya ekuitas; pertanyaan pemilik."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori modal · Masuk · Nominal",
+  "masukan": "1,500,000",
+  "harap": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 3-1000 K",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.17] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori lain · Keluar · Nominal",
+  "masukan": "2.000",
+  "harap": "Kas tersimpan persis 2000; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "[V2.18] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'Lain-lain' → 1-9999 Suspense (pertanyaan pemilik yang sudah tercatat)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori lain · Masuk · Nominal",
+  "masukan": "3.374.122,50",
+  "harap": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "[V2.19] uji jalan lulus. Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'lain' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual. Masuk 'Lain-lain' → 1-9999 Suspense (pertanyaan pemilik yang sudah tercatat)."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "-100",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "[V2.20] uji jalan lulus."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "abc",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "[V2.21] uji jalan lulus."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "0",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "[V2.22] uji jalan lulus."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kas keluar MELEBIHI saldo Kas Toko",
+  "masukan": "saldo + 1.000.000",
+  "harap": "Ditolak 'saldo tidak cukup' ATAU tercatat (aturan pemilik)",
+  "hasil": "keputusan",
+  "catatan": "[V2.23] uji jalan lulus. Tidak ada penjaga saldo: kas kecil boleh MINUS. Pertanyaan pemilik: tolak kas keluar di atas saldo? (transaksi uji dianulir admin sesudahnya)"
+ },
+ {
+  "layar": "Rekening & Saldo",
+  "isian": "Saldo Kas Toko KSC",
+  "masukan": "(hitung ulang sesudah semua transaksi)",
+  "harap": "Saldo di layar = saldo awal + Σ kas masuk − Σ kas keluar (tidak anulir)",
+  "hasil": "lulus",
+  "catatan": "[V2.24] uji jalan lulus."
+ },
+ {
+  "layar": "Titipan Sales",
+  "isian": "Jumlah setoran saat diterima Finance",
+  "masukan": "(tidak bisa diubah di layar)",
+  "harap": "Form 'Terima setoran' menampilkan Jumlah = setoran (teks, bukan isian) — Finance tidak bisa menerima nominal lain",
+  "hasil": "lulus",
+  "catatan": "[V2.25] uji jalan lulus. Selisih fisik uang harus ditolak ([Tolak] + alasan) lalu sales mengajukan setoran baru."
+ },
+ {
+  "layar": "Titipan Sales (HP sales)",
+  "isian": "Jumlah disetor",
+  "masukan": "titipan + 1.000.000 (lewat API akun sales)",
+  "harap": "Ditolak dengan pesan Indonesia (melebihi titipan yang dipegang)",
+  "hasil": "lulus",
+  "catatan": "[V2.26] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal dd/mm/yyyy (contoh panduan)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.1] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal yyyy-mm-dd",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n2026-11-17,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.2] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal dd-mm-yyyy",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17-11-2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.3] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal '17 Nov 2026'",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17 Nov 2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.4] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal tanpa tahun dd/mm (gaya BCA)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.5] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal 1500000",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000,DB,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "[V3.6] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal 1.500.000 tanpa kutip",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1.500.000,CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.7] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal '1,500,000.00' (gaya Inggris)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1,500,000.00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.8] uji jalan lulus. Dulu ditolak 'Nominal tidak terbaca / nol' (template BCA berdesimal koma)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal '3240090.00' (titik desimal)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000.00,CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.9] uji jalan lulus. Dulu template BCA membuang titik → Rp 150.000.000 (×100, tanpa peringatan)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal bertanda minus tanpa DB/CR",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"-1.500.000,00\",,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "[V3.10] uji jalan lulus. Minus = uang keluar."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Akhiran DB di kolom nominal",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00 DB\",,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "[V3.11] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal ber-'Rp'",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"Rp 1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "[V3.12] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Pemisah TAB (salin dari Excel / KlikBCA)",
+  "masukan": "Tanggal⇥Keterangan⇥Cabang⇥Jumlah⇥DB/CR⇥Saldo\n17/11/2026⇥TRSF A⇥0000⇥1.500.000,00⇥DB⇥0\n17/11/2026⇥BIAYA ADM⇥0000⇥15.000,00⇥DB⇥0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.13] uji jalan lulus. Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Pemisah titik koma ;",
+  "masukan": "Tanggal;Keterangan;Cabang;Jumlah;DB/CR;Saldo\n17/11/2026;TRSF A;0000;1.500.000,00;DB;0\n17/11/2026;BIAYA ADM;0000;15.000,00;DB;0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.14] uji jalan lulus. Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom dipisah spasi berderet (salin dari PDF)",
+  "masukan": "Tanggal    Keterangan    Cabang    Jumlah    DB/CR    Saldo\n17/11/2026    TRSF A    0000    1.500.000,00    DB    0\n17/11/2026    BIAYA ADM    0000    15.000,00    DB    0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.15] uji jalan lulus. Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Baris kosong di tengah & akhir",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n\n<baris>\n\n",
+  "harap": "Baris kosong dilewati tanpa galat",
+  "hasil": "lulus",
+  "catatan": "[V3.16] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom Debet/Kredit terpisah (gaya Mandiri) + 'Kenali otomatis'",
+  "masukan": "Tanggal,Keterangan,Debet,Kredit,Saldo / …,,\"1.500.000,00\",0",
+  "harap": "Dikenali template Mandiri; 1 baris Masuk 1.500.000",
+  "hasil": "lulus",
+  "catatan": "[V3.17] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom Debet/Kredit terpisah dengan template BCA (template salah)",
+  "masukan": "Tanggal,Keterangan,Debet,Kredit,Saldo + template BCA",
+  "harap": "Ditolak dengan arahan: kolom nominal tidak ditemukan, pilih template yang cocok",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.18] uji jalan lulus. Dulu 'Nominal tidak terbaca / nol' per baris tanpa menyebut kolom/template."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanpa baris judul kolom",
+  "masukan": "<hanya baris data>",
+  "harap": "Ditolak dengan arahan 'Baris judul kolom tidak dikenali …'",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.19] uji jalan lulus. Dulu pratinjau diam-diam 'Terbaca 0 baris' (baris data dipakai sebagai judul) tanpa alasan."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Campuran baris benar & rusak",
+  "masukan": "tanggal 31/02, nominal 'abc', koma desimal tanpa kutip, 1 baris benar",
+  "harap": "Pratinjau 1 baris; SETIAP baris yang dilewati disebut nomor & alasannya (isi selnya)",
+  "hasil": "diperbaiki",
+  "catatan": "[V3.20] uji jalan lulus. Dulu hanya satu contoh galat yang tampil."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Impor 1 baris (nominal sen)",
+  "masukan": "1.234,50 DB · 'VARIASI LATIHAN 64 65467'",
+  "harap": "'1 baris baru, 0 dilewati'; tersimpan keluar 1234.5, tanggal hari ini",
+  "hasil": "lulus",
+  "catatan": "[V3.21] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Impor ULANG teks yang sama",
+  "masukan": "(tempel lagi teks yang sama → Impor)",
+  "harap": "'0 baris baru, 1 dilewati (sudah pernah masuk)'; tidak ada baris ganda",
+  "hasil": "lulus",
+  "catatan": "[V3.22] uji jalan lulus."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Ringkasan",
+  "isian": "Rekening (bersih) · Buku (bersih) · Selisih",
+  "masukan": "(BCA Operasional KSC, tanpa saringan periode)",
+  "harap": "Rekening = Σ mutasi masuk − keluar (bukan 'diabaikan'); Buku = Σ kas masuk − keluar (tidak anulir, rekening ini + kas lama tanpa rekening bila rekening tunggal); Selisih = Rekening − Buku; sama dengan kartu di layar",
+  "hasil": "lulus",
+  "catatan": "[V3.23] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "Kolom umur piutang pelanggan cicilan",
+  "masukan": "Latihan 66 · Toko Kain Cicilan 66 (cicilan 1 jatuh tempo 2026-10-28, cicilan 2 2026-11-27)",
+  "harap": "Dihitung ulang: belum jatuh tempo Rp 1.688.172 · 1–30 Rp 1.688.171 · 31–60 Rp 0 · 61–90 Rp 0 · >90 Rp 0 = layanan = layar",
+  "hasil": "lulus",
+  "catatan": "[V4.1] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "Taksiran denda (kolom Denda)",
+  "masukan": "aturan 2%/bulan · tenggang 0 hr · dasar installment · batas 0% · minimum Rp 10.000",
+  "harap": "Σ (dasar × 2% × (hari telat − tenggang)/30) = Rp 22.509 (= 22508.95); layar sama",
+  "hasil": "lulus",
+  "catatan": "[V4.2] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "[Buat Nota Denda]",
+  "masukan": "(rincian pelanggan → Buat Nota Denda)",
+  "harap": "Nota USULAN = Rp 22.509, belum berjurnal; rincian hitungan menyebut tarif & hari",
+  "hasil": "lulus",
+  "catatan": "[V4.3] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "[Terbitkan] nota denda",
+  "masukan": "(Antrean Denda → Terbitkan → konfirmasi)",
+  "harap": "Jurnal seimbang: piutang denda D = 4-9300 Pendapatan Denda K = Rp 22.509",
+  "hasil": "lulus",
+  "catatan": "[V4.4] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · nominal cicilan 1",
+  "masukan": "1.000.000 (Σ jadwal ≠ nilai dokumen)",
+  "harap": "Label merah 'Selisih Rp …' (= nilai dokumen − Σ jadwal) dan [Simpan perubahan] mati",
+  "hasil": "lulus",
+  "catatan": "[V4.5] uji jalan lulus."
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · nominal bergaya Indonesia",
+  "masukan": "cicilan 1 '2.000.000' · cicilan 2 '615.160,00'",
+  "harap": "'Sudah pas'; tersimpan persis; umur piutang & taksiran denda ikut nominal baru (dihitung ulang)",
+  "hasil": "diperbaiki",
+  "catatan": "[V4.6] uji jalan lulus. Dulu koma desimal di kotak nominal jadwal → 0 lalu digit berikutnya (mis. Rp 50): jadwal tidak pernah pas."
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · jatuh tempo cicilan 2 di MASA LAMPAU",
+  "masukan": "2026-11-07",
+  "harap": "Ditolak dengan pesan ATAU diterima (aturan pemilik); bila diterima: cicilan 2 langsung telat & ikut umur/denda",
+  "hasil": "keputusan",
+  "catatan": "[V4.7] uji jalan lulus. Diterima tanpa peringatan: jadwal baru bisa langsung telat (denda berjalan sejak tanggal lampau). Pertanyaan pemilik: tolak/peringatkan jatuh tempo < hari ini saat mengubah jadwal?"
+ },
+ {
+  "layar": "Terima pembayaran",
+  "isian": "Nominal diterima — diketik SELAGI tagihan terbuka dimuat",
+  "masukan": "ketik 50.000 sebelum daftar tagihan selesai dimuat (tanpa / dengan SO dibuka; 1.000.000 > sisa SO)",
+  "harap": "Ketikan tidak ditimpa sisa tagihan; dari baris SO: ketikan ≤ sisa → Atur sendiri sebesar ketikan, > sisa → tetap Tertua dulu (lebih bayar diputus di dialog)",
+  "hasil": "diperbaiki",
+  "catatan": "[jest] frontend/src/features/__tests__/latihVariasiTerimaBayar.test.js (gagal tanpa perbaikan). Temuan agen Hutang/Pajak/Gaji: dulu isian otomatis menimpa/bercampur dengan ketikan ('50.000' → '832.500'). Perbaikan: penanda amountTouched di ReceivePaymentModal."
+ }
+]

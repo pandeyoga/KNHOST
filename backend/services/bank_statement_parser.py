@@ -140,6 +140,21 @@ def parse_amount(raw: Any, style: str = "auto") -> Tuple[float, bool]:
     s = re.sub(r"[^\d.,-]", "", s).lstrip("-")
     if not s:
         return 0.0, neg
+    # Uji variasi isian (pelatihan 18 Nov): nominal yang JELAS bergaya lain dari template dulu terbaca 0 ("Nominal tidak
+    # terbaca / nol"): "1,500,000.00" ditempel ke template BCA (desimal koma), "1.500.000,00" ke template berdesimal titik.
+    # Gaya Indonesia tidak pernah memuat koma > 1 atau koma SEBELUM titik (dan sebaliknya) → dibaca sesuai gaya aslinya.
+    # Pemisah ribuan selalu diikuti TEPAT 3 angka: "3240090.00" ke template BCA dulu dibaca 324.009.000 (×100, diam-diam)
+    # — titik yang tidak diikuti 3 angka pasti titik desimal (sebaliknya "1500000,00" ke template bertitik desimal).
+    # Bentuk yang ambigu ("1,500" · "1.500") tetap mengikuti template.
+    def _bukan_ribuan(sep: str) -> bool:
+        return any(len(g) != 3 for g in s.split(sep)[1:])
+
+    if style == "id" and (s.count(",") > 1 or ("," in s and "." in s and s.rfind(".") > s.rfind(","))
+                          or ("," not in s and "." in s and _bukan_ribuan("."))):
+        style = "en"
+    elif style == "en" and (s.count(".") > 1 or ("," in s and "." in s and s.rfind(",") > s.rfind("."))
+                            or ("." not in s and "," in s and _bukan_ribuan(","))):
+        style = "id"
     if style == "id":
         s = s.replace(".", "").replace(",", ".")
     elif style == "en":
@@ -333,8 +348,20 @@ def parse_csv(raw: str, fmt: Dict[str, Any], year_hint: int = 0) -> Tuple[List[D
     text = (raw or "").replace("\r\n", "\n").replace("\r", "\n").strip("\n")
     if not text.strip():
         return rows, [{"row": 0, "reason": "Berkas/teks kosong", "raw": ""}]
-    delim = fmt.get("delimiter") or _sniff_delimiter(text.split("\n")[0])
+    first = next((ln for ln in text.split("\n") if ln.strip()), "")
+    delim = fmt.get("delimiter") or _sniff_delimiter(first)
     if delim == "\\t":
+        delim = "\t"
+    # Uji variasi isian (pelatihan 18 Nov): teks yang disalin dari Excel / tabel KlikBCA berpemisah TAB (atau ";"),
+    # sedangkan template BCA ber-koma → seluruh baris menjadi satu kolom dan setiap baris ditolak "Tanggal tidak
+    # terbaca". Pemisah lain yang jelas (≥ 2 kali dan lebih sering dari pemisah template di baris pertama) dipakai.
+    # Salinan dari PDF (kolom dipisah ≥ 2 spasi, tanpa pemisah apa pun) → spasi berderet dijadikan TAB.
+    hitung = {d: first.count(d) for d in ("\t", ";", "|", ",")}
+    lain = max((d for d in ("\t", ";", "|") if d != delim), key=lambda d: hitung[d])
+    if hitung[lain] >= 2 and hitung[lain] > hitung.get(delim, first.count(delim)):
+        delim = lain
+    elif not any(hitung.values()) and re.search(r"\S {2,}\S", first):
+        text = "\n".join(re.sub(r" {2,}", "\t", ln.strip()) for ln in text.split("\n"))
         delim = "\t"
     reader = list(csv.reader(io.StringIO(text), delimiter=delim))
     skip = int(fmt.get("skip_rows") or 0)
@@ -360,6 +387,20 @@ def parse_csv(raw: str, fmt: Dict[str, Any], year_hint: int = 0) -> Tuple[List[D
     i_ext = _col_index(cols.get("external_id"), headers)
     style = fmt.get("decimal_style") or "auto"
     dfmt = fmt.get("date_format") or "auto"
+    # Uji variasi isian (pelatihan 18 Nov): baris judul kolom tidak ikut ditempel → baris data pertama dipakai sebagai
+    # judul, kolom tidak ketemu, dan pratinjau diam-diam "Terbaca 0 baris" tanpa alasan. Kini ditolak dengan arahan.
+    if fmt.get("has_header", True):
+        hilang = []
+        if i_date < 0:
+            hilang.append("tanggal")
+        if i_amt < 0 and i_in < 0 and i_out < 0:
+            hilang.append("nominal (jumlah / debet-kredit)")
+        if hilang:
+            contoh = ", ".join(str(s) for s in (fmt.get("header_signature") or []) if s)
+            return rows, [{"row": 0, "raw": delim.join(headers)[:160], "reason": (
+                f"Baris judul kolom tidak dikenali — kolom {' & '.join(hilang)} tidak ditemukan. Baris pertama harus judul "
+                f"kolom rekening koran ({contoh or 'sesuai template'}); salin juga baris judulnya, atau pilih template yang "
+                f"cocok.")}]
 
     def cell(r: List[str], idx: int) -> str:
         return str(r[idx]).strip() if 0 <= idx < len(r) else ""
@@ -393,10 +434,11 @@ def parse_csv(raw: str, fmt: Dict[str, Any], year_hint: int = 0) -> Tuple[List[D
             if not direction and neg:
                 direction = "out"
         if amount <= 0:
-            errors.append({"row": n, "reason": "Nominal tidak terbaca / nol", "raw": raw_line[:160]})
+            isi = cell(r, i_amt) if not two_col else f"{cell(r, i_in)}/{cell(r, i_out)}"
+            errors.append({"row": n, "reason": f"Nominal tidak terbaca / nol ('{isi[:40]}')", "raw": raw_line[:160]})
             continue
         if not stmt_date:
-            errors.append({"row": n, "reason": "Tanggal tidak terbaca", "raw": raw_line[:160]})
+            errors.append({"row": n, "reason": f"Tanggal tidak terbaca ('{cell(r, i_date)[:40]}')", "raw": raw_line[:160]})
             continue
         # ── KN-G8-DIR-SILENT (P1, uang) ───────────────────────────────────────────
         # DULU: bila penanda arah tidak terbaca, baris DIAM-DIAM dianggap uang MASUK.

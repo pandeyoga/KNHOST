@@ -50,6 +50,47 @@ def svg_html(svg: str) -> str:
             "#d{width:1500px;padding:8px}</style></head><body><div id='d'>" + svg + "</div></body></html>")
 
 
+DOKUMEN = [   # (judul, pola gambar di uji/hasil, kata kunci baris src/dokumen_cetak.json)
+    ("Faktur Komersial (faktur penjualan)", "D1/faktur-0*-1.png", "Faktur Komersial"),
+    ("Konfirmasi Pesanan (SO)", "D1/pesanan-KSC-SO-*-1.png", "Konfirmasi Pesanan"),
+    ("Surat Jalan", "D1/surat-jalan-*-1.png", "Surat Jalan"),
+    ("Daftar Kemasan (packing list)", "D1/daftar-kemasan-*-1.png", "Daftar Kemasan"),
+    ("Surat Pengambilan Barang", "D1/surat-pengambilan-*-1.png", "Surat Pengambilan"),
+    ("Kwitansi penerimaan piutang", "D2/kwitansi-*-1.png", "Kwitansi"),
+    ("Rekening Koran pelanggan", "D2/rekening-koran-1.png", "Rekening Koran"),
+    ("Faktur Pajak Keluaran (salinan ERP)", "D2/faktur-pajak-*-1.png", "Faktur Pajak"),
+    ("Pesanan Pembelian (PO)", "D2/po-*-1.png", "Pesanan Pembelian"),
+    ("Tagihan Supplier", "D2/tagihan-VB-*-1.png", "Tagihan Supplier"),
+    ("Tanda Terima Kontrabon", "D2/kontrabon-*-1.png", "Kontrabon"),
+    ("Form Pengajuan Dana (PD) kas kecil", "D2/pd-*-1.png", "Pengajuan Dana"),
+    ("Tanda Terima pencairan PD", "D2/tanda-terima-*-1.png", "Tanda Terima pencairan"),
+    ("LPJ kas kecil", "D2/lpj-*-1.png", "LPJ"),
+    ("Bukti Kas Keluar", "D2/bukti-kas-keluar-*-1.png", "Bukti Kas"),
+    ("Bukti Kas Masuk", "D2/bukti-kas-masuk-*-1.png", "Bukti Kas"),
+    ("Slip Gaji", "D2/slip-gaji-*-1.png", "Slip Gaji"),
+]
+
+
+def dokumen():
+    import glob
+    f = os.path.join(SRC, "dokumen_cetak.json")
+    rows = []
+    if os.path.exists(f):
+        raw = json.load(open(f, encoding="utf-8"))
+        rows = raw if isinstance(raw, list) else raw.get("baris") or []
+    out = []
+    for judul, pola, kunci in DOKUMEN:
+        files = sorted(glob.glob(os.path.join(ROOT, "uji", "hasil", pola)))
+        if not files:
+            continue
+        rel = B.opt(os.path.relpath(files[0], ROOT), 1100)
+        r = next((x for x in rows if kunci.lower() in str(x.get("dokumen", "")).lower()), {})
+        cara = re.sub(r"\s*[;·]?\s*(GET|POST) /api/[^;]*", "", bersih(r.get("cara_cetak"))).strip(" ;·")   # tanpa alamat API teknis
+        out.append({"judul": judul, "img": rel, "wh": ukuran(rel), "cara_cetak": cara,
+                    "dicek": bersih(r.get("dicek")), "hasil": r.get("hasil", ""), "catatan": bersih(r.get("catatan"))})
+    return out
+
+
 def main() -> None:
     sc = B.load()
     os.makedirs(os.path.join(HERE, "alur"), exist_ok=True)
@@ -104,6 +145,7 @@ def main() -> None:
             "catatan_pelatih": bersih(d.get("catatan_pelatih")),
             "uji": {"ok": bool(u.get("ok")), "lulus": sum(1 for s in u.get("steps", []) if s.get("ok")),
                     "langkah": len(u.get("steps", []))}})
+    out["dokumen"] = dokumen()
     with open(os.path.join(HERE, "data.json"), "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)
     n = sum(len(s["langkah"]) for s in out["skenario"])

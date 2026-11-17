@@ -346,7 +346,7 @@ async def resolve_purchase_order(doc, db):
                      "address": sup.get("address"), "phone": sup.get("phone") or doc.get("supplier_contact")},
         "meta": [
             {"label": "Tgl Kirim Diharap", "value": fmt_date(doc.get("expected_delivery_date"))},
-            {"label": "NPWP Supplier", "value": sup.get("npwp", "-")},
+            {"label": "NPWP Supplier", "value": _npwp(doc.get("supplier_npwp"), sup.get("npwp"))},
             {"label": "Status Bayar", "value": doc.get("payment_status", "-")},
             {"label": "Dibuat oleh", "value": doc.get("created_by", "-")},
         ],
@@ -366,45 +366,70 @@ async def resolve_purchase_order(doc, db):
 # ── Quotation / Penawaran (dari sales_orders draft/quotation atau rfqs) ───────
 async def resolve_quotation(doc, db):
     ctx = await resolve_sales_order(doc, db)
-    ctx["title"] = "Sales Quotation / Penawaran Harga"
+    ctx["title"] = "Penawaran Harga"
     ctx["signatures"] = [{"label": "Hormat Kami", "role": "Sales", "name": doc.get("sales_name") or doc.get("created_by")},
                          {"label": "Menyetujui", "role": "Customer", "name": ""}]
     return ctx
 
 
 # ── Vendor Bill / Tagihan Supplier ───────────────────────────────────────────
+def _npwp(*vals) -> str:
+    """NPWP pertama yang terisi; kosong → "-" (dulu `sup.get("npwp", "-")` mencetak sel kosong bila field ada tapi "")."""
+    return next((str(v).strip() for v in vals if str(v or "").strip()), "-")
+
+
 async def resolve_vendor_bill(doc, db):
-    sup = await db.suppliers.find_one({"id": doc.get("supplier_id")}, {"_id": 0}) or {}
-    items = [{
-        "no": 1, "desc": f"Tagihan atas {doc.get('bill_type', 'pembelian')} "
-                         f"{doc.get('po_id') or doc.get('makloon_order_id') or ''}".strip(),
-        "ref": doc.get("supplier_invoice_no", "-"),
-        "net": fmt_rp(doc.get("net_amount")), "ppn": fmt_rp(doc.get("ppn_amount")),
-        "total": fmt_rp(doc.get("grand_total")),
-    }]
+    """Pelatihan 18 Nov (audit dokumen cetak) — dulu satu baris ringkas "Tagihan atas pembelian po_…": DPP Rp 0 (field
+    `net_amount` tidak ada di tagihan), Ref PO = id internal, tanpa rincian barang, jatuh tempo, maupun sisa hutang.
+    Kini baris barang dari tagihan, total K-03 (`_total_rows`: DPP · DPP nilai lain · PPN · Total), nomor PO, jatuh
+    tempo, terbayar & sisa. Tagihan lama tanpa `items` tetap satu baris ringkas."""
+    sup = (await db.suppliers.find_one({"id": doc.get("supplier_id")}, {"_id": 0}) or {}) if db is not None else {}
+    po_no = doc.get("po_number") or doc.get("makloon_order_number") or ""
+    items = []
+    for i, it in enumerate(doc.get("items") or [], 1):
+        qty = it.get("billed_qty", it.get("quantity", 0))
+        items.append({"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name") or it.get("description", ""),
+                      "qty": f"{fmt_num(qty)} {it.get('unit', '')}".strip(), "price": fmt_rp(it.get("price")),
+                      "disc": f"{fmt_num(it.get('discount_percent', 0))}%",
+                      "total": fmt_rp(it.get("line_total", it.get("subtotal")))})
+    if items:
+        columns = [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Barang / Jasa"),
+                   _col("qty", "Jumlah", "num"), _col("price", "Harga", "num"), _col("disc", "Disc", "num"),
+                   _col("total", "Subtotal", "num")]
+    else:
+        base = _num(doc.get("grand_total")) - _num(doc.get("ppn_amount"))
+        items = [{"no": 1, "desc": f"Tagihan atas {doc.get('bill_type') or 'pembelian'} {po_no}".strip(),
+                  "ref": doc.get("supplier_invoice_no") or "-", "net": fmt_rp(base),
+                  "ppn": fmt_rp(doc.get("ppn_amount")), "total": fmt_rp(doc.get("grand_total"))}]
+        columns = [_col("no", "No", "num"), _col("desc", "Uraian"), _col("ref", "Ref"),
+                   _col("net", "DPP", "num"), _col("ppn", "PPN", "num"), _col("total", "Total", "num")]
+    # Terbayar/sisa/status dari `bill_financials` (sumber yang sama dengan layar Hutang). Field tersimpan
+    # `outstanding`/`payment_status` tidak dipakai: pelunasan lewat kontrabon hanya menaikkan `amount_paid`.
+    from services.vendor_bill_service import bill_financials
+    fin = bill_financials(doc)
+    grand, paid, sisa = fin["grand_total"], fin["amount_paid"], fin["outstanding"]
+    totals = _total_rows(doc, grand=grand)   # K-03 — sama dengan PO/SO/Faktur
+    totals += [{"label": "Sudah dibayar", "value": fmt_rp(paid)}, {"label": "Sisa hutang", "value": fmt_rp(sisa)}]
     return {
-        "title": "Vendor Bill / Tagihan", "number": doc.get("bill_number"),
+        "title": "Tagihan Supplier", "number": doc.get("bill_number"),
         "date": fmt_date(doc.get("bill_date") or doc.get("created_at")), "status": doc.get("status"),
         "party_to": {"title": "Supplier", "name": doc.get("supplier_name") or sup.get("name"),
                      "address": sup.get("address"), "phone": sup.get("phone")},
         "meta": [
-            {"label": "No. Faktur Supplier", "value": doc.get("supplier_invoice_no", "-")},
-            {"label": "Tipe", "value": doc.get("bill_type", "-")},
-            {"label": "Ref PO", "value": doc.get("po_id", "-")},
-            {"label": "NPWP", "value": sup.get("npwp", "-")},
+            {"label": "No. Faktur Supplier", "value": doc.get("supplier_invoice_no") or "-"},
+            {"label": "Ref PO", "value": po_no or "-"},
+            {"label": "Jatuh Tempo", "value": fmt_date(doc.get("due_date")) or "-"},
+            {"label": "NPWP Supplier", "value": _npwp(doc.get("supplier_npwp"), sup.get("npwp"))},
+            {"label": "Status Bayar", "value": fin["payment_status"]},
         ],
-        "columns": [_col("no", "No", "num"), _col("desc", "Uraian"), _col("ref", "Ref"),
-                    _col("net", "DPP", "num"), _col("ppn", "PPN", "num"), _col("total", "Total", "num")],
+        "columns": columns,
         "items": items,
-        # K-03 — "Total" = termasuk PPN; DPP rincian (label seragam dengan SO/PO/Faktur).
-        "totals": [{"label": "DPP (harga sebelum PPN)", "value": fmt_rp(doc.get("net_amount"))},
-                   {"label": "PPN", "value": fmt_rp(doc.get("ppn_amount"))},
-                   {"label": "Total (termasuk PPN)" if _num(doc.get("ppn_amount")) > 0 else "Total",
-                    "value": fmt_rp(doc.get("grand_total")), "strong": True}],
-        "terbilang": terbilang(doc.get("grand_total")),
+        "totals": totals,
+        "terbilang": terbilang(grand),
+        "notes": doc.get("notes"),
         "signatures": [{"label": "Diperiksa", "role": "Accounting", "name": ""},
-                       {"label": "Disetujui", "role": "Manager", "name": ""}],
-        "_amount": doc.get("grand_total"),
+                       {"label": "Disetujui", "role": "Manager", "name": doc.get("approved_by") or ""}],
+        "_amount": grand,
     }
 
 
@@ -442,8 +467,8 @@ async def resolve_contra_bon(doc, db):
             {"label": "Jatuh Tempo Bayar", "value": fmt_date(doc.get("due_date"))},
             {"label": "Jumlah Faktur", "value": str(len(doc.get("bills") or []))},
             {"label": "Termin", "value": doc.get("payment_term_code", "-")},
-            {"label": "NPWP", "value": sup.get("npwp", "-")},
-            {"label": "Penyerah dari Supplier", "value": doc.get("supplier_pic", "-")},
+            {"label": "NPWP", "value": _npwp(doc.get("supplier_npwp"), sup.get("npwp"))},
+            {"label": "Penyerah dari Supplier", "value": doc.get("supplier_pic") or "-"},
         ],
         "columns": [_col("no", "No", "num"), _col("inv", "No. Faktur Supplier"),
                     _col("bill", "No. Tagihan"), _col("po", "No. PO"),
@@ -483,7 +508,7 @@ async def resolve_ar_receipt(doc, db):
     else:
         cara = [{"label": "Metode", "value": doc.get("method", "-")}]
     return {
-        "title": "Kwitansi / Official Receipt", "number": doc.get("number"),
+        "title": "Kwitansi", "number": doc.get("number"),
         "date": fmt_date(doc.get("receipt_date") or doc.get("created_at")), "status": doc.get("status"),
         "party_to": {"title": "Telah diterima dari", "name": doc.get("customer_name")},
         "meta": [
@@ -769,20 +794,29 @@ def _sum_by_unit(pairs) -> str:
     return " + ".join(f"{fmt_num(v)} {u}".strip() for u, v in agg.items() if v) or "0"
 
 
+# Pelatihan 18 Nov (audit dokumen cetak) — entri scan yang hanya MENCATAT kejadian atas roll yang sudah terhitung
+# (kirim = `dispatch`, serah terima potong = `cutting_handoff`) bukan kuantitas baru. Dulu ikut menjadi baris: Surat
+# Jalan, Daftar Kemasan, dan Surat Pengambilan mencetak tiap roll DUA kali (pick + dispatch) → "Total Roll 2 ·
+# 235,58 yard" untuk 1 roll 117,79 yard yang benar-benar dikirim.
+_SCAN_EVENT_ONLY = frozenset({"dispatch", "cutting_handoff"})
+
+
 async def _wms_scan_rows(db, match: dict, flow_type: str):
     """Ratakan scan_log dari wms_tasks → satu baris per roll (fallback: satu baris per task).
 
-    Return (rows, tasks). rows: [{product_name, sku, roll_id, lot, bin_id, qty, unit, warehouse_name}].
+    Return (rows, tasks). rows: [{product_name, sku, roll_id, roll_no, lot, bin_id, qty, unit, warehouse_name}].
+    `roll_no` = nomor roll tercetak (RL-…) dari master roll; id internal hanya bila nomornya tidak ada.
     """
     tasks = await db.wms_tasks.find({**match, "flow_type": flow_type}, {"_id": 0}).to_list(2000)
     rows = []
     for t in tasks:
-        logs = t.get("scan_log") or []
+        logs = [lg for lg in (t.get("scan_log") or []) if lg.get("scan_type") not in _SCAN_EVENT_ONLY]
         if logs:
             for lg in logs:
                 rows.append({
                     "product_name": t.get("product_name", ""), "sku": t.get("sku", ""),
-                    "roll_id": lg.get("roll_id") or "-", "lot": lg.get("lot") or t.get("lot") or "-",
+                    "roll_id": lg.get("roll_id") or "-", "roll_no": lg.get("roll_no") or "",
+                    "lot": lg.get("lot") or t.get("lot") or "-",
                     "bin_id": lg.get("bin_id") or t.get("bin_id") or "-",
                     "qty": float(lg.get("actual_qty") or 0), "unit": t.get("unit", ""),
                     "warehouse_name": t.get("warehouse_name", ""),
@@ -790,10 +824,15 @@ async def _wms_scan_rows(db, match: dict, flow_type: str):
         else:
             rows.append({
                 "product_name": t.get("product_name", ""), "sku": t.get("sku", ""),
-                "roll_id": "-", "lot": t.get("lot") or "-", "bin_id": t.get("bin_id") or "-",
+                "roll_id": "-", "roll_no": "", "lot": t.get("lot") or "-", "bin_id": t.get("bin_id") or "-",
                 "qty": float(t.get("picked_qty") or t.get("received_qty") or t.get("quantity") or 0),
                 "unit": t.get("unit", ""), "warehouse_name": t.get("warehouse_name", ""),
             })
+    ids = sorted({r["roll_id"] for r in rows if r["roll_id"] != "-" and not r["roll_no"]})
+    nos = {x["id"]: x.get("roll_no") for x in await db.inventory_rolls.find(
+        {"id": {"$in": ids}}, {"_id": 0, "id": 1, "roll_no": 1}).to_list(len(ids))} if ids else {}
+    for r in rows:
+        r["roll_no"] = r["roll_no"] or nos.get(r["roll_id"]) or r["roll_id"]
     return rows, tasks
 
 
@@ -813,8 +852,9 @@ _KETENTUAN_SJ = (
 )
 
 
-async def _sj_number(db, order):
-    shp = await db.shipments.find_one({"order_id": order.get("id")}, {"_id": 0, "shipment_no": 1})
+async def _sj_number(db, order, shp=None):
+    if shp is None:
+        shp = await db.shipments.find_one({"order_id": order.get("id")}, {"_id": 0, "shipment_no": 1})
     if shp and shp.get("shipment_no"):
         return shp["shipment_no"]
     num = (order.get("number") or "").replace("SO-", "")
@@ -825,7 +865,7 @@ async def _sj_number(db, order):
 async def resolve_picking_list(doc, db):
     rows, _ = await _wms_scan_rows(db, {"order_id": doc.get("id")}, "outbound")
     items = [{"no": i, "sku": r["sku"], "desc": r["product_name"], "bin": r["bin_id"],
-              "roll": r["roll_id"], "lot": r["lot"], "qty": f"{fmt_num(r['qty'])} {r['unit']}"}
+              "roll": r["roll_no"], "lot": r["lot"], "qty": f"{fmt_num(r['qty'])} {r['unit']}"}
              for i, r in enumerate(rows, 1)]
     wh = next((r["warehouse_name"] for r in rows if r["warehouse_name"]), "-")
     total = _sum_by_unit([(r["qty"], r["unit"]) for r in rows])
@@ -896,14 +936,20 @@ async def resolve_delivery_note(doc, db):
     for i, r in enumerate(rows, 1):
         p = pidx.get(r["sku"], {})
         items.append({"no": i, "nama": r["product_name"], "warna": p.get("color", "-"),
-                      "kode": r["sku"], "roll": r["roll_id"], "jumlah": f"{fmt_num(r['qty'])} {r['unit']}"})
+                      "kode": r["sku"], "roll": r["roll_no"], "jumlah": f"{fmt_num(r['qty'])} {r['unit']}"})
     total_rolls = len(rows)
     total = _sum_by_unit([(r["qty"], r["unit"]) for r in rows])
     rname, rphone = _ship_recipient(doc.get("shipping_address"))
+    # Pelatihan 18 Nov — tanggal & pembuat SJ dari dokumen pengiriman (SO tidak menyimpan `dispatched_at`; dulu tanggal
+    # cetak yang tercetak dan "Dibuat Oleh" berisi id pengguna pembuat SO, mis. "user_sales_01").
+    shp = await db.shipments.find_one({"order_id": doc.get("id")}, {"_id": 0, "shipment_no": 1, "dispatched_at": 1,
+                                                                    "created_at": 1, "created_by": 1},
+                                      sort=[("created_at", 1)]) or {}
     return {
-        "title": "Surat Jalan", "number": await _sj_number(db, doc),
+        "title": "Surat Jalan", "number": await _sj_number(db, doc, shp),
         # CX-10 — tanggal SJ = tanggal kirim (stabil untuk hash versi), bukan tanggal cetak
-        "date": fmt_date(doc.get("dispatched_at")) or fmt_date(datetime.now(_WIB).isoformat()), "status": doc.get("status"),
+        "date": (fmt_date(doc.get("dispatched_at") or shp.get("dispatched_at") or shp.get("created_at"))
+                 or fmt_date(datetime.now(_WIB).isoformat())), "status": doc.get("status"),
         "party_to": {"title": "Kepada Yth", "name": (rname or doc.get("customer_name")),
                      "address": fmt_address(doc.get("shipping_address")),
                      "phone": (rphone or doc.get("customer_phone", ""))},
@@ -919,7 +965,7 @@ async def resolve_delivery_note(doc, db):
         "notes": _KETENTUAN_SJ if items else "⚠ Belum ada barang yang dikirim untuk order ini. Surat jalan akan terisi otomatis setelah proses pengiriman (outbound) di gudang.",
         "signatures": [{"label": "Penerima", "role": "Customer / Kurir", "name": ""},
                        {"label": "Mengetahui", "role": "Supervisor", "name": ""},
-                       {"label": "Dibuat Oleh", "role": "Gudang", "name": doc.get("created_by", "")}],
+                       {"label": "Dibuat Oleh", "role": "Gudang", "name": shp.get("created_by") or ""}],
         "_amount": 0,
     }
 
@@ -963,7 +1009,7 @@ async def resolve_makloon_sj(doc, db):
 # ── Daftar Put-Away — dari purchase_orders (barang diterima → penempatan bin) ─
 async def resolve_put_away(doc, db):
     rows, tasks = await _wms_scan_rows(db, {"po_id": doc.get("id")}, "inbound")
-    items = [{"no": i, "sku": r["sku"], "desc": r["product_name"], "roll": r["roll_id"],
+    items = [{"no": i, "sku": r["sku"], "desc": r["product_name"], "roll": r["roll_no"],
               "lot": r["lot"], "bin": r["bin_id"], "qty": f"{fmt_num(r['qty'])} {r['unit']}"}
              for i, r in enumerate(rows, 1)]
     wh = next((r["warehouse_name"] for r in rows if r["warehouse_name"]), "-")
@@ -1108,6 +1154,25 @@ async def resolve_purchase_requisition(doc, db):
 
 
 # ── Invoice Komersial — dari sales_orders ────────────────────────────────────
+async def _invoice_due_lines(doc, db):
+    """Pelatihan 18 Nov (audit dokumen cetak) — Faktur Komersial dulu tanpa jatuh tempo, terbayar, dan sisa. Baris
+    tagihan TERBUKA pesanan dari sumber yang sama dengan Umur Piutang & Reminder Penagihan (`report_basis.baris_tagihan`:
+    per surat jalan / cicilan, jatuh tempo = tanggal kirim + termin). `None` = tidak bisa dihitung (tanpa db, pelanggan
+    tidak ada, galat) → faktur dicetak seperti dulu; `[]` = tidak ada sisa (lunas)."""
+    if db is None or not doc.get("id") or not doc.get("customer_id"):
+        return None
+    try:
+        from services import report_basis as rb
+        if not rb.pesanan_piutang(doc):   # pesanan tunai / batal: tidak berpiutang → jangan dicetak "Lunas"
+            return None
+        cust = await db.customers.find_one({"id": doc["customer_id"]}, {"_id": 0})
+        if not cust:
+            return None
+        return (await rb.baris_tagihan([doc], {cust["id"]: cust}, per=None)).get(doc["id"], [])
+    except Exception:  # noqa: BLE001 — faktur tetap terbit tanpa blok jatuh tempo
+        return None
+
+
 async def resolve_invoice(doc, db):
     items = []
     for i, it in enumerate(doc.get("items", []), 1):
@@ -1118,6 +1183,23 @@ async def resolve_invoice(doc, db):
                       "total": fmt_rp(it.get("line_total", it.get("subtotal")))})
     grand = doc.get("grand_total", doc.get("total_amount"))
     totals = _total_rows(doc, grand=grand)   # K-03 — DPP · [DPP nilai lain] · PPN · Total (termasuk PPN)
+    tagihan = await _invoice_due_lines(doc, db)
+    meta_due, extra = [], []
+    if tagihan is not None:
+        paid = _num(doc.get("paid_total"))
+        sisa = round(sum(_num(r.get("sisa")) for r in tagihan), 2)
+        totals += [{"label": "Sudah dibayar", "value": fmt_rp(paid)}, {"label": "Sisa tagihan", "value": fmt_rp(sisa)}]
+        due = sorted(r["jatuh_tempo"] for r in tagihan if r.get("jatuh_tempo"))
+        meta_due = [{"label": "Jatuh Tempo", "value": fmt_date(due[0]) if due else ("Lunas" if sisa <= 0.01 else "-")}]
+        if tagihan:
+            extra = [{"title": "Jatuh Tempo & Sisa Tagihan",
+                      "columns": [_col("tagihan", "Tagihan"), _col("jt", "Jatuh Tempo", "ctr"),
+                                  _col("nilai", "Nilai", "num"), _col("bayar", "Sudah Dibayar", "num"),
+                                  _col("sisa", "Sisa", "num")],
+                      "items": [{"tagihan": r.get("label") or r.get("ref_number") or "-",
+                                 "jt": fmt_date(r.get("jatuh_tempo")) or "belum dikirim",
+                                 "nilai": fmt_rp(r.get("nilai")), "bayar": fmt_rp(r.get("terbayar")),
+                                 "sisa": fmt_rp(r.get("sisa"))} for r in tagihan]}]
     return {
         "title": "Faktur", "number": (doc.get("number") or "").replace("SO-", "INV-"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("payment_status") or doc.get("status"),
@@ -1126,12 +1208,14 @@ async def resolve_invoice(doc, db):
                      "phone": doc.get("customer_phone", "")},
         "meta": [{"label": "No. Pesanan Penjualan", "value": doc.get("number", "-")},
                  {"label": "Termin Bayar", "value": doc.get("payment_term_name", "-")},
+                 *meta_due,
                  {"label": "Status Bayar", "value": doc.get("payment_status", "-")},
                  {"label": "Dicetak", "value": fmt_date(datetime.now(_WIB).isoformat())}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"),
                     _col_rolls(), _col("qty", "Jumlah", "num"), _col("price", "Harga", "num"),
                     _col("disc", "Disc", "num"), _col("total", "Subtotal", "num")],
         "items": items, "totals": totals, "terbilang": terbilang(grand), "notes": doc.get("notes"),
+        "extra_tables": extra,
         "signatures": [{"label": "Hormat Kami", "role": "Finance", "name": ""},
                        {"label": "Diterima", "role": "Customer", "name": ""}],
         "_amount": grand,
@@ -1381,9 +1465,9 @@ DOC_REGISTRY = {
     "sales_order":     {"label": "Pesanan Penjualan",        "collection": "sales_orders",    "module": "order",          "esignable": True,  "resolver": resolve_sales_order},
     "quotation":       {"label": "Penawaran","collection": "sales_orders",    "module": "order",          "esignable": True,  "resolver": resolve_quotation},
     "purchase_order":  {"label": "Pesanan Pembelian",     "collection": "purchase_orders", "module": "purchase_order", "esignable": True,  "resolver": resolve_purchase_order},
-    "vendor_bill":     {"label": "Vendor Bill",        "collection": "vendor_bills",    "module": "vendor_bill",    "esignable": True,  "resolver": resolve_vendor_bill},
+    "vendor_bill":     {"label": "Tagihan Supplier",   "collection": "vendor_bills",    "module": "vendor_bill",    "esignable": True,  "resolver": resolve_vendor_bill},
     "contra_bon":      {"label": "Tanda Terima Kontrabon", "collection": "contra_bons", "module": "contra_bon",     "esignable": True,  "resolver": resolve_contra_bon},
-    "ar_receipt":      {"label": "Kwitansi (Receipt)", "collection": "ar_receipts",     "module": "ar_receipt",     "esignable": True,  "resolver": resolve_ar_receipt},
+    "ar_receipt":      {"label": "Kwitansi Penerimaan", "collection": "ar_receipts",     "module": "ar_receipt",     "esignable": True,  "resolver": resolve_ar_receipt},
     "sales_return":    {"label": "Nota Retur Jual",    "collection": "sales_returns",   "module": "sales_return",   "esignable": True,  "resolver": resolve_sales_return},
     "purchase_return": {"label": "Nota Retur Beli",    "collection": "purchase_returns","module": "purchase_return","esignable": True,  "resolver": resolve_purchase_return},
     "interco_return":  {"label": "Nota Retur / Kredit Antar-PT", "collection": "interco_returns", "module": "interco", "esignable": True,  "resolver": resolve_interco_return},

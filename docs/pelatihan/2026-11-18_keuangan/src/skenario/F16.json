@@ -23,7 +23,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Ketik nomor kwitansi dari Kartu Peserta di kotak *Cari nomor jurnal / keterangan…*",
    "isi": "*Cari*: KSC/AR-000xx (kolom *kwitansi* di Kartu Peserta)",
-   "hasil": "Tinggal '1 jurnal': nomor = *jurnal_terima*, sumber 'Kas' KSC/CASH-…, keterangan 'Kas in · Penerimaan KSC/AR-… — Latihan NN …', nilai = total SO, status 'Terposting'.",
+   "hasil": "Tinggal '1 jurnal': nomor = *jurnal_terima*, sumber 'Kas' KSC/CASH-…, keterangan 'Kas masuk · Penerimaan KSC/AR-… — Latihan NN …', nilai = total SO, status 'Terposting'.",
    "gambar": "uji/hasil/F16/02-cari-kwitansi.png"
   },
   {

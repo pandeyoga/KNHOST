@@ -3476,7 +3476,7 @@ async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]
         lines = _balanced_pair(_cash_out_contra(txn), cash_acc, amount, f"{number} · {desc}")
 
     je = await _insert_entry(
-        lines=lines, description=f"Kas {direction} · {desc}", date=txn.get("txn_date") or now_iso(),
+        lines=lines, description=f"Kas {({'in': 'masuk', 'out': 'keluar'}).get(direction, direction)} · {desc}", date=txn.get("txn_date") or now_iso(),
         source_type="cash_transaction", source_id=tid, entity_id=je_entity,
         created_by=txn.get("created_by", "system"), source_label=number)
     # Uang muka untuk pesanan yang SUDAH sebagian berpendapatan: reklas porsi yang lahir

@@ -1,0 +1,232 @@
+[
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal dd/mm/yyyy (contoh panduan)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal yyyy-mm-dd",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n2026-11-17,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal dd-mm-yyyy",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17-11-2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal '17 Nov 2026'",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17 Nov 2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanggal tanpa tahun dd/mm (gaya BCA)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11,TRSF A,0000,\"1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal 1500000",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000,DB,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal 1.500.000 tanpa kutip",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1.500.000,CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal '1,500,000.00' (gaya Inggris)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1,500,000.00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu ditolak 'Nominal tidak terbaca / nol' (template BCA berdesimal koma).",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal '3240090.00' (titik desimal)",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000.00,CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu template BCA membuang titik → Rp 150.000.000 (×100, tanpa peringatan).",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal bertanda minus tanpa DB/CR",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"-1.500.000,00\",,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "Minus = uang keluar.",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Akhiran DB di kolom nominal",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00 DB\",,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Nominal ber-'Rp'",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"Rp 1.500.000,00\",CR,0",
+  "harap": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Pemisah TAB (salin dari Excel / KlikBCA)",
+  "masukan": "Tanggal⇥Keterangan⇥Cabang⇥Jumlah⇥DB/CR⇥Saldo\n17/11/2026⇥TRSF A⇥0000⇥1.500.000,00⇥DB⇥0\n17/11/2026⇥BIAYA ADM⇥0000⇥15.000,00⇥DB⇥0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom).",
+  "uji": "lulus",
+  "bukti": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Pemisah titik koma ;",
+  "masukan": "Tanggal;Keterangan;Cabang;Jumlah;DB/CR;Saldo\n17/11/2026;TRSF A;0000;1.500.000,00;DB;0\n17/11/2026;BIAYA ADM;0000;15.000,00;DB;0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom).",
+  "uji": "lulus",
+  "bukti": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom dipisah spasi berderet (salin dari PDF)",
+  "masukan": "Tanggal    Keterangan    Cabang    Jumlah    DB/CR    Saldo\n17/11/2026    TRSF A    0000    1.500.000,00    DB    0\n17/11/2026    BIAYA ADM    0000    15.000,00    DB    0",
+  "harap": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu setiap baris ditolak 'Tanggal tidak terbaca' (template BCA ber-koma membaca seluruh baris sebagai satu kolom).",
+  "uji": "lulus",
+  "bukti": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Baris kosong di tengah & akhir",
+  "masukan": "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n\n<baris>\n\n",
+  "harap": "Baris kosong dilewati tanpa galat",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom Debet/Kredit terpisah (gaya Mandiri) + 'Kenali otomatis'",
+  "masukan": "Tanggal,Keterangan,Debet,Kredit,Saldo / …,,\"1.500.000,00\",0",
+  "harap": "Dikenali template Mandiri; 1 baris Masuk 1.500.000",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terbaca 1 baris memakai template Mandiri — Rekening Koran (CSV) (dikenali otomatis) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk"
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Kolom Debet/Kredit terpisah dengan template BCA (template salah)",
+  "masukan": "Tanggal,Keterangan,Debet,Kredit,Saldo + template BCA",
+  "harap": "Ditolak dengan arahan: kolom nominal tidak ditemukan, pilih template yang cocok",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu 'Nominal tidak terbaca / nol' per baris tanpa menyebut kolom/template.",
+  "uji": "lulus",
+  "bukti": "Judul kolom: Baris judul kolom tidak dikenali — kolom nominal (jumlah / debet-kredit) tidak ditemukan. Baris pertama harus judul kolom rekening koran (tanggal, keterangan, jumlah); salin juga baris judulnya, atau pilih template yang cocok."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Tanpa baris judul kolom",
+  "masukan": "<hanya baris data>",
+  "harap": "Ditolak dengan arahan 'Baris judul kolom tidak dikenali …'",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu pratinjau diam-diam 'Terbaca 0 baris' (baris data dipakai sebagai judul) tanpa alasan.",
+  "uji": "lulus",
+  "bukti": "Judul kolom: Baris judul kolom tidak dikenali — kolom tanggal & nominal (jumlah / debet-kredit) tidak ditemukan. Baris pertama harus judul kolom rekening koran (tanggal, keterangan, jumlah); salin juga baris judulnya, atau pilih template yang cocok."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Campuran baris benar & rusak",
+  "masukan": "tanggal 31/02, nominal 'abc', koma desimal tanpa kutip, 1 baris benar",
+  "harap": "Pratinjau 1 baris; SETIAP baris yang dilewati disebut nomor & alasannya (isi selnya)",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu hanya satu contoh galat yang tampil.",
+  "uji": "lulus",
+  "bukti": "Baris data ke-1: Tanggal tidak terbaca ('31/02/2026') | Baris data ke-2: Nominal tidak terbaca / nol ('abc') | Baris data ke-3: Arah dana (masuk/keluar) tidak bisa dipastikan — sistem tidak menebak uang. Periksa kolom penanda DB/CR pada template, atau bungkus nominal dengan tanda kutip bila koma desimal membuat kolom bergeser."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Impor 1 baris (nominal sen)",
+  "masukan": "1.234,50 DB · 'VARIASI LATIHAN 64 65467'",
+  "harap": "'1 baris baru, 0 dilewati'; tersimpan keluar 1234.5, tanggal hari ini",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Impor (tempel)",
+  "isian": "Impor ULANG teks yang sama",
+  "masukan": "(tempel lagi teks yang sama → Impor)",
+  "harap": "'0 baris baru, 1 dilewati (sudah pernah masuk)'; tidak ada baris ganda",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Impor BCA — Rekening Koran (CSV): 0 baris baru, 1 dilewati (sudah pernah masuk)."
+ },
+ {
+  "layar": "Rekonsiliasi Bank · Ringkasan",
+  "isian": "Rekening (bersih) · Buku (bersih) · Selisih",
+  "masukan": "(BCA Operasional KSC, tanpa saringan periode)",
+  "harap": "Rekening = Σ mutasi masuk − keluar (bukan 'diabaikan'); Buku = Σ kas masuk − keluar (tidak anulir, rekening ini + kas lama tanpa rekening bila rekening tunggal); Selisih = Rekening − Buku; sama dengan kartu di layar",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "rekening Rp -3.703 · buku Rp 310.776.410 · selisih Rp -310.780.113 (layanan = hitung ulang = layar)"
+ }
+]

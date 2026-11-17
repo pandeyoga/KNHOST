@@ -28,6 +28,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import FilterChips from "../../../components/FilterChips";
 import { formatCurrency, todayWib } from "../../../utils/formatters";
+import { heldMoney } from "../../../utils/parseMoney";
 import { apiErrorText } from "../../../utils/apiError";
 import { offlinePost } from "../../../utils/offlineQueue";
 import { moneyPost } from "../../../utils/moneyRequest";
@@ -109,6 +110,12 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   const [error, setError] = useState("");
   const [mode, setMode] = useState("auto");
   const [amount, setAmount] = useState(hintAmount ? String(hintAmount) : "");
+  // Uji variasi isian (pelatihan 18 Nov) — kolom Nominal diterima sudah bisa diketik selagi tagihan terbuka dimuat.
+  // Dulu isian otomatis (sisa tagihan) sesudah muat MENIMPA ketikan ("50.000" lalu bercampur jadi "832.500"). Kini
+  // isian otomatis hanya bila pengguna belum menyentuh kolom itu (`amountTouched`); ketikannya yang dipakai.
+  const amountTouched = useRef(false);
+  const amountNow = useRef(amount);
+  const ketikNominal = (v) => { amountTouched.current = true; amountNow.current = v; setAmount(v); };
   const [method, setMethod] = useState("transfer");
   const pm = usePaymentMethods("masuk");
   const { selectedEntity, entities } = useEntityScope();
@@ -154,7 +161,15 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
       const pre = preselectOrderId && list.find((o) => o.order_id === preselectOrderId);
       setOpenOrders(pre ? [pre, ...list.filter((o) => o !== pre)] : list);
       setDeposit(Number(rd.data?.deposit_balance || 0));
-      if (pre) {
+      const diketik = amountTouched.current ? heldMoney(amountNow.current) : NaN;
+      if (amountTouched.current) {
+        // Nominal sudah diketik: tidak ditimpa. Pesanan yang dibuka & nominal ≤ sisanya → "Atur sendiri" ke pesanan itu
+        // sebesar ketikan; selain itu tetap "Tertua dulu" dengan ketikan (lebih bayar → dialog selisih seperti biasa).
+        if (pre && diketik > 0 && diketik <= (Number(pre.outstanding) || 0) + 0.005) {
+          setMode("manual");
+          setAlloc({ [pre.order_id]: diketik });
+        }
+      } else if (pre) {
         setMode("manual");
         const take = hintAmount ? Math.min(Number(hintAmount) || 0, Number(pre.outstanding) || 0) : pre.outstanding;
         setAlloc({ [pre.order_id]: take });
@@ -193,15 +208,17 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
     })();
   }, [customerId]);
 
-  const allocTotal = useMemo(() => Object.values(alloc).reduce((s, v) => s + (Number(v) || 0), 0), [alloc]);
-  const depositWanted = useDeposit ? Math.min(Number(depositAmt) || 0, deposit) : 0;
+  // Uji variasi isian (pelatihan 18 Nov) — nominal dibaca `heldMoney` (teks kanonik MoneyInput / angka); dulu
+  // `Number("3374122,5")` = NaN → Rp 0 padahal pratinjau kotak menampilkan Rp 3.374.123.
+  const allocTotal = useMemo(() => Object.values(alloc).reduce((s, v) => s + (heldMoney(v) || 0), 0), [alloc]);
+  const depositWanted = useDeposit ? Math.min(heldMoney(depositAmt) || 0, deposit) : 0;
   // Pelatihan 18 Nov (F04) — "Atur sendiri": angka per tagihan = yang DILUNASI (uang baru + titipan). Dulu titipan
   // ditambahkan DI LUAR alokasi (uang = Σ alokasi, titipan = dana lebih) → pesanan tidak bertambah lunas, titipan
   // kembali utuh, dan kwitansi terbaca "lebih bayar" sebesar titipan. Kini titipan dipakai lebih dulu dan uang baru =
   // Σ alokasi − titipan. "Tertua dulu" tidak berubah: nominal = uang baru, titipan menambah dana.
   const depositUse = mode === "manual" ? Math.min(depositWanted, allocTotal) : depositWanted;
   const effectiveAmount = mode === "manual"
-    ? Math.round(Math.max(allocTotal - depositUse, 0) * 100) / 100 : Number(amount) || 0;
+    ? Math.round(Math.max(allocTotal - depositUse, 0) * 100) / 100 : Math.round((heldMoney(amount) || 0) * 100) / 100;
   const totalFunds = effectiveAmount + depositUse;
   const allocatedOrders = useMemo(() => {
     if (mode === "manual") return openOrders.filter((o) => Number(alloc[o.order_id]) > 0);
@@ -236,7 +253,7 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   useEffect(() => { setVariance(null); }, [effectiveAmount, depositUse, mode]);
 
   function setAllocFor(orderId, value, max) {
-    setAlloc((p) => ({ ...p, [orderId]: Math.min(Math.max(Number(value) || 0, 0), max) }));
+    setAlloc((p) => ({ ...p, [orderId]: Math.min(Math.max(heldMoney(value) || 0, 0), max) }));
   }
 
   async function linkBankLine(rc) {
@@ -312,8 +329,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
 
   const blockReason = (needsAccount || titipan) ? receiptBlockReason(payState) : "";
   // Tombol mati selalu beralasan tertulis di sampingnya (KN_37).
-  const reason = allPt ? TEKS_PILIH_PT : !customerId ? "Pilih pelanggan dulu." : (!loading && totalFunds <= 0)
-    ? "Isi nominal diterima." : blockReason;
+  const reason = allPt ? TEKS_PILIH_PT : !customerId ? "Pilih pelanggan dulu." : (!loading && totalFunds < 0)
+    ? "Nominal tidak boleh minus." : (!loading && totalFunds <= 0) ? "Isi nominal diterima." : blockReason;
   const cashHint = titipan ? TEKS_TITIPAN
     : pm.isCash(method) ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).` : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
   const dir = assessment?.direction && assessment.direction !== "none" ? directionMeta(assessment.direction) : null;
@@ -356,7 +373,7 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                 <div>
                   <label className="field-label">Nominal diterima</label>
                   {mode === "auto"
-                    ? <MoneyInput testId="ar-receipt-amount" className="field" value={amount} onChange={(v) => setAmount(v)} placeholder="0" />
+                    ? <MoneyInput testId="ar-receipt-amount" className="field" value={amount} onChange={ketikNominal} placeholder="0" />
                     : <p className="field flex items-center tabular-nums" data-testid="ar-receipt-amount-manual">{formatCurrency(effectiveAmount)}</p>}
                   {mode === "manual" && depositUse > 0 && (
                     <p className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-amount-manual-note">
@@ -391,7 +408,7 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                   </label>
                   {useDeposit && (
                     <MoneyInput testId="ar-receipt-deposit-amount" className="field mt-2" value={depositAmt} placeholder="0"
-                      onChange={(v) => setDepositAmt(String(Math.min(Math.max(Number(v) || 0, 0), deposit)))} />
+                      onChange={(v) => setDepositAmt(String(Math.min(Math.max(heldMoney(v) || 0, 0), deposit)))} />
                   )}
                 </div>
               )}

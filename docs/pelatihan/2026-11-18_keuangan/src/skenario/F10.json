@@ -118,7 +118,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Ketik *BIAYA ADM LATIHAN NN* di kotak cari → klik baris bersumber [[Kas]]",
    "isi": "*Cari*: BIAYA ADM LATIHAN NN",
-   "hasil": "Jurnal 'Kas out · Biaya bank — BIAYA ADM LATIHAN NN': 6-8000 Beban Administrasi Bank — Debit Rp 15.000; 1-1100 Kas Besar / Bank — Kredit Rp 15.000. Baris yang hanya dicocokkan (transfer masuk & ekspedisi) TIDAK menerbitkan jurnal baru.",
+   "hasil": "Jurnal 'Kas keluar · Biaya bank — BIAYA ADM LATIHAN NN': 6-8000 Beban Administrasi Bank — Debit Rp 15.000; 1-1100 Kas Besar / Bank — Kredit Rp 15.000. Baris yang hanya dicocokkan (transfer masuk & ekspedisi) TIDAK menerbitkan jurnal baru.",
    "gambar": "uji/hasil/F10/10-jurnal-biaya-bank.png"
   },
   {
@@ -147,7 +147,7 @@
   "Ringkasan per periode: Selisih = mutasi bersih periode − buku bersih periode (rekening yang sama)"
  ],
  "kesalahan_umum": [
-  "Format nominal salah (\"3240090\" tanpa titik/koma, atau titik desimal) → pratinjau membaca angka lain; selalu periksa [[Pratinjau]] sebelum [[Impor]].",
+  "Nominal tanpa tanda kutip dengan koma desimal (3.240.090,00 → kolom bergeser) → baris ditolak 'Arah dana … bungkus nominal dengan tanda kutip'. Bentuk lain (3240090 · 3.240.090 · 3,240,090.00 · 3240090.00), pemisah TAB/titik koma (salin dari Excel) dibaca benar; baris yang dilewati disebut nomor & alasannya — tetap periksa [[Pratinjau]] sebelum [[Impor]].",
   "Keterangan tanpa 'LATIHAN NN' / sama dengan peserta lain → baris dilewati sebagai duplikat ('0 baris baru, 1 dilewati').",
   "Klik 'Catat sebagai kwitansi' pada baris transfer masuk yang kwitansinya SUDAH dicatat → kwitansi ganda; pakai [[Cocokkan otomatis]] / [[Cocokkan]].",
   "Menautkan kandidat milik peserta lain dengan nominal mirip (skor lebih rendah) → kas Anda tetap 'Belum'. Pilih nomor KSC/CASH dari F09 dengan nominal persis sama.",

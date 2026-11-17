@@ -127,11 +127,21 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
             <b className="text-[#C0392B]">{formatCurrency(preview.sum_out)}</b>
           </p>
           {preview.error_count > 0 && (
-            <p className="text-[11px] text-[#B26A00] flex items-center gap-1 mb-1"
-              data-testid="recon-preview-errors">
-              <AlertTriangle size={12} /> {preview.error_count} baris tidak terbaca dan TIDAK akan
-              diimpor — contoh: {preview.errors?.[0]?.reason} (baris {preview.errors?.[0]?.row})
-            </p>
+            // Uji variasi isian (pelatihan 18 Nov) — dulu hanya contoh baris pertama; peserta tidak tahu baris mana lagi
+            // yang dilewati. Kini setiap baris yang ditolak (≤ 10) disebut nomor & alasannya.
+            <div className="text-[11px] text-[#B26A00] mb-1" data-testid="recon-preview-errors">
+              <p className="flex items-center gap-1">
+                <AlertTriangle size={12} /> {preview.error_count} baris tidak terbaca dan TIDAK akan diimpor:
+              </p>
+              <ul className="ml-5 list-disc">
+                {(preview.errors || []).slice(0, 10).map((e, i) => (
+                  <li key={`${e.row}-${i}`} data-testid={`recon-preview-error-${i}`}>
+                    {e.row ? `Baris data ke-${e.row}` : "Judul kolom"}: {e.reason}
+                  </li>
+                ))}
+              </ul>
+              {preview.error_count > 10 && <p>… dan {preview.error_count - 10} baris lagi.</p>}
+            </div>
           )}
           <div className="overflow-x-auto rounded border border-[#E5E5EA] sm:max-h-[260px] sm:overflow-auto">
             <table className="w-full text-[11px]">

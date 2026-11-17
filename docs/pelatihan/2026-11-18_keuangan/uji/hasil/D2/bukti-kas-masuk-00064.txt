@@ -1,0 +1,23 @@
+Sukacita                                                                                                                  BUKTI KAS MASUK
+Kas / Bank Masuk                                                                                                                 No. KSC/JE-00064
+
+Tanggal               17 November 2026                                           Sumber                     KSC/CASH-00013
+Keterangan Kas in · Penerimaan KSC/AR-00008 — Latihan                            Dibuat oleh                Peserta Keuangan 02
+           02 · Toko Kain Peserta 02 · Kode KN-ZJGFP
+Metode:            Tunai    ✓ Bank / Transfer                Kas Kecil
+
+ AKUN                      MEMO                                                                                              DEBIT                 KREDIT
+ 1-1100 — Kas Besar        KSC/CASH-00013 · Penerimaan KSC/AR-00008 — Latihan 02 · Toko                               Rp 3.287.820                          -
+ / Bank                    Kain Peserta 02 · Kode KN-ZJGFP
+ 1-1200 — Piutang          KSC/CASH-00013 · pelunasan AR                                                                        -      Rp 3.287.820
+ Usaha
+ TOTAL                                                                                                                Rp 3.287.820     Rp 3.287.820
+Terbilang: Tiga juta dua ratus delapan puluh tujuh ribu delapan ratus dua puluh rupiah
+
+          Dibuat                      Diperiksa                       Disetujui                    Diposting                         Penyetor
+
+
+
+
+ ( Peserta Keuangan 02 )          ( .................... )        ( .................... )     ( .................... )          ( .................... )
+

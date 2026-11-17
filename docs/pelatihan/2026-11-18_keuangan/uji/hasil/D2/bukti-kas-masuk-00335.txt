@@ -1,0 +1,23 @@
+Sukacita                                                                                                         RECEIVED VOUCHER
+Bukti Kas/Bank Masuk                                                                                                        No. KSC/JE-00335
+
+Tanggal               17 November 2026                                      Sumber                     KSC/CASH-00039
+Keterangan Kas in · Penerimaan KSC/AR-00047 — Latihan                       Dibuat oleh                Peserta Keuangan 81
+           81 · Toko Kain Peserta 81 · Kode KN-MWWS2
+Metode:            Cash / Tunai     ✓ Bank / Transfer          Petty Cash / Kas Kecil
+
+ AKUN                      MEMO                                                                                         DEBIT                 KREDIT
+ 1-1100 — Kas Besar        KSC/CASH-00039 · Penerimaan KSC/AR-00047 — Latihan 81 · Toko                          Rp 3.268.673                          -
+ / Bank                    Kain Peserta 81 · Kode KN-MWWS2
+ 1-1200 — Piutang          KSC/CASH-00039 · pelunasan AR                                                                   -      Rp 3.268.673
+ Usaha
+ TOTAL                                                                                                           Rp 3.268.673     Rp 3.268.673
+Terbilang: Tiga juta dua ratus enam puluh delapan ribu enam ratus tujuh puluh dua rupiah
+
+          Dibuat                      Diperiksa                  Disetujui                    Diposting                         Penyetor
+
+
+
+
+ ( Peserta Keuangan 81 )          ( .................... )   ( .................... )     ( .................... )          ( .................... )
+

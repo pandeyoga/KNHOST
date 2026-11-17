@@ -2,62 +2,62 @@
   "code": "F08",
   "title": "Titipan Sales — terima setoran tunai sales ke Kas Toko",
   "ok": true,
-  "at": "2026-11-17T06:28:51.383Z",
+  "at": "2026-11-17T09:14:32.331Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
       "action": "Login akun peserta → Keuangan › Kas & Bank › Titipan Sales → bagian \"Setoran menunggu diterima\"",
-      "expect": "Baris KSC/STT-00001: Penyetor Ayu Marketing, Jumlah Rp 3.480.128, Catatan \"Setoran tunai Latihan 01 · …\"; tombol [[Terima setoran]] dan [[Tolak]]",
+      "expect": "Baris KSC/STT-00002: Penyetor Ayu Marketing, Jumlah Rp 3.230.378, Catatan \"Setoran tunai Latihan 02 · …\"; tombol [[Terima setoran]] dan [[Tolak]]",
       "ok": true,
-      "ms": 5740,
-      "info": "KSC/STT-00001 Ayu Marketing Rp 3.480.128 hari ini Setoran tunai Latihan 01 · Toko Kain Peserta 01 Terima setoran Tolak"
+      "ms": 5907,
+      "info": "KSC/STT-00002 Ayu Marketing Rp 3.230.378 hari ini Setoran tunai Latihan 02 · Toko Kain Peserta 02 Terima setoran Tolak"
     },
     {
       "no": 2,
       "role": "Finance",
-      "action": "Di \"Titipan belum disetor\" ketik Latihan 01 di kotak cari → klik [[Lihat kwitansi]] pada Ayu Marketing",
-      "expect": "Baris KSC/TTP-00001: Kwitansi KSC/AR-00003, Pelanggan Latihan 01 · Toko Kain Peserta 01, Belum disetor Rp 3.480.128, Status Dipegang",
+      "action": "Di \"Titipan belum disetor\" ketik Latihan 02 di kotak cari → klik [[Lihat kwitansi]] pada Ayu Marketing",
+      "expect": "Baris KSC/TTP-00002: Kwitansi KSC/AR-00006, Pelanggan Latihan 02 · Toko Kain Peserta 02, Belum disetor Rp 3.230.378, Status Dipegang",
       "ok": true,
-      "ms": 1315,
-      "info": "KSC/TTP-00001 KSC/AR-00003 Latihan 01 · Toko Kain Peserta 01 17 Nov 2026 Rp 3.480.128 Rp 3.480.128 Dipegang"
+      "ms": 1333,
+      "info": "KSC/TTP-00002 KSC/AR-00006 Latihan 02 · Toko Kain Peserta 02 17 Nov 2026 Rp 3.230.378 Rp 3.230.378 Dipegang"
     },
     {
       "no": 3,
       "role": "Finance",
-      "action": "Cek jurnal kwitansi titipan: Akuntansi & Pajak › Buku Besar › Jurnal → ketik nomor kwitansi (KSC/AR-00003) → klik baris sumber \"Titipan Tunai Sales\"",
-      "expect": "Jurnal \"Titipan tunai sales · Titipan tunai Ayu Marketing · KSC/AR-00003 …\": 1-1280 Piutang Titipan Karyawan Debit Rp 3.480.128 · 1-1200 Piutang Usaha Kredit Rp 3.480.128. Piutang pelanggan sudah lunas, tetapi BELUM ada kas — uangnya masih di tangan sales",
+      "action": "Cek jurnal kwitansi titipan: Akuntansi & Pajak › Buku Besar › Jurnal → ketik nomor kwitansi (KSC/AR-00006) → klik baris sumber \"Titipan Tunai Sales\"",
+      "expect": "Jurnal \"Titipan tunai sales · Titipan tunai Ayu Marketing · KSC/AR-00006 …\": 1-1280 Piutang Titipan Karyawan Debit Rp 3.230.378 · 1-1200 Piutang Usaha Kredit Rp 3.230.378. Piutang pelanggan sudah lunas, tetapi BELUM ada kas — uangnya masih di tangan sales",
       "ok": true,
-      "ms": 5179,
-      "info": "KSC/JE-00034: 1-1280 Piutang Titipan Karyawan (D) Rp 3.480.128 · 1-1200 Piutang Usaha (K) Rp 3.480.128 · KSC/SO-00007 paid"
+      "ms": 5029,
+      "info": "KSC/JE-00056: 1-1280 Piutang Titipan Karyawan (D) Rp 3.230.378 · 1-1200 Piutang Usaha (K) Rp 3.230.378 · KSC/SO-00013 paid"
     },
     {
       "no": 4,
       "role": "Finance",
-      "action": "Klik [[Terima setoran]] pada KSC/STT-00001 → *Masuk ke rekening*: Kas Toko KSC → [[Terima setoran]] → konfirmasi [[Ya, terima setoran]]",
-      "expect": "Pesan \"Setoran KSC/STT-00001 (Rp 3.480.128) diterima ke Kas Toko KSC.\"; baris hilang dari \"Setoran menunggu diterima\"",
+      "action": "Klik [[Terima setoran]] pada KSC/STT-00002 → *Masuk ke rekening*: Kas Toko KSC → [[Terima setoran]] → konfirmasi [[Ya, terima setoran]]",
+      "expect": "Pesan \"Setoran KSC/STT-00002 (Rp 3.230.378) diterima ke Kas Toko KSC.\"; baris hilang dari \"Setoran menunggu diterima\"",
       "ok": true,
-      "ms": 2950,
-      "info": "Setoran KSC/STT-00001 (Rp 3.480.128) diterima ke Kas Toko KSC. ×"
+      "ms": 2806,
+      "info": "Setoran KSC/STT-00002 (Rp 3.230.378) diterima ke Kas Toko KSC. ×"
     },
     {
       "no": 5,
       "role": "Finance",
-      "action": "Cek jurnal setoran: Buku Besar › Jurnal → ketik nomor setoran (KSC/STT-00001) → klik baris sumber \"Kas\"",
-      "expect": "Jurnal \"Kas in · Setoran KSC/STT-00001 — Ayu Marketing\": 1-1110 Kas Kecil Debit Rp 3.480.128 · 1-1280 Piutang Titipan Karyawan Kredit Rp 3.480.128 — titipan sales kembali nol (titipan KSC/TTP-00001 berstatus Disetor)",
+      "action": "Cek jurnal setoran: Buku Besar › Jurnal → ketik nomor setoran (KSC/STT-00002) → klik baris sumber \"Kas\"",
+      "expect": "Jurnal \"Kas masuk · Setoran KSC/STT-00002 — Ayu Marketing\": 1-1110 Kas Kecil Debit Rp 3.230.378 · 1-1280 Piutang Titipan Karyawan Kredit Rp 3.230.378 — titipan sales kembali nol (titipan KSC/TTP-00002 berstatus Disetor)",
       "ok": true,
-      "ms": 4052,
-      "info": "KSC/CASH-00028 · KSC/JE-00159: 1-1110 Kas Kecil (D) Rp 3.480.128 · 1-1280 Piutang Titipan Karyawan (K) Rp 3.480.128"
+      "ms": 4136,
+      "info": "KSC/CASH-00042 · KSC/JE-00177: 1-1110 Kas Kecil (D) Rp 3.230.378 · 1-1280 Piutang Titipan Karyawan (K) Rp 3.230.378"
     },
     {
       "no": 6,
       "role": "Finance",
       "action": "Keuangan › Kas & Bank › Rekening & Saldo → klik kartu Kas Toko KSC → tab Mutasi",
-      "expect": "Baris masuk Rp 3.480.128 \"Setoran …\" dari Ayu Marketing di Kas Toko KSC",
+      "expect": "Baris masuk Rp 3.230.378 \"Setoran …\" dari Ayu Marketing di Kas Toko KSC",
       "ok": true,
-      "ms": 1748,
-      "info": "17 Nov 2026 KSC/CASH-00028 Setoran KSC/STT-00001 — Ayu Marketing Rp 3.480.128 — Rp 36.398.128 Belum"
+      "ms": 1688,
+      "info": "17 Nov 2026 KSC/CASH-00042 Setoran KSC/STT-00002 — Ayu Marketing Rp 3.230.378 — Rp 39.396.505 Belum"
     }
   ],
   "http_5xx": [],

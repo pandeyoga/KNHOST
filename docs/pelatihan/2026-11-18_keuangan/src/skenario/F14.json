@@ -71,7 +71,7 @@
    "menu": "Penjualan › Pesanan Sample",
    "aksi": "Klik [[Tinjau]]",
    "isi": "",
-   "hasil": "Pesanan Sample terbuka pada SOS Anda: BERBAYAR, Menunggu ACC bayar; Subtotal Rp 75.000 · PPN 12% Rp 8.250 · Total Rp 83.250; kotak kuning 'Pembayaran belum disetujui Finance/Admin Sample.' JANGAN setujui dulu — pastikan uangnya masuk.",
+   "hasil": "Pesanan Sample terbuka pada SOS Anda: BERBAYAR, Menunggu ACC bayar; Subtotal Rp 75.000 · PPN 12% Rp 8.250 · Total Rp 83.250; kotak kuning 'Pembayaran belum disetujui Finance/Admin Sample.' + 'Uang tercatat masuk: Rp 0 dari Rp 83.250 — kurang Rp 83.250' JANGAN setujui dulu — pastikan uangnya masuk.",
    "gambar": "uji/hasil/F14/02-rincian-sample.png"
   },
   {
@@ -111,7 +111,8 @@
   "Menekan [[Setujui Pembayaran]] sebelum uang masuk — persetujuan = izin memotong roll & mengirim sample.",
   "Mencatat kwitansi sample di pelanggan F02–F04 (Toko Kain Peserta) — sample milik pelanggan kedua 'Butik Sample Peserta NN'.",
   "Mengetik nominal 83.250 di kotak cari, bukan di *Nominal diterima*; atau memilih 'Atur sendiri' tanpa mengisi kotak alokasi.",
-  "Bingung PPN 12% tapi PPN Rp 8.250 (bukan Rp 9.000): PPN 12% dihitung atas DPP nilai lain 11/12 × Rp 75.000 = Rp 68.750."
+  "Bingung PPN 12% tapi PPN Rp 8.250 (bukan Rp 9.000): PPN 12% dihitung atas DPP nilai lain 11/12 × Rp 75.000 = Rp 68.750.",
+  "Menyetujui pembayaran padahal kwitansi baru sebagian: rincian SOS menulis 'Uang tercatat masuk: Rp … dari Rp … — kurang Rp …' dan dialog 'Uang belum lengkap' meminta konfirmasi — pilih [Batal], terima sisanya dulu."
  ],
  "catatan_pelatih": "Pelanggan sample sengaja pelanggan KEDUA peserta supaya kwitansi 'Tertua dulu' di F02–F04 tidak teralokasi ke SOS (open-orders memuat semua pesanan hidup pelanggan, termasuk sample yang belum dikirim). Izin Finance: sample_order lihat + setujui bayar (bersama Admin Sample). Bila nilai potong aktual berubah > ±5% sesudah dipotong, sample muncul lagi sebagai 'ACC ulang' (tombol [[Setujui Ulang Pembayaran]]) — sebutkan saja. Kwitansi ke pesanan yang belum dikirim dijurnal ke Uang Muka Pelanggan (2-1400), bukan Piutang. Data acuan: harga sample Rp 25.000/yard dari master harga sample.",
  "uji": {

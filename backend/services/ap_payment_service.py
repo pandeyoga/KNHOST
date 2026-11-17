@@ -161,9 +161,11 @@ async def _plan_vendor_bill(bill: Dict[str, Any], amount: Optional[float], paid_
     if over > EPS:
         kind_ok = str((variance or {}).get("kind") or "") in ("ap_advance",)
         if assessment["direction"] != pvs.DIR_ROUNDING and not kind_ok:
+            # Pelatihan 18 Nov (uji variasi V5) — nominal ditulis rupiah (dulu "Pembayaran (2000000.0) melebihi sisa
+            # hutang (1864800.0)").
             raise ApPaymentError(
-                f"Pembayaran ({amount}) melebihi sisa hutang ({fin['outstanding']}). Bila memang ingin membayar "
-                "lebih, pilih keputusan 'Kelebihan jadi uang muka supplier' (selisih pembayaran).", 400)
+                f"Pembayaran {rupiah(amount)} melebihi sisa hutang {rupiah(fin['outstanding'])}. Bila memang ingin "
+                "membayar lebih, pilih keputusan 'Kelebihan jadi uang muka supplier' (selisih pembayaran).", 400)
     applied = _r(min(amount, fin["outstanding"]))
     ent = bill.get("entity_id") or DEFAULT_ENTITY_ID
     acc = await _check_account(bank_account_id, ent)

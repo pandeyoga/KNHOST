@@ -1,0 +1,101 @@
+{
+  "code": "D3",
+  "title": "Naskah dokumen bisa diubah, berlaku per PT, dan bisa dikembalikan",
+  "ok": true,
+  "at": "2026-11-17T09:23:18.040Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Admin",
+      "action": "Pengaturan › Dokumen & Notifikasi › Template Dokumen › tab [[Desainer PDF]] → Jenis dokumen [[Faktur Komersial]], Berlaku untuk [[Semua PT]] → bagian [[Naskah]]: isi *Teks penutup* (klik token {{rekening_bank}} & {{nomor}}) → bagian [[Layout]]: *Judul dokumen* → bagian [[Footer]]: *Teks Footer* → [[Simpan]]",
+      "expect": "Pesan hijau 'Template tersimpan'; pratinjau menampilkan teks penutup dengan rekening & nomor faktur terisi",
+      "ok": true,
+      "ms": 13553,
+      "info": "Template tersimpan (hanya perbedaan dari bawaan yang disimpan)."
+    },
+    {
+      "no": 2,
+      "role": "Admin",
+      "action": "Cetak ulang Faktur KSC/SO-00010 (Pusat Dokumen › Unduh PDF)",
+      "expect": "Judul, teks penutup (rekening bank PT & nomor faktur terisi) dan footer tercetak persis; isi lain tidak berubah",
+      "ok": true,
+      "ms": 1380,
+      "info": "Mohon transfer ke dan tulis nomor KSC/INV-00010 pada berita transfer."
+    },
+    {
+      "no": 3,
+      "role": "Admin",
+      "action": "Berlaku untuk [[Hanya Sukacita Textile]] → [[Naskah]] *Teks pembuka* → [[Simpan]]",
+      "expect": "Pesan 'Aturan khusus Sukacita Textile tersimpan — PT lain tidak berubah.'",
+      "ok": true,
+      "ms": 3117,
+      "info": "Aturan khusus Sukacita Textile tersimpan — PT lain tidak berubah."
+    },
+    {
+      "no": 4,
+      "role": "Admin",
+      "action": "Cetak faktur KSC/SO-00010 (Sukacita) dan CST/SO-00001 (PT lain)",
+      "expect": "Teks pembuka hanya di faktur Sukacita; faktur PT lain tetap memakai naskah semua PT",
+      "ok": true,
+      "ms": 1209,
+      "info": "Sukacita: ada · CST/SO-00001: tidak ada (footer semua PT tetap ada)"
+    },
+    {
+      "no": 5,
+      "role": "Admin",
+      "action": "Ketik token salah {{nomer}} di Teks penutup (Semua PT) → [[Simpan]]",
+      "expect": "Peringatan kuning token tidak dikenal saat mengetik; simpan ditolak dengan pesan berisi daftar token yang sah",
+      "ok": true,
+      "ms": 2554,
+      "info": "Placeholder tidak dikenal: {{nomer}} — tidak akan terisi & ditolak saat simpan. | Placeholder tidak dikenal di naskah: {{nomer}}. Yang sah: {{nomor}}, {{tanggal}}, {{judul}}, {{status}}, {{perusahaan}}, {{alamat_perusahaan}}, {{npwp_perusahaa"
+    },
+    {
+      "no": 6,
+      "role": "Admin",
+      "action": "API: lapisan PT mencoba mengubah ukuran kertas",
+      "expect": "Ditolak 400 'Bagian ini hanya bisa diatur untuk semua PT: Ukuran kertas.'",
+      "ok": true,
+      "ms": 31,
+      "info": "Bagian ini hanya bisa diatur untuk semua PT: Ukuran kertas."
+    },
+    {
+      "no": 7,
+      "role": "Finance/Manajer",
+      "action": "Finance mencoba menyimpan naskah; Manajer membuka Template Dokumen",
+      "expect": "Finance 403; Manajer boleh menyimpan lewat server (izin pdf_template.manage) — dicatat bila tab Desainer tidak tampil",
+      "ok": true,
+      "ms": 8143,
+      "info": "Finance PUT → 403 · Manajer tab Desainer tidak tampil"
+    },
+    {
+      "no": 8,
+      "role": "Admin",
+      "action": "Kop & tata letak dasar: ubah footer 'Template Invoice Standard' → cetak lewat tombol lama vs Pusat Dokumen",
+      "expect": "Tombol lama 'Faktur (PPN)' memakai footer baru; PDF Pusat Dokumen TIDAK terpengaruh (dua editor untuk dua jalur cetak)",
+      "ok": true,
+      "ms": 578,
+      "info": "cetak lama: true · PDF: false"
+    },
+    {
+      "no": 9,
+      "role": "Admin",
+      "action": "Kembalikan: [[Kembalikan ke bawaan]] untuk lapisan Sukacita & Semua PT; footer template dasar ke teks asal",
+      "expect": "pdf_templates & template dasar sama dengan sebelum uji; faktur tercetak sama persis dengan sebelum uji",
+      "ok": true,
+      "ms": 3199,
+      "info": "pdf_templates 0 baris (sebelum 0); faktur identik dengan sebelum uji"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  ],
+  "notes": [
+    "Sebelum uji: pdf_templates 0 baris; faktur KSC/SO-00010 & CST/SO-00001 dicetak sebagai pembanding",
+    "PERLU PENGATURAN: PT Sukacita belum punya rekening BAWAAN penerimaan transfer → {{rekening_bank}} tercetak kosong (\"Mohon transfer ke dan …\"). Tetapkan bawaan di Pengaturan › Rekening sebelum memakai token ini.",
+    "Manajer: GET template invoice OK (izin pdf_template); tab Desainer PDF TIDAK tampil (dikunci nama peran admin)",
+    "Footer template dasar: tombol cetak lama BERUBAH · PDF Pusat Dokumen TIDAK berubah"
+  ]
+}

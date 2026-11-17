@@ -1,0 +1,163 @@
+{
+  "code": "D2",
+  "title": "Dokumen keuangan peserta 02 — isi & format",
+  "ok": false,
+  "at": "2026-11-17T09:22:39.586Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": "1.1",
+      "role": "Finance",
+      "action": "Kwitansi KSC/AR-00006 (cash)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 370,
+      "info": "1 hlm · kwitansi-00006-1.png"
+    },
+    {
+      "no": "1.2",
+      "role": "Finance",
+      "action": "Kwitansi KSC/AR-00007 (transfer)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 426,
+      "info": "1 hlm · kwitansi-00007-1.png"
+    },
+    {
+      "no": "1.3",
+      "role": "Finance",
+      "action": "Kwitansi KSC/AR-00008 (transfer)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 387,
+      "info": "1 hlm · kwitansi-00008-1.png"
+    },
+    {
+      "no": "2.1",
+      "role": "Finance",
+      "action": "Tagihan Supplier VB-00004 (paid)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 446,
+      "info": "1 hlm · tagihan-VB-00004-1.png"
+    },
+    {
+      "no": "2.2",
+      "role": "Finance",
+      "action": "Tagihan Supplier VB-00005 (paid)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 475,
+      "info": "1 hlm · tagihan-VB-00005-1.png"
+    },
+    {
+      "no": "2.3",
+      "role": "Finance",
+      "action": "Tanda Terima Kontrabon KSC/CB-00002",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 486,
+      "info": "1 hlm · kontrabon-00002-1.png"
+    },
+    {
+      "no": "2.4",
+      "role": "Finance",
+      "action": "Pesanan Pembelian KSC/PO-00004",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 819,
+      "info": "1 hlm · po-00004-1.png"
+    },
+    {
+      "no": "3",
+      "role": "Finance",
+      "action": "Faktur Pajak KSC/FKT-00002 (NSFP 0100261118000002)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 473,
+      "info": "1 hlm · faktur-pajak-00002-1.png"
+    },
+    {
+      "no": "4.1",
+      "role": "Finance",
+      "action": "Rekening Koran Latihan 02 · Toko Kain Peserta 02",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": false,
+      "ms": 717,
+      "info": "rekening-koran: keterangan jurnal \"Kas in\" (arah kas berbahasa Inggris, dari gl_service)",
+      "shot": "/home/user/KNHOST/docs/pelatihan/2026-11-18_keuangan/uji/hasil/D2/01-GAGAL-4.1.png"
+    },
+    {
+      "no": "4.2",
+      "role": "Admin",
+      "action": "Slip Gaji KSC/SLIP-00014 (Dewi Manager)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 119,
+      "info": "1 hlm · slip-gaji-00014-1.png"
+    },
+    {
+      "no": "5.0",
+      "role": "Finance",
+      "action": "Login akun peserta → Keuangan › Kas & Bank › Kas Kecil, cari PD, klik [[Buka]]",
+      "expect": "Rincian PD + LPJ tampil dengan tombol [[Cetak PD]], [[Tanda Terima]], cetak LPJ",
+      "ok": true,
+      "ms": 5789,
+      "info": ""
+    },
+    {
+      "no": "5.1",
+      "role": "Finance",
+      "action": "Klik [[Cetak PD]] → Form Pengajuan Dana KSC/PD-00002",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 709,
+      "info": "1 hlm · pd-00002-1.png"
+    },
+    {
+      "no": "5.2",
+      "role": "Finance",
+      "action": "Klik [[Tanda Terima]] → tanda terima pencairan KSC/PD-00002",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 616,
+      "info": "1 hlm · tanda-terima-00002-1.png"
+    },
+    {
+      "no": "5.3",
+      "role": "Finance",
+      "action": "Klik cetak LPJ KSC/STL-00002",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 638,
+      "info": "1 hlm · lpj-00002-1.png"
+    },
+    {
+      "no": "5.4",
+      "role": "Finance",
+      "action": "Buku Besar › Jurnal KSC/JE-00178 → [[Bukti Kas Keluar]] (KSC/CASH-00043, Rp 320.000)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 5078,
+      "info": "1 hlm · bukti-kas-keluar-00178-1.png"
+    },
+    {
+      "no": "5.5",
+      "role": "Finance",
+      "action": "Buku Besar › Jurnal KSC/JE-00064 → [[Bukti Kas Masuk]] (KSC/CASH-00013, Rp 3.287.820)",
+      "expect": "PDF A4 · kop PT · nomor/pihak/nominal = database · terbilang = nominal (termasuk sen) · tanpa label Inggris",
+      "ok": true,
+      "ms": 5373,
+      "info": "1 hlm · bukti-kas-masuk-00064-1.png"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "VB-00004: field tersimpan outstanding 1864800 / payment_status unpaid tidak ikut diperbarui saat dilunasi (status paid); cetakan memakai rumus terbayar → sisa 0",
+    "VB-00005: field tersimpan outstanding 1287600 / payment_status unpaid tidak ikut diperbarui saat dilunasi (status paid); cetakan memakai rumus terbayar → sisa 0",
+    "Rangkuman: {\"kwitansi-00006\":\"lulus\",\"kwitansi-00007\":\"lulus\",\"kwitansi-00008\":\"lulus\",\"tagihan-VB-00004\":\"lulus\",\"tagihan-VB-00005\":\"lulus\",\"kontrabon-00002\":\"lulus\",\"po-00004\":\"lulus\",\"faktur-pajak-00002\":\"lulus\",\"rekening-koran\":[\"keterangan jurnal \\\"Kas in\\\" (arah kas berbahasa Inggris, dari gl_service)\"],\"slip-gaji-00014\":\"lulus\",\"pd-00002\":\"lulus\",\"tanda-terima-00002\":\"lulus\",\"lpj-00002\":\"lulus\",\"bukti-kas-keluar-00178\":\"lulus\",\"bukti-kas-masuk-00064\":\"lulus\"}"
+  ]
+}

@@ -90,7 +90,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Ketik nomor setoran (KSC/STT-…) di kotak cari → klik baris bersumber [[Kas]]",
    "isi": "*Cari*: KSC/STT-…",
-   "hasil": "Jurnal 'Kas in · Setoran KSC/STT-… — <sales>': 1-1110 Kas Kecil — Debit; 1-1280 Piutang Titipan Karyawan — Kredit (nominal sama). Titipan sales untuk kwitansi ini kembali nol; di daftar titipan statusnya 'Disetor' (tidak tampil lagi di 'Titipan belum disetor').",
+   "hasil": "Jurnal 'Kas masuk · Setoran KSC/STT-… — <sales>': 1-1110 Kas Kecil — Debit; 1-1280 Piutang Titipan Karyawan — Kredit (nominal sama). Titipan sales untuk kwitansi ini kembali nol; di daftar titipan statusnya 'Disetor' (tidak tampil lagi di 'Titipan belum disetor').",
    "gambar": "uji/hasil/F08/08-jurnal-setoran.png"
   },
   {

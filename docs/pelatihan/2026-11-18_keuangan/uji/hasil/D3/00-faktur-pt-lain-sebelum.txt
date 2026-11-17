@@ -1,0 +1,63 @@
+CV Cipta Sandang Textile
+- · NPWP 00.000.000.0-000.000
+
+
+                                                                                                                     FAKTUR
+                                                            No. CST/INV-00001 · 17 Nov 2026 · DIBAYAR SEBAGIAN
+
+             REFERENSI DOKUMEN
+             Merujuk: PICK-C245F7 · PICK-A453F1 · CST/SJ-00001 · CST/SJ-00002 · CST/
+             AR-00001
+             Menurunkan Tugas Pengambilan PICK-C245F7 · Menurunkan Tugas Pengambilan PICK-A453F1 ·
+             Menurunkan Surat Jalan / Pengiriman CST/SJ-00001 · Menurunkan Surat Jalan / Pengiriman CST/
+             SJ-00002 · Dilunasi oleh Kwitansi Pelanggan CST/AR-00001
+             Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                             TAGIHAN KEPADA
+CV Cipta Sandang Textile                                                                          PT Fashion Ibukota
+-                                                                                Jl. Perdagangan No. 15, Jakarta, Jakarta
+No. Pesanan          CST/SO-00001                                Termin Bayar            Kredit NET 30 Hari
+Penjualan
+Jatuh Tempo          17 Des 2026                                 Status Bayar            Dibayar sebagian
+Dicetak              17 Nov 2026
+
+ NO    SKU                               PRODUK                  ROLL      JUMLAH           HARGA          DISC        SUBTOTAL
+
+       KNKNT0005-I-14XX-                 ALICE KNIT (94139 -
+   1                                                                 6   122,04 kg      Rp 40.000               0%   Rp 4.881.600
+       XA-XX-XX                          45) 14 A
+
+       KNKNT0005-I-8XXX-                 ALICE KNIT (94139 -
+   2                                                                 6   119,78 kg      Rp 45.000               0%   Rp 5.390.100
+       XA-XX-XX                          45) 8 A
+
+                                                                    DPP (harga sebelum PPN)                          Rp 10.271.700
+                                                                    DPP nilai lain (11/12)                            Rp 9.415.725
+                                                                    PPN 12% × DPP nilai lain                          Rp 1.129.887
+
+                                                                     Total (termasuk PPN) Rp 11.401.587
+                                                                    Sudah dibayar                                     Rp 5.700.794
+                                                                    Sisa tagihan                                      Rp 5.700.793
+Terbilang: Sebelas juta empat ratus satu ribu lima ratus delapan puluh tujuh rupiah
+Jatuh Tempo & Sisa Tagihan
+
+ TAGIHAN                                      JATUH TEMPO                NILAI        SUDAH DIBAYAR                          SISA
+
+ Surat jalan CST/SJ-00002                     17 Des 2026        Rp 5.983.011               Rp 282.218               Rp 5.700.793
+
+
+
+                     Hormat Kami                                                          Diterima
+
+
+
+
+                      ( ................. )                                             ( ................. )
+                          Finance                                                          Customer
+
+
+
+
+                                                                                                                           Hal. 1 / 1
+

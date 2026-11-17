@@ -105,7 +105,7 @@
  "kesalahan_umum": [
   "Membayar proses REGULER KSC/PAY-00001 (6 karyawan) — itu peragaan pelatih; bayar hanya proses susulan Anda.",
   "Masa gaji masih bulan berjalan (November) → kartu Rp 0 dan 'Belum ada gaji November 2026 yang diposting'; pilih Oktober 2026.",
-  "Mengetik nominal dengan titik ribuan tanpa melihat pratinjau (mis. '45.240' terbaca Rp 45,24) — ketik angka polos 45240 dan periksa pratinjau 'Rp 45.240' di bawah kotak.",
+  "Tidak membaca pratinjau di bawah kotak nominal — '45.240', '45240' dan 'Rp 45.240' semuanya terbaca Rp 45.240; pastikan pratinjau sama dengan nominal setoran sebelum menyimpan.",
   "Menyetor melebihi sisa → ditolak 'Nominal melebihi sisa kewajiban'.",
   "Bingung 'Tanpa Rekening — Bayar Tunai' di Daftar transfer: data karyawan demo belum berisi nomor rekening; uangnya tetap keluar dari rekening yang dipilih saat Bayar."
  ],

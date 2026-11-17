@@ -14,7 +14,9 @@ import csv
 import io
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Request, Query, Response
+import re
+
+from fastapi import APIRouter, HTTPException, Request, Query, Response
 
 from dependencies import require_permission
 from entity_scope import entity_ctx, resolve_list_scope, scope_line, scope_meta
@@ -23,6 +25,20 @@ from services import cash_flow_service as cf
 from services import equity_statement_service as eq
 
 router = APIRouter(prefix="/api")
+
+
+_RX_TANGGAL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _rentang(start: Optional[str], end: Optional[str]) -> None:
+    """Pelatihan 18 Nov (uji variasi V8) — rentang laporan: tanggal `TTTT-BB-HH` (kosong boleh) dan awal ≤ akhir.
+    Dulu rentang terbalik / tanggal tak dikenal diam-diam menghasilkan laporan bernilai Rp 0 semua."""
+    s, e = (start or "").strip(), (end or "").strip()
+    for v, nama in ((s, "awal"), (e, "akhir")):
+        if v and not _RX_TANGGAL.match(v[:10]):
+            raise HTTPException(status_code=400, detail=f"Tanggal {nama} harus berbentuk TTTT-BB-HH.")
+    if s and e and s[:10] > e[:10]:
+        raise HTTPException(status_code=400, detail="Tanggal awal tidak boleh sesudah tanggal akhir.")
 
 
 async def _je_scope(request: Request, entity_id: Optional[str]) -> Dict[str, Any]:
@@ -49,6 +65,7 @@ async def get_income_statement(
 ) -> Dict[str, Any]:
     """Laba-Rugi (Income Statement) untuk periode — per entitas."""
     await require_permission(request, "accounting", "view")
+    _rentang(start, end)
     scope = await _je_scope(request, entity_id)
     return {**(await fs.income_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
@@ -80,6 +97,7 @@ async def get_cash_flow(
 
     PK-41 (RP-12) — keterangan dulu "metode tak langsung" padahal hitungannya per jurnal kas."""
     await require_permission(request, "accounting", "view")
+    _rentang(start, end)
     scope = await _je_scope(request, entity_id)
     return {**(await cf.cash_flow_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
@@ -93,6 +111,7 @@ async def get_equity_changes(
 ) -> Dict[str, Any]:
     """Laporan Perubahan Ekuitas (Statement of Changes in Equity) — per entitas."""
     await require_permission(request, "accounting", "view")
+    _rentang(start, end)
     scope = await _je_scope(request, entity_id)
     return {**(await eq.equity_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 

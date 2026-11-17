@@ -82,7 +82,7 @@ const PAKAI = LPJ.reduce((s, l) => s + l.amount, 0);   // 232.000
     });
 
   await r.step(4, "Finance", `Cek jurnal pencairan: Akuntansi & Pajak › Buku Besar › Jurnal → ketik nomor PD (${k.pd}) di kotak cari → klik baris jurnal sumber "Kas"`,
-    `Jurnal "Kas out · Pencairan ${k.pd} …": 1-1400 Uang Muka & Biaya Dibayar Dimuka Debit Rp 500.000 · 1-1110 Kas Kecil Kredit Rp 500.000; total debit = total kredit`, async () => {
+    `Jurnal "Kas keluar · Pencairan ${k.pd} …": 1-1400 Uang Muka & Biaya Dibayar Dimuka Debit Rp 500.000 · 1-1110 Kas Kecil Kredit Rp 500.000; total debit = total kredit`, async () => {
       const txn = kb.kas(ca.disbursement.cash_txn_id);
       assert(txn && txn.direction === "out" && Math.abs(txn.amount - k.nominal) < 0.01 && txn.account_id === kasToko0.id,
         `kas cair: ${JSON.stringify(txn && { d: txn.direction, a: txn.amount, acc: txn.account_id })}`);
@@ -191,7 +191,7 @@ const PAKAI = LPJ.reduce((s, l) => s + l.amount, 0);   // 232.000
       return lbl;
     });
 
-  await r.step(10, "Finance", "Cek jurnal pengembalian sisa: Buku Besar › Jurnal → ketik nomor LPJ → klik baris sumber \"Kas\" (Kas in · Pengembalian sisa uang muka …)",
+  await r.step(10, "Finance", "Cek jurnal pengembalian sisa: Buku Besar › Jurnal → ketik nomor LPJ → klik baris sumber \"Kas\" (Kas masuk · Pengembalian sisa uang muka …)",
     `Jurnal: 1-1110 Kas Kecil Debit ${rp(SISA)} · 1-1400 Uang Muka Kredit ${rp(SISA)}. Uang muka PD kembali nol: Rp 500.000 (cair) − ${rp(PAKAI)} (LPJ) − ${rp(SISA)} (sisa) = Rp 0`, async () => {
       const s = mongo(`return db.cash_advance_settlements.findOne({id:"${stl.id}"},{_id:0,sisa_dikembalikan:1,status:1})`);
       assert(s.sisa_dikembalikan.status === "returned", "sisa belum returned");

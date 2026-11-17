@@ -9,7 +9,9 @@ yang dikendalikan oleh `cfg` (template config) sehingga bisa dikustomisasi penuh
 """
 from __future__ import annotations
 import io
+from decimal import Decimal, ROUND_HALF_UP
 from jinja2 import Environment, BaseLoader, select_autoescape
+from markupsafe import Markup
 
 # ─── Format uang & terbilang (Bahasa Indonesia) ──────────────────────────────
 # FASE G-0 — mata uang aktif untuk dokumen yang sedang dirender. Diisi `pdf_service`
@@ -22,20 +24,40 @@ def set_document_currency(currency: str) -> None:
     _ACTIVE_CURRENCY[0] = (currency or "IDR").upper()
 
 
+def _sen(v) -> int:
+    """Nominal → sen bulat (pembulatan setengah ke atas, bukan pembulatan bankir `format()`); tak terbaca → 0."""
+    try:
+        return int((Decimal(str(abs(float(v or 0)))) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    except (TypeError, ValueError, ArithmeticError):
+        return 0
+
+
 def fmt_rp(v, currency: str = "") -> str:
     """Format nominal mengikuti `finance.base_currency` (default Rupiah).
 
     Tetap menerima 1 argumen agar 30+ pemakaian lama tidak berubah.
+
+    Pelatihan 18 Nov (audit dokumen cetak) — nominal BERSEN (PPN 12% × DPP nilai lain, pembulatan pajak `dua_desimal`)
+    dulu dibulatkan `format(..., ".0f")` = pembulatan bankir: total SO Rp 3.381.337,50 tercetak "Rp 3.381.338" sedangkan
+    terbilangnya "… tiga puluh tujuh rupiah" dan kwitansi Rp 3.268.672,50 tercetak "Rp 3.268.672". Kini mata uang tanpa
+    desimal (Rupiah) mencetak sen HANYA bila nominalnya bersen ("Rp 3.381.337,50"); nominal bulat tetap "Rp 3.381.337".
     """
-    from services.config_currency import format_money_with
+    from services.config_currency import CURRENCIES
     try:
         n = float(v or 0)
     except (TypeError, ValueError):
         n = 0.0
     cur = (currency or _ACTIVE_CURRENCY[0] or "IDR").upper()
-    neg = n < 0
-    s = format_money_with(abs(n), cur)
-    return f"-{s}" if neg else s
+    spec = CURRENCIES.get(cur, CURRENCIES["IDR"])
+    sen = _sen(n)
+    dec = int(spec["decimals"])
+    if dec == 0 and sen % 100:
+        dec = 2
+    body = f"{Decimal(sen) / 100:,.{dec}f}"
+    if spec["thousands"] != "," or spec["decimal"] != ".":
+        body = body.replace(",", "\x00").replace(".", spec["decimal"]).replace("\x00", spec["thousands"])
+    s = f"{spec['symbol']}{spec['space']}{body}"
+    return f"-{s}" if n < 0 and sen else s
 
 
 _SATUAN = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"]
@@ -65,11 +87,13 @@ def _terbilang(n: int) -> str:
 
 
 def terbilang(n) -> str:
-    try:
-        words = " ".join(_terbilang(int(float(n or 0))).split())
-    except (TypeError, ValueError):
-        words = ""
+    """Nominal dalam huruf. Pelatihan 18 Nov — sen ikut dibaca ("… rupiah lima puluh sen") dan rupiahnya sama dengan
+    angka yang tercetak (`fmt_rp`); dulu `int()` memotong sen sehingga angka & terbilang berbeda."""
+    rupiah, sen = divmod(_sen(n), 100)
+    words = " ".join(_terbilang(rupiah).split())
     out = f"{words} rupiah" if words else "nol rupiah"
+    if sen:
+        out += f" {' '.join(_terbilang(sen).split())} sen"
     return out[:1].upper() + out[1:]
 
 
@@ -78,7 +102,7 @@ MASTER_TEMPLATE = r"""
 <!doctype html><html lang="id"><head><meta charset="utf-8"/>
 <style>
   @page { size: {{ cfg.paper_size }} {{ cfg.orientation }}; margin: {{ cfg.margin_top }}mm {{ cfg.margin_right }}mm {{ cfg.margin_bottom }}mm {{ cfg.margin_left }}mm;
-    {% if cfg.footer_text and cfg.footer_mode != 'none' and cfg.footer_mode != 'image' %}@bottom-center { content: "{{ cfg.footer_text }}"; font-size: 8pt; color:#888; }{% endif %}
+    {% if cfg.footer_text and cfg.footer_mode != 'none' and cfg.footer_mode != 'image' %}@bottom-center { content: "{{ cfg.footer_text | css_str }}"; font-size: 8pt; color:#888; }{% endif %}
     {% if cfg.show_page_numbers %}@bottom-right { content: "Hal. " counter(page) " / " counter(pages); font-size: 7.5pt; color:#999; }{% endif %}
   }
   * { box-sizing: border-box; }
@@ -122,13 +146,16 @@ MASTER_TEMPLATE = r"""
   table.items th, table.items td { border:1px solid #bbb; padding:5px 7px; font-size:9pt; }
   table.items th { background: {{ cfg.color_primary }}14; text-transform:uppercase; font-size:7.5pt; letter-spacing:.3px; color:#333; }
   td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  /* Pelatihan 18 Nov — "Rp" dan angkanya dulu terpisah dua baris di kolom sempit (Harga, Subtotal). */
+  td.num { white-space:nowrap; }
   td.ctr, th.ctr { text-align:center; }
-  .totals { margin-left:auto; width:46%; margin-top:6px; }
-  .totals .row { display:flex; justify-content:space-between; padding:3px 0; font-size:9.5pt; }
+  .totals { margin-left:auto; width:46%; margin-top:6px; page-break-inside:avoid; }
+  .totals .row { display:flex; justify-content:space-between; gap:10px; padding:3px 0; font-size:9.5pt; }
+  .totals .row span + span { white-space:nowrap; text-align:right; }
   .totals .row.strong { border-top:2px solid #333; font-weight:800; font-size:11pt; margin-top:3px; padding-top:5px; color:{{ cfg.color_primary }}; }
   .terbilang { font-style:italic; color:#444; margin:8px 0; font-size:9pt; }
   .notes { margin-top:8px; font-size:9pt; color:#444; border-left:3px solid {{ cfg.color_primary }}44; padding-left:8px; }
-  .signs { display:flex; justify-content:space-around; gap:12px; margin-top:34px; }
+  .signs { display:flex; justify-content:space-around; gap:12px; margin-top:34px; page-break-inside:avoid; }
   .sign { text-align:center; font-size:8.5pt; flex:1; }
   .sign .role { font-weight:700; margin-bottom:2px; }
   .sign .space { height:56px; display:flex; align-items:center; justify-content:center; }
@@ -216,6 +243,8 @@ MASTER_TEMPLATE = r"""
     </div>
     <div style="clear:both"></div>
     {% endif %}
+    {# Pelatihan 18 Nov — terbilang tepat di bawah total yang dibacanya (dulu sesudah tabel tambahan). #}
+    {% if cfg.show_terbilang and doc.terbilang %}<div class="terbilang">Terbilang: <b>{{ doc.terbilang }}</b></div>{% endif %}
 
     {% if doc.payment_instruction %}
     <div class="payins">
@@ -243,7 +272,6 @@ MASTER_TEMPLATE = r"""
     {% if xt.note %}<div class="notes" style="margin-top:4px">{{ xt.note }}</div>{% endif %}
     {% endfor %}
 
-    {% if cfg.show_terbilang and doc.terbilang %}<div class="terbilang">Terbilang: <b>{{ doc.terbilang }}</b></div>{% endif %}
     {% if doc.notes %}<div class="notes"><b>Catatan:</b> {{ doc.notes }}</div>{% endif %}
     {% if doc.closing_note %}<div class="closing">{{ doc.closing_note }}</div>{% endif %}
     {% if doc.place_date %}<div class="place-date">{{ doc.place_date }}</div>{% endif %}
@@ -281,7 +309,30 @@ MASTER_TEMPLATE = r"""
 </body></html>
 """
 
+
+def css_str(value) -> Markup:
+    """Teks pengguna di dalam string CSS (`content: "…"` footer halaman).
+
+    Pelatihan 18 Nov (audit naskah dokumen) — dulu teks footer di-escape HTML di dalam `<style>` (yang TIDAK di-decode
+    peramban/WeasyPrint): "Kain & Co" tercetak "Kain &amp; Co", tanda kutip tercetak "&#34;". Kini di-escape menurut
+    aturan string CSS; `<`/`>` ditulis sebagai escape CSS supaya `</style>` tidak bisa menutup blok gaya."""
+    out = []
+    for ch in str(value or ""):
+        if ch in ('"', "\\"):
+            out.append("\\" + ch)
+        elif ch in ("\n", "\r", "\t"):
+            out.append(" ")
+        elif ch == "<":
+            out.append("\\3C ")
+        elif ch == ">":
+            out.append("\\3E ")
+        else:
+            out.append(ch)
+    return Markup("".join(out))
+
+
 _env = Environment(loader=BaseLoader(), autoescape=select_autoescape(["html", "xml"]))
+_env.filters["css_str"] = css_str
 _tmpl = _env.from_string(MASTER_TEMPLATE)
 
 

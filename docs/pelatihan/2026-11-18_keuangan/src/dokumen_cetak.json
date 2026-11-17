@@ -1,0 +1,156 @@
+[
+ {
+  "dokumen": "Faktur Komersial (Faktur penjualan)",
+  "cara_cetak": "Pusat Dokumen › Cetak PDF (jenis Faktur Komersial) › Unduh PDF; Rincian pesanan › Cetak Dokumen · Gudang & Penagihan › Faktur Komersial; GET /api/pdf/render/invoice/{id SO}",
+  "dicek": "KSC/SO-00086 (belum bayar), KSC/SO-00088 (bayar sebagian), KSC/SO-00093 (cicilan) peserta 81: nomor KSC/INV-…, tanggal WIB, kop & NPWP dari Profil PT, pelanggan, baris (produk, qty + satuan, roll, harga, diskon), DPP · DPP nilai lain 11/12 · PPN 12% · Total, terbilang, termin, jatuh tempo, sudah dibayar, sisa — uji/hasil/D1/faktur-*.png",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu nominal bersen dibulatkan: Total Rp 3.381.338 padahal buku Rp 3.381.337,50 dan terbilang '… tiga puluh tujuh rupiah'; tanpa jatuh tempo/terbayar/sisa; 'Rp' terpotong ke baris baru. Kini 'Rp 3.381.337,50 … lima puluh sen', Jatuh Tempo (SJ + termin), Sudah dibayar, Sisa tagihan, tabel 'Jatuh Tempo & Sisa Tagihan' (cicilan per baris). Rekening tujuan hanya tampil bila pesanan berkode bayar (kotak Instruksi Pembayaran) atau lewat naskah {{rekening_bank}}."
+ },
+ {
+  "dokumen": "Konfirmasi Pesanan Penjualan (SO) & pesanan sample (SOS)",
+  "cara_cetak": "Rincian pesanan › bilah dokumen (Pratinjau/Unduh PDF); Pusat Dokumen › Pesanan Penjualan; GET /api/pdf/render/sales_order/{id}",
+  "dicek": "KSC/SO-00088 dan KSC/SOS-00015 peserta 81: nomor, pelanggan/penerima, baris, total K-03, terbilang, tanda tangan sales",
+  "hasil": "diperbaiki",
+  "catatan": "Perbaikan uang bersen & kolom angka yang sama dengan faktur. Pesanan sample memakai cetakan yang sama (judul 'Konfirmasi Pesanan Penjualan')."
+ },
+ {
+  "dokumen": "Surat Jalan",
+  "cara_cetak": "Rincian pesanan › Cetak Dokumen · Gudang & Penagihan › Surat Jalan Pengiriman; Pusat Dokumen; GET /api/pdf/render/delivery_note/{id SO}",
+  "dicek": "KSC/SJ-00093 (SO-00092) & KSC/SJ-00088 (SO-00086): nomor SJ, tanggal kirim, penerima, nama kain/warna/kode, nomor roll, jumlah, total roll & kuantitas = roll yang dikirim, pembuat",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu tiap roll tercetak DUA kali (scan ambil + scan kirim): 'Total Roll 2 · 235,58 yard' untuk 1 roll 117,79 yard; kolom Roll berisi id internal (roll_c7f8…) bukan RL-36399; 'Dibuat Oleh' berisi id pengguna (user_sales_01); tanggal = tanggal cetak. Kini 1 roll, RL-…, pembuat & tanggal dari dokumen pengiriman. Sisa: satu SJ per PESANAN (pengiriman bertahap tercetak gabungan di bawah nomor SJ pertama)."
+ },
+ {
+  "dokumen": "Daftar Kemasan (Packing list)",
+  "cara_cetak": "Rincian pesanan › Cetak Dokumen · Gudang & Penagihan › Daftar Kemasan; GET /api/pdf/render/packing_list/{id SO}",
+  "dicek": "SO-00092 & SO-00086: nomor SO & SJ, total koli/roll, total kuantitas per satuan",
+  "hasil": "diperbaiki",
+  "catatan": "Penggandaan roll yang sama dengan Surat Jalan (akar: pdf_resolvers._wms_scan_rows menghitung entri scan 'dispatch')."
+ },
+ {
+  "dokumen": "Surat Pengambilan Barang (Picking list)",
+  "cara_cetak": "Rincian pesanan › Cetak Dokumen · Gudang & Penagihan; GET /api/pdf/render/picking_list/{id SO}",
+  "dicek": "SO-00092 & SO-00086: baris per roll, nomor roll, lot, qty ambil",
+  "hasil": "diperbaiki",
+  "catatan": "Baris ganda & id roll diperbaiki. Lokasi bin masih id simulasi data demo (bin_sim_…) — tidak ada master bin."
+ },
+ {
+  "dokumen": "Tombol lama 'Faktur (PPN)' & 'Surat Jalan' di rincian pesanan",
+  "cara_cetak": "Rincian pesanan (status terkonfirmasi–selesai) › tombol Faktur (PPN) / Surat Jalan → /api/documents/generate + /api/documents/preview (HTML, template 'Kop & tata letak dasar')",
+  "dicek": "SO-00086: judul, nomor, total, footer, isi SJ",
+  "hasil": "keputusan",
+  "catatan": "Jalur cetak kedua yang berbeda isi: judul 'INVOICE', nomor = nomor SO, 'PPN 12%' tanpa DPP nilai lain, Surat Jalan memuat harga & PPN, footer tetap 'Pembayaran dalam 30 hari' untuk semua termin, qty '121.85'. Usul: arahkan kedua tombol ke PDF Faktur Komersial/Surat Jalan (atau hapus) — perlu persetujuan pemilik."
+ },
+ {
+  "dokumen": "Kwitansi (penerimaan piutang)",
+  "cara_cetak": "Keuangan › Piutang › Riwayat Kwitansi › bilah dokumen; Pusat Dokumen › Kwitansi Penerimaan; GET /api/pdf/render/ar_receipt/{id}",
+  "dicek": "KSC/AR-00045 (titipan tunai), KSC/AR-00046 (transfer, ref & kode bayar), KSC/AR-00047 (pelunasan Rp 3.268.672,50): pelanggan, cara bayar, rekening, no. referensi, alokasi SO, jumlah, terbilang, penerima",
+  "hasil": "diperbaiki",
+  "catatan": "Judul 'Kwitansi / Official Receipt' → 'Kwitansi'. AR-00047 dulu tercetak Rp 3.268.672 (buku Rp 3.268.672,50)."
+ },
+ {
+  "dokumen": "Tagihan Supplier (vendor bill)",
+  "cara_cetak": "Keuangan › Hutang › Tagihan › rincian › bilah dokumen; Pusat Dokumen › Tagihan Supplier; GET /api/pdf/render/vendor_bill/{id}",
+  "dicek": "VB-00030 (belum bayar) & VB-00031 (lunas lewat kontrabon): no. faktur supplier, nomor PO, jatuh tempo, NPWP, baris barang, DPP/DPP nilai lain/PPN/Total, terbayar, sisa",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu: judul 'Vendor Bill / Tagihan', DPP Rp 0, Ref PO = id internal (po_991f…), tanpa rincian barang, jatuh tempo, terbayar & sisa. Kini lengkap; terbayar/sisa memakai rumus layar Hutang (bill_financials) karena pelunasan kontrabon tidak memperbarui field tersimpan outstanding/payment_status (VB-00031: status paid, outstanding 1.287.600)."
+ },
+ {
+  "dokumen": "Tanda Terima Kontrabon",
+  "cara_cetak": "Keuangan › Hutang › Kontrabon › rincian › bilah dokumen; GET /api/pdf/render/contra_bon/{id}",
+  "dicek": "KSC/CB-00001 (F12 peserta 81): faktur supplier, nomor tagihan & PO, nilai, potongan, nilai bersih, jatuh tempo, terbilang",
+  "hasil": "lulus",
+  "catatan": "NPWP supplier kosong kini '-'. Termin tercetak sebagai kode (NET30)."
+ },
+ {
+  "dokumen": "Pesanan Pembelian (PO) & Bukti Terima per PO",
+  "cara_cetak": "Pembelian › PO › rincian › bilah dokumen; GET /api/pdf/render/purchase_order|po_receipt/{id PO}",
+  "dicek": "KSC/PO-00030: supplier, baris, total K-03, terbilang; bukti terima",
+  "hasil": "lulus",
+  "catatan": "Bukti terima PO-00030: 'Total Roll Diterima 3' (scan) ≠ kolom 'Roll Diterima 1' (items.received_rolls dari penerimaan seed) — data gudang, di luar area keuangan."
+ },
+ {
+  "dokumen": "Faktur Pajak Keluaran",
+  "cara_cetak": "Akuntansi & Pajak › Pajak › Faktur Keluaran › bilah dokumen; GET /api/pdf/render/tax_invoice/{id}; tombol 'Cetak Faktur (format lama)'",
+  "dicek": "KSC/FKT-00001 (F13 peserta 81, NSFP 0100261118000081): NSFP, kode transaksi, penjual & NPWP, pembeli, DPP nilai lain, PPN, total, terbilang",
+  "hasil": "keputusan",
+  "catatan": "Nominal bersen diperbaiki (DPP nilai lain Rp 2.792.395,83 · PPN Rp 335.087,50). Bukan format resmi DJP/Coretax; ekspor e-Faktur/Coretax (CSV/XML) belum ada; isian NSFP tanpa cek 16/17 digit — pertanyaan pemilik."
+ },
+ {
+  "dokumen": "Rekening Koran Pelanggan",
+  "cara_cetak": "Kartu pelanggan › Rekening Koran › Cetak PDF; GET /api/customers/{id}/statement.pdf",
+  "dicek": "Toko Kain Peserta 81, 1–17 Nov: saldo awal/akhir, tagihan per SJ, pembayaran per kwitansi, saldo berjalan",
+  "hasil": "diperbaiki",
+  "catatan": "Saldo berjalan dulu tidak bisa dijumlah di kertas (3.381.338 + 3.164.055 tercetak 6.545.392). Keterangan jurnal 'Kas in · …' (arah kas Inggris dari gl_service) — usulan patch uji/dokumen/usulan/backend_gl_kas_masuk_keluar.diff, ditunda sesudah pelatihan karena panduan & uji F07/F08/F10/F16 memakai teks itu."
+ },
+ {
+  "dokumen": "Slip Gaji",
+  "cara_cetak": "SDM › Penggajian › Slip (unduh PDF); GET /api/hr/payslips/{id}/pdf",
+  "dicek": "KSC/SLIP-00027 (gaji susulan Ayu Marketing): nomor, karyawan, komponen, PPh 21, gaji bersih",
+  "hasil": "diperbaiki",
+  "catatan": "BUG belum diperbaiki (di luar area): kop selalu 'Kain Nusantara' — routers/hr_payroll.py:577 membaca field `name` yang tidak ada di Profil PT. Usulan patch uji/dokumen/usulan/backend_slip_gaji_kop_pt.diff. Periode tercetak '2026-10'. Finance tidak boleh mengunduh slip (izin hr) — sesuai. — Diperbaiki koordinator: kop slip memakai nama PT di Profil PT (print_name/legal_name), routers/hr_payroll.py · tests_mem/test_latih_slip_kop.py."
+ },
+ {
+  "dokumen": "Form Pengajuan Dana (PD) kas kecil",
+  "cara_cetak": "Keuangan › Kas & Bank › Kas Kecil › Buka › Cetak PD (cetak peramban)",
+  "dicek": "KSC/PD-00016: nomor, divisi, rincian, total, terbilang, 4 kolom tanda tangan",
+  "hasil": "lulus",
+  "catatan": "Kop hanya nama singkat PT (tanpa alamat/NPWP) — semua cetak sisi peramban (utils/docPrint.js)."
+ },
+ {
+  "dokumen": "Tanda Terima pencairan PD",
+  "cara_cetak": "Kas Kecil › Buka PD (dicairkan) › Tanda Terima (cetak peramban)",
+  "dicek": "KSC/PD-00016: penerima, jumlah Rp 500.000, terbilang",
+  "hasil": "lulus",
+  "catatan": ""
+ },
+ {
+  "dokumen": "LPJ kas kecil (Pertanggungjawaban)",
+  "cara_cetak": "Kas Kecil › Buka PD › rincian LPJ › cetak (cetak peramban)",
+  "dicek": "KSC/STL-00001 (F07 peserta 81): ref PD, rincian & kategori, total pengeluaran, dana diterima, sisa dikembalikan",
+  "hasil": "lulus",
+  "catatan": ""
+ },
+ {
+  "dokumen": "Bukti Kas Keluar / Bukti Kas Masuk (voucher jurnal)",
+  "cara_cetak": "Akuntansi & Pajak › Buku Besar › Jurnal › buka jurnal › Bukti Kas Keluar / Bukti Kas Masuk (cetak peramban)",
+  "dicek": "KSC/JE-00407 (ongkos ekspedisi F09, Rp 1.110.000) & KSC/JE-00335 (kwitansi Rp 3.268.672,50)",
+  "hasil": "diperbaiki",
+  "catatan": "BUG belum diperbaiki (frontend/src/utils/docPrint.js, di luar izin sunting): judul 'PAYMENT VOUCHER'/'RECEIVED VOUCHER', pilihan 'Cash / Tunai', 'Petty Cash / Kas Kecil'; nominal bersen tercetak Rp 3.268.673 tetapi terbilang '… tujuh puluh dua rupiah'. Usulan patch uji/dokumen/usulan/frontend_docPrint_bukti_kas.diff. — Diperbaiki koordinator: judul \"Bukti Kas Keluar/Masuk\", pilihan \"Kas Kecil\", nominal & terbilang bersen sama (utils/docPrint.js · latihBuktiKas.test.js)."
+ },
+ {
+  "dokumen": "Nota Denda keterlambatan",
+  "cara_cetak": "Tidak ada cetakan — hanya baris di Umur Piutang › rincian & Jejak Dokumen",
+  "dicek": "Pencarian jalur cetak (DOC_REGISTRY, layar)",
+  "hasil": "keputusan",
+  "catatan": "Perlu dokumen cetak/kirim ke pelanggan? — pertanyaan pemilik."
+ },
+ {
+  "dokumen": "Setoran PPh 21 / BPJS",
+  "cara_cetak": "Tidak ada cetakan — layar Kewajiban Setoran mencatat 'Nomor bukti setor' dari DJP/BPJS",
+  "dicek": "Pencarian jalur cetak",
+  "hasil": "keputusan",
+  "catatan": "Bukti resmi berasal dari DJP/BPJS (NTPN); rekap setoran cetak belum ada — pertanyaan pemilik."
+ },
+ {
+  "dokumen": "Desainer PDF — naskah per dokumen (konfigurasi)",
+  "cara_cetak": "Pengaturan › Dokumen & Notifikasi › Template Dokumen › Desainer PDF (Semua PT / Hanya PT X)",
+  "dicek": "D3: judul, teks penutup bertoken, footer, teks pembuka khusus Sukacita pada Faktur Komersial; token salah; lapisan PT ubah kertas; izin; kembalikan → cetakan identik",
+  "hasil": "diperbaiki",
+  "catatan": "Berfungsi: perubahan tercetak, khusus PT hanya di PT itu, token salah ditolak jelas, kembalikan = identik (pdf_templates kembali 0 baris). Diperbaiki: footer berisi '&' / tanda kutip dulu tercetak '&amp;'/'&#34;'. Catatan: {{rekening_bank}} kosong bila PT belum menetapkan rekening BAWAAN penerimaan transfer (Sukacita belum); tab Desainer hanya untuk peran Admin padahal Manajer berizin pdf_template.manage."
+ },
+ {
+  "dokumen": "Kop & tata letak dasar (template dokumen lama)",
+  "cara_cetak": "Pengaturan › Dokumen & Notifikasi › Template Dokumen › Kop & tata letak dasar",
+  "dicek": "D3.8: ubah footer 'Template Invoice Standard' lalu cetak lewat dua jalur",
+  "hasil": "keputusan",
+  "catatan": "Hanya memengaruhi tombol lama 'Faktur (PPN)'/'Surat Jalan'; PDF Pusat Dokumen tidak berubah — dua editor untuk dua jalur cetak membingungkan. Dikembalikan persis (footer & tanpa updated_at)."
+ },
+ {
+  "dokumen": "Penomoran dokumen per PT",
+  "cara_cetak": "—",
+  "dicek": "Nomor di semua cetakan peserta 81",
+  "hasil": "keputusan",
+  "catatan": "SO/SJ/AR/PO/FKT/CB/PD/STL ber-awalan KSC/; Tagihan Supplier 'VB-00030' tanpa awalan PT (deret bersama, scheme='shared' di vendor_bill_service.next_bill_number — bisa diubah lewat pengaturan penomoran); tugas gudang PICK-…/GRN-… tanpa awalan."
+ }
+]

@@ -212,6 +212,17 @@ s.addTable([[head("Kartu Peserta (nomor dokumen awal)"), head("Skenario")]].conc
   color: HEX.line }, margin: [0.03, 0.08, 0.03, 0.08], valign: "middle" });
 
 s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
+s.addText("Cara mengetik nominal & menyimpan", { placeholder: "title" });
+kartuTeks(s, { x: 0.6, y: 1.35, w: 5.95, h: 5.4, judul: "Nominal — semua benar", fill: HEX.tealSoft, color: HEX.teal, name: "tips-nominal",
+  size: 16, isi: ["3.374.122,50  ·  3374122,5  ·  Rp 3.374.123  ·  3374123", "Selalu baca PRATINJAU di bawah kotak (mis. Rp 3.374.122,50)",
+    "Baca kalimat konfirmasi sebelum [Ya, simpan] — nominal, rekening, PT", "Nominal minus, kosong, atau huruf ditolak dengan pesan"] });
+kartuTeks(s, { x: 6.75, y: 1.35, w: 5.95, h: 5.4, judul: "Kebiasaan aman", fill: HEX.amberSoft, color: HEX.amber, name: "tips-aman", size: 16,
+  isi: ["Klik tombol simpan SEKALI, tunggu pesan hasil", "Pakai tanggal hari ini", "Bayar tagihan: ketik nominal penuh (kurang ≤ Rp 5.000 menutup tagihan)",
+    "Bila daftar tetap abu-abu, tekan muat ulang", "Tempel mutasi bank: salin langsung dari Excel"] });
+s.addNotes("Hasil uji variasi isian: format nominal gaya Indonesia, Inggris, dengan 'Rp' dan spasi semuanya terbaca benar sesudah " +
+  "perbaikan; klik ganda tidak membuat kwitansi/pembayaran ganda. Rinciannya di Lampiran A manual dan LAPORAN_AUDIT.md.");
+
+s = pres.addSlide({ masterName: "ISI", sectionTitle: "Pembuka" });
 s.addText("Istilah yang sering muncul", { placeholder: "title" });
 s.addTable(D.istilah.map(([k, v]) => [{ text: k, options: { bold: true, color: HEX.teal } }, { text: v, options: { color: HEX.navy } }]),
   { x: 0.6, y: 1.3, w: 12.1, colW: [2.6, 9.5], fontSize: 13, fontFace: THEME.bodyFontFace, border: { type: "solid", pt: 0.5,
@@ -310,6 +321,34 @@ for (const sc of D.skenario) {
     name: `${sc.kode}-salah`, isi: (sc.kesalahan_umum.length ? sc.kesalahan_umum : ["—"]).map((x) => potong(x, 230)), size: 14 });
   s.addNotes(`CEK BUKU:\n- ${sc.cek_buku.join("\n- ")}\n\nKESALAHAN UMUM:\n- ${sc.kesalahan_umum.join("\n- ")}` +
     (sc.catatan_pelatih ? `\n\nCATATAN PELATIH: ${sc.catatan_pelatih}` : ""));
+}
+
+// ── 2b. Dokumen yang terbit ───────────────────────────────────────────────────────────────────────────────────────
+if ((D.dokumen || []).length) {
+  const SECD = "Dokumen yang terbit";
+  pres.addSection({ title: SECD });
+  s = pres.addSlide({ masterName: "JUDUL", sectionTitle: SECD });
+  s.addText("Dokumen yang terbit", { placeholder: "title" });
+  s.addText("Setiap dokumen dicetak dari data latihan, lalu isinya (nomor, tanggal, PT, barang, DPP, PPN, total, terbilang) dicocokkan " +
+    "dengan transaksi. Pengaturan naskah dokumen diuji: ubah → tercetak → dikembalikan.", { placeholder: "body" });
+  const HASIL = { lulus: ["Lulus", HEX.green], diperbaiki: ["Diperbaiki & diuji ulang", HEX.green], keputusan: ["Perlu keputusan pemilik", HEX.amber] };
+  for (const d of D.dokumen) {
+    s = pres.addSlide({ masterName: "LANGKAH", sectionTitle: SECD });
+    s.addText("Dokumen yang terbit", { placeholder: "kicker" });
+    s.addText(d.judul, { placeholder: "title" });
+    gambar(s, d.img, d.wh, { x: 0.6, y: 1.45, w: 5.7, h: 5.35 }, `dok-${d.judul}`);
+    const [hl, hc] = HASIL[d.hasil] || [d.hasil || "—", HEX.slate];
+    s.addText([
+      { text: "CARA MENCETAK", options: { bold: true, fontSize: 10.5, color: HEX.teal, charSpacing: 1, breakLine: true } },
+      { text: potong(d.cara_cetak, 220), options: { breakLine: true, paraSpaceAfter: 10, color: HEX.navy } },
+      { text: "YANG DICEK", options: { bold: true, fontSize: 10.5, color: HEX.teal, charSpacing: 1, breakLine: true } },
+      { text: potong(d.dicek, 330), options: { breakLine: true, paraSpaceAfter: 10, color: HEX.navy } },
+      { text: "HASIL AUDIT", options: { bold: true, fontSize: 10.5, color: hc, charSpacing: 1, breakLine: true } },
+      { text: hl, options: { bold: true, color: hc } }],
+    { x: 6.65, y: 1.45, w: 6.05, h: 5.35, fontSize: 14, valign: "top", margin: 0, isTextBox: true, objectName: `dok-${d.judul}-teks`,
+      fit: "shrink" });
+    s.addNotes(`${d.judul}\nCARA MENCETAK: ${d.cara_cetak}\nYANG DICEK: ${d.dicek}\nHASIL: ${hl}` + (d.catatan ? `\nCATATAN: ${d.catatan}` : ""));
+  }
 }
 
 // ── 3. Penutup ─────────────────────────────────────────────────────────────────────────────────────────────────────

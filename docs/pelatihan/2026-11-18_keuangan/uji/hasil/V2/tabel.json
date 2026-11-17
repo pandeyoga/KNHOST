@@ -1,0 +1,262 @@
+[
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Nominal baris LPJ",
+  "masukan": "185.000,50 dan 47.000 (dua nota)",
+  "harap": "Total Pengeluaran Rp 232.001 (232.000,50); Sisa Rp 268.000; LPJ tersimpan persis 232.000,50",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu '185.000,50' diketik → '185.00050' / koma membuat Number() = NaN → baris DIBUANG diam-diam saat simpan.",
+  "uji": "lulus",
+  "bukti": "KSC/STL-00004 · total 232000.5 · sisa 267999.5"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Tombol [Ajukan] tanpa foto nota",
+  "masukan": "(tidak ada lampiran)",
+  "harap": "Pengaturan 'finance.lpj_wajib_lampiran' MENYALA → ditolak 'Lampirkan minimal satu bukti …'; MATI (bawaan) → LPJ terajukan tanpa bukti",
+  "hasil": "keputusan",
+  "catatan": "Di lingkungan uji pengaturan MATI (bawaan): LPJ bisa diajukan TANPA foto nota. Pertanyaan pemilik: nyalakan wajib bukti LPJ untuk PT? (F07 mengajarkan unggah bukti, tetapi sistem tidak memaksanya.) Bila menyala, penolakannya berbahasa Indonesia (pesan di atas, `cash_advance_service.submit_settlement`).",
+  "uji": "lulus",
+  "bukti": "MATI → LPJ diajukan tanpa lampiran"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "LPJ disetujui manajer → jurnal",
+  "masukan": "lampirkan nota → Ajukan → manager Setujui & Posting GL",
+  "harap": "Jurnal: 6-4600 D 185.000,50 · 6-4300 D 47.000 · 1-1400 K 232.000,50 (seimbang)",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00600: 6-4600 Beban Transportasi & BBM (D) Rp 185.001 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 232.001"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Terima pengembalian sisa (nominal sen)",
+  "masukan": "sisa Rp 268.000 (267.999,50)",
+  "harap": "Kas masuk persis 267.999,50; uang muka PD bersih 0; saldo Kas Toko = hitung ulang (saldo awal + Σ masuk − Σ keluar)",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Terima Rp 268.000 dari Ayu Marketing ke Kas Toko KSC · Sukacita Textile? Kas masuk ke reke · uang muka bersih 0 · saldo Kas Toko Rp 40.927.744 (hitung ulang = layar)"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Nominal baris LPJ",
+  "masukan": "baris 2 diketik -5.000",
+  "harap": "Ditolak: 'Periksa baris 2: nominal tidak boleh minus.'; tidak ada LPJ",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu baris minus dibuang diam-diam saat simpan, padahal Total di layar ikut dikurangi (tersimpan ≠ terlihat).",
+  "uji": "lulus",
+  "bukti": "Periksa baris 2: nominal tidak boleh minus. ×"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "Baris beruraian tanpa nominal",
+  "masukan": "baris 2 'Parkir' nominal kosong",
+  "harap": "Ditolak: 'Periksa baris 2: isi nominalnya atau hapus barisnya.'",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu baris dibuang diam-diam.",
+  "uji": "lulus",
+  "bukti": "Periksa baris 2: isi nominalnya atau hapus barisnya. ×"
+ },
+ {
+  "layar": "Kas Kecil · LPJ",
+  "isian": "LPJ melebihi PD + uraian kosong",
+  "masukan": "baris 1 (uraian kosong) 400.000 · baris 2 'Parkir' 150.000,00 (Σ 550.000 > PD 500.000)",
+  "harap": "Form: 'Kekurangan Dana Rp 50.000'; daftar manajer: 'Perkiraan hutang reimburse Rp 50.000' + tombol [Buka]; disetujui → jurnal beban D 550.000 = 1-1400 K 500.000 + 2-1650 Hutang Reimburse K 50.000",
+  "hasil": "keputusan",
+  "catatan": "Uraian kosong DITERIMA (tidak wajib) — pertanyaan pemilik: wajibkan uraian per nota? DIPERBAIKI: dulu baris PD di daftar menampilkan 'Hutang reimburse Rp 50.000' + tombol [Bayar] (ditolak server) MENGGANTIKAN [Buka] sebelum LPJ disetujui → manajer tidak bisa membuka PD dari barisnya.",
+  "uji": "lulus",
+  "bukti": "KSC/STL-00005 · KSC/JE-00604: 6-4600 Beban Transportasi & BBM (D) Rp 550.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 500.000 · 2-1650 Hutang Reimburse Karyawan (K) Rp 50.000"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori operasional · Keluar · Nominal",
+  "masukan": "12.345,50",
+  "harap": "Kas tersimpan persis 12345.5; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00607: 6-4000 Beban Operasional Lainnya (D) Rp 12.346 · 1-1110 Kas Kecil (K) Rp 12.346"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori operasional · Masuk · Nominal",
+  "masukan": "12345",
+  "harap": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "Masuk 'operasional' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual.",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00608: 1-1110 Kas Kecil (D) Rp 12.345 · 1-9999 Akun Sementara (Suspense) (K) Rp 12.345"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori pembelian · Keluar · Nominal",
+  "masukan": "Rp 1.250",
+  "harap": "Kas tersimpan persis 1250; jurnal 1-1300 D / 1-1110 K",
+  "hasil": "keputusan",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Kas keluar 'Pembelian' mendebit 1-1300 Persediaan tanpa barang masuk (persediaan buku ≠ stok) — pertanyaan pemilik.",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00609: 1-1300 Persediaan Barang (D) Rp 1.250 · 1-1110 Kas Kecil (K) Rp 1.250"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori pembelian · Masuk · Nominal",
+  "masukan": "1,500,000",
+  "harap": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'pembelian' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual.",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00610: 1-1110 Kas Kecil (D) Rp 1.500.000 · 1-9999 Akun Sementara (Suspense) (K) Rp 1.500.000"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori gaji · Keluar · Nominal",
+  "masukan": "2.000",
+  "harap": "Kas tersimpan persis 2000; jurnal 6-1000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00611: 6-1000 Beban Gaji (D) Rp 2.000 · 1-1110 Kas Kecil (K) Rp 2.000"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori gaji · Masuk · Nominal",
+  "masukan": "3.374.122,50",
+  "harap": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'gaji' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual.",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00612: 1-1110 Kas Kecil (D) Rp 3.374.123 · 1-9999 Akun Sementara (Suspense) (K) Rp 3.374.123"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori transfer · Keluar · Nominal",
+  "masukan": "12.345,50",
+  "harap": "Kas tersimpan persis 12345.5; jurnal 1-1150 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Lewat 1-1150 Kas Transit (perbaikan 17 Nov).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00613: 1-1150 Kas & Bank Transit (Dana Dalam Perjalanan) (D) Rp 12.346 · 1-1110 Kas Kecil (K) Rp 12.346"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori transfer · Masuk · Nominal",
+  "masukan": "12345",
+  "harap": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-1150 K",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00614: 1-1110 Kas Kecil (D) Rp 12.345 · 1-1150 Kas & Bank Transit (Dana Dalam Perjalanan) (K) Rp 12.345"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori modal · Keluar · Nominal",
+  "masukan": "Rp 1.250",
+  "harap": "Kas tersimpan persis 1250; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "keputusan",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Keluar 'Setoran Modal' (prive/penarikan) jatuh ke 6-4000 BEBAN — seharusnya ekuitas; pertanyaan pemilik.",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00615: 6-4000 Beban Operasional Lainnya (D) Rp 1.250 · 1-1110 Kas Kecil (K) Rp 1.250"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori modal · Masuk · Nominal",
+  "masukan": "1,500,000",
+  "harap": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 3-1000 K",
+  "hasil": "diperbaiki",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00616: 1-1110 Kas Kecil (D) Rp 1.500.000 · 3-1000 Modal Disetor (K) Rp 1.500.000"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori lain · Keluar · Nominal",
+  "masukan": "2.000",
+  "harap": "Kas tersimpan persis 2000; jurnal 6-4000 D / 1-1110 K",
+  "hasil": "diperbaiki",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'Lain-lain' → 1-9999 Suspense (pertanyaan pemilik yang sudah tercatat).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00617: 6-4000 Beban Operasional Lainnya (D) Rp 2.000 · 1-1110 Kas Kecil (K) Rp 2.000"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kategori lain · Masuk · Nominal",
+  "masukan": "3.374.122,50",
+  "harap": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+  "hasil": "keputusan",
+  "catatan": "Nominal bertitik/koma dulu terbaca salah (mis. '12.345,50' → NaN/12,35). Masuk 'lain' → 1-9999 Suspense (tidak ada kata kunci) — perlu reklas manual. Masuk 'Lain-lain' → 1-9999 Suspense (pertanyaan pemilik yang sudah tercatat).",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00618: 1-1110 Kas Kecil (D) Rp 3.374.123 · 1-9999 Akun Sementara (Suspense) (K) Rp 3.374.123"
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "-100",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Nominal harus lebih dari 0."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "abc",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Nominal harus lebih dari 0."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Nominal",
+  "masukan": "0",
+  "harap": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Nominal harus lebih dari 0."
+ },
+ {
+  "layar": "Transaksi Kas",
+  "isian": "Kas keluar MELEBIHI saldo Kas Toko",
+  "masukan": "saldo + 1.000.000",
+  "harap": "Ditolak 'saldo tidak cukup' ATAU tercatat (aturan pemilik)",
+  "hasil": "keputusan",
+  "catatan": "Tidak ada penjaga saldo: kas kecil boleh MINUS. Pertanyaan pemilik: tolak kas keluar di atas saldo? (transaksi uji dianulir admin sesudahnya)",
+  "uji": "lulus",
+  "bukti": "TERCATAT KSC/CASH-00121 Rp 51.169.488 → saldo Kas Toko Rp -1.000.000 · dianulir admin → saldo Rp 50.169.488"
+ },
+ {
+  "layar": "Rekening & Saldo",
+  "isian": "Saldo Kas Toko KSC",
+  "masukan": "(hitung ulang sesudah semua transaksi)",
+  "harap": "Saldo di layar = saldo awal + Σ kas masuk − Σ kas keluar (tidak anulir)",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Rp 50.169.488 · Kas Toko KSC Kas tunai Kas kecil Rp 50.169.488 Rp 32.081.870 Rp 6.912.382 38 tra"
+ },
+ {
+  "layar": "Titipan Sales",
+  "isian": "Jumlah setoran saat diterima Finance",
+  "masukan": "(tidak bisa diubah di layar)",
+  "harap": "Form 'Terima setoran' menampilkan Jumlah = setoran (teks, bukan isian) — Finance tidak bisa menerima nominal lain",
+  "hasil": "lulus",
+  "catatan": "Selisih fisik uang harus ditolak ([Tolak] + alasan) lalu sales mengajukan setoran baru.",
+  "uji": "lulus",
+  "bukti": "Jumlah Rp 3.455.708 (teks)"
+ },
+ {
+  "layar": "Titipan Sales (HP sales)",
+  "isian": "Jumlah disetor",
+  "masukan": "titipan + 1.000.000 (lewat API akun sales)",
+  "harap": "Ditolak dengan pesan Indonesia (melebihi titipan yang dipegang)",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "400: \"Setoran melebihi tunai yang Anda pegang (Rp 0).\""
+ }
+]

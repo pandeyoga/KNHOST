@@ -42,7 +42,9 @@ export function overlayDismiss(onClose) {
     onClick: (e) => {
       const armed = e.currentTarget.dataset[ARM_ATTR] === "1";
       delete e.currentTarget.dataset[ARM_ATTR];
-      if (armed && e.target === e.currentTarget) onClose(e);
+      // Pelatihan 18 Nov — klik ke-2 dari klik GANDA (detail ≥ 2) pada tombol yang membuka dialog konfirmasi jatuh di
+      // backdrop dialog baru → dulu dialog langsung tertutup. Klik ganda tidak dianggap niat menutup.
+      if (armed && e.target === e.currentTarget && !(e.detail >= 2)) onClose(e);
     },
   };
 }

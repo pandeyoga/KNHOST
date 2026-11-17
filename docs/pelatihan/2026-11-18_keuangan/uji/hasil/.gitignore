@@ -1,2 +1,4 @@
-# PNG asli uji jalan (±50 MB) tidak di-commit; panduan memakai salinan JPEG di ../../gambar/.
+# PNG/PDF/HTML asli uji jalan & cetak dokumen tidak di-commit (besar); panduan & slide memakai salinan JPEG di ../../gambar/.
 *.png
+*.pdf
+*.html

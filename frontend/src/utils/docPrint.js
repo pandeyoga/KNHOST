@@ -18,9 +18,21 @@ function _terbilang(n) {
   if (n < 1000000000000) return `${_terbilang(Math.floor(n / 1000000000))} miliar ${_terbilang(n % 1000000000)}`.trim();
   return `${_terbilang(Math.floor(n / 1000000000000))} triliun ${_terbilang(n % 1000000000000)}`.trim();
 }
+// Pelatihan 18 Nov (audit dokumen cetak) — sen ikut dibaca dan rupiahnya = angka tercetak (`rpCetak`); dulu sen dibuang
+// (Math.floor) sedangkan angkanya dibulatkan ke atas: "Rp 3.268.673" + "… enam ratus tujuh puluh dua rupiah".
+const _sen = (n) => Math.round(Math.abs(Number(n) || 0) * 100 + 1e-6);
 export function terbilang(n) {
-  const words = _terbilang(n).replace(/\s+/g, " ").trim();
-  return (words ? `${words} rupiah` : "nol rupiah").replace(/^\w/, (c) => c.toUpperCase());
+  const s = _sen(n);
+  const words = _terbilang(Math.floor(s / 100)).replace(/\s+/g, " ").trim();
+  let out = words ? `${words} rupiah` : "nol rupiah";
+  if (s % 100) out += ` ${_terbilang(s % 100).replace(/\s+/g, " ").trim()} sen`;
+  return out.replace(/^\w/, (c) => c.toUpperCase());
+}
+/** Nominal cetak: "Rp 3.268.672,50" bila bersen, "Rp 500.000" bila bulat (sama dengan PDF server `pdf_engine.fmt_rp`). */
+export function rpCetak(n) {
+  const s = _sen(n);
+  const body = Math.floor(s / 100).toLocaleString("id-ID") + (s % 100 ? `,${String(s % 100).padStart(2, "0")}` : "");
+  return `${Number(n) < 0 && s ? "-" : ""}Rp ${body}`;
 }
 
 export function escapeHtml(s) {
@@ -49,7 +61,7 @@ export function printHTML(title, bodyHtml) {
     table{width:100%;border-collapse:collapse;margin:8px 0 12px}
     th,td{border:1px solid #999;padding:6px 8px;text-align:left;font-size:11.5px}
     th{background:#f0f0f0;text-transform:uppercase;font-size:10px;letter-spacing:.4px}
-    td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+    td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     tfoot td{font-weight:800;background:#fafafa}
     .terbilang{font-style:italic;margin:-4px 0 12px;color:#333}
     .checkbox-row{display:flex;gap:22px;margin:8px 0 14px;font-size:12px}
@@ -203,14 +215,14 @@ function detectMedium(lines) {
 // ── Payment / Received Voucher (dari journal entry) ──
 function voucherHtml(je, entityName, kind) {
   const isPayment = kind === "payment";
-  const title = isPayment ? "Payment Voucher" : "Received Voucher";
+  const title = isPayment ? "Bukti Kas Keluar" : "Bukti Kas Masuk";
   const medium = detectMedium(je.lines);
   const rows = (je.lines || []).map((l) => `
     <tr>
       <td>${escapeHtml(l.account_code || "")} — ${escapeHtml(l.account_name || "")}</td>
       <td>${escapeHtml(l.memo || l.description || "-")}</td>
-      <td class="num">${l.debit > 0 ? formatCurrency(l.debit) : "-"}</td>
-      <td class="num">${l.credit > 0 ? formatCurrency(l.credit) : "-"}</td>
+      <td class="num">${l.debit > 0 ? rpCetak(l.debit) : "-"}</td>
+      <td class="num">${l.credit > 0 ? rpCetak(l.credit) : "-"}</td>
     </tr>`).join("");
   const total = je.total_debit || je.total_credit || 0;
   const signs = isPayment
@@ -218,7 +230,7 @@ function voucherHtml(je, entityName, kind) {
     : sign("Dibuat", je.created_by) + sign("Diperiksa", "") + sign("Disetujui", "") + sign("Diposting", "") + sign("Penyetor", "");
   const body = `
     <div class="doc-head">
-      <div><h1>${escapeHtml(entityName || "")}</h1><div style="font-size:11px;color:#555">${isPayment ? "Bukti Kas/Bank Keluar" : "Bukti Kas/Bank Masuk"}</div></div>
+      <div><h1>${escapeHtml(entityName || "")}</h1><div style="font-size:11px;color:#555">${isPayment ? "Kas / Bank Keluar" : "Kas / Bank Masuk"}</div></div>
       <div class="doc-title"><div class="t">${title}</div><div class="n">No. ${escapeHtml(je.number || "")}</div></div>
     </div>
     <div class="meta">
@@ -229,14 +241,14 @@ function voucherHtml(je, entityName, kind) {
     </div>
     <div class="checkbox-row">
       <b>Metode:</b>
-      ${cb("Cash / Tunai", medium === "cash")}
+      ${cb("Tunai", medium === "cash")}
       ${cb("Bank / Transfer", medium === "bank")}
-      ${cb("Petty Cash / Kas Kecil", medium === "petty")}
+      ${cb("Kas Kecil", medium === "petty")}
     </div>
     <table>
       <thead><tr><th>Akun</th><th>Memo</th><th class="num">Debit</th><th class="num">Kredit</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="2">TOTAL</td><td class="num">${formatCurrency(je.total_debit)}</td><td class="num">${formatCurrency(je.total_credit)}</td></tr></tfoot>
+      <tfoot><tr><td colspan="2">TOTAL</td><td class="num">${rpCetak(je.total_debit)}</td><td class="num">${rpCetak(je.total_credit)}</td></tr></tfoot>
     </table>
     <div class="terbilang">Terbilang: <b>${terbilang(total)}</b></div>
     <div class="sign-row">${signs}</div>`;

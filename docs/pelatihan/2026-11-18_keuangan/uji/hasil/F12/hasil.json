@@ -2,7 +2,7 @@
   "code": "F12",
   "title": "Kontrabon (tukar faktur) sampai dibayar",
   "ok": true,
-  "at": "2026-11-17T06:31:05.526Z",
+  "at": "2026-11-17T09:16:39.064Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,7 +11,7 @@
       "action": "Login akun Finance peserta, buka Keuangan › Hutang › tab [[Kontrabon]]",
       "expect": "Daftar kontrabon tampil; TIDAK ada tombol [[Kontrabon baru]] (Finance hanya melihat & membayar)",
       "ok": true,
-      "ms": 6858,
+      "ms": 5482,
       "info": "kpi menunggu 0 · dijadwalkan 0"
     },
     {
@@ -20,16 +20,16 @@
       "action": "Login manager@, Keuangan › Hutang › Kontrabon › [[Kontrabon baru]], pilih *Supplier* pemasok peserta → [[Lanjut]]",
       "expect": "Ringkasan supplier: Tagihan siap ≥ 1, termin NET30, jatuh tempo diusulkan +30 hari",
       "ok": true,
-      "ms": 10367,
+      "ms": 10043,
       "info": "TAGIHAN SIAP 1 Rp 1.287.600 POTONGAN TERSEDIA 0 Rp 0 BELUM DITAGIH Rp 0 0 PO TERMIN NET30 jatuh tempo diusulkan 17 Des 2026"
     },
     {
       "no": 3,
       "role": "Manajer",
-      "action": "Langkah 2: centang hanya faktur VB-00003 (INV-LTH01-3C75C) → [[Lanjut]]",
+      "action": "Langkah 2: centang hanya faktur VB-00005 (INV-LTH02-040B1) → [[Lanjut]]",
       "expect": "Faktur peserta tercentang, nilai = total tagihan",
       "ok": true,
-      "ms": 242,
+      "ms": 239,
       "info": "1 faktur ditawarkan · Terpilih 1 faktur dari 1 PO · nilai Rp 1.287.600"
     },
     {
@@ -38,8 +38,8 @@
       "action": "Langkah 3: periksa tanggal tukar faktur & jatuh tempo, centang *Ajukan langsung* → [[Terbitkan kontrabon]]",
       "expect": "Bilah hijau \"Kontrabon KSC/CB-… terbit — 1 faktur digabung, nilai bersih Rp …\"; status Diajukan",
       "ok": true,
-      "ms": 1299,
-      "info": "Kontrabon KSC/CB-00001 terbit — 1 faktur digabung, nilai bersih Rp 1.287.600."
+      "ms": 1298,
+      "info": "Kontrabon KSC/CB-00002 terbit — 1 faktur digabung, nilai bersih Rp 1.287.600."
     },
     {
       "no": 5,
@@ -47,8 +47,8 @@
       "action": "Di rincian kontrabon klik [[Verifikasi 3-way match]]",
       "expect": "Status Terverifikasi; 3-way match dijalankan ulang tanpa selisih",
       "ok": true,
-      "ms": 1265,
-      "info": "KSC/CB-00001 terverifikasi — 3-way match dijalankan ulang."
+      "ms": 1280,
+      "info": "KSC/CB-00002 terverifikasi — 3-way match dijalankan ulang."
     },
     {
       "no": 6,
@@ -56,7 +56,7 @@
       "action": "(Coba) klik [[Setujui kontrabon]] dengan akun yang sama",
       "expect": "Ditolak: \"Kontrabon harus diputuskan orang lain: Anda yang mengajukannya…\" (kontrol dua orang)",
       "ok": true,
-      "ms": 1119,
+      "ms": 1116,
       "info": "Kontrabon harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang. ×"
     },
     {
@@ -65,8 +65,8 @@
       "action": "Login admin@ (penyetuju kedua), buka kontrabon itu → [[Setujui kontrabon]]",
       "expect": "Status Disetujui",
       "ok": true,
-      "ms": 10250,
-      "info": "KSC/CB-00001 disetujui."
+      "ms": 10350,
+      "info": "KSC/CB-00002 disetujui."
     },
     {
       "no": 8,
@@ -74,7 +74,7 @@
       "action": "Login manager@, buka kontrabon → [[Jadwalkan pembayaran]]: *Tanggal rencana* biarkan (= jatuh tempo), *Cara bayar* Transfer bank, *Rekening rencana* BCA Operasional KSC → [[Simpan jadwal bayar]]",
       "expect": "Status Dijadwalkan bayar; rincian menampilkan jadwal bayar & rekening",
       "ok": true,
-      "ms": 12684,
+      "ms": 11624,
       "info": "jadwal 2026-12-17 (jatuh tempo 2026-12-17) · transfer · BCA Operasional KSC"
     },
     {
@@ -83,17 +83,17 @@
       "action": "Login akun Finance peserta, Keuangan › Hutang › Kontrabon, cari nomor kontrabon, buka → [[Catat pembayaran]] → [[Bayar]] → [[Ya, bayar]]",
       "expect": "Form Bayar pemasok: Kontrabon KSC/CB-…, sisa = nilai bersih, rekening BCA terisi dari jadwal; sesudahnya status Sudah dibayar",
       "ok": true,
-      "ms": 8412,
-      "info": "konfirmasi \"Bayar Rp 1.287.600 ke Latihan 01 · Pemasok Grey Peserta 01 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · Pembayaran dicatat: Rp 1.287.600 lewat kas KSC/CASH-00032 — kontrabon LUNAS."
+      "ms": 9710,
+      "info": "konfirmasi \"Bayar Rp 1.287.600 ke Latihan 02 · Pemasok Grey Peserta 02 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · Pembayaran dicatat: Rp 1.287.600 lewat kas KSC/CASH-00046 — kontrabon LUNAS."
     },
     {
       "no": 10,
       "role": "Finance",
       "action": "Cek buku: tagihan & jurnal",
-      "expect": "Tagihan VB-00003 Lunas (lewat kontrabon); jurnal Hutang Usaha (D) / Kas Besar / Bank (K) = nilai bersih, seimbang",
+      "expect": "Tagihan VB-00005 Lunas (lewat kontrabon); jurnal Hutang Usaha (D) / Kas Besar / Bank (K) = nilai bersih, seimbang",
       "ok": true,
-      "ms": 1100,
-      "info": "KSC/JE-00163 seimbang D=K=1287600 [2-1100 Hutang Usaha D 1287600 · 1-1100 Kas Besar / Bank K 1287600] · tagihan paid"
+      "ms": 1131,
+      "info": "KSC/JE-00181 seimbang D=K=1287600 [2-1100 Hutang Usaha D 1287600 · 1-1100 Kas Besar / Bank K 1287600] · tagihan paid"
     }
   ],
   "http_5xx": [],
@@ -102,6 +102,6 @@
     "Failed to load resource: the server responded with a status of 403 (Forbidden)"
   ],
   "notes": [
-    "Peserta 01 · VB-00003 (INV-LTH01-3C75C) · Latihan 01 · Pemasok Grey Peserta 01 · Rp 1.287.600 · status awal posted"
+    "Peserta 02 · VB-00005 (INV-LTH02-040B1) · Latihan 02 · Pemasok Grey Peserta 02 · Rp 1.287.600 · status awal posted"
   ]
 }

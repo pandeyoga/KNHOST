@@ -76,6 +76,15 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
   async function submit() {
     setErr("");
     if (!pdId) { setErr("Pilih PD yang akan dipertanggungjawabkan."); return; }
+    // Uji variasi isian (pelatihan 18 Nov) — baris bernominal minus / baris beruraian tanpa nominal dulu DIBUANG diam-diam
+    // saat simpan, padahal Total Pengeluaran di layar ikut menghitung minusnya (tersimpan ≠ yang terlihat).
+    const salah = [];
+    lines.forEach((l, i) => {
+      const a = Number(l.amount);
+      if (Number.isFinite(a) && a < 0) salah.push(`baris ${i + 1}: nominal tidak boleh minus`);
+      else if (String(l.description || "").trim() && !(a > 0)) salah.push(`baris ${i + 1}: isi nominalnya atau hapus barisnya`);
+    });
+    if (salah.length) { setErr(`Periksa ${salah.join("; ")}.`); return; }
     const clean = lines
       .filter((l) => (Number(l.amount) || 0) > 0)
       .map((l) => ({ date: l.date, description: l.description || "", category: l.category, amount: Number(l.amount) || 0 }));

@@ -1,0 +1,48 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                                                                        FAKTUR PAJAK
+                                                                   No. KSC/FKT-00002 · 17 Nov 2026 · NORMAL
+
+             REFERENSI DOKUMEN
+             Merujuk: KSC/SO-00010
+             Berasal dari Pesanan Penjualan (SO) KSC/SO-00010
+             Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                         PEMBELI
+Sukacita Textile                                                              Latihan 02 · Toko Kain Peserta 02
+Jl. Soekarno Hatta No. 100, Bandung                            Jl. Latihan Keuangan No. 2, Bandung, Kota Bandung
+                                                                                                         NPWP: -
+NSFP               0100261118000002                            Kode Transaksi         04
+Penjual        Sukacita Textile · NPWP                         No. Referensi SO       KSC/SO-00010
+               01.234.567.8-901.000
+
+ NO    SKU                              NAMA BKP/JKP                 ROLL          JUMLAH     HARGA           TOTAL
+
+       KNWVN0015-L-TAUX-XA-             DENIM TENCEL
+   1                                                                     —    120,22 yard   Rp 25.000   Rp 3.005.500
+       XX-XX                            TAUPE A
+
+                                                                  DPP (harga sebelum PPN)               Rp 3.005.500
+                                                                  DPP nilai lain (11/12)            Rp 2.755.041,67
+                                                                  PPN 12% × DPP nilai lain                Rp 330.605
+
+                                                                    Total (termasuk PPN)           Rp 3.336.105
+Terbilang: Tiga juta tiga ratus tiga puluh enam ribu seratus lima rupiah
+
+
+                                                     Penjual / PKP
+
+
+
+
+                                                  Peserta Keuangan 02
+                                                    Sukacita Textile
+
+
+
+
+                                                                                                              Hal. 1 / 1
+

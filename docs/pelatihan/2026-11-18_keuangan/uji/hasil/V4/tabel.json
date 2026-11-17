@@ -1,0 +1,72 @@
+[
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "Kolom umur piutang pelanggan cicilan",
+  "masukan": "Latihan 66 · Toko Kain Cicilan 66 (cicilan 1 jatuh tempo 2026-10-28, cicilan 2 2026-11-27)",
+  "harap": "Dihitung ulang: belum jatuh tempo Rp 1.688.172 · 1–30 Rp 1.688.171 · 31–60 Rp 0 · 61–90 Rp 0 · >90 Rp 0 = layanan = layar",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "{\"current\":1688171.5,\"b1_30\":1688171,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0} · Latihan 66 · Toko Kain Cicilan 66 Ayu Marketing · telat 20 hr Terblokir Rp 1.688.172 Rp 1.688.171 — — — Rp 3.376.343 Rp 22.509 est. — belum jadi nota Buat Nota "
+ },
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "Taksiran denda (kolom Denda)",
+  "masukan": "aturan 2%/bulan · tenggang 0 hr · dasar installment · batas 0% · minimum Rp 10.000",
+  "harap": "Σ (dasar × 2% × (hari telat − tenggang)/30) = Rp 22.509 (= 22508.95); layar sama",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "2026-10-28 sisa 1688171 telat 20 · 2026-11-27 sisa 1688171.5 telat 0 → 22508.95 · layar 'Rp 22.509 est. — belum jadi nota Buat Nota'"
+ },
+ {
+  "layar": "Piutang › Saldo & Umur",
+  "isian": "[Buat Nota Denda]",
+  "masukan": "(rincian pelanggan → Buat Nota Denda)",
+  "harap": "Nota USULAN = Rp 22.509, belum berjurnal; rincian hitungan menyebut tarif & hari",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "1 nota denda siap: KSC/DN-DENDA-00002. Nota masih USULAN — belum menyentuh buku besar. · KSC/DN-DENDA-00002 22508.95 [Dasar denda Rp 1.688.171 (sisa tagihan yang telat) | Telat 20 hari − tenggang 0 hari = 20 hari kena denda | Bunga 2% / bulan × 20/30 hari → Rp 22.509]"
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "[Terbitkan] nota denda",
+  "masukan": "(Antrean Denda → Terbitkan → konfirmasi)",
+  "harap": "Jurnal seimbang: piutang denda D = 4-9300 Pendapatan Denda K = Rp 22.509",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "KSC/JE-00622: 1-1270 D22508.95 K0 · 4-9300 D0 K22508.95"
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · nominal cicilan 1",
+  "masukan": "1.000.000 (Σ jadwal ≠ nilai dokumen)",
+  "harap": "Label merah 'Selisih Rp …' (= nilai dokumen − Σ jadwal) dan [Simpan perubahan] mati",
+  "hasil": "lulus",
+  "catatan": "",
+  "uji": "lulus",
+  "bukti": "Selisih Rp 307.580"
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · nominal bergaya Indonesia",
+  "masukan": "cicilan 1 '2.000.000' · cicilan 2 '615.160,00'",
+  "harap": "'Sudah pas'; tersimpan persis; umur piutang & taksiran denda ikut nominal baru (dihitung ulang)",
+  "hasil": "diperbaiki",
+  "catatan": "Dulu koma desimal di kotak nominal jadwal → 0 lalu digit berikutnya (mis. Rp 50): jadwal tidak pernah pas.",
+  "uji": "lulus",
+  "bukti": "jadwal 2000000 + 615160 · umur {\"current\":615160,\"b1_30\":2000000,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0} · denda 26666.67"
+ },
+ {
+  "layar": "Piutang › Rencana & Denda",
+  "isian": "Ubah Jadwal · jatuh tempo cicilan 2 di MASA LAMPAU",
+  "masukan": "2026-11-07",
+  "harap": "Ditolak dengan pesan ATAU diterima (aturan pemilik); bila diterima: cicilan 2 langsung telat & ikut umur/denda",
+  "hasil": "keputusan",
+  "catatan": "Diterima tanpa peringatan: jadwal baru bisa langsung telat (denda berjalan sejak tanggal lampau). Pertanyaan pemilik: tolak/peringatkan jatuh tempo < hari ini saat mengubah jadwal?",
+  "uji": "lulus",
+  "bukti": "DITERIMA: cicilan 2 jatuh tempo 2026-11-07 → umur {\"current\":0,\"b1_30\":2615160,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0}"
+ }
+]

@@ -89,7 +89,7 @@
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
    "aksi": "Tutup rincian PD (×), buka Buku Besar, ketik nomor PD di kotak 'Cari nomor jurnal / keterangan…' → klik baris bersumber [[Kas]]",
    "isi": "*Cari*: KSC/PD-… (nomor PD Anda)",
-   "hasil": "Rincian jurnal 'Kas out · Pencairan KSC/PD-… — Latihan NN …': 1-1400 Uang Muka & Biaya Dibayar Dimuka — Debit Rp 500.000; 1-1110 Kas Kecil — Kredit Rp 500.000; baris Total debit = kredit. Artinya uang belum menjadi beban — masih piutang karyawan (uang muka).",
+   "hasil": "Rincian jurnal 'Kas keluar · Pencairan KSC/PD-… — Latihan NN …': 1-1400 Uang Muka & Biaya Dibayar Dimuka — Debit Rp 500.000; 1-1110 Kas Kecil — Kredit Rp 500.000; baris Total debit = kredit. Artinya uang belum menjadi beban — masih piutang karyawan (uang muka).",
    "gambar": "uji/hasil/F07/06-jurnal-pencairan.png"
   },
   {
@@ -141,7 +141,7 @@
    "no": 10,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik nomor LPJ lagi → klik baris bersumber [[Kas]] ('Kas in · Pengembalian sisa uang muka …')",
+   "aksi": "Ketik nomor LPJ lagi → klik baris bersumber [[Kas]] ('Kas masuk · Pengembalian sisa uang muka …')",
    "isi": "*Cari*: KSC/STL-…",
    "hasil": "Jurnal: 1-1110 Kas Kecil — Debit Rp 268.000; 1-1400 Uang Muka & Biaya Dibayar Dimuka — Kredit Rp 268.000. Uang muka PD ini sekarang nol: 500.000 (cair) − 232.000 (LPJ) − 268.000 (sisa) = 0.",
    "gambar": "uji/hasil/F07/16-jurnal-pengembalian.png"

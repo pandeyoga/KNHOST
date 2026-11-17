@@ -197,7 +197,7 @@ function IncomeStatementTab({ selectedEntity, drill, restore }) {
         {mode === "range" ? (
           <div className="flex flex-wrap items-end gap-3">
             <Labeled label="Dari Tanggal">
-              <KNDatePicker data-testid="fs-pl-start" className="w-[170px] text-[12px]" clearable={false} value={range.start}
+              <KNDatePicker data-testid="fs-pl-start" className="w-[170px] text-[12px]" clearable={false} max={range.end || undefined} value={range.start}
                 onChange={(v) => setRange((r) => ({ ...r, start: v }))} />
             </Labeled>
             <Labeled label="Sampai Tanggal">

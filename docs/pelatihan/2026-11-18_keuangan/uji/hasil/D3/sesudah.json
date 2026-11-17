@@ -1,0 +1,34 @@
+{
+  "pdf_templates": [],
+  "document_templates_inv": {
+    "id": "tmpl_inv_default",
+    "document_type": "invoice",
+    "name": "Template Invoice Standard",
+    "header": "KAIN NUSANTARA — Invoice",
+    "footer": "Pembayaran dalam 30 hari. Terima kasih atas kepercayaan Anda.",
+    "columns": [
+      "sku",
+      "name",
+      "qty",
+      "unit",
+      "price",
+      "subtotal"
+    ],
+    "logo_url": "",
+    "paper_size": "A4",
+    "orientation": "portrait",
+    "margin_mm": 12,
+    "signature_left": "Dibuat Oleh",
+    "signature_right": "Disetujui Oleh",
+    "section_order": [
+      "header",
+      "customer",
+      "items",
+      "signature",
+      "footer"
+    ],
+    "status": "active",
+    "created_by": "seed",
+    "created_at": "2026-11-17T08:48:21.736662+00:00"
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "code": "V6",
+  "title": "Variasi isian — kontrabon, faktur pajak, sample berbayar (F12–F14)",
+  "ok": true,
+  "at": "2026-11-17T08:08:28.689Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": "K1",
+      "role": "Manajer",
+      "action": "Kontrabon baru untuk Latihan 76 · Pemasok Grey Peserta 76: centang VB-00035, JANGAN centang *Ajukan langsung* → [[Terbitkan kontrabon]]",
+      "expect": "Kontrabon Draf, nilai tagihan Rp 1.287.600",
+      "ok": true,
+      "ms": 12781,
+      "info": "KSC/CB-00003 draf · tagihan Rp 1.287.600"
+    },
+    {
+      "no": "K2",
+      "role": "Manajer",
+      "action": "[[Tambah potongan]] · *Jenis* Denda keterlambatan supplier · *Nominal* \"1.387.600\" (lebih dari nilai faktur)",
+      "expect": "Ditolak dengan pesan Indonesia (nilai bersih kontrabon tidak boleh negatif); tidak ada potongan tersimpan",
+      "ok": true,
+      "ms": 2553,
+      "info": "pratinjau Rp 1.387.600 · Total potongan Rp 1.387.600 melebihi nilai tagihan Rp 1.287.600 — nilai bersih kontrabon tidak boleh negatif. Sisa ruang potongan: Rp 1.287.600. ×"
+    },
+    {
+      "no": "K3",
+      "role": "Manajer",
+      "action": "[[Tambah potongan]] · Denda keterlambatan supplier · *Nominal* \"12.600\" · alasan → [[Tambah potongan]]",
+      "expect": "Potongan Rp 12.600; Nilai bersih = Rp 1.287.600 − Rp 12.600 = Rp 1.275.000 (layar & DB)",
+      "ok": true,
+      "ms": 3247,
+      "info": "pratinjau Rp 12.600 · tagihan Rp 1.287.600 − potongan Rp 12.600 = bersih Rp 1.275.000"
+    },
+    {
+      "no": "K4",
+      "role": "Manajer → Admin",
+      "action": "Manajer [[Ajukan]] → [[Verifikasi 3-way match]]; Admin [[Setujui kontrabon]]",
+      "expect": "Status Disetujui",
+      "ok": true,
+      "ms": 15485,
+      "info": "approved"
+    },
+    {
+      "no": "K5",
+      "role": "Manajer",
+      "action": "[[Jadwalkan pembayaran]]: *Tanggal rencana* 2026-11-16 (KEMARIN) · BCA Operasional KSC → [[Simpan jadwal bayar]]",
+      "expect": "Diterima (rencana lewat tanggal = sudah jatuh tempo) atau ditolak dengan pesan jelas — tidak 5xx",
+      "ok": true,
+      "ms": 34538,
+      "info": "diterima: scheduled_payment · rencana 2026-11-16"
+    },
+    {
+      "no": "K6",
+      "role": "Finance",
+      "action": "Finance peserta: [[Catat pembayaran]] → ketik \"1.275.001\" (lebih Rp 1)",
+      "expect": "Tombol [[Bayar]] mati: melebihi sisa Rp 1.275.000",
+      "ok": true,
+      "ms": 9422,
+      "info": "Nominal Rp 1.275.001 melebihi sisa hutang Rp 1.275.000. Bayar paling banyak sebesar sisa hutang. · catatan potongan: Pada pembayaran pertama, potongan Rp 12.600 ikut diterapkan sebagai pelunasan non-kas; uang yang keluar hanya nilai bersihnya."
+    },
+    {
+      "no": "K7",
+      "role": "Finance",
+      "action": "Ketik \"500.000\" · BCA Operasional KSC → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Bayar sebagian: status tetap Dijadwalkan, Sudah dibayar Rp 500.000, sisa Rp 775.000; potongan diterapkan; jurnal potongan Hutang (D) / Pendapatan Denda 4-9300 (K) Rp 12.600 + jurnal kas Hutang (D) / Bank (K) Rp 500.000",
+      "ok": true,
+      "ms": 3048,
+      "info": "KSC/JE-00534 seimbang D=K=500000 [2-1100 Hutang Usaha D 500000 · 1-1100 Kas Besar / Bank K 500000] · KSC/JE-00535 seimbang D=K=12600 [2-1100 Hutang Usaha D 12600 · 4-9300 Pendapatan Denda Keterlambatan K 12600]"
+    },
+    {
+      "no": "K8",
+      "role": "Finance",
+      "action": "[[Catat pembayaran]] lagi (nominal terisi sisa Rp 775.000) → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Status Sudah dibayar; Σ kas = Rp 1.275.000; tagihan VB-00035 Lunas (kas Rp 1.275.000 + potongan Rp 12.600 = Rp 1.287.600)",
+      "ok": true,
+      "ms": 2368,
+      "info": "kontrabon paid: kas Rp 1.275.000 + potongan Rp 12.600 · tagihan paid Rp 1.287.600 · Σ D 2-1100 Rp 1.287.600"
+    },
+    {
+      "no": "P1",
+      "role": "Finance",
+      "action": "Login peserta 76 → Meja Finance → [[Terbitkan]] faktur SO peserta → Pajak › Faktur Keluaran, cari SO",
+      "expect": "Faktur FKT-… Normal, NSFP belum diisi",
+      "ok": true,
+      "ms": 6762,
+      "info": "KSC/FKT-00004 · KSC/SO-00100"
+    },
+    {
+      "no": "P2",
+      "role": "Finance",
+      "action": "Ikon [[#]] → *Nomor Seri Faktur Pajak*: \"ABC-DEF\" (huruf saja) → [[Konfirmasi]]",
+      "expect": "Diterima atau ditolak dengan pesan jelas; dicatat apa adanya (aturan bentuk NSFP = keputusan K-04)",
+      "ok": true,
+      "ms": 1350,
+      "info": "DITERIMA · DB nsfp \"ABC-DEF\" · kunci \"—\""
+    },
+    {
+      "no": "P3",
+      "role": "Finance",
+      "action": "Ikon [[#]] → *Nomor Seri Faktur Pajak*: \"12345\" (5 digit) → [[Konfirmasi]]",
+      "expect": "Diterima atau ditolak dengan pesan jelas; dicatat apa adanya (aturan bentuk NSFP = keputusan K-04)",
+      "ok": true,
+      "ms": 1102,
+      "info": "DITERIMA · DB nsfp \"12345\" · kunci \"12345\""
+    },
+    {
+      "no": "P4",
+      "role": "Finance",
+      "action": "Ikon [[#]] → *Nomor Seri Faktur Pajak*: \"01002611180000761\" (17 digit) → [[Konfirmasi]]",
+      "expect": "Diterima atau ditolak dengan pesan jelas; dicatat apa adanya (aturan bentuk NSFP = keputusan K-04)",
+      "ok": true,
+      "ms": 1492,
+      "info": "DITERIMA · DB nsfp \"01002611180000761\" · kunci \"01002611180000761\""
+    },
+    {
+      "no": "P5",
+      "role": "Finance",
+      "action": "Ikon [[#]] → *Nomor Seri Faktur Pajak*: \"010.026-11.18000076\" (bertitik & strip) → [[Konfirmasi]]",
+      "expect": "Diterima atau ditolak dengan pesan jelas; dicatat apa adanya (aturan bentuk NSFP = keputusan K-04)",
+      "ok": true,
+      "ms": 1578,
+      "info": "DITERIMA · DB nsfp \"010.026-11.18000076\" · kunci \"0100261118000076\""
+    },
+    {
+      "no": "P6",
+      "role": "Finance",
+      "action": "Peserta 77: terbitkan fakturnya → isi NSFP \"0100261118000076\" (digit SAMA dengan faktur peserta 76, tanpa titik)",
+      "expect": "Ditolak: \"Nomor seri … sudah dipakai faktur KSC/FKT-00004\"",
+      "ok": true,
+      "ms": 9622,
+      "info": "Nomor seri 0100261118000076 sudah dipakai faktur KSC/FKT-00004. Periksa nomor serinya. × · NSFP sendiri 010.026-11.18000077 diterima"
+    },
+    {
+      "no": "P7",
+      "role": "Pemeriksa",
+      "action": "Hitung ulang faktur peserta dari baris SO: DPP nilai lain = 11/12 × DPP; PPN = 12% × DPP nilai lain; PPN faktur = PPN Keluaran jurnal pengiriman",
+      "expect": "Semua sama (±Rp 1)",
+      "ok": true,
+      "ms": 1484,
+      "info": "DPP Rp 2.950.250 → nilai lain Rp 2.704.396 → PPN Rp 324.528 (faktur Rp 324.528, buku 2-1200 Rp 324.528) · total Rp 3.274.778"
+    },
+    {
+      "no": "S1",
+      "role": "Finance",
+      "action": "Peserta 76: Terima pembayaran Butik Sample, *Nominal diterima* \"50.000\" (kurang dari total Rp 83.250)",
+      "expect": "Kwitansi Rp 50.000; SOS status bayar Sebagian; jurnal Bank (D) / Uang Muka Pelanggan (K) Rp 50.000",
+      "ok": true,
+      "ms": 25473,
+      "info": "konfirmasi \"Catat penerimaan Rp 50.000 dari Latihan 76 · Butik Sample Peserta 76 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? · selisih: Dibayar Rp 50.000, seharusnya Rp 83.250 (tagihan yang jatuh tempo). Kurang Rp 33.250 — mau bagaimana?\" · KSC/AR-00082 · SOS partial Rp 50.000 · KSC/JE-00537 seimbang D=K=50000 [1-1100 Kas Besar / Bank D 50000 · 2-1400 Uang Muka Pelanggan K 50000]"
+    },
+    {
+      "no": "S2",
+      "role": "Finance",
+      "action": "Pesanan Sample → SOS peserta → [[Setujui Pembayaran]]",
+      "expect": "Rincian menyebut \"Uang tercatat masuk: Rp 50.000 dari Rp 83.250 — kurang Rp 33.250\"; dialog \"Uang belum lengkap\" minta konfirmasi → [[Batal]] → SOS tetap Menunggu ACC bayar",
+      "ok": true,
+      "ms": 2030,
+      "info": "Uang tercatat masuk: Rp 50.000 dari Rp 83.250 — kurang Rp 33.250 · dialog \"Uang yang tercatat masuk untuk KSC/SOS-00017 baru Rp 50.000 dari Rp 83.250 (kurang Rp 33.250). Tetap setujui pembayaran dan lepas ke gudang?\" → batal → waiting_approval"
+    },
+    {
+      "no": "S3",
+      "role": "Finance",
+      "action": "Terima pembayaran sisa \"33.250\" → Setujui Pembayaran",
+      "expect": "SOS Lunas → tanpa dialog tambahan → \"pembayaran disetujui\"; status Siap ke gudang",
+      "ok": true,
+      "ms": 6836,
+      "info": "KSC/SOS-00017: pembayaran disetujui. · SOS approved/paid Rp 83.250"
+    },
+    {
+      "no": "S4",
+      "role": "Finance",
+      "action": "Peserta 77: Terima pembayaran \"100.000\" (LEBIH Rp 16.750 dari total Rp 83.250)",
+      "expect": "Kwitansi Rp 100.000; SOS Lunas; kelebihan Rp 16.750 jadi titipan/deposit pelanggan (bukan pendapatan); jurnal seimbang",
+      "ok": true,
+      "ms": 10996,
+      "info": "konfirmasi \"Catat penerimaan Rp 100.000 dari Latihan 77 · Butik Sample Peserta 77 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? · selisih: Dibayar Rp 100.000, seharusnya Rp 83.250 (sisa tagihan pesanan tujuan). Lebih Rp 16.750 — mau bagaimana?\" · KSC/AR-00084 applied Rp 83.250 unapplied Rp 16.750 · SOS paid Rp 83.250 · KSC/JE-00539 [1-1100 D 100000 · 2-1400 K 83250 · 2-1400 K 16750]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "notes": []
+}

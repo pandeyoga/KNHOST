@@ -1,0 +1,279 @@
+{
+  "code": "V1",
+  "title": "Variasi isian — Terima pembayaran pelanggan",
+  "ok": true,
+  "at": "2026-11-17T08:38:57.439Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan (Atur sendiri): ketik 9.999.999 (di atas sisa)",
+      "expect": "Kotak dibatasi = sisa Rp 2.673.324; 'Nominal sesuai tagihan — tidak ada selisih'",
+      "ok": true,
+      "ms": 1841,
+      "info": "2673324 · Rp 2.673.324"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: tempel 'Rp 9.999.999'",
+      "expect": "Diterima, dibatasi = sisa Rp 2.673.324",
+      "ok": true,
+      "ms": 1557,
+      "info": "Rp 2.673.324"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: ketik 1.000.000,50",
+      "expect": "Total diterima Rp 1.000.001 (1.000.000,50); petunjuk 'Kurang bayar …'",
+      "ok": true,
+      "ms": 1816,
+      "info": "Kurang bayar Rp 1.673.324 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 2.673.324) — akan diminta keputusan saat disimpan. Putuskan"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: ketik 1,500,000 (gaya Inggris)",
+      "expect": "Dibaca Rp 1.500.000",
+      "ok": true,
+      "ms": 1794,
+      "info": "Rp 1.500.000"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: ketik sisa persis bergaya Indonesia 2.673.324,00",
+      "expect": "Total = Rp 2.673.324; tidak ada selisih",
+      "ok": true,
+      "ms": 1825,
+      "info": "2.673.324,00 · Rp 2.673.324"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: 0",
+      "expect": "Tombol mati + 'Isi nominal diterima.'",
+      "ok": true,
+      "ms": 950,
+      "info": "\"0\" · Isi nominal diterima."
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: (kosongkan)",
+      "expect": "Tombol mati + 'Isi nominal diterima.'",
+      "ok": true,
+      "ms": 1000,
+      "info": "\"0\" · Isi nominal diterima."
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: abc",
+      "expect": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+      "ok": true,
+      "ms": 989,
+      "info": "\"0\" · Isi nominal diterima."
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi ke tagihan: ketik -100",
+      "expect": "Minus tidak bisa masuk kotak alokasi (tidak pernah tersimpan negatif); yang tampil & dihitung Rp 100",
+      "ok": true,
+      "ms": 1630,
+      "info": "Rp 100"
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): ketik 3.374.123",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1764,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): ketik 3374123",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3374123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1773,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): ketik 3,374,123",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3,374,123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1764,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): ketik 3374122,5",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3374122,5' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1735,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.477 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 14,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): ketik 3.374.122,50",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3.374.122,50' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1783,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.477 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 15,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): tempel Rp 3.374.123",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3.374.123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1565,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): tempel Rp 3 374 123",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3 374 123' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1656,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu): tempel 3.374.123,-",
+      "expect": "Total diterima Rp 3.374.123; kotak berisi '3.374.123,-' (awalan Rp dibuang — kotak sudah berlabel Rp); petunjuk selisih",
+      "ok": true,
+      "ms": 1544,
+      "info": "Rp 3.374.123 · Kurang bayar Rp 2.576.476 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 5.950.59"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima: ketik -100",
+      "expect": "Kotak bergaris merah, tombol mati + 'Nominal tidak boleh minus.'",
+      "ok": true,
+      "ms": 915,
+      "info": "Nominal tidak boleh minus."
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima: ketik abc",
+      "expect": "Huruf tidak masuk; tombol mati + 'Isi nominal diterima.'",
+      "ok": true,
+      "ms": 874,
+      "info": "Isi nominal diterima."
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima: ketik 99.999.999.999 → [Simpan kwitansi] → [Batal] di dialog selisih",
+      "expect": "Total Rp 99.999.999.999; petunjuk 'Lebih bayar …'; Simpan → dialog 'Lebih bayar' wajib diputus; Batal → tidak ada kwitansi",
+      "ok": true,
+      "ms": 3045,
+      "info": "Lebih bayar Rp 99.994.049.400 dari sisa tagihan pesanan tujuan (Rp 5.950.599) —  · dialog: Dibayar Rp 99.999.999.999, seharusnya Rp 5.950.599 (sisa tagihan pesanan tujuan). Lebih Rp 99.994.049.400 — mau bagaiman"
+    },
+    {
+      "no": 21,
+      "role": "Finance",
+      "action": "Terima pembayaran · Tombol [Batal] form: isi 1.000.000 lalu klik [Batal]",
+      "expect": "Form tertutup, tidak ada kwitansi baru",
+      "ok": true,
+      "ms": 1559,
+      "info": "form tertutup"
+    },
+    {
+      "no": 22,
+      "role": "Finance",
+      "action": "Terima pembayaran · No. referensi: (kosong)",
+      "expect": "Boleh kosong (pengaturan 'payment.wajib_nomor_referensi' bawaan mati) — tombol tetap aktif",
+      "ok": true,
+      "ms": 4349,
+      "info": "aktif"
+    },
+    {
+      "no": 23,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi SO kedua + keputusan 'Sisa tetap jadi piutang': ketik 1.000.000,50",
+      "expect": "Kwitansi tepat Rp 1.000.000,50; jurnal 1-1100 D = 1-1200 K = 1.000.000,50; sisa SO = total − 1.000.000,50",
+      "ok": true,
+      "ms": 7361,
+      "info": "Kwitansi KSC/AR-00101 (Rp 1.000.001) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00019). × · sisa 2277274.5"
+    },
+    {
+      "no": 24,
+      "role": "Finance",
+      "action": "Terima pembayaran · Alokasi SO lunas + klik ganda [Simpan kwitansi] & [Ya, simpan]: tempel 'Rp 2.673.324,00'",
+      "expect": "Tepat SATU kwitansi = sisa; SO lunas; jurnal seimbang",
+      "ok": true,
+      "ms": 10090,
+      "info": "klik ganda menutup dialog konfirmasi (tidak tersimpan) → klik sekali lagi · Kwitansi KSC/AR-00102 (Rp 2.673.324) dicatat untuk Latihan 69 · Toko Kain Peserta 69. ×"
+    },
+    {
+      "no": 25,
+      "role": "Finance",
+      "action": "Terima pembayaran · Tanggal terima di MASA DEPAN: 2026-12-22 · alokasi 200.000",
+      "expect": "Ditolak dengan pesan jelas ATAU diterima bertanggal itu (aturan pemilik)",
+      "ok": true,
+      "ms": 10129,
+      "info": "DITERIMA: Kwitansi KSC/AR-00103 (Rp 200.000) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00020). × · tanggal kwitansi 2026-12-22 · jurnal KSC/JE-00658 2026-12-22"
+    },
+    {
+      "no": 26,
+      "role": "Finance",
+      "action": "Terima pembayaran · Tanggal terima di periode TERTUTUP: 15 Sep 2026 (periode Sep 2026 ditutup sementara untuk uji) · alokasi 100.000",
+      "expect": "Ditolak di dalam form: 'Periode … sudah DITUTUP …'; tidak ada kwitansi; tombol tidak macet",
+      "ok": true,
+      "ms": 9362,
+      "info": "Periode September 2026 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."
+    },
+    {
+      "no": 27,
+      "role": "Finance",
+      "action": "Terima pembayaran · Nominal diterima (Tertua dulu) di atas sisa → 'Simpan sebagai deposit': ketik 2.327.274,50",
+      "expect": "Kwitansi Rp 2.327.275: jurnal 1-1100 D 2.327.274,50 · 1-1200 K 2.077.274,50 · 2-1400 K 250.000,00; titipan pelanggan +250.000,00",
+      "ok": true,
+      "ms": 12369,
+      "info": "Kwitansi KSC/AR-00104 (Rp 2.327.275) dicatat untuk Latihan 69 · Toko Kain Peserta 69. Rp 2.077.275 melunasi tagihan, Rp 250.000 menjadi titipan pelanggan. Selisih diputus: Pelanggan transfer berlebih (KSC/SLB-00021). × · titipan 250000 (hitung ulang 250000)"
+    },
+    {
+      "no": 28,
+      "role": "Finance",
+      "action": "Terima pembayaran · Pakai titipan — nominal titipan: centang 'Pakai titipan', ketik 999.999 (di atas tersedia)",
+      "expect": "Kotak titipan dibatasi = tersedia Rp 250.000",
+      "ok": true,
+      "ms": 12198,
+      "info": "KSC/SO-00157 · kotak titipan 250000"
+    },
+    {
+      "no": 29,
+      "role": "Finance",
+      "action": "Terima pembayaran · Pakai titipan sebagian: ketik 100.000 di kotak titipan",
+      "expect": "Nominal diterima = total SO − 100.000; jurnal 1-1100 D + 2-1400 D 100.000 = 1-1200 K total; titipan tersisa Rp 150.000",
+      "ok": true,
+      "ms": 6076,
+      "info": "Kwitansi KSC/AR-00105 (Rp 3.329.723) dicatat untuk Latihan 69 · Toko Kain Peserta 69. × · titipan 150000"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "notes": [
+    "Peserta 69 · KSC/SO-00136 2673324 · KSC/SO-00137 3277275 · pelanggan Latihan 69 · Toko Kain Peserta 69",
+    "tagihan terbuka tersisa: -"
+  ]
+}

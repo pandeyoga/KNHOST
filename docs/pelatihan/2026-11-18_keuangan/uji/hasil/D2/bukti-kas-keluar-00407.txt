@@ -1,0 +1,24 @@
+Sukacita                                                                                                          PAYMENT VOUCHER
+Bukti Kas/Bank Keluar                                                                                                        No. KSC/JE-00407
+
+Tanggal                     17 November 2026                                 Sumber                     KSC/CASH-00051
+Keterangan         Kas out · Ongkos ekspedisi kirim kain ke                  Dibuat oleh                Peserta Keuangan 81
+                   Toko Kain Peserta 81 — Latihan 81
+Metode:            Cash / Tunai     ✓ Bank / Transfer           Petty Cash / Kas Kecil
+
+ AKUN                                MEMO                                                                                DEBIT                 KREDIT
+ 6-4000 — Beban                      KSC/CASH-00051 · Ongkos ekspedisi kirim kain ke Toko Kain                    Rp 1.110.000                          -
+ Operasional Lainnya                 Peserta 81 — Latihan 81
+
+ 1-1100 — Kas Besar / Bank           KSC/CASH-00051 · Ongkos ekspedisi kirim kain ke Toko Kain                              -      Rp 1.110.000
+                                     Peserta 81 — Latihan 81
+ TOTAL                                                                                                            Rp 1.110.000     Rp 1.110.000
+Terbilang: Satu juta seratus sepuluh ribu rupiah
+
+          Dibuat                      Diperiksa                   Disetujui                    Diposting                         Diterima
+
+
+
+
+ ( Peserta Keuangan 81 )          ( .................... )    ( .................... )     ( .................... )          ( .................... )
+

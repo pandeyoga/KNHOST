@@ -1,0 +1,24 @@
+Sukacita                                                                                                                  BUKTI KAS KELUAR
+Kas / Bank Keluar                                                                                                                 No. KSC/JE-00160
+
+Tanggal                     17 November 2026                                     Sumber                     KSC/CASH-00029
+Keterangan         Kas out · Ongkos ekspedisi kirim kain ke                      Dibuat oleh                Peserta Keuangan 01
+                   Toko Kain Peserta 01 — Latihan 01
+Metode:            Tunai     ✓ Bank / Transfer               Kas Kecil
+
+ AKUN                                  MEMO                                                                                     DEBIT               KREDIT
+ 6-4000 — Beban Operasional            KSC/CASH-00029 · Ongkos ekspedisi kirim kain ke Toko Kain                           Rp 310.000                        -
+ Lainnya                               Peserta 01 — Latihan 01
+
+ 1-1100 — Kas Besar / Bank             KSC/CASH-00029 · Ongkos ekspedisi kirim kain ke Toko Kain                                   -       Rp 310.000
+                                       Peserta 01 — Latihan 01
+ TOTAL                                                                                                                     Rp 310.000      Rp 310.000
+Terbilang: Tiga ratus sepuluh ribu rupiah
+
+          Dibuat                      Diperiksa                       Disetujui                    Diposting                            Diterima
+
+
+
+
+ ( Peserta Keuangan 01 )          ( .................... )        ( .................... )     ( .................... )           ( .................... )
+

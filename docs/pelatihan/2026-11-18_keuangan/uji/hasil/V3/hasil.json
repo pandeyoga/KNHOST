@@ -1,0 +1,221 @@
+{
+  "code": "V3",
+  "title": "Variasi teks rekening koran — Rekonsiliasi Bank",
+  "ok": true,
+  "at": "2026-11-17T08:24:33.463Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanggal dd/mm/yyyy (contoh panduan): Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1416,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanggal yyyy-mm-dd: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n2026-11-17,TRSF A,0000,\"1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1518,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanggal dd-mm-yyyy: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17-11-2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1332,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanggal '17 Nov 2026': Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17 Nov 2026,TRSF A,0000,\"1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1339,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanggal tanpa tahun dd/mm (gaya BCA): Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11,TRSF A,0000,\"1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1633,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal 1500000: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000,DB,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+      "ok": true,
+      "ms": 1653,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal 1.500.000 tanpa kutip: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1.500.000,CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1109,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal '1,500,000.00' (gaya Inggris): Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1,500,000.00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1491,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal '3240090.00' (titik desimal): Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,1500000.00,CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1647,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal bertanda minus tanpa DB/CR: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"-1.500.000,00\",,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+      "ok": true,
+      "ms": 1409,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Akhiran DB di kolom nominal: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"1.500.000,00 DB\",,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Keluar",
+      "ok": true,
+      "ms": 1575,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.500.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Keluar\"]"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Nominal ber-'Rp': Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n17/11/2026,TRSF A,0000,\"Rp 1.500.000,00\",CR,0",
+      "expect": "Pratinjau 1 baris: 17 Nov 2026 · Rp 1.500.000 · Masuk",
+      "ok": true,
+      "ms": 1323,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk · [\"17 Nov 2026\",\"Rp 1.500.000\",\"Masuk\"]"
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Pemisah TAB (salin dari Excel / KlikBCA): Tanggal⇥Keterangan⇥Cabang⇥Jumlah⇥DB/CR⇥Saldo\n17/11/2026⇥TRSF A⇥0000⇥1.500.000,00⇥DB⇥0\n17/11/2026⇥BIAYA ADM⇥0000⇥15.000,00⇥DB⇥0",
+      "expect": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+      "ok": true,
+      "ms": 1162,
+      "info": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+    },
+    {
+      "no": 14,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Pemisah titik koma ;: Tanggal;Keterangan;Cabang;Jumlah;DB/CR;Saldo\n17/11/2026;TRSF A;0000;1.500.000,00;DB;0\n17/11/2026;BIAYA ADM;0000;15.000,00;DB;0",
+      "expect": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+      "ok": true,
+      "ms": 1240,
+      "info": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+    },
+    {
+      "no": 15,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Kolom dipisah spasi berderet (salin dari PDF): Tanggal    Keterangan    Cabang    Jumlah    DB/CR    Saldo\n17/11/2026    TRSF A    0000    1.500.000,00    DB    0\n17/11/2026    BIAYA ADM    0000    15.000,00    DB    0",
+      "expect": "Pratinjau 2 baris keluar (1.500.000 & 15.000)",
+      "ok": true,
+      "ms": 948,
+      "info": "Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 0 · keluar Rp 1.515.000 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Keluar 17 Nov 2026 BIAYA ADM — Rp 15.000 Keluar"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Baris kosong di tengah & akhir: Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n\n<baris>\n\n",
+      "expect": "Baris kosong dilewati tanpa galat",
+      "ok": true,
+      "ms": 1144,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Kolom Debet/Kredit terpisah (gaya Mandiri) + 'Kenali otomatis': Tanggal,Keterangan,Debet,Kredit,Saldo / …,,\"1.500.000,00\",0",
+      "expect": "Dikenali template Mandiri; 1 baris Masuk 1.500.000",
+      "ok": true,
+      "ms": 1072,
+      "info": "Terbaca 1 baris memakai template Mandiri — Rekening Koran (CSV) (dikenali otomatis) · masuk Rp 1.500.000 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 17 Nov 2026 TRSF A — Rp 1.500.000 Masuk"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Kolom Debet/Kredit terpisah dengan template BCA (template salah): Tanggal,Keterangan,Debet,Kredit,Saldo + template BCA",
+      "expect": "Ditolak dengan arahan: kolom nominal tidak ditemukan, pilih template yang cocok",
+      "ok": true,
+      "ms": 1320,
+      "info": "Judul kolom: Baris judul kolom tidak dikenali — kolom nominal (jumlah / debet-kredit) tidak ditemukan. Baris pertama harus judul kolom rekening koran (tanggal, keterangan, jumlah); salin juga baris judulnya, atau pilih template yang cocok."
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Tanpa baris judul kolom: <hanya baris data>",
+      "expect": "Ditolak dengan arahan 'Baris judul kolom tidak dikenali …'",
+      "ok": true,
+      "ms": 1632,
+      "info": "Judul kolom: Baris judul kolom tidak dikenali — kolom tanggal & nominal (jumlah / debet-kredit) tidak ditemukan. Baris pertama harus judul kolom rekening koran (tanggal, keterangan, jumlah); salin juga baris judulnya, atau pilih template yang cocok."
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Campuran baris benar & rusak: tanggal 31/02, nominal 'abc', koma desimal tanpa kutip, 1 baris benar",
+      "expect": "Pratinjau 1 baris; SETIAP baris yang dilewati disebut nomor & alasannya (isi selnya)",
+      "ok": true,
+      "ms": 1244,
+      "info": "Baris data ke-1: Tanggal tidak terbaca ('31/02/2026') | Baris data ke-2: Nominal tidak terbaca / nol ('abc') | Baris data ke-3: Arah dana (masuk/keluar) tidak bisa dipastikan — sistem tidak menebak uang. Periksa kolom penanda DB/CR pada template, atau bungkus nominal dengan tanda kutip bila koma desimal membuat kolom bergeser."
+    },
+    {
+      "no": 21,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Impor 1 baris (nominal sen): 1.234,50 DB · 'VARIASI LATIHAN 64 65467'",
+      "expect": "'1 baris baru, 0 dilewati'; tersimpan keluar 1234.5, tanggal hari ini",
+      "ok": true,
+      "ms": 2735,
+      "info": "Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
+    },
+    {
+      "no": 22,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Impor (tempel) · Impor ULANG teks yang sama: (tempel lagi teks yang sama → Impor)",
+      "expect": "'0 baris baru, 1 dilewati (sudah pernah masuk)'; tidak ada baris ganda",
+      "ok": true,
+      "ms": 3394,
+      "info": "Impor BCA — Rekening Koran (CSV): 0 baris baru, 1 dilewati (sudah pernah masuk)."
+    },
+    {
+      "no": 23,
+      "role": "Finance",
+      "action": "Rekonsiliasi Bank · Ringkasan · Rekening (bersih) · Buku (bersih) · Selisih: (BCA Operasional KSC, tanpa saringan periode)",
+      "expect": "Rekening = Σ mutasi masuk − keluar (bukan 'diabaikan'); Buku = Σ kas masuk − keluar (tidak anulir, rekening ini + kas lama tanpa rekening bila rekening tunggal); Selisih = Rekening − Buku; sama dengan kartu di layar",
+      "ok": true,
+      "ms": 1865,
+      "info": "rekening Rp -3.703 · buku Rp 310.776.410 · selisih Rp -310.780.113 (layanan = hitung ulang = layar)"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

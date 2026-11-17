@@ -110,7 +110,7 @@
    "no": 7,
    "peran": "Finance",
    "menu": "Akuntansi & Pajak › Buku Besar › Jurnal",
-   "aksi": "Ketik *Latihan NN* di kotak 'Cari nomor jurnal / keterangan…' → klik baris bersumber [[Kas]] dengan keterangan 'Kas out · Ongkos ekspedisi …'",
+   "aksi": "Ketik *Latihan NN* di kotak 'Cari nomor jurnal / keterangan…' → klik baris bersumber [[Kas]] dengan keterangan 'Kas keluar · Ongkos ekspedisi …'",
    "isi": "*Cari*: Latihan NN",
    "hasil": "Rincian jurnal: 6-4000 Beban Operasional Lainnya — Debit Rp 330.000; 1-1100 Kas Besar / Bank — Kredit Rp 330.000; Total debit = kredit. Tombol [[Bukti Kas Keluar]] mencetak voucher.",
    "gambar": "uji/hasil/F09/07-jurnal-transaksi-kas.png"

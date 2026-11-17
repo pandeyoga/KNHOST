@@ -228,7 +228,16 @@ async def get_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
     if not bill:
         raise HTTPException(status_code=404, detail="Vendor Bill tidak ditemukan")
     assert_entity_access(bill, "vendor_bills", ctx)
-    return _hydrate(bill)
+    out = _hydrate(bill)
+    # Pelatihan 18 Nov (uji variasi V5) — toleransi selisih bayar supplier PT ini (`payment.variance_ap_tolerance_rupiah`)
+    # ikut dikirim supaya form Bayar pemasok bisa memberi tahu SEBELUM simpan bahwa kurang bayar receh ditutup otomatis.
+    from services.config_resolver import resolve as _resolve
+    try:
+        tol = (await _resolve("payment.variance_ap_tolerance_rupiah", {"entity_id": bill.get("entity_id") or ""}))["value"]
+        out["payment_tolerance"] = round(float(tol or 0), 2)
+    except Exception:  # noqa: BLE001 — pengaturan tak terbaca tidak boleh menggagalkan rincian tagihan
+        out["payment_tolerance"] = None
+    return out
 
 
 # ── Create ────────────────────────────────────────────────────────────────────
@@ -683,8 +692,18 @@ async def void_vendor_bill_payment(bill_id: str, payment_id: str, payload: Vendo
     # PK-21 — yang menahan hanya pencocokan nyata (`reconciled_amount`); tanda manual lama tidak bisa dilepas lagi.
     if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Kas pembayaran ini sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
+    # Pelatihan 18 Nov (uji variasi V5) — pembayaran bertanggal MAJU (mis. 15 Des) yang dibatalkan hari ini dulu dibalik
+    # bertanggal hari ini: November mendapat Dr Bank / Cr Hutang tanpa jurnal aslinya (saldo kas & hutang menggelembung
+    # sampai 15 Des). Pembalik tidak boleh sebelum jurnal aslinya (aturan yang sama dengan `gl_service.reverse_entry`):
+    # tanggal pembalik = tanggal kas asli bila masih di depan, selain itu hari ini (perilaku lama).
+    from services.book_date import tanggal_buku
     try:
-        await gl_service.preflight_posting(bill.get("entity_id", ""), now_iso())
+        tgl_kas = tanggal_buku(txn.get("txn_date")) if txn.get("txn_date") else ""
+    except ValueError:
+        tgl_kas = ""
+    tgl_balik = tgl_kas if tgl_kas and tgl_kas > tanggal_buku() else ""
+    try:
+        await gl_service.preflight_posting(bill.get("entity_id", ""), tgl_balik or now_iso())
     except gl_service.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     amount = round(float(pay.get("amount") or 0), 2)
@@ -702,7 +721,8 @@ async def void_vendor_bill_payment(bill_id: str, payment_id: str, payload: Vendo
     if txn:
         from services import cash_ledger   # PK-20 — jurnal asal dipastikan ada lewat pembuat kas
         await cash_ledger.ensure_posted(txn["id"])
-        rev = await gl_service.post_cash_void(txn["id"], label=txn.get("number", ""), created_by=actor["name"])
+        rev = await gl_service.post_cash_void(txn["id"], label=txn.get("number", ""), created_by=actor["name"],
+                                              date=tgl_balik)
         await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {
             "status": "void", "updated_at": now_iso(), "void_journal_entry_id": (rev or {}).get("id", "")}})
     await sync_po_billing(bill["po_id"])

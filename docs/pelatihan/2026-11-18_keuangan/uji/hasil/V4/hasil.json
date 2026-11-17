@@ -1,0 +1,79 @@
+{
+  "code": "V4",
+  "title": "Rencana & Denda + hitungan dihitung ulang",
+  "ok": true,
+  "at": "2026-11-17T08:22:14.771Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Piutang › Saldo & Umur · Kolom umur piutang pelanggan cicilan: Latihan 66 · Toko Kain Cicilan 66 (cicilan 1 jatuh tempo 2026-10-28, cicilan 2 2026-11-27)",
+      "expect": "Dihitung ulang: belum jatuh tempo Rp 1.688.172 · 1–30 Rp 1.688.171 · 31–60 Rp 0 · 61–90 Rp 0 · >90 Rp 0 = layanan = layar",
+      "ok": true,
+      "ms": 1770,
+      "info": "{\"current\":1688171.5,\"b1_30\":1688171,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0} · Latihan 66 · Toko Kain Cicilan 66 Ayu Marketing · telat 20 hr Terblokir Rp 1.688.172 Rp 1.688.171 — — — Rp 3.376.343 Rp 22.509 est. — belum jadi nota Buat Nota "
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Piutang › Saldo & Umur · Taksiran denda (kolom Denda): aturan 2%/bulan · tenggang 0 hr · dasar installment · batas 0% · minimum Rp 10.000",
+      "expect": "Σ (dasar × 2% × (hari telat − tenggang)/30) = Rp 22.509 (= 22508.95); layar sama",
+      "ok": true,
+      "ms": 5,
+      "info": "2026-10-28 sisa 1688171 telat 20 · 2026-11-27 sisa 1688171.5 telat 0 → 22508.95 · layar 'Rp 22.509 est. — belum jadi nota Buat Nota'"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Piutang › Saldo & Umur · [Buat Nota Denda]: (rincian pelanggan → Buat Nota Denda)",
+      "expect": "Nota USULAN = Rp 22.509, belum berjurnal; rincian hitungan menyebut tarif & hari",
+      "ok": true,
+      "ms": 2615,
+      "info": "1 nota denda siap: KSC/DN-DENDA-00002. Nota masih USULAN — belum menyentuh buku besar. · KSC/DN-DENDA-00002 22508.95 [Dasar denda Rp 1.688.171 (sisa tagihan yang telat) | Telat 20 hari − tenggang 0 hari = 20 hari kena denda | Bunga 2% / bulan × 20/30 hari → Rp 22.509]"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Piutang › Rencana & Denda · [Terbitkan] nota denda: (Antrean Denda → Terbitkan → konfirmasi)",
+      "expect": "Jurnal seimbang: piutang denda D = 4-9300 Pendapatan Denda K = Rp 22.509",
+      "ok": true,
+      "ms": 3837,
+      "info": "KSC/JE-00622: 1-1270 D22508.95 K0 · 4-9300 D0 K22508.95"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Piutang › Rencana & Denda · Ubah Jadwal · nominal cicilan 1: 1.000.000 (Σ jadwal ≠ nilai dokumen)",
+      "expect": "Label merah 'Selisih Rp …' (= nilai dokumen − Σ jadwal) dan [Simpan perubahan] mati",
+      "ok": true,
+      "ms": 5941,
+      "info": "Selisih Rp 307.580"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Piutang › Rencana & Denda · Ubah Jadwal · nominal bergaya Indonesia: cicilan 1 '2.000.000' · cicilan 2 '615.160,00'",
+      "expect": "'Sudah pas'; tersimpan persis; umur piutang & taksiran denda ikut nominal baru (dihitung ulang)",
+      "ok": true,
+      "ms": 6631,
+      "info": "jadwal 2000000 + 615160 · umur {\"current\":615160,\"b1_30\":2000000,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0} · denda 26666.67"
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Piutang › Rencana & Denda · Ubah Jadwal · jatuh tempo cicilan 2 di MASA LAMPAU: 2026-11-07",
+      "expect": "Ditolak dengan pesan ATAU diterima (aturan pemilik); bila diterima: cicilan 2 langsung telat & ikut umur/denda",
+      "ok": true,
+      "ms": 5440,
+      "info": "DITERIMA: cicilan 2 jatuh tempo 2026-11-07 → umur {\"current\":0,\"b1_30\":2615160,\"b31_60\":0,\"b61_90\":0,\"b90_plus\":0}"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "aturan denda: {\"mode\":\"draft\",\"base\":\"installment\",\"rate\":2,\"grace\":0,\"cap\":0,\"min\":10000} · kolom umur 30,60,90"
+  ]
+}

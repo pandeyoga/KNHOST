@@ -1,0 +1,124 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                              REKENING KORAN PELANGGAN
+                                                     No. CUST-0012 · 1 November 2026 – 17 November 2026
+DARI                                                                                                  KEPADA
+Sukacita Textile                                                          Latihan 02 · Toko Kain Peserta 02
+Jl. Soekarno Hatta No. 100, Bandung
+PT                  Sukacita Textile                     Periode           1 November 2026 – 17
+                                                                           November 2026
+Saldo awal          Rp 0                                 Saldo akhir          Rp 0
+
+                                                                             PEMBAYARAN /
+ TANGGAL      DOKUMEN       KETERANGAN                        TAGIHAN                                 SALDO
+                                                                                  KREDIT
+
+ 1
+ November                   Saldo awal                                                                   Rp 0
+ 2026
+
+ 17           Surat jalan   Pengakuan penjualan
+ November     KSC/          KSC/SO-00010 · KSC/            Rp 3.336.105                         Rp 3.336.105
+ 2026         SJ-00011      SJ-00011
+
+ 17           Surat jalan   Pengakuan penjualan
+ November     KSC/          KSC/SO-00011 · KSC/         Rp 3.300.862,50                       Rp 6.636.967,50
+ 2026         SJ-00012      SJ-00012
+
+ 17           Surat jalan   Pengakuan penjualan
+ November     KSC/          KSC/SO-00013 · KSC/         Rp 3.230.377,50                         Rp 9.867.345
+ 2026         SJ-00014      SJ-00014
+
+                            Titipan tunai sales ·
+ 17           Kwitansi      Titipan tunai Ayu
+ November     KSC/          Marketing · KSC/                                Rp 3.230.377,50   Rp 6.636.967,50
+ 2026         AR-00006      AR-00006 — Latihan 02
+                            · Toko Kain Peserta 02
+
+ 17           Surat jalan   Pengakuan penjualan
+ November     KSC/          KSC/SO-00014 · KSC/         Rp 3.268.672,50                         Rp 9.905.640
+ 2026         SJ-00015      SJ-00015
+
+                            Kas in · Penerimaan
+                            KSC/AR-00007 —
+ 17           Kwitansi
+                            Latihan 02 · Toko Kain
+ November     KSC/                                                          Rp 3.268.672,50   Rp 6.636.967,50
+                            Peserta 02 · Ref TRF-
+ 2026         AR-00007
+                            LTH02-00014 · Kode
+                            KN-DPKA7
+
+ 17           Surat jalan   Pengakuan penjualan
+ November     KSC/          KSC/SO-00015 · KSC/            Rp 3.287.820                       Rp 9.924.787,50
+ 2026         SJ-00016      SJ-00016
+
+                            Kas in · Penerimaan
+ 17           Kwitansi      KSC/AR-00008 —
+ November     KSC/          Latihan 02 · Toko Kain                            Rp 3.287.820    Rp 6.636.967,50
+ 2026         AR-00008      Peserta 02 · Kode KN-
+                            ZJGFP
+
+                            Kas masuk ·
+                            Penerimaan KSC/
+ 17           Kwitansi
+                            AR-00026 — Latihan 02
+ November     KSC/                                                            Rp 3.336.105    Rp 3.300.862,50
+                            · Toko Kain Peserta 02 ·
+ 2026         AR-00026
+                            Ref TRF-LATIH02-F02 ·
+                            Kode KN-QZMCH
+
+                            Kas masuk ·
+ 17           Kwitansi      Penerimaan KSC/
+ November     KSC/          AR-00027 — Latihan 02                             Rp 1.320.345    Rp 1.980.517,50
+ 2026         AR-00027      · Toko Kain Peserta 02 ·
+
+
+
+                                                                                                       Hal. 1 / 2
+                                                                        PEMBAYARAN /
+TANGGAL     DOKUMEN       KETERANGAN                       TAGIHAN                               SALDO
+                                                                             KREDIT
+                          Ref TRF-LATIH02-F03 ·
+                          Kode KN-ZMSLU
+
+                          Kas masuk ·
+                          Penerimaan KSC/
+17          Kwitansi
+                          AR-00028 — Latihan 02
+November    KSC/                                                       Rp 1.980.517,50              Rp 0
+                          · Toko Kain Peserta 02 ·
+2026        AR-00028
+                          Ref TRF-LATIH02-F04 ·
+                          Kode KN-ZMSLU
+
+17          Surat jalan   Pengakuan penjualan
+November    KSC/          KSC/SO-00041 · KSC/        Rp 3.302.527,50                     Rp 3.302.527,50
+2026        SJ-00042      SJ-00042
+
+                          Kas masuk ·
+                          Penerimaan KSC/
+17          Kwitansi
+                          AR-00029 — Latihan 02
+November    KSC/                                                       Rp 3.302.527,50              Rp 0
+                          · Toko Kain Peserta 02 ·
+2026        AR-00029
+                          Ref TRF-LATIH02-F04B
+                          · Kode KN-RENHM
+
+17
+November                  Saldo akhir                                                               Rp 0
+2026
+
+
+                                                          Saldo akhir                             Rp 0
+Catatan: Titipan dan uang muka ada di kotak Eksposur.
+
+
+
+
+                                                                                                  Hal. 2 / 2
+

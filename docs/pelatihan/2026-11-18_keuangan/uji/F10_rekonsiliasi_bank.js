@@ -156,7 +156,7 @@ const BIAYA_ADM = 15000;
     });
 
   await r.step(7, "Finance", `Cek jurnal biaya bank: Akuntansi & Pajak › Buku Besar › Jurnal → ketik "BIAYA ADM LATIHAN ${NO}" → klik baris bersumber "Kas"`,
-    `Jurnal "Kas out · Biaya bank — BIAYA ADM LATIHAN ${NO}": 6-8000 Beban Administrasi Bank Debit ${rp(BIAYA_ADM)} · 1-1100 Kas Besar / Bank Kredit ${rp(BIAYA_ADM)}. Baris yang hanya DICOCOKKAN (transfer masuk & biaya F09) tidak menerbitkan jurnal baru`, async () => {
+    `Jurnal "Kas keluar · Biaya bank — BIAYA ADM LATIHAN ${NO}": 6-8000 Beban Administrasi Bank Debit ${rp(BIAYA_ADM)} · 1-1100 Kas Besar / Bank Kredit ${rp(BIAYA_ADM)}. Baris yang hanya DICOCOKKAN (transfer masuk & biaya F09) tidak menerbitkan jurnal baru`, async () => {
       cariBaris();
       for (const id of [k.kas_id, f09.id]) {
         const c = kb.kas(id);

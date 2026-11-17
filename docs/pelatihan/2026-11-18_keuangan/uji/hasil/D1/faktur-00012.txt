@@ -1,0 +1,60 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                                                                                                  FAKTUR
+                                                          No. KSC/INV-00012 · 17 Nov 2026 · BELUM DIBAYAR
+
+             REFERENSI DOKUMEN
+             Merujuk: PICK-B2B364 · KSC/SJ-00013 · KSC/RPB-00002 · KSC/DN-DENDA-00002
+             Menurunkan Tugas Pengambilan PICK-B2B364 · Menurunkan Surat Jalan / Pengiriman KSC/
+             SJ-00013 · Menurunkan Rencana Pembayaran KSC/RPB-00002 · Menurunkan Nota Denda
+             Keterlambatan KSC/DN-DENDA-00002
+             Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).
+
+
+DARI                                                                                                          TAGIHAN KEPADA
+Sukacita Textile                                                               Latihan 02 · Toko Kain Cicilan 02
+Jl. Soekarno Hatta No. 100, Bandung                               Jl. Latihan Cicilan No. 2, Bandung, Kota Bandung
+No. Pesanan          KSC/SO-00012                              Termin Bayar          Kredit NET 30 Hari
+Penjualan
+Jatuh Tempo          28 Okt 2026                               Status Bayar          Belum dibayar
+Dicetak              17 Nov 2026
+
+ NO    SKU                                PRODUK             ROLL         JUMLAH         HARGA          DISC        SUBTOTAL
+
+       KNWVN0015-L-TAUX-                  DENIM TENCEL
+   1                                                             1    116,46 yard    Rp 25.000               0%   Rp 2.911.500
+       XA-XX-XX                           TAUPE A
+
+                                                                  DPP (harga sebelum PPN)                         Rp 2.911.500
+                                                                  DPP nilai lain (11/12)                          Rp 2.668.875
+                                                                  PPN 12% × DPP nilai lain                          Rp 320.265
+
+                                                                     Total (termasuk PPN)                    Rp 3.231.765
+                                                                  Sudah dibayar                                            Rp 0
+                                                                  Sisa tagihan                                    Rp 3.231.765
+Terbilang: Tiga juta dua ratus tiga puluh satu ribu tujuh ratus enam puluh lima rupiah
+Jatuh Tempo & Sisa Tagihan
+
+ TAGIHAN                                JATUH TEMPO                  NILAI         SUDAH DIBAYAR                          SISA
+
+ Cicilan 1 (50%)                          28 Okt 2026       Rp 1.615.882                           Rp 0           Rp 1.615.882
+
+ Cicilan 2 (pelunasan)                   27 Nov 2026        Rp 1.615.883                           Rp 0           Rp 1.615.883
+
+
+
+                     Hormat Kami                                                       Diterima
+
+
+
+
+                      ( ................. )                                          ( ................. )
+                          Finance                                                       Customer
+
+
+
+
+                                                                                                                        Hal. 1 / 1
+

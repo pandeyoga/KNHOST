@@ -77,13 +77,21 @@ export function StagePill({ stage, testId }) {
 /** Teks sisa per baris: "Sisa kembali Rp …" / "Hutang reimburse Rp …" / "" (tidak ada sisa atau tidak berizin). */
 export function sisaText(stl) {
   if (!stl) return "";
+  // Uji variasi isian (pelatihan 18 Nov) — LPJ yang belum dijurnal hanya memberi PERKIRAAN (server: `_sisa_lpj`);
+  // dulu tertulis "Hutang reimburse Rp …" seolah sudah terutang.
+  const kira = stl.status && stl.status !== "posted_to_gl";
   const parts = [];
-  if (Number(stl.refund_due) > 0) parts.push(`Sisa kembali ${formatCurrency(stl.refund_due)}`);
+  if (Number(stl.refund_due) > 0) parts.push(`${kira ? "Perkiraan sisa kembali" : "Sisa kembali"} ${formatCurrency(stl.refund_due)}`);
   if (stl.reimburse_due !== null && stl.reimburse_due !== undefined && Number(stl.reimburse_due) > 0) {
-    parts.push(`Hutang reimburse ${formatCurrency(stl.reimburse_due)}`);
+    parts.push(`${kira ? "Perkiraan hutang reimburse" : "Hutang reimburse"} ${formatCurrency(stl.reimburse_due)}`);
   }
   return parts.join(" · ");
 }
+
+/** Tombol "Bayar" baris hanya bila hutang reimburse SUDAH lahir (LPJ dijurnal). Dulu LPJ diajukan yang melebihi PD
+ *  menampilkan "Bayar" (server menolak: "tidak punya hutang reimburse terbuka") MENGGANTIKAN "Buka", sehingga manajer
+ *  tidak bisa membuka PD dari barisnya untuk menyetujui LPJ. */
+export const bolehBayarBaris = (r) => Number(r?.settlement?.reimburse_due) > 0 && r?.settlement?.status === "posted_to_gl";
 
 export default function PettyCashView({ currentUser, selectedEntity = "all", entities = [], focusDoc, onClearFocus,
   bagianAwal = "" }) {
@@ -247,7 +255,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
                   </span>);
               } },
             ]}
-            actions={(r) => (canPay && Number(r.settlement?.reimburse_due) > 0 ? (
+            actions={(r) => (canPay && bolehBayarBaris(r) ? (
               <button type="button" data-testid={`pc-pay-${r.id}`} className="primary-button btn-sm whitespace-nowrap"
                 onClick={() => setBayar(r)}><HandCoins size={13} aria-hidden="true" /> Bayar</button>
             ) : (

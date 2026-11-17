@@ -83,7 +83,7 @@ export default function CashFlowTab({ selectedEntity }) {
 
       <div className="rounded-lg border border-[#EFF0F2] p-3 mb-3 bg-[#FCFCFD] flex flex-wrap items-end gap-3">
         <div><label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Dari Tanggal</label>
-          <KNDatePicker data-testid="cf-start" className="w-[170px] text-[12px]" clearable={false} value={range.start}
+          <KNDatePicker data-testid="cf-start" className="w-[170px] text-[12px]" clearable={false} max={range.end || undefined} value={range.start}
             onChange={(v) => setRange((r) => ({ ...r, start: v }))} /></div>
         <div><label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Sampai Tanggal</label>
           <KNDatePicker data-testid="cf-end" className="w-[170px] text-[12px]" clearable={false} min={range.start} value={range.end}

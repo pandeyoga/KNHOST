@@ -1,0 +1,641 @@
+[
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon",
+    "isian": "Wizard kontrabon",
+    "masukan": "1 faktur VB-00035, tanpa ajukan langsung",
+    "harap": "draf, nilai = total faktur",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Tambah potongan",
+    "isian": "Nominal potongan",
+    "masukan": "1.387.600",
+    "harap": "ditolak: nilai bersih tidak boleh negatif",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Tambah potongan",
+    "isian": "Nominal potongan",
+    "masukan": "12.600",
+    "harap": "bersih Rp 1.275.000",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"12.600\" terbaca Rp 12,60 (satu titik = desimal, Number()) — diperbaiki MoneyInput/parseMoney"
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Jadwalkan pembayaran",
+    "isian": "Tanggal rencana",
+    "masukan": "2026-11-16 (kemarin)",
+    "harap": "diterima atau ditolak jelas",
+    "hasil": "keputusan",
+    "catatan": "diterima: scheduled_payment · rencana 2026-11-16 — tanggal rencana lampau tidak dibatasi; perlu aturan? (pemilik)"
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Catat pembayaran",
+    "isian": "Nominal dibayar",
+    "masukan": "1.275.001",
+    "harap": "ditolak sebelum simpan",
+    "hasil": "diperbaiki",
+    "catatan": "dulu ditolak server sesudah konfirmasi"
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Catat pembayaran",
+    "isian": "Nominal dibayar",
+    "masukan": "500.000 (sebagian)",
+    "harap": "sisa Rp 775.000; jurnal potongan + kas",
+    "hasil": "diperbaiki",
+    "catatan": "\"500.000\" dulu terbaca Rp 500"
+  },
+  {
+    "uji": "V6",
+    "layar": "Hutang › Kontrabon › Catat pembayaran",
+    "isian": "Nominal dibayar",
+    "masukan": "sisa Rp 775.000",
+    "harap": "lunas; Σ hutang berkurang = nilai faktur",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "Nomor Seri Faktur Pajak",
+    "masukan": "ABC-DEF",
+    "harap": "aturan bentuk = keputusan K-04",
+    "hasil": "keputusan",
+    "catatan": "DITERIMA · DB nsfp \"ABC-DEF\" · kunci \"—\" — DITERIMA tanpa peringatan → NSFP tersimpan \"ABC-DEF\" tanpa kunci kembar (nsfp_key kosong). Usul cek: 13–17 digit sesudah titik/strip/spasi dibuang (K-04)"
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "Nomor Seri Faktur Pajak",
+    "masukan": "12345",
+    "harap": "aturan bentuk = keputusan K-04",
+    "hasil": "keputusan",
+    "catatan": "DITERIMA · DB nsfp \"12345\" · kunci \"12345\" — DITERIMA tanpa peringatan (label kotak \"16 digit\"). Usul cek panjang (K-04)"
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "Nomor Seri Faktur Pajak",
+    "masukan": "01002611180000761",
+    "harap": "aturan bentuk = keputusan K-04",
+    "hasil": "keputusan",
+    "catatan": "DITERIMA · DB nsfp \"01002611180000761\" · kunci \"01002611180000761\" — diterima (format e-Faktur 17 digit = kode transaksi+status+seri) — sesuai bila K-04 memutuskan"
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "Nomor Seri Faktur Pajak",
+    "masukan": "010.026-11.18000076",
+    "harap": "aturan bentuk = keputusan K-04",
+    "hasil": "lulus",
+    "catatan": "DITERIMA · DB nsfp \"010.026-11.18000076\" · kunci \"0100261118000076\" — diterima; kunci kembar = digit saja"
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "Nomor Seri Faktur Pajak",
+    "masukan": "0100261118000076 (kembar, format lain)",
+    "harap": "ditolak: sudah dipakai",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Akuntansi & Pajak › Pajak › Faktur Keluaran",
+    "isian": "(hitung ulang)",
+    "masukan": "DPP nilai lain 11/12 × 12%",
+    "harap": "faktur = jurnal = hitung ulang",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Penjualan › Pesanan Sample (+ Terima pembayaran)",
+    "isian": "Nominal diterima",
+    "masukan": "50.000 (kurang dari total)",
+    "harap": "kwitansi Rp 50.000, SOS sebagian",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Penjualan › Pesanan Sample (+ Terima pembayaran)",
+    "isian": "Setujui Pembayaran",
+    "masukan": "uang baru Rp 50.000",
+    "harap": "diberi tahu kurang bayar sebelum setuju",
+    "hasil": "diperbaiki",
+    "catatan": "dulu disetujui tanpa info uang masuk (server tidak memeriksa kwitansi) — kini rincian & konfirmasi menyebut kekurangan"
+  },
+  {
+    "uji": "V6",
+    "layar": "Penjualan › Pesanan Sample (+ Terima pembayaran)",
+    "isian": "Nominal diterima",
+    "masukan": "33.250",
+    "harap": "lunas, setujui tanpa dialog",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V6",
+    "layar": "Penjualan › Pesanan Sample (+ Terima pembayaran)",
+    "isian": "Nominal diterima",
+    "masukan": "100.000 (lebih dari total)",
+    "harap": "kelebihan jadi deposit, jurnal seimbang",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian (slip susulan)",
+    "isian": "PPh 21 TER",
+    "masukan": "KSC/PAY-00009 bruto Rp 821.000",
+    "harap": "PPh slip = hitung ulang dengan tabel aplikasi; jurnal seimbang",
+    "hasil": "keputusan",
+    "catatan": "Dewi Manager TK0→TER A: bruto sebulan Rp 14.908.800 (3 proses sebelumnya) × 4.50% = Rp 670.896 − dipotong Rp 633.951 = Rp 36.945 (slip Rp 36.945) · KSC/JE-00166 seimbang D=K=821000 [2-1500 Hutang Insentif Penjualan D 821000 · 2-1600 Hutang Gaji K 784055 · 2-1800 Hutang PPh 21 K 36945] · MENURUT PP 58/2023 (TER A 6.00%): Rp 260.577 — selisih Rp 223.632 — tabel TER bawaan belum diverifikasi (PY-03/K-42)"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian (slip susulan)",
+    "isian": "PPh 21 TER",
+    "masukan": "KSC/PAY-00010 bruto Rp 822.000",
+    "harap": "PPh slip = hitung ulang dengan tabel aplikasi; jurnal seimbang",
+    "hasil": "lulus",
+    "catatan": "Ayu Marketing TK0→TER A: bruto sebulan Rp 8.621.400 (3 proses sebelumnya) × 1.75% = Rp 150.875 − dipotong Rp 116.991 = Rp 33.884 (slip Rp 33.884) · KSC/JE-00187 seimbang D=K=822000 [2-1500 Hutang Insentif Penjualan D 822000 · 2-1600 Hutang Gaji K 788117 · 2-1800 Hutang PPh 21 K 33884]"
+  },
+  {
+    "uji": "V7",
+    "layar": "Akuntansi › Buku Besar (2-1500)",
+    "isian": "akrual insentif",
+    "masukan": "proses reguler + susulan Oktober",
+    "harap": "Hutang Insentif nol; Beban Insentif = Σ komisi slip",
+    "hasil": "diperbaiki",
+    "catatan": "dulu akrual PT·periode disamakan dengan komisi proses TERAKHIR (services/posting_registry.py post_payroll) → Beban Insentif Okt kurang ±Rp 17,6 jt, 2-1500 bersaldo debit; data lama ikut terkoreksi saat proses gaji Oktober berikutnya diposting"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak",
+    "isian": "Bayar gaji",
+    "masukan": "KSC/PAY-00009 · BCA Operasional KSC",
+    "harap": "jurnal Hutang Gaji D / Bank K = bersih",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "40.864,50",
+    "harap": "terbaca Rp 40.864,5",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"40.864,50\" diketik menjadi \"40.86450\" (Rp 40,86) — MoneyInput/parseMoney"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "40864.5",
+    "harap": "terbaca Rp 40.864,5",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "40.864",
+    "harap": "terbaca Rp 40.864",
+    "hasil": "diperbaiki",
+    "catatan": "dulu satu titik = desimal (Rp 40,86); kini titik + 3 angka = ribuan (MoneyInput/parseMoney)"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "40,864.50",
+    "harap": "terbaca Rp 40.864,5",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"40.864,50\" diketik menjadi \"40.86450\" (Rp 40,86) — MoneyInput/parseMoney"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "Rp 40.864,50",
+    "harap": "terbaca Rp 40.864,5",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"40.864,50\" diketik menjadi \"40.86450\" (Rp 40,86) — MoneyInput/parseMoney"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "0",
+    "harap": "Nominal harus lebih dari 0.",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "",
+    "harap": "Nominal harus lebih dari 0.",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "sisa + 1.000",
+    "harap": "ditolak: melebihi sisa kewajiban",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "36.945 (sebagian dari sisa)",
+    "harap": "sisa turun tepat sebesar setoran",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Bayar gaji",
+    "isian": "Bayar gaji",
+    "masukan": "KSC/PAY-00010 bersih Rp 788.116,5",
+    "harap": "jurnal = bersih bersen",
+    "hasil": "keputusan",
+    "catatan": "jurnal benar, tetapi kalimat konfirmasi bayar gaji membulatkan sen (formatCurrency) — usul tampilkan sen"
+  },
+  {
+    "uji": "V7",
+    "layar": "SDM › Penggajian › Setoran & Pajak › Catat Setoran",
+    "isian": "Nominal (Rp)",
+    "masukan": "33.883,50",
+    "harap": "tersimpan Rp 33.883,5",
+    "hasil": "diperbaiki",
+    "catatan": "konfirmasi & kartu kini menulis sen (dulu dibulatkan: kartu \"Sisa Rp 33.884\" lalu Rp 33.884 ditolak melebihi sisa)"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1.864.800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "diperbaiki",
+    "catatan": "dulu diketik jadi \"1.864800\" = Rp 1,86 (MoneyInput, perbaikan agen Piutang)"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1864800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1,864,800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"1,864800\" → tombol mati \"Isi nominal dibayar.\""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "Rp 1.864.800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \" 1.864800\" = Rp 1,86"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "Rp1864800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1 864 800",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "diperbaiki",
+    "catatan": "pratinjau benar tetapi tombol mati (Number(\"1 864 800\") = NaN)"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1.864.800,00",
+    "harap": "terbaca Rp 1.864.800",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"1.86480000\" = Rp 1,86"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1.764.800,50",
+    "harap": "terbaca Rp 1.764.800,5",
+    "hasil": "diperbaiki",
+    "catatan": "koma sen dulu terbaca 0 (\"Isi nominal dibayar.\")"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "0",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "-500000",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "lulus",
+    "catatan": "tanda minus: ditolak"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "abc",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "lulus",
+    "catatan": "huruf tidak masuk ke kotak"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1.864.900",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "diperbaiki",
+    "catatan": "dulu DITERIMA diam-diam — kelebihan Rp 100 (≤ toleransi selisih Rp 5.000) menjadi kas keluar kedua \"uang muka supplier\" tanpa pemberitahuan"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "2.000.000",
+    "harap": "ditolak dengan alasan Indonesia",
+    "hasil": "diperbaiki",
+    "catatan": "dulu ditolak server dengan \"Pembayaran (2000000.0) melebihi sisa hutang (1864800.0) … pilih keputusan 'Kelebihan jadi uang muka supplier'\" — pilihan itu tidak ada di form"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar + Rekening sumber",
+    "masukan": "500.000 · Kas Toko KSC",
+    "harap": "sebagian Rp 500.000; sisa Rp 1.364.800; jurnal 2-1100 D / 1-1110 K",
+    "hasil": "diperbaiki",
+    "catatan": "dulu \"500.000\" terbaca Rp 500 (satu titik = desimal) — diperbaiki MoneyInput/parseMoney"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Ya, bayar (klik ganda)",
+    "masukan": "sisa Rp 1.364.800 · klik ganda",
+    "harap": "satu pembayaran, tagihan Lunas",
+    "hasil": "lulus",
+    "catatan": "kunci niat bayar (Idempotency-Key) mencegah kas ganda"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "tombol Bayar",
+    "masukan": "tagihan sudah Lunas",
+    "harap": "tidak bisa bayar lagi",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Tanggal bayar",
+    "masukan": "2026-12-15 (bulan depan)",
+    "harap": "keputusan pemilik: tanggal maju boleh?",
+    "hasil": "keputusan",
+    "catatan": "DITERIMA: konfirmasi \"Bayar Rp 100.000 ke Latihan 75 · Pemasok Grey Peserta 75 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · KSC/CASH-00142 paid_at 2026-12-15 · jurnal KSC/JE-00649 bertanggal 2026-12-15 · kalender tidak membatasi tanggal maju; jurnal kas lahir di bulan depan"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Batalkan pembayaran (tanggal maju)",
+    "masukan": "pembayaran 2026-12-15 dibatalkan hari ini",
+    "harap": "jurnal pembalik bertanggal sama dengan jurnal asli",
+    "hasil": "diperbaiki",
+    "catatan": "dulu pembalik bertanggal HARI INI (Nov) sedangkan aslinya Des → saldo Bank & Hutang November menggelembung; diperbaiki routers/vendor_bills.py void_vendor_bill_payment"
+  },
+  {
+    "uji": "V5",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Nominal dibayar",
+    "masukan": "1.864.000 (kurang Rp 800)",
+    "harap": "sisa Rp 800 tetap hutang, atau form memberi tahu selisih receh dihapus",
+    "hasil": "diperbaiki",
+    "catatan": "dulu: selisih ≤ toleransi Rp 5.000 (payment.variance_ap_tolerance_rupiah) DIHAPUS otomatis (tagihan Lunas, jurnal selisih) padahal form menulis \"sisanya tetap hutang\""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"KSC/AR-00090\"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "1 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"ksc/ar-00090\"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "1 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"AR-00090\"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "1 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"00090\"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "7 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"  KSC/AR-00090  \"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "1 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"je-00597\"",
+    "harap": "KSC/JE-00597 ditemukan",
+    "hasil": "lulus",
+    "catatan": "1 jurnal · KSC/JE-00597 tampil"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Jurnal",
+    "isian": "Cari",
+    "masukan": "\"zzz-tidak-ada\"",
+    "harap": "kosong, pesan jelas",
+    "hasil": "lulus",
+    "catatan": "0 jurnal · Tidak ada jurnal yang cocok dengan “zzz-tidak-ada”."
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Buku Besar",
+    "isian": "Akun + rentang",
+    "masukan": "1-1200 · 2026-11-01 s/d 2026-11-17",
+    "harap": "saldo akhir = jurnal",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Buku Besar",
+    "isian": "Dari > Sampai",
+    "masukan": "besok s/d hari ini",
+    "harap": "tidak bisa dipilih",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Buku Besar › Neraca Saldo",
+    "isian": "Per tanggal",
+    "masukan": "2026-11-17 dan 2026-10-31",
+    "harap": "total = hitung ulang jurnal",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Laba-Rugi",
+    "isian": "Rentang tanggal",
+    "masukan": "2026-10-01 s/d 2026-10-31",
+    "harap": "= jurnal Oktober",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Laba-Rugi",
+    "isian": "Rentang tanggal",
+    "masukan": "2026-11-17 s/d 2026-11-17",
+    "harap": "= jurnal satu hari",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Laba-Rugi / Arus Kas / Perubahan Ekuitas",
+    "isian": "Dari > Sampai",
+    "masukan": "2026-11-05 s/d 2026-10-31",
+    "harap": "tidak bisa dipilih / ditolak jelas",
+    "hasil": "diperbaiki",
+    "catatan": "dulu kalender 'Dari' tanpa batas → laporan Rp 0 semua tanpa pesan; kini max = Sampai (3 tab) + server 400"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Neraca",
+    "isian": "Per tanggal",
+    "masukan": "2026-11-17",
+    "harap": "A = L + E = jurnal",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Neraca",
+    "isian": "Per tanggal",
+    "masukan": "2026-10-31",
+    "harap": "A = L + E = jurnal",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Laporan › Arus Kas",
+    "isian": "Rentang tanggal",
+    "masukan": "Oktober; 1 Jan – hari ini",
+    "harap": "kas akhir = jurnal kas",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Hutang › Tagihan › Bayar pemasok",
+    "isian": "Tanggal bayar",
+    "masukan": "2026-09-15 (periode tertutup)",
+    "harap": "ditolak, tidak ada yang berubah",
+    "hasil": "lulus",
+    "catatan": ""
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Tutup Buku › Buka Periode",
+    "isian": "Alasan (wajib)",
+    "masukan": "kosong; spasi saja",
+    "harap": "ditolak",
+    "catatan": "alasan 1 huruf masih diterima (server hanya cek tidak kosong) — usul minimal 5 huruf seperti alasan pembalikan jurnal (keputusan pemilik)",
+    "hasil": "lulus"
+  },
+  {
+    "uji": "V8",
+    "layar": "Akuntansi & Pajak › Tutup Buku › Riwayat › Buka Kembali",
+    "isian": "Alasan",
+    "masukan": "(tidak diminta)",
+    "harap": "buka kembali beralasan wajib?",
+    "hasil": "keputusan",
+    "catatan": "Periode September 2026 dibuka kembali (jurnal penutup dianulir). ✕ · isian alasan di dialog: TIDAK ADA — usul: wajibkan alasan ≥ 5 huruf & simpan di riwayat (sama dengan pembalikan jurnal)"
+  }
+]

@@ -1,0 +1,248 @@
+{
+  "code": "V2",
+  "title": "Variasi isian — Kas Kecil, Transaksi Kas, Titipan Sales",
+  "ok": true,
+  "at": "2026-11-17T08:17:55.522Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Kas Kecil · LPJ · Nominal baris LPJ: 185.000,50 dan 47.000 (dua nota)",
+      "expect": "Total Pengeluaran Rp 232.001 (232.000,50); Sisa Rp 268.000; LPJ tersimpan persis 232.000,50",
+      "ok": true,
+      "ms": 8122,
+      "info": "KSC/STL-00004 · total 232000.5 · sisa 267999.5"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Kas Kecil · LPJ · Tombol [Ajukan] tanpa foto nota: (tidak ada lampiran)",
+      "expect": "Pengaturan 'finance.lpj_wajib_lampiran' MENYALA → ditolak 'Lampirkan minimal satu bukti …'; MATI (bawaan) → LPJ terajukan tanpa bukti",
+      "ok": true,
+      "ms": 152,
+      "info": "MATI → LPJ diajukan tanpa lampiran"
+    },
+    {
+      "no": 3,
+      "role": "Finance + Manajer",
+      "action": "Kas Kecil · LPJ · LPJ disetujui manajer → jurnal: lampirkan nota → Ajukan → manager Setujui & Posting GL",
+      "expect": "Jurnal: 6-4600 D 185.000,50 · 6-4300 D 47.000 · 1-1400 K 232.000,50 (seimbang)",
+      "ok": true,
+      "ms": 11725,
+      "info": "KSC/JE-00600: 6-4600 Beban Transportasi & BBM (D) Rp 185.001 · 6-4300 Beban Cetak, Fotokopi & Materai (D) Rp 47.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 232.001"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Kas Kecil · LPJ · Terima pengembalian sisa (nominal sen): sisa Rp 268.000 (267.999,50)",
+      "expect": "Kas masuk persis 267.999,50; uang muka PD bersih 0; saldo Kas Toko = hitung ulang (saldo awal + Σ masuk − Σ keluar)",
+      "ok": true,
+      "ms": 9861,
+      "info": "Terima Rp 268.000 dari Ayu Marketing ke Kas Toko KSC · Sukacita Textile? Kas masuk ke reke · uang muka bersih 0 · saldo Kas Toko Rp 40.927.744 (hitung ulang = layar)"
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Kas Kecil · LPJ · Nominal baris LPJ: baris 2 diketik -5.000",
+      "expect": "Ditolak: 'Periksa baris 2: nominal tidak boleh minus.'; tidak ada LPJ",
+      "ok": true,
+      "ms": 6026,
+      "info": "Periksa baris 2: nominal tidak boleh minus. ×"
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Kas Kecil · LPJ · Baris beruraian tanpa nominal: baris 2 'Parkir' nominal kosong",
+      "expect": "Ditolak: 'Periksa baris 2: isi nominalnya atau hapus barisnya.'",
+      "ok": true,
+      "ms": 641,
+      "info": "Periksa baris 2: isi nominalnya atau hapus barisnya. ×"
+    },
+    {
+      "no": 7,
+      "role": "Finance + Manajer",
+      "action": "Kas Kecil · LPJ · LPJ melebihi PD + uraian kosong: baris 1 (uraian kosong) 400.000 · baris 2 'Parkir' 150.000,00 (Σ 550.000 > PD 500.000)",
+      "expect": "Form: 'Kekurangan Dana Rp 50.000'; daftar manajer: 'Perkiraan hutang reimburse Rp 50.000' + tombol [Buka]; disetujui → jurnal beban D 550.000 = 1-1400 K 500.000 + 2-1650 Hutang Reimburse K 50.000",
+      "ok": true,
+      "ms": 14764,
+      "info": "KSC/STL-00005 · KSC/JE-00604: 6-4600 Beban Transportasi & BBM (D) Rp 550.000 · 1-1400 Uang Muka & Biaya Dibayar Dimuka (K) Rp 500.000 · 2-1650 Hutang Reimburse Karyawan (K) Rp 50.000"
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori operasional · Keluar · Nominal: 12.345,50",
+      "expect": "Kas tersimpan persis 12345.5; jurnal 6-4000 D / 1-1110 K",
+      "ok": true,
+      "ms": 5694,
+      "info": "KSC/JE-00607: 6-4000 Beban Operasional Lainnya (D) Rp 12.346 · 1-1110 Kas Kecil (K) Rp 12.346"
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori operasional · Masuk · Nominal: 12345",
+      "expect": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-9999 K",
+      "ok": true,
+      "ms": 5196,
+      "info": "KSC/JE-00608: 1-1110 Kas Kecil (D) Rp 12.345 · 1-9999 Akun Sementara (Suspense) (K) Rp 12.345"
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori pembelian · Keluar · Nominal: Rp 1.250",
+      "expect": "Kas tersimpan persis 1250; jurnal 1-1300 D / 1-1110 K",
+      "ok": true,
+      "ms": 5586,
+      "info": "KSC/JE-00609: 1-1300 Persediaan Barang (D) Rp 1.250 · 1-1110 Kas Kecil (K) Rp 1.250"
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori pembelian · Masuk · Nominal: 1,500,000",
+      "expect": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 1-9999 K",
+      "ok": true,
+      "ms": 6022,
+      "info": "KSC/JE-00610: 1-1110 Kas Kecil (D) Rp 1.500.000 · 1-9999 Akun Sementara (Suspense) (K) Rp 1.500.000"
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori gaji · Keluar · Nominal: 2.000",
+      "expect": "Kas tersimpan persis 2000; jurnal 6-1000 D / 1-1110 K",
+      "ok": true,
+      "ms": 5403,
+      "info": "KSC/JE-00611: 6-1000 Beban Gaji (D) Rp 2.000 · 1-1110 Kas Kecil (K) Rp 2.000"
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori gaji · Masuk · Nominal: 3.374.122,50",
+      "expect": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+      "ok": true,
+      "ms": 6072,
+      "info": "KSC/JE-00612: 1-1110 Kas Kecil (D) Rp 3.374.123 · 1-9999 Akun Sementara (Suspense) (K) Rp 3.374.123"
+    },
+    {
+      "no": 14,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori transfer · Keluar · Nominal: 12.345,50",
+      "expect": "Kas tersimpan persis 12345.5; jurnal 1-1150 D / 1-1110 K",
+      "ok": true,
+      "ms": 5711,
+      "info": "KSC/JE-00613: 1-1150 Kas & Bank Transit (Dana Dalam Perjalanan) (D) Rp 12.346 · 1-1110 Kas Kecil (K) Rp 12.346"
+    },
+    {
+      "no": 15,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori transfer · Masuk · Nominal: 12345",
+      "expect": "Kas tersimpan persis 12345; jurnal 1-1110 D / 1-1150 K",
+      "ok": true,
+      "ms": 5476,
+      "info": "KSC/JE-00614: 1-1110 Kas Kecil (D) Rp 12.345 · 1-1150 Kas & Bank Transit (Dana Dalam Perjalanan) (K) Rp 12.345"
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori modal · Keluar · Nominal: Rp 1.250",
+      "expect": "Kas tersimpan persis 1250; jurnal 6-4000 D / 1-1110 K",
+      "ok": true,
+      "ms": 5479,
+      "info": "KSC/JE-00615: 6-4000 Beban Operasional Lainnya (D) Rp 1.250 · 1-1110 Kas Kecil (K) Rp 1.250"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori modal · Masuk · Nominal: 1,500,000",
+      "expect": "Kas tersimpan persis 1500000; jurnal 1-1110 D / 3-1000 K",
+      "ok": true,
+      "ms": 5232,
+      "info": "KSC/JE-00616: 1-1110 Kas Kecil (D) Rp 1.500.000 · 3-1000 Modal Disetor (K) Rp 1.500.000"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori lain · Keluar · Nominal: 2.000",
+      "expect": "Kas tersimpan persis 2000; jurnal 6-4000 D / 1-1110 K",
+      "ok": true,
+      "ms": 5138,
+      "info": "KSC/JE-00617: 6-4000 Beban Operasional Lainnya (D) Rp 2.000 · 1-1110 Kas Kecil (K) Rp 2.000"
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kategori lain · Masuk · Nominal: 3.374.122,50",
+      "expect": "Kas tersimpan persis 3374122.5; jurnal 1-1110 D / 1-9999 K",
+      "ok": true,
+      "ms": 5607,
+      "info": "KSC/JE-00618: 1-1110 Kas Kecil (D) Rp 3.374.123 · 1-9999 Akun Sementara (Suspense) (K) Rp 3.374.123"
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Transaksi Kas · Nominal: -100",
+      "expect": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+      "ok": true,
+      "ms": 5087,
+      "info": "Nominal harus lebih dari 0."
+    },
+    {
+      "no": 21,
+      "role": "Finance",
+      "action": "Transaksi Kas · Nominal: abc",
+      "expect": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+      "ok": true,
+      "ms": 3357,
+      "info": "Nominal harus lebih dari 0."
+    },
+    {
+      "no": 22,
+      "role": "Finance",
+      "action": "Transaksi Kas · Nominal: 0",
+      "expect": "Pesan di dalam pop-up: 'Nominal harus lebih dari 0.'; tidak ada transaksi",
+      "ok": true,
+      "ms": 3624,
+      "info": "Nominal harus lebih dari 0."
+    },
+    {
+      "no": 23,
+      "role": "Finance",
+      "action": "Transaksi Kas · Kas keluar MELEBIHI saldo Kas Toko: saldo + 1.000.000",
+      "expect": "Ditolak 'saldo tidak cukup' ATAU tercatat (aturan pemilik)",
+      "ok": true,
+      "ms": 21501,
+      "info": "TERCATAT KSC/CASH-00121 Rp 51.169.488 → saldo Kas Toko Rp -1.000.000 · dianulir admin → saldo Rp 50.169.488"
+    },
+    {
+      "no": 24,
+      "role": "Finance",
+      "action": "Rekening & Saldo · Saldo Kas Toko KSC: (hitung ulang sesudah semua transaksi)",
+      "expect": "Saldo di layar = saldo awal + Σ kas masuk − Σ kas keluar (tidak anulir)",
+      "ok": true,
+      "ms": 1857,
+      "info": "Rp 50.169.488 · Kas Toko KSC Kas tunai Kas kecil Rp 50.169.488 Rp 32.081.870 Rp 6.912.382 38 tra"
+    },
+    {
+      "no": 25,
+      "role": "Finance",
+      "action": "Titipan Sales · Jumlah setoran saat diterima Finance: (tidak bisa diubah di layar)",
+      "expect": "Form 'Terima setoran' menampilkan Jumlah = setoran (teks, bukan isian) — Finance tidak bisa menerima nominal lain",
+      "ok": true,
+      "ms": 1451,
+      "info": "Jumlah Rp 3.455.708 (teks)"
+    },
+    {
+      "no": 26,
+      "role": "Sales",
+      "action": "Titipan Sales (HP sales) · Jumlah disetor: titipan + 1.000.000 (lewat API akun sales)",
+      "expect": "Ditolak dengan pesan Indonesia (melebihi titipan yang dipegang)",
+      "ok": true,
+      "ms": 330,
+      "info": "400: \"Setoran melebihi tunai yang Anda pegang (Rp 0).\""
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

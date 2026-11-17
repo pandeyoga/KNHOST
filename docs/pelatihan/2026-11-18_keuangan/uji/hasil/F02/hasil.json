@@ -2,7 +2,7 @@
   "code": "F02",
   "title": "Terima pelunasan penuh — transfer bank",
   "ok": true,
-  "at": "2026-11-17T06:25:15.062Z",
+  "at": "2026-11-17T09:11:15.736Z",
   "base": "http://localhost:3000",
   "steps": [
     {
@@ -11,17 +11,17 @@
       "action": "Masuk dengan akun peserta → Perlu Tindakan · kartu 'Uang masuk perlu dicatat'",
       "expect": "Kartu 'Uang masuk perlu dicatat' tampil di Perlu Tindakan",
       "ok": true,
-      "ms": 4027,
-      "info": "finance.latih01@kainnusantara.id"
+      "ms": 4146,
+      "info": "finance.latih02@kainnusantara.id"
     },
     {
       "no": 2,
       "role": "Finance",
       "action": "Keuangan › Piutang › tab Penagihan & Penerimaan — cari baris SO",
-      "expect": "Baris KSC/SO-00004: Belum Lunas Rp 3.374.123, jatuh tempo ±30 hari lagi",
+      "expect": "Baris KSC/SO-00010: Belum Lunas Rp 3.336.105, jatuh tempo ±30 hari lagi",
       "ok": true,
-      "ms": 2187,
-      "info": "Latihan 01 · Toko Kain Peserta 01 Ayu Marketing KSC/SO-00004 Rp 3.374.123 17 Des 2026 30h Lagi"
+      "ms": 2272,
+      "info": "Latihan 02 · Toko Kain Peserta 02 Ayu Marketing KSC/SO-00010 Rp 3.336.105 17 Des 2026 30h Lagi"
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "Klik ikon dompet [Terima pembayaran] pada baris SO",
       "expect": "Form 'Terima pembayaran' terbuka: alokasi 'Atur sendiri' terisi sisa SO, rekening BCA Operasional KSC terkunci",
       "ok": true,
-      "ms": 1748,
-      "info": "alokasi 3374122.5 · REKENING PENERIMA BCA Operasional KSC · BCA 7415595554 Satu-satunya rekening penerimaan PT ini untuk cara bayar ini."
+      "ms": 1626,
+      "info": "alokasi 3336105 · REKENING PENERIMA BCA Operasional KSC · BCA 7415595554 Satu-satunya rekening penerimaan PT ini untuk cara bayar ini."
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Ketik nominal sesuai mutasi bank (rupiah bulat) di kotak alokasi SO, isi No. referensi, klik [Simpan kwitansi]",
       "expect": "Kotak alokasi tetap = sisa tagihan persis (tidak bisa melebihi); 'Nominal sesuai tagihan — tidak ada selisih'",
       "ok": true,
-      "ms": 1918,
-      "info": "ketik 3374123 → tersimpan 3374122.5 · Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan."
+      "ms": 1768,
+      "info": "ketik 3336105 → tersimpan 3336105 · Nominal sesuai tagihan — tidak ada selisih yang perlu diputuskan."
     },
     {
       "no": 5,
@@ -47,17 +47,17 @@
       "action": "Periksa kalimat konfirmasi → klik [Ya, simpan]",
       "expect": "Konfirmasi 'Catat penerimaan Rp … dari Latihan NN … ke BCA Operasional KSC … untuk Sukacita?'; lalu pesan hijau 'Kwitansi KSC/AR-… (Rp …) dicatat …' dan baris SO hilang",
       "ok": true,
-      "ms": 2970,
-      "info": "Catat penerimaan Rp 3.374.123 dari Latihan 01 · Toko Kain Peserta 01 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? → Kwitansi KSC/AR-00021 (Rp 3.374.123) dicatat untuk Latihan 01 · Toko Kain Peserta 01. ×"
+      "ms": 2610,
+      "info": "Catat penerimaan Rp 3.336.105 dari Latihan 02 · Toko Kain Peserta 02 ke BCA Operasional KSC · BCA 7415595554 untuk Sukacita? → Kwitansi KSC/AR-00026 (Rp 3.336.105) dicatat untuk Latihan 02 · Toko Kain Peserta 02. ×"
     },
     {
       "no": 6,
       "role": "Finance",
       "action": "Cek buku: SO lunas, piutang 0",
-      "expect": "KSC/SO-00004: status bayar Lunas, sisa Rp 0",
+      "expect": "KSC/SO-00010: status bayar Lunas, sisa Rp 0",
       "ok": true,
-      "ms": 1910,
-      "info": "KSC/AR-00021 · status bayar paid"
+      "ms": 1908,
+      "info": "KSC/AR-00026 · status bayar paid"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Di Riwayat Pembayaran (AR) cari nomor kwitansi, klik label [Jurnal Terbit]",
       "expect": "Jurnal terbuka: 1-1100 Kas Besar / Bank (Debit) dan 1-1200 Piutang Usaha (Kredit) sama besar = nominal kwitansi",
       "ok": true,
-      "ms": 3170,
-      "info": "KSC/JE-00149: 1-1100 D3374122.5 K0 · 1-1200 D0 K3374122.5"
+      "ms": 3134,
+      "info": "KSC/JE-00167: 1-1100 D3336105 K0 · 1-1200 D0 K3336105"
     }
   ],
   "http_5xx": [],
@@ -74,6 +74,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 01 · KSC/SO-00004 · total 3374122.5 · sisa 3374122.5"
+    "Peserta 02 · KSC/SO-00010 · total 3336105 · sisa 3336105"
   ]
 }

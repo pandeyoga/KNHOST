@@ -1,0 +1,15 @@
+--- a/backend/routers/hr_payroll.py	2026-11-17 08:01:10.948112173 +0000
++++ b/backend/routers/hr_payroll.py	2026-11-17 08:01:10.964918459 +0000
+@@ -574,8 +574,10 @@
+         raise HTTPException(status_code=404, detail="Slip gaji tidak ditemukan.")
+     if not await _can_view_slip(request, user, slip):
+         raise HTTPException(status_code=403, detail="Tidak berwenang melihat slip ini.")
+-    ent = await db.business_entities.find_one({"id": slip.get("entity_id")}, {"_id": 0, "name": 1})
+-    pdf = payslip_pdf_bytes(slip, (ent or {}).get("name", "Kain Nusantara"))
++    # Pelatihan 18 Nov (audit dokumen cetak) — Profil PT tidak punya field `name`: slip selalu berkop "Kain Nusantara".
++    ent = await db.business_entities.find_one({"id": slip.get("entity_id")},
++                                              {"_id": 0, "print_name": 1, "legal_name": 1, "short_name": 1}) or {}
++    pdf = payslip_pdf_bytes(slip, ent.get("print_name") or ent.get("legal_name") or ent.get("short_name") or "Kain Nusantara")
+     fname = f"slip-{slip.get('number', slip_id)}.pdf"
+     return StreamingResponse(iter([pdf]), media_type="application/pdf",
+                              headers={"Content-Disposition": f"inline; filename={fname}"})

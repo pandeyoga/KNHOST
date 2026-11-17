@@ -30,6 +30,12 @@ import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "..
 import { askConfirm, askReason } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate, formatPeriod, todayWib } from "../../utils/formatters";
+
+// Pelatihan 18 Nov (uji variasi V7) — kewajiban/sisa/setoran PPh 21 bisa bersen (mis. Rp 33.883,50). `formatCurrency`
+// membulatkan ke rupiah: kartu menulis "Sisa Rp 33.884" lalu nominal Rp 33.884 yang diketik ditolak "melebihi sisa
+// kewajiban (Rp 33.884)". Di layar setoran nominal ditulis dengan sennya (bilangan bulat = sama dengan formatCurrency).
+const rpSen = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0,
+  maximumFractionDigits: 2 }).format(Number(n) || 0);
 import { entityFullById } from "../../utils/entityLabel";
 import { moneyPost } from "../../utils/moneyRequest";
 import useIntentKey from "../../hooks/useIntentKey";
@@ -130,7 +136,7 @@ export function galatForm(f, sisa) {
   const n = parseDecimal(f.amount);
   if (!f.kind || !f.period) return "Pilih jenis dan masa.";
   if (!(n > 0)) return "Nominal harus lebih dari 0.";
-  if (sisa != null && n > sisa + 0.005) return `Nominal melebihi sisa kewajiban (${formatCurrency(sisa)}).`;
+  if (sisa != null && n > sisa + 0.005) return `Nominal melebihi sisa kewajiban (${rpSen(sisa)}).`;
   if (!f.paid_date) return "Isi tanggal setor.";
   return "";
 }
@@ -148,9 +154,9 @@ function KartuKewajiban({ item, testId }) {
         )}
       </div>
       <dl className="grid grid-cols-3 gap-2 text-fs-12">
-        <div><dt className="text-kn-text-2">Kewajiban</dt><dd className="text-fs-14 font-semibold tabular-nums" data-testid={`${testId}-kewajiban`}>{formatCurrency(item.kewajiban)}</dd></div>
-        <div><dt className="text-kn-text-2">Sudah disetor</dt><dd className="text-fs-14 font-semibold tabular-nums" data-testid={`${testId}-disetor`}>{formatCurrency(item.disetor)}</dd></div>
-        <div><dt className="text-kn-text-2">Sisa</dt><dd className={`text-fs-14 font-bold tabular-nums ${lunas ? "text-kn-success-text" : "text-kn-warning-text"}`} data-testid={`${testId}-sisa`}>{formatCurrency(item.sisa)}</dd></div>
+        <div><dt className="text-kn-text-2">Kewajiban</dt><dd className="text-fs-14 font-semibold tabular-nums" data-testid={`${testId}-kewajiban`}>{rpSen(item.kewajiban)}</dd></div>
+        <div><dt className="text-kn-text-2">Sudah disetor</dt><dd className="text-fs-14 font-semibold tabular-nums" data-testid={`${testId}-disetor`}>{rpSen(item.disetor)}</dd></div>
+        <div><dt className="text-kn-text-2">Sisa</dt><dd className={`text-fs-14 font-bold tabular-nums ${lunas ? "text-kn-success-text" : "text-kn-warning-text"}`} data-testid={`${testId}-sisa`}>{rpSen(item.sisa)}</dd></div>
       </dl>
     </div>
   );
@@ -214,7 +220,7 @@ export default function PayrollRemittancesView() {
   const simpan = async () => {
     const g = galatForm(form, form.period === period ? sisaOf(form.kind) : null);
     if (g) { setFormErr(g); return; }
-    const nominal = formatCurrency(parseDecimal(form.amount));
+    const nominal = rpSen(parseDecimal(form.amount));
     const ok = await askConfirm({
       title: `Catat setoran ${KIND_LABEL[form.kind]} ${nominal}?`,
       message: `Setoran ${KIND_LABEL[form.kind]} masa ${formatPeriod(form.period)} sebesar ${nominal} untuk ${pt}. `
@@ -240,7 +246,7 @@ export default function PayrollRemittancesView() {
 
   // PY-T4 — batalkan setoran yang salah catat: alasan wajib; kas setoran dibatalkan, jurnalnya dibalik (tanggal setor).
   const batalkan = async (d) => {
-    const nominal = formatCurrency(Number(d.amount));
+    const nominal = rpSen(Number(d.amount));
     const reason = await askReason({
       title: `Batalkan setoran ${d.number}?`,
       description: `Setoran ${KIND_LABEL[d.kind] || ""} masa ${formatPeriod(d.period)} sebesar ${nominal} untuk ${pt}. `
@@ -336,7 +342,7 @@ export default function PayrollRemittancesView() {
                         <td className="whitespace-nowrap"><span className="font-mono">{d.number}</span>
                           <span className="block text-fs-12 text-kn-text-2">{KIND_LABEL[d.kind] || "—"}</span></td>
                         <td className="whitespace-nowrap">{formatDate(d.paid_date)}</td>
-                        <td className="text-right tabular-nums whitespace-nowrap">{formatCurrency(d.amount)}</td>
+                        <td className="text-right tabular-nums whitespace-nowrap">{rpSen(d.amount)}</td>
                         <td className="max-w-[140px] break-words">{d.reference || "—"}</td>
                         <td><span className={`status-pill ${st.cls} inline-flex items-center gap-1 whitespace-nowrap`} data-testid={`remit-row-status-${d.id}`}>
                           <st.Icon size={12} aria-hidden="true" />{st.label}</span></td>
@@ -371,7 +377,7 @@ export default function PayrollRemittancesView() {
             <KNSelect data-testid="remit-form-period" value={form.period} className="field" onValueChange={(v) => ubah({ period: v })} options={monthOpts} /></div>
           <div><label className="field-label">Nominal (Rp) <span className="req">*</span></label>
             <MoneyInput testId="remit-form-amount" className="field" value={form.amount || ""} onChange={(v) => ubah({ amount: v })} />
-            {form.period === period && sisaOf(form.kind) != null && <p className="text-fs-12 text-kn-text-2 mt-1">Sisa kewajiban: {formatCurrency(sisaOf(form.kind))}</p>}</div>
+            {form.period === period && sisaOf(form.kind) != null && <p className="text-fs-12 text-kn-text-2 mt-1">Sisa kewajiban: {rpSen(sisaOf(form.kind))}</p>}</div>
           <div><label className="field-label">Tanggal setor <span className="req">*</span></label>
             <KNDatePicker data-testid="remit-form-date" value={form.paid_date || ""} onChange={(v) => ubah({ paid_date: v })} clearable={false} />
             <p className="text-fs-12 text-kn-text-2 mt-1">Tanggal ini menjadi tanggal jurnal.</p></div>

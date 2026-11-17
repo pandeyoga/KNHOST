@@ -29,7 +29,9 @@ import { useEntityScope } from "../../context/EntityScopeContext";
 import TransferListPanel from "./TransferListPanel";
 import { runTypeLabel } from "./payrollUtils";
 
-const PAGE_SIZE = 20;
+// Pelatihan 18 Nov (uji variasi V7) — 20 baris: dengan ±20 peserta (proses susulan masing-masing) + proses reguler, proses
+// peserta pindah ke halaman 2 tanpa kotak cari dan tidak terlihat. Antrean gaji per PT jarang panjang; 50 = bawaan server.
+const PAGE_SIZE = 50;
 export const TEKS_PILIH_PT = "Pilih satu PT dulu.";
 export const TEKS_TANPA_REKENING_GAJI = "Belum ada rekening berperuntukan Gaji di PT ini. Atur di Keuangan › Kas & Bank › Rekening & Saldo.";
 export const TEKS_ANTREAN_KOSONG = "Tidak ada penggajian yang menunggu dibayar.";

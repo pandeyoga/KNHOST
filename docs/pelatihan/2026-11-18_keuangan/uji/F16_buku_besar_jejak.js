@@ -46,7 +46,7 @@ const NO = peserta("05");
       });
 
     await r.step(2, "Finance", `Ketik nomor kwitansi ${j.kwitansi} di kotak *Cari nomor jurnal / keterangan…*`,
-      `Tinggal satu baris: ${jeRcp} · sumber 'Transaksi Kas' ${j.kas} · keterangan 'Kas in · Penerimaan ${j.kwitansi} — Latihan ${NO} …' · nilai ${rp(j.total)} · Terposting`,
+      `Tinggal satu baris: ${jeRcp} · sumber 'Transaksi Kas' ${j.kas} · keterangan 'Kas masuk · Penerimaan ${j.kwitansi} — Latihan ${NO} …' · nilai ${rp(j.total)} · Terposting`,
       async () => {
         await r.tid("gl-journal-search").fill(j.kwitansi);
         await r.page.waitForFunction((n) => {

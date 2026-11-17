@@ -138,7 +138,7 @@
    "menu": "Jurnal (pop-up Buku Besar)",
    "aksi": "Baca jurnal penerimaan → [[Tutup]]",
    "isi": "",
-   "hasil": "'Jurnal KSC/JE-…' · 'Kas in · Penerimaan KSC/AR-… — Latihan NN … · Ref TRF-LATIHNN-F02'; Dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'; baris 1-1100 Kas Besar / Bank Debit Rp 3.359.693 dan 1-1200 Piutang Usaha Kredit Rp 3.359.693; Total Debit = Total Kredit.",
+   "hasil": "'Jurnal KSC/JE-…' · 'Kas masuk · Penerimaan KSC/AR-… — Latihan NN … · Ref TRF-LATIHNN-F02'; Dokumen sumber 'Transaksi Kas / Bank KSC/CASH-…'; baris 1-1100 Kas Besar / Bank Debit Rp 3.359.693 dan 1-1200 Piutang Usaha Kredit Rp 3.359.693; Total Debit = Total Kredit.",
    "gambar": "uji/hasil/F02/10-jurnal-kwitansi.png"
   }
  ],

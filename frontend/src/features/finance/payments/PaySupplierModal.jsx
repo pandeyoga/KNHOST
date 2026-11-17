@@ -24,6 +24,7 @@ import MoneyInput from "../../../components/MoneyInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
+import { parseDecimal } from "../../../utils/decimalInput";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
@@ -46,7 +47,36 @@ export function payBody({ amount, method, paidAt, accountId, notes = "" }) {
 
 /** Kalimat konfirmasi N5 (persis spesifikasi). */
 export const payConfirmText = ({ amount, supplier, account, pt }) =>
-  `Bayar ${formatCurrency(amount)} ke ${supplier || "pemasok"} dari ${account} untuk ${pt}?`;
+  `Bayar ${rpSen(amount)} ke ${supplier || "pemasok"} dari ${account} untuk ${pt}?`;
+
+/** Pelatihan 18 Nov (uji variasi V5) — rupiah dengan sen bila ada ("Rp 1.764.800,5"); bilangan bulat sama persis dengan
+ *  `formatCurrency`. Dipakai di form ini supaya konfirmasi & pesan tidak membulatkan nominal yang diketik. */
+export const rpSen = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0,
+  maximumFractionDigits: 2 }).format(Number(n) || 0);
+
+/**
+ * Pelatihan 18 Nov (uji variasi V5) — periksa nominal yang DIKETIK terhadap sisa hutang (bukan dari mutasi bank).
+ *  · `blok`: alasan tombol Bayar mati — nominal > sisa. Dulu kelebihan ≤ toleransi selisih (bawaan Rp 5.000) diterima
+ *    diam-diam menjadi kas keluar kedua "uang muka supplier"; kelebihan di atasnya ditolak server dengan angka mentah
+ *    ("Pembayaran (2000000.0) melebihi sisa hutang (1864800.0)") dan pilihan yang tidak ada di form ini.
+ *  · `info`: kurang bayar yang masih di dalam toleransi selisih tagihan pemasok → server MENUTUP sisanya otomatis
+ *    (tagihan Lunas, selisih dijurnal), padahal catatan form berkata "sisanya tetap hutang". Kini disebut sebelum simpan.
+ */
+export function cekNominalBayar({ amount, outstanding, tolerance, type }) {
+  const amt = Number(amount) || 0;
+  const sisa = Math.round((Number(outstanding) || 0) * 100) / 100;
+  if (amt <= 0 || sisa <= 0) return { blok: "", info: "" };
+  if (amt > sisa + 0.005) {
+    return { blok: `Nominal ${rpSen(amt)} melebihi sisa hutang ${rpSen(sisa)}. Bayar paling banyak sebesar sisa hutang.`, info: "" };
+  }
+  const kurang = Math.round((sisa - amt) * 100) / 100;
+  const tol = Number(tolerance) || 0;
+  if (type === "vendor_bill" && kurang > 0.005 && tol > 0 && kurang <= tol + 0.005) {
+    return { blok: "", info: `Kurang ${rpSen(kurang)} dari sisa hutang — masih di dalam toleransi selisih ${rpSen(tol)}, `
+      + "jadi sisa itu DITUTUP otomatis (tagihan menjadi Lunas, selisihnya dijurnal). Ketik nominal penuh bila ingin membayar persis." };
+  }
+  return { blok: "", info: "" };
+}
 
 /** Ringkasan dokumen untuk kepala form: pemasok, nomor, sisa, PT. */
 export function docSummary(type, doc) {
@@ -59,7 +89,8 @@ export function docSummary(type, doc) {
   }
   const fin = doc.financials || {};
   return { supplier: doc.supplier_name, number: doc.bill_number, outstanding: Number(fin.outstanding ?? doc.outstanding ?? 0),
-    entityId: doc.entity_id, firstPayment: false, deductions: 0, defaultMethod: "", defaultAccount: "" };
+    entityId: doc.entity_id, firstPayment: false, deductions: 0, defaultMethod: "", defaultAccount: "",
+    tolerance: Number(doc.payment_tolerance) || 0 };
 }
 
 export default function PaySupplierModal({ target, bankLineId = "", preset = null, onClose, onPaid, onError }) {
@@ -94,7 +125,7 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
   const sum = useMemo(() => docSummary(type, doc), [type, doc]);
   useEffect(() => {
     if (!sum) return;
-    if (!fromLine && amount === "" && sum.outstanding > 0) setAmount(String(sum.outstanding));
+    if (!fromLine && amount === "" && sum.outstanding > 0) setAmount(String(Math.round(sum.outstanding * 100) / 100));
     if (sum.defaultMethod) setMethod(canonicalMethod(sum.defaultMethod, "transfer"));
     if (!accountId && sum.defaultAccount) setAccountId(sum.defaultAccount);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,8 +137,13 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
   const accLabel = (accounts.find((a) => a.id === accountId) && accountLabel(accounts.find((a) => a.id === accountId)))
     || "rekening terpilih";
   const ptName = entityShortById(entities, sum?.entityId || selectedEntity, "PT dokumen");
-  const amt = Number(amount) || 0;
-  const reason = allPt ? TEKS_PILIH_PT : (!doc ? "" : amt <= 0 ? "Isi nominal dibayar." : !accountId ? NEED_ACCOUNT_TEXT : "");
+  // Pelatihan 18 Nov (uji variasi V5) — dibaca seperti isian rupiah lain (dulu `Number()`: "1764800,5" / "1 864 800" → 0
+  // → tombol mati "Isi nominal dibayar.").
+  const parsed = parseDecimal(amount);
+  const amt = Number.isFinite(parsed) ? parsed : 0;
+  const cek = fromLine ? { blok: "", info: "" }
+    : cekNominalBayar({ amount: amt, outstanding: sum?.outstanding, tolerance: sum?.tolerance, type });
+  const reason = allPt ? TEKS_PILIH_PT : (!doc ? "" : amt <= 0 ? "Isi nominal dibayar." : cek.blok || (!accountId ? NEED_ACCOUNT_TEXT : ""));
 
   async function linkLine(data) {
     if (!fromLine || type !== "vendor_bill") return "";
@@ -130,7 +166,7 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
     try {
       const ok = await askConfirm({
         title: "Bayar pemasok",
-        message: payConfirmText({ amount: amt, supplier: sum?.supplier, account: accLabel, pt: ptName }),
+        message: payConfirmText({ amount: amt, supplier: sum?.supplier, account: accLabel, pt: ptName }) + (cek.info ? ` ${cek.info}` : ""),
         confirmLabel: "Ya, bayar", cancelLabel: "Batal", testId: "pay-supplier-confirm",
       });
       if (!ok) return;
@@ -148,7 +184,7 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
       const bank = await linkLine(data);
       const lunas = data.status === "paid" ? " — LUNAS." : ".";
       const warn = data.warning ? ` ${data.warning}` : "";
-      onPaid?.(data, `${JENIS_DOKUMEN[type]} ${sum?.number || ""} dibayar ${formatCurrency(fromLine ? preset?.amount || amt : amt)}${lunas}${warn}${bank}`);
+      onPaid?.(data, `${JENIS_DOKUMEN[type]} ${sum?.number || ""} dibayar ${rpSen(fromLine ? preset?.amount || amt : amt)}${lunas}${warn}${bank}`);
     } catch (e) {
       const msg = apiErrorText(e, "Pembayaran belum bisa dicatat.");
       setErr(msg); onError?.(e);
@@ -189,7 +225,7 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
               <div><dt className="field-label">Pemasok</dt><dd data-testid="pay-supplier-supplier">{sum.supplier || "—"}</dd></div>
               <div><dt className="field-label">Dokumen</dt><dd data-testid="pay-supplier-number">{JENIS_DOKUMEN[type]} {sum.number}</dd></div>
               <div><dt className="field-label">Sisa hutang</dt>
-                <dd className="whitespace-nowrap font-semibold tabular-nums" data-testid="pay-supplier-outstanding">{formatCurrency(sum.outstanding)}</dd></div>
+                <dd className="whitespace-nowrap font-semibold tabular-nums" data-testid="pay-supplier-outstanding">{rpSen(sum.outstanding)}</dd></div>
             </dl>
             {type === "contra_bon" && sum.firstPayment && sum.deductions > 0 && (
               <p className="flex items-start gap-1 rounded-md bg-kn-action-soft px-2 py-1.5 text-fs-12" data-testid="pay-supplier-deduction-note">
@@ -208,7 +244,9 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
                 <label className="field-label">Nominal dibayar</label>
                 {fromLine ? <p className="field flex items-center tabular-nums" data-testid="pay-supplier-amount-fixed">{formatCurrency(amt)}</p>
                   : <MoneyInput testId="pay-supplier-amount" className="field" value={amount} onChange={(v) => setAmount(v)} />}
-                {!fromLine && <p className="mt-1 text-fs-12 text-kn-text-2">Bayar sebagian diizinkan; sisanya tetap hutang.</p>}
+                {!fromLine && <p className="mt-1 text-fs-12 text-kn-text-2">Bayar sebagian diizinkan; sisanya tetap hutang
+                  {type === "vendor_bill" && sum.tolerance > 0 ? ` (kecuali selisih receh ≤ ${rpSen(sum.tolerance)}: ditutup otomatis)` : ""}.</p>}
+                {cek.info && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="pay-supplier-variance-note">{cek.info}</p>}
               </div>
               <div>
                 <label className="field-label">Tanggal bayar</label>

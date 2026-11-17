@@ -1,0 +1,158 @@
+{
+  "code": "V7",
+  "title": "Variasi isian — bayar gaji & setor PPh 21, hitung ulang TER (F15)",
+  "ok": true,
+  "at": "2026-11-17T08:16:13.728Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": "G1",
+      "role": "Pemeriksa",
+      "action": "Hitung ulang PPh 21 TER slip KSC/PAY-00009: bruto sebulan (proses sebelumnya + susulan) × tarif TER kategori PTKP − PPh yang sudah dipotong",
+      "expect": "PPh 21 slip = hitung ulang; jurnal posting: Hutang Insentif (D) = Hutang Gaji (K) + Hutang PPh 21 (K); BPJS 0 (susulan tanpa gaji pokok)",
+      "ok": true,
+      "ms": 2231,
+      "info": "Dewi Manager TK0→TER A: bruto sebulan Rp 14.908.800 (3 proses sebelumnya) × 4.50% = Rp 670.896 − dipotong Rp 633.951 = Rp 36.945 (slip Rp 36.945) · KSC/JE-00166 seimbang D=K=821000 [2-1500 Hutang Insentif Penjualan D 821000 · 2-1600 Hutang Gaji K 784055 · 2-1800 Hutang PPh 21 K 36945] · MENURUT PP 58/2023 (TER A 6.00%): Rp 260.577 — selisih Rp 223.632"
+    },
+    {
+      "no": "G2",
+      "role": "Pemeriksa",
+      "action": "Hitung ulang PPh 21 TER slip KSC/PAY-00010: bruto sebulan (proses sebelumnya + susulan) × tarif TER kategori PTKP − PPh yang sudah dipotong",
+      "expect": "PPh 21 slip = hitung ulang; jurnal posting: Hutang Insentif (D) = Hutang Gaji (K) + Hutang PPh 21 (K); BPJS 0 (susulan tanpa gaji pokok)",
+      "ok": true,
+      "ms": 2441,
+      "info": "Ayu Marketing TK0→TER A: bruto sebulan Rp 8.621.400 (3 proses sebelumnya) × 1.75% = Rp 150.875 − dipotong Rp 116.991 = Rp 33.884 (slip Rp 33.884) · KSC/JE-00187 seimbang D=K=822000 [2-1500 Hutang Insentif Penjualan D 822000 · 2-1600 Hutang Gaji K 788117 · 2-1800 Hutang PPh 21 K 33884]"
+    },
+    {
+      "no": "G3",
+      "role": "Pemeriksa",
+      "action": "Akun 2-1500 Hutang Insentif Penjualan PT Sukacita, Oktober 2026: akrual (K) vs komisi yang dilunasi slip gaji (D)",
+      "expect": "Saldo 0 (akrual = Σ komisi slip semua proses Oktober)",
+      "ok": true,
+      "ms": 1660,
+      "info": "2-1500 = Rp 0 · 6-5000 = Rp 20.112.000 · Σ komisi slip Rp 20.112.000"
+    },
+    {
+      "no": "G4",
+      "role": "Finance",
+      "action": "Login peserta 71 → Penggajian › Setoran & Pajak → [[Bayar]] KSC/PAY-00009 → BCA Operasional KSC → [[Bayar gaji]] → konfirmasi",
+      "expect": "Konfirmasi menyebut Rp 784.055; jurnal Hutang Gaji (D) / Bank (K) = gaji bersih",
+      "ok": true,
+      "ms": 8682,
+      "info": "Total bersih Rp 784.055 untuk 1 karyawan (1 tanpa rekening, dibayar tunai) Satu kas keluar sebesar total bersih; transfer per karyawan mengikuti Daftar transfer. · \"Rp 784.055 dari BCA Operasional KSC · Sukacita Textile. Total bersih Rp 784.055 untuk 1 karyawan (1 tanpa rekening, dibayar tunai). Kas keluar dan jurnal (hutang gaji berkurang, kas berkurang) dibuat bertanggal 17 Nov 2026.\" · KSC/JE-00599 seimbang D=K=784055 [2-1600 Hutang Gaji D 784055 · 1-1100 Kas Besar / Bank K 784055]"
+    },
+    {
+      "no": "G5",
+      "role": "Finance",
+      "action": "*Masa gaji* Oktober 2026 → [[Catat Setoran]] → *Jenis* PPh 21",
+      "expect": "Form terbuka; nominal terisi sisa PPh 21 Oktober",
+      "ok": true,
+      "ms": 2545,
+      "info": "sisa PPh 21 Oktober Rp 3.224.594 · nominal awal \"3224594\""
+    },
+    {
+      "no": "G6",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"40.864,50\" → [[Catat Setoran]]",
+      "expect": "Konfirmasi menyebut Rp 40.864,5 (lalu Batal)",
+      "ok": true,
+      "ms": 934,
+      "info": "pratinjau Rp 40.865 · Catat setoran PPh 21 Rp 40.864,5? Setoran PPh 21 masa Oktober 2026 sebesar Rp 40.864,5 untuk Sukacita Textile. Kas kelua"
+    },
+    {
+      "no": "G7",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"40864.5\" → [[Catat Setoran]]",
+      "expect": "Konfirmasi menyebut Rp 40.864,5 (lalu Batal)",
+      "ok": true,
+      "ms": 1038,
+      "info": "pratinjau Rp 40.865 · Catat setoran PPh 21 Rp 40.864,5? Setoran PPh 21 masa Oktober 2026 sebesar Rp 40.864,5 untuk Sukacita Textile. Kas kelua"
+    },
+    {
+      "no": "G8",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"40.864\" → [[Catat Setoran]]",
+      "expect": "Konfirmasi menyebut Rp 40.864 (lalu Batal)",
+      "ok": true,
+      "ms": 1005,
+      "info": "pratinjau Rp 40.864 · Catat setoran PPh 21 Rp 40.864? Setoran PPh 21 masa Oktober 2026 sebesar Rp 40.864 untuk Sukacita Textile. Kas keluar da"
+    },
+    {
+      "no": "G9",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"40,864.50\" → [[Catat Setoran]]",
+      "expect": "Konfirmasi menyebut Rp 40.864,5 (lalu Batal)",
+      "ok": true,
+      "ms": 1256,
+      "info": "pratinjau Rp 40.865 · Catat setoran PPh 21 Rp 40.864,5? Setoran PPh 21 masa Oktober 2026 sebesar Rp 40.864,5 untuk Sukacita Textile. Kas kelua"
+    },
+    {
+      "no": "G10",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"Rp 40.864,50\" → [[Catat Setoran]]",
+      "expect": "Konfirmasi menyebut Rp 40.864,5 (lalu Batal)",
+      "ok": true,
+      "ms": 1269,
+      "info": "pratinjau Rp 40.865 · Catat setoran PPh 21 Rp 40.864,5? Setoran PPh 21 masa Oktober 2026 sebesar Rp 40.864,5 untuk Sukacita Textile. Kas kelua"
+    },
+    {
+      "no": "G11",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"0\" → [[Catat Setoran]]",
+      "expect": "Pesan \"Nominal harus lebih dari 0.\"",
+      "ok": true,
+      "ms": 570,
+      "info": "Nominal harus lebih dari 0."
+    },
+    {
+      "no": "G12",
+      "role": "Finance",
+      "action": "*Nominal (Rp)*: \"\" → [[Catat Setoran]]",
+      "expect": "Pesan \"Nominal harus lebih dari 0.\"",
+      "ok": true,
+      "ms": 15463,
+      "info": "Nominal harus lebih dari 0."
+    },
+    {
+      "no": "G13",
+      "role": "Finance",
+      "action": "*Nominal*: sisa PPh 21 Oktober + Rp 1.000 → [[Catat Setoran]]",
+      "expect": "Pesan \"Nominal melebihi sisa kewajiban (Rp …)\" — tidak tersimpan",
+      "ok": true,
+      "ms": 1248,
+      "info": "\"3.225.594\" → Nominal melebihi sisa kewajiban (Rp 3.224.594)."
+    },
+    {
+      "no": "G14",
+      "role": "Finance",
+      "action": "*Nominal* \"36.945\" (PPh 21 proses sendiri) · *Nomor bukti setor* NTPN-V7-71 → [[Catat Setoran]] → [[Catat setoran]]",
+      "expect": "Setoran tersimpan Rp 36.945; Sisa PPh 21 turun tepat Rp 36.945; jurnal Hutang PPh 21 (D) / Bank (K)",
+      "ok": true,
+      "ms": 3264,
+      "info": "KSC/STR-00001 · sisa Rp 3.224.594 → Rp 3.187.649 · KSC/JE-00603 seimbang D=K=36945 [2-1800 Hutang PPh 21 D 36945 · 1-1100 Kas Besar / Bank K 36945]"
+    },
+    {
+      "no": "G15",
+      "role": "Finance",
+      "action": "Login peserta 72 → [[Bayar]] KSC/PAY-00010 (bersih Rp 788.116,5)",
+      "expect": "Konfirmasi menyebut Rp 788.116,5; jurnal Hutang Gaji (D) / Bank (K) Rp 788.116,5 (sen tidak hilang)",
+      "ok": true,
+      "ms": 7978,
+      "info": "\"Rp 788.117 dari BCA Operasional KSC · Sukacita Textile. Total bersih Rp 788.117 untuk 1 karyawan (1 tanpa rekening, dibayar tunai). Kas keluar dan jurnal (hutang gaji berkurang, kas berkurang) dibuat bertanggal 17 Nov 2026.\" · KSC/JE-00605 seimbang D=K=788117 [2-1600 Hutang Gaji D 788117 · 1-1100 Kas Besar / Bank K 788117] · KONFIRMASI MEMBULATKAN: tidak menyebut Rp 788.116,5"
+    },
+    {
+      "no": "G16",
+      "role": "Finance",
+      "action": "[[Catat Setoran]] PPh 21 *Nominal* \"33.883,50\" · NTPN-V7-72 → simpan",
+      "expect": "Tersimpan Rp 33.883,5 (sen utuh); jurnal Hutang PPh 21 (D) / Bank (K) Rp 33.883,5",
+      "ok": true,
+      "ms": 4829,
+      "info": "Catat setoran PPh 21 Rp 33.883,5? Setoran PPh 21 masa Oktober 2026 sebesar Rp 33.883,5 untuk Sukacit · Setoran KSC/STR-00002 tercatat: PPh 21 Rp 33.883,5. × · KSC/JE-00606 seimbang D=K=33884 [2-1800 Hutang PPh 21 D 33884 · 1-1100 Kas Besar / Bank K 33884]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": []
+}

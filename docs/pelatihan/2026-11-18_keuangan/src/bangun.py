@@ -439,6 +439,21 @@ def _tabel_json(nama: str):
     return d if isinstance(d, list) else d.get("baris") or d.get("rows") or []
 
 
+def galeri_dokumen() -> str:
+    """Contoh halaman pertama tiap dokumen (gambar uji jalan D1/D2), dua per baris."""
+    if RINGKAS:
+        return ""
+    try:
+        sys.path.insert(0, os.path.join(HERE, "ppt"))
+        import siapkan_data as SD   # noqa: E402 — daftar dokumen yang sama dengan PowerPoint
+        docs = SD.dokumen()
+    except Exception:  # noqa: BLE001
+        return ""
+    figs = "".join(f'<figure class="navfig"><img src="{escape(d["img"])}" alt=""><figcaption>{escape(d["judul"])}</figcaption></figure>'
+                   for d in docs if d.get("img"))
+    return f'<h3>Contoh dokumen tercetak</h3><div class="navgrid">{figs}</div>' if figs else ""
+
+
 def lampiran() -> str:
     """Lampiran: uji variasi isian (src/variasi_*.json) & dokumen cetak (src/dokumen_cetak.json), bila ada."""
     out = []
@@ -465,7 +480,8 @@ def lampiran() -> str:
   <p>Setiap dokumen yang terbit dari skenario latihan dicetak, lalu isinya (nomor, tanggal, identitas PT, baris barang, DPP, PPN,
   total, terbilang) dicocokkan dengan transaksi, formatnya diperiksa, dan pengaturan naskah dokumen diuji (ubah → tercetak → dikembalikan).</p>
   <table class="grid"><colgroup><col style="width:18%"><col style="width:22%"><col style="width:36%"><col style="width:24%"></colgroup>
-  <thead><tr><th>Dokumen</th><th>Cara cetak</th><th>Yang dicek</th><th>Hasil</th></tr></thead><tbody>{rows}</tbody></table></section>""")
+  <thead><tr><th>Dokumen</th><th>Cara cetak</th><th>Yang dicek</th><th>Hasil</th></tr></thead><tbody>{rows}</tbody></table>
+  {galeri_dokumen()}</section>""")
     return "".join(out)
 
 

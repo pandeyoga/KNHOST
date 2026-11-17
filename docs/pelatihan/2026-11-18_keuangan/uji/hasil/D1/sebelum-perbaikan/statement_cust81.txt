@@ -1,0 +1,90 @@
+Sukacita Textile
+Jl. Soekarno Hatta No. 100, Bandung · NPWP 01.234.567.8-901.000
+
+
+                                               REKENING KORAN PELANGGAN
+                                                    No. CUST-0050 · 1 November 2026 – 17 November 2026
+DARI                                                                                                KEPADA
+Sukacita Textile                                                        Latihan 81 · Toko Kain Peserta 81
+Jl. Soekarno Hatta No. 100, Bandung
+PT                  Sukacita Textile                      Periode         1 November 2026 – 17
+                                                                          November 2026
+Saldo awal          Rp 0                                  Saldo akhir        Rp 6.545.392
+
+                                                                                 PEMBAYARAN /
+ TANGGAL       DOKUMEN         KETERANGAN                            TAGIHAN                       SALDO
+                                                                                      KREDIT
+
+ 1
+ November                      Saldo awal                                                             Rp 0
+ 2026
+
+ 17            Surat jalan
+                               Pengakuan penjualan KSC/                     Rp                          Rp
+ November      KSC/
+                               SO-00086 · KSC/SJ-00088               3.381.338                   3.381.338
+ 2026          SJ-00088
+
+ 17            Surat jalan
+                               Pengakuan penjualan KSC/                     Rp                          Rp
+ November      KSC/
+                               SO-00088 · KSC/SJ-00089               3.164.055                   6.545.392
+ 2026          SJ-00089
+
+ 17            Surat jalan
+                               Pengakuan penjualan KSC/                     Rp                          Rp
+ November      KSC/
+                               SO-00090 · KSC/SJ-00091               3.262.845                   9.808.238
+ 2026          SJ-00091
+
+                               Titipan tunai sales · Titipan tunai
+ 17            Kwitansi
+                               Ayu Marketing · KSC/AR-00045                                             Rp
+ November      KSC/                                                               Rp 3.262.845
+                               — Latihan 81 · Toko Kain Peserta                                  6.545.392
+ 2026          AR-00045
+                               81
+
+ 17            Surat jalan
+                               Pengakuan penjualan KSC/                     Rp                          Rp
+ November      KSC/
+                               SO-00091 · KSC/SJ-00092               3.414.638                   9.960.030
+ 2026          SJ-00092
+
+                               Kas in · Penerimaan KSC/
+ 17            Kwitansi
+                               AR-00046 — Latihan 81 · Toko                                             Rp
+ November      KSC/                                                               Rp 3.414.638
+                               Kain Peserta 81 · Ref TRF-                                        6.545.392
+ 2026          AR-00046
+                               LTH81-00091 · Kode KN-SHEE4
+
+ 17            Surat jalan
+                               Pengakuan penjualan KSC/                     Rp                          Rp
+ November      KSC/
+                               SO-00092 · KSC/SJ-00093               3.268.672                   9.814.065
+ 2026          SJ-00093
+
+                               Kas in · Penerimaan KSC/
+ 17            Kwitansi
+                               AR-00047 — Latihan 81 · Toko                                             Rp
+ November      KSC/                                                               Rp 3.268.672
+                               Kain Peserta 81 · Kode KN-                                        6.545.392
+ 2026          AR-00047
+                               MWWS2
+
+ 17
+                                                                                                        Rp
+ November                      Saldo akhir
+                                                                                                 6.545.392
+ 2026
+
+
+                                                              Saldo akhir                 Rp 6.545.392
+ Catatan: Titipan dan uang muka ada di kotak Eksposur.
+
+
+
+
+                                                                                                    Hal. 1 / 1
+

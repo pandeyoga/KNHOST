@@ -1,0 +1,205 @@
+{
+  "code": "V5",
+  "title": "Variasi isian — bayar tagihan supplier (F11)",
+  "ok": true,
+  "at": "2026-11-17T08:29:08.922Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Login finance.latih73 → Hutang › Tagihan → VB-00018 → [[Bayar]] → *Rekening sumber* BCA Operasional KSC",
+      "expect": "Form terbuka, Sisa hutang Rp 1.864.800, nominal terisi penuh",
+      "ok": true,
+      "ms": 12908,
+      "info": "nominal awal \"1864800\""
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1.864.800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16257,
+      "info": "kotak \"1.864.800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1864800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 15978,
+      "info": "kotak \"1864800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1,864,800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16158,
+      "info": "kotak \"1,864,800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"Rp 1.864.800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16341,
+      "info": "kotak \" 1.864.800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 6,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"Rp1864800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16061,
+      "info": "kotak \"1864800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 7,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1 864 800\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16983,
+      "info": "kotak \"1 864 800\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 8,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1.864.800,00\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.864.800 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16516,
+      "info": "kotak \"1.864.800,00\" · pratinjau \"Rp 1.864.800\" · konfirmasi \"Bayar Rp 1.864.800 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BCA …\""
+    },
+    {
+      "no": 9,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1.764.800,50\"",
+      "expect": "Pratinjau & konfirmasi menyebut Rp 1.764.800,5 (lalu [[Batal]])",
+      "ok": true,
+      "ms": 16538,
+      "info": "kotak \"1.764.800,50\" · pratinjau \"Rp 1.764.801\" · konfirmasi \"Bayar Rp 1.764.800,5 ke Latihan 73 · Pemasok Grey Peserta 73 dari BCA Operasional KSC · BC…\""
+    },
+    {
+      "no": 10,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"0\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 606,
+      "info": "kotak \"0\" · pratinjau \"Rp 0\" · tombol mati: \"Isi nominal dibayar.\""
+    },
+    {
+      "no": 11,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 15390,
+      "info": "kotak \"\" · pratinjau \"—\" · tombol mati: \"Isi nominal dibayar.\""
+    },
+    {
+      "no": 12,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"-500000\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 451,
+      "info": "kotak \"-500000\" · pratinjau \"-Rp 500.000\" · tombol mati: \"Isi nominal dibayar.\""
+    },
+    {
+      "no": 13,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"abc\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 15369,
+      "info": "kotak \"\" · pratinjau \"—\" · tombol mati: \"Isi nominal dibayar.\""
+    },
+    {
+      "no": 14,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"1.864.900\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 500,
+      "info": "kotak \"1.864.900\" · pratinjau \"Rp 1.864.900\" · tombol mati: \"Nominal Rp 1.864.900 melebihi sisa hutang Rp 1.864.800. Bayar paling banyak sebesar sisa hutang.\""
+    },
+    {
+      "no": 15,
+      "role": "Finance",
+      "action": "Ketik di *Nominal dibayar*: \"2.000.000\"",
+      "expect": "Tombol [[Bayar]] mati dengan alasan berbahasa Indonesia; tidak ada yang tersimpan",
+      "ok": true,
+      "ms": 495,
+      "info": "kotak \"2.000.000\" · pratinjau \"Rp 2.000.000\" · tombol mati: \"Nominal Rp 2.000.000 melebihi sisa hutang Rp 1.864.800. Bayar paling banyak sebesar sisa hutang.\""
+    },
+    {
+      "no": 16,
+      "role": "Finance",
+      "action": "Ketik \"500.000\" · *Rekening sumber* Kas Toko KSC → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Bayar sebagian Rp 500.000: status tetap Terposting, Sudah Dibayar Rp 500.000, Sisa Hutang Rp 1.364.800; jurnal Hutang Usaha (D) / Kas Kecil (K) Rp 500.000",
+      "ok": true,
+      "ms": 2650,
+      "info": "konfirmasi \"Bayar Rp 500.000 ke Latihan 73 · Pemasok Grey Peserta 73 dari Kas Toko KSC untuk Sukacita?\" · KSC/JE-00647 seimbang D=K=500000 [2-1100 Hutang Usaha D 500000 · 1-1110 Kas Kecil K 500000]"
+    },
+    {
+      "no": 17,
+      "role": "Finance",
+      "action": "[[Bayar]] lagi: nominal terisi sisa → *Rekening sumber* BCA Operasional KSC → [[Bayar]] → klik GANDA [[Ya, bayar]]",
+      "expect": "Tepat SATU pembayaran Rp 1.364.800; status Lunas, Sisa Rp 0; dua jurnal berjumlah Rp 1.864.800",
+      "ok": true,
+      "ms": 3206,
+      "info": "KSC/CASH-00140 Rp 500.000 + KSC/CASH-00141 Rp 1.364.800 = Rp 1.864.800 · jurnal KSC/JE-00647, KSC/JE-00648 D 2-1100 Rp 1.864.800"
+    },
+    {
+      "no": 18,
+      "role": "Finance",
+      "action": "Tagihan Lunas: tombol [[Bayar]] tidak ada lagi",
+      "expect": "Tidak bisa membayar dua kali (\"Tagihan lunas.\")",
+      "ok": true,
+      "ms": 3,
+      "info": "tombol Bayar hilang"
+    },
+    {
+      "no": 19,
+      "role": "Finance",
+      "action": "Login finance.latih75, bayar VB-00032: ketik \"100000\", *Tanggal bayar* 2026-12-15 (bulan depan) → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Diterima sebagai pembayaran bertanggal maju (keputusan pemilik: boleh/tidak?) ATAU ditolak dengan pesan jelas — tidak 5xx",
+      "ok": true,
+      "ms": 11566,
+      "info": "DITERIMA: konfirmasi \"Bayar Rp 100.000 ke Latihan 75 · Pemasok Grey Peserta 75 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita?\" · KSC/CASH-00142 paid_at 2026-12-15 · jurnal KSC/JE-00649 bertanggal 2026-12-15"
+    },
+    {
+      "no": 20,
+      "role": "Finance",
+      "action": "Batalkan pembayaran bertanggal maju itu (pemeriksa, lewat API resmi)",
+      "expect": "Pembayaran dibatalkan, jurnal dibalik, tagihan kembali terbuka penuh",
+      "ok": true,
+      "ms": 1824,
+      "info": "tagihan posted, dibayar 0 · KSC/JE-00649 2026-12-15 dibalik KSC/JE-00650 2026-12-15"
+    },
+    {
+      "no": 21,
+      "role": "Finance",
+      "action": "Bayar VB-00032: ketik \"1.864.000\" (kurang Rp 800 dari sisa) → [[Bayar]] → [[Ya, bayar]]",
+      "expect": "Form menyebut sisa Rp 800 tetap hutang (seperti tulisan \"Bayar sebagian diizinkan; sisanya tetap hutang\") ATAU menjelaskan sebelum simpan bahwa selisih receh dihapus",
+      "ok": true,
+      "ms": 4075,
+      "info": "status Lunas · sisa 0 · konfirmasi \"Bayar Rp 1.864.000 ke Latihan 75 · Pemasok Grey Peserta 75 dari BCA Operasional KSC · BCA · 7415595554 untuk Sukacita? Kurang Rp 800 dari sisa hutang — masih di dalam toleransi selisih Rp 5.000, jadi sisa itu DITUTUP otomatis (tagihan menjadi Lunas, selisihnya dijurnal). Ketik nominal penuh bila ingin membayar persis.\" · keputusan [{\"kind\":\"ap_rounding_writeoff\",\"delta\":-800,\"amount\":800,\"status\":\"done\",\"journal_entry_id\":\"je_1f9531931348\"}]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "notes": [
+    "Peserta 73: VB-00018 Rp 1.864.800 · peserta 75: VB-00032"
+  ]
+}

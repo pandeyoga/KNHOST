@@ -2,17 +2,17 @@
   "code": "F15",
   "title": "Bayar gaji & setor PPh 21",
   "ok": true,
-  "at": "2026-11-17T06:31:49.580Z",
+  "at": "2026-11-17T09:17:24.034Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": 1,
       "role": "Finance",
       "action": "Login akun Finance peserta → SDM › Penggajian (tab Setoran & Pajak)",
-      "expect": "\"Gaji siap dibayar\" memuat proses KSC/PAY-00003 (Susulan · Oktober 2026 · 1 karyawan · Rp 713.450)",
+      "expect": "\"Gaji siap dibayar\" memuat proses KSC/PAY-00004 (Susulan · Oktober 2026 · 1 karyawan · Rp 721.920)",
       "ok": true,
-      "ms": 4817,
-      "info": "KSC/PAY-00003 Oktober 2026 Susulan 1 Rp 713.450 Daftar transfer Bayar · 7 penggajian menunggu dibayar"
+      "ms": 5430,
+      "info": "KSC/PAY-00004 Oktober 2026 Susulan 1 Rp 721.920 Daftar transfer Bayar · 6 penggajian menunggu dibayar"
     },
     {
       "no": 2,
@@ -20,8 +20,8 @@
       "action": "Klik [[Daftar transfer]] pada proses Anda, lalu tutup (×)",
       "expect": "Daftar transfer: penerima, bank & nomor rekening, nominal = total bersih; tombol [[Unduh Excel]] untuk berkas bank",
       "ok": true,
-      "ms": 415,
-      "info": "Daftar transfer KSC/PAY-00003 · Oktober 2026 Belum dibayar. Daftar ini bisa diunduh untuk disiapkan di bank sebelum menekan Bayar. Unduh Excel NO. NAMA PENERIMA BANK NOMOR REKENING NOMINAL SLIP 1 Budi Santoso Tanpa Reken"
+      "ms": 503,
+      "info": "Daftar transfer KSC/PAY-00004 · Oktober 2026 Belum dibayar. Daftar ini bisa diunduh untuk disiapkan di bank sebelum menekan Bayar. Unduh Excel NO. NAMA PENERIMA BANK NOMOR REKENING NOMINAL SLIP 1 Dewi Manager Tanpa Reken"
     },
     {
       "no": 3,
@@ -29,8 +29,8 @@
       "action": "Klik [[Bayar]] → *Rekening pembayaran* BCA Operasional KSC, *Tanggal bayar* hari ini → [[Bayar gaji]] → konfirmasi [[Bayar gaji]]",
       "expect": "Proses hilang dari \"Gaji siap dibayar\"; pesan sukses; status proses Dibayar",
       "ok": true,
-      "ms": 2532,
-      "info": "Total bersih Rp 713.450 untuk 1 karyawan (1 tanpa rekening, dibayar tunai) Satu kas keluar sebesar total bersih; transfer per karyawan mengikuti Daftar transfer. · konfirmasi \"Rp 713.450 dari BCA Operasional KSC · Sukacita Textile. Total bersih Rp 713.450 untuk 1 karyawan (1 tanpa rekening, dibayar tunai). Kas keluar dan jurnal (hutang gaji berkurang, kas berkurang) dibuat bertanggal 17 Nov 2026.\" · Gaji KSC/PAY-00003 dibayar Rp 713.450 dari BCA Operasional KSC (kas KSC/CASH-00034). × · Dibayar 17 Nov 2026 dari BCA Operasional KSC (BCA 7415595554). · jurnal KSC/JE-00165 · kas KSC/CASH-00034"
+      "ms": 2459,
+      "info": "Total bersih Rp 721.920 untuk 1 karyawan (1 tanpa rekening, dibayar tunai) Satu kas keluar sebesar total bersih; transfer per karyawan mengikuti Daftar transfer. · konfirmasi \"Rp 721.920 dari BCA Operasional KSC · Sukacita Textile. Total bersih Rp 721.920 untuk 1 karyawan (1 tanpa rekening, dibayar tunai). Kas keluar dan jurnal (hutang gaji berkurang, kas berkurang) dibuat bertanggal 17 Nov 2026.\" · Gaji KSC/PAY-00004 dibayar Rp 721.920 dari BCA Operasional KSC (kas KSC/CASH-00048). × · Dibayar 17 Nov 2026 dari BCA Operasional KSC (BCA 7415595554). · jurnal KSC/JE-00183 · kas KSC/CASH-00048"
     },
     {
       "no": 4,
@@ -38,8 +38,8 @@
       "action": "Cek buku: jurnal bayar gaji",
       "expect": "Hutang Gaji (D) = Kas Besar / Bank (K) = total bersih, seimbang",
       "ok": true,
-      "ms": 542,
-      "info": "KSC/JE-00165 seimbang D=K=713450 [2-1600 Hutang Gaji D 713450 · 1-1100 Kas Besar / Bank K 713450]"
+      "ms": 490,
+      "info": "KSC/JE-00183 seimbang D=K=721920 [2-1600 Hutang Gaji D 721920 · 1-1100 Kas Besar / Bank K 721920]"
     },
     {
       "no": 5,
@@ -47,17 +47,17 @@
       "action": "Di \"Setoran BPJS dan PPh 21\" pilih *Masa gaji* Oktober 2026",
       "expect": "Kartu BPJS & PPh 21: Kewajiban · Sudah disetor · Sisa (dari gaji Oktober yang sudah diposting)",
       "ok": true,
-      "ms": 1625,
-      "info": "BPJS: BPJS Masih Ada Sisa Kewajiban Rp 6.256.458 Sudah disetor Rp 0 Sisa Rp 6.256.458 | PPh 21: PPh 21 Masih Ada Sisa Kewajiban Rp 1.777.602 Sudah disetor Rp 0 Sisa Rp 1.777.602"
+      "ms": 1540,
+      "info": "BPJS: BPJS Masih Ada Sisa Kewajiban Rp 6.256.458 Sudah disetor Rp 0 Sisa Rp 6.256.458 | PPh 21: PPh 21 Masih Ada Sisa Kewajiban Rp 1.777.602 Sudah disetor Rp 37.550 Sisa Rp 1.740.052"
     },
     {
       "no": 6,
       "role": "Finance",
-      "action": "Klik [[Catat Setoran]] → *Jenis* PPh 21 · *Masa* Oktober 2026 · *Nominal* Rp 37.550 (PPh 21 proses Anda) · *Tanggal setor* hari ini · *Rekening* BCA Operasional KSC · *Nomor bukti setor* NTPN-LATIH-01 → [[Catat Setoran]] → konfirmasi [[Catat setoran]]",
+      "action": "Klik [[Catat Setoran]] → *Jenis* PPh 21 · *Masa* Oktober 2026 · *Nominal* Rp 30.080 (PPh 21 proses Anda) · *Tanggal setor* hari ini · *Rekening* BCA Operasional KSC · *Nomor bukti setor* NTPN-LATIH-02 → [[Catat Setoran]] → konfirmasi [[Catat setoran]]",
       "expect": "Pesan \"Setoran STR-… tercatat: PPh 21 Rp …\"; Sudah disetor PPh 21 naik, Sisa turun sebesar nominal; baris baru di Riwayat setoran",
       "ok": true,
-      "ms": 3346,
-      "info": "konfirmasi \"Setoran PPh 21 masa Oktober 2026 sebesar Rp 37.550 untuk Sukacita Textile. Kas keluar dan jurnal (hutang berkurang, kas berkurang) dibuat.\" → Setoran KSC/STR-00001 tercatat: PPh 21 Rp 37.550. × · sisa PPh 21 Rp 1.777.602 → Rp 1.740.052"
+      "ms": 3422,
+      "info": "konfirmasi \"Setoran PPh 21 masa Oktober 2026 sebesar Rp 30.080 untuk Sukacita Textile. Kas keluar dan jurnal (hutang berkurang, kas berkurang) dibuat.\" → Setoran KSC/STR-00002 tercatat: PPh 21 Rp 30.080. × · sisa PPh 21 Rp 1.740.052 → Rp 1.709.972"
     },
     {
       "no": 7,
@@ -65,8 +65,8 @@
       "action": "Cek buku: jurnal setoran PPh 21",
       "expect": "Hutang PPh 21 (D) = Kas Besar / Bank (K) = nominal setoran, seimbang; kas keluar dari BCA Operasional KSC",
       "ok": true,
-      "ms": 1541,
-      "info": "KSC/JE-00166 seimbang D=K=37550 [2-1800 Hutang PPh 21 D 37550 · 1-1100 Kas Besar / Bank K 37550] · KSC/STR-00001 · kas KSC/CASH-00035 (BCA Operasional KSC)"
+      "ms": 1514,
+      "info": "KSC/JE-00184 seimbang D=K=30080 [2-1800 Hutang PPh 21 D 30080 · 1-1100 Kas Besar / Bank K 30080] · KSC/STR-00002 · kas KSC/CASH-00049 (BCA Operasional KSC)"
     }
   ],
   "http_5xx": [],
@@ -74,6 +74,6 @@
     "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
   ],
   "notes": [
-    "Peserta 01 · KSC/PAY-00003 (susulan 2026-10) · Budi Santoso · bersih Rp 713.450 · PPh 21 Rp 37.550 · status posted"
+    "Peserta 02 · KSC/PAY-00004 (susulan 2026-10) · Dewi Manager · bersih Rp 721.920 · PPh 21 Rp 30.080 · status posted"
   ]
 }

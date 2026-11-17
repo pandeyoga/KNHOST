@@ -81,7 +81,7 @@ const NO = peserta("03");
     });
 
   await r.step(5, "Finance", `Cek jurnal setoran: Buku Besar › Jurnal → ketik nomor setoran (${k.setoran}) → klik baris sumber "Kas"`,
-    `Jurnal "Kas in · Setoran ${k.setoran} — ${k.penyetor}": 1-1110 Kas Kecil Debit ${rp(k.nominal)} · 1-1280 Piutang Titipan Karyawan Kredit ${rp(k.nominal)} — titipan sales kembali nol (titipan ${k.titipan} berstatus Disetor)`, async () => {
+    `Jurnal "Kas masuk · Setoran ${k.setoran} — ${k.penyetor}": 1-1110 Kas Kecil Debit ${rp(k.nominal)} · 1-1280 Piutang Titipan Karyawan Kredit ${rp(k.nominal)} — titipan sales kembali nol (titipan ${k.titipan} berstatus Disetor)`, async () => {
       dep = mongo(`return db.cash_deposits.findOne({id:"${k.setoran_id}"},{_id:0})`);
       assert(dep.status === "diterima" && dep.account_id === toko.id, `setoran: ${dep.status}`);
       const txn = kb.kas(dep.cash_txn_id);

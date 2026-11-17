@@ -1,0 +1,213 @@
+{
+  "code": "V8",
+  "title": "Variasi isian — buku besar, laporan, tutup buku (F16–F18)",
+  "ok": true,
+  "at": "2026-11-17T08:32:34.972Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": "B1",
+      "role": "Finance",
+      "action": "Login peserta 79 → Akuntansi & Pajak › Buku Besar (tab Jurnal)",
+      "expect": "Daftar jurnal tampil",
+      "ok": true,
+      "ms": 5790,
+      "info": "655 jurnal"
+    },
+    {
+      "no": "B2",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"KSC/AR-00090\" (persis)",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 938,
+      "info": "1 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B3",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"ksc/ar-00090\" (huruf kecil)",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 922,
+      "info": "1 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B4",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"AR-00090\" (tanpa awalan PT)",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 918,
+      "info": "1 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B5",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"00090\" (angka saja (sebagian))",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 924,
+      "info": "7 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B6",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"  KSC/AR-00090  \" (dengan spasi di depan/belakang)",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 927,
+      "info": "1 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B7",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"je-00597\" (nomor jurnal tanpa awalan, huruf kecil)",
+      "expect": "Jurnal KSC/JE-00597 tampil",
+      "ok": true,
+      "ms": 923,
+      "info": "1 jurnal · KSC/JE-00597 tampil"
+    },
+    {
+      "no": "B8",
+      "role": "Finance",
+      "action": "*Cari nomor jurnal / keterangan…*: \"zzz-tidak-ada\" (tidak ada yang cocok)",
+      "expect": "Pesan kosong \"Tidak ada jurnal yang cocok dengan …\" (tanpa galat)",
+      "ok": true,
+      "ms": 929,
+      "info": "0 jurnal · Tidak ada jurnal yang cocok dengan “zzz-tidak-ada”."
+    },
+    {
+      "no": "B9",
+      "role": "Finance",
+      "action": "Tab [Buku Besar] → akun 1-1200 → *Dari* 1 bulan ini, *Sampai* hari ini",
+      "expect": "Saldo akhir = saldo 1-1200 di jurnal s/d hari ini; Saldo awal = saldo s/d kemarin bulan lalu",
+      "ok": true,
+      "ms": 4231,
+      "info": "Saldo awal Rp 0 · Saldo akhir Rp 238.036.756 · jurnal 1-1200 s/d 2026-11-17 Rp 238.036.756"
+    },
+    {
+      "no": "B10",
+      "role": "Finance",
+      "action": "Coba pilih *Dari* sesudah *Sampai* (rentang terbalik)",
+      "expect": "Tanggal sesudah 'Sampai' tidak bisa dipilih di kalender",
+      "ok": true,
+      "ms": 115,
+      "info": "tanggal 2026-11-18 tidak bisa dipilih (dikunci kalender)"
+    },
+    {
+      "no": "B11",
+      "role": "Finance",
+      "action": "Tab [Neraca Saldo] per hari ini, lalu per 31 Oktober 2026",
+      "expect": "Total Debit = Total Kredit = Σ saldo debit (dan Σ saldo kredit) semua akun dari jurnal",
+      "ok": true,
+      "ms": 4137,
+      "info": "2026-11-17: layar D Rp 23.960.689.003 / K Rp 23.960.689.003 · jurnal D Rp 23.960.689.003 / K Rp 23.960.689.003 · 2026-10-31: layar D Rp 69.955.612 / K Rp 69.955.612 · jurnal D Rp 69.955.612 / K Rp 69.955.612"
+    },
+    {
+      "no": "L1",
+      "role": "Manajer",
+      "action": "Login manager → PT Sukacita → Laporan › Laba-Rugi → [Rentang Tanggal] 1 Oktober – 31 Oktober 2026",
+      "expect": "Pendapatan, HPP, Beban, Laba Bersih = jumlah jurnal Oktober per kelompok akun",
+      "ok": true,
+      "ms": 12012,
+      "info": "2026-10-01…2026-10-31: pendapatan Rp 0 − HPP Rp 0 − beban Rp 69.955.612 = laba Rp -69.955.612 (jurnal Rp 0 / Rp 0 / Rp 69.955.612 / Rp -69.955.612)"
+    },
+    {
+      "no": "L2",
+      "role": "Manajer",
+      "action": "Laba-Rugi satu hari: *Dari* = *Sampai* = 2026-11-17",
+      "expect": "= jurnal hari ini",
+      "ok": true,
+      "ms": 2867,
+      "info": "2026-11-17…2026-11-17: pendapatan Rp 488.187.340 − HPP Rp 351.430.092 − beban Rp 7.466.192 = laba Rp 129.291.057 (jurnal Rp 488.187.340 / Rp 351.430.092 / Rp 7.466.192 / Rp 129.291.057)"
+    },
+    {
+      "no": "L3",
+      "role": "Manajer",
+      "action": "Coba *Dari* sesudah *Sampai* (rentang terbalik)",
+      "expect": "Tanggal tidak bisa dipilih (dulu bisa → semua angka Rp 0 tanpa pesan); API menolak \"Tanggal awal tidak boleh sesudah tanggal akhir.\"",
+      "ok": true,
+      "ms": 2343,
+      "info": "tanggal 2026-11-05 tidak bisa dipilih (dikunci kalender) · API 400 Tanggal awal tidak boleh sesudah tanggal akhir."
+    },
+    {
+      "no": "L4",
+      "role": "Manajer",
+      "action": "Tab [Neraca] per 2026-11-17",
+      "expect": "Total Aset = Kewajiban + Ekuitas (termasuk laba berjalan) = hitung ulang jurnal",
+      "ok": true,
+      "ms": 1663,
+      "info": "aset Rp 23.503.315.929 = kewajiban Rp 184.311.851 + ekuitas Rp 23.319.004.078 · jurnal: Rp 23.503.315.929 = Rp 184.311.851 + Rp 23.259.668.634 + laba Rp 59.335.445 (selisih Rp 0)"
+    },
+    {
+      "no": "L5",
+      "role": "Manajer",
+      "action": "Tab [Neraca] per 2026-10-31",
+      "expect": "Total Aset = Kewajiban + Ekuitas (termasuk laba berjalan) = hitung ulang jurnal",
+      "ok": true,
+      "ms": 2312,
+      "info": "aset Rp 0 = kewajiban Rp 69.955.612 + ekuitas Rp -69.955.612 · jurnal: Rp 0 = Rp 69.955.612 + Rp 0 + laba Rp -69.955.612 (selisih Rp 0)"
+    },
+    {
+      "no": "L6",
+      "role": "Manajer",
+      "action": "Tab [Arus Kas] rentang 1 Oktober – 31 Oktober 2026, lalu 1 Januari – hari ini",
+      "expect": "Kas awal + saldo awal rekening baru + perubahan = kas akhir = saldo akun kas & bank (1-1100 + 1-1110) di jurnal per tanggal akhir",
+      "ok": true,
+      "ms": 9447,
+      "info": "2026-10-01…2026-10-31: Rp 0 + Rp 0 + Rp 0 = Rp 0 · jurnal kas Rp 0 · 2026-01-01…2026-11-17: Rp 0 + Rp 775.000.000 + Rp 328.700.780 = Rp 1.103.700.780 · jurnal kas Rp 1.103.700.780"
+    },
+    {
+      "no": "T1",
+      "role": "Manajer",
+      "action": "Tutup Buku → Bulanan · September 2026 (kosong) → [Pratinjau] → [Tutup Buku] → dialog [Tutup Buku]",
+      "expect": "September 2026 tertutup",
+      "ok": true,
+      "ms": 10407,
+      "info": "Periode September 2026 berhasil ditutup. Jurnal penutup: —. ✕"
+    },
+    {
+      "no": "T2",
+      "role": "Finance",
+      "action": "Peserta 79: Bayar tagihan supplier dengan *Tanggal bayar* 15 September 2026 (periode tertutup)",
+      "expect": "Ditolak dengan pesan Indonesia tentang periode tertutup; tagihan tidak berubah, tidak ada kas/jurnal",
+      "ok": true,
+      "ms": 12252,
+      "info": "Periode September 2026 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock). ×"
+    },
+    {
+      "no": "T3",
+      "role": "Manajer",
+      "action": "Tutup Buku › Buka Periode: pilih September 2026, *Alasan* kosong / spasi saja → [Ajukan Usul]",
+      "expect": "Ditolak: \"Alasan membuka periode WAJIB diisi.\"; tidak ada usul tersimpan",
+      "ok": true,
+      "ms": 11481,
+      "info": "\"\" → Alasan membuka periode WAJIB diisi. Coba lagi × · \"   \" → Alasan membuka periode WAJIB diisi. Coba lagi ×"
+    },
+    {
+      "no": "T4",
+      "role": "Admin",
+      "action": "Daftar Periksa & Tutup › Riwayat: September 2026 → [Buka Kembali] → dialog",
+      "expect": "Dialog konfirmasi TANPA isian alasan → periode dibuka kembali (catat: buka kembali tidak meminta alasan)",
+      "ok": true,
+      "ms": 11312,
+      "info": "Periode September 2026 dibuka kembali (jurnal penutup dianulir). ✕ · isian alasan di dialog: TIDAK ADA"
+    },
+    {
+      "no": "T5",
+      "role": "Pemeriksa",
+      "action": "Keadaan periode PT Sukacita dibanding sebelum uji",
+      "expect": "Sama persis",
+      "ok": true,
+      "ms": 0,
+      "info": "tertutup [—] · usul hidup [—]"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [
+    "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "notes": []
+}

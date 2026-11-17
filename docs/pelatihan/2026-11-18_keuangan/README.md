@@ -15,6 +15,8 @@ Setiap skenario **dijalankan di layar** (Playwright, akun peran yang sama dengan
 | `src/skenario/Fxx.json` | Sumber tiap skenario (langkah, hasil, cek buku) |
 | `src/bangun.py`, `src/cetak_pdf.js` | Pembangun HTML/PDF/Lembar |
 | `uji/lib.js`, `uji/Fxx_*.js` | Uji jalan per skenario (layar + buku); hasil di `uji/hasil/Fxx/hasil.json` + tangkapan layar |
+| `uji/variasi/V1–V8_*.js` · `src/variasi_*.json` | Uji variasi isian (format nominal, kosong/nol/minus, melebihi, klik ganda, format tempel mutasi) + hitungan dicocokkan rumus sendiri (Lampiran A manual) |
+| `uji/dokumen/D1–D3_*.js` · `src/dokumen_cetak.json` | Cetak dokumen (faktur, surat jalan, daftar kemasan, kwitansi, tagihan, kontrabon, bukti kas, PD/LPJ, slip gaji, …) dicocokkan dengan transaksi + uji pengaturan naskah (Lampiran B manual, bagian "Dokumen yang terbit" di slide) |
 
 ## Data latihan
 
