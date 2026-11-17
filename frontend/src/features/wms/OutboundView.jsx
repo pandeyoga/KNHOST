@@ -1,21 +1,18 @@
+import { Truck } from "lucide-react";
+import { PageHeader } from "../../components/ListPageParts";
 import OutboundScanInterface from "./OutboundScanInterface";
 
-/** Operasi Gudang › Barang Keluar — setara dengan Barang Masuk (satu level hub). */
+/** Operasi Gudang › Barang Keluar — setara dengan Barang Masuk (satu level hub).
+ *  Pola UI gelombang Gudang (M26) — kepala satu baris + ? (dulu kartu berkicker + dua baris keterangan); bilah daftar,
+ *  daftar, dan panel rincian sama dengan Barang Masuk & Cutting (`OpsListParts`). */
 export default function OutboundView({ user, focusDoc, onClearFocus }) {
   return (
-    <div className="section-card" data-testid="wms-outbound-view">
-      <div className="section-head">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="kicker">Barang Keluar</span>
-          <h2>Pengambilan & Pengiriman Pesanan Penjualan</h2>
-        </div>
-        <span className="text-[11px] text-[#6B6B73]">Scan barcode di formulir tugas di bawah</span>
-      </div>
-      <div className="section-body">
-        <OutboundScanInterface user={user}
-          focusTaskId={focusDoc?.focus_type === "wms_task" ? focusDoc.focus_id : ""}
-          onFocusConsumed={onClearFocus} />
-      </div>
+    <div className="space-y-3" data-testid="wms-outbound-view">
+      <PageHeader icon={Truck} title="Barang Keluar" testId="outbound-header"
+        help="Ambil & kirim pesanan penjualan: buka tugas, scan barcode roll di panel tugas, lalu kirim — Surat Jalan terbit otomatis. Potong sample/catalogue & potong roll ada di tab Cutting; paket sample muncul di sini setelah diterima Admin Cutting." />
+      <OutboundScanInterface user={user}
+        focusTaskId={focusDoc?.focus_type === "wms_task" ? focusDoc.focus_id : ""}
+        onFocusConsumed={onClearFocus} />
     </div>
   );
 }

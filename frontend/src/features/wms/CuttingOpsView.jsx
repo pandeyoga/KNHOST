@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PackageCheck, Printer, RefreshCw, Scissors, Search } from "lucide-react";
+import { Printer, RefreshCw, Scissors, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import { KNSelect } from "../../components/KNSelect";
+import EmptyState, { listStateKind } from "../../components/EmptyState";
+import StatusBadge from "../../components/StatusBadge";
+import { ListToolbar, PageHeader, SearchInput } from "../../components/ListPageParts";   // pola UI 16 Nov
 import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import { printSampleLabel, printSampleLabels } from "../../utils/rollLabels";
@@ -11,6 +13,7 @@ import PendingCutsPanel from "./PendingCutsPanel";
 import useViewPreset from "../../hooks/useViewPreset";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
+import { OpsCount, OpsList, OpsRow, OpsSelect, OpsSplit } from "./OpsListParts";   // pola UI M26
 
 /**
  * Operasi Gudang › **Cutting** — Trial 22 Okt 2026 (F1/A2, permintaan pemilik): operasi potong DIPISAH dari Barang
@@ -23,7 +26,7 @@ const STAGES = [
   { id: "cut", label: "Belum dipotong" },
   { id: "handoff", label: "Menunggu Admin Cutting" },
   { id: "ready", label: "Siap kirim" },
-  { id: "all", label: "Semua" },
+  { id: "all", label: "Semua tahap" },
 ];
 
 // FIX-7 (B3b LST-01) — tugas potong disaring di SERVER (`task_subtype` + `exclude_status`); dulu disaring dari 200
@@ -38,7 +41,7 @@ export default function CuttingOpsView() {
   const [moreBusy, setMoreBusy] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [wh, setWh] = useState("");
-  const [cutWh, setCutWh] = useState("");
+  const [kind, setKind] = useState("all");   // M26 — Jenis ▾: paket sample/catalogue · potong roll SO · keduanya
   const [q, setQ] = useState("");
   const [stage, setStage] = useState("cut");
   // Fase 3 · P5 — D-24 (a): Operasi Gudang › Cutting = layar utama "menunggu dipotong". Tautan dari Meja Cutting
@@ -47,7 +50,9 @@ export default function CuttingOpsView() {
     if (p.stage && STAGES.some((s) => s.id === p.stage)) setStage(p.stage);
     if (p.q !== undefined) setQ(p.q || "");
   });
-  const [open, setOpen] = useState({});
+  const [selKey, setSelKey] = useState("");   // paket yang dibuka di panel kanan (dulu kartu buka-tutup)
+  const [loaded, setLoaded] = useState(false);
+  const [loadErr, setLoadErr] = useState(null);   // galat muat daftar (403 ≠ "tidak ada paket")
   const [manual, setManual] = useState(null);
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
@@ -62,7 +67,8 @@ export default function CuttingOpsView() {
       const ws = Array.isArray(w.data) ? w.data : w.data?.items || [];
       setWarehouses(ws);
       setError("");
-    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong.")); }
+      setLoadErr(null);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong.")); setLoadErr(e); } finally { setLoaded(true); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -78,22 +84,26 @@ export default function CuttingOpsView() {
     } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong berikutnya.")); } finally { setMoreBusy(false); }
   };
 
-  const packages = useMemo(() => {
-    const term = q.toLowerCase().trim();
+  // Semua paket (panel rincian tetap menampilkan paket terbuka walau tahapnya berpindah sesudah dipotong).
+  const allPackages = useMemo(() => {
     const map = {};
     tasks.forEach((t) => {
       const key = `${t.order_id}|${t.warehouse_id}`;
       (map[key] = map[key] || { key, order_id: t.order_id, order_number: t.order_number, customer_name: t.customer_name,
         warehouse_id: t.warehouse_id, warehouse_name: t.warehouse_name, lines: [] }).lines.push(t);
     });
-    return Object.values(map).filter((p) => {
+    return Object.values(map);
+  }, [tasks]);
+  const packages = useMemo(() => {
+    const term = q.toLowerCase().trim();
+    return allPackages.filter((p) => {
       if (wh && p.warehouse_id !== wh) return false;
       if (stage !== "all" && !p.lines.some((l) => lineStage(l) === stage)) return false;
       if (!term) return true;
       return [p.order_number, p.customer_name, ...p.lines.flatMap((l) => [l.product_name, l.sku, l.suggested_roll_no])]
         .filter(Boolean).join(" ").toLowerCase().includes(term);
     });
-  }, [tasks, q, wh, stage]);
+  }, [allPackages, q, wh, stage]);
 
   const cutAll = async (p) => {
     setBusy(p.key); setMsg(""); setError("");
@@ -106,105 +116,164 @@ export default function CuttingOpsView() {
     } catch (e) { setError(apiErrorText(e, "Gagal memotong paket.")); } finally { setBusy(""); }
   };
 
-  const whOptions = [{ value: "", label: "Semua gudang" }, ...warehouses.map((w) => ({ value: w.id, label: w.name }))];
+  const whOptions = [{ value: "", label: "Semua gudang" },
+    ...warehouses.map((w) => ({ value: w.id, label: w.name || w.code || "Gudang tanpa nama" }))];
+  const selPkg = selKey ? allPackages.find((p) => p.key === selKey) || null : null;
+  const listKind = listStateKind({ loading: !loaded, error: loadErr, count: packages.length,
+    filtered: stage !== "all" || Boolean(wh) || Boolean(q.trim()) });
   return (
-    <div className="section-card" data-testid="wms-cutting-view">
-      <div className="section-head">
-        <div className="flex items-center gap-2 min-w-0"><span className="kicker">Cutting</span><h2>Potong Sample & Potong Roll</h2></div>
-        <div className="flex items-center gap-2">
-          <ExportMenu dataset="wms_tasks" label="tugas-potong-sample" scope="work" testId="cutting-ops-export" search={q}
-            filters={[["task_subtype", "eq", "sample_cut"], ["status", "ne", "dispatched"], ["status", "ne", "cancelled"],
-              wh && ["warehouse_id", "eq", wh]]} sort={[{ key: "created_at", dir: "desc" }]}
-            unsupported={stage !== "all" ? "Tahap paket dihitung di layar — pilih tahap “Semua” untuk mengunduh." : ""} />
-          <button className="icon-button" onClick={load} aria-label="Muat ulang" data-testid="cutting-ops-refresh"><RefreshCw size={14} /></button>
+    <div className="space-y-3" data-testid="wms-cutting-view">
+      {/* Pola UI gelombang Gudang (M26, pemilik 16 Nov) — kepala satu baris + ?; SATU bilah daftar seperti Barang Masuk &
+          Barang Keluar (Cari → Tahap ▾ → Jenis ▾ → Gudang ▾ → jumlah · Muat ulang/Unduh). Dulu: kotak cari buatan, chip
+          tahap, kartu paket buka-tutup, dan dropdown gudang KEDUA untuk potong roll SO. Kini satu Gudang ▾ untuk kedua
+          daftar; Jenis ▾ memilih daftar mana yang tampil; paket dibuka di panel kanan. */}
+      <PageHeader icon={Scissors} title="Cutting" testId="cutting-header"
+        help="Potong sample/catalogue: satu paket per pesanan × gudang. “Potong semua” memotong semua baris dengan roll saran FIFO sekaligus (label tercetak); baris yang perlu roll lain dipotong manual di panel paket. Sesudah dipotong → serahkan ke Admin Cutting (Meja Cutting › Terima semua) → paket muncul di Barang Keluar untuk dikirim. Potong roll pesanan (SO) = reservasi panjang di roll induk yang belum dipotong fisik." />
+      <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-ops-error" />
+      {msg && (
+        <div className="notice-bar success !mb-0" data-testid="cutting-ops-msg">
+          {msg}
+          <button type="button" aria-label="Tutup pesan" onClick={() => setMsg("")}><X size={12} /></button>
         </div>
-      </div>
-      <div className="section-body grid gap-3">
-        <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-ops-error" />
-        {msg && <p data-testid="cutting-ops-msg" className="rounded-lg bg-[#EAF7EE] px-3 py-2 text-[11.5px] text-[#1B7E3B]">{msg}</p>}
+      )}
 
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px]">
-          <div className="flex items-center gap-2 rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5">
-            <Search size={14} className="text-[#8E8E93]" />
-            <input data-testid="cutting-ops-search" value={q} onChange={(e) => setQ(e.target.value)} className="w-full bg-transparent text-[12.5px] outline-none"
-              placeholder="Cari no. pesanan, pelanggan, produk, SKU, roll…" />
-          </div>
-          <KNSelect data-testid="cutting-ops-wh" value={wh} onValueChange={setWh} options={whOptions} searchable={false} />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {STAGES.map((s) => (
-            <button key={s.id} data-testid={`cutting-ops-stage-${s.id}`} onClick={() => setStage(s.id)}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${stage === s.id ? "bg-[#FF9500] text-white" : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>{s.label}</button>
-          ))}
-        </div>
+      <ListToolbar testId="cutting-ops-toolbar" actions={(
+        <>
+          <button type="button" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"
+            data-testid="cutting-ops-refresh"><RefreshCw size={14} /></button>
+          {kind !== "so" && (
+            <ExportMenu dataset="wms_tasks" label="tugas-potong-sample" scope="work" testId="cutting-ops-export" search={q}
+              filters={[["task_subtype", "eq", "sample_cut"], ["status", "ne", "dispatched"], ["status", "ne", "cancelled"],
+                wh && ["warehouse_id", "eq", wh]]} sort={[{ key: "created_at", dir: "desc" }]}
+              unsupported={stage !== "all" ? "Tahap paket dihitung di layar — pilih tahap “Semua tahap” untuk mengunduh." : ""} />
+          )}
+        </>
+      )}>
+        {kind !== "so" && (
+          <SearchInput testId="cutting-ops-search" value={q} onChange={setQ} placeholder="Cari no. pesanan, pelanggan, produk, SKU, roll…"
+            className="min-w-[220px] flex-1 sm:max-w-[320px]" />
+        )}
+        {kind !== "so" && (
+          <OpsSelect testId="cutting-ops-stage" label="Tahap paket" value={stage} onChange={(v) => setStage(v || "all")}
+            width="min-w-[190px]" options={STAGES.map((s) => ({ value: s.id, label: s.label }))} />
+        )}
+        <OpsSelect testId="cutting-ops-kind" label="Jenis potong" value={kind} onChange={(v) => setKind(v || "all")}
+          width="min-w-[190px]" options={KINDS} />
+        <OpsSelect testId="cutting-ops-wh" label="Gudang" value={wh} onChange={setWh} width="min-w-[170px]"
+          searchable={whOptions.length > 9} options={whOptions} />
+        {kind !== "so" && <OpsCount testId="cutting-ops-count">{loaded ? `${packages.length} paket` : "Memuat…"}</OpsCount>}
+      </ListToolbar>
 
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Paket potong sample / catalogue ({packages.length})</p>
-        <ListLimitNote meta={listMeta} noun="tugas potong" onMore={loadMore} loading={moreBusy}
-          hint="paket & saringan di layar hanya atas tugas yang sudah dimuat." testId="cutting-ops-limit" />
-        {packages.length === 0 && <p className="rounded-lg border border-dashed border-[#E5E5EA] p-4 text-center text-[12px] text-[#8E8E93]" data-testid="cutting-ops-empty">Tidak ada paket potong pada filter ini.</p>}
-        {packages.map((p) => {
-          const n = p.lines.length;
-          const cut = p.lines.filter((l) => lineStage(l) !== "cut").length;
-          const recv = p.lines.filter((l) => lineStage(l) === "ready").length;
-          const uncut = p.lines.filter((l) => lineStage(l) === "cut");
-          const isOpen = open[p.key] ?? n <= 3;
-          return (
-            <div key={p.key} data-testid={`cutting-pkg-${p.order_id}`} className="rounded-xl border border-[#F3D9A4] bg-[#FFFCF5]">
-              <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="text-[12.5px] font-bold text-[#9A5B00]">{p.order_number} · {p.customer_name}</p>
-                  <p className="text-[11px] text-[#6B6B73]">{p.warehouse_name} · {n} baris · dipotong {cut}/{n} · diterima Admin Cutting {recv}/{n}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {uncut.length > 0 && (
-                    <button data-testid={`cutting-pkg-cut-all-${p.order_id}`} disabled={busy === p.key} onClick={() => cutAll(p)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#FF9500] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50">
-                      <Scissors size={13} /> {busy === p.key ? "Memotong…" : `Potong semua (${uncut.length}) · roll saran`}
+      {kind !== "so" && (
+        <OpsSplit open={Boolean(selPkg)} testId="cutting-ops-split">
+          <OpsList testId="cutting-ops-list" footer={(
+            <ListLimitNote meta={listMeta} noun="tugas potong" onMore={loadMore} loading={moreBusy}
+              hint="paket & saringan di layar hanya atas tugas yang sudah dimuat." testId="cutting-ops-limit" />
+          )}>
+            {listKind ? (
+              <EmptyState compact what="paket potong" icon={Scissors} error={loadErr} onRetry={load} kind={listKind}
+                testId="cutting-ops-empty" onReset={() => { setStage("all"); setWh(""); setQ(""); }} />
+            ) : packages.map((p) => {
+              const st = pkgState(p);
+              return (
+                <OpsRow key={p.key} wrapperTestId={`cutting-pkg-${p.order_id}`} testId={`cutting-open-${p.order_id}`}
+                  selected={selKey === p.key} onOpen={() => { setSelKey(p.key); setManual(null); }}
+                  title={p.order_number}
+                  status={<PkgBadge st={st} />}
+                  lines={[p.customer_name, `${p.warehouse_name || "Gudang tanpa nama"} · ${st.n} baris · dipotong ${st.cut}/${st.n} · diterima Admin Cutting ${st.recv}/${st.n}`]}
+                  action={st.uncut.length > 0 && (
+                    <button type="button" data-testid={`cutting-pkg-cut-all-${p.order_id}`} disabled={busy === p.key}
+                      onClick={() => cutAll(p)} className="primary-button btn-sm">
+                      <Scissors size={14} /> {busy === p.key ? "Memotong…" : `Potong semua (${st.uncut.length}) · roll saran`}
                     </button>
-                  )}
-                  {uncut.length === 0 && recv < n && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF3D6] px-2 py-0.5 text-[10.5px] font-semibold text-[#9A5B00]"><PackageCheck size={12} /> Serahkan ke Admin Cutting</span>
-                  )}
-                  {recv === n && <span className="rounded-full bg-[#EAF7EE] px-2 py-0.5 text-[10.5px] font-semibold text-[#1B7E3B]">Siap kirim — lihat Barang Keluar</span>}
-                  <button className="text-[11px] font-semibold text-[#0058CC]" onClick={() => setOpen((o) => ({ ...o, [p.key]: !isOpen }))}>{isOpen ? "Tutup" : "Rincian"}</button>
-                </div>
-              </div>
-              {isOpen && (
-                <ul className="divide-y divide-[#F6ECD5] border-t border-[#F6ECD5] text-[11.5px]">
-                  {p.lines.map((l) => (
-                    <li key={l.id} data-testid={`cutting-line-${l.id}`} className="px-3 py-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="min-w-0"><b>{l.product_name}</b> · {formatQty(l.quantity)} {l.unit} · saran {l.suggested_roll_no || "—"}</span>
-                        <span className="flex items-center gap-2">
-                          {lineStage(l) === "cut" ? (
-                            <button data-testid={`cutting-line-manual-${l.id}`} className="text-[11px] font-semibold text-[#CC7700]" onClick={() => setManual(manual === l.id ? null : l.id)}>Potong manual</button>
-                          ) : (
-                            <>
-                              <span className="text-[#126E2C]">{l.parent_roll_no} → <b>{l.child_roll_no}</b>{lineStage(l) === "ready" ? " · diterima" : " · menunggu Admin Cutting"}</span>
-                              <button aria-label="Cetak label" className="text-[#6B6B73]" onClick={() => printSampleLabel({ ...l, cut_roll_no: l.parent_roll_no, length: l.picked_qty, sales_order_number: l.order_number })}><Printer size={12} /></button>
-                            </>
-                          )}
-                        </span>
-                      </div>
-                      {manual === l.id && <div className="mt-2"><SampleCutPanel task={l} onCut={() => { setManual(null); load(); }} /></div>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
+                  )} />
+              );
+            })}
+          </OpsList>
 
-        <div className="mt-2 border-t border-[#EFF0F2] pt-3" data-testid="cutting-ops-so-cuts">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Potong roll untuk pesanan (SO) — reservasi panjang yang belum dipotong</p>
-            {/* Audit UI 054 — dulu dua filter gudang di satu layar punya nilai awal berbeda ("Semua gudang" vs gudang
-                pertama). Kini sama-sama mulai dari "Semua gudang". */}
-            <div className="w-[220px]"><KNSelect data-testid="cutting-ops-cut-wh" aria-label="Gudang potong SO" value={cutWh} onValueChange={setCutWh} options={whOptions} searchable={false} /></div>
-          </div>
-          <PendingCutsPanel whId={cutWh} />
+          {selPkg && (
+            <PackagePanel p={selPkg} st={pkgState(selPkg)} busy={busy} manual={manual} setManual={setManual}
+              onCutAll={() => cutAll(selPkg)} onCut={() => { setManual(null); load(); }}
+              onClose={() => { setSelKey(""); setManual(null); }} />
+          )}
+        </OpsSplit>
+      )}
+
+      {kind !== "sample" && (
+        <div data-testid="cutting-ops-so-cuts">
+          <PendingCutsPanel whId={wh} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const KINDS = [
+  { value: "all", label: "Semua jenis potong" },
+  { value: "sample", label: "Sample / catalogue (paket)" },
+  { value: "so", label: "Potong roll pesanan (SO)" },
+];
+
+function pkgState(p) {
+  const n = p.lines.length;
+  const cut = p.lines.filter((l) => lineStage(l) !== "cut").length;
+  const recv = p.lines.filter((l) => lineStage(l) === "ready").length;
+  const uncut = p.lines.filter((l) => lineStage(l) === "cut");
+  return { n, cut, recv, uncut };
+}
+
+/** Tahap paket = lencana baku (dulu pil oranye/hijau buatan sendiri). */
+function PkgBadge({ st }) {
+  if (st.uncut.length > 0) return <StatusBadge tone="warning" icon="alert">Belum dipotong</StatusBadge>;
+  if (st.recv < st.n) return <StatusBadge tone="info" icon="clock">Serahkan ke Admin Cutting</StatusBadge>;
+  return <StatusBadge tone="success" icon="check">Siap kirim — lihat Barang Keluar</StatusBadge>;
+}
+
+/** Panel rincian paket (kanan): aksi paket + baris potong (dulu kartu yang dibuka-tutup "Rincian/Tutup"). */
+function PackagePanel({ p, st, busy, manual, setManual, onCutAll, onCut, onClose }) {
+  return (
+    <div className="kn-ops-panel" data-testid={`cutting-detail-${p.order_id}`}>
+      <div className="kn-ops-panel-head">
+        <div className="min-w-0">
+          <p className="text-fs-13 font-bold text-kn-text">{p.order_number} · {p.customer_name}</p>
+          <p className="text-fs-12 text-kn-text-2">{p.warehouse_name || "Gudang tanpa nama"} · {st.n} baris · dipotong {st.cut}/{st.n} · diterima Admin Cutting {st.recv}/{st.n}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {st.uncut.length > 0 ? (
+            <button type="button" data-testid={`cutting-detail-cut-all-${p.order_id}`} disabled={busy === p.key} onClick={onCutAll}
+              className="primary-button btn-sm">
+              <Scissors size={14} /> {busy === p.key ? "Memotong…" : `Potong semua (${st.uncut.length}) · roll saran`}
+            </button>
+          ) : <PkgBadge st={st} />}
+          <button type="button" className="icon-button" aria-label="Tutup panel paket" data-testid="cutting-detail-close" onClick={onClose}>
+            <X size={14} />
+          </button>
         </div>
       </div>
+      <ul className="divide-y divide-kn-divider text-fs-12">
+        {p.lines.map((l) => (
+          <li key={l.id} data-testid={`cutting-line-${l.id}`} className="px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="min-w-0"><b>{l.product_name}</b> · {formatQty(l.quantity)} {l.unit} · saran {l.suggested_roll_no || "—"}</span>
+              <span className="flex items-center gap-2">
+                {lineStage(l) === "cut" ? (
+                  <button type="button" data-testid={`cutting-line-manual-${l.id}`} className="secondary-button btn-sm"
+                    onClick={() => setManual(manual === l.id ? null : l.id)}>Potong manual</button>
+                ) : (
+                  <>
+                    <span className="text-kn-success-text">{l.parent_roll_no} → <b>{l.child_roll_no}</b>{lineStage(l) === "ready" ? " · diterima" : " · menunggu Admin Cutting"}</span>
+                    <button type="button" aria-label="Cetak label" title="Cetak label" className="icon-button"
+                      onClick={() => printSampleLabel({ ...l, cut_roll_no: l.parent_roll_no, length: l.picked_qty, sales_order_number: l.order_number })}>
+                      <Printer size={14} />
+                    </button>
+                  </>
+                )}
+              </span>
+            </div>
+            {manual === l.id && <div className="mt-2"><SampleCutPanel task={l} onCut={onCut} /></div>}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,0 +1,84 @@
+/* Pola UI gelombang Gudang (pemilik 16 Nov — M26/M29; docs/blueprint/04_POLA_UI.md §2.A).
+   SATU bentuk daftar untuk tab Operasi Gudang (Barang Masuk · Barang Keluar · Cutting): kartu daftar berbaris selebar
+   layar; rincian dibuka di panel kanan dan daftar menyempit jadi kolom kiri HANYA saat ada yang dibuka (dulu Barang
+   Keluar selalu menyisakan panel kosong "Pilih tugas dari daftar", Barang Masuk kartu berpetak, Cutting kartu
+   buka-tutup). Lokasi Rak: antrean penempatan jadi tabel berkolom. Token kn-* saja; huruf ≥ 12 px. */
+
+.kn-ops-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
+@media (min-width: 1024px) {
+  .kn-ops-split.is-open { grid-template-columns: 360px minmax(0, 1fr); }
+  .kn-ops-split.is-open .kn-ops-rows { max-height: 640px; overflow-y: auto; }
+  .kn-ops-split.is-open .kn-ops-row-action { display: none; }   /* aksi baris pindah ke panel rincian */
+}
+
+.kn-ops-list, .kn-ops-panel {
+  min-width: 0; overflow: hidden; border: 1px solid var(--kn-divider); border-radius: 12px; background: white;
+}
+.kn-ops-rows > * + * { border-top: 1px solid var(--kn-divider); }
+
+.kn-ops-row { display: flex; align-items: center; min-width: 0; }
+.kn-ops-row.is-selected { background: var(--kn-action-soft); box-shadow: inset 3px 0 0 var(--kn-action); }
+.kn-ops-row-main {
+  flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 2px;
+  padding: 10px 12px; border: 0; background: transparent; color: var(--kn-text); font: inherit; text-align: left;
+  cursor: pointer;
+}
+.kn-ops-row:not(.is-selected) .kn-ops-row-main:hover { background: var(--kn-neutral-soft); }
+.kn-ops-row-main:focus-visible { outline: 2px solid var(--kn-focus); outline-offset: -2px; }
+.kn-ops-row-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); min-width: 0; }
+.kn-ops-row-title {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0;
+  font-size: var(--fs-13); line-height: var(--lh-13); font-weight: 600;
+}
+.kn-ops-row-status { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; color: var(--kn-text-2); }
+.kn-ops-row-lines { display: grid; min-width: 0; font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.kn-ops-row-lines > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-ops-row-lines > span:first-child { color: var(--kn-neutral); }
+.kn-ops-row-aside {
+  display: block; min-width: 0; margin-top: 4px; font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2);
+}
+.kn-ops-row-action { flex-shrink: 0; padding: 8px 12px 8px 0; }
+
+/* Daftar selebar layar (tidak ada yang dibuka): baris = kolom tabel — nomor · keterangan · kemajuan · status. */
+@media (min-width: 768px) {
+  .kn-ops-split:not(.is-open) .kn-ops-row-main {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.8fr) minmax(150px, 1fr) auto;
+    grid-template-areas: "title lines aside status"; align-items: center; column-gap: var(--sp-4);
+  }
+  .kn-ops-split:not(.is-open) .kn-ops-row-head { display: contents; }
+  .kn-ops-split:not(.is-open) .kn-ops-row-title { grid-area: title; }
+  .kn-ops-split:not(.is-open) .kn-ops-row-status { grid-area: status; justify-self: end; }
+  .kn-ops-split:not(.is-open) .kn-ops-row-lines { grid-area: lines; }
+  .kn-ops-split:not(.is-open) .kn-ops-row-aside { grid-area: aside; margin-top: 0; }
+}
+
+.kn-ops-panel-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  padding: 10px 12px; border-bottom: 1px solid var(--kn-divider);
+}
+.kn-ops-panel-body { display: grid; gap: var(--sp-2); padding: var(--sp-3); font-size: var(--fs-12); line-height: var(--lh-12); }
+
+/* Lokasi Rak (M29) — antrean penempatan sebagai tabel berkolom (dulu kartu abu bertumpuk berisi chip & tombol biru). */
+.kn-putaway-table {
+  min-width: 0; overflow: hidden; border: 1px solid var(--kn-divider); border-radius: 12px; background: white;
+}
+.kn-putaway-head, .kn-putaway-row {
+  display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--sp-3); row-gap: 6px; align-items: center;
+  padding: 8px 12px;
+}
+.kn-putaway-head {
+  display: none; background: var(--kn-neutral-soft); color: var(--kn-text-2);
+  font-size: var(--fs-12); line-height: var(--lh-12); font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+}
+.kn-putaway-table > * + * { border-top: 1px solid var(--kn-divider); }
+.kn-putaway-row { font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.kn-putaway-roll { min-width: 0; font-size: var(--fs-13); line-height: var(--lh-13); font-weight: 600; color: var(--kn-text); }
+.kn-putaway-bin { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.kn-putaway-extra { grid-column: 1 / -1; display: grid; gap: 4px; }
+.kn-putaway-extra:empty { display: none; }
+@media (min-width: 900px) {
+  .kn-putaway-head, .kn-putaway-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(0, 1.7fr) minmax(280px, 340px) auto;
+  }
+  .kn-putaway-head { display: grid; }
+}

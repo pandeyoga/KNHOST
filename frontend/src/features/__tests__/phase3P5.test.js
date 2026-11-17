@@ -92,7 +92,8 @@ describe("D-28 — SPK Inspeksi ber-preset 'Hanya yang DITAHAN'", () => {
         <InspectionsView currentUser={{ role: "manager", permissions: {} }} />
       </ViewPresetProvider>);
     await flush();
-    expect(q("ins-chip-hold").getAttribute("aria-pressed")).toBe("true");
+    // Pola UI (M24, 16 Nov) — chip "Hanya yang DITAHAN" kini kartu angka "Barang DITAHAN" (saringan cepat, aktif).
+    expect(q("ins-kpi-hold").getAttribute("aria-pressed")).toBe("true");
     const listCalls = axios.get.mock.calls.filter(([url]) => url.endsWith("/inspections"));
     expect(listCalls.some(([, cfg]) => cfg?.params?.hold_only === true)).toBe(true);
   });

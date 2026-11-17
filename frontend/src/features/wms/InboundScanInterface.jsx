@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Package, Scan, X, ChevronRight } from "lucide-react";
+import { AlertTriangle, Package, RefreshCw, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { rememberDocEntities } from "../../services/docEntityRegistry";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -20,6 +20,9 @@ import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
+import { ListToolbar, SearchInput } from "../../components/ListPageParts";
+import EmptyState, { listStateKind } from "../../components/EmptyState";
+import { OpsCount, OpsList, OpsRow, OpsSelect, OpsSplit, warehouseOptions } from "./OpsListParts";   // pola UI M26
 
 function MiniBar({ pct, status }) {
   const color = status === 'completed' ? 'bg-[#34C759]' : status === 'escalated' ? 'bg-red-400' : 'bg-[#007AFF]';
@@ -44,6 +47,14 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
   const [error, setError] = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  // Pola UI gelombang Gudang (M26) — cari & saringan gudang di layar (atas tugas termuat), sama dengan Barang Keluar.
+  const [q, setQ] = useState("");
+  const [whFilter, setWhFilter] = useState("");
+  const [loadErr, setLoadErr] = useState(null);   // galat muat daftar (403 ≠ "tidak ada tugas")
+  const term = q.toLowerCase().trim();
+  const visibleTasks = shownTasks.filter((t) => (!whFilter || t.warehouse_id === whFilter) && (!term
+    || [t.po_number, t.supplier_name, t.product_name, t.sku, t.warehouse_name].filter(Boolean).join(" ").toLowerCase().includes(term)));
+  const whOptions = warehouseOptions(shownTasks, whFilter);
 
   const [cameraActive, setCameraActive] = useState(false);
   const [scanData, setScanData] = useState(EMPTY_SCAN);
@@ -135,7 +146,8 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
       setTasks(rememberDocEntities(res.data));   // FIX-1 — tugas lintas PT: aksi atas nama PT tugas
       setListMeta(metaFromHeaders(res, (res.data || []).length));
       setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat inbound task."); }
+      setLoadErr(null);
+    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat inbound task."); setLoadErr(e); }
     finally { setLoading(false); setFetched(true); }
   };
 
@@ -315,6 +327,8 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
 
   const FILTERS = ["all", "waiting_goods", "receiving", "qc_check", "escalated"];
   const FILTER_LABELS = { all: "Semua", waiting_goods: "Menunggu barang", receiving: "Sedang diterima", qc_check: "Cek QC", escalated: "Dieskalasi" };
+  const listKind = listStateKind({ loading: loading || !fetched, error: loadErr, count: visibleTasks.length,
+    filtered: filterStatus !== "all" || Boolean(whFilter) || Boolean(q.trim()) });
 
   return (
     <div data-testid="inbound-scan-panel" className="flex flex-col gap-3">
@@ -359,94 +373,83 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           <a data-testid="inbound-grn-open" href="?view=goods-receipts" className="primary-button whitespace-nowrap !py-1">Buka Kedatangan Barang</a>
         </div>
       )}
-      {/* Filter strip */}
-      <div className="flex items-center gap-1.5 overflow-x-auto">
-        {FILTERS.map(s => (
-          <button key={s}
-            data-testid={`filter-status-${s}`}
-            onClick={() => setFilterStatus(s)}
-            className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all ${filterStatus === s ? "bg-[#34C759] text-white" : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#34C759]"}`}>
-            {FILTER_LABELS[s]}
-          </button>
-        ))}
-        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{fetched ? `${shownTasks.length} tugas` : "Memuat…"}</span>
-        <ExportMenu dataset="wms_tasks" label="tugas-barang-masuk" scope="work" testId="inbound-export"
-          filters={[["flow_type", "eq", "inbound"], ["source_type", "eq", "purchase_order"],
-            filterStatus !== "all" && ["status", "eq", filterStatus]]} sort={[{ key: "created_at", dir: "desc" }]} />
-      </div>
+      {/* Pola UI gelombang Gudang (M26, pemilik 16 Nov) — bilah daftar sama dengan Kedatangan, Barang Keluar & Cutting:
+          Cari → Status ▾ → Gudang ▾ → jumlah · Muat ulang/Unduh di kanan (dulu deret chip status hijau + tombol muat ulang
+          di kepala daftar). Cari & gudang menyaring tugas yang sudah dimuat. */}
+      <ListToolbar testId="inbound-filters" actions={(
+        <>
+          <button type="button" className="icon-button" onClick={fetchTasks} aria-label="Muat ulang" title="Muat ulang"
+            data-testid="inbound-refresh"><RefreshCw size={14} /></button>
+          <ExportMenu dataset="wms_tasks" label="tugas-barang-masuk" scope="work" testId="inbound-export" search={q}
+            filters={[["flow_type", "eq", "inbound"], ["source_type", "eq", "purchase_order"],
+              filterStatus !== "all" && ["status", "eq", filterStatus], whFilter && ["warehouse_id", "eq", whFilter]]}
+            sort={[{ key: "created_at", dir: "desc" }]} />
+        </>
+      )}>
+        <SearchInput testId="inbound-search" value={q} onChange={setQ} placeholder="Cari no. PO, pemasok, produk, SKU…"
+          className="min-w-[220px] flex-1 sm:max-w-[320px]" />
+        <OpsSelect testId="inbound-status" label="Status" value={filterStatus} onChange={(v) => setFilterStatus(v || "all")}
+          width="min-w-[170px]" options={FILTERS.map((s) => ({ value: s, label: s === "all" ? "Semua status" : FILTER_LABELS[s] }))} />
+        <OpsSelect testId="inbound-wh" label="Gudang" value={whFilter} onChange={setWhFilter}
+          width="min-w-[170px]" searchable={whOptions.length > 9} options={whOptions} />
+        <OpsCount testId="inbound-task-count">{fetched ? `${visibleTasks.length} tugas` : "Memuat…"}</OpsCount>
+      </ListToolbar>
 
-      {/* 2-panel layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-3">
-        {/* LEFT: Task List */}
-        <div className="bg-white border border-[#EFF0F2] rounded-xl overflow-hidden">
-          <div className="px-3 py-2 border-b border-[#EFF0F2] bg-[#FAFBFC] flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tugas Barang Masuk</span>
-            <button onClick={fetchTasks} data-testid="inbound-refresh"
-              className="text-[#007AFF] text-[11px] font-medium">Muat ulang</button>
-          </div>
-          {loading ? (
-            <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : shownTasks.length === 0 ? (
-            <div className="py-8 text-center text-[12px] text-[#6B6B73]">
-              <Package size={28} className="mx-auto mb-2 text-gray-300" />
-              <p>Tidak ada tugas barang masuk</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#EFF0F2] overflow-y-auto max-h-[520px]">
-              {shownTasks.map(task => {
-                const pct = task.expected_qty ? Math.min((task.received_qty || 0) / task.expected_qty * 100, 100) : 0;
-                const isSelected = selectedTask?.id === task.id;
-                return (
-                  <button key={task.id}
-                    data-testid={`inbound-task-${task.id}`}
-                    onClick={() => selectTask(task)}
-                    className={`w-full text-left px-3 py-2.5 hover:bg-[#F5F7FF] transition-colors ${isSelected ? 'bg-[#EFF4FF] border-l-2 border-[#007AFF]' : ''}`}>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] font-bold text-[#007AFF]">{task.po_number}</span>
-                      <div className="flex items-center gap-1">
-                        <TaskBadge status={task.status} />
-                        <ChevronRight size={12} className="text-gray-400" />
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-[#3C3C43] truncate">{task.sku}</p>
-                    <p className="text-[10px] text-[#8E8E93] truncate">{task.product_name}</p>
-                    {/* FASE F-1 — satuan supplier terlihat langsung di daftar */}
-                    {task.supplier_uom && task.supplier_uom !== task.unit && (
-                      <p data-testid={`inbound-task-supplier-uom-${task.id}`}
-                        className="text-[9.5px] font-semibold text-[#0058CC]">
-                        surat jalan: {task.supplier_sku || "-"} · per {task.supplier_uom}
-                      </p>
-                    )}
-                    <div className="mt-1.5">
-                      <MiniBar pct={pct} status={task.status} />
-                      <div className="flex justify-between mt-0.5">
-                        <span className="text-[10px] text-[#8E8E93]">
-                          {formatQty(task.received_qty || 0)}/{formatQty(task.expected_qty)} {task.unit}
-                          {/* FASE U — DUA SATUAN di daftar tugas gudang: petugas mencocokkan
-                              surat jalan supplier per GULUNGAN, jadi jumlah roll harus
-                              terlihat sebelum tugas dibuka. `rollsText` = satu-satunya
-                              aturan "layak ditulis atau tidak" (dokumen lama → kosong,
-                              bukan "0 roll"). Rencana dari PO (`expected_rolls`) diganti
-                              hasil nyata (`qty_rolls`) begitu roll benar-benar lahir. */}
-                          {hasRolls(task.qty_rolls)
-                            ? <span className="ml-1 text-[#1B7F4B]">· {rollsText(task.qty_rolls)} diterima</span>
-                            : (hasRolls(task.expected_rolls)
-                              ? <span className="ml-1">· rencana {rollsText(task.expected_rolls)}</span>
-                              : null)}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[#3C3C43]">{pct.toFixed(0)}%</span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <ListLimitNote meta={listMeta} noun="tugas" onMore={loadMoreTasks} loading={moreBusy} testId="inbound-limit" />
-        </div>
+      <OpsSplit open={Boolean(selectedTask)} testId="inbound-split">
+        <OpsList testId="inbound-task-list" footer={(
+          <ListLimitNote meta={listMeta} noun="tugas" onMore={loadMoreTasks} loading={moreBusy}
+            hint={q.trim() || whFilter ? "cari & saringan gudang hanya atas tugas yang sudah dimuat." : undefined} testId="inbound-limit" />
+        )}>
+          {listKind ? (
+            <EmptyState compact what="tugas barang masuk" icon={Package} error={loadErr} onRetry={fetchTasks} kind={listKind}
+              title={listKind === "empty" ? "Tidak ada tugas barang masuk" : undefined}
+              onReset={() => { setFilterStatus("all"); setWhFilter(""); setQ(""); }} testId="inbound-list-state" />
+          ) : visibleTasks.map((task) => {
+            const pct = task.expected_qty ? Math.min((task.received_qty || 0) / task.expected_qty * 100, 100) : 0;
+            return (
+              <OpsRow key={task.id} testId={`inbound-task-${task.id}`} selected={selectedTask?.id === task.id}
+                onOpen={() => selectTask(task)}
+                title={task.po_number}
+                status={<TaskBadge status={task.status} />}
+                lines={[
+                  task.supplier_name,
+                  [task.sku, task.product_name].filter(Boolean).join(" · "),
+                  task.warehouse_name,
+                  // FASE F-1 — satuan supplier terlihat langsung di daftar
+                  task.supplier_uom && task.supplier_uom !== task.unit && (
+                    <span data-testid={`inbound-task-supplier-uom-${task.id}`} className="font-semibold text-kn-action">
+                      surat jalan: {task.supplier_sku || "-"} · per {task.supplier_uom}
+                    </span>
+                  ),
+                ]}
+                aside={(
+                  <>
+                    <MiniBar pct={pct} status={task.status} />
+                    <span className="mt-0.5 flex justify-between gap-2 tabular-nums">
+                      <span>
+                        {formatQty(task.received_qty || 0)}/{formatQty(task.expected_qty)} {task.unit}
+                        {/* FASE U — DUA SATUAN di daftar tugas gudang: petugas mencocokkan
+                            surat jalan supplier per GULUNGAN, jadi jumlah roll harus
+                            terlihat sebelum tugas dibuka. `rollsText` = satu-satunya
+                            aturan "layak ditulis atau tidak" (dokumen lama → kosong,
+                            bukan "0 roll"). Rencana dari PO (`expected_rolls`) diganti
+                            hasil nyata (`qty_rolls`) begitu roll benar-benar lahir. */}
+                        {hasRolls(task.qty_rolls)
+                          ? <span className="ml-1 text-kn-success-text">· {rollsText(task.qty_rolls)} diterima</span>
+                          : (hasRolls(task.expected_rolls)
+                            ? <span className="ml-1">· rencana {rollsText(task.expected_rolls)}</span>
+                            : null)}
+                      </span>
+                      <span className="font-semibold text-kn-neutral">{pct.toFixed(0)}%</span>
+                    </span>
+                  </>
+                )} />
+            );
+          })}
+        </OpsList>
 
-        {/* RIGHT: Scan Panel */}
-        {selectedTask ? (
+        {/* RIGHT: Scan Panel — hanya saat tugas dibuka (dulu panel kosong "Pilih tugas dari daftar"). */}
+        {selectedTask && (
           <InboundTaskPanel
             task={selectedTask}
             scanData={scanData}
@@ -465,16 +468,8 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
             onTaskUpdated={onTaskUpdated}
             onOpenDocument={onOpenDocument}
           />
-        ) : (
-          <div className="bg-white border border-dashed border-[#E5E5EA] rounded-xl flex items-center justify-center">
-            <div className="text-center p-8">
-              <Scan size={32} className="mx-auto mb-2 text-gray-300" />
-              <p className="text-[13px] font-semibold text-[#6B6B73]">Pilih tugas dari daftar</p>
-              <p className="text-[11px] text-[#8E8E93] mt-1">Klik baris tugas untuk buka formulir scan</p>
-            </div>
-          </div>
         )}
-      </div>
+      </OpsSplit>
 
       {/* Escalate Modal — Fase 4 · R3 (L-03): FormModal baku (layar penuh di HP, Esc berlapis, galat di kaki pop-up).
           Testid `inbound-escalate-reason` / `-submit` tetap. */}

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { can } from "../../config/roles";
-import { MapPin, Package, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon, ChevronRight } from "lucide-react";
+import { MapPin, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
-import { PageHeader } from "../../components/ListPageParts";
+import { ListToolbar, MetricRow, PageHeader } from "../../components/ListPageParts";
+import EmptyState from "../../components/EmptyState";
 import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
@@ -20,6 +21,7 @@ import { askReason } from "../../services/confirmService";
 import { normalizeZones, fmtUnits, TERMS } from "./location/locUtils";
 import { formatQty } from "../../utils/formatters";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import "./opsList.css";   // pola UI M29 — tabel antrean penempatan
 
 const isActiveWh = (w) => (w.status || "active") === "active" && w.active !== false;
 
@@ -115,41 +117,47 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
   };
 
   const w = loc?.warehouse || {};
-  const capTxt = loc?.capacity_rolls_total ? `${loc.capacity_rolls_total} roll` : "Belum diatur";
+  const capTxt = loc?.capacity_rolls_total ? `${formatQty(loc.capacity_rolls_total)} roll` : "belum diatur";
+  const kpi = (v) => (loading ? "…" : v);
+  // Pola UI (pemilik 16 Nov — M29 "UI masih sangat buruk", foto 24): kartu angka = pintasan ke tab-nya (dulu lima kartu
+  // tanpa aksi; Total Bin & Kapasitas kini satu kartu "Bin").
+  const kpis = [
+    { label: "Belum Ditempatkan", value: kpi(`${formatQty(loc?.unassigned?.rolls ?? 0)} roll`), icon: Layers, tab: "putaway",
+      hint: [fmtUnits(loc?.unassigned?.by_unit), "gedung ini · semua PT"].filter(Boolean).join(" · "), testId: "lp-unassigned" },
+    { label: "Terisi di Rak", value: kpi(`${formatQty(loc?.binned_rolls ?? 0)} roll`), icon: PackageCheck, tab: "stock",
+      hint: fmtUnits(loc?.binned_by_unit), testId: "lp-kpi-occupied" },
+    { label: "Bin", value: kpi(`${formatQty(loc?.bin_count ?? 0)} bin`), icon: Boxes, tab: "bins", testId: "lp-kpi-bins",
+      hint: `kapasitas ${capTxt}${loc?.bins_without_capacity ? ` · ${formatQty(loc.bins_without_capacity)} tanpa kapasitas` : ""}` },
+    { label: "Alamat Tak Terdaftar", value: kpi(`${formatQty(loc?.orphan?.rolls ?? 0)} roll`), icon: AlertOctagon, tab: "orphans",
+      hint: fmtUnits(loc?.orphan?.by_unit), testId: "lp-kpi-orphan" },
+  ];
+  const noAssignment = locScope?.restricted && locScope?.no_assignment;
   return (
-    <div data-testid="location-putaway-view" className="space-y-4">
-      {/* Fase 4 · R3 (L-01/L-02) — kepala = PageHeader baku (dulu kicker "GUDANG" + h1 20 px buatan sendiri); tab = PageTabs
-          (dulu TabBtn buatan sendiri; testid `lp-tab-*` tetap). Di HP bilah tab satu baris bergulir (aturan baku P1). */}
+    <div data-testid="location-putaway-view" className="view-container">
+      {/* Pola UI §2.A — kepala SATU baris: judul (?) · Gudang ▾ · muat ulang. Dulu: kepala + baris hierarki lokasi + lencana
+          cakupan (lokasi sudah dipilih di bilah atas) + paragraf saran bin di atas antrean — kini di ?. */}
       <PageHeader icon={MapPin} title="Lokasi Gudang & Penempatan Rak" testId="lp-header"
+        help={`Susunan alamat: ${[TERMS.site, TERMS.warehouse, TERMS.zone, TERMS.rack, TERMS.level, TERMS.bin].join(" › ")}`
+          + `${w.name ? ` — gudang terpilih: ${w.site ? `${w.site} › ` : ""}${w.name}` : ""}. Klik kartu angka untuk membuka tab-nya. `
+          + "Penempatan: saran bin hanya menampilkan bin yang lolos aturan & kapasitas; server tetap memeriksa ulang saat disimpan."}
         actions={(
           <>
-            <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId}
+            {noAssignment && <LocationScopeBadge scope={locScope} />}
+            <KNSelect data-testid="lp-warehouse" aria-label="Gudang" value={whId} onValueChange={setWhId}
+              searchable={warehouses.length > 9} placeholder="Gudang"
               options={warehouses.map((x) => ({ value: x.id, label: isActiveWh(x) ? x.name : `${x.name} (nonaktif)` }))}
-              className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-            <button type="button" data-testid="lp-refresh" onClick={() => loadAll()} className="secondary-button">
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
+              className="!h-auto !w-auto min-w-[200px] rounded-lg border border-kn-field-border bg-white !px-2 !py-1.5 text-fs-13" />
+            <button type="button" data-testid="lp-refresh" onClick={() => loadAll()} className="icon-button"
+              aria-label="Muat ulang" title="Muat ulang">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </button>
           </>
         )} />
-      <div className="-mt-2">
-        <p data-testid="lp-hierarchy" className="text-[12px] text-[#6B6B73] flex flex-wrap items-center gap-1">
-          {[TERMS.site, TERMS.warehouse, TERMS.zone, TERMS.rack, TERMS.level, TERMS.bin].map((t, i) => (
-            <span key={t} className="inline-flex items-center gap-1">{i > 0 && <ChevronRight size={11} />}{t}</span>))}
-          {w.name && <span className="ml-2 font-semibold text-[#1C1C1E]">· {w.site ? `${w.site} › ` : ""}{w.name}</span>}
-        </p>
-        <div className="mt-1"><LocationScopeBadge scope={locScope} /></div>
-      </div>
 
       {error && <ErrorNotice message={error} onRetry={() => loadAll()} />}
-      {msg && <div data-testid="lp-msg" className="rounded-lg bg-[#E7F7EC] text-[#1B7E3B] text-[12px] font-semibold px-3 py-2">{msg}</div>}
+      {msg && <div data-testid="lp-msg" className="notice-bar success !mb-0">{msg}</div>}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Stat icon={Boxes} label="Total Bin" value={loc?.bin_count ?? 0} sub={loc?.bins_without_capacity ? `${loc.bins_without_capacity} tanpa kapasitas` : ""} color="#0058CC" loading={loading} testId="lp-kpi-bins" />
-        <Stat icon={Package} label="Kapasitas" value={capTxt} color="#5856D6" loading={loading} testId="lp-kpi-capacity" />
-        <Stat icon={PackageCheck} label="Terisi di Rak" value={`${formatQty(loc?.binned_rolls ?? 0)} roll`} sub={fmtUnits(loc?.binned_by_unit)} color="#34C759" loading={loading} testId="lp-kpi-occupied" />
-        <Stat icon={Layers} label="Belum Ditempatkan" value={`${formatQty(loc?.unassigned?.rolls ?? 0)} roll`} sub={[fmtUnits(loc?.unassigned?.by_unit), "gedung ini · semua PT"].filter(Boolean).join(" · ")} color="#FF9500" loading={loading} testId="lp-unassigned" />
-        <Stat icon={AlertOctagon} label="Alamat Tak Terdaftar" value={`${formatQty(loc?.orphan?.rolls ?? 0)} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
-      </div>
+      <MetricRow testId="lp-kpis" items={kpis.map(({ tab: t, ...k }) => ({ ...k, active: tab === t, onClick: () => setTab(t) }))} />
 
       <PageTabs value={tab} onChange={setTab} testId="lp-tab" ariaLabel="Lokasi gudang" tabs={[
         { key: "putaway", label: `Penempatan Rak${queueMeta.total ? ` (${formatQty(queueMeta.total)})` : ""}` },
@@ -168,54 +176,52 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         : tab === "bins" ? <BinOccupancyGrid bins={loc?.bins} />
         : tab === "orphans" ? <OrphanPanel whId={whId} binOptions={binOptions} onChanged={() => loadAll()} />
         : (
-          <div className="section-card section-pad">
-            <div className="kn-list-toolbar mb-1">
-              <h3 className="text-[13px] font-bold">Antrean Penempatan Rak — roll belum ditempatkan</h3>
+          <div data-testid="lp-queue">
+            {/* Bilah daftar (jumlah · Unduh) tepat di atas tabel antrean; dulu judul + paragraf + kalimat jumlah. */}
+            <ListToolbar testId="lp-queue-toolbar" actions={(
               <ExportMenu dataset="inventory_rolls" label="antrean-penempatan-rak" testId="lp-queue-export"
                 filters={[whId && ["warehouse_id", "eq", whId], ["bin_id", "empty"], ["length_remaining", "gt", 0],
                   ["status", "in", ["available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged"]]]} />
-            </div>
-            <p className="text-[11.5px] text-[#6B6B73] mb-3">Saran bin hanya menampilkan bin yang lolos aturan & kapasitas; server tetap memeriksa ulang saat disimpan.</p>
-            {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-              : queue.length === 0 ? <p data-testid="lp-queue-empty" className="py-8 text-center text-[12px] text-[#6B6B73]">Semua roll sudah ditempatkan ke bin.</p>
-              : <>
-                <p data-testid="lp-queue-count" className="mb-2 text-[12px] text-[#3A3A3C]">
-                  Menampilkan roll {formatQty(queueMeta.skip + 1)}–{formatQty(queueMeta.skip + queue.length)} dari <b>{formatQty(queueMeta.total)}</b> roll
+            )}>
+              {!loading && queue.length > 0 && (
+                <span data-testid="lp-queue-count" className="text-fs-12 text-kn-text-2">
+                  Roll {formatQty(queueMeta.skip + 1)}–{formatQty(queueMeta.skip + queue.length)} dari <b className="text-kn-text">{formatQty(queueMeta.total)}</b> belum ditempatkan
                   {queueMeta.total_building > queueMeta.total && (
                     <span> · gedung ini (semua PT): {formatQty(queueMeta.total_building)} roll — roll PT lain tampil saat PT-nya dipilih</span>
                   )}
-                </p>
-                <div className="space-y-2">{queue.map((r, i) => (
-                  <LazyMount key={r.id} eager={i < 12} testId={`lp-queue-lazy-${r.id}`}>
-                    <PutawayRow roll={r} binOptions={binOptions} canOverride={isSup} onDone={() => loadAll()} />
-                  </LazyMount>
-                ))}</div>
+                </span>
+              )}
+            </ListToolbar>
+            {loading ? <div className="h-16 animate-pulse rounded-xl bg-kn-neutral-soft" />
+              : queue.length === 0 ? (
+                <div className="kn-putaway-table">
+                  <EmptyState compact kind={error ? "error" : "empty"} error={error} onRetry={() => loadAll()} what="antrean penempatan"
+                    icon={PackageCheck} title={error ? undefined : "Semua roll sudah ditempatkan ke bin."} testId="lp-queue-empty" />
+                </div>
+              )
+              : <>
+                <div className="kn-putaway-table" data-testid="lp-queue-table">
+                  <div className="kn-putaway-head" data-testid="lp-queue-head">
+                    <span>Roll</span><span>Barang · cek</span><span>Bin tujuan</span><span className="text-right">Aksi</span>
+                  </div>
+                  {queue.map((r, i) => (
+                    <LazyMount key={r.id} eager={i < 12} minHeight={56} testId={`lp-queue-lazy-${r.id}`}>
+                      <PutawayRow roll={r} binOptions={binOptions} canOverride={isSup} onDone={() => loadAll()} />
+                    </LazyMount>
+                  ))}
+                </div>
                 {(queueMeta.skip > 0 || queueMeta.truncated) && (
                   <div className="mt-3 flex items-center justify-between gap-2" data-testid="lp-queue-pager">
-                    <button type="button" className="secondary-button" disabled={queueMeta.skip <= 0 || loading}
+                    <button type="button" className="secondary-button btn-sm" disabled={queueMeta.skip <= 0 || loading}
                       onClick={() => setQueueSkip(Math.max(0, queueMeta.skip - queueMeta.limit))}>Sebelumnya</button>
-                    <span className="text-[12px] text-[#6B6B73]">Halaman {formatQty(Math.floor(queueMeta.skip / queueMeta.limit) + 1)} dari {formatQty(Math.max(1, Math.ceil(queueMeta.total / queueMeta.limit)))}</span>
-                    <button type="button" className="secondary-button" disabled={!queueMeta.truncated || loading}
+                    <span className="text-fs-12 text-kn-text-2">Halaman {formatQty(Math.floor(queueMeta.skip / queueMeta.limit) + 1)} dari {formatQty(Math.max(1, Math.ceil(queueMeta.total / queueMeta.limit)))}</span>
+                    <button type="button" className="secondary-button btn-sm" disabled={!queueMeta.truncated || loading}
                       onClick={() => setQueueSkip(queueMeta.skip + queueMeta.limit)}>Berikutnya</button>
                   </div>
                 )}
               </>}
           </div>
         )}
-    </div>
-  );
-}
-
-function Stat({ icon: Icon, label, value, sub, color, loading, testId }) {
-  return (
-    <div data-testid={testId} className="rounded-xl border border-[#EFF0F2] bg-white p-4 flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <div className="rounded-lg p-1.5" style={{ background: `${color}18` }}><Icon size={15} style={{ color }} /></div>
-        <span className="text-[12px] font-semibold text-[#6B6B73]">{label}</span>
-      </div>
-      {loading ? <div className="h-6 bg-[#F5F5F7] rounded animate-pulse" />
-        : <p className="text-[18px] font-bold text-[#1C1C1E] tabular-nums leading-tight">{value}</p>}
-      {sub && <p className="text-[11px] text-[#6B6B73] truncate" title={sub}>{sub}</p>}
     </div>
   );
 }
