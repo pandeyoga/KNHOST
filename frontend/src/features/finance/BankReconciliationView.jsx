@@ -268,17 +268,22 @@ export default function BankReconciliationView({ user = null }) {
               {summary.book_includes_unlinked ? " · termasuk kas lama tanpa rekening (rekening tunggal PT ini)" : ""}
             </p>
           </div>
-          <div className="stat-card">
+          {/* Pola UI 16 Nov (prinsip 5) — kartu hitungan = saringan cepat daftar mutasi (klik lagi → semua). */}
+          <button type="button" className={`stat-card text-left ${fStatus === "matched" ? "ring-2 ring-kn-action" : ""}`}
+            data-testid="recon-card-matched" aria-pressed={fStatus === "matched"}
+            onClick={() => setFStatus(fStatus === "matched" ? "" : "matched")}>
             <p className="stat-label">Tercocok</p>
             <p className="stat-value text-[#1B7F4B]" data-testid="recon-matched">{summary.matched}</p>
-          </div>
-          <div className="stat-card">
+          </button>
+          <button type="button" className={`stat-card text-left ${fStatus === "unmatched" ? "ring-2 ring-kn-action" : ""}`}
+            data-testid="recon-card-unmatched" aria-pressed={fStatus === "unmatched"}
+            onClick={() => setFStatus(fStatus === "unmatched" ? "" : "unmatched")}>
             <p className="stat-label">Perlu keputusan</p>
             <p className="stat-value text-[#B26A00]" data-testid="recon-unmatched">
               {summary.unmatched_lines}
             </p>
             <p className="text-[11px] text-[#8E8E93]">{summary.suggested} punya usulan</p>
-          </div>
+          </button>
           <div className="stat-card">
             <p className="stat-label">Dana titipan</p>
             <p className="stat-value text-[#0058CC] tabular-nums" data-testid="recon-holding-balance">

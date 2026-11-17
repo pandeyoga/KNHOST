@@ -176,3 +176,20 @@ test("M38 — mutasi data contoh (bukan unggahan): asal tertulis & Cocokkan otom
   expect(mockAskConfirm).toHaveBeenCalledTimes(1);
   expect(mockPost).not.toHaveBeenCalled();   // dibatalkan → tidak mencocokkan diam-diam
 });
+
+test("Pola UI — kartu 'Perlu keputusan' = saringan cepat daftar mutasi (klik lagi → semua)", async () => {
+  routeGet({ "/bank-accounts": [{ id: "ba_r1", name: "BCA PK21" }], "/bank-reconciliation/lines": [],
+    "/bank-reconciliation/summary": { ...SUMMARY, unmatched_lines: 2 },
+    "/bank-reconciliation/holding": { items: [], balance: 0, count: 0 }, "/bank-reconciliation/rules": [],
+    "/bank-reconciliation/formats": [] });
+  const { host } = await mount(
+    <ViewPresetProvider preset={{ view: "bank-reconciliation", nonce: 1, bank_account_id: "ba_r1" }}>
+      <BankReconciliationView />
+    </ViewPresetProvider>);
+  const lastLines = () => mockGet.mock.calls.filter(([u]) => u.endsWith("/bank-reconciliation/lines")).at(-1)[1].params;
+  await click(q(host, "recon-card-unmatched"));
+  expect(lastLines().status).toBe("unmatched");
+  expect(q(host, "recon-card-unmatched").getAttribute("aria-pressed")).toBe("true");
+  await click(q(host, "recon-card-unmatched"));
+  expect(lastLines().status || "").toBe("");
+});
