@@ -2,17 +2,17 @@
   "code": "A3_retur_tukar",
   "title": "A3 Retur penjualan: tukar barang sampai pesanan pengganti",
   "ok": true,
-  "at": "2026-11-17T18:10:35.025Z",
+  "at": "2026-11-17T19:51:12.425Z",
   "base": "http://localhost:3000",
   "steps": [
     {
       "no": "0",
       "role": "Persiapan",
-      "action": "Pelanggan melunasi KSC/SO-00028 lewat transfer (kwitansi dicatat akun Finance peserta lewat API — dilatih di F02)",
-      "expect": "KSC/SO-00028 lunas",
+      "action": "Pelanggan melunasi KSC/SO-00108 lewat transfer (kwitansi dicatat akun Finance peserta lewat API — dilatih di F02)",
+      "expect": "KSC/SO-00108 lunas",
       "ok": true,
-      "ms": 1664,
-      "info": "KSC/SO-00028 dilunasi Rp 3.349.148"
+      "ms": 1700,
+      "info": "KSC/SO-00108 dilunasi Rp 3.446.273"
     },
     {
       "no": "T1",
@@ -20,17 +20,17 @@
       "action": "Masuk sebagai sales@ → menu [[Retur]] → tab [[Retur Pelanggan]] → [[Buat Retur]]",
       "expect": "Pop-up 'Buat Retur / Barang Sisa' terbuka",
       "ok": true,
-      "ms": 9334,
+      "ms": 13937,
       "info": ""
     },
     {
       "no": "T2",
       "role": "Sales",
-      "action": "Cari & pilih pesanan KSC/SO-00028; centang roll yang dikembalikan; isi alasan & sebab keluhan → [[Buat Retur]]",
+      "action": "Cari & pilih pesanan KSC/SO-00108; centang roll yang dikembalikan; isi alasan & sebab keluhan → [[Buat Retur]]",
       "expect": "Retur SRET-… terbuka dengan status 'Menunggu Persetujuan'",
       "ok": true,
-      "ms": 4942,
-      "info": "SRET-00006 · 120.69 yard · roll RL-36335"
+      "ms": 5789,
+      "info": "SRET-00007 · 124.19 yard · roll RL-36409"
     },
     {
       "no": "T3",
@@ -38,8 +38,8 @@
       "action": "Masuk sebagai manager@ → Retur › Retur Pelanggan → cari nomor retur → [[Detail →]] → [[Setujui (Manager)]]",
       "expect": "Status 'Disetujui'; panel 'QC retur · SPK inspeksi per roll' menampilkan SPK KSC/INS-… (lahir otomatis)",
       "ok": true,
-      "ms": 11620,
-      "info": "SRET-00006 disetujui · SPK KSC/INS-00020"
+      "ms": 13498,
+      "info": "SRET-00007 disetujui · SPK KSC/INS-00045"
     },
     {
       "no": "T4",
@@ -47,7 +47,7 @@
       "action": "sales@ buka retur → panel 'Pengembalian barang': *Cara barang kembali* = Diantar sendiri oleh pelanggan → [[Barang sudah dikirim/dijemput]]",
       "expect": "Tahap 'Barang dikirim/dijemput' tercentang; menunggu scan terima gudang",
       "ok": true,
-      "ms": 13099,
+      "ms": 16486,
       "info": ""
     },
     {
@@ -56,8 +56,8 @@
       "action": "warehouse@ buka retur → tab [[Logistik & perjalanan]] → *Tahap* Terima di gudang, *Gudang* Jakarta · Gudang Sukacita, ketik nomor roll → [[Catat scan]]",
       "expect": "Lokasi roll: diterima di Jakarta · Gudang Sukacita; panel QC: 'Roll diterima gudang 1/1'",
       "ok": true,
-      "ms": 11085,
-      "info": "roll RL-36335 diterima"
+      "ms": 11509,
+      "info": "roll RL-36409 diterima"
     },
     {
       "no": "T6",
@@ -65,8 +65,8 @@
       "action": "wh.admin@ buka retur → panel 'QC retur · SPK inspeksi per roll' → pilih petugas QC (Mulyadi) → [[Tugaskan]]",
       "expect": "Petugas SPK: Mulyadi; status SPK Ditugaskan",
       "ok": true,
-      "ms": 29524,
-      "info": "(diulang) "
+      "ms": 11526,
+      "info": ""
     },
     {
       "no": "T7",
@@ -74,17 +74,17 @@
       "action": "qc@ buka retur → [[Buka SPK]] → [[Mulai periksa]] → baris roll [[QC 4-point]]: *Kondisi* Baik, *Qty aktual* = qty klaim, *Grade* A → [[Simpan hasil]] → *Keputusan akhir* Diterima → [[Tutup SPK]]",
       "expect": "SPK selesai; retur berstatus 'Siap diselesaikan' (hasil per roll: grade A, kondisi Baik)",
       "ok": true,
-      "ms": 17567,
-      "info": "hasil: [{\"grade\":\"A\",\"kondisi\":\"ok\",\"qty\":120.69}]"
+      "ms": 20503,
+      "info": "hasil: [{\"grade\":\"A\",\"kondisi\":\"ok\",\"qty\":124.19}]"
     },
     {
       "no": "T8",
       "role": "Manajer",
-      "action": "manager@ buka retur → [[Selesaikan (Pilih Outcome)]] → roll RL-36335: *Outcome* Tukar Barang → buka 'Lihat jurnal yang akan terbentuk' → isi *Bukti keputusan* → [[Simpan penyelesaian (1 roll)]]",
+      "action": "manager@ buka retur → [[Selesaikan (Pilih Outcome)]] → roll RL-36409: *Outcome* Tukar Barang → buka 'Lihat jurnal yang akan terbentuk' → isi *Bukti keputusan* → [[Simpan penyelesaian (1 roll)]]",
       "expect": "Retur 'Selesai: Store Credit' bertipe Penggantian; Nota Kredit CN-…; pratinjau: 'Jadi saldo pelanggan (termasuk saldo tukar barang)'",
       "ok": true,
-      "ms": 15691,
-      "info": "pratinjau: Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.349.148 KSC/SO-00028 sudah lunas — tidak ada tagihan yang dipotong. · CN-00003"
+      "ms": 16360,
+      "info": "pratinjau: Jadi saldo pelanggan (termasuk saldo tukar barang) Rp 3.446.273 KSC/SO-00108 sudah lunas — tidak ada tagihan yang dipotong. · CN-00004"
     },
     {
       "no": "T9",
@@ -92,8 +92,8 @@
       "action": "Cek buku: Nota Kredit, jurnal retur (pembalikan penjualan, PPN keluaran, persediaan kembali), tagihan & saldo",
       "expect": "Jurnal sama dengan Store Credit: 4-1000 (D) · 2-1200 (D) / 2-1450 Saldo Kredit Pelanggan (K); 1-1300 (D) / 5-1000 (K)",
       "ok": true,
-      "ms": 2360,
-      "info": "CN-00003 DPP Rp 3.017.250 + PPN Rp 331.898 = Rp 3.349.147,5 · HPP dibalik Rp 2.172.420 · potong tagihan Rp 0 · refund Rp 0 · saldo Rp 3.349.147,5 · KSC/JE-00210 seimbang D=K=5521568 [4-1000 Pendapatan Penjualan D 3017250 · 2-1200 PPN Keluaran D 331898 · 2-1450 Saldo Kredit Pelanggan (Store Credit) K 3349148 · 1-1300 Persediaan Barang D 2172420 · 5-1000 Harga Pokok Penjualan K 2172420]"
+      "ms": 2323,
+      "info": "CN-00004 DPP Rp 3.104.750 + PPN Rp 341.523 = Rp 3.446.272,5 · HPP dibalik Rp 2.235.420 · potong tagihan Rp 0 · refund Rp 0 · saldo Rp 3.446.272,5 · KSC/JE-00517 seimbang D=K=5681693 [4-1000 Pendapatan Penjualan D 3104750 · 2-1200 PPN Keluaran D 341523 · 2-1450 Saldo Kredit Pelanggan (Store Credit) K 3446273 · 1-1300 Persediaan Barang D 2235420 · 5-1000 Harga Pokok Penjualan K 2235420]"
     },
     {
       "no": "T10",
@@ -101,23 +101,22 @@
       "action": "salesadmin@ → Retur › Retur Pelanggan → retur ini → tab [[Kebijakan & keputusan]] → panel 'Pesanan pengganti': *Pengganti (yd)* = kewajiban → [[Buat pesanan pengganti]]",
       "expect": "Ringkasan: 'Pesanan pengganti KSC/SO-… · Nilai pengganti Rp … · saldo retur dipakai Rp … · ditagih Rp 0'",
       "ok": true,
-      "ms": 13835,
-      "info": "Pesanan pengganti: KSC/SO-00056 Nilai pengganti Rp 3.349.148 · saldo retur dipakai Rp 3.349.148 · ditagih Rp 0 · sisa saldo customer Rp 0 Lebih → selisih ditagih (harga asal); kurang → sisa saldo customer (pakai/refund). · SO pengganti KSC/SO-00056 total Rp 3.349.147,5 · saldo Rp 3.349.147,5 → Rp 0"
+      "ms": 12961,
+      "info": "Pesanan pengganti: KSC/SO-00114 Nilai pengganti Rp 3.446.273 · saldo retur dipakai Rp 3.446.273 · ditagih Rp 0 · sisa saldo customer Rp 0 Lebih → selisih ditagih (harga asal); kurang → sisa saldo customer (pakai/refund). · SO pengganti KSC/SO-00114 total Rp 3.446.272,5 · saldo Rp 3.446.272,5 → Rp 0"
     },
     {
       "no": "T11",
       "role": "Sistem",
       "action": "Cek buku: saldo retur dipakai untuk pesanan pengganti",
-      "expect": "Jurnal pemakaian saldo: 2-1450 Saldo Kredit Pelanggan (D) / 1-1200 Piutang Usaha (K) sebesar saldo dipakai; pendapatan pesanan pengganti baru diakui saat surat jalannya terbit",
+      "expect": "Jurnal pemakaian saldo: 2-1450 Saldo Kredit Pelanggan (D) / 2-1400 Uang Muka Pelanggan (K) sebesar saldo dipakai — pesanan pengganti belum dikirim, jadi tidak ada baris 1-1200 Piutang; pembayaran di pesanan bertanda uang muka (direklas ke piutang saat surat jalannya terbit)",
       "ok": true,
-      "ms": 1784,
-      "info": "KSC/JE-00211 seimbang D=K=3349148 [2-1450 Saldo Kredit Pelanggan (Store Credit) D 3349148 · 1-1200 Piutang Usaha K 3349148]"
+      "ms": 2670,
+      "info": "KSC/JE-00518 seimbang D=K=3446273 [2-1450 Saldo Kredit Pelanggan (Store Credit) D 3446273 · 2-1400 Uang Muka Pelanggan K 3446273] · KSC/SO-00114 status reserved, baris bayar KSC/SCR-00003 bertanda uang muka · Saldo & Umur KSC: piutang tercatat Rp 143.757.373,25, saldo akun Rp 140.708.225,75, selisih Rp -3.049.147,5 (seluruh PT, bukan hanya peserta ini)"
     }
   ],
   "http_5xx": [],
   "console_errors": [],
   "notes": [
-    "Peserta 43: pelanggan Latihan 43 · Toko Kain Peserta 43 · SO KSC/SO-00028 (Rp 3.349.148)",
-    "T6: percobaan pertama gagal (locator.waitFor: Timeout 8000ms exceeded.) — diulang sekali"
+    "Peserta 47: pelanggan Latihan 47 · Toko Kain Peserta 47 · SO KSC/SO-00108 (Rp 3.446.273)"
   ]
 }

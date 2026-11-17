@@ -2,8 +2,11 @@
 //
 //   SO pelunasan penuh (sudah dilunasi) → retur 1 roll → … → Manajer selesaikan per roll "Tukar Barang" (Nota Kredit →
 //   saldo khusus pengganti) → Admin Sales membuat pesanan pengganti dari panel retur (saldo retur dipakai, ditagih Rp 0)
-//   → cek buku (saldo dipakai: Saldo Kredit Pelanggan D / Piutang Usaha K). Pengiriman pesanan pengganti mengikuti alur
-//   pesanan biasa (A1: periksa & lepas → ambil → surat jalan) dan tidak diulang di sini.
+//   → cek buku (saldo dipakai: Saldo Kredit Pelanggan D / Uang Muka Pelanggan K — pesanan pengganti belum dikirim, jadi
+//   piutangnya belum lahir; uang muka direklas ke Piutang saat surat jalannya terbit). Pengiriman pesanan pengganti
+//   mengikuti alur pesanan biasa (A1: periksa & lepas → ambil → surat jalan) dan tidak diulang di sini.
+//   Uji adversarial O1 (18 Nov): dulu jurnalnya 2-1450 D / 1-1200 K → piutang buku besar lebih kecil dari buku pembantu
+//   ("Selisih" di Saldo & Umur sebesar saldo dipakai).
 //
 //   KN_PESERTA=45 node docs/pelatihan/2026-11-18_keuangan/uji/e2e/A3_retur_tukar.js
 //   Data: seed_pelatihan_keuangan_kn.py --mulai NN --peserta NN (a_dasar:so_lunas BELUM dibayar; SO kedua tidak dipakai).
@@ -74,14 +77,23 @@ const KODE = "A3_retur_tukar";
     });
 
   await r.step("T11", "Sistem", "Cek buku: saldo retur dipakai untuk pesanan pengganti",
-    "Jurnal pemakaian saldo: 2-1450 Saldo Kredit Pelanggan (D) / 1-1200 Piutang Usaha (K) sebesar saldo dipakai; pendapatan pesanan pengganti baru diakui saat surat jalannya terbit", async () => {
+    "Jurnal pemakaian saldo: 2-1450 Saldo Kredit Pelanggan (D) / 2-1400 Uang Muka Pelanggan (K) sebesar saldo dipakai — pesanan pengganti belum dikirim, jadi tidak ada baris 1-1200 Piutang; pembayaran di pesanan bertanda uang muka (direklas ke piutang saat surat jalannya terbit)", async () => {
       const ret = R.returById(ctx.ret.T.id);
       const s = ret.replacement_summary || {};
       const red = mongo(`return db.store_credit_redemptions.find({customer_id:"${cust.id}"},{_id:0}).sort({created_at:-1}).limit(1).toArray()[0]`);
       assert(red, "catatan pemakaian saldo tidak ada");
       const je = R.jurnalDari([red.id, red.number, ret.replacement_order_id]).find((j) => (j.lines || []).some((l) => l.account_code === "2-1450"));
       assert(je, "jurnal pemakaian saldo tidak ada");
-      return R.cekJurnal(je, [["2-1450", "D", Number(s.credit_applied)], ["1-1200", "K", Number(s.credit_applied)]]);
+      const so = R.soDoc(ret.replacement_order_id);
+      assert(!["shipped", "partially_shipped", "done"].includes(so.status), `pesanan pengganti sudah dikirim (${so.status})`);
+      // O1 — pesanan belum dikirim: tidak boleh mengkredit piutang (dulu 1-1200 K → "Selisih" di Saldo & Umur)
+      assert(!(je.lines || []).some((l) => l.account_code === "1-1200"), `jurnal ${je.number} masih mengkredit 1-1200 Piutang`);
+      const bayar = (so.payments || []).filter((p) => p.receipt_id === red.id);
+      assert(bayar.length && bayar.every((p) => p.gl_bucket === "advance"), `baris bayar ${red.number} belum bertanda uang muka`);
+      const rek = (await (await api(akunPeserta(no))).get(`/ar/aging?entity_id=${R.KSC}`, R.KSC)).reconciliation || {};
+      return `${R.cekJurnal(je, [["2-1450", "D", Number(s.credit_applied)], ["2-1400", "K", Number(s.credit_applied)]])}`
+        + ` · ${so.number} status ${so.status}, baris bayar ${red.number} bertanda uang muka`
+        + ` · Saldo & Umur KSC: piutang tercatat ${R.rpBuku(rek.ar_ledger_total)}, saldo akun ${R.rpBuku(rek.gl_balance)}, selisih ${R.rpBuku(rek.difference)} (seluruh PT, bukan hanya peserta ini)`;
     });
 
   await r.finish();

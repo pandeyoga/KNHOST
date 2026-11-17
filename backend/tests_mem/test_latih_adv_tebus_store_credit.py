@@ -16,8 +16,10 @@ Aturan yang ditiru (TIDAK ada mekanisme baru) = kwitansi kas (`gl_service._recei
     jurnal penebusan → setiap akun kembali persis.
 
 Hitung tangan (PT KSC, PKP 11%; pesanan 100 yd × Rp 10.000 = DPP Rp 1.000.000 + PPN Rp 110.000 = Rp 1.110.000):
-  L1 belum dikirim, tebus Rp 1.110.000 → Dr 2-1450 1.110.000 / Cr 2-1400 1.110.000 (kode lama: Cr 1-1200 → selisih −1.110.000);
-     surat jalan penuh: Dr 1-1200 1.110.000 (pendapatan) + reklas Dr 2-1400 / Cr 1-1200 1.110.000 → piutang 0 = pembantu;
+  L1 belum dikirim, tebus Rp 1.110.000 → Dr 2-1450 1.110.000 / Cr 2-1400 1.110.000
+     (kode lama: Cr 1-1200 → selisih −1.110.000);
+     surat jalan penuh: Dr 1-1200 1.110.000 (pendapatan) + reklas Dr 2-1400 / Cr 1-1200 1.110.000
+     → piutang 0 = pembantu;
      batal sesudah reklas → piutang 1.110.000 (pesanan kembali tertagih), uang muka 0, saldo kredit pulih.
   L2 dikirim 40 yd (piutang lahir 444.000), tebus 666.000 → bersih Cr 1-1200 444.000 · Cr 2-1400 222.000;
      surat jalan sisa 60 yd: Dr 1-1200 666.000 + reklas 222.000 → piutang 444.000 = sisa tagihan; batal → piutang
@@ -170,7 +172,8 @@ async def test_O1_L2_tebus_pesanan_dikirim_sebagian_dipecah_piutang_dan_uang_muk
 
     tebus = round(GRAND * 0.6, 2)                          # 666.000 > piutang lahir 444.000
     red = await _tebus(klien, siap, so, tebus)
-    # hasil bersih (jurnal penebusan + reklas seketika, pola kwitansi kas): Cr piutang sebesar yang lahir, sisanya uang muka
+    # hasil bersih (jurnal penebusan + reklas seketika, pola kwitansi kas): Cr piutang sebesar yang lahir,
+    # sisanya uang muka
     assert _delta(s0, await _saldo(db)) == {"1-1200": -lahir, "2-1400": -round(tebus - lahir, 2), "2-1450": tebus}
     assert await _selisih_tak_terjelaskan() == x0          # kode lama & tanpa reklas seketika: berubah
 
