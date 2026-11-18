@@ -65,6 +65,8 @@ class Run {
       timezoneId: "Asia/Jakarta" });
     this.page = await this.ctx.newPage();
     this.page.setDefaultTimeout(15000);
+    // Muatan pertama dev server (bundel besar, kontainer/VPS lambat) bisa > 15 dtk — navigasi diberi batas sendiri.
+    this.page.setDefaultNavigationTimeout(Number(process.env.KN_NAV_TIMEOUT || 45000));
     this.page.on("response", (res) => {
       const u = res.url();
       if (u.includes("/api/") && res.status() >= 500) this.httpErr.push(`${res.status()} ${res.request().method()} ${u.replace(/^.*\/api/, "/api")}`);
@@ -154,13 +156,26 @@ class Run {
 
 function assert(cond, msg) { if (!cond) throw new Error(msg); }
 
-// Kartu Peserta (hasil `seed_pelatihan_keuangan_kn.py`) — dibaca langsung dari Mongo lokal (uji hanya di lingkungan lokal).
+// `mongosh --eval js`. Bawaan: di kontainer Mongo — KN_MONGO = nama kontainer (bawaan kn-mongo; Docker lokal:
+// kn-dev-mongo-1), KN_DB = basis data. KN_MONGO_URL (mis. mongodb://mongo:27017/test_database) → `mongosh` setempat
+// langsung ke URL itu (uji dari kontainer tanpa docker CLI). KN_SSH = host ssh (mis. kn-vps) → perintah docker yang sama
+// dijalankan di server itu (hanya baca/cek).
+function mongosh(js) {
+  const { execFileSync } = require("child_process");
+  const opt = { maxBuffer: 64 * 1024 * 1024 };
+  if (process.env.KN_MONGO_URL) return execFileSync("mongosh", [process.env.KN_MONGO_URL, "--quiet", "--eval", js], opt).toString();
+  const args = ["exec", process.env.KN_MONGO || "kn-mongo", "mongosh", "--quiet", process.env.KN_DB || "test_database",
+    "--eval", js];
+  if (!process.env.KN_SSH) return execFileSync("docker", args, opt).toString();
+  const q = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'";
+  return execFileSync("ssh", [process.env.KN_SSH, ["docker", ...args].map(q).join(" ")], opt).toString();
+}
+
+// Kartu Peserta (hasil `seed_pelatihan_keuangan_kn.py`) — dibaca langsung dari Mongo (lihat `mongosh`).
 // kartu("02") → { "a_dasar:so_lunas": { so, so_id, total, … }, … }
 function kartu(no) {
-  const { execFileSync } = require("child_process");
   const kode = String(no).padStart(2, "0");
-  const out = execFileSync("docker", ["exec", "kn-mongo", "mongosh", "--quiet", process.env.KN_DB || "test_database", "--eval",
-    `JSON.stringify(((db.migrations.findOne({id:"pelatihan_keuangan"})||{}).peserta||{})["${kode}"]||{})`]).toString();
+  const out = mongosh(`JSON.stringify(((db.migrations.findOne({id:"pelatihan_keuangan"})||{}).peserta||{})["${kode}"]||{})`);
   return JSON.parse(out.trim() || "{}");
 }
 
@@ -170,9 +185,7 @@ const akunPeserta = (no) => `finance.latih${String(no).padStart(2, "0")}`;
 
 // Sumber `mongosh` untuk cek buku langsung (jurnal seimbang, saldo) bila API tidak menyediakan.
 function mongo(js) {
-  const { execFileSync } = require("child_process");
-  return JSON.parse(execFileSync("docker", ["exec", "kn-mongo", "mongosh", "--quiet", process.env.KN_DB || "test_database",
-    "--eval", `JSON.stringify((()=>{${js}})())`]).toString().trim() || "null");
+  return JSON.parse(mongosh(`JSON.stringify((()=>{${js}})())`).trim() || "null");
 }
 
-module.exports = { Run, api, assert, sleep, rp, num, email, kartu, peserta, akunPeserta, mongo, BASE, API };
+module.exports = { Run, api, assert, sleep, rp, num, email, kartu, peserta, akunPeserta, mongo, mongosh, BASE, API };

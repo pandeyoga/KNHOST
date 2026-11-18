@@ -16,7 +16,7 @@ delimiter, ada/tidak header, pemetaan kolom (berdasarkan NAMA header atau INDEKS
 gaya desimal, format tanggal, dan penanda arah dana. Template bisa dibuat/disunting user
 tanpa deploy — 5 preset bawaan (BCA · Mandiri · BNI · BRI · Permata) hanya titik mulai.
 Selain CSV/TSV, parser ini juga membaca **MT940** (`:61:`/`:86:`) dan **OFX** (`<STMTTRN>`)
-yang dipakai bank untuk unduhan terstruktur.
+yang dipakai bank untuk unduhan terstruktur, serta **Excel .xlsx** (`xlsx_to_text` → teks CSV → template yang sama).
 
 Semua fungsi di sini MURNI (tanpa DB, tanpa jaringan) supaya bisa diuji cepat dan dipakai
 untuk **pratinjau sebelum impor** — user melihat hasil baca sebelum satu baris pun masuk.
@@ -561,6 +561,119 @@ def parse_rows(raw: str, fmt: Dict[str, Any], year_hint: int = 0) -> Tuple[List[
             toks = ref_tokens_of(r.get("description", ""))
             r["ref"] = toks[0] if toks else ""
     return rows, errors
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  EXCEL (.xlsx) — rekening koran yang diunduh bank sebagai lembar kerja
+# ═══════════════════════════════════════════════════════════════════════════
+# Unduhan internet banking (KlikBCA Bisnis, Livin' Mandiri, BRI CMS, BNI Direct) umumnya Excel: beberapa baris
+# pembuka (nomor rekening, periode), tabel mutasi, lalu baris ringkasan saldo di bawah baris kosong. Lembar itu
+# diubah menjadi teks CSV lalu dibaca dengan TEMPLATE yang sama seperti CSV — tidak ada aturan baca kedua.
+XLSX_MAX_BYTES = 5 * 1024 * 1024
+XLSX_MAX_ROWS = 20000
+XLSX_HEADER_SCAN = 60          # baris pembuka yang diperiksa untuk mencari judul kolom
+
+
+class StatementFileError(ValueError):
+    """Berkas rekening koran tidak bisa dibaca (bukan .xlsx, .xls lama, rusak, terlalu besar)."""
+
+
+def is_xlsx(data: bytes) -> bool:
+    return bytes(data[:4]) == b"PK\x03\x04"
+
+
+def is_legacy_xls(data: bytes) -> bool:
+    return bytes(data[:8]) == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+
+
+def _xlsx_cell(v: Any) -> str:
+    """Nilai sel → teks yang dibaca parser CSV. Tanggal Excel → ISO (diterima template mana pun); angka → tanpa
+    pemisah ribuan dengan titik desimal (`parse_amount` mengenalinya di template bergaya Indonesia maupun Inggris)."""
+    from datetime import date
+    if v is None:
+        return ""
+    if isinstance(v, datetime):
+        return v.strftime("%Y-%m-%d")
+    if isinstance(v, date):
+        return v.strftime("%Y-%m-%d")
+    if isinstance(v, bool):
+        return "1" if v else "0"
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        return str(int(v)) if v.is_integer() else f"{v:.2f}"
+    return re.sub(r"\s+", " ", str(v)).strip()
+
+
+def _row_has_signature(cells: List[str], sig: List[str]) -> bool:
+    low = [_norm_header(c) for c in cells if c]
+    return bool(low) and all(any(s in c for c in low) for s in sig)
+
+
+def xlsx_to_text(data: bytes, formats: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Lembar Excel rekening koran → teks CSV (judul kolom di baris pertama) untuk `parse_rows`.
+
+    Lembar yang dipakai = lembar pertama yang memuat baris judul kolom salah satu template (`header_signature`);
+    baris di atasnya (nama rekening, periode) dibuang, dan tabel berhenti di baris kosong pertama sesudahnya
+    (ringkasan saldo awal/akhir tidak ikut). Tanpa judul dikenali → lembar pertama dari baris berisi pertama, dan
+    template yang dipilih/terdeteksi menentukan hasilnya seperti CSV biasa.
+    """
+    if not data:
+        raise StatementFileError("Berkas kosong.")
+    if len(data) > XLSX_MAX_BYTES:
+        raise StatementFileError(f"Berkas Excel lebih dari {XLSX_MAX_BYTES // (1024 * 1024)} MB — unduh per periode yang lebih pendek.")
+    if is_legacy_xls(data):
+        raise StatementFileError("Berkas .xls (Excel 97–2003) belum bisa dibaca — buka di Excel lalu Simpan Sebagai "
+                                 "'Excel Workbook (.xlsx)', atau unduh rekening koran dalam bentuk CSV.")
+    if not is_xlsx(data):
+        raise StatementFileError("Berkas bukan Excel .xlsx yang sah.")
+    from openpyxl import load_workbook
+    try:
+        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    except Exception as exc:  # noqa: BLE001 — isi berkas dari luar; pesan untuk pengguna
+        raise StatementFileError(f"Berkas Excel tidak bisa dibuka ({type(exc).__name__}) — simpan ulang sebagai .xlsx.") from exc
+    sigs = [[str(s).lower() for s in (f.get("header_signature") or []) if s]
+            for f in formats if (f.get("file_kind") or "csv").lower() == "csv"]
+    sigs = [s for s in sigs if s]
+    first: Optional[Tuple[str, List[List[str]]]] = None
+    chosen: Optional[Tuple[str, List[List[str]], int]] = None
+    try:
+        for ws in wb.worksheets:
+            rows: List[List[str]] = []
+            for i, r in enumerate(ws.iter_rows(values_only=True)):
+                if i >= XLSX_MAX_ROWS:
+                    break
+                rows.append([_xlsx_cell(v) for v in r])
+            if first is None:
+                first = (ws.title, rows)
+            hit = next((i for i, r in enumerate(rows[:XLSX_HEADER_SCAN])
+                        if any(_row_has_signature(r, s) for s in sigs)), None)
+            if hit is not None:
+                chosen = (ws.title, rows, hit)
+                break
+    finally:
+        wb.close()
+    if chosen:
+        title, rows, start = chosen
+    else:
+        title, rows = first or ("", [])
+        start = next((i for i, r in enumerate(rows) if any(r)), 0)
+    table: List[List[str]] = []
+    for r in rows[start:]:
+        if not any(r):
+            if table:
+                break
+            continue
+        table.append(r)
+    if not table:
+        raise StatementFileError("Lembar Excel kosong — tidak ada tabel mutasi.")
+    width = max(max((i for i, c in enumerate(r) if c), default=-1) for r in table) + 1
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    for r in table:
+        writer.writerow((r + [""] * width)[:width])
+    return {"text": out.getvalue(), "sheet": title, "header_row": (start + 1) if chosen else 0,
+            "rows": max(len(table) - 1, 0), "header_found": bool(chosen)}
 
 
 def detect_format(raw: str, formats: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:

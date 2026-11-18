@@ -1,0 +1,59 @@
+{
+  "code": "R5",
+  "title": "Rekonsiliasi · dua transfer untuk satu kwitansi — gabung N:1",
+  "ok": true,
+  "at": "2026-11-18T10:11:17.904Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R5_gabung_88.xlsx → [[Pratinjau]] → [[Impor]] → [[Cocokkan otomatis]]",
+      "expect": "2 baris baru (Rp 1.610.000 dan Rp 1.073.088); keduanya TETAP \"Perlu keputusan\"",
+      "ok": true,
+      "ms": 18107,
+      "info": "Impor BCA — Rekening Koran (CSV): 2 baris baru, 0 dilewati (sudah pernah masuk). · Pencocokan otomatis: 0 tertaut (skor ≥ 80), 1 usulan (skor ≥ 60), 10 baris tersisa."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Centang kotak di kiri kedua baris \"… TAHAP SATU\" dan \"… TAHAP DUA\"",
+      "expect": "Bilah biru \"2 mutasi dipilih · total Rp 2.683.088 — bisa digabung ke SATU transaksi buku\" dengan tombol [[Gabung ke 1 transaksi]]",
+      "ok": true,
+      "ms": 459,
+      "info": "2 mutasi dipilih · total Rp 2.683.088 — bisa digabung ke SATU transaksi buku. Bersihkan Gabung ke 1 transaksi"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik [[Gabung ke 1 transaksi]]",
+      "expect": "Pop-up \"Gabung 2 mutasi ke satu transaksi buku · total Rp 2.683.088\"; kandidat teratas KSC/CASH-00053 sisa Rp 2.683.088 dengan alasan \"Sisa transaksi pas sama dengan total mutasi terpilih (+40)\"",
+      "ok": true,
+      "ms": 909,
+      "info": "KSC/CASH-00053 · 18 Nov 2026 Penerimaan KSC/AR-00032 — Latihan 88 · Toko Rekon Peserta 88 · Ref TRF-LTH88-00038 · Kode KN-ENE8H Sisa transaksi pas sama dengan total mutasi terpilih (Rp 2.683.088) (+40) · Tanggal sama (+20) · nama mirip 'Latihan 88 · Toko Rekon Peserta 88' (83%) (+15) sisa Rp 2.683.088skor 75"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Klik baris KSC/CASH-00053",
+      "expect": "Pesan \"2 mutasi digabung ke transaksi KSC/CASH-00053 (Rp 2.683.088).\"; kedua baris Tercocok · banyak → 1",
+      "ok": true,
+      "ms": 848,
+      "info": "2 mutasi digabung ke transaksi KSC/CASH-00053 (Rp 2.683.088)."
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
+      "expect": "KSC/CASH-00053 \"Terekonsiliasi\" (Rp 1.610.000 + Rp 1.073.088); tidak ada jurnal baru",
+      "ok": true,
+      "ms": 5356,
+      "info": "KSC/CASH-00053 Rp 2.683.088 dari 2 baris"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

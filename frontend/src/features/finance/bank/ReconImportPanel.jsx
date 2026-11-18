@@ -25,13 +25,25 @@ const yearHint = () => Number(todayWib().slice(0, 4));
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
 const fmtDate = (s) => formatDate(s);
 
+// Rekening koran Excel (.xlsx) dibaca server dengan template yang sama seperti CSV; dikirim base64.
+const XLSX_MAX_BYTES = 5 * 1024 * 1024;
+const isExcel = (name) => /\.xlsx$/i.test(name || "");
+function toBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
 export default function ReconImportPanel({ accountId, formats, onDone, onClose }) {
   const [formatId, setFormatId] = useState("");
   const [raw, setRaw] = useState("");
   const [fileName, setFileName] = useState("");
+  const [fileB64, setFileB64] = useState("");   // berkas Excel terpilih (kosong = teks/CSV)
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  const ready = !!fileB64 || !!raw.trim();
 
   const options = useMemo(() => ([
     { value: "", label: "Kenali otomatis dari isi berkas" },
@@ -42,18 +54,36 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
 
   async function readFile(e) {
     const f = e.target.files?.[0];
+    e.target.value = "";   // memilih berkas yang sama lagi tetap memicu pembacaan
     if (!f) return;
+    setPreview(null); setErr("");
+    if (/\.xls$/i.test(f.name)) {
+      setErr("Berkas .xls (Excel 97–2003) belum bisa dibaca — buka di Excel lalu Simpan Sebagai 'Excel Workbook (.xlsx)'.");
+      return;
+    }
     setFileName(f.name);
-    const text = await f.text();
-    setRaw(text);
-    setPreview(null);
+    if (isExcel(f.name)) {
+      if (f.size > XLSX_MAX_BYTES) {
+        setErr("Berkas Excel lebih dari 5 MB — unduh rekening koran per periode yang lebih pendek.");
+        setFileName("");
+        return;
+      }
+      setFileB64(toBase64(await f.arrayBuffer()));
+      setRaw("");
+      return;
+    }
+    setFileB64("");
+    setRaw(await f.text());
   }
+
+  // Isi yang dikirim: berkas Excel (base64) ATAU teks (berkas CSV/MT940/OFX atau tempelan).
+  const body = () => (fileB64 ? { file_b64: fileB64, raw: "" } : { raw });
 
   async function doPreview() {
     setBusy("preview"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/preview`,
-        { raw, format_id: formatId || "", year_hint: yearHint() });
+        { ...body(), format_id: formatId || "", year_hint: yearHint() });
       setPreview(r.data);
     } catch (e) { setErr(apiErrorText(e)); setPreview(null); } finally { setBusy(""); }
   }
@@ -62,12 +92,12 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
     setBusy("import"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/import-file`,
-        { bank_account_id: accountId, raw, format_id: formatId || "",
+        { bank_account_id: accountId, ...body(), format_id: formatId || "",
           year_hint: yearHint(), file_name: fileName || "" });   // M38 — asal mutasi tercatat
       const d = r.data || {};
       onDone(`Impor ${d.format_name || ""}: ${d.imported} baris baru, ${d.skipped} dilewati `
         + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.`);
-      setRaw(""); setPreview(null); setFileName("");
+      setRaw(""); setPreview(null); setFileName(""); setFileB64("");
     } catch (e) { setErr(apiErrorText(e)); } finally { setBusy(""); }
   }
 
@@ -79,12 +109,12 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" className="secondary-button" onClick={onClose} disabled={busy === "import"}>Batal</button>
           <button type="button" data-testid="recon-preview-btn" className="secondary-button"
-            disabled={!raw.trim() || busy === "preview"} onClick={doPreview}>
+            disabled={!ready || busy === "preview"} onClick={doPreview}>
             {busy === "preview" ? <RefreshCw size={14} className="spin" /> : <Eye size={14} />}
             Pratinjau
           </button>
           <button type="button" data-testid="recon-import-submit" className="primary-button"
-            disabled={!raw.trim() || !accountId || busy === "import"} onClick={doImport}>
+            disabled={!ready || !accountId || busy === "import"} onClick={doImport}>
             {busy === "import" ? <RefreshCw size={14} className="spin" /> : <Upload size={14} />}
             Impor
           </button>
@@ -104,12 +134,20 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
             Unggah berkas
           </label>
           <label className="secondary-button cursor-pointer" data-testid="recon-file-label">
-            <FileUp size={14} /> {fileName || "Pilih berkas (CSV · MT940 · OFX)"}
+            <FileUp size={14} /> {fileName || "Pilih berkas (Excel · CSV · MT940 · OFX)"}
             <input data-testid="recon-file-input" type="file" className="hidden"
-              accept=".csv,.txt,.sta,.mt940,.ofx,.qfx" onChange={readFile} />
+              accept=".xlsx,.xls,.csv,.txt,.sta,.mt940,.ofx,.qfx" onChange={readFile} />
           </label>
         </div>
       </div>
+      {fileB64 ? (
+        <p className="text-[12px] text-[#1C1C1E] rounded border border-[#E5E5EA] bg-[#F7F8FA] px-3 py-2"
+          data-testid="recon-file-excel">
+          Berkas Excel <b>{fileName}</b> dipilih — tekan <b>Pratinjau</b> untuk melihat baris yang terbaca.{" "}
+          <button type="button" className="underline text-[#0058CC]" data-testid="recon-file-clear"
+            onClick={() => { setFileB64(""); setFileName(""); setPreview(null); }}>Batal pilih</button>
+        </p>
+      ) : (<>
       <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
         Atau tempel isi rekening koran di sini
       </label>
@@ -117,12 +155,19 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
         placeholder={"Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n"
           + "12/07,TRSF E-BANKING CR PT MAJU JAYA SO-0007,0000,\"12.500.000,00\",CR,..."}
         value={raw} onChange={(e) => { setRaw(e.target.value); setPreview(null); }} />
+      </>)}
 
       {preview && (
         <div className="mt-3" data-testid="recon-preview">
           <p className="text-[12px] text-[#1C1C1E] mb-1">
             Terbaca <b>{preview.total}</b> baris memakai template <b>{preview.format?.name}</b>
-            {preview.detected ? " (dikenali otomatis)" : ""} · masuk{" "}
+            {preview.detected ? " (dikenali otomatis)" : ""}
+            {preview.source?.file_kind === "xlsx" && (
+              <span data-testid="recon-preview-sheet">
+                {" "}· lembar <b>{preview.source.sheet}</b>
+                {preview.source.header_row ? `, judul kolom di baris ${preview.source.header_row}` : ""}
+              </span>
+            )} · masuk{" "}
             <b className="text-[#1B7F4B]">{formatCurrency(preview.sum_in)}</b> · keluar{" "}
             <b className="text-[#C0392B]">{formatCurrency(preview.sum_out)}</b>
           </p>

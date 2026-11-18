@@ -342,15 +342,41 @@ async def _resolve_format(format_id: str, fmt: Optional[Dict[str, Any]], raw: st
     raise ValueError("Template tidak dikenali dari isi berkas — pilih template secara manual")
 
 
+async def _raw_from_xlsx(file_b64: str, format_id: str, fmt: Optional[Dict[str, Any]],
+                         entity_ids: Optional[List[str]], active_entity: str) -> Tuple[str, Dict[str, Any]]:
+    """Berkas Excel (.xlsx, base64) → teks CSV untuk template. Judul kolom dicari memakai tanda tangan template yang
+    dipilih, atau semua template aktif bila "Kenali otomatis"."""
+    import base64
+    import binascii
+    try:
+        data = base64.b64decode((file_b64 or "").split(",")[-1], validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("Isi berkas Excel rusak saat dikirim — pilih berkasnya lagi.") from exc
+    if format_id:
+        doc, _ = await _resolve_format(format_id, None, "", entity_ids, active_entity)
+        formats = [doc]
+    elif fmt:
+        formats = [_fmt_doc(fmt, active_entity, "preview")]
+    else:
+        formats = await list_formats(entity_ids, active_entity)
+    conv = parser.xlsx_to_text(data, formats)
+    return conv["text"], {"file_kind": "xlsx", "sheet": conv["sheet"], "header_row": conv["header_row"],
+                          "header_found": conv["header_found"]}
+
+
 async def preview(raw: str, format_id: str = "", fmt: Optional[Dict[str, Any]] = None,
                   entity_ids: Optional[List[str]] = None, active_entity: str = "",
-                  year_hint: int = 0, limit: int = 50) -> Dict[str, Any]:
-    """Baca mutasi TANPA menyimpan — user melihat hasil sebelum impor."""
+                  year_hint: int = 0, limit: int = 50, file_b64: str = "") -> Dict[str, Any]:
+    """Baca mutasi TANPA menyimpan — user melihat hasil sebelum impor. `file_b64` = berkas Excel (.xlsx)."""
+    source: Dict[str, Any] = {}
+    if file_b64:
+        raw, source = await _raw_from_xlsx(file_b64, format_id, fmt, entity_ids, active_entity)
     fdoc, detected = await _resolve_format(format_id, fmt, raw, entity_ids, active_entity)
     rows, errors = parser.parse_rows(raw, fdoc, year_hint)
     return {
         "format": {"id": fdoc.get("id", ""), "name": fdoc.get("name", ""),
                    "bank_code": fdoc.get("bank_code", ""), "file_kind": fdoc.get("file_kind", "")},
+        "source": source,
         "detected": detected,
         "rows": rows[:limit],
         "total": len(rows),
@@ -440,8 +466,12 @@ async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[st
 async def import_raw(bank_account_id: str, raw: str, format_id: str = "",
                      fmt: Optional[Dict[str, Any]] = None,
                      entity_ids: Optional[List[str]] = None, active_entity: str = "",
-                     actor: str = "", year_hint: int = 0, file_name: str = "") -> Dict[str, Any]:
-    """Impor dari ISI BERKAS (CSV/MT940/OFX) memakai template."""
+                     actor: str = "", year_hint: int = 0, file_name: str = "",
+                     file_b64: str = "") -> Dict[str, Any]:
+    """Impor dari ISI BERKAS (CSV/MT940/OFX, atau Excel .xlsx lewat `file_b64`) memakai template."""
+    source: Dict[str, Any] = {}
+    if file_b64:
+        raw, source = await _raw_from_xlsx(file_b64, format_id, fmt, entity_ids, active_entity)
     fdoc, detected = await _resolve_format(format_id, fmt, raw, entity_ids, active_entity)
     rows, errors = parser.parse_rows(raw, fdoc, year_hint)
     if not rows:
@@ -451,7 +481,7 @@ async def import_raw(bank_account_id: str, raw: str, format_id: str = "",
     res = await import_lines(bank_account_id, "", rows, actor, entity_ids, active_entity,
                              fdoc.get("id", ""), source="berkas" if (file_name or "").strip() else "tempel",
                              file_name=file_name)
-    res.update({"format_id": fdoc.get("id", ""), "format_name": fdoc.get("name", ""),
+    res.update({"format_id": fdoc.get("id", ""), "format_name": fdoc.get("name", ""), "source": source,
                 "detected": detected, "parsed": len(rows),
                 "errors": errors[:20], "error_count": len(errors)})
     return res
@@ -729,9 +759,110 @@ def _txn_brief(t: Dict[str, Any]) -> Dict[str, Any]:
             "outstanding": _round(_round(t.get("amount")) - _round(t.get("reconciled_amount")))}
 
 
-async def candidates(line_id: str, entity_ids: Optional[List[str]] = None,
-                     limit: int = 8) -> Dict[str, Any]:
-    """Kandidat berperingkat + penjelasan skor untuk satu baris (dipakai modal UI)."""
+CAND_MODES = ("single", "split", "group")
+#: batas transaksi yang diperiksa kombinasinya (pasangan & tiga-serangkai) pada mode pecah
+COMBO_POOL = 400
+COMBO_MAX = 3
+
+
+def _tidak_layak(reason: str, **kw: Any) -> Dict[str, Any]:
+    return {"score": 0, "explain": [], "eligible": False, "amount_diff": 0, "day_diff": 0, "reason": reason, **kw}
+
+
+def _score_part(line: Dict[str, Any], txn: Dict[str, Any], cfg: Dict[str, Any], rule: Optional[Dict[str, Any]],
+                mode: str, total: float = 0.0) -> Dict[str, Any]:
+    """Uji rekonsiliasi R4/R5 (18 Nov) — skor kandidat PECAH (1:N) dan GABUNG (N:1).
+
+    `score_pair` hanya melayakkan transaksi bernominal ≈ mutasi (selisih ≤ 1 %), padahal pada pecah transaksi bukunya
+    LEBIH KECIL dari transfer dan pada gabung transaksinya menampung JUMLAH beberapa mutasi — dulu modal "Pecah" dan
+    "Gabung ke 1 transaksi" kosong begitu nominalnya berbeda. Di sini syarat nominal diganti:
+      split — sisa transaksi ≤ nominal mutasi (bisa menjadi bagiannya); poin nominal separuh, penuh bila transaksi itu
+              anggota kombinasi yang pas menutup transfer (`_combos`, diberikan oleh `candidates`);
+      group — sisa transaksi ≥ `total` (Σ mutasi terpilih); poin penuh bila pas sama, separuh bila hanya menampung.
+    Tanggal (jendela sama), nomor referensi, nama, aturan tersimpan dinilai seperti `score_pair`. Kode bayar yang menunjuk
+    pesanan kwitansi di balik kas ini bernilai seperti nomor referensi (tanpa angkat ke ambang otomatis: pecah/gabung
+    selalu keputusan manusia)."""
+    if _norm_dir(txn.get("direction")) != _norm_dir(line.get("direction")):
+        return _tidak_layak("arah dana berbeda")
+    sisa = _round(_round(txn.get("amount")) - _round(txn.get("reconciled_amount")))
+    l_amt = _round(line.get("amount"))
+    tol = max(cfg["amount_tol"], 0.0)
+    if sisa <= EPS:
+        return _tidak_layak("transaksi sudah habis terekonsiliasi")
+    w_half = round(cfg["w_amount"] * 0.5, 2)
+    if mode == "split":
+        if sisa > l_amt + tol + EPS:
+            return _tidak_layak(f"sisa {rupiah(sisa)} melebihi nominal transfer")
+        pts, label = w_half, f"Bisa menjadi bagian transfer ini (sisa {rupiah(sisa)})"
+    else:
+        need = _round(total) if total and total > EPS else l_amt
+        if sisa + tol + EPS < need:
+            return _tidak_layak(f"sisa {rupiah(sisa)} kurang dari total mutasi {rupiah(need)}")
+        if abs(sisa - need) <= tol + 0.001:
+            pts, label = cfg["w_amount"], f"Sisa transaksi pas sama dengan total mutasi terpilih ({rupiah(need)})"
+        else:
+            pts, label = w_half, f"Sisa transaksi {rupiah(sisa)} menampung total mutasi terpilih {rupiah(need)}"
+    explain = [{"label": label, "points": pts}]
+    score = pts
+    ld, td = _d(line.get("stmt_date")), _d(txn.get("txn_date") or txn.get("created_at"))
+    day_diff = abs((td - ld).days) if (td and ld) else 999
+    window = max(cfg["window_days"], 0)
+    kode = _kode_cocok(line, txn)
+    if day_diff > window and not kode:
+        return _tidak_layak(f"selisih {day_diff} hari di luar jendela {window} hari", day_diff=day_diff)
+    if cfg["w_date"] > 0 and day_diff <= window:
+        pts_d = cfg["w_date"] if day_diff == 0 else round(cfg["w_date"] * (1 - (day_diff / (window + 1))), 2)
+        explain.append({"label": "Tanggal sama" if day_diff == 0 else f"Tanggal beda {day_diff} hari", "points": pts_d})
+        score += pts_d
+    if kode and cfg["w_ref"] > 0:
+        explain.append({"label": f"Kode bayar {kode['code']} menunjuk pesanan {kode.get('order_number') or ''}".strip(),
+                        "points": cfg["w_ref"]})
+        score += cfg["w_ref"]
+    for p, why in ((0.0, "") if kode else _ref_score(line, txn, cfg["w_ref"]), _name_score(line, txn, cfg["w_name"])):
+        if p:
+            explain.append({"label": why, "points": p})
+            score += p
+    if rule and cfg["rule_bonus"] > 0:
+        explain.append({"label": f"Aturan tersimpan: {rule.get('sample_desc', '')[:40]}", "points": cfg["rule_bonus"]})
+        score += cfg["rule_bonus"]
+    return {"score": round(score, 2), "explain": explain, "eligible": True, "amount_diff": round(abs(l_amt - sisa), 2),
+            "day_diff": day_diff, "reason": ""}
+
+
+def _combos(rows: List[Dict[str, Any]], target: float, tol: float) -> List[List[Dict[str, Any]]]:
+    """Kombinasi 2–3 kandidat yang SISA-nya pas menutup `target` (± toleransi), terbaik dulu (anggota lebih sedikit,
+    lalu skor rata-rata lebih tinggi). Hitungan dalam sen; pasangan & tiga-serangkai lewat pencarian biner."""
+    from bisect import bisect_left, bisect_right
+    pool = sorted(rows[:COMBO_POOL], key=lambda r: r["outstanding"])
+    amt = [int(round(r["outstanding"] * 100)) for r in pool]
+    tgt, tl, n = int(round(target * 100)), int(round(max(tol, 0.0) * 100)), len(pool)
+    found: List[Tuple[int, ...]] = []
+    for i in range(n):
+        need = tgt - amt[i]
+        if need < amt[i] - tl:
+            break
+        found += [(i, j) for j in range(bisect_left(amt, need - tl, i + 1), bisect_right(amt, need + tl, i + 1))]
+    for i in range(n):
+        for j in range(i + 1, n):
+            need = tgt - amt[i] - amt[j]
+            if need < amt[j] - tl:
+                break
+            found += [(i, j, k) for k in range(bisect_left(amt, need - tl, j + 1), bisect_right(amt, need + tl, j + 1))]
+            if len(found) > 200:
+                break
+    combos = [[pool[x] for x in ix] for ix in found]
+    combos.sort(key=lambda c: (len(c), -sum(r["score"] for r in c) / len(c)))
+    return combos[:COMBO_MAX]
+
+
+async def candidates(line_id: str, entity_ids: Optional[List[str]] = None, limit: int = 8,
+                     mode: str = "single", total: float = 0.0) -> Dict[str, Any]:
+    """Kandidat berperingkat + penjelasan skor untuk satu baris (dipakai modal UI).
+
+    `mode` — single (cocok 1:1, `score_pair`) · split (pecah 1:N: transaksi yang bisa menjadi BAGIAN transfer ini, plus
+    `combos` = kombinasi yang pas menutupnya) · group (gabung N:1: transaksi yang menampung `total` = Σ mutasi terpilih).
+    Lihat `_score_part`."""
+    mode = mode if mode in CAND_MODES else "single"
     ln = await _line(line_id, entity_ids)
     await _isi_hits([ln])   # PM-T3
     cfg = await load_cfg(ln.get("entity_id", ""))
@@ -740,12 +871,28 @@ async def candidates(line_id: str, entity_ids: Optional[List[str]] = None,
     txns = await _candidate_txns(ln["bank_account_id"], entity_ids)
     scored = []
     for t in txns:
-        s = score_pair(ln, t, cfg, rule)
+        s = score_pair(ln, t, cfg, rule) if mode == "single" else _score_part(ln, t, cfg, rule, mode, total)
         if not s["eligible"]:
             continue
         scored.append({**_txn_brief(t), "score": s["score"], "explain": s["explain"]})
     scored.sort(key=lambda r: -r["score"])
-    return {"line": safe_doc(ln), "candidates": scored[:limit],
+    combos: List[Dict[str, Any]] = []
+    if mode == "split":
+        found = _combos(scored, _round(ln.get("amount")), cfg["amount_tol"])
+        naik: Dict[str, List[str]] = {}
+        for c in found:
+            combos.append({"txn_ids": [r["id"] for r in c], "numbers": [r["number"] for r in c],
+                           "amounts": [r["outstanding"] for r in c], "total": _round(sum(r["outstanding"] for r in c))})
+        for r in (found[0] if found else []):
+            naik[r["id"]] = [x["number"] for x in found[0] if x["id"] != r["id"]]
+        tambah = round(cfg["w_amount"] - cfg["w_amount"] * 0.5, 2)
+        for r in scored:
+            if r["id"] in naik:
+                r["explain"] = [{"label": f"Bersama {' + '.join(naik[r['id']])} pas menutup nominal transfer",
+                                 "points": r["explain"][0]["points"] + tambah}] + r["explain"][1:]
+                r["score"] = round(r["score"] + tambah, 2)
+        scored.sort(key=lambda r: -r["score"])
+    return {"line": safe_doc(ln), "candidates": scored[:limit], "mode": mode, "combos": combos,
             "auto_min": cfg["auto_min"], "suggest_min": cfg["suggest_min"],
             "rule_applied": bool(rule)}
 

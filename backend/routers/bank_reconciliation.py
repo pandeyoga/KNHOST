@@ -50,6 +50,10 @@ class StatementImportInput(BaseModel):
     lines: List[StatementLineIn] = Field(default_factory=list)
 
 
+#: Berkas Excel dikirim base64 (≈ 4/3 ukuran berkas); batas parser 5 MB → teks base64 ≤ 7 jutaan karakter.
+XLSX_B64_MAX = 7_100_000
+
+
 class RawImportInput(BaseModel):
     bank_account_id: str
     raw: str = ""
@@ -57,6 +61,7 @@ class RawImportInput(BaseModel):
     fmt: Optional[Dict[str, Any]] = None
     year_hint: Optional[int] = 0
     file_name: Optional[str] = ""   # M38 — nama berkas yang diunggah (asal mutasi)
+    file_b64: Optional[str] = Field("", max_length=XLSX_B64_MAX)   # berkas Excel .xlsx (base64) — menggantikan `raw`
 
 
 class PreviewInput(BaseModel):
@@ -64,6 +69,7 @@ class PreviewInput(BaseModel):
     format_id: Optional[str] = ""
     fmt: Optional[Dict[str, Any]] = None
     year_hint: Optional[int] = 0
+    file_b64: Optional[str] = Field("", max_length=XLSX_B64_MAX)
 
 
 class AutoMatchInput(BaseModel):
@@ -183,7 +189,8 @@ async def preview_statement(payload: PreviewInput, request: Request,
     await require_permission(request, "cash", "view")
     try:
         return await svc.preview(payload.raw, payload.format_id or "", payload.fmt,
-                                 _ids(ctx), ctx.active_entity_id, int(payload.year_hint or 0))
+                                 _ids(ctx), ctx.active_entity_id, int(payload.year_hint or 0),
+                                 file_b64=payload.file_b64 or "")
     except Exception as e:  # noqa: BLE001
         _bad(e)
 
@@ -212,13 +219,15 @@ async def import_file(payload: RawImportInput, request: Request,
         res = await svc.import_raw(payload.bank_account_id, payload.raw,
                                    payload.format_id or "", payload.fmt, _ids(ctx),
                                    ctx.active_entity_id, _actor_name(actor),
-                                   int(payload.year_hint or 0), file_name=payload.file_name or "")
+                                   int(payload.year_hint or 0), file_name=payload.file_name or "",
+                                   file_b64=payload.file_b64 or "")
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(_actor_name(actor), "bank_statement_imported_file", "bank_account",
                 payload.bank_account_id,
                 {"imported": res["imported"], "skipped": res["skipped"],
-                 "format": res.get("format_name", "")})
+                 "format": res.get("format_name", ""), "file_kind": (res.get("source") or {}).get("file_kind", ""),
+                 "file_name": payload.file_name or ""})
     return res
 
 
@@ -252,10 +261,13 @@ async def list_lines(request: Request, ctx: EntityContext = Depends(entity_ctx),
 @router.get("/bank-reconciliation/lines/{line_id}/candidates")
 async def line_candidates(line_id: str, request: Request,
                           ctx: EntityContext = Depends(entity_ctx),
-                          limit: int = Query(8)) -> Dict[str, Any]:
+                          limit: int = Query(8, ge=1, le=100),
+                          mode: str = Query("single", pattern="^(single|split|group)$"),
+                          total: float = Query(0, ge=0)) -> Dict[str, Any]:
+    # Uji rekonsiliasi 18 Nov — `mode` split (pecah 1:N) / group (gabung N:1, `total` = Σ mutasi terpilih).
     await require_permission(request, "cash", "view")
     try:
-        return await svc.candidates(line_id, _ids(ctx), limit)
+        return await svc.candidates(line_id, _ids(ctx), limit, mode, total)
     except Exception as e:  # noqa: BLE001
         _bad(e)
 
