@@ -1,0 +1,50 @@
+{
+  "code": "R6",
+  "title": "Rekonsiliasi · biaya administrasi & bunga bank — catat dari layar rekonsiliasi",
+  "ok": true,
+  "at": "2026-11-18T10:11:46.917Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R6_biaya_bunga_88.xlsx → [[Pratinjau]] → [[Impor]]",
+      "expect": "2 baris baru: BIAYA ADM LATIHAN NN Rp 15.000 (keluar) dan BUNGA LATIHAN NN Rp 26.800 (masuk)",
+      "ok": true,
+      "ms": 13079,
+      "info": "Impor BCA — Rekening Koran (CSV): 2 baris baru, 0 dilewati (sudah pernah masuk)."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Pada baris BIAYA ADM klik [[Catat biaya bank]] → periksa dialog → [[Catat biaya bank]]",
+      "expect": "Dialog \"Catat biaya bank?\" menyebut Rp 15.000 dan PT Sukacita; pesan \"Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).\"; baris Tercocok · \"Biaya bank · akun 6-8000\"",
+      "ok": true,
+      "ms": 1039,
+      "info": "Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank)."
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Pada baris BUNGA klik [[Catat bunga bank]] → periksa dialog → [[Catat bunga bank]]",
+      "expect": "Dialog \"Catat bunga bank?\" menyebut Rp 26.800; pesan \"Bunga · jasa giro dibukukan (Dr Bank / Cr Pendapatan Bunga).\"; baris Tercocok",
+      "ok": true,
+      "ms": 1143,
+      "info": "Bunga · jasa giro dibukukan (Dr Bank / Cr Pendapatan Bunga)."
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Cek jurnal: Akuntansi & Pajak › Buku Besar › Jurnal → cari \"BUNGA LATIHAN 88\" → buka jurnalnya",
+      "expect": "Biaya: 6-8000 Beban Administrasi Bank Debit Rp 15.000 / 1-1100 Bank Kredit. Bunga: 1-1100 Bank Debit Rp 26.800 / 4-9000 Pendapatan Lain-lain Kredit (akun pemetaan kas_bank.pendapatan_bunga). Keduanya seimbang; kas baru terekonsiliasi",
+      "ok": true,
+      "ms": 11196,
+      "info": "KSC/JE-00151: 6-8000 Beban Administrasi Bank (D) Rp 15.000 · 1-1100 Kas Besar / Bank (K) Rp 15.000 || KSC/JE-00152: 1-1100 Kas Besar / Bank (D) Rp 26.800 · 4-9000 Pendapatan Lain-lain (K) Rp 26.800"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

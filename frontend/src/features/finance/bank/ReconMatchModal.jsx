@@ -12,7 +12,7 @@ import { Link2, RefreshCw, Split, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 import MoneyInput from "../../../components/MoneyInput";
-import { parseDecimal } from "../../../utils/decimalInput";
+import { parseDecimal, toDecimalText } from "../../../utils/decimalInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FilterChips from "../../../components/FilterChips";
 import FormModal from "../../../components/FormModal";
@@ -37,14 +37,16 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
   const matchIntent = useIntentKey("brmatch");
   const splitIntent = useIntentKey("brsplit");
 
+  // Uji rekonsiliasi R4 (18 Nov) — mode pecah meminta kandidat `split`: transaksi yang LEBIH KECIL dari transfer
+  // (dulu kandidat hanya transaksi bernominal ≈ transfer, sehingga kwitansi-kwitansi pecahannya tidak pernah tampil).
   const load = useCallback(async () => {
     setBusy("load");
     try {
       const r = await axios.get(`${API}/bank-reconciliation/lines/${line.id}/candidates`,
-        { params: { limit: 25 } });
+        { params: { limit: 25, mode } });
       setData(r.data);
     } catch (e) { setMErr(apiErrorText(e)); onError?.(e); } finally { setBusy(""); }
-  }, [line.id, onError]);
+  }, [line.id, mode, onError]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -129,14 +131,34 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
         </div>
       )}
 
+      {/* Uji rekonsiliasi R4 (18 Nov) — kombinasi transaksi yang sisanya PAS menutup transfer (server `combos`);
+          satu klik mengisi alokasinya, orang tetap memeriksa lalu menekan Simpan pemecahan. */}
+      {mode === "split" && (data?.combos || []).map((c, i) => (
+        <div key={c.txn_ids.join("-")} data-testid={`recon-split-combo-${i}`}
+          className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded border border-[#BFE5CC] bg-[#EAF7EE] px-3 py-2 text-[11px]">
+          <span>
+            <b>Kombinasi pas:</b>{" "}
+            {c.numbers.map((n, j) => `${n} (${formatCurrency(c.amounts[j])})`).join(" + ")}
+            {" = "}<b>{formatCurrency(c.total)}</b>
+          </span>
+          <button type="button" className="secondary-button btn-sm" data-testid={`recon-split-combo-fill-${i}`}
+            onClick={() => setAlloc(Object.fromEntries(c.txn_ids.map((id, j) => [id, toDecimalText(c.amounts[j], 2)])))}>
+            Isi alokasi
+          </button>
+        </div>
+      ))}
+
       <div className="mt-2 rounded border border-[#EFF0F2] sm:max-h-[340px] sm:overflow-auto">
         {busy === "load" ? (
           <div className="p-4 text-center text-[12px] text-[#8E8E93]">
             <RefreshCw size={14} className="spin inline" /> Menghitung kandidat…
           </div>
         ) : cands.length === 0 ? (
-          <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+          <div className="p-4 text-center text-[12px] text-[#8E8E93]" data-testid="recon-cand-empty">
             Tidak ada transaksi buku yang layak (arah dana, nominal, atau tanggalnya terlalu jauh).
+            {mode === "single"
+              ? " Bila satu transfer ini melunasi beberapa transaksi, pilih “Pecah ke beberapa transaksi”."
+              : ""}{" "}
             Anda bisa menitipkan dana ini bila pengirimnya belum diketahui.
           </div>
         ) : cands.map((t) => (

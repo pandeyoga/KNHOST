@@ -1,0 +1,50 @@
+{
+  "code": "R7",
+  "title": "Rekonsiliasi · setoran tanpa nama — titipkan lalu alokasikan",
+  "ok": true,
+  "at": "2026-11-18T10:12:12.269Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R7_titipan_88.xlsx → [[Pratinjau]] → [[Impor]] → [[Cocokkan otomatis]]",
+      "expect": "1 baris baru \"SETORAN TUNAI CDM LATIHAN NN\" Rp 2.236.088; sesudah Cocokkan otomatis tetap \"Perlu keputusan\" tanpa usulan",
+      "ok": true,
+      "ms": 12469,
+      "info": "Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk). · Pencocokan otomatis: 0 tertaut (skor ≥ 80), 1 usulan (skor ≥ 60), 9 baris tersisa. · sisa tagihan KSC/SO-00039 Rp 3.440.445"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Pada baris SETORAN TUNAI CDM klik [[Titipkan]] → periksa dialog → [[Titipkan dana]]",
+      "expect": "Dialog \"Titipkan dana ini?\" menyebut Rp 2.236.088; pesan \"Dana dititipkan (jurnal Dr Bank / Cr Titipan terbit).\"; status baris \"Dititipkan\", \"Sisa Rp 2.236.088\"",
+      "ok": true,
+      "ms": 1137,
+      "info": "Dana dititipkan (jurnal Dr Bank / Cr Titipan terbit)."
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Tab [[Dana Titipan]] → baris SETORAN TUNAI CDM → [[Alokasikan]] → *Pelanggan* Latihan 88 · Toko Rekon Peserta 88 → isi nominal Rp 2.236.088 pada pesanan KSC/SO-00039 → *Alasan* \"Dikonfirmasi pelanggan lewat bukti transfer\" → *Catatan* → [[Alokasikan]]",
+      "expect": "Pesan \"Titipan dialokasikan Rp 2.236.088 · sisa titipan Rp 0.\"; baris titipan sudah dialokasikan Rp 2.236.088, sisa Rp 0",
+      "ok": true,
+      "ms": 3672,
+      "info": "Titipan dialokasikan Rp 2.236.088 · sisa titipan Rp 0. · 18 Nov 2026 SETORAN TUNAI CDM LATIHAN 88 Pihak: SETORAN TUNAI CDM LATIHAN 88 Rp 2.236.088 Rp 0 Rp 2.236.088 0 hari Alokasikan Buka kasus Batalkan titipan"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Cek buku: jurnal titipan & jurnal alokasi; sisa tagihan pesanan",
+      "expect": "Jurnal titipan: Bank Debit / 2-1950 Titipan Kredit Rp 2.236.088; jurnal alokasi: 2-1950 Titipan Debit / Piutang Kredit Rp 2.236.088; sisa tagihan KSC/SO-00039 turun Rp 2.236.088",
+      "ok": true,
+      "ms": 5371,
+      "info": "KSC/JE-00153: 1-1100 Kas Besar / Bank (D) Rp 2.236.088 · 2-1950 Titipan Dana Belum Teridentifikasi (K) Rp 2.236.088 || KSC/JE-00154: 2-1950 Titipan Dana Belum Teridentifikasi (D) Rp 2.236.088 · 1-1200 Piutang Usaha (K) Rp 2.236.088 || sisa KSC/SO-00039 Rp 3.440.445 → Rp 1.204.357"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

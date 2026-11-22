@@ -1,0 +1,41 @@
+{
+  "code": "R8",
+  "title": "Rekonsiliasi · lepas tautan lalu cocokkan ulang",
+  "ok": true,
+  "at": "2026-11-18T10:13:09.858Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → cari \"LATIHAN NN\" → baris transfer R2 (tanpa kode) berstatus Tercocok → klik [[Lepas]]",
+      "expect": "Pesan \"Tautan dilepas.\"; baris kembali \"Perlu keputusan\"; kas KSC/CASH-00049 kembali belum terekonsiliasi",
+      "ok": true,
+      "ms": 51000,
+      "info": "Tautan dilepas."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Klik [[Cocokkan]] pada baris itu → kandidat KSC/CASH-00049 (skor 75) → [[Tautkan]]",
+      "expect": "Pop-up kandidat teratas KSC/CASH-00049 · Rp 3.065.088 · skor 75; pesan \"Mutasi ditautkan (skor 75).\"; baris Tercocok lagi",
+      "ok": true,
+      "ms": 1693,
+      "info": "KSC/CASH-00049 · 18 Nov 2026 Penerimaan KSC/AR-00029 — Latihan 88 · Toko Rekon Peserta 88 · Ref TRF-LTH88-00035 · Kode KN-PTW66 Nominal Rp 3.065.088 · sisa Rp 3.065.088 skor 75 Tautkan Nominal sama (+40) · Tanggal sama (+20) · nama mirip 'Latihan 88 · Toko Rekon Peserta 88' (96%) (+15) · Mutasi ditautkan (skor 75)."
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Cek buku",
+      "expect": "Kas KSC/CASH-00049 \"Terekonsiliasi\" lagi; tetap SATU jurnal (lepas/tautkan tidak menerbitkan jurnal)",
+      "ok": true,
+      "ms": 2341,
+      "info": "KSC/CASH-00049 Rp 3.065.088"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

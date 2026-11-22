@@ -36,6 +36,7 @@ akses yang sama dengan Manajer, termasuk lintas PT; di latihan pengesahan tetap 
 | `uji/` | Uji jalan per materi: `F*.js`, `konfigurasi/K*.js`, `sdm/K09, H*.js`, `e2e/A*.js`, `situasi/S*.js`; hasil di `uji/hasil/<kode>/hasil.json` + tangkapan layar |
 | `uji/situasi/S1–S5_*.js` | Uji jalan Bagian 5 (situasi khusus & koreksi, hutang & piutang per pihak) di peserta peraga tersendiri |
 | `uji/variasi/`, `uji/dokumen/` | Uji variasi isian & hitungan (Lampiran A), dokumen cetak + pengaturan naskah (Lampiran B), dan V9: bukti setiap klaim di teks materi (`src/variasi_klaim_materi.json`) |
+| `rekonsiliasi/SKENARIO_UJI_REKONSILIASI.md` | Lanjutan F10: rekonsiliasi bank dengan **rekening koran Excel per peserta** (R1 kode bayar · R2 usulan · R3 bayar pemasok · R4 pecah · R5 gabung · R6 biaya & bunga · R7 titipan · R8 lepas · R9 impor ulang). Data: seed `--hanya a_dasar:akun,a_dasar:mitra,g_rekon` lalu `backend/scripts/buat_mutasi_bank_latihan.py`; uji jalan `uji/rekonsiliasi/` (`jalankan_rekon.sh`, atau `jalankan_rekon_docker.sh` di mesin tanpa Node) |
 
 ## Data latihan
 

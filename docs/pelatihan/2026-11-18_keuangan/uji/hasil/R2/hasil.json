@@ -1,0 +1,50 @@
+{
+  "code": "R2",
+  "title": "Rekonsiliasi · transfer tanpa kode — usulan, tautkan manual",
+  "ok": true,
+  "at": "2026-11-18T10:09:37.069Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R2_tanpa_kode_88.xlsx → [[Pratinjau]] → [[Impor]]",
+      "expect": "Pratinjau \"Terbaca 1 baris … masuk Rp 3.065.088\"; pesan \"Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati\"",
+      "ok": true,
+      "ms": 9382,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) (dikenali otomatis) · lembar Mutasi Rekening, judul kolom di baris 7 · masuk Rp 3.065.088 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 18 Nov 2026 TRSF E-BANKING CR LATIHAN 88 TOKO REKON PESERTA 88 — Rp 3.065.088 Masuk || Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk)."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Klik [[Cocokkan otomatis]] → cari \"LATIHAN NN\"",
+      "expect": "Baris Rp 3.065.088 TETAP \"Perlu keputusan\" dengan tombol usulan \"Terima usulan: KSC/CASH-00049 · Rp 3.065.088 (skor 75)\"; alasan skor: Nominal sama (+40) · Tanggal sama (+20) · nama mirip (+15)",
+      "ok": true,
+      "ms": 2467,
+      "info": "Pencocokan otomatis: 0 tertaut (skor ≥ 80), 2 usulan (skor ≥ 60), 9 baris tersisa. · Terima usulan: KSC/CASH-00049 · Rp 3.065.088 (skor 75) · ALASAN SKOR Nominal sama +40 Tanggal sama +20 nama mirip 'Latihan 88 · Toko Rekon Peserta 88' (96%) +15"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Periksa usulan (nominal, tanggal, nama pelanggan sama dengan kwitansi KSC/AR-00029) → klik [[Terima usulan: KSC/CASH-00049 …]]",
+      "expect": "Pesan \"Mutasi ditautkan ke KSC/CASH-00049 (skor 75).\"; baris Tercocok · satu-satu (manual); Transaksi buku KSC/CASH-00049",
+      "ok": true,
+      "ms": 2199,
+      "info": "Mutasi ditautkan ke KSC/CASH-00049 (skor 75)."
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
+      "expect": "Baris KSC/CASH-00049 \"Terekonsiliasi\"; tidak ada jurnal baru",
+      "ok": true,
+      "ms": 5090,
+      "info": "KSC/CASH-00049 Rp 3.065.088"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

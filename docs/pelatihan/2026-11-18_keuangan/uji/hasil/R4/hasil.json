@@ -1,0 +1,59 @@
+{
+  "code": "R4",
+  "title": "Rekonsiliasi · satu transfer untuk dua kwitansi — pecah 1:N",
+  "ok": true,
+  "at": "2026-11-18T10:10:50.211Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R4_pecah_88.xlsx → [[Pratinjau]] → [[Impor]] → [[Cocokkan otomatis]]",
+      "expect": "1 baris baru; sesudah Cocokkan otomatis baris Rp 3.809.888 TETAP \"Perlu keputusan\" (tidak ada SATU transaksi buku bernominal sama)",
+      "ok": true,
+      "ms": 15232,
+      "info": "Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk). · Pencocokan otomatis: 0 tertaut (skor ≥ 80), 1 usulan (skor ≥ 60), 9 baris tersisa."
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Pada baris \"… DUA NOTA\" klik [[Cocokkan]]",
+      "expect": "Pop-up \"Cocokkan mutasi bank\" mode Satu transaksi: \"Tidak ada transaksi buku yang layak … pilih “Pecah ke beberapa transaksi”\"",
+      "ok": true,
+      "ms": 526,
+      "info": "Tidak ada transaksi buku yang layak (arah dana, nominal, atau tanggalnya terlalu jauh). Bila satu transfer ini melunasi beberapa transaksi, pilih “Pecah ke beberapa transaksi”. Anda bisa menitipkan dana ini bila pengirimnya belum diketahui."
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik [[Pecah ke beberapa transaksi]]",
+      "expect": "Kotak hijau \"Kombinasi pas: KSC/CASH-00051 (Rp 2.277.088) + KSC/CASH-00052 (Rp 1.532.800) = Rp 3.809.888\"; kedua kas di urutan teratas dengan alasan \"Bersama … pas menutup nominal transfer (+40)\"",
+      "ok": true,
+      "ms": 580,
+      "info": "Kombinasi pas: KSC/CASH-00052 (Rp 1.532.800) + KSC/CASH-00051 (Rp 2.277.088) = Rp 3.809.888 Isi alokasi"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Klik [[Isi alokasi]] → periksa nominal kedua kas → klik [[Simpan pemecahan (2 transaksi)]]",
+      "expect": "Sisa belum dialokasikan Rp 0; pesan \"Satu transfer dipecah ke 2 transaksi buku (Rp 3.809.888).\"; baris Tercocok · 1 transfer → banyak; Transaksi buku KSC/CASH-00051 dan KSC/CASH-00052",
+      "ok": true,
+      "ms": 1097,
+      "info": "Isi nominal pada transaksi yang dilunasi transfer ini. Total alokasi tidak boleh melebihi nominal mutasi. Sisa belum dialokasikan: Rp 0 · Satu transfer dipecah ke 2 transaksi buku (Rp 3.809.888)."
+    },
+    {
+      "no": 5,
+      "role": "Finance",
+      "action": "Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
+      "expect": "KSC/CASH-00051 dan KSC/CASH-00052 \"Terekonsiliasi\"; tidak ada jurnal baru",
+      "ok": true,
+      "ms": 8759,
+      "info": "KSC/CASH-00051 Rp 2.277.088 · KSC/CASH-00052 Rp 1.532.800"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

@@ -42,12 +42,16 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def preps():
+def preps(opsional: bool = False):
+    """Semua prep berurutan modul. Modul ber-`OPSIONAL = True` (mis. g_rekon) hanya ikut bila `opsional` — yaitu bila
+    `--hanya` diberikan (lalu tetap disaring awalannya): seed bawaan tidak menambah dokumen yang tidak diminta."""
     out = []
     for m in sorted(pkgutil.iter_modules(pkg.__path__), key=lambda x: x.name):
         if m.name in ("konteks",):
             continue
         mod = importlib.import_module(f"scripts.latih_keuangan.{m.name}")
+        if getattr(mod, "OPSIONAL", False) and not opsional:
+            continue
         for key, fn in getattr(mod, "PREPS", []):
             out.append((f"{m.name}:{key}", fn))   # tanpa titik: kunci jadi nama field Mongo
     return out
@@ -62,6 +66,10 @@ LABEL = {   # sama persis dengan label Kartu Peserta di manual pelatihan (docs/p
     "a_dasar:tagihan_kontrabon": "Tagihan untuk kontrabon", "d_hutang:sample_berbayar": "Pesanan sample berbayar",
     "d_hutang:gaji_susulan": "Gaji susulan", "e_buku:so_jejak": "SO lunas untuk penelusuran",
     "f_sdm:karyawan_baru": "Karyawan baru",   # K-SDM-01 — isian K09, H01–H04
+    # Rekonsiliasi bank lanjutan R1–R9 (rekening koran Excel: scripts/buat_mutasi_bank_latihan.py)
+    "g_rekon:kode_bayar": "Rekon R1 · kwitansi kode bayar", "g_rekon:tanpa_kode": "Rekon R2 · kwitansi tanpa kode",
+    "g_rekon:bayar_pemasok": "Rekon R3 · bayar pemasok", "g_rekon:pecah": "Rekon R4 · dua kwitansi (pecah)",
+    "g_rekon:gabung": "Rekon R5 · kwitansi (gabung)", "g_rekon:titipan": "Rekon R7 · pesanan untuk titipan",
 }
 
 
@@ -97,7 +105,8 @@ async def main() -> None:
     ap.add_argument("--mulai", type=int, default=1, help="nomor peserta pertama (mis. --mulai 3 --peserta 3 = hanya 03)")
     ap.add_argument("--kartu", action="store_true")
     ap.add_argument("--nonaktifkan", action="store_true")
-    ap.add_argument("--hanya", default="", help="jalankan prep tertentu saja (awalan kunci, mis. a_dasar:so_lunas)")
+    ap.add_argument("--hanya", default="", help="jalankan prep tertentu saja (awalan kunci, mis. a_dasar:so_lunas; "
+                                                "beberapa dipisah koma, mis. a_dasar:akun,a_dasar:mitra,g_rekon)")
     a = ap.parse_args()
     if a.nonaktifkan:
         return await nonaktifkan()
@@ -109,7 +118,8 @@ async def main() -> None:
     api = Api()
     lc = LatihCtx(api, cst)
     failed = []
-    steps = [s for s in preps() if s[0].startswith(a.hanya)]
+    awalan = tuple(x.strip() for x in a.hanya.split(",")) if a.hanya else ("",)
+    steps = [s for s in preps(bool(a.hanya)) if s[0].startswith(awalan)]
     try:
         for i in range(a.mulai, a.peserta + 1):
             p = Peserta(i)

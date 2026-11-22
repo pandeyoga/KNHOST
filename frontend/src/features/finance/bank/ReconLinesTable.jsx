@@ -104,8 +104,10 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
     setMErr("");
     try {
       const first = pickedLines[0];
+      // Uji rekonsiliasi R5 (18 Nov) — kandidat `group` dinilai terhadap TOTAL mutasi terpilih (dulu terhadap nominal
+      // mutasi pertama saja, sehingga transaksi yang menampung semua bagiannya tidak pernah tampil).
       const r = await axios.get(`${API}/bank-reconciliation/lines/${first.id}/candidates`,
-        { params: { limit: 25 } });
+        { params: { limit: 25, mode: "group", total: pickedTotal } });
       setGroupTxn({ candidates: r.data?.candidates || [], total: pickedTotal });
     } catch (e) { setMErr(apiErrorText(e)); onError?.(e); }
   }
@@ -417,9 +419,16 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                 <span className="min-w-0 text-[12px]">
                   <b>{t.number}</b> · {fmtDate(t.txn_date)}{" "}
                   <span className="text-[#8E8E93]">{t.description || ""}</span>
+                  {/* Uji rekonsiliasi R5 — alasan teratas (mis. "Sisa transaksi pas sama dengan total mutasi terpilih"). */}
+                  {(t.explain || []).length > 0 && (
+                    <span className="block text-[10px] text-[#6B6B73]">
+                      {t.explain.map((e) => `${e.label} (+${Number(e.points).toFixed(0)})`).join(" · ")}
+                    </span>
+                  )}
                 </span>
-                <span className="text-[12px] font-semibold">
+                <span className="text-[12px] font-semibold whitespace-nowrap">
                   sisa {formatCurrency(t.outstanding)}
+                  {t.score !== undefined && <span className="ml-2 text-[10px] text-[#8E8E93]">skor {Number(t.score).toFixed(0)}</span>}
                 </span>
               </button>
             ))}

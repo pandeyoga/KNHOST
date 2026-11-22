@@ -1,0 +1,50 @@
+{
+  "code": "R1",
+  "title": "Rekonsiliasi · transfer masuk berkode bayar — cocok otomatis",
+  "ok": true,
+  "at": "2026-11-18T10:09:15.752Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Login akun peserta → Keuangan › Kas & Bank › Rekonsiliasi → pilih rekening BCA Operasional KSC",
+      "expect": "Kartu ringkasan rekening tampil; tombol [[Impor mutasi bank]] dan [[Cocokkan otomatis]] tersedia",
+      "ok": true,
+      "ms": 10127,
+      "info": "kwitansi KSC/AR-00028 · KSC/CASH-00048 Rp 3.349.148 · kode bayar KN-4CT7V"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Klik [[Impor mutasi bank]] → [[Pilih berkas]] R1_kode_bayar_88.xlsx → biarkan *Template bank* \"Kenali otomatis\" → [[Pratinjau]]",
+      "expect": "\"Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) (dikenali otomatis) · lembar Mutasi Rekening, judul kolom di baris 7 · masuk Rp 3.349.148\"",
+      "ok": true,
+      "ms": 1601,
+      "info": "Terbaca 1 baris memakai template BCA — Rekening Koran (CSV) (dikenali otomatis) · lembar Mutasi Rekening, judul kolom di baris 7 · masuk Rp 3.349.148 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 18 Nov 2026 TRSF E-BANKING CR KN-4CT7V LATIHAN 88 TOKO REKON PESERTA 88 — Rp 3.349.148 Masuk || Impor BCA — Rekening Koran (CSV): 1 baris baru, 0 dilewati (sudah pernah masuk). || Impor terakhir: R1_kode_bayar_88.xlsx oleh Peserta Keuangan 88, 18 Nov 2026"
+    },
+    {
+      "no": 3,
+      "role": "Finance",
+      "action": "Klik [[Cocokkan otomatis]] → ketik \"LATIHAN NN\" di kotak cari daftar mutasi → klik angka Skor baris transfer",
+      "expect": "Baris Rp 3.349.148 berstatus Tercocok · satu-satu · otomatis; Transaksi buku KSC/CASH-00048; alasan skor menyebut \"Kode bayar KN-4CT7V cocok dengan pesanan KSC/SO-00034\"",
+      "ok": true,
+      "ms": 2424,
+      "info": "Pencocokan otomatis: 1 tertaut (skor ≥ 80), 1 usulan (skor ≥ 60), 8 baris tersisa. · skor 80"
+    },
+    {
+      "no": 4,
+      "role": "Finance",
+      "action": "Rekening & Saldo → kartu BCA Operasional KSC → Mutasi",
+      "expect": "Baris KSC/CASH-00048 berstatus Rekonsiliasi \"Terekonsiliasi\"; tidak ada jurnal baru (kas tetap satu jurnal)",
+      "ok": true,
+      "ms": 5948,
+      "info": "KSC/CASH-00048 Rp 3.349.148 / Rp 3.349.148"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88"
+  ]
+}

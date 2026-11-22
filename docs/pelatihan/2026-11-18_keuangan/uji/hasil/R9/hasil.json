@@ -1,0 +1,33 @@
+{
+  "code": "R9",
+  "title": "Rekonsiliasi · impor ulang rekening koran lengkap — tidak ada mutasi ganda",
+  "ok": true,
+  "at": "2026-11-18T10:13:43.532Z",
+  "base": "http://localhost:3000",
+  "steps": [
+    {
+      "no": 1,
+      "role": "Finance",
+      "action": "Rekonsiliasi → BCA Operasional KSC → [[Impor mutasi bank]] → [[Pilih berkas]] R0_rekening_koran_lengkap_88.xlsx → [[Pratinjau]] → [[Impor]]",
+      "expect": "Pratinjau \"Terbaca 9 baris\"; pesan \"… 0 baris baru, 9 dilewati (sudah pernah masuk).\"",
+      "ok": true,
+      "ms": 28775,
+      "info": "Impor BCA — Rekening Koran (CSV): 0 baris baru, 9 dilewati (sudah pernah masuk). · baris peserta tetap 9"
+    },
+    {
+      "no": 2,
+      "role": "Finance",
+      "action": "Saring status \"Perlu keputusan\" → cari \"LATIHAN NN\"",
+      "expect": "Tidak ada baris LATIHAN NN tersisa: 9 baris = Tercocok (R1–R6) + Dititipkan (R7)",
+      "ok": true,
+      "ms": 2590,
+      "info": "{\"matched\":8,\"holding\":1}"
+    }
+  ],
+  "http_5xx": [],
+  "console_errors": [],
+  "notes": [
+    "Peserta 88 · finance.latih88 · rekening BCA Operasional KSC (bank_cfb8819cb5af) · berkas /work/docs/pelatihan/2026-11-18_keuangan/rekonsiliasi/mutasi/peserta_88",
+    "Kartu \"Impor terakhir\" tidak menyebut R0_rekening_koran_lengkap_88.xlsx: Impor terakhir: R7_titipan_88.xlsx oleh Peserta Keuangan 88, 18 Nov 2026"
+  ]
+}
