@@ -1,6 +1,25 @@
 # SESSION HANDOFF — Kain Nusantara (KN10)
 
-## ▶ MULAI DI SINI — 2026-11-15 — akhir eksekusi blueprint, sesi berikutnya review pemilik
+## ▶ MULAI DI SINI — 2026-11-23 — komisi per artikel (KA-1…KA-11)
+> **23 Nov 2026 — komisi per artikel + tab "Skema & Tarif" (KA-1…KA-11) selesai dibangun** di cabang
+> `claude/nifty-carson-jjx3c8` (`main` tidak disentuh; belum dipasang ke produksi). **Yang dibangun:** tarif komisi Rp per
+> satuan dasar per **kategori → artikel → varian** (PT dulu, lalu Semua PT); pengali harga (pita selisih dari harga acuan,
+> pengali tetap untuk harga khusus/harga pelanggan/pesanan khusus, atau diskon baris cara lama — bawaan); pengali capaian
+> target bulanan (bawaan mati); aturan tiap baris **dipotret saat pesanan dibuat** (tarif baru tidak berlaku mundur;
+> pesanan lama dipotret sekali saat aplikasi menyala); aturan bulan dibekukan sesudah jurnal akrual; sumber insentif
+> **"Keduanya dibayar"** (`auto_and_sheet`); rincian faktor di kartu "Capaian & Insentif Saya" dan Beranda Sales.
+> **Cara pakai:** SDM › Kinerja & Insentif › **Skema & Tarif** → pilih satu PT → 1 sumber insentif · 2 tarif (cukup tarif
+> kategori; artikel/varian opsional; ubah banyak; unduh/unggah Excel) · 3–5 pengali & batas margin · akrual bulanan ·
+> simulasi. Bagian "Komisi otomatis (cara lama)" di Target & Aturan dicabut (tautan ke tab baru).
+> **Hasil & bukti:** `docs/superpowers/plans/2026-11-23-komisi-per-artikel-hasil.md` (uji penuh: tests_mem 1 merah → diperbaiki
+> `3302c1f`; jest 1 merah = kendala zona waktu lingkungan; gate 37 merah = garis dasar main, 2 pelanggaran baru: satu
+> diperbaiki, satu residu penjadwal; uji layar ujung ke ujung cocok hitung tangan Rp 71.836; 8 tangkapan layar).
+> Keputusan pelaksanaan: rancangan §8 butir 8–24. **Untuk pemilik:** nilai pita/pengali/tarif dan "Keduanya dibayar" untuk
+> PT nyata diisi pemilik (H5); kesetaraan angka berlaku per PT ("Semua PT" bisa beda); galat komisi di gaji ditelan menjadi 0
+> (lama — penting bila pengali capaian dinyalakan); jurnal akrual yang dibalik tetap membekukan aturan bulannya; simulasi
+> "Dengan perubahan" ikut menghitung pesanan yang dipotret tanpa tarif.
+
+## 2026-11-15 — akhir eksekusi blueprint, sesi berikutnya review pemilik (catatan lama)
 > **16 Nov 2026 — gelombang Master Produk & Makloon (MP-T1…MP-T5) dikerjakan** di cabang `claude/nifty-carson-jjx3c8`
 > (`main` belum dimajukan). Keputusan pemilik K-52…K-77 di `docs/blueprint/01_KEPUTUSAN.md` bagian E. Selesai: MP-T1 Rute
 > Produk (tab Rute di Master Produk, tahap dari Master Tahapan Proses, rilis R&D wajib rute), MP-T2 satu wizard Order
