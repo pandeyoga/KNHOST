@@ -57,11 +57,14 @@ async function kirim(host, formId) {
   await act(async () => { q(host, formId).querySelector("form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await settle();
 }
+const akar = [];   // akar React tiap uji — dilepas di afterEach
 async function mount(node, entity = "ent_kanda") {
   const host = document.createElement("div");
   document.body.appendChild(host);
+  const root = createRoot(host);
+  akar.push(root);
   await act(async () => {
-    createRoot(host).render(
+    root.render(
       <EntityScopeProvider selectedEntity={entity} entities={ENT} canSwitch>
         <AppNavProvider role="manager" onOpenDocument={() => {}} onNavigateTo={() => {}}>{node}</AppNavProvider>
       </EntityScopeProvider>);
@@ -81,7 +84,10 @@ beforeEach(() => {
   setAccessContext({ role: "manager", permissions: { sales_force: ["view", "update", "delete"], audit: ["view"] },
     view_resources: {}, hidden_views: [], view_actions: {} });
 });
-afterEach(() => setAccessContext(null));
+afterEach(async () => {
+  await act(async () => { akar.splice(0).forEach((r) => r.unmount()); });
+  setAccessContext(null);
+});
 
 test("I5 pita khusus dibaca per id; tarif tidak terbaca (404) = terkunci dan pita tidak dikirim", async () => {
   mockGet.mockImplementation((url) => (url === "/api/incentive-rates/r_mega"

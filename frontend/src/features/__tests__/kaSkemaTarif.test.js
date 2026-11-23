@@ -111,10 +111,12 @@ async function kirim(host, formId) {
   await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await settle();
 }
+const akar = [];   // akar React tiap uji — dilepas di afterEach
 async function mount(node, { entity = "ent_kanda", pick } = {}) {
   const host = document.createElement("div");
   document.body.appendChild(host);
   const root = createRoot(host);
+  akar.push(root);
   await act(async () => {
     root.render(
       <EntityScopeProvider selectedEntity={entity} entities={ENT} canSwitch pickEntity={pick}>
@@ -202,7 +204,12 @@ beforeEach(() => {
   mockDelete.mockResolvedValue({ data: { deleted: true } });
   mockPut.mockResolvedValue({ data: { count: 1 } });
 });
-afterEach(() => setAccessContext(null));
+// Akar React dilepas tiap uji: akar yang tertinggal ikut menggambar ulang saat jawaban async uji lama tiba sesudah tiruan
+// pengaturan berganti (uji berikutnya) → urutan hook berbeda (terlihat di jest penuh yang lambat).
+afterEach(async () => {
+  await act(async () => { akar.splice(0).forEach((r) => r.unmount()); });
+  setAccessContext(null);
+});
 
 // ═══ Pemetaan ① ═══════════════════════════════════════════════════════════════════════════════════════════════════
 test("KA9 pemetaan sumber insentif", () => {
