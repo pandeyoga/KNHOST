@@ -30,6 +30,7 @@ import { COMMISSION_LINK } from "../settings/config/SettingsHub";
 import { AppNavProvider } from "../../context/AppNavContext";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import { setAccessContext } from "../../config/roles";
+import { todayWib } from "../../utils/formatters";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -68,7 +69,7 @@ jest.mock("../../components/KNSelect", () => {
 });
 jest.mock("../../components/EntityScopeBanner", () => () => <div data-testid="scope" />);
 jest.mock("../../components/KNDatePicker", () => (p) => (
-  <input data-testid={p["data-testid"]} value={p.value || ""} disabled={p.disabled} onChange={(e) => p.onChange(e.target.value)} />));
+  <input id={p.id} data-testid={p["data-testid"]} value={p.value || ""} disabled={p.disabled} onChange={(e) => p.onChange(e.target.value)} />));
 // Pusat Pengaturan tertanam: yang diuji di sini = kunci yang dikunci tiap bagian (mesinnya diuji di suite Pengaturan).
 jest.mock("../settings/config/SettingsHub", () => {
   const asli = jest.requireActual("../settings/config/SettingsHub");
@@ -109,13 +110,13 @@ async function kirim(host, formId) {
   await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await settle();
 }
-async function mount(node, { entity = "ent_kanda" } = {}) {
+async function mount(node, { entity = "ent_kanda", pick } = {}) {
   const host = document.createElement("div");
   document.body.appendChild(host);
   const root = createRoot(host);
   await act(async () => {
     root.render(
-      <EntityScopeProvider selectedEntity={entity} entities={ENT} canSwitch>
+      <EntityScopeProvider selectedEntity={entity} entities={ENT} canSwitch pickEntity={pick}>
         <AppNavProvider role="manager" onOpenDocument={() => {}} onNavigateTo={() => {}}>{node}</AppNavProvider>
       </EntityScopeProvider>);
   });
@@ -418,7 +419,9 @@ test("KA9 tanpa izin ubah: tombol ubah/ubah banyak/unggah tidak tampil", async (
   host = await mount(<IncentiveSchemeView />, { entity: "all" });
   expect(txt(q(host, "scheme-all-pt"))).toContain(TEKS_SEMUA_PT);
   expect(TEKS_SEMUA_PT).toMatch(/^Pilih satu PT/);
-  expect(mockGet.mock.calls.map((c) => c[0])).toEqual(["/api/incentive-rates"]);   // rute pohon menolak "Semua PT"
+  const urlSemua = mockGet.mock.calls.map((c) => c[0]);
+  expect(urlSemua).toContain("/api/incentive-rates");                  // daftar tarif Semua PT
+  expect(urlSemua.filter((u) => /incentive-rates\/(categories|articles)/.test(u))).toEqual([]);   // rute pohon menolak "Semua PT"
   expect(q(host, "group-rates-row-r_cat_all")).not.toBeNull();
   expect(q(host, "group-rates-edit-r_cat_all")).toBeNull();
   expect(q(host, "group-rates-delete-r_cat_all")).toBeNull();
@@ -536,6 +539,7 @@ test("KA9 R15 pop-up Berlaku untuk: Semua PT → POST entity_id all; tarif Semua
   await klik(q(host, "rates-cat-edit-Batik"));
   expect(q(host, "rate-form-scope-pt").checked).toBe(true);
   expect(q(host, "rate-form-scope-warning")).toBeNull();
+  expect(txt(q(host, "rate-form-inherit"))).toBe("Sekarang memakai tarif Semua PT Rp 3.000.");
   await klik(q(host, "rate-form-scope-semua_pt"));
   expect(txt(q(host, "rate-form-title"))).toBe("Ubah tarif kategori Batik");
   expect(txt(q(host, "rate-form-scope-warning"))).toBe("Mengubah tarif ini berlaku untuk semua PT.");
@@ -677,17 +681,32 @@ test("KA9 R16 sumber insentif: Berlaku mulai, Riwayat, pesan tetap sesudah simpa
   await klik(q(host, "scheme-source-history"));
   window.removeEventListener("kn-open-config", buka);
   expect(buka.mock.calls[0][0].detail.key).toBe("hr.payroll_commission_mode");
+  expect(host.querySelector('label[for="scheme-source-from"]')).not.toBeNull();   // label terikat ke pemilih tanggal
+  expect(q(host, "scheme-source-from").id).toBe("scheme-source-from");
+  const nanti = `${Number(todayWib().slice(0, 4)) + 1}-01-15`;
   await klik(q(host, "scheme-source-lembar"));
-  await isi(q(host, "scheme-source-from"), "2026-12-01");
+  await isi(q(host, "scheme-source-from"), nanti);
   const nTarget = dipanggil("/incentive/targets").length;
   await klik(q(host, "scheme-source-save"));
   expect(mockReason.mock.calls[0][0].message).toContain("berlaku mulai");
-  expect(mockPut).toHaveBeenCalledWith("/api/config/values", { items: [{ key: "hr.payroll_commission_mode", value: "sheet",
-    scope_type: "entity", scope_id: "ent_kanda", reason: "alasan uji", effective_from: "2026-12-01" }] });
+  expect(mockPut).toHaveBeenLastCalledWith("/api/config/values", { items: [{ key: "hr.payroll_commission_mode", value: "sheet",
+    scope_type: "entity", scope_id: "ent_kanda", reason: "alasan uji", effective_from: nanti }] });
   expect(dipanggil("/incentive/targets")).toHaveLength(nTarget + 1);
-  expect(txt(q(host, "scheme-source-msg"))).toMatch(/^Sumber insentif CV Kanda Suka dijadwalkan menjadi Dari Lembar Insentif yang disahkan mulai /);
+  // berjadwal: ditulis "Dijadwalkan: …"; pilihan kembali ke yang berlaku sekarang; Simpan mati sampai ada pilihan baru
+  expect(txt(q(host, "scheme-source-scheduled"))).toMatch(/^Dijadwalkan: Dari Lembar Insentif yang disahkan mulai \S+/);
+  ["otomatis", "lembar", "keduanya"].forEach((x) => expect(q(host, `scheme-source-${x}`).checked).toBe(false));
+  expect(q(host, "scheme-source-save").disabled).toBe(true);
+  expect(q(host, "scheme-source-from").value).toBe("");
+  expect(q(host, "scheme-source-msg")).toBeNull();
   expect(q(host, "scheme-source-loading")).toBeNull();
   expect(q(host, "ins-accrual-na")).toBe(kartuAkrual);                   // kartu akrual tidak dipasang ulang
+  // tanggal hari ini = langsung berlaku (tanpa "Dijadwalkan")
+  await klik(q(host, "scheme-source-lembar"));
+  await isi(q(host, "scheme-source-from"), todayWib());
+  await klik(q(host, "scheme-source-save"));
+  expect(mockPut.mock.calls[mockPut.mock.calls.length - 1][1].items[0].effective_from).toBe("");
+  expect(txt(q(host, "scheme-source-msg"))).toBe("Sumber insentif CV Kanda Suka kini: Dari Lembar Insentif yang disahkan.");
+  expect(q(host, "scheme-source-scheduled")).toBeNull();
 });
 
 test("KA9 R16 tanpa incentive.view: kalimat izin di bagian 1 dan di pemilih sales simulasi", async () => {
@@ -752,16 +771,25 @@ test("KA9 R16 mode Semua PT: bagian 3–5 & Lanjutan tampil pada cakupan aturan 
   izin(PENUH);
   const KARTU = { key: "commission.achievement_multiplier", group: "penjualan", section: "komisi-pengali",
     label: "Kalikan komisi dengan pengali capaian target", type: "bool", value: false, default: false, stored_value: false,
-    can_edit: true, source_layer: "code_default", scopes: ["global", "entity"], status: "active", risk: "medium" };
+    can_edit: true, source_layer: "code_default", scopes: ["global", "entity"], status: "active", risk: "medium",
+    entity_overrides: [{ entity_id: "ent_kanda", entity_label: "Kanda", value: true }] };
+  const OPSI = [{ value: "per_sku", label: "Per SKU (tarif per barang)" }];
+  const pilihPt = jest.fn();
   api({ extra: {
     "/api/incentive-rates": TARIF_GRUP,
     "/api/config/registry": { groups: [{ id: "penjualan", label: "Penjualan & harga", count: 1,
       sections: [{ id: "komisi-pengali", label: "Komisi sales: pengali", advanced: false }] }],
     entries: [{ key: KARTU.key, group: "penjualan" }], caps: { global_write: true, settings_manage: true, settings_view: true } },
     "/api/config/effective": { groups: [], items: [KARTU] },
+    "/api/config/explain": { value: "per_sku", entry: { key: "commission.strategy", options: OPSI } },
   } });
   mockAsli.pakai = true;
-  const host = await mount(<IncentiveSchemeView />, { entity: "all" });
+  const host = await mount(<IncentiveSchemeView />, { entity: "all", pick: pilihPt });
+  // Lanjutan grup: label opsi registri, bukan kode mentah
+  expect(txt(q(host, "scheme-advanced-toggle"))).toContain("Cara menghitung komisi: Per SKU (tarif per barang)");
+  expect(txt(q(host, "scheme-advanced-toggle"))).not.toContain("per_sku");
+  expect(dipanggil("/config/explain")[0][1]).toEqual({ params: { key: "commission.strategy", entity_id: "" } });
+  expect(q(host, "scheme-group-readonly")).toBeNull();                 // peran lintas PT (global_write)
   expect(q(host, "scheme-group-rates-card")).not.toBeNull();
   expect(txt(q(host, "scheme-settings-scope"))).toContain("aturan grup (Semua PT)");
   const grupKunci = mockSettings.filter((o) => o.selectedEntity === "all").map((o) => (o.includeKeys || []).join());
@@ -777,12 +805,54 @@ test("KA9 R16 mode Semua PT: bagian 3–5 & Lanjutan tampil pada cakupan aturan 
   // kartu di bagian 4 (pengali capaian): buka → ubah → simpan pada aturan grup
   const kartu = q(host, "scheme-achievement-card");
   await klik(kartu.querySelector('[data-testid="cfg-card-toggle-commission.achievement_multiplier"]'));
+  // R16 — "PT dengan nilai sendiri: Kanda" memindah seluruh tab lewat pemilih PT halaman, bukan satu bagian diam-diam
+  await klik(kartu.querySelector('[data-testid="cfg-entity-override-commission.achievement_multiplier-ent_kanda"]'));
+  expect(pilihPt).toHaveBeenCalledWith("ent_kanda");
+  expect(dipanggil("/config/effective").every((c) => c[1].params.scope === "global" && c[1].params.entity_id === "")).toBe(true);
   await klik(kartu.querySelector('[data-testid="cfg-input-commission.achievement_multiplier"]'));
   await klik(kartu.querySelector('[data-testid="cfg-save-commission.achievement_multiplier"]'));
   expect(mockPut).toHaveBeenCalledTimes(1);
   expect(mockPut.mock.calls[0][0]).toBe("/api/config/values");
   expect(mockPut.mock.calls[0][1].items[0]).toMatchObject({ key: "commission.achievement_multiplier", value: true,
     scope_type: "global", scope_id: "" });
+});
+
+test("KA9 R16 mode Semua PT tanpa hak aturan grup: kalimat hub + kartu hanya baca", async () => {
+  izin(PENUH);
+  const KARTU = { key: "commission.achievement_multiplier", group: "penjualan", section: "komisi-pengali",
+    label: "Kalikan komisi dengan pengali capaian target", type: "bool", value: false, default: false, stored_value: false,
+    can_edit: true, source_layer: "code_default", scopes: ["global", "entity"], status: "active", risk: "medium" };
+  api({ extra: {
+    "/api/incentive-rates": TARIF_GRUP,
+    "/api/config/registry": { groups: [{ id: "penjualan", label: "Penjualan & harga", count: 1,
+      sections: [{ id: "komisi-pengali", label: "Komisi sales: pengali", advanced: false }] }],
+    entries: [{ key: KARTU.key, group: "penjualan" }], caps: { global_write: false, settings_manage: true, settings_view: true } },
+    "/api/config/effective": { groups: [], items: [KARTU] },
+  } });
+  mockAsli.pakai = true;
+  const host = await mount(<IncentiveSchemeView />, { entity: "all" });
+  expect(txt(q(host, "scheme-group-readonly"))).toBe("Aturan grup hanya dapat diubah peran lintas PT. Pilih satu PT di pemilih PT untuk mengubah nilai khusus PT Anda.");
+  const kartu = q(host, "scheme-achievement-card");
+  await klik(kartu.querySelector('[data-testid="cfg-card-toggle-commission.achievement_multiplier"]'));
+  expect(kartu.querySelector('[data-testid="cfg-save-commission.achievement_multiplier"]')).toBeNull();
+  expect(kartu.querySelector('[data-testid="cfg-input-commission.achievement_multiplier"]')).toBeNull();
+});
+
+test("KA9 R16 simulasi: jawaban yang datang sesudah masukan berubah diabaikan", async () => {
+  izin(PENUH);
+  api();
+  let lepas;
+  mockPost.mockImplementation(() => new Promise((r) => { lepas = r; }));
+  const host = await mount(<IncentiveSchemeView />);
+  await isi(q(host, "scheme-sim-sales"), "u_andi");
+  await klik(q(host, "scheme-sim-run"));
+  const bulanLain = q(host, "scheme-sim-month").querySelectorAll("option")[3].value;
+  await isi(q(host, "scheme-sim-month"), bulanLain);                    // masukan berubah selagi menghitung
+  await act(async () => { lepas({ data: { sekarang: { total_incentive: 1, breakdown: [] }, dengan_perubahan: { total_incentive: 2, breakdown: [] },
+    catatan: "x" } }); });
+  await settle();
+  expect(q(host, "scheme-sim-result")).toBeNull();
+  expect(q(host, "scheme-sim-run").disabled).toBe(false);
 });
 
 test("KA9 R16 SettingsBrowser tertanam: tanpa kotak cari & pemilih cakupan, testid berawalan", async () => {

@@ -47,6 +47,8 @@ export const TEKS_STRATEGI_LANJUTAN = "Skema tarif per artikel di atas hanya dip
 export const TEKS_TANPA_LIHAT = "Melihat skema & tarif komisi butuh akses Lihat di modul Pengawasan Tim Sales & Kredit.";
 export const TEKS_SUMBER_TANPA_IZIN = "Melihat sumber insentif butuh akses Lihat di modul Kinerja & Insentif.";
 export const TEKS_SALES_TANPA_IZIN = "Memilih sales untuk simulasi butuh akses Lihat di modul Kinerja & Insentif.";
+export const TEKS_GRUP_TERKUNCI = "Aturan grup hanya dapat diubah peran lintas PT. Pilih satu PT di pemilih PT untuk "
+  + "mengubah nilai khusus PT Anda.";
 export const TEKS_TARIF_TIDAK_DIPAKAI = "PT ini tidak memakai komisi otomatis, jadi tarif dan pengali di bawah tidak dipakai "
   + "sampai sumber insentif diubah ke Komisi otomatis atau Keduanya dibayar.";
 
@@ -85,10 +87,13 @@ function Bagian({ nomor, icon: Icon, judul, help, testId, children }) {
 /** Pusat Pengaturan tertanam, dikunci ke kunci satu bagian (nilai PT aktif; berlaku mulai, alasan, riwayat per kartu ikut).
  *  R16 — `embedded`: tanpa kotak cari & pemilih cakupan per bagian; testid berawalan `testIdPrefix` (tidak kembar). */
 function PengaturanBagian({ s, entities, testIdPrefix }) {
+  // R16 — tautan "PT dengan nilai sendiri" (cakupan grup) memindah SELURUH tab ke PT itu lewat pemilih PT halaman, bukan
+  // diam-diam memindah satu bagian.
+  const { pickEntity } = useEntityScope();
   return (
     <div className="cfg-hub cfg-group-view">
       <SettingsNotice s={s} testId={`${testIdPrefix}-notice`} />
-      <SettingsBrowser s={s} entities={entities} groupNav="chips" embedded={testIdPrefix} />
+      <SettingsBrowser s={s} entities={entities} groupNav="chips" embedded={testIdPrefix} onPickEntity={pickEntity} />
     </div>
   );
 }
@@ -127,6 +132,24 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
     cfgFocus={{ focusKey, focusGroup, focusNonce, onFocusConsumed }} />;
 }
 
+/** Cara menghitung komisi (`commission.strategy`) yang berlaku: PT (`entityId`) atau aturan grup ("all"). Label dari opsi
+ *  registri (bukan kode mentah); galat baca ditulis (R16). */
+function useStrategi(entityId) {
+  const [strategi, setStrategi] = useState("");
+  const [opsi, setOpsi] = useState([]);
+  const [err, setErr] = useState("");
+  const [muat, setMuat] = useState(0);
+  useEffect(() => {
+    let hidup = true;
+    axios.get(`${API}/config/explain`, { params: { key: KUNCI_STRATEGI, entity_id: entityId === "all" ? "" : entityId } })
+      .then((r) => { if (hidup) { setStrategi(r.data?.value || ""); setOpsi(r.data?.entry?.options || []); setErr(""); } })
+      .catch((e) => { if (hidup) { setStrategi(""); setErr(apiErrorText(e) || ""); } });
+    return () => { hidup = false; };
+  }, [entityId, muat]);
+  return { strategi, setStrategi, label: opsi.find((o) => o.value === strategi)?.label || "", err,
+    ulang: () => setMuat((n) => n + 1) };
+}
+
 /** R15 — bagian tertutup "Lanjutan": `commission.strategy` (Pusat Pengaturan tertanam). Mesin pengaturan baru dipasang saat
  *  dibuka; deep link ke kunci strategi membukanya. Nilai yang termuat diteruskan ke induk (jenjang arsip tampil/hilang). */
 function BagianLanjutan({ entityId, entities, grup, strategi, labelStrategi, stratErr, onRetry, onStrategi, cfgFocus }) {
@@ -141,7 +164,7 @@ function BagianLanjutan({ entityId, entities, grup, strategi, labelStrategi, str
           {buka ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
           <Settings2 size={14} className="text-kn-action" aria-hidden="true" />
           <span className="font-bold text-kn-text">Lanjutan</span>
-          <span className="font-normal text-kn-text-2">{strategi ? `· Cara menghitung komisi: ${labelStrategi || strategi}` : ""}</span>
+          <span className="font-normal text-kn-text-2">{strategi && labelStrategi ? `· Cara menghitung komisi: ${labelStrategi}` : ""}</span>
         </button>
       </div>
       {stratErr && (
@@ -165,6 +188,7 @@ function PengaturanStrategi({ entityId, entities, grup, onStrategi, cfgFocus }) 
     ...(bagianUntukKunci(cfgFocus.focusKey) === "lanjutan" ? cfgFocus : {}) });
   const nilai = (s.items || []).find((i) => i.key === KUNCI_STRATEGI)?.value;
   useEffect(() => { if (nilai) onStrategi(nilai); }, [nilai]); // eslint-disable-line react-hooks/exhaustive-deps
+  // nilai mentah tidak pernah tampil di kepala bagian — label dibaca dari opsi registri (`useStrategi`).
   return <PengaturanBagian s={s} entities={entities} testIdPrefix="scheme-advanced-cfg" />;
 }
 
@@ -185,11 +209,14 @@ function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, 
   const batas = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.batas, ...fokus("batas") });
   const bawaanBatas = (batas.items || []).find((i) => i.key === KUNCI_BATAS)?.value;
   useEffect(() => { if (onBatas) onBatas(bawaanBatas); }, [bawaanBatas]); // eslint-disable-line react-hooks/exhaustive-deps
+  // R16 — aturan grup hanya untuk peran lintas PT (`caps.global_write`, sama dengan hub Pusat Pengaturan): kartu hanya baca.
+  const grupTerkunci = selectedEntity === "all" && !harga.loading && !harga.denied && !harga.caps?.global_write;
   return (
     <>
       <Bagian nomor={3} icon={SlidersHorizontal} judul="Pengali harga" testId="scheme-price-card"
         help="Komisi dikalikan menurut seberapa jauh harga jual di bawah harga acuan (atau menurut diskon baris, cara lama). Artikel boleh punya pita sendiri di pop-up tarifnya.">
         <p className="text-fs-12 text-kn-text-2" data-testid="scheme-settings-scope">{kalimatCakupan}</p>
+        {grupTerkunci && <p className="text-fs-12 text-kn-warning-text" data-testid="scheme-group-readonly">{TEKS_GRUP_TERKUNCI}</p>}
         <PengaturanBagian s={harga} entities={entities} testIdPrefix="scheme-price-cfg" />
       </Bagian>
 
@@ -210,14 +237,14 @@ function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, 
  *  boleh diubah menurut izin kunci di registri. */
 function BagianPengaturanGrup({ entities, cfgFocus }) {
   const fokus = useFokusKomisi(cfgFocus);
-  const [strategi, setStrategi] = useState("");
+  const st = useStrategi("all");
   const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
   return (
     <>
       <BagianPengali selectedEntity="all" entities={entities} grup={grup} fokus={fokus}
         kalimatCakupan={<>Bagian 3–5 dan Lanjutan di bawah adalah <b>aturan grup (Semua PT)</b>: berlaku untuk setiap PT yang tidak punya nilai sendiri. Nilai khusus satu PT diubah sesudah memilih PT itu.</>} />
-      <BagianLanjutan entityId="all" entities={entities} grup={grup} strategi={strategi} labelStrategi=""
-        stratErr="" onRetry={() => {}} onStrategi={setStrategi} cfgFocus={cfgFocus} />
+      <BagianLanjutan entityId="all" entities={entities} grup={grup} strategi={st.strategi} labelStrategi={st.label}
+        stratErr={st.err} onRetry={st.ulang} onStrategi={st.setStrategi} cfgFocus={cfgFocus} />
     </>
   );
 }
@@ -226,10 +253,8 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
   const pt = entityFullById(entities, entityId, "PT ini");
   const ptPendek = entityShortById(entities, entityId, "pt");
   const [sakelar, setSakelar] = useState({ state: "loading", mode: "", roster: [], err: "" });
-  const [strategi, setStrategi] = useState("");
-  const [opsiStrategi, setOpsiStrategi] = useState([]);
-  const [stratErr, setStratErr] = useState("");
-  const [stratMuat, setStratMuat] = useState(0);
+  const st = useStrategi(entityId);
+  const strategi = st.strategi;
 
   const fokus = useFokusKomisi(cfgFocus);
   const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
@@ -247,17 +272,10 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
     }
   }, []);
   useEffect(() => { muatSakelar(); }, [muatSakelar, entityId]);
-  useEffect(() => {
-    let hidup = true;
-    axios.get(`${API}/config/explain`, { params: { key: KUNCI_STRATEGI, entity_id: entityId } })
-      .then((r) => { if (hidup) { setStrategi(r.data?.value || ""); setOpsiStrategi(r.data?.entry?.options || []); setStratErr(""); } })
-      .catch((e) => { if (hidup) { setStrategi(""); setStratErr(apiErrorText(e) || ""); } });   // R16 — galat tertulis
-    return () => { hidup = false; };
-  }, [entityId, stratMuat]);
 
   const mode = sakelar.mode;
   const otomatis = sakelar.state === "ready" && komisiOtomatisJalan(mode);
-  const labelStrategi = opsiStrategi.find((o) => o.value === strategi)?.label || "";
+  const labelStrategi = st.label;
   return (
     <div className="space-y-4" data-testid="incentive-scheme-view">
       <EntityScopeBanner testId="scheme-scope" />
@@ -301,7 +319,7 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
       {strategi === STRATEGI_ARSIP && <LegacySchemeEditor />}
 
       <BagianLanjutan entityId={entityId} entities={entities} grup={grup} strategi={strategi} labelStrategi={labelStrategi}
-        stratErr={stratErr} onRetry={() => setStratMuat((n) => n + 1)} onStrategi={setStrategi} cfgFocus={cfgFocus} />
+        stratErr={st.err} onRetry={st.ulang} onStrategi={st.setStrategi} cfgFocus={cfgFocus} />
 
       <Bagian icon={Calculator} judul="Simulasi" testId="scheme-sim-card"
         help="Coba dulu: komisi seorang sales pada satu bulan dengan aturan sekarang dibanding dengan tarif percobaan. Tidak menyimpan apa pun.">

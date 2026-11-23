@@ -14,7 +14,7 @@ export const formatDateId = (iso, pattern = "EEE, dd MMM yyyy") => {
   return isValid(d) ? format(d, pattern, { locale: localeId }) : String(iso);
 };
 
-export default function KNDatePicker({ value, onChange, placeholder = "Pilih tanggal", disabled = false, clearable = true, className = "", min, max, "data-testid": testId }) {
+export default function KNDatePicker({ value, onChange, placeholder = "Pilih tanggal", disabled = false, clearable = true, className = "", min, max, "data-testid": testId, id }) {
   const [open, setOpen] = useState(false);
   const selected = value ? parseISO(String(value).slice(0, 10)) : undefined;
   const minD = min ? parseISO(String(min).slice(0, 10)) : null;
@@ -26,8 +26,9 @@ export default function KNDatePicker({ value, onChange, placeholder = "Pilih tan
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className={`relative ${className}`}>
+        {/* `id` (opsional) — supaya <label htmlFor> layar terikat ke pemicu (KA-9). */}
         <PopoverTrigger asChild>
-          <button type="button" disabled={disabled} data-testid={testId}
+          <button type="button" id={id} disabled={disabled} data-testid={testId}
             className={`form-input flex w-full items-center gap-2 text-left ${!value ? "text-[#9A9BA3]" : ""} ${clearable && value && !disabled ? "pr-7" : ""}`}>
             <CalendarDays size={14} className="shrink-0 text-[#0058CC]" />
             <span className="flex-1 truncate">{value ? formatDateId(value) : placeholder}</span>

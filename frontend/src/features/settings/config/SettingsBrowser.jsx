@@ -13,7 +13,8 @@
  * KA-9 (R16) — `embedded` (awalan testid, mis. "scheme-price"): mode tertanam di layar domain yang memuat beberapa daftar
  * terkunci sekaligus (tab Skema & Tarif). Tanpa bilah cari/cakupan (`SettingsScopeBar`), tanpa kepala kelompok & chip;
  * cakupan = PT dari pemilih PT halaman (ditulis sekali oleh layar itu); testid bagian/kosong/galat memakai awalan itu
- * supaya tidak kembar. Bawaan (`embedded` kosong) = perilaku lama untuk semua layar lain.
+ * supaya tidak kembar. Tautan "PT dengan nilai sendiri" memanggil `onPickEntity` (pemilih PT halaman) bila diberikan;
+ * aturan grup tanpa `caps.global_write` = kartu hanya baca. Bawaan (`embedded` kosong) = perilaku lama untuk layar lain.
  */
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, History, ShieldCheck, SlidersHorizontal } from "lucide-react";
@@ -37,7 +38,7 @@ function bySection(items, sections) {
   return [...out, lain].filter((x) => x.items.length);
 }
 
-function Section({ s, sec, entities, scopeName, defaultOpen, peers, tid = "cfg" }) {
+function Section({ s, sec, entities, scopeName, defaultOpen, peers, tid = "cfg", pickEntity, readOnly = false }) {
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => { if (defaultOpen) setOpen(true); }, [defaultOpen]);
   const cards = (
@@ -48,13 +49,13 @@ function Section({ s, sec, entities, scopeName, defaultOpen, peers, tid = "cfg" 
           className={s.highlight === item.key ? "cfg-card-focus" : ""}
           data-testid={`cfg-card-wrap-${item.key}`} data-focused={s.highlight === item.key ? "1" : "0"}>
           <SettingCard item={item} scopeType={s.scopeType} scopeId={s.scopeId} scopeLabel={scopeName}
-            wiring={s.health[item.key]} canEdit={item.can_edit !== false}
+            wiring={s.health[item.key]} canEdit={item.can_edit !== false && !readOnly}
             onSave={s.onSave} onReset={s.onReset} onClearEntity={s.onClearEntity}
             onWhy={(it) => s.setWhy(it)} onSimulate={(it, draft) => s.setSim({ entry: it, draft })}
             onHistory={(it) => s.setHist({ entry: it })}
             onCancelScheduled={s.onCancelScheduled} entities={entities}
             collapsible open={s.openKeys.has(item.key)} onToggle={s.toggleOpen} onDirty={s.onDirty}
-            onPickEntity={s.pickEntity} restore={s.restore} peers={peers} />
+            onPickEntity={pickEntity} restore={s.restore} peers={peers} />
         </div>
       ))}
     </div>
@@ -81,8 +82,13 @@ function Section({ s, sec, entities, scopeName, defaultOpen, peers, tid = "cfg" 
 }
 
 export default function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLink = null, searchPlaceholder = "",
-  embedded = "" }) {
+  embedded = "", onPickEntity = null }) {
   const tid = embedded || "cfg";
+  // R16 — tertanam: tautan "PT dengan nilai sendiri" tidak boleh memindah cakupan satu bagian diam-diam (tanpa pita &
+  // pemilih cakupan) — dikirim ke pemilih PT halaman (`onPickEntity`) atau tidak berbuat apa-apa. Aturan grup tanpa hak
+  // `caps.global_write` = hanya baca (hub menonaktifkan pilihan itu; di sini tidak ada pemilihnya).
+  const pickEntity = embedded ? (onPickEntity || undefined) : s.pickEntity;
+  const readOnly = !!embedded && s.scopeType === "global" && !s.caps?.global_write;
   const scopeName = useMemo(
     () => (s.scopeType === "entity" && s.scopeId ? entityShortById(entities, s.scopeId) : "Semua PT"),
     [s.scopeType, s.scopeId, entities]);
@@ -190,10 +196,12 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
 
           {!s.loading && blocks.map((sec) => (
             <Section key={sec.id} s={s} sec={sec} entities={entities} scopeName={scopeName} peers={peers} tid={tid}
+              pickEntity={pickEntity} readOnly={readOnly}
               defaultOpen={s.section === sec.id || sec.items.some((i) => i.key === s.highlight)} />
           ))}
           {!s.loading && tidakDipakai.length ? (
             <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false} peers={peers} tid={tid}
+              pickEntity={pickEntity} readOnly={readOnly}
               sec={{ id: "tidak-dipakai", label: "Tidak dipakai sistem", advanced: false, items: tidakDipakai }} />
           ) : null}
           {/* Pengaturan yang diatur di layar lain — di bawah daftar, tidak menghalangi isi (pola UI 16 Nov). */}

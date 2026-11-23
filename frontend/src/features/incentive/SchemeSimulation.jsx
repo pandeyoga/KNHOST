@@ -10,7 +10,7 @@
  * berubah (tidak ada hasil basi), judul hasil "Hasil untuk {sales} · {bulan}"; daftar artikel tarif percobaan dibatasi 200
  * per muat dan ditulis bila terpotong, dengan kotak cari untuk mempersempit.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Calculator, Plus, Trash2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -65,10 +65,12 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
   const [untuk, setUntuk] = useState(null);       // { nama, bulan } hasil yang tampil
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  // R16 — masukan berubah = hasil lama dibuang.
-  const setSales = (v) => { setSalesRaw(v); setHasil(null); };
-  const setBulan = (v) => { setBulanRaw(v); setHasil(null); };
-  const setDraf = (f) => { setDrafRaw(f); setHasil(null); };
+  // R16 — masukan berubah = hasil lama dibuang, dan hitungan yang masih berjalan dianggap basi (nomor hitung naik).
+  const hitungKe = useRef(0);
+  const basi = () => { hitungKe.current += 1; setHasil(null); setBusy(false); };
+  const setSales = (v) => { setSalesRaw(v); basi(); };
+  const setBulan = (v) => { setBulanRaw(v); basi(); };
+  const setDraf = (f) => { setDrafRaw(f); basi(); };
 
   const muatArtikel = async (c, q = "") => {
     const k = kunciArtikel(c, q);
@@ -98,13 +100,19 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
   const hitung = async () => {
     const kurang = draf.findIndex((r) => !r.kategori || !(Number(r.tarif) >= 0) || r.tarif === "");
     if (kurang >= 0) { setErr(`Lengkapi tarif percobaan baris ${kurang + 1} (kategori dan tarif), atau hapus barisnya.`); return; }
+    const no = hitungKe.current + 1;
+    hitungKe.current = no;
     setBusy(true); setErr("");
     try {
       const r = await axios.post(`${API}/incentive-rates/simulate`, { entity_id: entityId, sales_id: sales, period: bulan,
         draft_rates: draf.map((d) => ({ ...(d.artikel ? { template_id: d.artikel } : { category: d.kategori }), per_unit_amount: Number(d.tarif) })) });
+      if (hitungKe.current !== no) return;          // masukan berubah selagi menghitung: jawaban ini basi
       setHasil(r.data || null);
       setUntuk({ nama: (roster || []).find((x) => x.id === sales)?.name || "sales ini", bulan });
-    } catch (e) { setHasil(null); setErr(apiErrorText(e) || "Simulasi gagal dihitung."); } finally { setBusy(false); }
+    } catch (e) {
+      if (hitungKe.current !== no) return;
+      setHasil(null); setErr(apiErrorText(e) || "Simulasi gagal dihitung.");
+    } finally { if (hitungKe.current === no) setBusy(false); }
   };
 
   const rows = hasil ? gabungSimulasi(hasil.sekarang?.breakdown, hasil.dengan_perubahan?.breakdown) : [];

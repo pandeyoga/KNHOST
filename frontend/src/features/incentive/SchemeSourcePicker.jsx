@@ -10,9 +10,10 @@
  * Label & hak ubah dari `GET /api/config/registry?q=hr.payroll_commission_mode` (`can_edit` = izin kunci; registri tidak
  * terbaca → pilihan terkunci). Mode sekarang dari induk (`GET /api/incentive/targets` → `commission_mode`).
  *
- * R16 — "Berlaku mulai" (opsional; dikirim sebagai `effective_from`, kosong = langsung berlaku) dan tautan "Riwayat" yang
- * membuka kunci ini di Pusat Pengaturan (`openConfig`, riwayat & jadwal per kunci ada di sana). Sesudah menyimpan, induk
- * memuat ulang diam-diam — pesan berhasil tetap terlihat.
+ * R16 — "Berlaku mulai" (opsional; dikirim sebagai `effective_from`, kosong atau hari ini = langsung berlaku) dan tautan
+ * "Riwayat" yang membuka kunci ini di Pusat Pengaturan (`openConfig`, riwayat & jadwal per kunci ada di sana). Sesudah
+ * menyimpan, induk memuat ulang diam-diam — pesan berhasil tetap terlihat. Perubahan berjadwal ditulis "Dijadwalkan:
+ * {pilihan} mulai {tanggal}" dan pilihan kembali ke mode yang berlaku sekarang (Simpan mati sampai ada pilihan baru).
  */
 import { useEffect, useState } from "react";
 import { AlertTriangle, History, Settings2 } from "lucide-react";
@@ -43,6 +44,7 @@ export default function SchemeSourcePicker({ entityId, pt, mode, onSaved }) {
   const [muat, setMuat] = useState(0);
   const [pilihan, setPilihan] = useState(pilihanSumber(mode));
   const [mulai, setMulai] = useState("");       // "" = langsung berlaku
+  const [jadwal, setJadwal] = useState(null);    // { label, tanggal } perubahan berjadwal yang baru disimpan
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
@@ -67,9 +69,10 @@ export default function SchemeSourcePicker({ entityId, pt, mode, onSaved }) {
 
   const simpan = async () => {
     const pembukuan = butuhKonfirmasiAkru(pilihan, mode);
+    const nanti = mulai && mulai > todayWib() ? mulai : "";   // hari ini = langsung berlaku
     const reason = await askReason({
       title: `Ubah sumber insentif ${pt}?`,
-      message: `Sumber insentif ${pt} menjadi "${label(baru)}", ${mulai ? `berlaku mulai ${formatDate(mulai)}` : "langsung berlaku untuk gaji berikutnya"}.`
+      message: `Sumber insentif ${pt} menjadi "${label(baru)}", ${nanti ? `berlaku mulai ${formatDate(nanti)}` : "langsung berlaku untuk gaji berikutnya"}.`
         + `${pilihan === "keduanya" ? ` ${TEKS_PERINGATAN_KEDUANYA}` : ""}${pembukuan ? ` ${TEKS_UBAH_PEMBUKUAN}` : ""}`,
       reasonLabel: "Alasan perubahan", confirmLabel: "Simpan sumber insentif", testId: "scheme-source-confirm",
     });
@@ -77,9 +80,14 @@ export default function SchemeSourcePicker({ entityId, pt, mode, onSaved }) {
     setBusy(true); setErr(""); setMsg("");
     try {
       await axios.put(`${API}/config/values`, { items: [{ key: KUNCI_MODE, value: baru, scope_type: "entity",
-        scope_id: entityId, reason, effective_from: mulai }] });
-      setMsg(mulai ? `Sumber insentif ${pt} dijadwalkan menjadi ${label(baru)} mulai ${formatDate(mulai)}.`
-        : `Sumber insentif ${pt} kini: ${label(baru)}.`);
+        scope_id: entityId, reason, effective_from: nanti }] });
+      if (nanti) {
+        setJadwal({ label: label(baru), tanggal: nanti });
+        setPilihan(pilihanSumber(mode));            // yang berlaku sekarang belum berubah
+      } else {
+        setJadwal(null);
+        setMsg(`Sumber insentif ${pt} kini: ${label(baru)}.`);
+      }
       setMulai("");
       if (onSaved) await onSaved();
     } catch (e) { setErr(apiErrorText(e) || "Sumber insentif gagal disimpan."); } finally { setBusy(false); }
@@ -115,8 +123,8 @@ export default function SchemeSourcePicker({ entityId, pt, mode, onSaved }) {
           <AlertTriangle size={13} aria-hidden="true" />{TEKS_PERINGATAN_KEDUANYA}</p>
       )}
       <div className="flex flex-wrap items-end gap-2">
-        <div className="w-[200px]"><span className="field-label">Berlaku mulai (opsional)</span>
-          <KNDatePicker data-testid="scheme-source-from" value={mulai} onChange={(v) => setMulai(v || "")} min={todayWib()}
+        <div className="w-[200px]"><label className="field-label" htmlFor="scheme-source-from">Berlaku mulai (opsional)</label>
+          <KNDatePicker id="scheme-source-from" data-testid="scheme-source-from" value={mulai} onChange={(v) => setMulai(v || "")} min={todayWib()}
             placeholder="Langsung berlaku" disabled={!bolehUbah || busy} /></div>
         <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid="scheme-source-save"
           disabled={!bolehUbah || !berubah || busy} onClick={simpan}>{busy ? "Menyimpan…" : "Simpan sumber insentif"}</button>
@@ -127,6 +135,10 @@ export default function SchemeSourcePicker({ entityId, pt, mode, onSaved }) {
         </span>
       </div>
       {regErr && <ErrorNotice testId="scheme-source-registry-error" message={regErr} onRetry={() => setMuat((n) => n + 1)} />}
+      {jadwal && (
+        <p className="text-fs-12 font-semibold text-kn-text" data-testid="scheme-source-scheduled">
+          {`Dijadwalkan: ${jadwal.label} mulai ${formatDate(jadwal.tanggal)}`}</p>
+      )}
       {msg && <div className="notice-bar success" data-testid="scheme-source-msg"><span className="text-fs-12">{msg}</span></div>}
       {err && <ErrorNotice testId="scheme-source-error" message={err} onDismiss={() => setErr("")} />}
     </div>

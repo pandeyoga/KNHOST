@@ -175,7 +175,12 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
   const bolehPilih = !semuaPtSaja && (!ada || lingkupAda === "semua_pt");
   const namaLingkup = (l) => (l === "semua_pt" ? "Semua PT" : `PT ini (${pt})`);
   const judul = `${ubah ? "Ubah" : "Atur"} tarif ${TINGKAT[sasaran.tingkat]} ${sasaran.nama}`;
-  const ikut = !ada && sasaran.rate ? `Sekarang memakai tarif ${sasaran.rate.asal_tingkat || "kategori"}: ${formatCurrency(sasaran.rate.per_unit_amount)}.` : "";
+  // Tarif yang dipakai sekarang (bila pop-up ini tidak sedang mengubahnya di tempat). R16 — dari tarif Semua PT disebut jelas.
+  const r0 = sasaran.rate;
+  const ikut = !r0 || ubah ? ""
+    : r0.asal_lingkup === "semua_pt"
+      ? `Sekarang memakai tarif Semua PT ${formatCurrency(r0.per_unit_amount)}${ada ? "" : ` (tingkat ${r0.asal_tingkat || "kategori"})`}.`
+      : !ada ? `Sekarang memakai tarif ${r0.asal_tingkat || "kategori"}: ${formatCurrency(r0.per_unit_amount)}.` : "";
   const gantiLingkup = (l) => { setLingkup(l); isiAwal(l); };
 
   const simpan = async () => {
