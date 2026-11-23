@@ -502,6 +502,7 @@ async def test_KA7_U6_beranda_admin_campuran(klien, f7):        # incentive_payo
 **Interfaces:**
 - Consumes: `muat_indeks_tarif`, `pilih_tarif`, `aturan_pt`, `potret`, `periksa_nilai`, `_compute_commission_per_sku(..., sumber_aturan=…)`.
 - Produces (izin di kurung):
+  - `GET /api/incentive-rates/categories?entity_id=` (`sales_force.view`) → `{"items": [{"category", "rate": {"per_unit_amount", "margin_cap_pct", "asal_lingkup", "rate_id"} | None, "articles": n, "articles_own_rate": n}]}` — kategori = gabungan kategori artikel aktif dan kategori yang punya tarif; urut nama.
   - `GET /api/incentive-rates/articles?entity_id=&search=&category=&page=1&page_size=50` (`sales_force.view`) →
     `{"items": [{"template_id", "name", "code", "category", "rate": {"per_unit_amount", "margin_cap_pct", "asal_tingkat", "asal_lingkup", "rate_id"} | None, "own_rate_id", "variant_exceptions"}], "total", "page", "page_size"}`; artikel aktif saja, urut nama.
   - `GET /api/incentive-rates/articles/{template_id}/variants?entity_id=` (`sales_force.view`) → `{"items": [{"product_id", "sku", "name", "rate": {…} | None, "follows": "artikel"|"kategori"|"tanpa_tarif"}]}`.
@@ -515,6 +516,8 @@ async def test_KA7_U6_beranda_admin_campuran(klien, f7):        # incentive_payo
 - [ ] **Step 1: Tulis uji yang gagal**
 
 ```python
+async def test_KA8_U0_daftar_kategori(klien, kepala_admin, f8):
+    # Batik: tarif kategori 3.000 (semua_pt), articles 2, articles_own_rate 1; Lurik: rate None, articles 1
 async def test_KA8_U1_daftar_artikel_tarif_efektif(klien, kepala_admin, f8):
     # Batik Mega: tarif artikel PT 3.500 (asal artikel/pt, variant_exceptions 1); Batik Parang: ikut kategori 3.000
 async def test_KA8_U2_varian_ikut_artikel(klien, kepala_admin, f8):     # merah follows "artikel", biru tarif sendiri 4.000
@@ -560,11 +563,16 @@ Isi layar (urut, sesuai sketsa rancangan 6.6):
   `pilihanSumber("off"|"pay_on_invoice")` → `"lain"`: tampil label registri + tautan ke Pusat Pengaturan. Simpan =
   `askReason` lalu `PUT /api/config/values` lapisan PT. "Keduanya" menampilkan peringatan "Insentif dari dua sumber
   dibayar bersama."; dari `pay_on_invoice` meminta konfirmasi "Cara pembukuan berubah menjadi dicadangkan tiap bulan."
-- ② `ArticleRatesTable`: cari, saring kategori, halaman; baris artikel (nama, kode, kategori, tarif + asal), buka baris →
-  varian dan pengecualiannya; pop-up ubah tarif artikel/varian (tarif, batas margin, pengali khusus artikel opsional);
-  pilih beberapa → "Ubah banyak"; "Unduh Excel" / "Unggah Excel" → pratinjau berstatus → "Terapkan" (alasan). Baris
-  tarif kategori tetap dikelola di bagian bawah tabel ini (editor kategori lama dipindah). Teks bantuan: "Tarif berlaku
-  untuk pesanan yang dibuat sesudah disimpan; pesanan lama memakai tarif saat pesanan dibuat."
+- ② `ArticleRatesTable` — **pohon tiga tingkat Kategori → Artikel → Varian** (pemilik 23 Nov: "bisa dari beberapa
+  level … user baru bisa memutuskan category dulu saja"). Tingkat atas = daftar kategori (`GET …/categories`): tarif
+  kategori + "n artikel bertarif sendiri"; kategori tanpa tarif bertanda "Belum ada tarif — sales tidak mendapat komisi
+  untuk kategori ini" dengan tombol "Atur tarif kategori". Buka kategori → artikelnya (`GET …/articles?category=`):
+  tarif sendiri atau "ikut kategori Rp …". Buka artikel → varian (`GET …/variants`): "ikut artikel" / "ikut kategori" /
+  tarif sendiri. Satu pop-up ubah tarif untuk ketiga tingkat (tarif, batas margin; pengali khusus hanya tingkat artikel);
+  "Hapus tarif" di artikel/varian = kembali ikut tingkat di atasnya. Cari artikel lintas kategori; pilih beberapa artikel →
+  "Ubah banyak"; "Unduh Excel" / "Unggah Excel" → pratinjau berstatus → "Terapkan" (alasan). Pengguna baru cukup
+  mengisi tarif kategori; tingkat artikel/varian opsional. Teks bantuan: "Tarif berlaku untuk pesanan yang dibuat
+  sesudah disimpan; pesanan lama memakai tarif saat pesanan dibuat."
 - ③ `SettingsBrowser` `includeKeys` = `PRICE_KEYS` + `commission.discount_*`; ④ = `ACH_KEYS`; ⑤ = `commission.default_margin_cap_pct` ("bawaan batas margin untuk tarif baru"). `commission.incentive_unit` dan `commission.strategy` tidak ditampilkan.
 - Kartu akrual bulanan (`KartuAkrual`, dipindah) dan `LegacySchemeEditor` (hanya bila `commission.strategy` = `achievement_tiered`).
 - `SchemeSimulation`: pilih sales (roster PT) + bulan, draf tarif opsional → tabel per artikel: yard · tarif · pengali harga (+alasan) · pengali capaian · komisi, kolom "Sekarang" dan "Dengan perubahan", plus `catatan` server.
@@ -583,7 +591,8 @@ test("KA9 pemetaan sumber insentif", () => {
   expect(butuhKonfirmasiAkru("keduanya", "pay_on_invoice")).toBe(true);
 });
 test("KA9 tab Skema & Tarif terdaftar dan alias lama mengarah ke sana", () => { /* HUB_TABS["hr-kpi-hub"], resolveDeepLinkTarget("incentive-rates") */ });
-test("KA9 tabel artikel: baris, asal tarif, buka varian", async () => { /* mock GET articles + variants */ });
+test("KA9 pohon tarif: kategori → artikel (ikut kategori / sendiri) → varian (ikut artikel)", async () => { /* mock GET categories + articles + variants */ });
+test("KA9 kategori tanpa tarif menulis 'Belum ada tarif' dan tombol Atur tarif kategori", async () => {});
 test("KA9 unggah Excel: pratinjau berstatus, Terapkan meminta alasan", async () => {});
 test("KA9 tanpa izin ubah: tombol ubah/ubah banyak/unggah tidak tampil", async () => {});
 test("KA9 Target & Aturan tidak lagi memuat bagian Komisi otomatis (cara lama)", async () => {});

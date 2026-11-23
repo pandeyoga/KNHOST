@@ -205,8 +205,10 @@ PT Sukacita ▾                                         [Simulasi]  [Riwayat per
   "Meter" diganti "yard / satuan dasar barang".
 - Kartu "Insentif saya" (sales) menampilkan rincian faktor per artikel; langkah batas margin hanya ditulis
   "dibatasi batas margin" **tanpa angka margin** (margin tetap dijaga izin `incentive.view_margin`).
-- Tabel ② menampilkan **artikel** (bukan kode varian); baris artikel bisa dibuka untuk melihat/menambah pengecualian
-  varian. Excel berisi baris artikel + baris pengecualian varian.
+- Tabel ② bertingkat **Kategori → Artikel → Varian** (pemilik 23 Nov: "komisi bisa dari beberapa level, category →
+  artikel → sku (varian), jadi mudah jika user baru bisa memutuskan category dulu saja"): pengguna baru cukup mengisi
+  tarif kategori; artikel dan varian opsional dan menampilkan "ikut kategori/artikel" bila tidak diisi. Excel berisi
+  baris artikel + baris pengecualian varian.
 - ⑤ "Batas" = bawaan batas margin untuk tarif baru; batas tiap tarif tampil dan diubah di baris tarifnya.
 
 ### 6.7 Izin
