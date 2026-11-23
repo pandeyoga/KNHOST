@@ -31,12 +31,15 @@ class RatePayload(BaseModel):
     price_bands: Optional[List[Dict[str, Any]]] = None          # None = ikut pita PT (`commission.price_bands`)
     price_source_rules: Optional[List[Dict[str, Any]]] = None   # None = ikut aturan sumber harga PT
     per_unit_amount: float = 0.0
-    discount_threshold_type: str = "pct"      # pct | rp_per_unit
-    discount_threshold: float = 10.0
-    discount_mechanic: str = "tier_factor"    # tier_factor | potong_rp | cutoff
-    discount_factor: float = 0.5
-    discount_potong_rp: float = 0.0
-    margin_cap_pct: float = 50.0
+    # Tinjauan akhir M7 — isian diskon cara lama & batas margin tanpa bawaan tertulis: kosong = tarif baru tidak
+    # menyimpannya → potret memakai kunci PT `commission.discount_*`; batas margin kosong = `commission.default_margin_cap_pct`
+    # PT itu (nilai bawaan registri sama dengan bawaan lama: pct · 10 · tier_factor · 0,5 · 0 · 50).
+    discount_threshold_type: Optional[str] = None      # pct | rp_per_unit
+    discount_threshold: Optional[float] = None
+    discount_mechanic: Optional[str] = None            # tier_factor | potong_rp | cutoff
+    discount_factor: Optional[float] = None
+    discount_potong_rp: Optional[float] = None
+    margin_cap_pct: Optional[float] = None
     status: str = "active"
 
 
@@ -98,6 +101,26 @@ class SimulatePayload(BaseModel):
 async def _pt_tunggal(request: Request, entity_id: Optional[str]) -> str:
     """Layar tarif bekerja per satu PT: kosong → PT aktif; "all"/di luar penugasan → 400/403."""
     return resolve_write_entity(await entity_ctx(request), entity_id)
+
+
+PESAN_SEMUA_PT = ("Tarif Semua PT hanya dapat diubah peran lintas PT. Pilih \u201cPT ini\u201d untuk tarif khusus PT "
+                  "Anda.")
+PESAN_BUKAN_PT_ANDA = "Anda tidak bertugas di PT pemilik tarif ini."
+
+
+async def _boleh_lingkup(request: Request, entity_id: Optional[str]) -> None:
+    """Tinjauan akhir M3 — tarif tunggal (POST/PATCH/DELETE): tarif PT hanya dalam penugasan pelaku; tarif Semua PT
+    (`"all"`) hanya peran lintas PT — kemampuan yang sama dengan menulis nilai grup di Pusat Pengaturan
+    (`routers/config._global_write_allowed`, `caps.global_write`). 403 berkalimat."""
+    ctx = await entity_ctx(request)
+    eid = (entity_id or "").strip()
+    if not eid:
+        raise HTTPException(status_code=400, detail="Pilih PT tarif ini, atau Semua PT.")
+    if eid == "all":
+        if not ctx.is_cross_entity:
+            raise HTTPException(status_code=403, detail=PESAN_SEMUA_PT)
+    elif not ctx.can_access(eid):
+        raise HTTPException(status_code=403, detail=PESAN_BUKAN_PT_ANDA)
 
 
 @router.get("/incentive-rates/categories")
@@ -181,16 +204,52 @@ async def list_rates(request: Request, entity_id: Optional[str] = None) -> List[
     # tetap terlihat sebagai WARISAN (label asal ditampilkan UI di FASE E-4).
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = resolve_list_scope_inherit("incentive_rates", {}, ctx, entity_id)
-    rows = await db.incentive_rates.find(query, {"_id": 0}).to_list(1000)
-    rows.sort(key=lambda r: (r.get("entity_id", ""), r.get("category", "")))
+    # Tinjauan akhir I5 (D4) — tanpa batas jumlah diam-diam (dulu 1.000 baris: pop-up tarif tidak menemukan tarifnya
+    # sendiri dan menyimpan pita kosong). Satu baris per sasaran per PT, jadi jumlahnya terbatas katalog.
+    rows = await db.incentive_rates.find(query, {"_id": 0}).to_list(None)
+    rows.sort(key=lambda r: (r.get("entity_id", ""), r.get("category", ""), r.get("rate_key") or ""))
     return [_out(r) for r in rows]
+
+
+@router.get("/incentive-rates/{rate_id}")
+async def get_rate(rate_id: str, request: Request) -> Dict[str, Any]:
+    """Satu tarif (termasuk pita & aturan asal harga khususnya) — dibaca pop-up tarif sebelum mengubah (tinjauan akhir
+    I5). Tarif PT di luar penugasan pelaku → 404 (sama dengan daftar ber-PT); tarif Semua PT terbaca semua pemegang izin."""
+    await require_permission(request, "sales_force", "view")
+    doc = await db.incentive_rates.find_one({"id": rate_id}, {"_id": 0})
+    ctx = await entity_ctx(request)
+    if not doc or (doc.get("entity_id") != "all" and not ctx.can_access(doc.get("entity_id") or "")):
+        raise HTTPException(status_code=404, detail="Tarif tidak ditemukan.")
+    return _out(doc)
 
 
 @router.post("/incentive-rates")
 async def create_rate(payload: RatePayload, request: Request) -> Dict[str, Any]:
+    """Buat tarif tunggal. Tinjauan akhir M4 — sasaran yang tarifnya sudah ada tetapi NONAKTIF diaktifkan lagi dan
+    diubah dengan isian yang dikirim (seperti ubah banyak/Excel, `susun_tarif`), bukan 409. M7 — isian diskon kosong tidak
+    disimpan; batas margin kosong = bawaan PT."""
     actor = await require_permission(request, "sales_force", "update")
+    await _boleh_lingkup(request, payload.entity_id)
     doc = payload.model_dump()
+    dikirim = payload.model_dump(exclude_unset=True)
+    if doc.get("margin_cap_pct") is None:
+        doc["margin_cap_pct"] = (await crs.aturan_pt(None if doc["entity_id"] == "all" else doc["entity_id"])
+                                 ).get("default_margin_cap_pct")
+    crs.buang_diskon_kosong(doc)
     await _selesaikan(doc)
+    lama = await db.incentive_rates.find_one({"entity_id": doc["entity_id"], "rate_key": doc["rate_key"]}, {"_id": 0})
+    if lama and lama.get("status") != "active":
+        ubah = {k: doc[k] for k in dikirim if k in _FIELDS and k in doc and k != "entity_id"}
+        for k in ("category", "target_name", "target_code", "rate_key"):
+            ubah[k] = doc[k]
+        ubah.update({"status": "active", "updated_at": now_iso()})
+        gabung = {**lama, **ubah}
+        await _selesaikan(gabung)
+        sesudah = await db.incentive_rates.find_one_and_update(
+            {"id": lama["id"]}, {"$set": ubah}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        await audit(actor["name"], "incentive_rate_updated", "incentive_rate", lama["id"], sesudah,
+                    reason="Tarif nonaktif diaktifkan lagi", before=lama)
+        return _out(sesudah)
     await _cek_kembar(doc)
     doc.update({"id": new_id("irate"), "created_at": now_iso(), "updated_at": now_iso()})
     try:
@@ -203,6 +262,9 @@ async def create_rate(payload: RatePayload, request: Request) -> Dict[str, Any]:
 
 @router.patch("/incentive-rates/{rate_id}")
 async def update_rate(rate_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
+    """Ubah tarif tunggal. Tinjauan akhir I5 — dokumen GABUNGAN selalu divalidasi (`crs.periksa_isian`: angka & batasnya,
+    pilihan diskon, status aktif/nonaktif, pita khusus); sasaran (kategori/artikel/varian/PT) dipotret ulang hanya bila
+    salah satunya berubah. M3 — PT lama dan PT baru harus boleh ditulis pelaku."""
     actor = await require_permission(request, "sales_force", "update")
     data = {k: v for k, v in payload.data.items() if k in _FIELDS}
     if not data:
@@ -210,15 +272,20 @@ async def update_rate(rate_id: str, payload: GenericPatch, request: Request) -> 
     lama = await db.incentive_rates.find_one({"id": rate_id}, {"_id": 0})
     if not lama:
         raise HTTPException(status_code=404, detail="Rate tidak ditemukan")
-    if any(k in data for k in ("entity_id", "category", "template_id", "product_id", "price_bands", "price_source_rules")):
-        gabung = {**lama, **data}
+    await _boleh_lingkup(request, lama.get("entity_id"))
+    if "entity_id" in data and data["entity_id"] != lama.get("entity_id"):
+        await _boleh_lingkup(request, data["entity_id"])
+    gabung = {**lama, **data}
+    if any(k in data for k in ("entity_id", "category", "template_id", "product_id")):
         await _selesaikan(gabung)
         await _cek_kembar(gabung, rate_id)
         for k in ("category", "template_id", "product_id", "target_name", "target_code", "rate_key"):
             data[k] = gabung[k]
-        for k in ("price_bands", "price_source_rules"):
-            if k in data:
-                data[k] = gabung[k]
+    else:
+        crs.periksa_isian(gabung)
+    for k in ("price_bands", "price_source_rules"):
+        if k in data:
+            data[k] = gabung[k]
     data["updated_at"] = now_iso()
     try:
         updated = await db.incentive_rates.find_one_and_update(
@@ -241,6 +308,7 @@ async def delete_rate(rate_id: str, request: Request,
     existing = await db.incentive_rates.find_one({"id": rate_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Rate tidak ditemukan")
+    await _boleh_lingkup(request, existing.get("entity_id"))   # tinjauan akhir M3
     await db.incentive_rates.delete_one({"id": rate_id})
     await audit(actor["name"], "incentive_rate_deleted", "incentive_rate", rate_id,
                 {**existing, "reason": (reason or "").strip()})

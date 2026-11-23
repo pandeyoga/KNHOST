@@ -12,12 +12,14 @@ from __future__ import annotations
 
 import io
 import math
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
+from config_registry import require as require_key
 from core_utils import new_id, now_iso
 from db import db
 from services.commission_rules import aturan_pt, muat_indeks_tarif, periksa_nilai, pilih_tarif, rate_key
@@ -33,10 +35,74 @@ _TINGKAT = {"artikel": "Tarif artikel", "varian": "Tarif varian", "kategori": "T
 _LINGKUP = {"pt": "PT ini", "semua_pt": "Semua PT"}
 
 
+STATUS_TARIF = ("active", "inactive")
+#: Isian diskon cara lama. Tarif BARU tanpa isian ini tidak menyimpannya (kunci tidak ada) → potret memakai kunci PT
+#: `commission.discount_*` (tinjauan akhir M7); tarif lama menyimpan nilainya sendiri dan tetap dipakai apa adanya.
+KUNCI_DISKON = ("discount_threshold_type", "discount_threshold", "discount_mechanic", "discount_factor",
+                "discount_potong_rp")
+#: Isian angka tarif → (nama di layar, kunci registri yang batas min/maksnya dipakai; None = hanya ≥ 0).
+_ISIAN_ANGKA = (("per_unit_amount", "Tarif", None), ("margin_cap_pct", "Batas margin", "commission.default_margin_cap_pct"),
+                ("discount_threshold", "Ambang diskon", "commission.discount_threshold"),
+                ("discount_factor", "Faktor komisi saat diskon besar", "commission.discount_factor"),
+                ("discount_potong_rp", "Potongan rupiah per satuan", "commission.discount_potong_rp"))
+_ISIAN_PILIHAN = (("discount_threshold_type", "Batas diskon dihitung dalam", "commission.discount_threshold_type"),
+                  ("discount_mechanic", "Cara memotong komisi", "commission.discount_mechanic"))
+
+
+def _teks_angka(n: float) -> str:
+    """Angka gaya Indonesia untuk pesan: 1000000 → "1.000.000", 0.5 → "0,5"."""
+    if float(n).is_integer():
+        return f"{int(n):,}".replace(",", ".")
+    return f"{float(n):,.2f}".rstrip("0").rstrip(".").replace(",", "\u0001").replace(".", ",").replace("\u0001", ".")
+
+
+def buang_diskon_kosong(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Hapus isian diskon yang kosong (None) dari tarif BARU supaya potretnya memakai kunci PT (M7)."""
+    for k in KUNCI_DISKON:
+        if doc.get(k) is None:
+            doc.pop(k, None)
+    return doc
+
+
+def periksa_isian(doc: Dict[str, Any]) -> None:
+    """Tinjauan akhir I5 — isian tarif sah (dokumen GABUNGAN, juga saat PATCH): tarif wajib angka ≥ 0; batas margin,
+    ambang/faktor/potongan diskon angka dalam batas kunci registrinya (batas margin 0–100); pilihan diskon dari opsi
+    registri; status `active`/`inactive`; pita & aturan asal harga khusus sah. Isian diskon/batas yang KOSONG (None)
+    diterima (tarif lama: dibaca 0 seperti mesin lama). Pita khusus dinormalkan di tempat. `HTTPException` 400."""
+    from config_registry import require
+    if doc.get("per_unit_amount") is None:
+        raise HTTPException(status_code=400, detail="Tarif wajib diisi (angka, boleh 0).")
+    for f, nama, kunci in _ISIAN_ANGKA:
+        v = doc.get(f)
+        if v is None:
+            continue
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)) or float(v) < 0:
+            raise HTTPException(status_code=400, detail=f"{nama} harus berupa angka, tidak boleh negatif.")
+        hi = require(kunci).get("max") if kunci else None
+        if hi is not None and float(v) > float(hi):
+            raise HTTPException(status_code=400, detail=f"{nama} harus angka 0\u2013{_teks_angka(hi)}.")
+    for f, nama, kunci in _ISIAN_PILIHAN:
+        v = doc.get(f)
+        if v is None:
+            continue
+        opsi = require(kunci).get("options") or []
+        if v not in [o["value"] for o in opsi]:
+            raise HTTPException(status_code=400, detail=f"{nama} tidak dikenal. Pilihan: "
+                                + ", ".join(o["label"] for o in opsi) + ".")
+    if doc.get("status", "active") not in STATUS_TARIF:
+        raise HTTPException(status_code=400, detail="Status tarif harus aktif atau nonaktif.")
+    for f, kunci in _NAMA_PAKSA.items():
+        if doc.get(f) is not None:
+            try:
+                doc[f] = periksa_nilai(kunci, doc[f])
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 # ── Validasi sasaran tarif (dipakai juga oleh router POST/PATCH) ────────────
 async def selesaikan(doc: Dict[str, Any]) -> None:
-    """Lengkapi `doc` di tempat: validasi sasaran (artikel/varian/kategori), potret nama/kode/kategori, pita khusus,
-    lalu `rate_key`. `HTTPException` 400 berpesan Indonesia bila tidak sah."""
+    """Lengkapi `doc` di tempat: validasi sasaran (artikel/varian/kategori), potret nama/kode/kategori, isian tarif
+    (`periksa_isian`), lalu `rate_key`. `HTTPException` 400 berpesan Indonesia bila tidak sah."""
     tpl = (doc.get("template_id") or "").strip()
     prd = (doc.get("product_id") or "").strip()
     if tpl and prd:
@@ -58,18 +124,7 @@ async def selesaikan(doc: Dict[str, Any]) -> None:
         if not (doc.get("category") or "").strip():
             raise HTTPException(status_code=400, detail="Kategori wajib diisi")
         doc.update({"target_name": "", "target_code": ""})
-    for f, nama in (("per_unit_amount", "Tarif"), ("margin_cap_pct", "Batas margin")):
-        v = doc.get(f)
-        if v is None:
-            continue
-        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)) or float(v) < 0:
-            raise HTTPException(status_code=400, detail=f"{nama} harus berupa angka, tidak boleh negatif.")
-    for f, kunci in _NAMA_PAKSA.items():
-        if doc.get(f) is not None:
-            try:
-                doc[f] = periksa_nilai(kunci, doc[f])
-            except ValueError as exc:
-                raise HTTPException(status_code=400, detail=str(exc)) from exc
+    periksa_isian(doc)
     doc["rate_key"] = rate_key(doc)
 
 
@@ -87,9 +142,10 @@ async def cek_kembar(doc: Dict[str, Any], kecuali_id: str = "") -> None:
 
 
 def bawaan_tarif() -> Dict[str, Any]:
-    """Isian bawaan tarif baru (`RatePayload`) — sama untuk simpan biasa, ubah banyak, terap Excel, dan simulasi."""
+    """Isian bawaan tarif baru (`RatePayload`) — sama untuk simpan biasa, ubah banyak, terap Excel, dan simulasi. Isian
+    yang bawaannya kosong (diskon, batas margin) TIDAK ikut: tarif baru memakai kunci PT (M7)."""
     from routers.incentive_rates import RatePayload
-    return RatePayload().model_dump()
+    return {k: v for k, v in RatePayload().model_dump().items() if v is not None}
 
 
 def susun_tarif(lama: Optional[Dict[str, Any]], doc: Dict[str, Any], jumlah: float, batas: Optional[float],
@@ -328,18 +384,42 @@ async def ekspor_xlsx(entity_id: str) -> bytes:
     return buf.getvalue()
 
 
-def _sel_angka(v: Any, nama: str) -> Tuple[Optional[float], str]:
-    """(angka, galat). Sel kosong → (None, ""); teks angka polos diterima; selebihnya galat."""
+#: Teks angka gaya Indonesia: titik = pemisah ribuan (kelompok 3 angka), koma = desimal. "3.500" · "3.500,5" · "3,5" · "3500".
+_ANGKA_ID = re.compile(r"^-?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?$")
+#: "3,500" bisa berarti 3,5 (Indonesia) atau 3.500 (Inggris) → ditolak dengan kalimat, bukan ditebak.
+_RAGU = re.compile(r"^-?\d{1,3},\d{3}$")
+
+
+def _teks_ke_angka(t: str) -> Optional[float]:
+    """Teks sel Excel → angka menurut cara tulis Indonesia; tidak sah / ragu → None."""
+    t = t.replace("\u00a0", "").replace(" ", "")
+    if not _ANGKA_ID.match(t) or _RAGU.match(t):
+        return None
+    return float(t.replace(".", "").replace(",", "."))
+
+
+def _sel_angka(v: Any, nama: str, *, maks: Optional[float] = None) -> Tuple[Optional[float], str]:
+    """(angka, galat). Sel kosong → (None, ""). Sel angka Excel dipakai apa adanya. Sel TEKS dibaca cara Indonesia (tinjauan
+    akhir I4): titik pemisah ribuan, koma desimal — "3.500" = 3.500, "3.500,5" = 3.500,5, "3,5" = 3,5; teks lain (mis.
+    "Rp 3.500", "3.5", "3,500") = galat berkalimat. Negatif / melebihi `maks` = galat."""
     if v is None or (isinstance(v, str) and not v.strip()):
         return None, ""
     if isinstance(v, bool):
         return None, f"{nama} harus berupa angka."
-    try:
-        n = float(v.strip().replace(",", ".") if isinstance(v, str) else v)
-    except (TypeError, ValueError):
-        return None, f"{nama} harus berupa angka."
+    if isinstance(v, str):
+        n = _teks_ke_angka(v.strip())
+        if n is None:
+            return None, (f"{nama} \u201c{v.strip()}\u201d tidak terbaca. Tulis angka saja dengan titik untuk ribuan dan "
+                          "koma untuk desimal, contoh 3.500 atau 3.500,5.")
+    else:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return None, f"{nama} harus berupa angka."
     if not math.isfinite(n) or n < 0:
         return None, f"{nama} harus berupa angka, tidak boleh negatif."
+    if maks is not None and n > maks:
+        return None, f"{nama} harus angka 0\u2013{_teks_angka(maks)}."
     return n, ""
 
 
@@ -462,7 +542,8 @@ async def pratinjau_impor(entity_id: str, isi: bytes) -> List[Dict[str, Any]]:
             continue
         terlihat[kunci] = no
         baru, g1 = _sel_angka(_sel(row, KOLOM[4]), "Tarif per satuan dasar")
-        batas, g2 = _sel_angka(_sel(row, KOLOM[5]), "Batas margin %")
+        batas, g2 = _sel_angka(_sel(row, KOLOM[5]), "Batas margin %",
+                               maks=float(require_key("commission.default_margin_cap_pct")["max"]))
         if g1 or g2:
             r["pesan"] = g1 or g2
             continue
