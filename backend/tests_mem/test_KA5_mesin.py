@@ -56,7 +56,7 @@ PERIODE = "2026-11"
 PITA = [{"sampai_pct": 3, "pengali": 0.8}, {"sampai_pct": 10, "pengali": 0.5}, {"sampai_pct": None, "pengali": 0.0}]
 MEGA = {"id": "tpl_ka5_mega", "nama": "Batik Mega KA5", "kode": "BTK-MEGA"}
 KAWUNG = {"id": "tpl_ka5_kwg", "nama": "Batik Kawung KA5", "kode": "BTK-KWG"}
-KUNCI_RINCIAN = {"category", "sku", "name", "template_id", "qty_base", "commission", "rate", "rate_origin",
+KUNCI_RINCIAN = {"unit", "category", "sku", "name", "template_id", "qty_base", "commission", "rate", "rate_origin",
                  "price_factor", "price_reason", "price_reason_label", "achievement_factor", "capped"}
 UJI = ("u1", "u1b", "u2", "u3", "u4", "u4b", "u5", "u6", "u7", "u8", "f2", "f2s", "f3", "u9")
 
@@ -165,7 +165,7 @@ async def test_KA5_U1_tanpa_potret_sama_dengan_lama(db, f):
     assert (hasil["total_incentive"], hasil["commission"], hasil["projection_full"]) == (500_000, 500_000, 500_000)
     b = _satu(hasil)
     assert set(b) == KUNCI_RINCIAN, b
-    assert b == {"category": "KA5-U1", "sku": "KA5U1", "name": "Kain KA5 U1", "template_id": "", "qty_base": 1000,
+    assert b == {"category": "KA5-U1", "sku": "KA5U1", "name": "Kain KA5 U1", "template_id": "", "qty_base": 1000, "unit": "yard",
                  "commission": 500_000, "rate": 500, "rate_origin": "Tarif kategori (PT ini)", "price_factor": 1.0,
                  "price_reason": "diskon_baris", "price_reason_label": "Diskon baris di bawah ambang",
                  "achievement_factor": 1.0, "capped": False}
@@ -273,9 +273,10 @@ async def test_KA5_U9_kartu_sales_rincian_tanpa_margin(klien, db, f):
     assert set(ac) == {"mtd", "projection_month_end", "breakdown"}, ac
     assert ac["mtd"] == 50_000
     b = ac["breakdown"][0]
-    assert set(b) == {"name", "sku", "qty_base", "rate", "rate_origin", "price_factor", "price_reason_label",
+    assert set(b) == {"name", "sku", "qty_base", "unit", "rate", "rate_origin", "price_factor", "price_reason_label",
                       "achievement_factor", "capped", "commission"}
     assert b["capped"] is True and b["commission"] == 50_000
+    assert b["unit"] == "yard"
     assert not [k for k in b if "margin" in k or "cost" in k], b
 
 

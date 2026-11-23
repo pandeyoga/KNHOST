@@ -82,9 +82,9 @@ const rute = (map) => mockGet.mockImplementation((url) => {
   return k ? (map[k] instanceof Error ? Promise.reject(map[k]) : Promise.resolve({ data: map[k] })) : Promise.resolve({ data: {} });
 });
 
-const BARIS_A = { name: "Batik Mega", sku: "BTK-MEGA", qty_base: 100, rate: 3500, rate_origin: "artikel",
+const BARIS_A = { name: "Batik Mega", sku: "BTK-MEGA", qty_base: 120, unit: "yard", rate: 3500, rate_origin: "artikel",
   price_factor: 0.8, price_reason_label: "diskon 2–3%", achievement_factor: 1.2, capped: false, commission: 336000 };
-const BARIS_B = { ...BARIS_A, name: "Batik Kawung", sku: "BTK-KWG", rate: 500, price_factor: 1, price_reason_label: "",
+const BARIS_B = { ...BARIS_A, name: "Batik Kawung", sku: "BTK-KWG", unit: "", rate: 500, price_factor: 1, price_reason_label: "",
   achievement_factor: null, capped: true, commission: 50000 };
 const KARTU = (breakdown) => ({ period: "2026-11", entity_id: "ent_kanda", mode: "accrue_then_settle",
   achievement: { target_sales: 0, omzet_bersih: 0, target_collection: 0, uang_masuk: 0 }, sheets: [],
@@ -108,6 +108,8 @@ test("KA10 kartu: baris rincian menulis 'dibatasi batas margin' tanpa angka marg
   expect(a).toContain("Batik Mega");
   expect(a).toContain("harga ×0,8 · diskon 2–3%");
   expect(a).toContain("capaian ×1,2");
+  expect(a).toContain("120 yard · tarif Rp 3.500/yard");
+  expect(txt(q(host, "my-incentive-auto-rincian-1"))).toContain("100 satuan".replace("100", "120") + " · tarif Rp 500/satuan");
   expect(a).not.toContain("dibatasi");
   expect(q(host, "my-incentive-auto-rincian-0-batas")).toBeNull();
   expect(txt(q(host, "my-incentive-auto-rincian-1-batas"))).toBe(" · dibatasi batas margin");
@@ -134,7 +136,9 @@ test("KA10 beranda sales: kolom tarif dan pengali tampil", async () => {
   expect(txt(kotak)).toContain("Rincian Komisi per Artikel");
   const th = txt(q(host, "commission-breakdown-table").querySelector("thead"));
   expect(th).toMatch(/Tarif.*Pengali harga.*Pengali capaian.*Komisi/);
-  expect(txt(q(host, "commission-breakdown-rate-0"))).toBe("Rp 3.500/m");
+  expect(txt(q(host, "commission-breakdown-rate-0"))).toBe("Rp 3.500/yard");
+  expect(txt(q(host, "commission-breakdown-rate-1"))).toBe("Rp 500/satuan");
+  expect(txt(q(host, "commission-breakdown-table"))).toMatch(/120 yard.*120 satuan/);
   expect(txt(q(host, "commission-breakdown-price-0"))).toBe("×0,8 · diskon 2–3%");
   expect(txt(q(host, "commission-breakdown-ach-0"))).toBe("×1,2");
   expect(q(host, "commission-breakdown-capped-0")).toBeNull();

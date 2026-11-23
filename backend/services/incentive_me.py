@@ -86,7 +86,7 @@ async def lembar_saya(entity_id: str, user_id: str, period: str) -> List[Dict[st
 
 
 # Daftar putih rincian komisi untuk sales: tanpa angka margin/HPP (jangan menyalin baris mesin apa adanya).
-KUNCI_RINCIAN = ("name", "sku", "qty_base", "rate", "rate_origin", "price_factor", "price_reason_label",
+KUNCI_RINCIAN = ("name", "sku", "qty_base", "unit", "rate", "rate_origin", "price_factor", "price_reason_label",
                  "achievement_factor", "capped", "commission")
 
 

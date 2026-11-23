@@ -13,8 +13,8 @@ import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import { selectWaitingBoards } from "../../config/waitingBoards";
 import HomeWaitingBoards from "./HomeWaitingBoards";
 import MyIncentiveCard from "../incentive/MyIncentiveCard";
-import { MODE_TANPA_MESIN } from "../incentive/incentiveModes";
-import { ringkasRincian } from "../incentive/rincianKomisi";   // KA-9 — satu tempat konstanta mode
+import { MODE_TANPA_MESIN } from "../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
+import { ringkasRincian } from "../incentive/rincianKomisi";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -175,7 +175,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                       <tr key={`${b.sku}-${i}`} data-testid={`commission-breakdown-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
                         <td className="px-3 py-2 font-semibold">{b.category || "—"}</td>
                         <td className="px-3 py-2 text-[#3C3C43]">{b.name}<span className="text-[10px] text-[#9A9BA3] font-mono"> · {b.sku}</span></td>
-                        <td className="px-3 py-2 text-right tabular-nums">{fmt.format(b.qty_base || 0)} m</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{fmt.format(b.qty_base || 0)} {r.satuan}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-rate-${i}`}>{r.tarif}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-price-${i}`}>{r.pengaliHarga}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-ach-${i}`}>{r.pengaliCapaian}</td>

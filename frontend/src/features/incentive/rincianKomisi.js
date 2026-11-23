@@ -16,8 +16,10 @@ export function formatPengali(v) {
 /** Satu baris rincian → teks siap tampil. Pengali harga disertai alasannya bila ada ("×0,8 · diskon 2–3%"). */
 export function ringkasRincian(b) {
   const alasan = b?.price_reason_label ? ` · ${b.price_reason_label}` : "";
+  const satuan = b?.unit || "satuan";
   return {
-    tarif: `${formatCurrency(b?.rate || 0)}/m`,
+    satuan,
+    tarif: `${formatCurrency(b?.rate || 0)}/${satuan}`,
     pengaliHarga: `${formatPengali(b?.price_factor)}${alasan}`,
     pengaliCapaian: formatPengali(b?.achievement_factor),
     dibatasi: !!b?.capped,

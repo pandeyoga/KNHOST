@@ -480,7 +480,7 @@ async def _compute_commission_per_sku(
             b = breakdown.setdefault(key, {
                 "category": line.get("category", ""), "sku": artikel.get("kode") or line.get("sku", ""),
                 "name": artikel.get("nama") or line.get("product_name", ""), "template_id": tpl,
-                "qty_base": 0.0, "commission": 0.0, "rate": h["tarif"], "rate_origin": asal,
+                "qty_base": 0.0, "unit": line.get("base_unit") or "", "commission": 0.0, "rate": h["tarif"], "rate_origin": asal,
                 "price_factor": h["pengali_harga"], "price_reason": h["alasan_harga"], "price_reason_label": "",
                 "achievement_factor": h["pengali_capaian"], "capped": h["dibatasi"], "_selisih": set(),
             })
