@@ -1185,32 +1185,42 @@ async def backfill_so_line_commission_rule() -> None:
     """KA-4 — potret aturan komisi (`commission_rule`, sumber "isi_awal") ke baris pesanan lama. Idempotent.
 
     Aturan saat itu = aturan hari ini, jadi komisi pesanan lama tidak berubah. Hanya pesanan yang punya minimal satu
-    baris tanpa potret; indeks tarif & aturan PT disimpan per PT, artikel dimuat satu kueri per kelompok pesanan.
+    baris tanpa potret; hanya baris tanpa potret yang ditulis (`items.<i>.commission_rule`). Indeks tarif & aturan PT
+    di-cache per PT; produk dimuat per pesanan (`$in`, tanpa batas jumlah) dan di-cache.
     """
     from core_utils import now_iso
     from services import commission_rules as cr
-    products = {p["id"]: p for p in await db.products.find({}, {"_id": 0, "id": 1, "template_id": 1, "category": 1}).to_list(20000)}
+    produk: dict = {}
     cache: dict = {}
     async for order in db.sales_orders.find({"items.commission_rule": {"$exists": False}},
                                             {"_id": 0, "id": 1, "items": 1, "entity_id": 1}):
+        items = order.get("items") or []
+        todo = [(i, it) for i, it in enumerate(items) if not it.get("commission_rule")]
+        if not todo:
+            continue
         ent = order.get("entity_id")
         if ent not in cache:
             cache[ent] = (await cr.muat_indeks_tarif(ent), await cr.aturan_pt(ent))
         indeks, pt = cache[ent]
-        items = order.get("items") or []
-        todo = [it for it in items if not it.get("commission_rule")]
-        if not todo:
-            continue
-        artikel = await cr._muat_artikel([(products.get(it.get("product_id")) or {}).get("template_id") or "" for it in todo])
+        baru = sorted({it.get("product_id") for _, it in todo if it.get("product_id")} - set(produk))
+        if baru:
+            for p in await db.products.find({"id": {"$in": baru}}, {"_id": 0, "id": 1, "template_id": 1,
+                                                                    "category": 1}).to_list(len(baru)):
+                produk[p["id"]] = p
+            for pid in baru:
+                produk.setdefault(pid, {})
+        artikel = await cr._muat_artikel([(produk.get(it.get("product_id")) or {}).get("template_id") or ""
+                                          for _, it in todo])
         waktu = now_iso()
-        for it in todo:
-            prod = products.get(it.get("product_id")) or {}
+        ubah = {}
+        for i, it in todo:
+            prod = produk.get(it.get("product_id")) or {}
             tpl = prod.get("template_id") or ""
             tarif = cr.pilih_tarif(indeks, product_id=it.get("product_id") or "", template_id=tpl,
                                    category=it.get("category") or prod.get("category") or "")
-            it["commission_rule"] = cr.potret(tarif, pt, artikel=cr._artikel_ringkas(artikel.get(tpl)),
-                                              sumber="isi_awal", waktu=waktu)
-        await db.sales_orders.update_one({"id": order["id"]}, {"$set": {"items": items}})
+            ubah[f"items.{i}.commission_rule"] = cr.potret(tarif, pt, artikel=cr._artikel_ringkas(artikel.get(tpl)),
+                                                           sumber="isi_awal", waktu=waktu)
+        await db.sales_orders.update_one({"id": order["id"]}, {"$set": ubah})
 
 
 async def backfill_ar_cash_postings() -> None:

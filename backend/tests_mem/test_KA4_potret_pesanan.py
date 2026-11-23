@@ -85,17 +85,30 @@ async def test_KA4_U3_tanpa_tarif_dipotret_kosong(klien, db, uji):
     assert r["tarif"] is None and r["artikel"] is None and r["sumber"] == "pesanan"
 
 
-async def test_KA4_U4_isi_awal_sekali(db, uji):
+async def test_KA4_U4_isi_awal_sekali(klien, db, uji):
+    # produk varian dengan tarif varian 5.000 (menang atas tarif artikel 4.000); produk tak dikenal → tanpa tarif
+    await db.products.insert_one(_produk("prd_ka4_var", "KA4Batik", "tpl_ka4"))
+    r = await klien.post("/api/incentive-rates", headers=uji["adm"],
+                         json={"entity_id": KSC, "product_id": "prd_ka4_var", "per_unit_amount": 5000})
+    assert r.status_code == 200, r.text
+    sudah = {"v": 1, "sumber": "pesanan", "dipotret_pada": "2026-01-01T00:00:00+00:00", "artikel": None, "tarif": None}
     await db.sales_orders.insert_one({
         "id": "so_ka4_lama", "number": "SO-KA4-LAMA", "entity_id": KSC, "status": "confirmed", "created_at": now_iso(),
         "items": [{"product_id": "prd_ka4_mrh", "quantity": 5, "price": 55_000, "line_total": 275_000, "category": "KA4Batik"},
                   {"product_id": "prd_ka4_pol", "quantity": 5, "price": 55_000, "line_total": 275_000,
-                   "category": "KA4Polos"}]})
+                   "category": "KA4Polos"},
+                  {"product_id": "prd_ka4_var", "quantity": 5, "price": 55_000, "line_total": 275_000,
+                   "category": "KA4Batik"},
+                  {"product_id": "prd_ka4_mrh", "quantity": 1, "price": 55_000, "line_total": 55_000,
+                   "category": "KA4Batik", "commission_rule": sudah}]})
     await bootstrap.backfill_so_line_commission_rule()
-    a, b = (await db.sales_orders.find_one({"id": "so_ka4_lama"}))["items"]
+    a, b, c, d = (await db.sales_orders.find_one({"id": "so_ka4_lama"}))["items"]
     assert (a["commission_rule"]["sumber"], a["commission_rule"]["tarif"]["per_unit_amount"],
             a["commission_rule"]["artikel"]["id"]) == ("isi_awal", 4000, "tpl_ka4")
     assert b["commission_rule"]["tarif"] is None
+    assert (c["commission_rule"]["tarif"]["per_unit_amount"], c["commission_rule"]["tarif"]["asal_tingkat"]) == (
+        5000, "varian")
+    assert d["commission_rule"] == sudah   # baris yang sudah dipotret tidak ditulis ulang
     dipotret = a["commission_rule"]["dipotret_pada"]
     await bootstrap.backfill_so_line_commission_rule()
     a2 = (await db.sales_orders.find_one({"id": "so_ka4_lama"}))["items"][0]
