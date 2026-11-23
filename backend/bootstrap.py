@@ -1037,6 +1037,14 @@ async def seed_product_categories() -> None:
         await db.product_categories.insert_many(docs)
 
 
+async def backfill_incentive_rate_key() -> None:
+    """KA-2 — isi `rate_key` tarif insentif lama (`kategori:<kategori>`) — idempotent; harus jalan sebelum indeks wajib."""
+    from services.commission_rules import rate_key
+    async for r in db.incentive_rates.find({"$or": [{"rate_key": {"$exists": False}}, {"rate_key": ""},
+                                                    {"rate_key": None}]}, {"_id": 0}):
+        await db.incentive_rates.update_one({"id": r["id"]}, {"$set": {"rate_key": rate_key(r)}})
+
+
 async def backfill_so_line_category() -> None:
     """Backfill snapshot kategori (+base_unit/base_quantity) ke SO line — idempotent.
 
@@ -2110,6 +2118,7 @@ async def run_bootstrap() -> None:
     await seed_procurement()
     await seed_product_categories()
     await backfill_so_line_category()
+    await backfill_incentive_rate_key()   # KA-2 — sebelum `assert_required_indexes` (indeks unik `uq_incentive_rate_key`)
     await backfill_costing_data()
     await backfill_so_line_cost()
     await backfill_ar_cash_postings()

@@ -106,6 +106,15 @@ _PEMERIKSA = {
 }
 
 
+def rate_key(doc: Dict[str, Any]) -> str:
+    """Kunci keunikan tarif insentif per PT: `varian:<id>` · `artikel:<id>` · `kategori:<kategori>`."""
+    if (doc.get("product_id") or "").strip():
+        return f"varian:{doc['product_id'].strip()}"
+    if (doc.get("template_id") or "").strip():
+        return f"artikel:{doc['template_id'].strip()}"
+    return f"kategori:{(doc.get('category') or '').strip()}"
+
+
 def periksa_nilai(key: str, value: Any) -> Any:
     """Nilai bersih kunci tabel pengali komisi (kunci lain dikembalikan apa adanya). `ValueError` berpesan siap tampil."""
     fn = _PEMERIKSA.get(key)

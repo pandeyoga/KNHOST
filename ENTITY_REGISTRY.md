@@ -612,7 +612,13 @@ Component:   features/crm/IncentiveRatesEditor.jsx (matrix entity×category)
 Key Fields:
   id                      string  prefix "irate_"
   entity_id               string  FK entities.id | "all" (fallback semua entitas)
-  category                string  = products.category / SO line snapshot
+  category                string  = products.category / SO line snapshot (baris artikel/varian: dipotret dari katalog)
+  template_id             string  KA-2 · FK product_templates.id ("" = bukan tarif artikel)
+  product_id              string  KA-2 · FK products.id — pengecualian per varian ("" = bukan varian); template_id & product_id tidak boleh keduanya
+  rate_key                string  KA-2 · "varian:<product_id>" | "artikel:<template_id>" | "kategori:<category>" (indeks unik (entity_id, rate_key))
+  target_name / target_code string KA-2 · potret nama & kode (sku_prefix artikel / sku varian); "" untuk baris kategori
+  price_bands             list?   KA-2 · pita pengali harga khusus artikel/varian; null = ikut `commission.price_bands` PT
+  price_source_rules      list?   KA-2 · aturan sumber harga khusus; null = ikut `commission.price_source_rules` PT
   incentive_unit          string  UOM dasar per_unit_amount (default meter)
   per_unit_amount         float   Rp per incentive_unit
   discount_threshold_type enum    pct | rp_per_unit  (basis ambang diskon line)
@@ -624,7 +630,7 @@ Key Fields:
   status                  enum    active | inactive
   created_at / updated_at
 
-ℹ️ UNIK per (entity_id, category). Lookup engine: entity spesifik → fallback "all".
+ℹ️ UNIK per (entity_id, rate_key) — indeks `uq_incentive_rate_key` (KA-2; bootstrap `backfill_incentive_rate_key`). Lookup engine: entity spesifik → fallback "all".
 ℹ️ Mode strategi di system_settings.commission.strategy (per_sku default | achievement_tiered arsip).
 ℹ️ Engine on-collection: iterasi line terbayar (pro-rata partial payment), cap by margin.
 ⚠️ JANGAN BUAT: incentive_rate, commission_rates, rates, sku_rates (sebagai koleksi).

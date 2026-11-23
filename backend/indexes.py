@@ -1115,6 +1115,15 @@ REQUIRED_UNIQUE_INDEXES += [
                            '{r:"$source.run_id",t:"$to_entity_id"}', "$number")},
 ]
 
+# KA-2 — satu tarif insentif per (PT, kunci tarif): `kategori:<kategori>` · `artikel:<id>` · `varian:<id>`. `rate_key` diisi
+# `bootstrap.backfill_incentive_rate_key` SEBELUM indeks dibuat (baris lama tanpa kunci tidak ikut indeks parsial).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "incentive_rates", "name": "uq_incentive_rate_key", "label": "satu tarif insentif per PT dan kunci tarif",
+     "keys": [("entity_id", 1), ("rate_key", 1)], "partial": {"rate_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("incentive_rates", '{rate_key:{$type:"string",$gt:""}}', '{e:"$entity_id",k:"$rate_key"}',
+                           "$id")},
+]
+
 
 class RequiredIndexError(RuntimeError):
     """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""

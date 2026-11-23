@@ -59,6 +59,8 @@ PYT3_INDEKS = 2
 KMT3_INDEKS = 1
 #: KM-T4 (D7) — `interco_charges.uq_charge_run_to` (satu tagihan insentif antar-PT per proses gaji dan PT tertagih).
 KMT4_INDEKS = 1
+#: KA-2 — `incentive_rates.uq_incentive_rate_key` (satu tarif insentif per PT dan kunci tarif).
+KA2_INDEKS = 1
 
 
 def _info_lengkap() -> dict:
@@ -106,10 +108,11 @@ def test_U12_pembanding_indeks():
     # PY-T3 — + hari libur per PT per tanggal, saldo awal pajak per karyawan per PT per tahun: + PYT3_INDEKS.
     # KM-T3 — + satu baris lembar insentif berlaku per (sales, komponen, periode dasar): + KMT3_INDEKS.
     # KM-T4 — + satu tagihan insentif antar-PT per (proses gaji, PT tertagih): + KMT4_INDEKS.
+    # KA-2 — + satu tarif insentif per (PT, kunci tarif): + KA2_INDEKS.
     assert len(indexes.REQUIRED_UNIQUE_INDEXES) == (9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
                                                     + PMT2_INDEKS + PK39_INDEKS + AGT3_INDEKS + KMT1_INDEKS
                                                     + PYT1_INDEKS + PYT2_INDEKS + CRT2_INDEKS + PMT4_INDEKS + PYT3_INDEKS
-                                                    + KMT3_INDEKS + KMT4_INDEKS)
+                                                    + KMT3_INDEKS + KMT4_INDEKS + KA2_INDEKS)
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):
