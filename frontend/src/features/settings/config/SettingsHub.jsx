@@ -67,7 +67,7 @@ const byPrefix = (list, key) => (list || []).some((p) => String(key || "").start
  */
 export function useSettingsBrowser({
   selectedEntity, groupIds = null, includeKeys = null, excludeKeys = null,
-  focusKey = "", focusGroup = "", focusSection = "", focusNonce = 0, onFocusConsumed,
+  focusKey = "", focusGroup = "", focusSection = "", focusNonce = 0, onFocusConsumed, focusWithoutSearch = false,
 }) {
   // KF-T4 — layar yang mengunci id kelompok LAMA (Komisi & Insentif `harga-diskon`, Kebijakan Retur `retur`, Jadwal Bayar
   // antar-PT `antar-entitas`) tetap jalan: id lama diterjemahkan ke kelompok barunya (`GROUP_ALIASES`).
@@ -194,7 +194,9 @@ export function useSettingsBrowser({
     if (g) setGroup(g);
     setSection(focusSection || tujuan.section || "");
     setLockedGroup(!key && g && (!allow || allow.size > 1) ? g : "");
-    setQ(key); setTerm(key);            // lewati debounce: hasil harus langsung muncul
+    // Komisi per artikel (tinjauan akhir T9) — bagian tertanam tanpa kotak cari (`focusWithoutSearch`): kartunya dibuka
+    // dan digulir, bukan menulis kunci mentah sebagai istilah cari ("Hasil pencarian “commission.…”").
+    if (!focusWithoutSearch) { setQ(key); setTerm(key); }   // lewati debounce: hasil harus langsung muncul
     setPendingScroll(key); setHighlight(key);
     if (key) setOpenKeys((cur) => new Set([...cur, key]));
     if (typeof onFocusConsumed === "function") onFocusConsumed();

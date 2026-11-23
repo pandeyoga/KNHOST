@@ -17,6 +17,9 @@
  * Pengaturan menyembunyikan `commission.*` dan menautkan ke tab ini, jadi di sinilah nilai grup komisi diubah). Mode PT & daftar sales dari `GET /api/incentive/targets` (`commission_mode`,
  * `roster`; 403 = kalimat izin modul Kinerja & Insentif — R16). Deep link kunci `commission.*` (`COMMISSION_HOME`)
  * membuka bagian yang memuat kuncinya (`bagianUntukKunci`); di cabang tanpa isi, permintaan fokus langsung dilepas.
+ * Tinjauan akhir: T9 — bagian tertanam memakai `focusWithoutSearch` (kartu dibuka & digulir, tanpa "Hasil pencarian
+ * “commission.…”"); M3/M5 — bagian 3 meneruskan `caps.global_write` (pilihan/ubah tarif Semua PT) dan
+ * `commission.price_basis` (petunjuk pita artikel) ke pop-up tarif dan daftar tarif Semua PT.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Calculator, ChevronDown, ChevronRight, Coins, Gauge, Percent, Settings2, Shield, SlidersHorizontal, Wallet } from "lucide-react";
@@ -61,6 +64,8 @@ export const KUNCI_BAGIAN = {
   lanjutan: ["commission.strategy"],
 };
 const KUNCI_BATAS = "commission.default_margin_cap_pct";
+const KUNCI_DASAR_HARGA = "commission.price_basis";
+const INFO_AWAL = { lintasPt: null, dasarHarga: "" };
 const KUNCI_STRATEGI = "commission.strategy";
 const STRATEGI_ARSIP = "achievement_tiered";
 
@@ -102,6 +107,7 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
   const { canWrite, selectedEntity, entities } = useEntityScope();
   const lihat = canCurrent("sales_force", "view");
   const siap = lihat && canWrite;
+  const [infoGrup, setInfoGrup] = useState(INFO_AWAL);   // M3/M5 — kemampuan tarif grup & dasar harga aturan grup
   // R16 — cabang tanpa izin tidak punya bagian pengaturan: permintaan fokus dilepas. ("Semua PT" punya bagian pengaturan
   // grup — fokusnya diteruskan ke sana.)
   useEffect(() => {
@@ -121,9 +127,10 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
         <EntityRequiredNotice what="skema & tarif komisi" reason={TEKS_SEMUA_PT} when testId="scheme-all-pt" />
         <Bagian icon={Coins} judul="Tarif Semua PT" testId="scheme-group-rates-card"
           help="Tarif tingkat grup: berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat yang sama. Tarif baru untuk Semua PT dibuat dari satu PT (pop-up tarif › Berlaku untuk: Semua PT).">
-          <GroupRatesList />
+          <GroupRatesList bolehUbahGrup={infoGrup.lintasPt} dasarHarga={infoGrup.dasarHarga} />
         </Bagian>
-        <BagianPengaturanGrup entities={entities} cfgFocus={{ focusKey, focusGroup, focusNonce, onFocusConsumed }} />
+        <BagianPengaturanGrup entities={entities} cfgFocus={{ focusKey, focusGroup, focusNonce, onFocusConsumed }}
+          onInfo={setInfoGrup} />
       </div>
     );
   }
@@ -185,7 +192,7 @@ function BagianLanjutan({ entityId, entities, grup, strategi, labelStrategi, str
 
 function PengaturanStrategi({ entityId, entities, grup, onStrategi, cfgFocus }) {
   const s = useSettingsBrowser({ selectedEntity: entityId, groupIds: grup, includeKeys: KUNCI_BAGIAN.lanjutan,
-    ...(bagianUntukKunci(cfgFocus.focusKey) === "lanjutan" ? cfgFocus : {}) });
+    focusWithoutSearch: true, ...(bagianUntukKunci(cfgFocus.focusKey) === "lanjutan" ? cfgFocus : {}) });
   const nilai = (s.items || []).find((i) => i.key === KUNCI_STRATEGI)?.value;
   useEffect(() => { if (nilai) onStrategi(nilai); }, [nilai]); // eslint-disable-line react-hooks/exhaustive-deps
   // nilai mentah tidak pernah tampil di kepala bagian — label dibaca dari opsi registri (`useStrategi`).
@@ -202,13 +209,22 @@ function useFokusKomisi(cfgFocus) {
   return (b) => (bagianFokus === b ? cfgFocus : {});
 }
 
-/** Bagian 3–5 pada satu cakupan (`selectedEntity` = PT, atau "all" = aturan grup). Mengembalikan mesin ⑤ (bawaan batas). */
-function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, onBatas }) {
-  const harga = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.harga, ...fokus("harga") });
-  const capaian = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.capaian, ...fokus("capaian") });
-  const batas = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.batas, ...fokus("batas") });
+/** Bagian 3–5 pada satu cakupan (`selectedEntity` = PT, atau "all" = aturan grup). Mengembalikan mesin ⑤ (bawaan batas) dan
+ *  `onInfo({ lintasPt, dasarHarga })`: kemampuan menulis aturan/tarif grup (`caps.global_write`; null = belum termuat) dan
+ *  dasar pengali harga cakupan ini (`commission.price_basis`) — dipakai pop-up tarif (tinjauan akhir M3, M5). */
+function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, onBatas, onInfo }) {
+  // T9 — bagian tertanam tanpa kotak cari: tautan dalam membuka & menggulir kartunya, bukan menulis kunci mentah.
+  const harga = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.harga, focusWithoutSearch: true,
+    ...fokus("harga") });
+  const capaian = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.capaian, focusWithoutSearch: true,
+    ...fokus("capaian") });
+  const batas = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.batas, focusWithoutSearch: true,
+    ...fokus("batas") });
   const bawaanBatas = (batas.items || []).find((i) => i.key === KUNCI_BATAS)?.value;
   useEffect(() => { if (onBatas) onBatas(bawaanBatas); }, [bawaanBatas]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lintasPt = harga.loading ? null : harga.caps?.global_write === true;
+  const dasarHarga = (harga.items || []).find((i) => i.key === KUNCI_DASAR_HARGA)?.value || "";
+  useEffect(() => { if (onInfo) onInfo({ lintasPt, dasarHarga }); }, [lintasPt, dasarHarga]); // eslint-disable-line react-hooks/exhaustive-deps
   // R16 — aturan grup hanya untuk peran lintas PT (`caps.global_write`, sama dengan hub Pusat Pengaturan): kartu hanya baca.
   const grupTerkunci = selectedEntity === "all" && !harga.loading && !harga.denied && !harga.caps?.global_write;
   return (
@@ -235,13 +251,13 @@ function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, 
 
 /** Mode "Semua PT" — bagian 3–5 dan Lanjutan pada cakupan aturan grup (nilai untuk PT yang tidak punya nilai sendiri),
  *  boleh diubah menurut izin kunci di registri. */
-function BagianPengaturanGrup({ entities, cfgFocus }) {
+function BagianPengaturanGrup({ entities, cfgFocus, onInfo }) {
   const fokus = useFokusKomisi(cfgFocus);
   const st = useStrategi("all");
   const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
   return (
     <>
-      <BagianPengali selectedEntity="all" entities={entities} grup={grup} fokus={fokus}
+      <BagianPengali selectedEntity="all" entities={entities} grup={grup} fokus={fokus} onInfo={onInfo}
         kalimatCakupan={<>Bagian 3–5 dan Lanjutan di bawah adalah <b>aturan grup (Semua PT)</b>: berlaku untuk setiap PT yang tidak punya nilai sendiri. Nilai khusus satu PT diubah sesudah memilih PT itu.</>} />
       <BagianLanjutan entityId="all" entities={entities} grup={grup} strategi={st.strategi} labelStrategi={st.label}
         stratErr={st.err} onRetry={st.ulang} onStrategi={st.setStrategi} cfgFocus={cfgFocus} />
@@ -259,6 +275,7 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
   const fokus = useFokusKomisi(cfgFocus);
   const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
   const [bawaanBatas, setBawaanBatas] = useState(undefined);   // ⑤ — isian awal batas margin tarif baru
+  const [info, setInfo] = useState(INFO_AWAL);                 // M3/M5 — "Semua PT" di pop-up tarif & petunjuk pita
 
   /** `diam` = muat ulang sesudah menyimpan: kartu tidak berganti "Memuat…" (pesan simpan & kartu akrual tetap). */
   const muatSakelar = useCallback(async (diam = false) => {
@@ -303,10 +320,11 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
             {`Cara menghitung komisi PT ini “${labelStrategi || "Berjenjang dari pencapaian target"}”: tarif di bawah tidak dipakai. Ubah di bagian Lanjutan.`}</p>
         )}
         <p className="text-fs-12 text-kn-text-2" data-testid="scheme-rates-effective">{TEKS_BERLAKU}</p>
-        <ArticleRatesTable entityId={entityId} pt={pt} ptPendek={ptPendek} bawaanBatas={bawaanBatas} />
+        <ArticleRatesTable entityId={entityId} pt={pt} ptPendek={ptPendek} bawaanBatas={bawaanBatas}
+          bolehSemuaPt={info.lintasPt === true} dasarHarga={info.dasarHarga} />
       </Bagian>
 
-      <BagianPengali selectedEntity={entityId} entities={entities} grup={grup} fokus={fokus} onBatas={setBawaanBatas}
+      <BagianPengali selectedEntity={entityId} entities={entities} grup={grup} fokus={fokus} onBatas={setBawaanBatas} onInfo={setInfo}
         kalimatCakupan={<>Pengaturan bagian 3–5 dan Lanjutan berlaku untuk <b>{pt}</b> (pemilih PT di kanan atas). Aturan grup (Semua PT) diubah dengan memilih "Semua PT" di pemilih PT.</>} />
 
       {otomatis && (

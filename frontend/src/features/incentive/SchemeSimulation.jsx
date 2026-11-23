@@ -3,7 +3,11 @@
  *
  * Pilih sales (daftar sales PT) + bulan, boleh menambah tarif percobaan (kategori atau artikel; belum disimpan) →
  * `POST /api/incentive-rates/simulate` (tidak menulis apa pun) → tabel per artikel: yard · tarif · pengali harga (+alasan)
- * · pengali capaian · komisi "Sekarang" dan "Dengan perubahan", total keduanya, dan catatan server (`catatan`). Server
+ * · pengali capaian · komisi "Aturan sekarang", "Dengan perubahan", dan "Selisih", total ketiganya, dan catatan server
+ * (`catatan`). Keputusan R18 (tinjauan akhir I3): kedua kolom sama-sama menghitung pesanan bulan itu dengan aturan HARI INI
+ * (tanpa potret pesanan), jadi selisihnya murni efek perubahan; angka yang dibayar (aturan saat pesanan dibuat) tampil
+ * sebagai baris info "Komisi bulan ini menurut aturan saat pesanan dibuat" (`komisi_menurut_potret`); `tanda` server
+ * (strategi berjenjang, mode gaji tanpa komisi otomatis) tampil sebagai peringatan. Server
  * menolak 403 bila pengguna tidak berwenang melihat komisi sales itu — kalimatnya ditampilkan apa adanya. `roster` = daftar
  * sales PT dari induk (`GET /api/incentive/targets`); `null` = belum/tidak bisa dimuat; `rosterAlasan` = kalimat pengganti
  * pemilih sales (mis. tanpa izin Kinerja & Insentif). R16 — hasil dihapus begitu sales, bulan, atau tarif percobaan
@@ -49,10 +53,12 @@ const kali = (v) => (v === null || v === undefined ? "—" : `×${formatDecimal(
 const teksTarif = (s) => (s ? s.tarif.map((t) => formatCurrency(t)).join(" / ") : "—");
 const teksHarga = (s) => (s ? s.harga.map((h) => `${kali(h.faktor)}${h.alasan ? ` (${h.alasan})` : ""}`).join("; ") : "—");
 const teksCapaian = (s) => (s ? s.capaian.map(kali).join(" / ") : "—");
-// KA-11 — yard dua sisi: kolom kanan bisa memuat pesanan bulan ini yang dipotret TANPA tarif (tidak berkomisi sekarang),
-// jadi yard-nya bisa lebih besar dari kolom kiri; satu angka saja menyesatkan (uji layar KA-11: 179,59 vs 1.981,78).
+// KA-11 — yard dua sisi: tarif percobaan bisa memberi tarif ke baris yang sekarang tanpa tarif (tidak berkomisi), jadi yard
+// kolom kanan bisa lebih besar dari kolom kiri; satu angka saja menyesatkan.
 const teksYard = (s) => (s ? formatDecimal(s.yard, 2, 0) : "—");
 const banding = (a, b) => (a === b ? a : `${a} → ${b}`);
+const teksSelisih = (n) => `${n >= 0 ? "+" : "−"}${formatCurrency(Math.abs(n))}`;
+export const TEKS_INFO_POTRET = "Komisi bulan ini menurut aturan saat pesanan dibuat:";
 
 export const BATAS_ARTIKEL = 200;
 export const TEKS_ARTIKEL_TERPOTONG = `Menampilkan ${BATAS_ARTIKEL} artikel pertama — cari untuk mempersempit`;
@@ -121,6 +127,7 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
   const rows = hasil ? gabungSimulasi(hasil.sekarang?.breakdown, hasil.dengan_perubahan?.breakdown) : [];
   const totA = Number(hasil?.sekarang?.total_incentive || 0);
   const totB = Number(hasil?.dengan_perubahan?.total_incentive || 0);
+  const tanda = Array.isArray(hasil?.tanda) ? hasil.tanda : [];
   return (
     <div className="space-y-3" data-testid="scheme-sim">
       <div className="flex flex-wrap items-end gap-3">
@@ -175,22 +182,29 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
       {hasil && (
         <div className="space-y-2" data-testid="scheme-sim-result">
           {untuk && <p className="text-fs-13 font-semibold text-kn-text" data-testid="scheme-sim-for">{`Hasil untuk ${untuk.nama} · ${formatPeriod(untuk.bulan)}`}</p>}
+          {tanda.map((t) => (
+            <p key={t.kode} className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`scheme-sim-flag-${t.kode}`}>{t.pesan}</p>
+          ))}
           <dl className="flex flex-wrap gap-x-6 gap-y-1 text-fs-13">
-            <div><dt className="text-fs-12 text-kn-text-2">Komisi sekarang</dt>
+            <div><dt className="text-fs-12 text-kn-text-2">Aturan sekarang</dt>
               <dd className="font-bold tabular-nums whitespace-nowrap" data-testid="scheme-sim-total-now">{formatCurrency(totA)}</dd></div>
             <div><dt className="text-fs-12 text-kn-text-2">Dengan perubahan</dt>
               <dd className="font-bold tabular-nums whitespace-nowrap" data-testid="scheme-sim-total-new">{formatCurrency(totB)}</dd></div>
             <div><dt className="text-fs-12 text-kn-text-2">Selisih</dt>
-              <dd className="font-bold tabular-nums whitespace-nowrap" data-testid="scheme-sim-total-diff">{`${totB - totA >= 0 ? "+" : "−"}${formatCurrency(Math.abs(totB - totA))}`}</dd></div>
+              <dd className="font-bold tabular-nums whitespace-nowrap" data-testid="scheme-sim-total-diff">{teksSelisih(totB - totA)}</dd></div>
           </dl>
+          {hasil.komisi_menurut_potret !== undefined && hasil.komisi_menurut_potret !== null && (
+            <p className="text-fs-12 text-kn-text-2" data-testid="scheme-sim-actual">
+              {`${TEKS_INFO_POTRET} ${formatCurrency(Number(hasil.komisi_menurut_potret || 0))}`}</p>
+          )}
           {!busy && rows.length === 0 ? (
             <p className="text-fs-13 text-kn-text-2" data-testid="scheme-sim-empty">Tidak ada baris komisi untuk sales ini pada bulan itu.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table head-wrap w-full" data-testid="scheme-sim-table">
                 <thead><tr><th>Artikel</th><th className="text-right">Yard / satuan dasar</th><th className="text-right">Tarif</th>
-                  <th>Pengali harga</th><th className="text-right">Pengali capaian</th><th className="text-right">Komisi sekarang</th>
-                  <th className="text-right">Dengan perubahan</th></tr></thead>
+                  <th>Pengali harga</th><th className="text-right">Pengali capaian</th><th className="text-right">Aturan sekarang</th>
+                  <th className="text-right">Dengan perubahan</th><th className="text-right">Selisih</th></tr></thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.kunci} data-testid={`scheme-sim-row-${r.kunci}`}>
@@ -204,6 +218,8 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
                         {r.a?.dibatasi && <span className="block text-fs-12 text-kn-text-2">dibatasi batas margin</span>}</td>
                       <td className="whitespace-nowrap text-right font-semibold tabular-nums">{r.b ? formatCurrency(r.b.komisi) : "—"}
                         {r.b?.dibatasi && <span className="block text-fs-12 font-normal text-kn-text-2">dibatasi batas margin</span>}</td>
+                      <td className="whitespace-nowrap text-right tabular-nums" data-testid={`scheme-sim-diff-${r.kunci}`}>
+                        {teksSelisih(Number(r.b?.komisi || 0) - Number(r.a?.komisi || 0))}</td>
                     </tr>
                   ))}
                 </tbody>

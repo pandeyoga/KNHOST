@@ -13,6 +13,8 @@
  * tarif" milik PT ini (artikel/varian: kembali ikut tingkat di atasnya) beralasan — tarif Semua PT dihapus dari mode
  * "Semua PT" (`GroupRatesList`); Riwayat per tarif = Jejak Audit (`audit.view`). Tombol menurut izin: ubah `sales_force.update`, hapus `sales_force.delete`
  * (`canCurrent`, sama dengan izin endpoint). Unggah Excel = `RatesExcelImport`.
+ * Tinjauan akhir M6 — konfirmasi "Hapus tarif" menyebut tarif pengganti yang sebenarnya (`fallback` dari server: tarif yang
+ * berlaku bila tarif PT ini di tingkat itu dihapus — tarif Semua PT di tingkat yang sama, atau tingkat di atasnya).
  */
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Download, History, Layers, Pencil, Trash2, Upload } from "lucide-react";
@@ -55,6 +57,23 @@ export function ringkasTarif(tingkat, rate) {
     kosong: false };
 }
 
+const LINGKUP_TEKS = { pt: "PT ini", semua_pt: "Semua PT" };
+
+/** M6 — kalimat akibat menghapus tarif PT ini di satu tingkat. `fallback` (server) = tarif yang berlaku sesudahnya
+ *  (`{per_unit_amount, asal_tingkat, asal_lingkup}`), `{tanpa_tarif:true}` = tanpa tarif; tanpa `fallback` = kalimat umum. */
+export function akibatHapus(tingkat, fallback, kategori = "") {
+  if (fallback?.tanpa_tarif) {
+    return `Sesudah dihapus, ${tingkat} ini tidak punya tarif lagi — sales tidak mendapat komisi untuknya.`;
+  }
+  if (fallback) {
+    const asal = `tarif ${fallback.asal_tingkat || "kategori"} ${LINGKUP_TEKS[fallback.asal_lingkup] || ""}`.trim();
+    return `Sesudah dihapus, ${tingkat} ini memakai ${asal} ${formatCurrency(fallback.per_unit_amount)}.`;
+  }
+  return tingkat === "artikel" ? `Artikel ini kembali ikut tarif artikel Semua PT bila ada, atau tarif kategori ${kategori}.`
+    : tingkat === "varian" ? "Varian ini kembali ikut tarif artikelnya (PT ini atau Semua PT), atau tarif kategori bila artikelnya tidak bertarif."
+      : "Kategori ini memakai tarif Semua PT bila ada; bila tidak, sales tidak mendapat komisi untuk kategori ini.";
+}
+
 /** Batas margin tampil: "50 %" · 0/kosong = "tidak dibatasi". */
 const teksBatas = (rate) => (!rate ? "—" : Number(rate.margin_cap_pct || 0) > 0
   ? `${String(rate.margin_cap_pct).replace(".", ",")} %` : "tidak dibatasi");
@@ -68,7 +87,7 @@ function SelTarif({ r, testId }) {
   );
 }
 
-export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas }) {
+export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas, bolehSemuaPt = true, dasarHarga = "" }) {
   const canUpdate = canCurrent("sales_force", "update");
   const canDelete = canCurrent("sales_force", "delete");
   const canAudit = canCurrent("audit", "view");
@@ -171,10 +190,8 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
   };
   const tersimpan = async (pesan) => { setSasaran(null); setNotice(pesan); setErr(""); await muatUlang(); };
 
-  const hapus = async ({ tingkat, nama, rate, kategori }) => {
-    const akibat = tingkat === "artikel" ? `Artikel ini kembali ikut tarif kategori ${kategori}.`
-      : tingkat === "varian" ? "Varian ini kembali ikut tarif artikelnya (atau kategorinya bila artikel tidak bertarif)."
-        : "Kategori ini memakai tarif Semua PT bila ada; bila tidak, sales tidak mendapat komisi untuk kategori ini.";
+  const hapus = async ({ tingkat, nama, rate, kategori, fallback }) => {
+    const akibat = akibatHapus(tingkat, fallback, kategori);
     const reason = await askReason({ title: `Hapus tarif ${tingkat} ${nama}?`,
       message: `${akibat} Berlaku untuk pesanan yang dibuat sesudah dihapus.`, reasonLabel: "Alasan penghapusan",
       confirmLabel: "Hapus tarif", danger: true, testId: "rates-delete-confirm" });
@@ -231,7 +248,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
           <SelTarif r={info} testId={`rates-var-rate-${p.product_id}`} />
           <td className={`text-right tabular-nums ${info.adaDiTingkat ? "" : "text-kn-text-2"}`}>{teksBatas(p.rate)}</td>
           {aksi({ prefix: "rates-var", id: p.product_id, info, sasaranBaru: { tingkat: "varian", nama: p.sku || p.name,
-            product_id: p.product_id, rate: p.rate, sendiri: info.sendiri, adaDiTingkat: info.adaDiTingkat } })}
+            product_id: p.product_id, rate: p.rate, sendiri: info.sendiri, adaDiTingkat: info.adaDiTingkat, fallback: p.fallback } })}
         </tr>
       );
     });
@@ -269,7 +286,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
                 <td className={`text-right tabular-nums ${info.adaDiTingkat ? "" : "text-kn-text-2"}`}>{teksBatas(a.rate)}</td>
                 {aksi({ prefix: "rates-art", id: a.template_id, info, sasaranBaru: { tingkat: "artikel", nama: a.name,
                   template_id: a.template_id, kategori: a.category, rate: a.rate, sendiri: info.sendiri,
-                  adaDiTingkat: info.adaDiTingkat } })}
+                  adaDiTingkat: info.adaDiTingkat, fallback: a.fallback } })}
               </tr>
               {bukaArt[a.template_id] && barisVarian(a)}
             </Fragment>
@@ -344,7 +361,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
                       <td className="text-right tabular-nums">{teksBatas(c.rate)}</td>
                       {aksi({ prefix: "rates-cat", id: c.category, info, labelAtur: "Atur tarif kategori",
                         sasaranBaru: { tingkat: "kategori", nama: c.category, category: c.category, rate: c.rate, sendiri: info.sendiri,
-                          adaDiTingkat: info.adaDiTingkat } })}
+                          adaDiTingkat: info.adaDiTingkat, fallback: c.fallback } })}
                     </tr>
                     {buka[c.category] && barisArtikel(c.category, false)}
                   </Fragment>
@@ -355,7 +372,8 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
         </div>
       )}
 
-      <RateFormModal sasaran={sasaran} entityId={entityId} pt={pt} bawaanBatas={bawaanBatas} onClose={() => setSasaran(null)} onSaved={tersimpan} />
+      <RateFormModal sasaran={sasaran} entityId={entityId} pt={pt} bawaanBatas={bawaanBatas} bolehSemuaPt={bolehSemuaPt}
+        dasarHarga={dasarHarga} onClose={() => setSasaran(null)} onSaved={tersimpan} />
       {bulk && <BulkRateModal ids={Object.keys(pilih)} entityId={entityId} pt={pt} onClose={() => setBulk(false)}
         onSaved={async (r) => {
           const n = nPilih;

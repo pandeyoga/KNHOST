@@ -38,6 +38,7 @@ const mockDelete = jest.fn();
 const mockConfirm = jest.fn();
 const mockReason = jest.fn();
 const mockSettings = [];
+const mockHarga = { lintasPt: true, items: [] };   // M3/M5 — caps.global_write & isi bagian 3 (dasar pengali harga)
 const mockBrowsers = [];
 const mockAsli = { pakai: false };   // true = mesin & tampilan Pusat Pengaturan yang asli (uji simpan cakupan grup)
 jest.mock("../../services/apiClient", () => ({
@@ -77,7 +78,9 @@ jest.mock("../settings/config/SettingsHub", () => {
     mockSettings.push(opts);
     if (mockAsli.pakai) return asli.useSettingsBrowser(opts);
     const batas = (opts.includeKeys || []).includes("commission.default_margin_cap_pct");
-    return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [] };
+    // tinjauan akhir M3 — kemampuan menulis tarif/aturan grup (`caps.global_write`) dibaca dari mesin pengaturan bagian 3
+    return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [...mockHarga.items],
+      caps: { global_write: mockHarga.lintasPt } };
   },
   SettingsBrowser: (p) => {
     mockBrowsers.push(p);
@@ -133,7 +136,8 @@ const KATEGORI = { items: [
 ] };
 const ARTIKEL = { items: [
   { template_id: "t_mega", name: "Batik Mega", code: "BTK-MEGA-001", category: "Batik",
-    rate: TARIF(3500, { margin_cap_pct: 40, asal_tingkat: "artikel", rate_id: "r_mega" }), own_rate_id: "r_mega", variant_exceptions: 1 },
+    rate: TARIF(3500, { margin_cap_pct: 40, asal_tingkat: "artikel", rate_id: "r_mega" }), own_rate_id: "r_mega", variant_exceptions: 1,
+    fallback: { per_unit_amount: 3000, margin_cap_pct: 50, asal_tingkat: "kategori", asal_lingkup: "pt", rate_id: "r_cat_batik" } },
   { template_id: "t_prg", name: "Batik Parang", code: "BTK-PRG-002", category: "Batik",
     rate: TARIF(3000, { asal_tingkat: "kategori" }), own_rate_id: null, variant_exceptions: 0 },
 ], total: 2, page: 1, page_size: 50 };
@@ -186,6 +190,8 @@ const dipanggil = (path) => mockGet.mock.calls.filter((c) => c[0] === `/api${pat
 beforeEach(() => {
   [mockGet, mockPost, mockPut, mockPatch, mockDelete, mockConfirm, mockReason].forEach((m) => m.mockReset());
   mockSettings.length = 0;
+  mockHarga.lintasPt = true;
+  mockHarga.items = [];
   mockBrowsers.length = 0;
   mockAsli.pakai = false;
   document.body.innerHTML = "";
@@ -284,9 +290,10 @@ test("KA9 pohon tarif: kategori → artikel (ikut kategori / sendiri) → varian
   await kirim(host, "rate-form");
   expect(mockPatch).toHaveBeenCalledWith("/api/incentive-rates/r_blu", { data: { per_unit_amount: 3900, margin_cap_pct: 40 } });
 
-  // "Hapus tarif" artikel = kembali ikut kategori; alasan wajib
+  // "Hapus tarif" artikel = tarif pengganti yang sebenarnya (server `fallback`, M6); alasan wajib
   await klik(q(host, "rates-art-delete-t_mega"));
-  expect(mockReason.mock.calls[0][0].message).toContain("ikut tarif kategori Batik");
+  expect(mockReason.mock.calls[0][0].message.replace(/\u00a0/g, " ")).toBe("Sesudah dihapus, artikel ini memakai tarif kategori PT ini Rp 3.000. "
+    + "Berlaku untuk pesanan yang dibuat sesudah dihapus.");
   expect(mockDelete).toHaveBeenCalledWith("/api/incentive-rates/r_mega", { params: { reason: "alasan uji" } });
 
   // ubah banyak: pilih dua artikel → satu tarif, alasan di pop-up
@@ -476,7 +483,7 @@ test("KA9 akrual bulanan pindah ke Skema & Tarif; jenjang arsip hanya untuk stra
   expect(txt(q(host, "scheme-rates-unused"))).toContain("tidak dipakai");
 });
 
-test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalimat", async () => {
+test("KA9 simulasi: Aturan sekarang vs Dengan perubahan + selisih, info potret, tanda, catatan server; 403 berkalimat", async () => {
   const BARIS = (over) => ({ category: "Batik", sku: "BTK-MEGA-001", name: "Batik Mega", template_id: "t_mega", qty_base: 120,
     commission: 420000, rate: 3500, rate_origin: "artikel_pt", price_factor: 1, price_reason: "harga_penuh",
     price_reason_label: "Harga jual tidak di bawah harga acuan", achievement_factor: 1, capped: false, ...over });
@@ -492,6 +499,7 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
   api();
   mockPost.mockResolvedValue({ data: { sekarang: { total_incentive: 420000, breakdown: [BARIS()] },
     dengan_perubahan: { total_incentive: 480000, breakdown: [BARIS({ rate: 4000, commission: 480000 })] },
+    komisi_menurut_potret: 350000, tanda: [],
     catatan: "Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan." } });
   const host = await mount(<IncentiveSchemeView />);
   await isi(q(host, "scheme-sim-sales"), "u_andi");
@@ -507,11 +515,28 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
   expect(txt(q(host, "scheme-sim-yard-t_mega"))).toBe("120");   // yard sama di dua sisi → satu angka
   expect(txt(q(host, "scheme-sim-total-now"))).toBe("Rp 420.000");
   expect(txt(q(host, "scheme-sim-total-new"))).toBe("Rp 480.000");
+  expect(txt(q(host, "scheme-sim-total-diff"))).toBe("+Rp 60.000");
+  expect(txt(q(host, "scheme-sim-diff-t_mega"))).toBe("+Rp 60.000");
+  const kepala = [...q(host, "scheme-sim-table").querySelectorAll("th")].map((th) => txt(th));
+  expect(kepala.slice(-3)).toEqual(["Aturan sekarang", "Dengan perubahan", "Selisih"]);
+  expect(txt(q(host, "scheme-sim-total-now").previousSibling)).toBe("Aturan sekarang");
+  // R18 — angka yang dibayar (aturan saat pesanan dibuat) = baris info, bukan kolom pembanding
+  expect(txt(q(host, "scheme-sim-actual"))).toBe("Komisi bulan ini menurut aturan saat pesanan dibuat: Rp 350.000");
+  expect(host.querySelector('[data-testid^="scheme-sim-flag-"]')).toBeNull();
   expect(txt(q(host, "scheme-sim-note"))).toBe("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan.");
   expect(txt(q(host, "scheme-sim-for"))).toMatch(/^Hasil untuk Andi · \S+ \d{4}$/);
   // R16 — masukan berubah = hasil lama dibuang
   await isi(q(host, "scheme-sim-draft-rate-0"), "4100");
   expect(q(host, "scheme-sim-result")).toBeNull();
+  // tanda server: strategi berjenjang / komisi otomatis tidak dibayar → peringatan tertulis
+  mockPost.mockResolvedValueOnce({ data: { sekarang: { total_incentive: 1000, breakdown: [] },
+    dengan_perubahan: { total_incentive: 1000, breakdown: [] }, komisi_menurut_potret: 1000, catatan: "",
+    tanda: [{ kode: "strategi_berjenjang", pesan: "Draf tidak berpengaruh: PT ini memakai cara hitung berjenjang." },
+      { kode: "tanpa_komisi_otomatis", pesan: "Komisi otomatis tidak dibayar di PT ini." }] } });
+  await klik(q(host, "scheme-sim-run"));
+  expect(txt(q(host, "scheme-sim-flag-strategi_berjenjang"))).toBe("Draf tidak berpengaruh: PT ini memakai cara hitung berjenjang.");
+  expect(txt(q(host, "scheme-sim-flag-tanpa_komisi_otomatis"))).toBe("Komisi otomatis tidak dibayar di PT ini.");
+  expect(txt(q(host, "scheme-sim-total-diff"))).toBe("+Rp 0");
   mockPost.mockRejectedValueOnce(Object.assign(new Error("x"), { response: { status: 403,
     data: { detail: "Anda tidak berwenang melihat komisi sales ini." } } }));
   await klik(q(host, "scheme-sim-run"));

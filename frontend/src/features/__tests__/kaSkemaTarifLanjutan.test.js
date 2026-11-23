@@ -25,6 +25,7 @@ const mockDelete = jest.fn();
 const mockConfirm = jest.fn();
 const mockReason = jest.fn();
 const mockSettings = [];
+const mockHarga = { lintasPt: true, items: [] };   // M3/M5 — caps.global_write & isi bagian 3 (dasar pengali harga)
 const mockBrowsers = [];
 const mockAsli = { pakai: false };   // true = mesin & tampilan Pusat Pengaturan yang asli (uji simpan cakupan grup)
 jest.mock("../../services/apiClient", () => ({
@@ -64,7 +65,9 @@ jest.mock("../settings/config/SettingsHub", () => {
     mockSettings.push(opts);
     if (mockAsli.pakai) return asli.useSettingsBrowser(opts);
     const batas = (opts.includeKeys || []).includes("commission.default_margin_cap_pct");
-    return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [] };
+    // tinjauan akhir M3 — kemampuan menulis tarif/aturan grup (`caps.global_write`) dibaca dari mesin pengaturan bagian 3
+    return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [...mockHarga.items],
+      caps: { global_write: mockHarga.lintasPt } };
   },
   SettingsBrowser: (p) => {
     mockBrowsers.push(p);
@@ -173,6 +176,8 @@ const dipanggil = (path) => mockGet.mock.calls.filter((c) => c[0] === `/api${pat
 beforeEach(() => {
   [mockGet, mockPost, mockPut, mockPatch, mockDelete, mockConfirm, mockReason].forEach((m) => m.mockReset());
   mockSettings.length = 0;
+  mockHarga.lintasPt = true;
+  mockHarga.items = [];
   mockBrowsers.length = 0;
   mockAsli.pakai = false;
   document.body.innerHTML = "";
@@ -228,7 +233,7 @@ test("KA9 R15 pop-up Berlaku untuk: Semua PT → POST entity_id all; tarif Semua
 
 test("KA9 R15 mode Semua PT: tarif Semua PT diubah lewat pop-up yang sama; tarif per PT tidak tampil", async () => {
   izin(PENUH);
-  api({ extra: { "/api/incentive-rates": TARIF_GRUP } });
+  api({ extra: { "/api/incentive-rates": TARIF_GRUP, "/api/incentive-rates/r_art_all": TARIF_GRUP[1] } });
   const host = await mount(<IncentiveSchemeView />, { entity: "all" });
   expect(dipanggil("/incentive-rates")[0][1]).toEqual({ params: { entity_id: "all" } });
   expect(dipanggil("/incentive-rates/categories")).toHaveLength(0);
@@ -325,7 +330,7 @@ test("KA9 R16 'artikel berikutnya' sesudah simpan: halaman benar, tanpa baris ke
 test("KA9 R16 pop-up tarif: muat pita yang terlambat diabaikan bila sasaran berganti", async () => {
   izin(PENUH);
   let lepas;
-  api({ extra: { "/api/incentive-rates": () => new Promise((r) => { lepas = r; }) } });
+  api({ extra: { "/api/incentive-rates/r_mega": () => new Promise((r) => { lepas = r; }) } });
   const host = await mount(<IncentiveSchemeView />);
   await klik(q(host, "rates-cat-toggle-Batik"));
   await klik(q(host, "rates-art-edit-t_mega"));                         // tarif sendiri → pita dimuat (tertahan)
@@ -333,7 +338,7 @@ test("KA9 R16 pop-up tarif: muat pita yang terlambat diabaikan bila sasaran berg
   await klik(q(host, "rate-form-close"));
   await klik(q(host, "rates-art-edit-t_prg"));
   expect(txt(q(host, "rate-form-title"))).toBe("Atur tarif artikel Batik Parang");
-  await act(async () => { lepas({ data: [{ id: "r_mega", price_bands: [{ sampai_pct: null, pengali: 0.5 }], price_source_rules: null }] }); });
+  await act(async () => { lepas({ data: { id: "r_mega", price_bands: [{ sampai_pct: null, pengali: 0.5 }], price_source_rules: null } }); });
   await settle();
   expect(q(host, "rate-form-bands-own").checked).toBe(false);            // jawaban lama tidak mengisi artikel lain
   expect(q(host, "rate-form-bands")).toBeNull();

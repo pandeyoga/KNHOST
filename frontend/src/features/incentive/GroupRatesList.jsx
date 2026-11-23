@@ -8,6 +8,8 @@
  * terkunci "Semua PT" → `PATCH /api/incentive-rates/{id}`; rute tingkat grup, lolos pagar tulis mode gabungan) dan dihapus
  * beralasan. Membuat tarif Semua PT baru dilakukan dari satu PT (pop-up "Berlaku untuk: Semua PT"). Izin: ubah
  * `sales_force.update`, hapus `sales_force.delete`, riwayat `audit.view`.
+ * Tinjauan akhir M3 — ubah/hapus tarif Semua PT hanya untuk peran lintas PT (`bolehUbahGrup` = `caps.global_write`; server
+ * menolak 403 berkalimat); M6 — konfirmasi hapus menyebut tingkat pengganti per tingkat.
  */
 import { useCallback, useEffect, useState } from "react";
 import { History, Pencil, Trash2 } from "lucide-react";
@@ -32,9 +34,19 @@ export function sasaranTarif(d) {
   return { tingkat, nama, kode, sebutan: tingkat === "varian" ? (kode || nama) : nama };
 }
 
-export default function GroupRatesList({ bawaanBatas }) {
-  const canUpdate = canCurrent("sales_force", "update");
-  const canDelete = canCurrent("sales_force", "delete");
+export const TEKS_GRUP_TARIF_TERKUNCI = "Tarif Semua PT hanya dapat diubah peran lintas PT.";
+
+/** M6 — akibat menghapus tarif Semua PT di satu tingkat (untuk PT yang tidak punya tarif sendiri di tingkat itu). */
+export function akibatHapusGrup(tingkat) {
+  return tingkat === "kategori" ? "Sesudah dihapus, PT itu tidak mendapat komisi untuk kategori ini."
+    : tingkat === "artikel" ? "Sesudah dihapus, PT itu memakai tarif kategori artikel ini (tarif PT itu sendiri atau Semua PT)."
+      : "Sesudah dihapus, PT itu memakai tarif artikelnya, atau tarif kategori bila artikelnya tidak bertarif.";
+}
+
+export default function GroupRatesList({ bawaanBatas, bolehUbahGrup = true, dasarHarga = "" }) {
+  const boleh = bolehUbahGrup === true;                     // null = kemampuan belum termuat → tombol belum tampil
+  const canUpdate = canCurrent("sales_force", "update") && boleh;
+  const canDelete = canCurrent("sales_force", "delete") && boleh;
   const canAudit = canCurrent("audit", "view");
   const [rows, setRows] = useState([]);
   const [state, setState] = useState("loading");
@@ -64,8 +76,8 @@ export default function GroupRatesList({ bawaanBatas }) {
   const hapus = async (d) => {
     const t = sasaranTarif(d);
     const reason = await askReason({ title: `Hapus tarif Semua PT ${t.sebutan}?`,
-      message: "Tarif ini berlaku untuk semua PT yang tidak punya tarif sendiri. Sesudah dihapus, PT itu memakai tarif tingkat "
-        + "di atasnya, atau tanpa komisi bila tidak ada. Berlaku untuk pesanan yang dibuat sesudah dihapus.",
+      message: `Tarif ini berlaku untuk semua PT yang tidak punya tarif sendiri di tingkat ini. ${akibatHapusGrup(t.tingkat)} `
+        + "Berlaku untuk pesanan yang dibuat sesudah dihapus.",
       reasonLabel: "Alasan penghapusan", confirmLabel: "Hapus tarif", danger: true, testId: "group-rates-delete-confirm" });
     if (reason === null) return;
     try {
@@ -77,7 +89,8 @@ export default function GroupRatesList({ bawaanBatas }) {
 
   return (
     <div className="space-y-2" data-testid="group-rates">
-      {!canUpdate && <p className="text-fs-12 text-kn-text-2" data-testid="group-rates-why">Mengubah tarif komisi butuh akses Ubah di modul Pengawasan Tim Sales & Kredit.</p>}
+      {!canCurrent("sales_force", "update") ? <p className="text-fs-12 text-kn-text-2" data-testid="group-rates-why">Mengubah tarif komisi butuh akses Ubah di modul Pengawasan Tim Sales & Kredit.</p>
+        : bolehUbahGrup === false && <p className="text-fs-12 text-kn-text-2" data-testid="group-rates-locked">{TEKS_GRUP_TARIF_TERKUNCI}</p>}
       {notice && <div className="notice-bar success" data-testid="group-rates-notice"><span className="text-fs-12">{notice}</span></div>}
       {aksiErr && <ErrorNotice testId="group-rates-error" message={aksiErr} onDismiss={() => setAksiErr("")} />}
       {state === "loading" ? (
@@ -119,7 +132,7 @@ export default function GroupRatesList({ bawaanBatas }) {
           </table>
         </div>
       )}
-      <RateFormModal sasaran={sasaran} entityId="all" pt="Semua PT" bawaanBatas={bawaanBatas} semuaPtSaja
+      <RateFormModal sasaran={sasaran} entityId="all" pt="Semua PT" bawaanBatas={bawaanBatas} semuaPtSaja dasarHarga={dasarHarga}
         onClose={() => setSasaran(null)} onSaved={async (pesan) => { setSasaran(null); setNotice(pesan); await load(); }} />
       {riwayat && (
         <FormModal open onClose={() => setRiwayat(null)} testId="group-rates-history" icon={History} size="lg" title={`Riwayat tarif ${riwayat.nama}`} subtitle="Semua PT">

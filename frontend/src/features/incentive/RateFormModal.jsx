@@ -12,6 +12,10 @@
  * R16 — tarif Semua PT yang terlihat dari satu PT: bawaan "PT ini" (membuat tarif khusus PT); "Semua PT" harus dipilih
  * sendiri dan memunculkan "Mengubah tarif ini berlaku untuk semua PT.". Muat pita khusus diabaikan bila sasaran/lingkup
  * sudah berganti sebelum jawabannya datang.
+ * Tinjauan akhir: I5 — pita/aturan khusus tarif dibaca per id (`GET /api/incentive-rates/{id}`); tidak terbaca (404/galat)
+ * = isian khusus TERKUNCI dan tidak dikirim saat menyimpan (dulu daftar terpotong 1.000 baris → pita terhapus diam-diam).
+ * M3 — pilihan "Semua PT" hanya untuk peran lintas PT (`bolehSemuaPt` = `caps.global_write`). M5 — petunjuk di bawah
+ * "Pita pengali sendiri" bila dasar pengali harga PT bukan "Selisih dari harga acuan" (`dasarHarga`).
  */
 import { useEffect, useRef, useState } from "react";
 import { Layers, Percent, Plus, Trash2 } from "lucide-react";
@@ -24,6 +28,10 @@ import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency } from "../../utils/formatters";
 
 export const TEKS_BERLAKU = "Tarif berlaku untuk pesanan yang dibuat sesudah disimpan; pesanan lama memakai tarif saat pesanan dibuat.";
+export const TEKS_PITA_DASAR = "Pita hanya dipakai bila dasar pengali harga PT ini = Selisih dari harga acuan.";
+export const TEKS_PITA_DASAR_GRUP = "Pita hanya dipakai di PT yang dasar pengali harganya = Selisih dari harga acuan.";
+export const TEKS_KHUSUS_TERKUNCI = "Pengali khusus artikel ini tidak bisa dimuat; isiannya tidak diubah saat menyimpan.";
+export const TEKS_SEMUA_PT_TERKUNCI = "Tarif Semua PT hanya dapat diubah peran lintas PT. Yang disimpan di sini menjadi tarif khusus PT ini.";
 const TINGKAT = { kategori: "kategori", artikel: "artikel", varian: "varian" };
 const SUMBER = [
   { key: "special_approval", label: "Harga khusus" },
@@ -54,7 +62,7 @@ function sumberDari(rows) {
 }
 
 /** Pita & aturan asal harga khusus satu artikel (null = ikut PT). */
-function PengaliKhusus({ pita, setPita, sumber, setSumber, terkunci }) {
+function PengaliKhusus({ pita, setPita, sumber, setSumber, terkunci, petunjukPita }) {
   if (terkunci) {
     return <p className="text-fs-12 text-kn-text-2" data-testid="rate-form-special-locked">{terkunci}</p>;
   }
@@ -67,6 +75,7 @@ function PengaliKhusus({ pita, setPita, sumber, setSumber, terkunci }) {
           onChange={(e) => setPita(e.target.checked ? [{ sampai: null, pengali: "1" }] : null)} />
         Pita pengali sendiri (tidak dicentang = ikut pita PT di bagian 3)
       </label>
+      {petunjukPita && <p className="text-fs-12 text-kn-warning-text" data-testid="rate-form-bands-basis">{petunjukPita}</p>}
       {pita && (
         <div className="space-y-1.5" data-testid="rate-form-bands">
           {pita.map((r, i) => (
@@ -121,7 +130,8 @@ export const LINGKUP = [{ key: "pt", label: "PT ini" }, { key: "semua_pt", label
 export const TEKS_LINGKUP_SEMUA = "Tarif Semua PT berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat ini.";
 export const TEKS_UBAH_SEMUA = "Mengubah tarif ini berlaku untuk semua PT.";
 
-export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semuaPtSaja = false, onClose, onSaved }) {
+export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semuaPtSaja = false, bolehSemuaPt = true,
+  dasarHarga = "", onClose, onSaved }) {
   const [jumlah, setJumlah] = useState("");
   const [batas, setBatas] = useState("");
   const [lingkup, setLingkup] = useState("pt");
@@ -144,17 +154,19 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
     const no = muatKe.current + 1;
     muatKe.current = no;
     if (artikel && r?.rate_id) {
-      // Pita/aturan khusus tarif ini tidak ikut di daftar artikel — dibaca dari daftar tarif supaya tidak tertimpa.
+      // Pita/aturan khusus tarif ini tidak ikut di daftar artikel — dibaca per id supaya tidak tertimpa. Tidak terbaca
+      // (404/galat) = terkunci: isian khusus tidak dikirim (I5).
       setKhusus("Memuat pengali khusus…");
-      axios.get(`${API}/incentive-rates`, { params: { entity_id: entityId } }).then((res) => {
+      axios.get(`${API}/incentive-rates/${r.rate_id}`).then((res) => {
         if (muatKe.current !== no) return;          // sasaran/lingkup sudah berganti
-        const doc = (Array.isArray(res.data) ? res.data : []).find((d) => d.id === r.rate_id);
-        setPita(doc?.price_bands ? pitaDari(doc.price_bands) : null);
-        setSumber(doc?.price_source_rules ? sumberDari(doc.price_source_rules) : null);
+        const doc = res.data;
+        if (!doc || doc.id !== r.rate_id) { setKhusus(TEKS_KHUSUS_TERKUNCI); return; }
+        setPita(doc.price_bands ? pitaDari(doc.price_bands) : null);
+        setSumber(doc.price_source_rules ? sumberDari(doc.price_source_rules) : null);
         setKhusus("");
       }).catch(() => {
         if (muatKe.current !== no) return;
-        setKhusus("Pengali khusus artikel ini tidak bisa dimuat; isiannya tidak diubah saat menyimpan.");
+        setKhusus(TEKS_KHUSUS_TERKUNCI);
       });
     }
   };
@@ -172,7 +184,9 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
   const ubah = ada && lingkup === lingkupAda;     // ubah tarif yang ada di tempat
   // Lingkup boleh dipilih bila belum ada tarif di tingkat ini, atau tarif yang terlihat milik Semua PT (boleh diganti
   // tarif khusus PT ini). Tarif milik PT ini diubah di tempat saja.
-  const bolehPilih = !semuaPtSaja && (!ada || lingkupAda === "semua_pt");
+  // M3 — "Semua PT" hanya untuk peran lintas PT; tanpa itu tarif Semua PT yang terlihat diganti tarif khusus PT ini.
+  const bolehPilih = !semuaPtSaja && bolehSemuaPt && (!ada || lingkupAda === "semua_pt");
+  const grupTerkunci = !semuaPtSaja && !bolehSemuaPt && ada && lingkupAda === "semua_pt";
   const namaLingkup = (l) => (l === "semua_pt" ? "Semua PT" : `PT ini (${pt})`);
   const judul = `${ubah ? "Ubah" : "Atur"} tarif ${TINGKAT[sasaran.tingkat]} ${sasaran.nama}`;
   // Tarif yang dipakai sekarang (bila pop-up ini tidak sedang mengubahnya di tempat). R16 — dari tarif Semua PT disebut jelas.
@@ -224,6 +238,7 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
           ) : (
             <p className="pt-1 text-fs-13 font-semibold text-kn-text" data-testid="rate-form-scope-fixed">{namaLingkup(lingkup)}</p>
           )}
+          {grupTerkunci && <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="rate-form-scope-locked">{TEKS_SEMUA_PT_TERKUNCI}</p>}
           {lingkup === "semua_pt" && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="rate-form-scope-warning">
             {ubah ? TEKS_UBAH_SEMUA : TEKS_LINGKUP_SEMUA}</p>}
         </div>
@@ -236,7 +251,8 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
               onChange={(e) => setBatas(e.target.value)} />
             <p className="mt-1 text-fs-12 text-kn-text-2">Komisi satu baris paling banyak persen ini dari margin barisnya. 0 = tidak dibatasi.</p></div>
         </div>
-        {artikel && <PengaliKhusus pita={pita} setPita={setPita} sumber={sumber} setSumber={setSumber} terkunci={khusus} />}
+        {artikel && <PengaliKhusus pita={pita} setPita={setPita} sumber={sumber} setSumber={setSumber} terkunci={khusus}
+          petunjukPita={!dasarHarga || dasarHarga === "pricelist" ? "" : (semuaPtSaja ? TEKS_PITA_DASAR_GRUP : TEKS_PITA_DASAR)} />}
         <p className="text-fs-12 text-kn-text-2">{TEKS_BERLAKU}</p>
       </div>
     </FormModal>
