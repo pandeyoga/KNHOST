@@ -737,39 +737,39 @@
    "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 3.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
   },
   {
-   "file": "backend/services/sales_force_service.py",
+   "file": "backend/services/commission_rules.py",
    "key": "commission.discount_factor",
    "line_text": "cfg.get(\"discount_factor\", default_of(\"commission.discount_factor\")) or 0",
    "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 0.5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 0.5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini. KA-3: kode pindah apa adanya dari sales_force_service.py ke `commission_rules.faktor_diskon`."
   },
   {
-   "file": "backend/services/sales_force_service.py",
+   "file": "backend/services/commission_rules.py",
    "key": "commission.discount_mechanic",
    "line_text": "cfg.get(\"discount_mechanic\", \"tier_factor\")",
    "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'tier_factor' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_mechanic\")`, lalu hapus butir ini."
+   "alasan": "Garis dasar KF-T8: cadangan 'tier_factor' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_mechanic\")`, lalu hapus butir ini. KA-3: kode pindah apa adanya dari sales_force_service.py ke `commission_rules.faktor_diskon`."
   },
   {
-   "file": "backend/services/sales_force_service.py",
+   "file": "backend/services/commission_rules.py",
    "key": "commission.discount_potong_rp",
    "line_text": "cfg.get(\"discount_potong_rp\", 0)",
    "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_potong_rp\")`, lalu hapus butir ini."
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_potong_rp\")`, lalu hapus butir ini. KA-3: kode pindah apa adanya dari sales_force_service.py ke `commission_rules.faktor_diskon`."
   },
   {
-   "file": "backend/services/sales_force_service.py",
+   "file": "backend/services/commission_rules.py",
    "key": "commission.discount_threshold",
    "line_text": "cfg.get(\"discount_threshold\", default_of(\"commission.discount_threshold\")) or 0",
    "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini. KA-3: kode pindah apa adanya dari sales_force_service.py ke `commission_rules.faktor_diskon`."
   },
   {
-   "file": "backend/services/sales_force_service.py",
+   "file": "backend/services/commission_rules.py",
    "key": "commission.discount_threshold_type",
    "line_text": "cfg.get(\"discount_threshold_type\", \"pct\")",
    "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'pct' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_threshold_type\")`, lalu hapus butir ini."
+   "alasan": "Garis dasar KF-T8: cadangan 'pct' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_threshold_type\")`, lalu hapus butir ini. KA-3: kode pindah apa adanya dari sales_force_service.py ke `commission_rules.faktor_diskon`."
   },
   {
    "file": "backend/services/sales_force_service.py",

@@ -168,8 +168,10 @@ def test_KA3_U10_potret_bentuk_v1():
                sumber="pesanan", waktu="2026-11-23T00:00:00+00:00")
     assert (p["v"], p["sumber"], p["dipotret_pada"]) == (1, "pesanan", "2026-11-23T00:00:00+00:00")
     assert p["artikel"]["kode"] == "BTK-MEGA"
-    # kosong → nilai PT; pita artikel (bukan None) menggantikan PT; aturan sumber None → PT
-    assert p["tarif"]["margin_cap_pct"] == 50 and p["tarif"]["discount_threshold"] == 10
+    # KA-5 (putusan pengendali, sama dengan mesin lama `{**cfg, **rate}`): isian ADA bernilai None tetap None
+    # (dibaca 0); isian TIDAK ADA → nilai PT. Pita artikel (bukan None) menggantikan PT; aturan sumber None → PT
+    assert p["tarif"]["margin_cap_pct"] is None and p["tarif"]["discount_threshold"] is None
+    assert (p["tarif"]["discount_factor"], p["tarif"]["discount_mechanic"]) == (0.5, "tier_factor")
     assert p["tarif"]["asal_tingkat"] == "artikel" and p["tarif"]["id"] == "ir1"
     assert p["price_bands"] == [{"sampai_pct": None, "pengali": 1.0}] and p["price_source_rules"] == SUMBER_BAWAAN
     assert (p["price_basis"], p["acuan"]) == ("pricelist", "daftar_pt")

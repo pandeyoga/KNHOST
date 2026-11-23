@@ -31,6 +31,15 @@ Hitung tangan (satuan dasar yard/meter; fraksi terbayar = bayar dalam periode / 
       B harga PT (selisih 5 % → pita ×0,5, tarif 3.500); grand total 9.500.000, bayar 3.800.000 → fraksi 0,4.
       A 40 × 3.000 × 0,5 = 60.000 · B 40 × 3.500 × 0,5 = 70.000 → 130.000. Proyeksi penuh 150.000 + 175.000 = 325.000.
   U8  tarif artikel 3.500 dipotret, lalu tarif dihapus (DELETE) → 100 yd lunas tetap 350.000.
+  F1  basis pricelist, selisih 5 %, potret TANPA pita (atau pita/aturan asal harga kosong) → bawaan registri (satu
+      baris terbuka ×1,0; semua asal harga ikut pita) → pengali 1,0, bukan ×0.
+  F2  baris tarif kategori dengan isian ADA bernilai None (`margin_cap_pct`, `discount_threshold`) → dibaca 0 seperti
+      mesin lama (`{**cfg, **rate}` lalu `… or 0`): N1 1.000 m @50.000 HPP 49.900, tanpa batas → 1.000 × 500 =
+      500.000 (batas PT 50 % akan memotong ke 50.000); N2 100 m diskon 5 % > ambang 0 → ×0,5 → 25.000 (ambang PT 10 %
+      → 50.000). Total 525.000 — sama lewat jalur potret.
+  F3  baris tarif kategori TANPA kunci batas margin & diskon → nilai PT (batas 50 %, ambang 10 %): A1 1.000 m @50.000
+      HPP 49.900 → kotor 500.000, batas 50 % × 1.000 × 100 = 50.000; A2 100 m diskon 5 % ≤ 10 % → ×1,0 → 50.000.
+      Total 100.000.
 """
 from __future__ import annotations
 
@@ -49,7 +58,7 @@ MEGA = {"id": "tpl_ka5_mega", "nama": "Batik Mega KA5", "kode": "BTK-MEGA"}
 KAWUNG = {"id": "tpl_ka5_kwg", "nama": "Batik Kawung KA5", "kode": "BTK-KWG"}
 KUNCI_RINCIAN = {"category", "sku", "name", "template_id", "qty_base", "commission", "rate", "rate_origin",
                  "price_factor", "price_reason", "price_reason_label", "achievement_factor", "capped"}
-UJI = ("u1", "u1b", "u2", "u3", "u4", "u4b", "u5", "u6", "u7", "u8")
+UJI = ("u1", "u1b", "u2", "u3", "u4", "u4b", "u5", "u6", "u7", "u8", "f2", "f2s", "f3")
 
 
 def _tarif_kategori(kode: str, kategori: str, *, cap: float = 0.0, **lain) -> Dict[str, Any]:
@@ -140,7 +149,11 @@ async def f(db, akun, sesi, kepala_admin):
          "template_id": f"tpl_ka5_{k}", "category": f"KA5{k.upper()}", "base_unit": "yard", "status": "active",
          "is_active": True} for k in ("u3", "u6", "u8")])
     await db.incentive_rates.insert_many([_tarif_kategori("u1", "KA5-U1"), _tarif_kategori("u2", "KA5-U2"),
-                                          _tarif_kategori("lama", "KA5-LAMA", cap=40.0)])
+                                          _tarif_kategori("lama", "KA5-LAMA", cap=40.0),
+                                          _tarif_kategori("null", "KA5-NULL", margin_cap_pct=None,
+                                                          discount_threshold=None),
+                                          {"id": "rate_ka5_absen", "entity_id": KSC, "category": "KA5-ABSEN",
+                                           "per_unit_amount": 500.0, "status": "active"}])
     return {"u": u, "pt": await aturan_pt(KSC), "adm": kepala_admin,
             "h_sales": await sesi(u["u4"], entitas=KSC)}
 
@@ -297,3 +310,57 @@ async def test_KA5_U8_tarif_dihapus_pesanan_lama_tetap(db, klien, f):  # Review 
     hasil = await _komisi(f, "u8")
     assert hasil["total_incentive"] == 350_000
     assert _satu(hasil)["rate_origin"] == "Tarif artikel (PT ini)"
+
+
+# ── Perbaikan sesudah tinjauan pengendali (INV-CFG-09; isian None = mesin lama) ─────────────────────────────────────
+async def test_KA5_F1_pita_kosong_ikut_bawaan_registri():
+    from services.commission_rules import pengali_harga
+    tarif = {"per_unit_amount": 3500, "margin_cap_pct": 0}
+    line = _baris(100, 47_500, pid="prd_ka5_x", kategori="KA5Batik", harga=50_000, list_price=50_000)
+    for pita in ({}, {"price_bands": None}, {"price_bands": []}):
+        aturan = {"tarif": tarif, "price_basis": "pricelist", "acuan": "daftar_pt", **pita}
+        assert pengali_harga(aturan, line) == (3500, 1.0, "pita", 5.0), pita
+    # aturan asal harga kosong → bawaan registri (semua ikut pita), pita kosong → ×1,0
+    khusus = {**line, "price_source": "special_approval"}
+    aturan = {"tarif": tarif, "price_basis": "pricelist", "acuan": "daftar_pt", "price_source_rules": []}
+    assert pengali_harga(aturan, khusus) == (3500, 1.0, "pita", 5.0)
+
+
+def _baris_null() -> List[Dict[str, Any]]:
+    return [_baris(1000, 50_000, pid="prd_ka5_n1", kategori="KA5-NULL", sku="NULL-1", unit_cost=49_900),
+            _baris(100, 47_500, pid="prd_ka5_n2", kategori="KA5-NULL", sku="NULL-2", harga=50_000,
+                   discount_percent=5)]
+
+
+async def test_KA5_F2_isian_tarif_null_sama_dengan_mesin_lama(db, f):
+    await _pesanan(db, "so_ka5_f2", "cus_ka5_f2", _baris_null())
+    hasil = await _komisi(f, "f2")
+    assert hasil["total_incentive"] == 525_000
+    rows = {r["sku"]: r for r in hasil["breakdown"]}
+    assert (rows["NULL-1"]["commission"], rows["NULL-1"]["capped"]) == (500_000, False)
+    assert (rows["NULL-2"]["commission"], rows["NULL-2"]["price_factor"]) == (25_000, 0.5)
+    # jalur potret (`create_order`): isian None tetap None di potret, hasilnya sama
+    items = _baris_null()
+    await _potret_asli(db, items)
+    t = items[0]["commission_rule"]["tarif"]
+    assert (t["margin_cap_pct"], t["discount_threshold"], t["discount_factor"]) == (None, None, 0.5)
+    await _pesanan(db, "so_ka5_f2s", "cus_ka5_f2s", items)
+    assert (await _komisi(f, "f2s"))["total_incentive"] == 525_000
+
+
+async def test_KA5_F3_isian_tarif_tidak_ada_ikut_pt(db, f):
+    items = [_baris(1000, 50_000, pid="prd_ka5_a1", kategori="KA5-ABSEN", sku="ABSEN-1", unit_cost=49_900),
+             _baris(100, 47_500, pid="prd_ka5_a2", kategori="KA5-ABSEN", sku="ABSEN-2", harga=50_000,
+                    discount_percent=5)]
+    await _pesanan(db, "so_ka5_f3", "cus_ka5_f3", items)
+    hasil = await _komisi(f, "f3")
+    assert hasil["total_incentive"] == 100_000
+    rows = {r["sku"]: r for r in hasil["breakdown"]}
+    assert (rows["ABSEN-1"]["commission"], rows["ABSEN-1"]["capped"]) == (50_000, True)
+    assert (rows["ABSEN-2"]["commission"], rows["ABSEN-2"]["price_factor"]) == (50_000, 1.0)
+    salinan = [dict(it) for it in items]
+    await _potret_asli(db, salinan)
+    t = salinan[0]["commission_rule"]["tarif"]
+    assert (t["margin_cap_pct"], t["discount_threshold"], t["discount_mechanic"]) == (
+        f["pt"]["default_margin_cap_pct"], f["pt"]["discount_threshold"], f["pt"]["discount_mechanic"])
+    assert (t["margin_cap_pct"], t["discount_threshold"]) == (50, 10)

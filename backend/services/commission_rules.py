@@ -195,18 +195,26 @@ def _isi(nilai: Any, cadangan: Any) -> Any:
     return cadangan if nilai is None else nilai
 
 
+def _dari_tarif(tarif: Dict[str, Any], kunci: str, nilai_pt: Any) -> Any:
+    """Isian baris tarif menimpa nilai PT bila KUNCINYA ada — juga bila nilainya None — sama dengan mesin lama
+    (`{**cfg, **rate}`; pembacanya memperlakukan None sebagai 0: batas margin None = tanpa batas). Kunci tidak ada di
+    baris tarif → nilai PT."""
+    return tarif[kunci] if kunci in tarif else nilai_pt
+
+
 def potret(tarif: Optional[Dict[str, Any]], pt: Dict[str, Any], *, artikel: Optional[Dict[str, Any]],
            sumber: str, waktu: str) -> Dict[str, Any]:
-    """Potret aturan komisi satu baris pesanan (`items[].commission_rule`, v1). Isian kosong di tarif → nilai PT;
-    pita/aturan asal harga milik tarif (bukan None) menggantikan milik PT."""
+    """Potret aturan komisi satu baris pesanan (`items[].commission_rule`, v1). Batas margin & isian diskon: kunci yang
+    ADA di baris tarif dipakai apa adanya (None tetap None), kunci yang TIDAK ADA → nilai PT (mesin lama). Pita/aturan
+    asal harga milik tarif (bukan None) menggantikan milik PT; None = ikut PT."""
     t = None
     if tarif:
         t = {"id": tarif.get("id"), "asal_tingkat": tarif.get("asal_tingkat"), "asal_lingkup": tarif.get("asal_lingkup"),
              "per_unit_amount": float(tarif.get("per_unit_amount", 0) or 0),
-             "margin_cap_pct": _isi(tarif.get("margin_cap_pct"), pt.get("default_margin_cap_pct"))}
+             "margin_cap_pct": _dari_tarif(tarif, "margin_cap_pct", pt.get("default_margin_cap_pct"))}
         for k in ("discount_threshold_type", "discount_threshold", "discount_mechanic", "discount_factor",
                   "discount_potong_rp"):
-            t[k] = _isi(tarif.get(k), pt.get(k))
+            t[k] = _dari_tarif(tarif, k, pt.get(k))
     return {
         "v": 1, "sumber": sumber, "dipotret_pada": waktu,
         "artikel": dict(artikel) if artikel else None,
@@ -269,12 +277,17 @@ def faktor_diskon(cfg: Dict[str, Any], line: Dict[str, Any], per_unit: float) ->
 
 
 def pengali_harga(aturan: Dict[str, Any], line: Dict[str, Any]) -> Tuple[float, float, str, Optional[float]]:
-    """`(tarif_efektif, pengali, alasan, selisih_pct)` untuk satu baris menurut `aturan` (bentuk potret)."""
+    """`(tarif_efektif, pengali, alasan, selisih_pct)` untuk satu baris menurut `aturan` (bentuk potret).
+
+    Pita/aturan asal harga tidak ada atau kosong → bawaan registri (satu pita terbuka ×1,0; semua ikut pita),
+    bukan ×0."""
+    from config_registry import default_of
     tarif_cfg = aturan["tarif"]
     tarif = float(tarif_cfg.get("per_unit_amount", 0) or 0)
     s = sumber_harga(line)
     if s in SUMBER_KHUSUS:
-        r = next((x for x in aturan.get("price_source_rules") or [] if x.get("sumber") == s), None)
+        aturan_sumber = aturan.get("price_source_rules") or default_of("commission.price_source_rules")
+        r = next((x for x in aturan_sumber if x.get("sumber") == s), None)
         if r and r.get("cara") == "pengali_tetap":
             return tarif, float(r.get("pengali", 1.0) or 0), f"sumber_tetap:{s}", None
     alasan = "diskon_baris"
@@ -286,7 +299,8 @@ def pengali_harga(aturan: Dict[str, Any], line: Dict[str, Any]) -> Tuple[float, 
             selisih = (acuan - bersih) / acuan * 100
             if selisih <= 0:
                 return tarif, 1.0, "harga_penuh", 0.0
-            return tarif, pilih_pita(aturan.get("price_bands") or [], selisih), "pita", round(selisih, 2)
+            pita = aturan.get("price_bands") or default_of("commission.price_bands")
+            return tarif, pilih_pita(pita, selisih), "pita", round(selisih, 2)
         alasan = "tanpa_pembanding"
     t, f = faktor_diskon(tarif_cfg, line, tarif)
     if (t, f) != (tarif, 1.0):
