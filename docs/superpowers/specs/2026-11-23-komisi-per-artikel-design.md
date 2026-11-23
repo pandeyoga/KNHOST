@@ -1,7 +1,9 @@
 # Rancangan — Komisi per artikel, pengali yang bisa diatur, dan satu layar "Skema & Tarif"
 
-Tanggal: 23 Nov 2026 · Pemilik keputusan: pemilik KNHOST · Status: **draf, menunggu persetujuan pemilik** · Sudah diputus
-pemilik: pendekatan A; tarif per **artikel** dengan pengecualian per varian (1.a); aturan mengikuti **tanggal pesanan dibuat**,
+Tanggal: 23 Nov 2026 · Pemilik keputusan: pemilik KNHOST · Status: **disetujui pemilik 23 Nov 2026; dibangun
+KA-1…KA-11** (keputusan pelaksanaan di §8 butir 8–24; hasil uji di
+`docs/superpowers/plans/2026-11-23-komisi-per-artikel-hasil.md`) · Sudah diputus pemilik: pendekatan A; tarif per
+**artikel** dengan pengecualian per varian (1.a); aturan mengikuti **tanggal pesanan dibuat**,
 bulan yang sudah diakrualkan dibekukan (2.a).
 
 ## 1. Maksud dan alasannya
@@ -236,6 +238,52 @@ ubah kunci pengaturan = izin pengaturan kunci masing-masing (registri); ubah mod
 5. Pilihan "Keduanya" memakai cara pembukuan akrual; PT `pay_on_invoice` tidak diubah tanpa konfirmasi.
 6. Amandemen tidak memotret ulang aturan baris lama; pesanan lama dipotret sekali saat pertama dihitung sesudah rilis.
 7. Pengali capaian ikut bulan komisi (jenjang akhir bulan itu), bukan tanggal pesanan.
+
+**Keputusan pelaksanaan (23 Nov 2026, saat membangun — boleh dikoreksi pemilik):**
+
+8. Pesanan lama (sebelum rilis) dipotret **sekali saat aplikasi pertama kali menyala sesudah rilis**
+   (`bootstrap.backfill_so_line_commission_rule`, sumber "isi_awal"), bukan dari jalur baca. Aturannya = aturan hari itu,
+   jadi angkanya sama dengan "saat pertama dihitung sesudah rilis" (6.5a, butir 6 di atas).
+9. Aturan sumber harga `pengali_tetap` (harga khusus / harga pelanggan / pesanan khusus) juga berlaku saat basis
+   `diskon_baris`; sumber yang "ikut cara harga" memakai basis PT (pita atau diskon baris).
+10. Harga jual ≥ harga acuan selalu ×1,0 (alasan "Harga jual tidak di bawah harga acuan"); pita hanya untuk harga di bawah
+    acuan. Batas pita termasuk ("s.d. 3%" berarti tepat 3% masih ×0,8). Label pita: "{selisih}% di bawah harga acuan".
+11. Baris tanpa harga acuan pada basis `pricelist` memakai faktor diskon baris lama (alasan "Harga acuan belum ada, komisi
+    tidak dikurangi", atau "Diskon baris melewati ambang" bila ambangnya terlampaui).
+12. Isian tarif yang ada walau kosong (null) tetap menimpa nilai PT, sama dengan penggabungan lama (`{**cfg, **rate_cfg}`);
+    potret meniru ini persis supaya PT yang tidak disentuh tidak berubah angka.
+13. INV-KM-4 (saldo Hutang Insentif = lembar belum dibayar) hanya memeriksa PT bermode Lembar Insentif; PT "Keduanya"
+    dilewati karena saldo hutangnya juga memuat akrual komisi otomatis.
+14. Riwayat per tarif lewat Jejak Audit (tombol "Riwayat" di baris tarif, izin `audit.view`); riwayat kunci pengaturan
+    lewat "Riwayat perubahan" di kartu pengaturannya. Tombol "Riwayat perubahan" di kepala halaman (sketsa 6.6) tidak
+    dibangun.
+15. Yang dibekukan saat akrual adalah **aturan** (potret per baris pesanan + jenjang capaian bulan itu). Rincian per sales
+    yang disimpan bersama akrual (`commission_period_rules.sales`) adalah catatan (D3); gaji, kartu, dan koreksi akrual
+    tetap menghitung dari aturan beku itu, sehingga angka hanya berubah karena data sumber (bayar/retur).
+16. Potret bulan dibuat **sesudah** jurnal akrual tersimpan dan terikat `journal_id` jurnal itu. Jurnal dianulir → potret
+    diabaikan saat dibaca dan diganti pada akrual berikutnya; akrual ditolak (mis. periode tertutup) → tidak ada potret.
+    Jurnal akrual yang **dibalik** tetap berstatus terposting, jadi potretnya tetap berlaku (tidak ada jalur anulir aplikasi
+    untuk jurnal akrual — catatan untuk pemilik).
+17. Periode triwulan/tahun: bila pengali capaian menyala di salah satu bulannya (potret beku atau nilai akhir bulan), komisi
+    = jumlah hasil per bulan dengan pengali bulan masing-masing. Proyeksi penuh periode = satu hitungan atas seluruh periode
+    (tiap pesanan sekali) × pengali bulan terakhir — bukan jumlah proyeksi bulanan (itu menghitung ganda).
+18. "Semua PT": pengali capaian ×1,0 (alasan "Semua PT"); baris berpotret memakai aturan PT pesanannya, sehingga angka
+    gabungan "Semua PT" bisa berbeda dari sebelum rilis untuk PT yang punya tarif/pengaturan sendiri. Kesetaraan
+    anti-tujuan 1 berlaku per PT.
+19. Excel tarif berisi kolom ID artikel/varian; ID menang atas kode (kode artikel `sku_prefix` tidak unik). Baris tanpa
+    tarif per satuan ditolak (bukan dianggap 0). Pratinjau tidak menulis apa pun; Terapkan ditolak seluruhnya bila ada baris
+    bergalat. Simulasi membentuk tarif percobaan lewat jalur yang sama dengan simpan, jadi "Dengan perubahan" = hasil simpan.
+20. Simulasi komisi sales lain mengikuti aturan melihat komisi sales: diri sendiri, anggota tim (cakupan data terbatas),
+    atau pemegang izin `order.view_sales_kpi` (cakupan penuh) — selain itu 403 berkalimat.
+21. Ubah banyak, Excel, dan simulasi hanya per PT (ditolak di mode "Semua PT"). Tarif "Semua PT" tetap dibuat/diubah dari
+    pop-up tarif tunggal ("Berlaku untuk: PT ini / Semua PT"); bawaan saat mengubah tarif Semua PT dari dalam satu PT =
+    "PT ini" (mengubah tarif grup harus dipilih sendiri dan diberi peringatan). Di mode "Semua PT" tab menampilkan daftar
+    tarif Semua PT dan aturan grup bagian 3–5.
+22. "Berlaku mulai" kunci pengali opsional (kosong = langsung berlaku); strategi komisi (`commission.strategy`) tetap bisa
+    diubah di bagian "Lanjutan" tab ini; jenjang strategi arsip hanya tampil bila strategi itu dipakai.
+23. Satuan di rincian komisi = satuan dasar barang tiap baris ("/yard", dst.; cadangan "satuan"), bukan "m" tetap.
+24. Kunci `commission.achievement_*` bertanggal ("berlaku mulai"), sehingga nilai yang mulai sesudah bulan komisi tidak
+    terbaca untuk bulan itu.
 
 ## 9. Catatan untuk keputusan pemilik sesudahnya (tidak menghalangi pembangunan)
 
