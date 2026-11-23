@@ -5,6 +5,9 @@ Spesifikasi `docs/superpowers/specs/2026-11-23-komisi-per-artikel-design.md` §6
 5.000.000, TK0, BPJS mati), tertaut ke akun sales. Komisi mesin: 1.000 m × Rp 500 (batas margin 0) = 500.000 (pola KM-T5
 `_data_mesin`). Lembar Insentif Andi "Insentif Bulanan" Okt 2026 = 2.000.000, diajukan lalu disahkan.
 
+U4 (sebelum gaji): akrual manual = komisi mesin saja 500.000; gaji sesudahnya mengakru Σ komisi mesin slip 500.000 = sama
+→ tidak ada jurnal koreksi `incentive_accrual_adj` (tidak ada akrual ganda).
+
 Hitung tangan (U3): slip = komisi mesin 500.000 + baris INSENTIF 2.000.000 → komisi slip 2.500.000. Akrual mesin hanya
 500.000 (jurnal `incentive_accrual`, Dr 6-5000 / Cr 2-1500); lembar sudah berjurnal 2.000.000 saat disahkan (Dr 6-5000 /
 Cr 2-1500). Kredit 2-1500 = 2.000.000 + 500.000 = 2.500.000; jurnal gaji Dr 2-1500 2.500.000 → saldo 2-1500 sesudah
@@ -111,6 +114,17 @@ async def test_KA7_U2_lembar_tertaut(klien, db, f7):
     K["lembar"] = j
 
 
+# ═══ U4 — akrual manual boleh, SEBELUM gaji: hanya komisi mesin 500.000; gaji sesudahnya tidak mengakru lagi ══════════
+async def test_KA7_U4_akrual_manual_sebelum_gaji(klien, db, f7):
+    r = await klien.get("/api/sales/incentive/gl-status", headers=f7["h"], params={"period": "2026-11"})
+    assert r.status_code == 200, r.text
+    assert (r.json()["mode"], r.json()["estimate"]) == ("auto_and_sheet", 500_000), r.json()
+    r = await klien.post("/api/sales/incentive/post-gl", headers=f7["h"], params={"period": "2026-11"})
+    assert r.status_code == 200, r.text
+    assert (r.json()["created"], r.json()["amount"]) == (True, 500_000), r.json()   # bukan 2.500.000 (lembar tidak ikut)
+    K["akrual_manual"] = r.json()["journal_id"]
+
+
 # ═══ U3 — gaji memuat komisi mesin DAN lembar ═══════════════════════════════════════════════════════════════════════
 async def test_KA7_U3_gaji_memuat_keduanya(klien, db, f7):
     h = f7["h"]
@@ -134,21 +148,14 @@ async def test_KA7_U3_gaji_memuat_keduanya(klien, db, f7):
     akr = await db.journal_entries.find({"source_type": "incentive_accrual", "entity_id": KANDA,
                                          "status": {"$ne": "void"}}, {"_id": 0}).to_list(10)
     assert len(akr) == 1 and akr[0]["total_debit"] == 500_000, akr   # hanya komisi mesin, bukan 2.500.000
+    assert akr[0]["id"] == K["akrual_manual"]                         # akrual manual U4 dipakai, bukan akrual kedua
+    assert await db.journal_entries.count_documents({"source_type": "incentive_accrual_adj", "entity_id": KANDA}) == 0
     gaji = await db.journal_entries.find_one({"source_type": "payroll_run", "source_id": run["id"]}, {"_id": 0})
     dr_hutang = sum(ln["debit"] for ln in gaji["lines"] if ln["account_code"] == "2-1500")
     assert dr_hutang == 2_500_000, gaji["lines"]
     assert await _saldo(db, KANDA, "2-1500") == 0
     l1 = await db.incentive_sheets.find_one({"id": K["lembar"]["id"]}, {"_id": 0})
     assert l1["status"] == "paid", l1["status"]
-
-
-# ═══ U4 — akrual manual boleh ═══════════════════════════════════════════════════════════════════════════════════════
-async def test_KA7_U4_akrual_manual_boleh(klien, f7):
-    r = await klien.post("/api/sales/incentive/post-gl", headers=f7["h"], params={"period": "2026-11"})
-    assert r.status_code == 200, r.text
-    r = await klien.get("/api/sales/incentive/gl-status", headers=f7["h"], params={"period": "2026-11"})
-    assert r.status_code == 200, r.text
-    assert r.json()["mode"] == "auto_and_sheet" and r.json()["estimate"] > 0, r.json()
 
 
 # ═══ U5 — halaman komisi tidak 409 ══════════════════════════════════════════════════════════════════════════════════
