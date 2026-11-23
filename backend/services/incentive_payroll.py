@@ -6,6 +6,7 @@ Sakelar per PT = pengaturan `hr.payroll_commission_mode`, dibaca SATU pembaca `h
                                                                (`payroll_linked: false`, `gl_status: "not_required"`)
   off   → komisi mesin 0 (mesin tidak dipanggil); lembar = keputusan saja
   sheet → komisi mesin 0; lembar yang disahkan = jurnal beban & hutang insentif + masukan gaji komponen `INSENTIF`
+  auto_and_sheet → komisi mesin tetap masuk slip (dan diakru) DAN lembar disahkan seperti `sheet` (KA-7)
 
 Mengesahkan lembar di PT bermode `sheet` (`sahkan_tertaut`, urutan `02_STANDAR.md` §1):
 
@@ -40,8 +41,23 @@ from services import incentive_sheet_service as iss
 MODE_SHEET = "sheet"
 MODE_OFF = "off"
 MODE_ACCRUE = "accrue_then_settle"
-#: Pilihan sakelar yang mematikan komisi mesin di slip PT itu.
+MODE_BOTH = "auto_and_sheet"   # KA-7 — komisi mesin DAN Lembar Insentif sama-sama dibayar lewat gaji
+#: Pilihan sakelar yang mematikan komisi mesin di slip PT itu (`auto_and_sheet`: mesin tetap berjalan).
 TANPA_MESIN = (MODE_OFF, MODE_SHEET)
+#: Pilihan yang menautkan Lembar Insentif ke gaji dan buku besar (`sahkan_tertaut`).
+LEMBAR_KE_GAJI = (MODE_SHEET, MODE_BOTH)
+#: Pilihan yang mengakru komisi mesin (akrual manual, akrual saat gaji diposting, estimasi).
+MODE_AKRU = (MODE_ACCRUE, MODE_BOTH)
+
+
+def akru(mode: str) -> bool:
+    """True bila komisi mesin PT bermode ini diakru (`accrue_then_settle`, `auto_and_sheet`)."""
+    return mode in MODE_AKRU
+
+
+def lembar_ke_gaji(mode: str) -> bool:
+    """True bila Lembar Insentif PT bermode ini tertaut ke gaji dan buku besar (`sheet`, `auto_and_sheet`)."""
+    return mode in LEMBAR_KE_GAJI
 KOMPONEN = "INSENTIF"
 SUMBER = "incentive_sheet"   # jenis sumber masukan gaji dan `source_type` jurnal lembar
 #: Jatah kerja satu pengesahan yang sedang berjalan (menit). Batas teknis, bukan aturan bisnis.
@@ -215,13 +231,13 @@ async def info_lembar(doc: Dict[str, Any]) -> Dict[str, Any]:
                   if o.get("value") == mode), mode)
     lines = doc.get("lines") or []
     jd = doc.get("journal_date") or ""
-    if not jd and mode == MODE_SHEET and doc.get("status") in ("draft", "submitted") and lines:
+    if not jd and lembar_ke_gaji(mode) and doc.get("status") in ("draft", "submitted") and lines:
         try:
             bulan = await _bulan_terakhir(doc["entity_id"], lines)
             jd = await periodic_posting.journal_date(doc["entity_id"], bulan) if bulan else ""
         except ValueError:
             jd = ""
-    return {"mode": mode, "mode_label": label, "sheet_mode": mode == MODE_SHEET,
+    return {"mode": mode, "mode_label": label, "sheet_mode": lembar_ke_gaji(mode),
             "linked": bool(doc.get("payroll_linked")), "journal_date": jd,
             "lines_to_payroll": sum(1 for x in lines if int(x.get("amount") or 0)),
             "pay_period": doc.get("pay_period") or ""}
@@ -392,12 +408,14 @@ async def belum_dibayar(entity_id: str) -> int:
 # ── INV-KM-4 ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def cek_hutang_insentif(entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """INV-KM-4, per PT bermode `sheet`: saldo akun hutang insentif = Σ nominal baris lembar `payroll_linked` yang
-    berjurnal (`gl_status` posted) dan belum ber-`paid_run_id`. → baris per PT {entity_id, saldo, lembar, ok}."""
+    berjurnal (`gl_status` posted) dan belum ber-`paid_run_id`. → baris per PT {entity_id, saldo, lembar, ok}.
+    KA-7 — PT bermode `auto_and_sheet` DILEWATI: saldo hutangnya juga memuat akrual komisi mesin, jadi tidak sama dengan
+    Σ baris lembar."""
     q: Dict[str, Any] = {"id": entity_id} if entity_id else {}
     out: List[Dict[str, Any]] = []
     async for e in db.business_entities.find(q, {"_id": 0, "id": 1}):
         eid = e.get("id")
-        if not eid or await mode_pt(eid) != MODE_SHEET:
+        if not eid or await mode_pt(eid) != MODE_SHEET:   # KA-7 — `auto_and_sheet` dilewati (saldo memuat akrual mesin)
             continue
         lembar = 0
         async for s in db.incentive_sheets.find({"entity_id": eid, "payroll_linked": True, "gl_status": "posted",

@@ -627,7 +627,8 @@ async def test_KMT4_U15_kunci_mode(klien, kepala_admin, peran_tanpa_acuan, akun,
     assert [(o["value"], o["label"]) for o in e["options"]] == [
         ("accrue_then_settle", "Komisi otomatis: dicadangkan, dilunasi lewat gaji"),
         ("pay_on_invoice", "Dibayar saat faktur terbit"), ("off", "Tidak ada komisi di gaji"),
-        ("sheet", "Dari Lembar Insentif yang disahkan")]
+        ("sheet", "Dari Lembar Insentif yang disahkan"),
+        ("auto_and_sheet", "Komisi otomatis + Lembar Insentif (keduanya dibayar)")]   # KA-7
     assert (e["group"], e["type"], e["default"], e["scopes"], e["risk"], e["requires_reason"], e["permission"],
             e["label"], e["consumers"]) == (
         "sdm", "enum", "accrue_then_settle", ["global", "entity"], "high", True, ["hr", "manage_payroll"],

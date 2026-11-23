@@ -56,7 +56,7 @@ BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"}
                    "commission.incentive_unit": {"status"}}
 #: Pilihan yang SENGAJA ditambahkan unit sesudah KF-T4 (pilihan lama tetap ada, urutannya tetap).
 #: KM-T4 (K-22) — sakelar per PT `sheet` "Dari Lembar Insentif yang disahkan".
-PILIHAN_TAMBAH_SESUDAH = {"hr.payroll_commission_mode": ["sheet"]}
+PILIHAN_TAMBAH_SESUDAH = {"hr.payroll_commission_mode": ["sheet", "auto_and_sheet"]}
 
 
 def _penjaga():

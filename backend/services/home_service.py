@@ -452,18 +452,19 @@ LABEL_CAMPURAN = "Belum dibayar + estimasi bulan ini"
 
 async def _incentive_payout(board: List[Dict[str, Any]], period: str, entity_id: Optional[str]) -> Tuple[float, str]:
     """KM-T5 — kartu "Insentif Sales" beranda admin, per PT menurut sakelar `hr.payroll_commission_mode`:
-    PT bermode `sheet` → Σ nominal baris lembar disahkan yang belum dibayar ("Belum dibayar"); PT lain → estimasi mesin
-    komisi bulan berjalan seperti dulu ("Estimasi bulan ini"). "Semua PT" tanpa satu pun PT bermode `sheet` = perilaku
-    lama persis (mesin dengan cakupan semua PT); bila ada, dijumlah per PT (sales = `sales_roster` PT itu)."""
+    PT bermode `sheet` → Σ nominal baris lembar disahkan yang belum dibayar ("Belum dibayar"); PT `auto_and_sheet`
+    (KA-7) → belum dibayar lembar + estimasi mesin bulan berjalan ("Belum dibayar + estimasi bulan ini"); PT lain →
+    estimasi mesin komisi bulan berjalan seperti dulu ("Estimasi bulan ini"). "Semua PT" tanpa satu pun PT yang
+    memuat lembar = perilaku lama persis (mesin dengan cakupan semua PT); bila ada, dijumlah per PT (sales =
+    `sales_roster` PT itu)."""
     from services import incentive_payroll as ipay
     from services.incentive_targets import sales_roster
     if entity_id and entity_id != "all":
-        if await ipay.mode_pt(entity_id) == ipay.MODE_SHEET:
-            return float(await ipay.belum_dibayar(entity_id)), LABEL_BELUM_DIBAYAR
-        ids: List[str] = []
+        ids: List[str] = [entity_id]
     else:
         ids = [e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1}) if e.get("id")]
-    lembar = [e for e in ids if await ipay.mode_pt(e) == ipay.MODE_SHEET]
+    modes = {e: await ipay.mode_pt(e) for e in ids}
+    lembar = [e for e in ids if ipay.lembar_ke_gaji(modes[e])]
     if not lembar:
         payout = 0.0
         for r in board:
@@ -474,11 +475,13 @@ async def _incentive_payout(board: List[Dict[str, Any]], period: str, entity_id:
     for e in ids:
         if e in lembar:
             payout += await ipay.belum_dibayar(e)
+        if e in lembar and modes[e] != ipay.MODE_BOTH:
             continue
         for s in await sales_roster(e):
             if s.get("active"):
                 payout += (await sf.compute_commission(s["id"], period, e))["total_incentive"]
-    return payout, LABEL_BELUM_DIBAYAR if len(lembar) == len(ids) else LABEL_CAMPURAN
+    murni = len(lembar) == len(ids) and all(modes[e] == ipay.MODE_SHEET for e in lembar)
+    return payout, LABEL_BELUM_DIBAYAR if murni else LABEL_CAMPURAN
 
 
 async def admin_home(entity_id: Optional[str] = None,

@@ -599,7 +599,7 @@ async def approve_sheet(doc: Dict[str, Any], corrections: Optional[List[Dict[str
                                     pengaju=[(doc.get("submitted_by") or {}).get("id") or ""])
     await aps.guard_door(JENIS_PERSETUJUAN, actor, doc=doc, amount=float(totals["amount"]))
     # KM-T4 — sakelar PT lembar: `sheet` → jurnal + masukan gaji (PERIKSA dulu, tanpa tulisan); lainnya → keputusan saja.
-    if await ipay.mode_pt(doc["entity_id"]) == ipay.MODE_SHEET:
+    if ipay.lembar_ke_gaji(await ipay.mode_pt(doc["entity_id"])):
         rencana = await ipay.periksa(doc, lines)
         return await ipay.sahkan_tertaut(doc, lines, totals, rencana, "; ".join(catatan), actor)
     now = now_iso()

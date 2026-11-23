@@ -794,13 +794,15 @@ E("hr.payroll_commission_mode", group="sdm", section="lembur", type="enum", defa
   options=({"value": "accrue_then_settle", "label": "Komisi otomatis: dicadangkan, dilunasi lewat gaji"},
            {"value": "pay_on_invoice", "label": "Dibayar saat faktur terbit"},
            {"value": "off", "label": "Tidak ada komisi di gaji"},
-           {"value": "sheet", "label": "Dari Lembar Insentif yang disahkan"}),
+           {"value": "sheet", "label": "Dari Lembar Insentif yang disahkan"},
+           {"value": "auto_and_sheet", "label": "Komisi otomatis + Lembar Insentif (keduanya dibayar)"}),
   scopes=G,
   label="Cara insentif sales masuk penggajian",
-  help="Menentukan apakah komisi dihitung otomatis, tidak dibayar lewat gaji, atau mengikuti Lembar Insentif yang "
-       "disahkan.",
+  help="Menentukan apakah komisi dihitung otomatis, tidak dibayar lewat gaji, mengikuti Lembar Insentif yang "
+       "disahkan, atau keduanya dibayar sekaligus.",
   impact="Pada pilihan Lembar Insentif, komisi otomatis berhenti masuk slip PT ini dan lembar yang disahkan menjadi "
-         "beban serta baris slip.",
+         "beban serta baris slip. Pada pilihan keduanya, komisi otomatis tetap masuk slip dan lembar yang disahkan "
+         "ditambahkan sebagai baris insentif.",
   example="Lembar Rp 8.500.000 disahkan → beban Rp 8.500.000; gaji bulan bayarnya memuat tiga baris insentif",
   consumers=("services/hr_payroll_service.py:commission_mode",),
   risk="high", requires_reason=True, permission=_HR_PAYROLL)

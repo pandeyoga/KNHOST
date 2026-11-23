@@ -487,7 +487,7 @@ async def get_incentive_gl_status(request: Request, period: str = Query(...),
     from services import incentive_payroll as ipay
     out["mode"] = await ipay.mode_pt(eid)
     out["estimate"] = (await gl_service.incentive_accrual_estimate(eid, period)
-                       if out["mode"] == ipay.MODE_ACCRUE else 0.0)
+                       if ipay.akru(out["mode"]) else 0.0)
     return out
 
 
@@ -505,9 +505,10 @@ async def post_incentive_gl(request: Request, period: str = Query(...),
         raise HTTPException(status_code=400, detail="Pilih entitas spesifik (bukan 'Semua') untuk posting insentif ke GL.")
     # PK-22 (FY-08) — akrual terpisah hanya untuk PT ber-mode `accrue_then_settle`; mode lain mengakui beban saat gaji
     # diposting, jadi akrual manual = beban ganda. Tanggal buku = jurnal periodik (`gl.tanggal_jurnal_periodik`, K-13).
+    from services import incentive_payroll as ipay
     from services import periodic_posting
     from services.config_resolver import value_of
-    if await value_of("hr.payroll_commission_mode", {"entity_id": eid}) != "accrue_then_settle":
+    if not ipay.akru(await value_of("hr.payroll_commission_mode", {"entity_id": eid})):
         raise HTTPException(status_code=409, detail="PT ini mengakui beban insentif saat gaji diposting, jadi akrual "
                                                     "terpisah tidak dipakai.")
     try:

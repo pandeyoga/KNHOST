@@ -38,6 +38,9 @@ import { useEntityScope } from "../../context/EntityScopeContext";
 import { openConfig } from "../settings/config/configDeepLink";
 import { bulanIni, MODE_TANPA_MESIN, pilihanBulan } from "./MyIncentiveCard";
 
+/** Sakelar PT (`hr.payroll_commission_mode`) yang mengakru komisi otomatis (KA-7: termasuk "keduanya dibayar"). */
+const MODE_AKRU = ["accrue_then_settle", "auto_and_sheet"];
+
 // KM-T5 — dimuat hanya bila bagian "Komisi otomatis (cara lama)" tampil (PT yang belum beralih ke Lembar Insentif).
 const LegacyRatesEditor = lazy(() => import("./LegacyRatesEditor"));
 const LegacySchemeEditor = lazy(() => import("./LegacySchemeEditor"));
@@ -590,7 +593,7 @@ function KartuAkrual({ canWrite, mode, pt }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const aktif = canWrite && mode === "accrue_then_settle";
+  const aktif = canWrite && MODE_AKRU.includes(mode);
   const load = useCallback(async () => {
     if (!aktif) return;
     setState("loading");
@@ -599,7 +602,7 @@ function KartuAkrual({ canWrite, mode, pt }) {
   }, [aktif, bulan]);
   useEffect(() => { load(); }, [load]);
   if (!canWrite) return <p className="text-fs-13 text-kn-text-2" data-testid="ins-accrual-all">{TEKS_AKRUAL_SEMUA_PT}</p>;
-  if (mode !== "accrue_then_settle") return <p className="text-fs-13 text-kn-text-2" data-testid="ins-accrual-na">{TEKS_AKRUAL_TIDAK_DIPAKAI}</p>;
+  if (!MODE_AKRU.includes(mode)) return <p className="text-fs-13 text-kn-text-2" data-testid="ins-accrual-na">{TEKS_AKRUAL_TIDAK_DIPAKAI}</p>;
   const rencana = rencanaAkrual(st, bulan, canCurrent("sales_force", "post"));
   const bukukan = async () => {
     const ok = await askConfirm({ title: `${rencana.label}?`,

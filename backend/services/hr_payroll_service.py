@@ -316,13 +316,13 @@ def _is_final_tax_period(emp: Dict[str, Any], period: str) -> bool:
 
 
 #: KM-T4 — pilihan `hr.payroll_commission_mode` yang dikenal; nilai lain yang tersimpan = perilaku komisi mesin.
-COMMISSION_MODES = ("accrue_then_settle", "pay_on_invoice", "off", "sheet")
+COMMISSION_MODES = ("accrue_then_settle", "pay_on_invoice", "off", "sheet", "auto_and_sheet")
 
 
 async def commission_mode(entity_id: str) -> str:
     """KM-T4 (PY-06, K-22) — SATU pembaca sakelar insentif per PT (`hr.payroll_commission_mode`, global → PT):
     `accrue_then_settle` (bawaan) · `pay_on_invoice` · `off` (tidak ada komisi di gaji) · `sheet` (Lembar Insentif yang
-    disahkan). Dipakai slip (`_commission_for`), proses & jurnal gaji, akrual manual, dan pengesahan lembar."""
+    disahkan) · `auto_and_sheet` (komisi mesin DAN Lembar Insentif sama-sama dibayar). Dipakai slip (`_commission_for`), proses & jurnal gaji, akrual manual, dan pengesahan lembar."""
     from config_registry import require
     from services.config_resolver import value_of
     eid = entity_id if entity_id and entity_id != "all" else ""
@@ -335,8 +335,10 @@ async def commission_mode(entity_id: str) -> str:
 
 async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> float:
     """Komisi mesin satu karyawan sales untuk slip. KM-T4 (PY-06) — PT bermode `off` (tidak ada komisi di gaji) atau
-    `sheet` (insentif dari Lembar Insentif yang disahkan) → 0 dan mesin komisi tidak dipanggil."""
-    if await commission_mode(entity_id) in ("off", "sheet"):
+    `sheet` (insentif dari Lembar Insentif yang disahkan) → 0 dan mesin komisi tidak dipanggil. `auto_and_sheet` →
+    mesin tetap berjalan (lembar masuk slip lewat masukan gaji)."""
+    from services.incentive_payroll import TANPA_MESIN
+    if await commission_mode(entity_id) in TANPA_MESIN:
         return 0.0
     uid = emp.get("user_id")
     if not uid:

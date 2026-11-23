@@ -3801,6 +3801,7 @@ def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_
       potongan lain                     → Cr `account_code` komponennya (negatif → Dr)
     Untuk slip berisi komponen bawaan saja, barisnya SAMA dengan jurnal gaji sebelum PY-T1 (Σ salary_earnings → 6-1000)."""
     from services.hr_pay_components import commission_parts   # KM-T4 — komisi mesin/manual vs baris Lembar Insentif
+    from services.incentive_payroll import akru               # KA-7 — `auto_and_sheet` juga mengakru komisi mesin
     salary = er_total = emp_total = pph21 = net = 0.0
     commission, lembar = commission_parts(slips)
     lembar_pt = round(lembar.pop(entity_id, 0.0), 2) if entity_id else 0.0
@@ -3842,7 +3843,7 @@ def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_
     if er_total > EPS:
         lines.append(L(ACC_BEBAN_BPJS, er_total, 0, "Kontribusi BPJS perusahaan"))
     if abs(commission) > EPS:
-        acc, d = ((ACC_HUTANG_INSENTIF, "Pelunasan hutang insentif via payroll") if mode == "accrue_then_settle"
+        acc, d = ((ACC_HUTANG_INSENTIF, "Pelunasan hutang insentif via payroll") if akru(mode)
                   else (ACC_BEBAN_INSENTIF, "Beban insentif penjualan (payroll)"))
         lines.append(L(acc, commission, 0, d) if commission > 0 else L(acc, 0, -commission, d))
     if abs(lembar_pt) > EPS:   # KM-T4 — beban sudah diakui saat lembar disahkan; gaji melunasi hutangnya

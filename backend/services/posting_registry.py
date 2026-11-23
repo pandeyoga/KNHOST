@@ -260,11 +260,12 @@ async def _komisi_proses_lain(run: Dict[str, Any]) -> float:
     """Σ komisi slip (bagian yang diakru, tanpa baris Lembar Insentif) proses gaji LAIN di PT·periode yang sama yang
     sudah diposting (`posted`/`paying`/`paid`) dengan mode akru `accrue_then_settle`. Proses batal/void/draf tidak."""
     from services.hr_pay_components import commission_parts
+    from services.incentive_payroll import akru
     total = 0.0
     async for other in db.hr_payroll_runs.find(
             {"entity_id": run.get("entity_id"), "period": run.get("period"), "id": {"$ne": run.get("id")},
              "status": {"$in": ["posted", "paying", "paid"]}}, {"_id": 0, "id": 1, "commission_mode": 1}):
-        if (other.get("commission_mode") or "accrue_then_settle") != "accrue_then_settle":
+        if not akru(other.get("commission_mode") or "accrue_then_settle"):
             continue
         slips = await db.hr_payslips.find({"run_id": other["id"]}, {"_id": 0}).to_list(5000)
         total += commission_parts(slips)[0]
@@ -283,9 +284,10 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
     date = run.get("journal_date") or ""
     # KM-T4 — baris Lembar Insentif sudah dibebankan saat lembar disahkan: tidak ikut diakru di sini (bukan beban ganda).
     from services.hr_pay_components import commission_parts
+    from services.incentive_payroll import akru
     commission, _lembar = commission_parts(slips)
     incentive_je_id = ""
-    if commission > 0.005 and run.get("commission_mode", "accrue_then_settle") == "accrue_then_settle":
+    if commission > 0.005 and akru(run.get("commission_mode", "accrue_then_settle")):
         # Pelatihan 18 Nov (uji variasi V7) — `post_incentive_accrual(total=…)` menyamakan akrual PT·periode dengan
         # `total`. Dulu `total` = komisi proses INI saja: proses susulan kedua di bulan yang sama "mengoreksi" akrual
         # turun/naik ke komisi susulan itu, padahal jurnal gajinya tetap mendebit Hutang Insentif sebesar komisinya →
