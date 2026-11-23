@@ -394,16 +394,17 @@ async def potret_pesanan(entity_id: str, items: List[Dict[str, Any]], products: 
         it["commission_rule"] = potret(tarif, pt, artikel=_artikel_ringkas(artikel.get(tpl)), sumber=sumber, waktu=waktu)
 
 
-async def aturan_baris(line: Dict[str, Any], entity_id: Optional[str], cache: Dict[str, Any]) -> Dict[str, Any]:
-    """Potret baris bila ada; bila tidak, potret dari aturan sekarang (`sumber="saat_hitung"`, tidak ditulis ke basis data).
-    `cache` menyimpan indeks tarif, aturan PT, produk dan artikel selama satu proses hitung."""
-    if line.get("commission_rule"):
-        return line["commission_rule"]
+async def aturan_dari_sekarang(line: Dict[str, Any], entity_id: Optional[str], cache: Dict[str, Any], *,
+                               sumber: str) -> Dict[str, Any]:
+    """Potret aturan baris dari aturan SEKARANG (tidak ditulis ke basis data). `cache` menyimpan indeks tarif
+    (`("indeks", PT)`), aturan PT (`("pt", PT)`), produk dan artikel; pemanggil boleh mengisi dua kunci pertama lebih dulu
+    (simulasi: indeks sekarang + draf)."""
     from core_utils import now_iso
     from db import db
     ent = entity_id or ""
     if ("indeks", ent) not in cache:
         cache[("indeks", ent)] = await muat_indeks_tarif(entity_id)
+    if ("pt", ent) not in cache:
         cache[("pt", ent)] = await aturan_pt(entity_id)
     pid = line.get("product_id") or ""
     if ("produk", pid) not in cache:
@@ -415,7 +416,15 @@ async def aturan_baris(line: Dict[str, Any], entity_id: Optional[str], cache: Di
     tarif = pilih_tarif(cache[("indeks", ent)], product_id=pid, template_id=tpl,
                         category=line.get("category") or prod.get("category") or "")
     return potret(tarif, cache[("pt", ent)], artikel=_artikel_ringkas(cache.get(("artikel", tpl))),
-                  sumber="saat_hitung", waktu=now_iso())
+                  sumber=sumber, waktu=now_iso())
+
+
+async def aturan_baris(line: Dict[str, Any], entity_id: Optional[str], cache: Dict[str, Any]) -> Dict[str, Any]:
+    """Potret baris bila ada; bila tidak, potret dari aturan sekarang (`sumber="saat_hitung"`, tidak ditulis ke basis data).
+    `cache` menyimpan indeks tarif, aturan PT, produk dan artikel selama satu proses hitung."""
+    if line.get("commission_rule"):
+        return line["commission_rule"]
+    return await aturan_dari_sekarang(line, entity_id, cache, sumber="saat_hitung")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -14,6 +14,9 @@ from services.commission_rules import (ALASAN_LABEL, aturan_baris, bulan_periode
                                       hitung_baris, label_alasan, pengali_capaian)
 from services.config_service import get_effective_settings
 
+CATATAN_SIMULASI = ("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan. Kolom kanan menunjukkan angka "
+                    "bila pesanan bulan ini dibuat dengan aturan baru.")
+
 DEFAULT_TIERS = [
     {"min_achievement": 0, "rate": 1.0},
     {"min_achievement": 80, "rate": 1.5},
@@ -191,10 +194,13 @@ async def _scheme_for(sales_id: str, period: str) -> Dict[str, Any]:
     return scheme
 
 
-async def compute_commission(sales_id: str, period: str, entity_id: Optional[str] = None) -> Dict[str, Any]:
+async def compute_commission(sales_id: str, period: str, entity_id: Optional[str] = None, *,
+                             sumber_aturan: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
+                             ) -> Dict[str, Any]:
     """Dispatcher strategi komisi (EPIC4). Mode dari settings.commission.strategy:
       - per_sku (default v2): per-SKU, 3 faktor, margin-aware, on-collection.
       - achievement_tiered (arsip): basis pencairan × tier capaian target (lama).
+    KA-8 — `sumber_aturan` (simulasi) menggantikan potret baris pada strategi per_sku; strategi arsip mengabaikannya.
     """
     settings = await get_effective_settings(entity_id if entity_id and entity_id != "all" else None)
     strategy = (settings.get("commission") or {}).get("strategy", "per_sku")
@@ -203,20 +209,42 @@ async def compute_commission(sales_id: str, period: str, entity_id: Optional[str
     bulan = bulan_periode(period)
     # KA-6 — triwulan/tahun yang salah satu bulannya berpengali capaian menyala (aturan bulan itu) = Σ per bulan
     if bulan and await capaian_aktif(entity_id, bulan):
-        return await _jumlah_bulanan(sales_id, period, entity_id, settings, bulan)
-    return await _compute_commission_per_sku(sales_id, period, entity_id, settings)
+        return await _jumlah_bulanan(sales_id, period, entity_id, settings, bulan, sumber_aturan=sumber_aturan)
+    return await _compute_commission_per_sku(sales_id, period, entity_id, settings, sumber_aturan=sumber_aturan)
+
+
+async def simulate_commission(sales_id: str, period: str, entity_id: str, draft_rates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """KA-8 — simulasi "coba dulu": komisi `sales_id` pada `period` dengan aturan SEKARANG (hasil mesin biasa, memakai potret
+    pesanan) dan dengan aturan sekarang + tarif draf (tiap baris dihitung ulang dari aturan sekarang + draf, potret
+    pesanan diabaikan). Tidak menulis apa pun. `draft_rates` = `[{template_id|product_id|category, per_unit_amount,
+    margin_cap_pct?}]`; draf tidak sah → `HTTPException` 400."""
+    from services.commission_rate_service import indeks_dengan_draf
+    from services.commission_rules import aturan_dari_sekarang, aturan_pt
+    ent = entity_id or ""
+    sekarang = await compute_commission(sales_id, period, entity_id)
+    cache: Dict[Any, Any] = {("indeks", ent): await indeks_dengan_draf(entity_id, draft_rates),
+                             ("pt", ent): await aturan_pt(entity_id)}
+
+    async def _dengan_draf(line: Dict[str, Any]) -> Dict[str, Any]:
+        return await aturan_dari_sekarang(line, entity_id, cache, sumber="simulasi")
+
+    return {"sekarang": sekarang,
+            "dengan_perubahan": await compute_commission(sales_id, period, entity_id, sumber_aturan=_dengan_draf),
+            "catatan": CATATAN_SIMULASI}
 
 
 async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any],
-                          bulan: List[str]) -> Dict[str, Any]:
+                          bulan: List[str], *, sumber_aturan: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
+                          ) -> Dict[str, Any]:
     """KA-6 (Review Focus 3) — triwulan/tahun berpengali capaian: komisi = Σ hasil `_compute_commission_per_sku` tiap
     bulan, masing-masing dengan pengali capaian bulannya; rincian digabung (baris dengan faktor sama dijumlah, pengali
     capaian berbeda = baris berbeda). `projection_full` = SATU lintasan mesin atas seluruh periode (tiap pesanan yang
     ikut dihitung sekali, seperti mesin lama) dengan pengali capaian bulan TERAKHIR periode itu; angka ringkasan
     (pencairan, target, KPI) dari lintasan yang sama."""
-    hasil = [await _compute_commission_per_sku(sales_id, m, entity_id, settings) for m in bulan]
+    hasil = [await _compute_commission_per_sku(sales_id, m, entity_id, settings, sumber_aturan=sumber_aturan)
+             for m in bulan]
     akhir = hasil[-1]["achievement_multiplier"]
-    utuh = await _compute_commission_per_sku(sales_id, period, entity_id, settings,
+    utuh = await _compute_commission_per_sku(sales_id, period, entity_id, settings, sumber_aturan=sumber_aturan,
                                              capaian_tetap=(akhir["factor"], akhir["info"]))
     gabung: Dict[tuple, Dict[str, Any]] = {}
     for h in hasil:
