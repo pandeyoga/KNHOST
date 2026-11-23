@@ -10,8 +10,8 @@ from services.customer_service import (
     compute_customer_credit, _order_grand_total, _order_paid, DEAD_STATUSES,
 )
 from services import costing_service
-from services.commission_rules import (ALASAN_LABEL, aturan_baris, capaian_aktif, faktor_diskon, hitung_baris,
-                                      label_alasan, pengali_capaian)
+from services.commission_rules import (ALASAN_LABEL, aturan_baris, bulan_periode, capaian_aktif, faktor_diskon,
+                                      hitung_baris, label_alasan, pengali_capaian)
 from services.config_service import get_effective_settings
 
 DEFAULT_TIERS = [
@@ -200,24 +200,11 @@ async def compute_commission(sales_id: str, period: str, entity_id: Optional[str
     strategy = (settings.get("commission") or {}).get("strategy", "per_sku")
     if strategy == "achievement_tiered":
         return await _compute_commission_tiered(sales_id, period, entity_id)
-    bulan = _bulan_periode(period)
+    bulan = bulan_periode(period)
     # KA-6 — triwulan/tahun yang salah satu bulannya berpengali capaian menyala (aturan bulan itu) = Σ per bulan
     if bulan and await capaian_aktif(entity_id, bulan):
         return await _jumlah_bulanan(sales_id, period, entity_id, settings, bulan)
     return await _compute_commission_per_sku(sales_id, period, entity_id, settings)
-
-
-def _bulan_periode(period: str) -> List[str]:
-    """KA-6 — bulan (`YYYY-MM`) dalam periode triwulan `YYYY-Qn` / tahun `YYYY` mesin; selain itu `[]`. Triwulan & tahun
-    KALENDER (bulan tutup tahun buku 12), sama dengan `_in_period`."""
-    from services import incentive_periods as ip
-    p = str(period or "").strip().upper()
-    for jenis in ("quarter", "year"):
-        try:
-            return ip.months_between(*ip.bounds_with(jenis, p, 12))
-        except ip.PeriodeError:
-            continue
-    return []
 
 
 async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any],

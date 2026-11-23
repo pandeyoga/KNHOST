@@ -426,6 +426,7 @@ ALASAN_CAPAIAN = ("mati", "semua_pt", "bukan_bulan", "tanpa_target_bulanan", "je
 #: Basis capaian → kolom persen pengumpul Capaian KM-T2 (`None` = tanpa target periode itu).
 _KOLOM_CAPAIAN = {"omzet_bersih": "pct_omzet", "uang_masuk": "pct_pencairan"}
 PESAN_BUKAN_BULAN = "Periode komisi yang dibekukan harus satu bulan, contoh: 2026-11."
+PESAN_BELUM_AKRUAL = "Aturan komisi {bulan} baru bisa dibekukan sesudah akrual komisinya dibukukan."
 
 
 def bulan_komisi(period: Any) -> Optional[str]:
@@ -435,6 +436,19 @@ def bulan_komisi(period: Any) -> Optional[str]:
         return ip.normalize("month", str(period or ""))[1]
     except ip.PeriodeError:
         return None
+
+
+def bulan_periode(period: Any) -> List[str]:
+    """Bulan (`YYYY-MM`) dalam periode triwulan `YYYY-Qn` / tahun `YYYY` mesin komisi; selain itu `[]`. Triwulan & tahun
+    KALENDER (bulan tutup tahun buku 12), sama dengan `sales_force_service._in_period`."""
+    from services import incentive_periods as ip
+    p = str(period or "").strip().upper()
+    for jenis in ("quarter", "year"):
+        try:
+            return ip.months_between(*ip.bounds_with(jenis, p, 12))
+        except ip.PeriodeError:
+            continue
+    return []
 
 
 def akhir_bulan_wib(bulan: str) -> datetime:
@@ -459,11 +473,30 @@ async def capaian_aktif(entity_id: Optional[str], bulan: Optional[Iterable[str]]
     return False
 
 
+async def _jurnal_akrual_hidup(entity_id: str, bulan: str) -> Optional[Dict[str, Any]]:
+    """Jurnal akrual insentif (bukan koreksi) PT·bulan yang tidak dianulir (`gl_service.post_incentive_accrual`)."""
+    from db import db
+    return await db.journal_entries.find_one({"source_type": "incentive_accrual", "source_id": f"{entity_id}:{bulan}",
+                                              "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+
+
+async def _beku_berlaku(doc: Optional[Dict[str, Any]]) -> bool:
+    """Dokumen beku hanya berlaku selama jurnal akrual yang membekukannya (`journal_id`) tidak dianulir. Akrual gagal
+    dibukukan (mis. periode tertutup) atau dianulir → dokumen diabaikan (aturan akhir bulan) dan diganti saat akrual
+    berikutnya dibukukan."""
+    jid = (doc or {}).get("journal_id")
+    if not jid:
+        return False
+    from db import db
+    return bool(await db.journal_entries.find_one({"id": jid, "source_type": "incentive_accrual",
+                                                   "status": {"$ne": "void"}}, {"_id": 0, "id": 1}))
+
+
 async def _aturan_beku(entity_id: str, bulan: str) -> Optional[Dict[str, Any]]:
     from db import db
     doc = await db.commission_period_rules.find_one({"entity_id": entity_id, "period": bulan},
-                                                    {"_id": 0, "achievement": 1})
-    return (doc or {}).get("achievement")
+                                                    {"_id": 0, "achievement": 1, "journal_id": 1})
+    return doc["achievement"] if await _beku_berlaku(doc) else None
 
 
 async def _aturan_bulan(entity_id: str, bulan: str) -> Tuple[Dict[str, Any], str]:
@@ -487,17 +520,21 @@ async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) 
     Aturan = dokumen beku `commission_period_rules` bulan itu bila ada (`sumber_jenjang="beku"`), selain itu nilai
     kunci `commission.achievement_*` yang berlaku pada akhir bulan komisi 23.59.59 WIB (`"akhir_bulan"`). Capaian =
     angka bulan komisi (bulan uang masuk) dibanding target BULANAN. Pengali 1 dengan alasan: `semua_pt` ("Semua PT" —
-    definisi angka berbeda per PT) · `bukan_bulan` (triwulan/tahun dihitung langsung; `compute_commission` memecahnya
-    per bulan) · `mati` · `tanpa_target_bulanan`; selain itu `jenjang` (`pilih_jenjang`).
+    definisi angka berbeda per PT) · `bukan_bulan` (triwulan/tahun dihitung langsung dan salah satu bulannya menyala;
+    `compute_commission` memecahnya per bulan) · `mati` (untuk triwulan/tahun: mati di semua bulannya) ·
+    `tanpa_target_bulanan`; selain itu `jenjang` (`pilih_jenjang`). Dokumen beku dipakai hanya selama jurnal akrualnya
+    tidak dianulir (`_beku_berlaku`).
     info = `{"aktif", "basis", "capaian_pct", "sumber_jenjang", "alasan"}`."""
     info: Dict[str, Any] = {"aktif": None, "basis": None, "capaian_pct": None, "sumber_jenjang": None, "alasan": ""}
     if not entity_id or entity_id == "all":
         return 1.0, {**info, "alasan": "semua_pt"}
     bulan = bulan_komisi(period)
-    if bulan is None:
-        aturan = await aturan_capaian(entity_id)
-        info.update(aktif=aturan["aktif"], basis=aturan["basis"])
-        return 1.0, {**info, "alasan": "bukan_bulan" if aturan["aktif"] else "mati"}
+    if bulan is None:   # triwulan/tahun: menyala bila salah satu bulannya menyala menurut aturan bulan itu
+        daftar = bulan_periode(period)
+        aktif = (await capaian_aktif(entity_id, daftar) if daftar
+                 else bool((await aturan_capaian(entity_id))["aktif"]))
+        info["aktif"] = aktif
+        return 1.0, {**info, "alasan": "bukan_bulan" if aktif else "mati"}
     aturan, sumber = await _aturan_bulan(entity_id, bulan)
     info.update(aktif=bool(aturan["aktif"]), basis=aturan["basis"], sumber_jenjang=sumber)
     if not info["aktif"]:
@@ -508,23 +545,31 @@ async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) 
     return pilih_jenjang(aturan["jenjang"], float(pct)), {**info, "capaian_pct": pct, "alasan": "jenjang"}
 
 
-async def bekukan_periode(entity_id: str, period: str, *, oleh: str) -> Dict[str, Any]:
+async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id: str = "") -> Dict[str, Any]:
     """Bekukan aturan komisi bulan itu saat akrual dibukukan (rancangan §6.4, §6.5a; `02_STANDAR.md` §5 D3).
 
-    Sisip-bila-belum-ada `commission_period_rules` `{id "cpr_…", entity_id, period, achievement {aktif, basis,
-    jenjang} (nilai yang berlaku pada akhir bulan), sales [{sales_id, total, breakdown}] (catatan hasil mesin per sales
-    daftar PT saat dibekukan), recorded_at, recorded_by}`. Idempoten: dokumen yang sudah ada dikembalikan, tidak
-    ditimpa — koreksi akrual sesudahnya tetap memakai jenjang beku, angka hanya berubah karena data sumber
-    (bayar/retur)."""
+    Dipanggil `gl_service.post_incentive_accrual` SESUDAH jurnal akrual pertama tersimpan, dan sebelum jurnal koreksi.
+    `commission_period_rules` `{id "cpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
+    pada akhir bulan), sales [{sales_id, total, breakdown}] (catatan hasil mesin per sales daftar PT saat dibekukan),
+    journal_id (jurnal akrual yang membekukan), recorded_at, recorded_by, replaces?}`.
+
+    Dokumen yang ada dan jurnal akrualnya masih hidup dikembalikan, tidak ditimpa — koreksi akrual sesudahnya tetap
+    memakai jenjang beku, angka hanya berubah karena data sumber (bayar/retur). Dokumen yang jurnal akrualnya tidak ada
+    / dianulir DIGANTI (satu dokumen per PT·bulan; `replaces` mencatat yang diganti) dengan aturan akhir bulan saat ini.
+    `journal_id` kosong → jurnal akrual hidup PT·bulan itu; tidak ada → `ValueError`."""
     from pymongo.errors import DuplicateKeyError
     from core_utils import new_id, now_iso
     from db import db
     bulan = bulan_komisi(period)
     if not entity_id or entity_id == "all" or bulan is None:
         raise ValueError(PESAN_BUKAN_BULAN)
+    jid = journal_id or ((await _jurnal_akrual_hidup(entity_id, bulan)) or {}).get("id", "")
+    if not jid:
+        from services.incentive_periods import period_label
+        raise ValueError(PESAN_BELUM_AKRUAL.format(bulan=period_label("month", bulan)))
     q = {"entity_id": entity_id, "period": bulan}
     ada = await db.commission_period_rules.find_one(q, {"_id": 0})
-    if ada:
+    if ada and await _beku_berlaku(ada):
         return ada
     from services import sales_force_service as sf          # lokal: sales_force_service mengimpor modul ini
     from services.incentive_targets import sales_roster
@@ -534,8 +579,12 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str) -> Dict[str
         c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
         sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
                       "breakdown": c.get("breakdown") or []})
-    doc = {"id": new_id("cpr"), **q, "achievement": achievement, "sales": sales, "recorded_at": now_iso(),
-           "recorded_by": oleh or ""}
+    doc = {"id": new_id("cpr"), **q, "achievement": achievement, "sales": sales, "journal_id": jid,
+           "recorded_at": now_iso(), "recorded_by": oleh or ""}
+    if ada:   # potret lama tanpa jurnal akrual hidup (akrual gagal / dianulir) → diganti, tetap satu per PT·bulan
+        doc["replaces"] = {k: ada.get(k) for k in ("id", "journal_id", "recorded_at", "recorded_by")}
+        await db.commission_period_rules.replace_one(q, dict(doc))
+        return doc
     try:
         await db.commission_period_rules.insert_one(dict(doc))
     except DuplicateKeyError:   # dua akrual bersamaan: dokumen pemenang yang berlaku (indeks uq_commission_period)

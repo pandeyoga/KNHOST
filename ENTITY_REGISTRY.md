@@ -639,9 +639,11 @@ Key Fields:
 ### commission_period_rules  [KA-6 — potret aturan komisi per PT per bulan saat akrual dibukukan]
 ```
 Collection:  commission_period_rules     Prefix: cpr_
-Penulis:     services/commission_rules.py (bekukan_periode) — dipanggil gl_service.post_incentive_accrual sebelum jurnal
-             akrual pertama MAUPUN koreksi (bulan yang diakru sebelum KA-6 dibekukan pada koreksi pertamanya)
-Pembaca:     services/commission_rules.py (pengali_capaian — jenjang beku menang atas nilai kunci akhir bulan)
+Penulis:     services/commission_rules.py (bekukan_periode) — dipanggil gl_service.post_incentive_accrual SESUDAH jurnal
+             akrual pertama tersimpan dan SEBELUM jurnal koreksi (bulan yang diakru sebelum KA-6 dibekukan pada koreksi
+             pertamanya). Akrual ditolak (mis. periode tertutup) → tidak ada potret.
+Pembaca:     services/commission_rules.py (pengali_capaian, capaian_aktif — jenjang beku menang atas nilai kunci akhir
+             bulan, HANYA selama jurnal `journal_id` tidak dianulir)
 Key Fields:
   id            string  prefix "cpr_"
   entity_id     string  FK business_entities.id (PT spesifik, bukan "all")
@@ -650,11 +652,15 @@ Key Fields:
                         23.59.59 WIB (kunci bertanggal)
   sales         list    [{sales_id, total, breakdown[]}] — catatan hasil mesin per sales daftar PT saat dibekukan
                         (`incentive_targets.sales_roster`; baris rincian = `compute_commission().breakdown`, tanpa margin/HPP)
+  journal_id    string  FK journal_entries.id — jurnal `incentive_accrual` (source_id "<entity_id>:<period>") yang
+                        membekukan; dianulir → dokumen diabaikan pembaca dan DIGANTI pada akrual berikutnya
   recorded_at   string  ISO UTC
   recorded_by   string  nama pembuat akrual
+  replaces      object? {id, journal_id, recorded_at, recorded_by} potret yang diganti (jurnalnya tidak hidup lagi)
 
-ℹ️ UNIK per (entity_id, period) — indeks wajib `uq_commission_period` (PK-14 REQUIRED_UNIQUE_INDEXES). Sisip-bila-belum-
-   ada: dokumen yang ada dikembalikan, tidak pernah ditimpa; dua akrual bersamaan → yang kalah membaca pemenang.
+ℹ️ UNIK per (entity_id, period) — indeks wajib `uq_commission_period` (PK-14 REQUIRED_UNIQUE_INDEXES). Dokumen yang
+   jurnal akrualnya hidup dikembalikan, tidak ditimpa; yang jurnalnya tidak ada/dianulir diganti di tempat
+   (replace_one); dua akrual bersamaan → yang kalah membaca pemenang.
 ℹ️ Yang dibekukan = ATURAN (jenjang capaian bulan itu; aturan per baris sudah dipotret di `items[].commission_rule`).
    Gaji/kartu/koreksi akrual tetap menghitung dari aturan beku ini, sehingga angka hanya berubah karena data sumber
    (bayar/retur). `sales[]` adalah catatan (D3), bukan sumber angka.

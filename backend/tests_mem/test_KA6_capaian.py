@@ -42,7 +42,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytest
 
 from core_utils import now_iso
-from pembantu import AKTOR_UJI
+from pembantu import AKTOR_UJI, buka_periode, tutup_periode
 
 pytestmark = pytest.mark.anyio
 
@@ -294,6 +294,34 @@ async def test_KA6_U6b_menyala_satu_bulan_proyeksi_sekali(db, f6):
         assert [b["factor"] for b in q["achievement_multiplier"]["per_bulan"]] == [1.2, 1.0, 1.0]
         assert q["projection_full"] == 350_000                              # SO-CIT sekali × pengali Des (×1)
         assert sum(b["projection_full"] for b in bulan) == 770_000           # Σ bulanan menghitungnya dua kali
+    # kebalikannya: menyala HARI INI (sejak 1 Nov) tetapi mati di semua bulan Triwulan III → alasan "mati", bukan
+    # "bukan_bulan" (alasan diambil dari aturan tiap bulan periode itu)
+    from services import sales_force_service as sfs
+    async with _aturan(db, *_menyala(AWAL_NOV)):
+        assert await capaian_aktif(KSC) is True
+        assert (await _pengali(f6, "citra", "2026-Q3"))[1]["alasan"] == "mati"
+        langsung = await sfs._compute_commission_per_sku(sid, "2026-Q3", KSC, {})
+        am = langsung["achievement_multiplier"]
+        assert (am["factor"], am["info"]["aktif"], am["info"]["alasan"]) == (1.0, False, "mati")
+        assert (await _komisi(f6, "citra", "2026-Q3"))["achievement_multiplier"]["info"]["alasan"] == "mati"
+
+
+# ═══ U7a — akrual ditolak (periode tertutup) → tidak ada potret; aturan akhir bulan tetap dipakai ══════════════════
+async def test_KA6_U7a_akrual_ditolak_tanpa_potret(klien, db, f6):
+    tutup = await tutup_periode(KSC, NOV)
+    try:
+        r = await klien.post("/api/sales/incentive/post-gl", params={"period": NOV, "entity_id": KSC},
+                             headers=f6["adm"])
+        assert r.status_code == 409, r.text
+        assert await db.commission_period_rules.count_documents({"entity_id": KSC, "period": NOV}) == 0
+        assert await db.journal_entries.count_documents({"source_type": "incentive_accrual",
+                                                         "source_id": f"{KSC}:{NOV}"}) == 0
+    finally:
+        await buka_periode(tutup["id"])
+    # jenjang diatur sesudahnya (berlaku mundur 1 Nov) → dipakai: tidak ada potret dari akrual yang gagal
+    async with _aturan(db, *_menyala(AWAL_NOV)):
+        faktor, info = await _pengali(f6, "andi")
+        assert (faktor, info["sumber_jenjang"]) == (1.2, "akhir_bulan")
 
 
 # ═══ U7 — aturan dibekukan saat akrual dibukukan ═══════════════════════════════════════════════════════════════════
@@ -314,6 +342,7 @@ async def test_KA6_U7_beku_saat_akrual(klien, db, f6):
                 if b["commission"]] == [(1_000, 1.2, 420_000)]
         assert r.json()["amount"] == round(sum(s["total"] for s in doc["sales"]), 2)
         assert doc["recorded_by"] and doc["recorded_at"]
+        assert doc["journal_id"] == r.json()["journal_id"]   # potret terikat ke jurnal akrual yang membekukannya
         # jenjang diubah sesudah akrual, berlaku mundur 1 Nov → pengaturan berubah, komisi Nov tetap jenjang beku
         baru = [{"capaian_min_pct": 0, "pengali": 1.0}, {"capaian_min_pct": 100, "pengali": 2.0}]
         async with _aturan(db, (TIERS, baru, AWAL_NOV)):
@@ -345,3 +374,56 @@ async def test_KA6_U8_akrual_ulang_tidak_menimpa(db, f6):
     await gl.post_incentive_accrual(KSC, OKT, "Uji Empat", total=175_000, date="2026-10-31")
     d3 = await db.commission_period_rules.find_one(q, {"_id": 0})
     assert d3 and d3["recorded_by"] == "Uji Empat" and d3["achievement"]["aktif"] is False
+
+
+# ═══ U9 — akrual dianulir → potret diabaikan; akrual berikutnya memotret ulang (jenjang baru dipakai) ══════════════
+async def test_KA6_U9_akrual_dianulir_potret_diganti(db, f6):
+    from services import gl_service as gl
+    q = {"entity_id": KSC, "period": DES}
+    baru = [{"capaian_min_pct": 0, "pengali": 0.8}, {"capaian_min_pct": 100, "pengali": 2.0}]
+    async with _aturan(db, *_menyala()):
+        j1 = await gl.post_incentive_accrual(KSC, DES, "Uji Satu", total=50_000, date="2026-12-31")
+        d1 = await db.commission_period_rules.find_one(q, {"_id": 0})
+        assert d1["journal_id"] == j1["id"] and d1["achievement"]["jenjang"] == JENJANG
+        assert await _pengali(f6, "andi", DES) == (0.5, {"aktif": True, "basis": "omzet_bersih", "capaian_pct": 0.0,
+                                                         "sumber_jenjang": "beku", "alasan": "jenjang"})
+        # jalur anulir jurnal aplikasi hanya untuk jurnal manual; jurnal akrual otomatis dianulir langsung (data)
+        with pytest.raises(ValueError, match="jurnal manual"):
+            await gl.void_entry(j1["id"], AKTOR_UJI, reason="uji KA-6")
+        await db.journal_entries.update_one({"id": j1["id"]}, {"$set": {"status": "void", "voided_by": "uji"}})
+        faktor, info = await _pengali(f6, "andi", DES)
+        assert (faktor, info["sumber_jenjang"]) == (0.5, "akhir_bulan")   # potret tanpa jurnal hidup diabaikan
+        # jenjang diperbaiki berlaku mundur 1 Des, lalu akrual dibukukan lagi → potret diganti dengan jenjang baru
+        async with _aturan(db, (TIERS, baru, "2026-12-01T00:00")):
+            assert (await _pengali(f6, "andi", DES))[0] == 0.8
+            j2 = await gl.post_incentive_accrual(KSC, DES, "Uji Dua", total=50_000, date="2026-12-31")
+            assert j2["id"] != j1["id"] and j2["source_type"] == "incentive_accrual"
+            d2 = await db.commission_period_rules.find_one(q, {"_id": 0})
+            assert await db.commission_period_rules.count_documents(q) == 1
+            assert (d2["id"] != d1["id"], d2["journal_id"], d2["achievement"]["jenjang"], d2["recorded_by"]) == (
+                True, j2["id"], baru, "Uji Dua")
+            assert d2["replaces"] == {"id": d1["id"], "journal_id": j1["id"], "recorded_at": d1["recorded_at"],
+                                      "recorded_by": "Uji Satu"}
+            faktor, info = await _pengali(f6, "andi", DES)
+            assert (faktor, info["sumber_jenjang"]) == (0.8, "beku")
+
+
+# ═══ U10 — pembekuan gagal sesudah jurnal akrual → panggilan akrual berikutnya (tanpa selisih) membekukan ═══════════
+async def test_KA6_U10_beku_gagal_sesudah_jurnal_diulang(db, f6, monkeypatch):
+    from services import commission_rules as cr
+    from services import gl_service as gl
+    q = {"entity_id": KSC, "period": "2026-09"}
+    asli = cr.bekukan_periode
+
+    async def gagal(*a, **kw):
+        raise RuntimeError("uji: pembekuan gagal")
+    monkeypatch.setattr(cr, "bekukan_periode", gagal)
+    with pytest.raises(RuntimeError):
+        await gl.post_incentive_accrual(KSC, "2026-09", "Uji", total=10_000, date="2026-09-30")
+    j = await db.journal_entries.find_one({"source_type": "incentive_accrual", "source_id": f"{KSC}:2026-09",
+                                           "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+    assert j and await db.commission_period_rules.count_documents(q) == 0
+    monkeypatch.setattr(cr, "bekukan_periode", asli)
+    assert await gl.post_incentive_accrual(KSC, "2026-09", "Uji", total=10_000, date="2026-09-30") is None
+    d = await db.commission_period_rules.find_one(q, {"_id": 0})
+    assert d and d["journal_id"] == j["id"]

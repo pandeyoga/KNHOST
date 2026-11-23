@@ -3595,9 +3595,11 @@ async def post_incentive_accrual(entity_id: str, period: str,
     (dulu dihitung ulang dari daftar akun sales, bisa berbeda dari slip). `date` = tanggal buku jurnal periodik
     (`periodic_posting.journal_date`); kosong = hari ini (perilaku lama).
 
-    KA-6 — sebelum jurnal (akrual pertama MAUPUN koreksi) aturan komisi bulan itu dibekukan
-    (`commission_rules.bekukan_periode`, sisip-bila-belum-ada; galatnya menggagalkan akrual). Bulan yang diakru sebelum
-    fitur ini dibekukan pada koreksi pertamanya.
+    KA-6 — aturan komisi bulan itu dibekukan (`commission_rules.bekukan_periode`): SESUDAH jurnal akrual pertama
+    tersimpan (jurnal ditolak, mis. periode tertutup → tidak ada potret), dan pada setiap panggilan berikutnya selama
+    akrual hidup ada, sebelum jurnal koreksi (idempoten). Potret terikat ke jurnal akrual itu: bila dianulir, potret
+    diabaikan dan diganti saat akrual berikutnya. Galat pembekuan merambat (gagal sesudah jurnal → panggilan akrual
+    berikutnya membekukan). Bulan yang diakru sebelum fitur ini dibekukan pada panggilan akrual berikutnya.
     """
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Akrual insentif membutuhkan entitas spesifik & periode (mis. 2026-06).")
@@ -3608,22 +3610,27 @@ async def post_incentive_accrual(entity_id: str, period: str,
     total = round(float(total or 0), 2)
     tgl = date or now_iso()
     from services.commission_rules import bekukan_periode   # lokal: modul aturan memanggil mesin komisi
-    if not await _already_posted("incentive_accrual", src_id):
+    akrual = await db.journal_entries.find_one(
+        {"source_type": "incentive_accrual", "source_id": src_id, "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+    if not akrual:
         if total <= EPS:
             return None
-        await bekukan_periode(entity_id, period, oleh=created_by)
         lines = _balanced_pair(ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF, total,
                                f"Akrual insentif penjualan {period}")
-        return await _insert_entry(
+        entry = await _insert_entry(
             lines=lines, description=f"Akrual insentif penjualan {period}",
             date=tgl, source_type="incentive_accrual", source_id=src_id,
             entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}")
+        await bekukan_periode(entity_id, period, oleh=created_by, journal_id=entry["id"])
+        return entry
+    # KA-6 — akrual hidup sudah ada: pastikan potretnya ada (idempoten), juga bila tidak ada selisih — pembekuan yang
+    # gagal sesudah jurnal akrual pertama dibuat di panggilan berikutnya.
+    await bekukan_periode(entity_id, period, oleh=created_by, journal_id=akrual["id"])
     # P17 COMM-04 — komisi on-collection berubah (pembayaran batal/susulan) → jurnal koreksi selisih.
     accrued = await _incentive_accrued(src_id)
     delta = round(total - accrued, 2)
     if abs(delta) <= EPS:
         return None
-    await bekukan_periode(entity_id, period, oleh=created_by)
     dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if delta > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
     desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
     try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat
