@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 5ddf882 pada 2026-11-23 -->
+<!-- Dihasilkan dari commit: 576e06f pada 2026-11-23 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -503,7 +503,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `incentive_achievement.py` | 912 | KM-T2 (keputusan K-19, K-20, K-21, K-23, K-24) — **Capaian**: angka dasar insentif per sales, per PT dan perio |
 | `incentive_definitions.py` | 67 | KM-T1 (keputusan K-19, K-20, K-21, K-23) — versi DEFINISI ANGKA insentif per PT (`incentive_definitions`). |
 | `incentive_facts.py` | 740 | KM-T1 (KM-01, KM-02, KM-03; keputusan K-19, K-20, K-21, K-23) — fakta insentif: omzet terkirim dan pencairan. |
-| `incentive_me.py` | 112 | KM-T5 (keputusan K-22, K-46) — kartu **Capaian & Insentif Saya**: angka milik pelaku sendiri, satu PT, satu bu |
+| `incentive_me.py` | 119 | KM-T5 (keputusan K-22, K-46) — kartu **Capaian & Insentif Saya**: angka milik pelaku sendiri, satu PT, satu bu |
 | `incentive_payroll.py` | 426 | KM-T4 (KM-07, PY-06; keputusan K-13, K-22, K-26) — Lembar Insentif tersambung ke gaji dan buku besar, per PT. |
 | `incentive_periods.py` | 143 | KM-T1 (KM-04, keputusan K-24) — periode target insentif: bulan · triwulan · tahun, mengikuti tahun buku PT. |
 | `incentive_sheet_service.py` | 718 | KM-T3 (KM-05, keputusan K-25; K-19 … K-24 lewat versi definisi yang dipotret) — **Lembar Insentif**. |
@@ -774,7 +774,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 208 | 33257 |
+| `__tests__` | 210 | 34315 |
 | `admin` | 36 | 7073 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 28 | 1967 |
@@ -786,9 +786,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `documents` | 18 | 2601 |
 | `export` | 9 | 700 |
 | `finance` | 121 | 28819 |
-| `home` | 6 | 1203 |
+| `home` | 6 | 1210 |
 | `hr` | 40 | 7802 |
-| `incentive` | 8 | 2787 |
+| `incentive` | 17 | 4235 |
 | `inspections` | 12 | 2152 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
@@ -807,10 +807,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `purchasing` | 88 | 18984 |
 | `rfid` | 21 | 3697 |
 | `rnd` | 66 | 7933 |
-| `sales` | 98 | 16139 |
+| `sales` | 98 | 16141 |
 | `sales_admin` | 12 | 1910 |
 | `samples` | 8 | 839 |
-| `settings` | 71 | 13485 |
+| `settings` | 71 | 13501 |
 | `tanya` | 27 | 2492 |
 | `transfers` | 1 | 20 |
 | `wms` | 102 | 13744 |
@@ -837,13 +837,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/rfid.py` | 846 | 800 |
 | `backend/routers/vendor_bills.py` | 833 | 800 |
 | `frontend/src/features/orders/OrderDetailPanel.jsx` | 770 | 500 |
-| `frontend/src/features/incentive/IncentiveSetupView.jsx` | 698 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 651 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 650 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 632 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 618 | 500 |
 | `frontend/src/features/incentive/IncentiveSheetDetail.jsx` | 596 | 500 |
 | `frontend/src/features/finance/TaxInvoices.jsx` | 595 | 500 |
+| `frontend/src/features/incentive/IncentiveSetupView.jsx` | 582 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 577 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
