@@ -62,14 +62,14 @@ class DraftRate(BaseModel):
     template_id: str = ""
     product_id: str = ""
     category: str = ""
-    per_unit_amount: float = 0.0
+    per_unit_amount: float
     margin_cap_pct: Optional[float] = None
 
 
 class BulkPayload(BaseModel):
     entity_id: str = ""
     template_ids: List[str] = Field(default_factory=list)
-    per_unit_amount: float = 0.0
+    per_unit_amount: float
     margin_cap_pct: Optional[float] = None
     reason: str = Field("", max_length=500)
 
@@ -77,8 +77,9 @@ class BulkPayload(BaseModel):
 class ImportRow(BaseModel):
     template_id: str = ""
     product_id: str = ""
-    per_unit_amount: float = 0.0
+    per_unit_amount: float
     margin_cap_pct: Optional[float] = None
+    baris: Optional[int] = None               # nomor baris di Excel (dari pratinjau) — untuk pesan galat
 
 
 class ImportApplyPayload(BaseModel):
@@ -128,7 +129,7 @@ async def bulk_rates(payload: BulkPayload, request: Request) -> Dict[str, int]:
         raise HTTPException(status_code=400, detail="Pilih minimal satu artikel.")
     sasaran = [{"template_id": t, "per_unit_amount": payload.per_unit_amount, "margin_cap_pct": payload.margin_cap_pct}
                for t in payload.template_ids]
-    return await crs.terapkan_tarif(ent, sasaran, bawaan=RatePayload().model_dump(), alasan=payload.reason.strip(),
+    return await crs.terapkan_tarif(ent, sasaran, bawaan=crs.bawaan_tarif(), alasan=payload.reason.strip(),
                                     aktor=actor["name"])
 
 
@@ -155,15 +156,18 @@ async def import_apply(payload: ImportApplyPayload, request: Request) -> Dict[st
     ent = await _pt_tunggal(request, payload.entity_id)
     if not payload.rows:
         raise HTTPException(status_code=400, detail="Tidak ada baris untuk diterapkan.")
-    return await crs.terapkan_tarif(ent, [r.model_dump() for r in payload.rows], bawaan=RatePayload().model_dump(),
+    return await crs.terapkan_tarif(ent, [r.model_dump() for r in payload.rows], bawaan=crs.bawaan_tarif(),
                                     alasan=payload.reason.strip(), aktor=actor["name"])
 
 
 @router.post("/incentive-rates/simulate")
 async def simulate_rates(payload: SimulatePayload, request: Request) -> Dict[str, Any]:
     """Coba dulu: komisi sales pada satu periode dengan aturan sekarang vs aturan sekarang + tarif draf. Tidak menulis."""
-    await require_permission(request, "sales_force", "view")
+    actor = await require_permission(request, "sales_force", "view")
     ent = await _pt_tunggal(request, payload.entity_id)
+    from services.sales_force_service import boleh_lihat_komisi_sales
+    if payload.sales_id and not await boleh_lihat_komisi_sales(actor, payload.sales_id):
+        raise HTTPException(status_code=403, detail="Anda tidak berwenang melihat komisi sales ini.")
     if not payload.sales_id or not payload.period:
         raise HTTPException(status_code=400, detail="Pilih sales dan periode.")
     from services.sales_force_service import simulate_commission

@@ -181,7 +181,7 @@ async def test_KA8_U5_excel_unduh_unggah(klien, kepala_admin, db, f8):
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
     assert list(rows[0]) == ["Kode artikel", "Nama artikel", "Kategori", "Kode varian", "Tarif per satuan dasar",
-                             "Batas margin %", "Asal tarif"]
+                             "Batas margin %", "Asal tarif", "ID artikel", "ID varian"]
     kode = {(r_[0], r_[3]): r_ for r_ in rows[1:]}
     assert (BTK := kode[("BTK-M8", None)])[4] == 3500 and BTK[6] == "Tarif artikel (PT ini)"
     assert kode[("BTK-M8", "BTK-M8-BRU")][4] == 4000                       # pengecualian varian = satu baris sendiri
@@ -288,3 +288,123 @@ async def test_KA8_U7_simulasi(klien, kepala_admin, db, akun, f8):
     assert r.status_code == 400, r.text
     r = await klien.post("/api/incentive-rates/simulate", headers=kepala_admin, json={**badan, "entity_id": "all"})
     assert r.status_code == 400, r.text
+
+
+async def test_KA8_F1_kode_kembar_id_menentukan_dan_pesan_baris(klien, kepala_admin, db, f8):
+    """Dua artikel berkode sama (BM): baris tanpa ID = galat; dengan ID artikel = artikel yang tepat. Sasaran dobel = galat."""
+    await db.product_templates.insert_many([
+        {"id": "tpl_ka8_bm1", "name": "Batik Mega KA8", "sku_prefix": "BM8", "category": "KA8Lurik", "status": "active"},
+        {"id": "tpl_ka8_bm2", "name": "Batik Motif KA8", "sku_prefix": "BM8", "category": "KA8Lurik", "status": "active"}])
+    wb = _muat((await klien.get(f"/api/incentive-rates/export?entity_id={KSC}", headers=kepala_admin)).content)
+    ws = wb.active
+    kepala = [c.value for c in ws[1]]
+    assert kepala[-2:] == ["ID artikel", "ID varian"] and ws["H1"].comment is not None
+    baris_bm = [row for row in ws.iter_rows(min_row=2) if row[0].value == "BM8"]
+    assert {row[7].value for row in baris_bm} == {"tpl_ka8_bm1", "tpl_ka8_bm2"}
+    for row in baris_bm:
+        row[4].value = 1234 if row[7].value == "tpl_ka8_bm2" else 1111
+    # dengan ID: masing-masing ke artikelnya sendiri
+    hasil = {x["template_id"]: x for x in (await _pratinjau(klien, kepala_admin, _unggah(wb))).json()["rows"]
+             if x["kode_artikel"] == "BM8"}
+    assert (hasil["tpl_ka8_bm2"]["status"], hasil["tpl_ka8_bm2"]["baru"]) == ("baru", 1234)
+    assert hasil["tpl_ka8_bm1"]["baru"] == 1111
+    # tanpa ID: kode kembar → galat bernasihat
+    for row in baris_bm:
+        row[7].value = None
+    rows = [x for x in (await _pratinjau(klien, kepala_admin, _unggah(wb))).json()["rows"] if x["kode_artikel"] == "BM8"]
+    assert [x["status"] for x in rows] == ["galat", "galat"]
+    assert rows[0]["pesan"] == ("Kode artikel BM8 dipakai lebih dari satu artikel — isi kolom ID artikel dari berkas "
+                                "unduhan.")
+    # sasaran dobel: baris kedua ditandai, dan apply menyebut nomor baris Excel
+    for row in baris_bm:
+        row[7].value = "tpl_ka8_bm1"
+    rows = [x for x in (await _pratinjau(klien, kepala_admin, _unggah(wb))).json()["rows"] if x["kode_artikel"] == "BM8"]
+    assert [x["status"] for x in rows] == ["baru", "galat"]
+    assert rows[1]["pesan"] == f"Sasaran sama dengan baris {rows[0]['baris']}; satu sasaran hanya boleh muncul sekali."
+    r = await klien.post("/api/incentive-rates/import/apply", headers=kepala_admin, json={"entity_id": KSC, "rows": [
+        {"template_id": "tpl_ka8_bm1", "per_unit_amount": 1, "baris": 7},
+        {"template_id": "tpl_ka8_bm1", "per_unit_amount": 2, "baris": 9}]})
+    assert r.status_code == 400 and r.json()["detail"].startswith("Baris 9:"), r.text
+    # varian dengan kode artikel salah
+    await db.product_templates.delete_many({"id": {"$in": ["tpl_ka8_bm1", "tpl_ka8_bm2"]}})
+
+
+async def test_KA8_F2_tarif_nonaktif_pratinjau_dan_apply_sepakat(klien, kepala_admin, db, f8):
+    await db.incentive_rates.insert_one(_rate("irate_ka8_mati", KSC, f"artikel:{LURIK}", 100.0, template_id=LURIK,
+                                              status="inactive", category="KA8Lurik"))
+    wb = _muat((await klien.get(f"/api/incentive-rates/export?entity_id={KSC}", headers=kepala_admin)).content)
+    for row in wb.active.iter_rows(min_row=2):
+        if row[0].value == "LRK-S8":
+            row[4].value = 2000
+    x = next(x for x in (await _pratinjau(klien, kepala_admin, _unggah(wb))).json()["rows"]
+             if x["kode_artikel"] == "LRK-S8")
+    assert (x["status"], x["pesan"]) == ("ubah", "Tarif nonaktif akan diaktifkan.")
+    r = await klien.post("/api/incentive-rates/import/apply", headers=kepala_admin,
+                         json={"entity_id": KSC, "rows": [{"template_id": LURIK, "per_unit_amount": 2000}]})
+    assert r.json() == {"created": 0, "updated": 1}, r.text
+    d = await db.incentive_rates.find_one({"id": "irate_ka8_mati"})
+    assert (d["status"], d["per_unit_amount"]) == ("active", 2000)
+    await db.incentive_rates.delete_one({"id": "irate_ka8_mati"})
+
+
+async def test_KA8_F3_wajib_angka_dan_tidak_negatif(klien, kepala_admin, f8):
+    for rute, isi in (("bulk", {"entity_id": KSC, "template_ids": [LURIK]}),
+                      ("import/apply", {"entity_id": KSC, "rows": [{"template_id": LURIK}]}),
+                      ("simulate", {"entity_id": KSC, "sales_id": "x", "period": PERIODE,
+                                    "draft_rates": [{"template_id": LURIK}]})):
+        r = await klien.post(f"/api/incentive-rates/{rute}", headers=kepala_admin, json=isi)
+        assert r.status_code == 422, (rute, r.text)
+    r = await klien.post("/api/incentive-rates", headers=kepala_admin,
+                         json={"entity_id": KSC, "template_id": LURIK, "per_unit_amount": -1})
+    assert (r.status_code, r.json()["detail"]) == (400, "Tarif harus berupa angka, tidak boleh negatif.")
+    r = await klien.post("/api/incentive-rates", headers=kepala_admin,
+                         json={"entity_id": KSC, "template_id": LURIK, "per_unit_amount": 1, "margin_cap_pct": -5})
+    assert (r.status_code, r.json()["detail"]) == (400, "Batas margin harus berupa angka, tidak boleh negatif.")
+    r = await klien.post("/api/incentive-rates/bulk", headers=kepala_admin,
+                         json={"entity_id": KSC, "template_ids": [LURIK], "per_unit_amount": 1, "margin_cap_pct": -1})
+    assert r.status_code == 400, r.text
+
+
+async def test_KA8_F4_simulasi_dibatasi_izin_lihat_sales_lain(klien, akun, sesi, peran_tanpa_acuan, f8):
+    rid = await peran_tanpa_acuan({"sales_force": ["view"]}, label="Simulasi KA8")
+    h = await sesi(await akun(rid, entitas=(KSC,)), entitas=KSC)
+    lain = await akun("sales", entitas=(KSC,))
+    r = await klien.post("/api/incentive-rates/simulate", headers=h,
+                         json={"entity_id": KSC, "sales_id": lain["id"], "period": PERIODE, "draft_rates": []})
+    assert (r.status_code, r.json()["detail"]) == (403, "Anda tidak berwenang melihat komisi sales ini.")
+
+
+async def test_KA8_F5_simulasi_sama_dengan_hasil_sesudah_disimpan(klien, kepala_admin, db, akun, f8):
+    """PT berambang diskon 5 % (bawaan tarif baru 10 %): baris diskon 8 %. Tarif baru yang disimpan membawa ambang 10 %
+    (×1) → 100 yd × 4.000 = 400.000; simulasi harus sama (bukan 200.000 dari ambang PT)."""
+    from services import config_resolver as resolver
+    from services.commission_rules import potret_pesanan
+    sales = await akun("sales", entitas=(KSC,))
+    await db.customers.insert_one({"id": "cus_ka8_f5", "name": "Toko KA8 F5", "entity_id": KSC, "status": "active",
+                                   "assigned_sales_id": sales["id"]})
+    item = {"product_id": "prd_ka8_lrk", "sku": "LRK-S8-01", "product_name": "Lurik Sawo 01", "category": "KA8Lurik",
+            "quantity": 100, "base_quantity": 100, "unit": "yard", "base_unit": "yard", "price": 50_000,
+            "line_total": 4_600_000, "discount_percent": 8, "unit_cost": 0, "price_source": "entity"}
+    so = {"id": "so_ka8_f5", "number": "SO/KA8/0005", "entity_id": KSC, "customer_id": "cus_ka8_f5",
+          "status": "completed", "items": [item], "subtotal": 4_600_000, "grand_total": 4_600_000,
+          "payments": [{"amount": 4_600_000, "created_at": "2026-11-10T03:00:00+00:00"}],
+          "created_at": "2026-11-02T03:00:00+00:00", "updated_at": now_iso()}
+    await db.sales_orders.insert_one(so)
+    row = await resolver.set_value("commission.discount_threshold", 5.0, scope_type="entity", scope_id=KSC, actor="uji",
+                                   reason="uji KA-8 F5", effective_from="2026-10-01")
+    try:
+        badan = {"entity_id": KSC, "sales_id": sales["id"], "period": PERIODE,
+                 "draft_rates": [{"template_id": LURIK, "per_unit_amount": 4000}]}
+        sim = (await klien.post("/api/incentive-rates/simulate", headers=kepala_admin, json=badan)).json()
+        r = await klien.post("/api/incentive-rates/bulk", headers=kepala_admin,
+                             json={"entity_id": KSC, "template_ids": [LURIK], "per_unit_amount": 4000, "reason": "uji"})
+        assert r.status_code == 200, r.text
+        prods = {p["id"]: p async for p in db.products.find({"id": "prd_ka8_lrk"}, {"_id": 0})}
+        await potret_pesanan(KSC, [item], prods)             # pesanan "baru dibuat" sesudah tarif disimpan
+        await db.sales_orders.update_one({"id": "so_ka8_f5"}, {"$set": {"items": [item]}})
+        from services import sales_force_service as sfs
+        nyata = await sfs.compute_commission(sales["id"], PERIODE, KSC)
+        assert sim["dengan_perubahan"]["total_incentive"] == nyata["total_incentive"] == 400_000
+    finally:
+        await db.config_values.delete_one({"id": row["id"]})
+        await db.incentive_rates.delete_many({"entity_id": KSC, "rate_key": f"artikel:{LURIK}"})

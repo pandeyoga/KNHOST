@@ -18,7 +18,8 @@ from services.customer_service import (
     customer_360, compute_customer_credit, can_access_customer, can_collect_customer, can_view_credit, collection_worklist,
     collection_reminders,
 )
-from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
+from services.sales_force_service import (sales_kpi, compute_commission, leaderboard, commission_history,
+                                          boleh_lihat_komisi_sales)
 from services import credit_override_service as cos   # CR-T3 — izin kredit
 from services import gl_service
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
@@ -402,10 +403,7 @@ async def _kpi_scope(request: Request, sales_id: str, entity_id: str) -> tuple:
     # KN-E38 — KPI/komisi sales lain hanya untuk yang berwenang. PR-T4: cakupan data bukan "semua" → dirinya atau
     # anggota timnya; selain itu butuh izin `order.view_sales_kpi` (dulu daftar nama peran admin/manajer/admin sales/
     # finance). Permintaan yang tidak berwenang = KPI dirinya (perilaku lama, bukan 403).
-    if own_scoped(actor):
-        if sales_id not in (await owner_ids(actor) or []):
-            sales_id = actor["id"]
-    elif not sales_id or not await has_permission(actor, "order", "view_sales_kpi"):
+    if not await boleh_lihat_komisi_sales(actor, sales_id):
         sales_id = actor["id"]
     return sales_id, entity_id
 

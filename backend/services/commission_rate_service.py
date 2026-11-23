@@ -26,6 +26,8 @@ STATUS_TAK_AKTIF = ("archived", "inactive", "discontinued")
 BATAS_BERKAS = 5 * 1024 * 1024
 KOLOM = ["Kode artikel", "Nama artikel", "Kategori", "Kode varian", "Tarif per satuan dasar", "Batas margin %",
          "Asal tarif"]
+KOLOM_ID = ["ID artikel", "ID varian"]   # kolom teknis di ujung kanan: pengenal pasti baris; jangan diubah pengguna
+CATATAN_ID = "Jangan diubah. Kolom ini menentukan artikel/varian yang dimaksud, walau kodenya kembar."
 _NAMA_PAKSA = {"price_bands": "commission.price_bands", "price_source_rules": "commission.price_source_rules"}
 _TINGKAT = {"artikel": "Tarif artikel", "varian": "Tarif varian", "kategori": "Tarif kategori"}
 _LINGKUP = {"pt": "PT ini", "semua_pt": "Semua PT"}
@@ -56,6 +58,12 @@ async def selesaikan(doc: Dict[str, Any]) -> None:
         if not (doc.get("category") or "").strip():
             raise HTTPException(status_code=400, detail="Kategori wajib diisi")
         doc.update({"target_name": "", "target_code": ""})
+    for f, nama in (("per_unit_amount", "Tarif"), ("margin_cap_pct", "Batas margin")):
+        v = doc.get(f)
+        if v is None:
+            continue
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)) or float(v) < 0:
+            raise HTTPException(status_code=400, detail=f"{nama} harus berupa angka, tidak boleh negatif.")
     for f, kunci in _NAMA_PAKSA.items():
         if doc.get(f) is not None:
             try:
@@ -78,12 +86,24 @@ async def cek_kembar(doc: Dict[str, Any], kecuali_id: str = "") -> None:
         raise kembar(doc)
 
 
-def _angka_tarif(v: Any, nama: str, *, boleh_kosong: bool = False) -> Optional[float]:
-    if v is None and boleh_kosong:
-        return None
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)) or float(v) < 0:
-        raise HTTPException(status_code=400, detail=f"{nama} harus berupa angka, tidak boleh negatif.")
-    return float(v)
+def bawaan_tarif() -> Dict[str, Any]:
+    """Isian bawaan tarif baru (`RatePayload`) — sama untuk simpan biasa, ubah banyak, terap Excel, dan simulasi."""
+    from routers.incentive_rates import RatePayload
+    return RatePayload().model_dump()
+
+
+def susun_tarif(lama: Optional[Dict[str, Any]], doc: Dict[str, Any], jumlah: float, batas: Optional[float],
+                bawaan: Dict[str, Any], pt: Dict[str, Any]) -> Dict[str, Any]:
+    """Tarif hasil simpan untuk satu sasaran (`doc` sudah lewat `selesaikan`): tarif PT yang sudah ada diubah jumlahnya
+    (batas hanya bila disebut; diaktifkan lagi), selain itu dibuat dari `bawaan` + batas margin bawaan PT. Satu fungsi untuk
+    penulisan DAN simulasi, supaya simulasi = hasil menyimpan."""
+    if lama:
+        out = {**lama, "per_unit_amount": jumlah, "status": "active"}
+        if batas is not None:
+            out["margin_cap_pct"] = batas
+        return out
+    return {**bawaan, **doc, "per_unit_amount": jumlah, "status": "active", "price_bands": None, "price_source_rules": None,
+            "margin_cap_pct": batas if batas is not None else pt.get("default_margin_cap_pct")}
 
 
 # ── Tampilan tarif ──────────────────────────────────────────────────────────
@@ -193,65 +213,60 @@ async def daftar_varian(entity_id: str, template_id: str) -> List[Dict[str, Any]
 
 # ── Simulasi ────────────────────────────────────────────────────────────────
 async def indeks_dengan_draf(entity_id: str, draft_rates: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
-    """Indeks tarif sekarang ditimpa tarif draf (kunci `rate_key`, lingkup "pt"). Draf menimpa isian jumlah (dan batas margin
-    bila disebut) pada tarif yang sudah ada di kunci itu; tanpa tarif yang sudah ada → tarif baru dengan bawaan PT.
+    """Indeks tarif sekarang ditimpa tarif draf (kunci `rate_key`, lingkup "pt"). Tiap draf dibangun lewat jalur yang sama
+    dengan menyimpan (`selesaikan` + `susun_tarif` atas tarif PT yang ada), jadi hasil simulasi = hasil sesudah disimpan.
     `HTTPException` 400 bila draf tidak sah."""
     indeks = await muat_indeks_tarif(entity_id)
+    bawaan, pt = bawaan_tarif(), await aturan_pt(entity_id)
     lihat = set()
     for i, d in enumerate(draft_rates or [], 1):
-        doc = {"template_id": d.get("template_id") or "", "product_id": d.get("product_id") or "",
-               "category": d.get("category") or ""}
+        doc = {"entity_id": entity_id, "template_id": d.get("template_id") or "", "product_id": d.get("product_id") or "",
+               "category": d.get("category") or "", "per_unit_amount": d.get("per_unit_amount"),
+               "margin_cap_pct": d.get("margin_cap_pct")}
         if doc["template_id"] or doc["product_id"]:
             doc["category"] = ""
         await selesaikan(doc)
         if doc["rate_key"] in lihat:
             raise HTTPException(status_code=400, detail=f"Draf tarif baris {i}: sasaran sama dengan draf lain.")
         lihat.add(doc["rate_key"])
-        jumlah = _angka_tarif(d.get("per_unit_amount"), f"Tarif draf baris {i}")
-        batas = _angka_tarif(d.get("margin_cap_pct"), f"Batas margin draf baris {i}", boleh_kosong=True)
-        baru = {**(indeks.get(doc["rate_key"]) or {}), "id": "draf", "entity_id": entity_id, "rate_key": doc["rate_key"],
-                "template_id": doc["template_id"], "product_id": doc["product_id"], "category": doc["category"],
-                "per_unit_amount": jumlah, "status": "active", "_lingkup": "pt"}
-        if batas is not None:
-            baru["margin_cap_pct"] = batas
-        indeks[doc["rate_key"]] = baru
+        lama = await db.incentive_rates.find_one({"entity_id": entity_id, "rate_key": doc["rate_key"]}, {"_id": 0})
+        baru = susun_tarif(lama, doc, float(doc["per_unit_amount"] or 0), doc.get("margin_cap_pct"), bawaan, pt)
+        indeks[doc["rate_key"]] = {**baru, "id": (lama or {}).get("id") or "draf", "_lingkup": "pt"}
     return indeks
 
 
 # ── Tulis: ubah banyak & terap Excel ────────────────────────────────────────
 async def terapkan_tarif(entity_id: str, sasaran: List[Dict[str, Any]], *, bawaan: Dict[str, Any], alasan: str,
                          aktor: str) -> Dict[str, int]:
-    """Buat/ubah tarif per sasaran `{template_id|product_id, per_unit_amount, margin_cap_pct?}` untuk satu PT. Semua sasaran
-    divalidasi dulu (satu galat = tidak ada yang tertulis). Tarif yang sudah ada di PT itu diubah jumlahnya (batas margin
-    hanya bila disebut; tarif nonaktif diaktifkan lagi); yang belum ada dibuat dari `bawaan` (isian bawaan `RatePayload`,
-    batas margin bawaan PT). Jejak audit per tarif memuat `alasan`."""
+    """Buat/ubah tarif per sasaran `{template_id|product_id, per_unit_amount, margin_cap_pct?, baris?}` untuk satu PT. Semua
+    sasaran divalidasi dulu (satu galat = tidak ada yang tertulis; pesan menyebut nomor `baris` Excel bila ada). Hasil
+    simpan = `susun_tarif` (tarif nonaktif diaktifkan lagi). Jejak audit per tarif memuat `alasan`."""
     from dependencies import audit
     pt = await aturan_pt(entity_id)
     rencana: List[Tuple[str, Dict[str, Any], Dict[str, Any]]] = []
     lihat = set()
-    for i, s in enumerate(sasaran, 1):
+    for s in sasaran:
+        awal = f"Baris {s['baris']}: " if s.get("baris") else ""
         ada_t, ada_p = bool((s.get("template_id") or "").strip()), bool((s.get("product_id") or "").strip())
         if ada_t == ada_p:
-            raise HTTPException(status_code=400, detail=f"Baris {i}: isi artikel atau varian (salah satu).")
+            raise HTTPException(status_code=400, detail=f"{awal}Isi artikel atau varian (salah satu).")
         doc = {"entity_id": entity_id, "template_id": s.get("template_id") or "", "product_id": s.get("product_id") or "",
-               "category": ""}
-        await selesaikan(doc)
+               "category": "", "per_unit_amount": s.get("per_unit_amount"), "margin_cap_pct": s.get("margin_cap_pct")}
+        try:
+            await selesaikan(doc)
+        except HTTPException as exc:
+            raise HTTPException(status_code=exc.status_code, detail=f"{awal}{exc.detail}") from None
         if doc["rate_key"] in lihat:
-            raise HTTPException(status_code=400, detail=f"Baris {i}: {doc['target_name']} muncul lebih dari sekali.")
+            raise HTTPException(status_code=400, detail=f"{awal}{doc['target_name']} muncul lebih dari sekali.")
         lihat.add(doc["rate_key"])
-        jumlah = _angka_tarif(s.get("per_unit_amount"), f"Tarif baris {i}")
-        batas = _angka_tarif(s.get("margin_cap_pct"), f"Batas margin baris {i}", boleh_kosong=True)
         lama = await db.incentive_rates.find_one({"entity_id": entity_id, "rate_key": doc["rate_key"]}, {"_id": 0})
+        baru = susun_tarif(lama, doc, float(doc["per_unit_amount"] or 0), doc.get("margin_cap_pct"), bawaan, pt)
         if lama:
-            ubah = {"per_unit_amount": jumlah, "status": "active", "updated_at": now_iso()}
-            if batas is not None:
-                ubah["margin_cap_pct"] = batas
+            ubah = {k: v for k, v in baru.items() if lama.get(k) != v}
+            ubah["updated_at"] = now_iso()
             rencana.append(("ubah", lama, ubah))
         else:
-            baru = {**bawaan, **doc, "per_unit_amount": jumlah, "status": "active",
-                    "margin_cap_pct": batas if batas is not None else pt.get("default_margin_cap_pct"),
-                    "price_bands": None, "price_source_rules": None,
-                    "id": new_id("irate"), "created_at": now_iso(), "updated_at": now_iso()}
+            baru.update({"id": new_id("irate"), "created_at": now_iso(), "updated_at": now_iso()})
             rencana.append(("buat", baru, {}))
     hasil = {"created": 0, "updated": 0}
     for jenis, doc, ubah in rencana:
@@ -287,22 +302,26 @@ async def ekspor_xlsx(entity_id: str) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Tarif per artikel"
-    ws.append(KOLOM)
+    from openpyxl.comments import Comment
+    ws.append(KOLOM + KOLOM_ID)
     for c in ws[1]:
         c.font = Font(bold=True)
+    for c in ws[1][len(KOLOM):]:
+        c.comment = Comment(CATATAN_ID, "Sistem")
 
-    def _baris(t: Dict[str, Any], tarif: Optional[Dict[str, Any]], nama: str, kode_varian: str) -> List[Any]:
+    def _baris(t: Dict[str, Any], tarif: Optional[Dict[str, Any]], nama: str, kode_varian: str, id_varian: str) -> List[Any]:
         r = _ringkas(tarif, pt)
         return [t.get("sku_prefix") or "", nama, t.get("category") or "", kode_varian or None,
-                r["per_unit_amount"] if r else None, r["margin_cap_pct"] if r else None, _teks_asal(tarif)]
+                r["per_unit_amount"] if r else None, r["margin_cap_pct"] if r else None, _teks_asal(tarif),
+                t["id"], id_varian or None]
 
     for t in artikel:
         cat = t.get("category") or ""
-        ws.append(_baris(t, pilih_tarif(indeks, product_id="", template_id=t["id"], category=cat), t.get("name") or "", ""))
+        ws.append(_baris(t, pilih_tarif(indeks, product_id="", template_id=t["id"], category=cat), t.get("name") or "", "", ""))
         for p in sorted(varian.get(t["id"], []), key=lambda x: x.get("sku") or ""):
             ws.append(_baris(t, pilih_tarif(indeks, product_id=p["id"], template_id=t["id"],
-                                            category=p.get("category") or cat), p.get("name") or "", p.get("sku") or ""))
-    for kolom, lebar in zip("ABCDEFG", (18, 32, 18, 20, 22, 16, 28)):
+                                            category=p.get("category") or cat), p.get("name") or "", p.get("sku") or "", p["id"]))
+    for kolom, lebar in zip("ABCDEFGHI", (18, 32, 18, 20, 22, 16, 28, 26, 26)):
         ws.column_dimensions[kolom].width = lebar
     buf = io.BytesIO()
     wb.save(buf)
@@ -329,8 +348,9 @@ def _teks(v: Any) -> str:
 
 
 async def pratinjau_impor(entity_id: str, isi: bytes) -> List[Dict[str, Any]]:
-    """Baca berkas `.xlsx` hasil unduhan (kolom dikenali dari judulnya) dan nilai tiap baris terhadap tarif yang berlaku.
-    TIDAK menulis apa pun. Status: baru (belum ada tarif sendiri di PT ini) · ubah · sama · galat."""
+    """Baca berkas `.xlsx` hasil unduhan dan nilai tiap baris terhadap tarif yang berlaku. TIDAK menulis apa pun.
+    Baris dikenali dari kolom "ID artikel"/"ID varian" bila terisi; kalau tidak, dari kode (kode kembar = galat).
+    Status: baru (belum ada tarif sendiri di PT ini) · ubah (termasuk tarif nonaktif yang akan diaktifkan) · sama · galat."""
     from openpyxl import load_workbook
     if len(isi) > BATAS_BERKAS:
         raise HTTPException(status_code=413, detail="Berkas terlalu besar (maksimal 5 MB).")
@@ -342,47 +362,105 @@ async def pratinjau_impor(entity_id: str, isi: bytes) -> List[Dict[str, Any]]:
     if not semua:
         raise HTTPException(status_code=400, detail="Berkas kosong.")
     judul = {_teks(h).lower(): i for i, h in enumerate(semua[0]) if h is not None}
-    kolom: Dict[str, int] = {}
-    for nama in KOLOM[:5] + [KOLOM[5]]:
-        if nama.lower() in judul:
-            kolom[nama] = judul[nama.lower()]
+    kolom: Dict[str, int] = {n: judul[n.lower()] for n in KOLOM + KOLOM_ID if n.lower() in judul}
     for wajib in (KOLOM[0], KOLOM[4]):
         if wajib not in kolom:
-            raise HTTPException(status_code=400, detail=f"Kolom “{wajib}” tidak ada di berkas.")
-    indeks, pt = await muat_indeks_tarif(entity_id), await aturan_pt(entity_id)
+            raise HTTPException(status_code=400, detail=f"Kolom \u201c{wajib}\u201d tidak ada di berkas.")
 
     def _sel(row: tuple, nama: str) -> Any:
         i = kolom.get(nama)
         return row[i] if i is not None and i < len(row) else None
 
+    baris_isi = [(no, row) for no, row in enumerate(semua[1:], 2) if not all(c is None or _teks(c) == "" for c in row)]
+    k_art = {_teks(_sel(r, KOLOM[0])) for _, r in baris_isi} - {""}
+    k_var = {_teks(_sel(r, KOLOM[3])) for _, r in baris_isi} - {""}
+    i_art = {_teks(_sel(r, KOLOM_ID[0])) for _, r in baris_isi} - {""}
+    i_var = {_teks(_sel(r, KOLOM_ID[1])) for _, r in baris_isi} - {""}
+    # satu kueri produk (varian), satu kueri artikel, satu kueri tarif PT — bukan per baris
+    pf = {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1, "template_id": 1}
+    produk = await db.products.find({"$or": [{"id": {"$in": list(i_var)}}, {"sku": {"$in": list(k_var)}}]}, pf).to_list(None) \
+        if (i_var or k_var) else []
+    p_id = {p["id"]: p for p in produk}
+    p_sku: Dict[str, List[Dict[str, Any]]] = {}
+    for p in produk:
+        p_sku.setdefault(p.get("sku") or "", []).append(p)
+    tpl_ids = i_art | {p.get("template_id") for p in produk if p.get("template_id")}
+    templat = await db.product_templates.find(
+        {"$or": [{"id": {"$in": list(tpl_ids)}}, {"sku_prefix": {"$in": list(k_art)}}]},
+        {"_id": 0, "id": 1, "name": 1, "sku_prefix": 1, "category": 1, "status": 1}).to_list(None) if (tpl_ids or k_art) else []
+    t_id = {t["id"]: t for t in templat}
+    t_kode: Dict[str, List[Dict[str, Any]]] = {}
+    for t in templat:
+        t_kode.setdefault(t.get("sku_prefix") or "", []).append(t)
+    indeks, pt = await muat_indeks_tarif(entity_id), await aturan_pt(entity_id)
+    tarif_pt: Dict[str, Dict[str, Any]] = {}      # rate_key → tarif PT ini (status apa pun)
+    async for d in db.incentive_rates.find({"entity_id": entity_id}, {"_id": 0, "rate_key": 1, "status": 1}):
+        tarif_pt[d.get("rate_key") or ""] = d
+
     out: List[Dict[str, Any]] = []
-    for no, row in enumerate(semua[1:], 2):
-        if all(c is None or _teks(c) == "" for c in row):
-            continue
+    terlihat: Dict[str, int] = {}
+    for no, row in baris_isi:
         kode_a, kode_v = _teks(_sel(row, KOLOM[0])), _teks(_sel(row, KOLOM[3]))
+        id_a, id_v = _teks(_sel(row, KOLOM_ID[0])), _teks(_sel(row, KOLOM_ID[1]))
         r = {"baris": no, "kode_artikel": kode_a, "kode_varian": kode_v, "nama": _teks(_sel(row, KOLOM[1])),
              "lama": None, "baru": None, "lama_batas": None, "baru_batas": None, "status": "galat", "pesan": "",
              "template_id": "", "product_id": ""}
         out.append(r)
-        tpl = await db.product_templates.find_one({"sku_prefix": kode_a}, {"_id": 0, "id": 1, "name": 1, "category": 1,
-                                                                            "status": 1}) if kode_a else None
+        # varian
+        prod: Optional[Dict[str, Any]] = None
+        if id_v or kode_v:
+            if id_v:
+                prod = p_id.get(id_v)
+                if not prod:
+                    r["pesan"] = f"ID varian {id_v} tidak ditemukan."
+                    continue
+            else:
+                cocok = p_sku.get(kode_v) or []
+                if len(cocok) > 1:
+                    r["pesan"] = (f"Kode varian {kode_v} dipakai lebih dari satu varian — isi kolom ID varian dari "
+                                  "berkas unduhan.")
+                    continue
+                if not cocok:
+                    r["pesan"] = f"Varian {kode_v} tidak ditemukan."
+                    continue
+                prod = cocok[0]
+        # artikel
+        if id_a:
+            tpl = t_id.get(id_a)
+            if not tpl:
+                r["pesan"] = f"ID artikel {id_a} tidak ditemukan."
+                continue
+        elif prod and not kode_a:
+            tpl = t_id.get(prod.get("template_id") or "")
+        elif prod:
+            tpl = t_id.get(prod.get("template_id") or "")
+            if tpl and (tpl.get("sku_prefix") or "") != kode_a:
+                r["pesan"] = f"Varian {kode_v} bukan bagian dari artikel {kode_a}."
+                continue
+        else:
+            semua_kode = t_kode.get(kode_a) or []
+            aktif = [t for t in semua_kode if t.get("status") not in STATUS_TAK_AKTIF]
+            if len(aktif) > 1:
+                r["pesan"] = (f"Kode artikel {kode_a} dipakai lebih dari satu artikel — isi kolom ID artikel dari "
+                              "berkas unduhan.")
+                continue
+            tpl = aktif[0] if aktif else (semua_kode[0] if semua_kode else None)
         if not tpl:
             r["pesan"] = f"Artikel {kode_a or '(kosong)'} tidak ditemukan."
             continue
         if tpl.get("status") in STATUS_TAK_AKTIF:
-            r["pesan"] = f"Artikel {kode_a} tidak aktif."
+            r["pesan"] = f"Artikel {tpl.get('sku_prefix') or kode_a} tidak aktif."
             continue
-        prod = None
-        if kode_v:
-            prod = await db.products.find_one({"sku": kode_v}, {"_id": 0, "id": 1, "name": 1, "category": 1, "template_id": 1})
-            if not prod:
-                r["pesan"] = f"Varian {kode_v} tidak ditemukan."
-                continue
-            if prod.get("template_id") != tpl["id"]:
-                r["pesan"] = f"Varian {kode_v} bukan bagian dari artikel {kode_a}."
-                continue
+        if prod and prod.get("template_id") != tpl["id"]:
+            r["pesan"] = f"Varian {prod.get('sku') or kode_v} bukan bagian dari artikel {tpl.get('sku_prefix') or kode_a}."
+            continue
         r["template_id"], r["product_id"] = (("", prod["id"]) if prod else (tpl["id"], ""))
         r["nama"] = (prod or tpl).get("name") or r["nama"]
+        kunci = rate_key({"template_id": r["template_id"], "product_id": r["product_id"]})
+        if kunci in terlihat:
+            r["pesan"] = f"Sasaran sama dengan baris {terlihat[kunci]}; satu sasaran hanya boleh muncul sekali."
+            continue
+        terlihat[kunci] = no
         baru, g1 = _sel_angka(_sel(row, KOLOM[4]), "Tarif per satuan dasar")
         batas, g2 = _sel_angka(_sel(row, KOLOM[5]), "Batas margin %")
         if g1 or g2:
@@ -397,11 +475,12 @@ async def pratinjau_impor(entity_id: str, isi: bytes) -> List[Dict[str, Any]]:
         if baru is None:
             r.update(status="sama", pesan="Tarif dikosongkan, baris tidak diubah.")
             continue
-        sendiri = indeks.get(rate_key({"template_id": r["template_id"], "product_id": r["product_id"]}))
-        sama = lama is not None and lama["per_unit_amount"] == baru and (batas is None or lama["margin_cap_pct"] == batas)
-        if sama:
+        sendiri = tarif_pt.get(kunci)
+        if sendiri and sendiri.get("status") != "active":
+            r.update(status="ubah", pesan="Tarif nonaktif akan diaktifkan.")
+        elif lama is not None and lama["per_unit_amount"] == baru and (batas is None or lama["margin_cap_pct"] == batas):
             r.update(status="sama", pesan="")
-        elif sendiri and sendiri.get("_lingkup") == "pt":
+        elif sendiri:
             r.update(status="ubah", pesan="")
         else:
             r.update(status="baru", pesan="Tarif sendiri baru untuk PT ini.")

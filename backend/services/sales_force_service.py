@@ -213,6 +213,18 @@ async def compute_commission(sales_id: str, period: str, entity_id: Optional[str
     return await _compute_commission_per_sku(sales_id, period, entity_id, settings, sumber_aturan=sumber_aturan)
 
 
+async def boleh_lihat_komisi_sales(actor: Dict[str, Any], sales_id: str) -> bool:
+    """Aturan satu pintu: komisi sales `sales_id` boleh dilihat `actor` bila itu dirinya, atau (cakupan data terbatas) anggota
+    timnya, atau (cakupan penuh) ia memegang izin `order.view_sales_kpi` (PR-T4 / KN-E38)."""
+    from dependencies import has_permission
+    from services.data_scope import own_scoped, owner_ids
+    if sales_id and sales_id == actor.get("id"):
+        return True
+    if own_scoped(actor):
+        return sales_id in (await owner_ids(actor) or [])
+    return bool(sales_id) and await has_permission(actor, "order", "view_sales_kpi")
+
+
 async def simulate_commission(sales_id: str, period: str, entity_id: str, draft_rates: List[Dict[str, Any]]) -> Dict[str, Any]:
     """KA-8 — simulasi "coba dulu": komisi `sales_id` pada `period` dengan aturan SEKARANG (hasil mesin biasa, memakai potret
     pesanan) dan dengan aturan sekarang + tarif draf (tiap baris dihitung ulang dari aturan sekarang + draf, potret

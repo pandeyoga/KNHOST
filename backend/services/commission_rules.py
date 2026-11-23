@@ -351,7 +351,8 @@ async def muat_indeks_tarif(entity_id: Optional[str]) -> Dict[str, Dict[str, Any
     """`rate_key` → tarif aktif (+ `_lingkup` "pt"/"semua_pt"). Baris PT menimpa baris `all`; tanpa PT hanya `all`."""
     from db import db
     ent = entity_id if entity_id and entity_id != "all" else None
-    rows = await db.incentive_rates.find({"status": "active"}, {"_id": 0}).to_list(5000)
+    rows = await db.incentive_rates.find({"status": "active", "entity_id": {"$in": [ent, "all"] if ent else ["all"]}},
+                                         {"_id": 0}).to_list(None)
     indeks: Dict[str, Dict[str, Any]] = {}
     for r in rows:
         if r.get("entity_id") == "all":

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 49a4203 pada 2026-11-23 -->
+<!-- Dihasilkan dari commit: 5ddf882 pada 2026-11-23 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -154,7 +154,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `costing.py` | 2 | 27 | `/wac`, `/wac/{product_id}` |
 | `credit_desk.py` | 6 | 150 | `/credit-desk`, `/credit-desk/summary`, `/customers/{customer_id}/exposure`, `/customers/{customer_id}/reminder-text`, `/customers/{customer_id}/statement`, `/customers/{customer_id}/statement.pdf` |
 | `credit_profiles.py` | 5 | 146 | `/credit-profile-requests`, `/credit-profile-requests/{request_id}/cancel`, `/credit-profile-requests/{request_id}/decision`, `/customers/{customer_id}/credit-profile`, `/customers/{customer_id}/credit-profile-requests` |
-| `crm.py` | 25 | 595 | `/collection-reminders`, `/collection-reminders/mark`, `/collection-worklist`, `/credit-gate-rejections`, `/credit-gate-rejections/{rejection_id}`, `/credit-override-reasons` … |
+| `crm.py` | 25 | 593 | `/collection-reminders`, `/collection-reminders/mark`, `/collection-worklist`, `/credit-gate-rejections`, `/credit-gate-rejections/{rejection_id}`, `/credit-override-reasons` … |
 | `crm_omnichannel.py` | 10 | 206 | `/crm/interactions`, `/crm/interactions/{intx_id}`, `/crm/leads`, `/crm/leads/board`, `/crm/leads/{lead_id}`, `/crm/leads/{lead_id}/convert` … |
 | `customer_balances.py` | 3 | 93 | `/ar/balances/rebuild`, `/customers/{customer_id}/balance`, `/customers/{customer_id}/billing-schedule` |
 | `customer_feedback.py` | 5 | 95 | `/customer-feedback`, `/customer-feedback/meta`, `/customer-feedback/summary`, `/customer-feedback/{fb_id}` |
@@ -202,7 +202,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inbound_receiving_extra.py` | 8 | 345 | `/inbound/po/{po_id}/receiving-goods-document`, `/inbound/qc/queue`, `/inbound/tasks/{task_id}/inspection-request`, `/inbound/tasks/{task_id}/preview-uom`, `/inbound/tasks/{task_id}/qc-decision`, `/inbound/tasks/{task_id}/uom-options` … |
 | `inbound_scan_label.py` | 10 | 333 | `/inbound/rolls/{roll_id}/confirm-measure`, `/inbound/rolls/{roll_id}/putaway`, `/inbound/rolls/{roll_id}/scan`, `/inbound/rolls/{roll_id}/tag`, `/inbound/scan-label/stats`, `/inbound/tasks/{task_id}/scan-label` … |
 | `incentive.py` | 28 | 554 | `/achievement`, `/achievement/export`, `/achievement/sources`, `/components`, `/components/{component_id}`, `/definitions/current` … |
-| `incentive_rates.py` | 12 | 243 | `/incentive-rates`, `/incentive-rates/articles`, `/incentive-rates/articles/{template_id}/variants`, `/incentive-rates/bulk`, `/incentive-rates/categories`, `/incentive-rates/export` … |
+| `incentive_rates.py` | 12 | 247 | `/incentive-rates`, `/incentive-rates/articles`, `/incentive-rates/articles/{template_id}/variants`, `/incentive-rates/bulk`, `/incentive-rates/categories`, `/incentive-rates/export` … |
 | `initial_registration.py` | 22 | 357 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 545 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
@@ -374,8 +374,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `color_card_pdf.py` | 76 | Kartu Warna Pelanggan (PDF) — swatch, kode, versi supplier per warna + kop badan usaha aktif. |
 | `color_lock_service.py` | 165 | Kunci Warna Eksklusif + Penanda Warna Otomatis. |
 | `color_service.py` | 410 | M0 — Color Library service (Pantone-style master warna). |
-| `commission_rate_service.py` | 408 | KA-8 — layanan layar "Skema & Tarif": daftar kategori/artikel/varian, ubah banyak, Excel, indeks draf simulasi |
-| `commission_rules.py` | 601 | KA-1 — aturan pengali komisi per artikel: validasi nilai tabel + pembaca kunci Pusat Pengaturan. |
+| `commission_rate_service.py` | 487 | KA-8 — layanan layar "Skema & Tarif": daftar kategori/artikel/varian, ubah banyak, Excel, indeks draf simulasi |
+| `commission_rules.py` | 602 | KA-1 — aturan pengali komisi per artikel: validasi nilai tabel + pembaca kunci Pusat Pengaturan. |
 | `config_currency.py` | 64 | FASE G-0 — Konsumen nyata untuk `finance.base_currency` & `finance.fiscal_year_end_month`. |
 | `config_health.py` | 229 | FASE G-0 — KESEHATAN KONFIGURASI: apakah setiap setting benar-benar tersambung? |
 | `config_impact_service.py` | 258 | FASE G-0 — DAFTAR DAMPAK (Blast-Radius Picker). |
@@ -696,7 +696,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `roll_state.py` | 292 | FIX-10 (audit 9 Nov 2026 B3a SSOT-1) — SATU penulis status roll (`inventory_rolls.status`). |
 | `roll_timeline_service.py` | 174 | JEJAK BARANG (Item Passport) — timeline satu roll lintas SEMUA dokumen. |
 | `saga_lock_watch.py` | 93 | services/saga_lock_watch.py — PEMANTAU KUNCI SAGA MENGGANTUNG (T-01 Opsi B). |
-| `sales_force_service.py` | 559 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
+| `sales_force_service.py` | 571 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
 | `sales_order_dashboard.py` | 99 | Dasbor Pesanan HP sales — omzet, status, tren 8 minggu, pelanggan teratas & pesanan butuh tindakan (data milik |
 | `sales_order_helpers.py` | 350 | Helper functions extracted from routers/sales_orders.py. |
 | `sales_ownership.py` | 129 | FASE E-8 (E8.4 · US11) — **SATU definisi "Pesanan Saya"**. |
