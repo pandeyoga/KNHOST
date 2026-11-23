@@ -166,6 +166,56 @@ def _commission_discount(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]
     return {"steps": steps, "result": f"Komisi dibayar {_rp(final)}", "verdict": "warn"}
 
 
+def _commission_price(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
+    """KA-3 — rumus SAMA dengan mesin (`commission_rules.pengali_harga`), memakai aturan efektif (+ nilai hipotetis)."""
+    from services import commission_rules as cr
+    nilai = dict(c)
+    try:
+        for k in ("commission.price_bands", "commission.price_source_rules"):
+            if k in nilai:
+                nilai[k] = cr.periksa_nilai(k, nilai[k])
+    except ValueError as exc:
+        return {"steps": [], "result": str(exc), "verdict": "block"}
+    nilai = {k: nilai.get(k) for k in cr.KUNCI_ATURAN}
+    nilai["commission.price_source_rules"] = nilai["commission.price_source_rules"] or []
+    aturan = cr.susun_aturan_pt(nilai)
+    tarif = _f(s.get("per_unit"), 3500)
+    qty = _f(s.get("quantity"), 100)
+    daftar, bersih = _f(s.get("list_price"), 50_000), _f(s.get("net_price"), 49_000)
+    aturan["tarif"] = {"per_unit_amount": tarif, **{k: aturan.get(k) for k in cr._KUNCI_HARGA_LAIN
+                                                    if k != "default_margin_cap_pct"}}
+    line = {"quantity": qty, "base_quantity": qty, "price": daftar, "line_total": bersih * qty,
+            "list_price": daftar, "global_price": daftar, "floor_price": daftar, "price_source": "global",
+            "discount_percent": round((daftar - bersih) / daftar * 100, 2) if daftar > 0 else 0}
+    t, f, alasan, selisih = cr.pengali_harga(aturan, line)
+    final = round(qty * t * f, 2)
+    steps = [{"label": "Harga daftar → harga jual", "value": f"{_rp(daftar)} → {_rp(bersih)}"},
+             {"label": "Cara menilai harga",
+              "value": "Selisih dari harga acuan" if aturan["price_basis"] == "pricelist" else "Diskon baris (cara lama)"},
+             {"label": "Penilaian", "value": cr.label_alasan(alasan, selisih)},
+             {"label": "Pengali harga", "value": f"× {_num(f)}"},
+             {"label": "Komisi sebelum pengali", "value": _rp(qty * tarif)}]
+    return {"steps": steps, "result": f"Komisi dibayar {_rp(final)}", "verdict": "ok" if f >= 1 else "warn"}
+
+
+def _commission_achievement(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
+    """KA-3 — pengali capaian target: `commission_rules.pilih_jenjang` (rumus yang sama dengan mesin)."""
+    from services import commission_rules as cr
+    try:
+        jenjang = cr.periksa_nilai("commission.achievement_tiers", c.get("commission.achievement_tiers"))
+    except ValueError as exc:
+        return {"steps": [], "result": str(exc), "verdict": "block"}
+    capaian, komisi = _f(s.get("achievement"), 85), _f(s.get("commission"), 1_000_000)
+    aktif = bool(c.get("commission.achievement_multiplier"))
+    p = cr.pilih_jenjang(jenjang, capaian)
+    steps = [{"label": "Capaian target", "value": f"{_num(capaian)}%"},
+             {"label": "Pengali menurut jenjang", "value": f"× {_num(p)}"},
+             {"label": "Pengali capaian", "value": "Aktif" if aktif else "Dimatikan (pengali diabaikan)"}]
+    final = round(komisi * p, 2) if aktif else komisi
+    return {"steps": steps, "result": f"Komisi dibayar {_rp(final)}",
+            "verdict": ("ok" if not aktif or p >= 1 else "warn")}
+
+
 def _receiving_over(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
     expected = _f(s.get("po_qty"), 1000)
     received = _f(s.get("received_total"), 1030)
@@ -539,6 +589,21 @@ SIMULATORS: Dict[str, Dict[str, Any]] = {
                                        I("commission", "Komisi awal", "money", 1_000_000, "Rp"),
                                        I("quantity", "Qty", "decimal", 100, "satuan")],
                             "run": _commission_discount},
+    "commission_price": {"label": "Uji pengali komisi menurut harga jual",
+                         "needs": ["commission.price_basis", "commission.price_bands", "commission.price_source_rules",
+                                   "insentif.harga_acuan", "commission.discount_threshold",
+                                   "commission.discount_mechanic", "commission.discount_factor",
+                                   "commission.discount_potong_rp", "commission.discount_threshold_type"],
+                         "inputs": [I("list_price", "Harga acuan", "money", 50_000, "Rp"),
+                                    I("net_price", "Harga jual bersih", "money", 49_000, "Rp"),
+                                    I("per_unit", "Tarif komisi per satuan", "money", 3500, "Rp"),
+                                    I("quantity", "Qty", "decimal", 100, "satuan")],
+                         "run": _commission_price},
+    "commission_achievement": {"label": "Uji pengali komisi menurut capaian target",
+                               "needs": ["commission.achievement_multiplier", "commission.achievement_tiers"],
+                               "inputs": [I("achievement", "Capaian target", "pct", 85, "%"),
+                                          I("commission", "Komisi sebelum pengali", "money", 1_000_000, "Rp")],
+                               "run": _commission_achievement},
     "receiving_over": {"label": "Uji penerimaan melebihi PO",
                        "needs": ["purchasing.receive_tolerance_percent", "receiving.block_over_remaining"],
                        "inputs": [I("po_qty", "Qty PO", "decimal", 1000, "satuan"),

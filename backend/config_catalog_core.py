@@ -414,7 +414,7 @@ E("commission.discount_threshold_type", group="penjualan", section="komisi", typ
   help="Menentukan apakah batas diskon di bawah dibaca sebagai persen atau rupiah per satuan.",
   impact="Mengubah cara ambang diskon dibandingkan sebelum mekanik pemotongan komisi aktif.",
   example="Persen · ambang 10 → diskon 12% memotong komisi",
-  consumers=("services/sales_force_service.py",), risk="low")
+  consumers=("services/commission_rules.py:faktor_diskon",), risk="low")
 
 E("commission.discount_threshold", group="penjualan", section="komisi", type="decimal", default=10.0,
   min=0, max=1000000, step=1, scopes=("global", "entity"), simulate="commission_discount",
@@ -423,7 +423,7 @@ E("commission.discount_threshold", group="penjualan", section="komisi", type="de
        "sales untuk baris itu dipotong. Isi 0 = diskon berapa pun memotong komisi.",
   impact="Menentukan baris mana yang komisinya dipotong karena diskon terlalu besar.",
   example="Ambang 10% · diskon 15% → mekanik pemotongan aktif",
-  consumers=("services/sales_force_service.py",),
+  consumers=("services/commission_rules.py:faktor_diskon",),
   related=("commission.discount_mechanic",), risk="medium")
 
 E("commission.discount_mechanic", group="penjualan", section="komisi", type="enum", default="tier_factor",
@@ -436,7 +436,7 @@ E("commission.discount_mechanic", group="penjualan", section="komisi", type="enu
        "satuan, atau hangus.",
   impact="Menentukan besar komisi yang dibayarkan pada baris berdiskon besar.",
   example="Kalikan faktor 0,5 → komisi Rp 1.000.000 menjadi Rp 500.000",
-  consumers=("services/sales_force_service.py",), risk="medium")
+  consumers=("services/commission_rules.py:faktor_diskon",), risk="medium")
 
 E("commission.discount_factor", group="penjualan", section="komisi", type="decimal", default=0.5,
   min=0, max=1, step=0.05, scopes=("global", "entity"), simulate="commission_discount",
@@ -445,7 +445,7 @@ E("commission.discount_factor", group="penjualan", section="komisi", type="decim
        "itu hangus.",
   impact="Langsung mengubah nominal komisi baris berdiskon besar.",
   example="Faktor 0,25 → komisi Rp 800.000 menjadi Rp 200.000",
-  consumers=("services/sales_force_service.py",), risk="medium",
+  consumers=("services/commission_rules.py:faktor_diskon",), risk="medium",
   unit="× komisi")
 
 E("commission.discount_potong_rp", group="penjualan", section="komisi", type="money", default=0.0,
@@ -455,7 +455,7 @@ E("commission.discount_potong_rp", group="penjualan", section="komisi", type="mo
   help="Dipakai bila mekanik 'Kurangi rupiah per satuan' dipilih. Isi 0 = komisi tidak dikurangi.",
   impact="Mengurangi tarif komisi per satuan pada baris berdiskon besar.",
   example="Tarif Rp 500/m dipotong Rp 200 → komisi jadi Rp 300/m",
-  consumers=("services/sales_force_service.py",), risk="low")
+  consumers=("services/commission_rules.py:faktor_diskon",), risk="low")
 
 # KA-1 — pengali komisi menurut harga jual & capaian target (komisi per artikel). Pembaca: `services/commission_rules.py`.
 # Isi tabel diperiksa `commission_rules.periksa_nilai` (dikaitkan di `config_resolver.set_value`).
@@ -463,9 +463,11 @@ _KA_SUMBER = [{"value": "special_approval", "label": "Harga khusus"},
               {"value": "customer", "label": "Harga pelanggan"},
               {"value": "special_order", "label": "Pesanan khusus"}]
 _KA_HARGA = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
-                 requires_reason=True, consumers=("services/commission_rules.py:aturan_pt",))
+                 requires_reason=True, consumers=("services/commission_rules.py:susun_aturan_pt",),
+                 simulate="commission_price")
 _KA_CAPAIAN = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
-                   requires_reason=True, consumers=("services/commission_rules.py:aturan_capaian",))
+                   requires_reason=True, consumers=("services/commission_rules.py:aturan_capaian",),
+                   simulate="commission_achievement")
 
 E("commission.price_basis", type="enum", default="diskon_baris",
   options=({"value": "diskon_baris", "label": "Diskon baris (cara lama)"},

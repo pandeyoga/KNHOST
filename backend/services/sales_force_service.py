@@ -10,6 +10,7 @@ from services.customer_service import (
     compute_customer_credit, _order_grand_total, _order_paid, DEAD_STATUSES,
 )
 from services import costing_service
+from services.commission_rules import faktor_diskon
 from services.config_service import get_effective_settings
 
 DEFAULT_TIERS = [
@@ -248,31 +249,7 @@ async def _load_incentive_rates(entity_id: Optional[str]) -> Dict[str, Dict[str,
     return by_cat
 
 
-def _discount_factor(cfg: Dict[str, Any], line: Dict[str, Any], per_unit: float) -> tuple:
-    """Kembalikan (effective_per_unit, factor) berdasar mekanik diskon line.
-
-    3 mekanik (configurable): tier_factor | potong_rp | cutoff. Ambang: pct | rp_per_unit.
-    """
-    qty = float(line.get("quantity", 0) or 0)
-    price = float(line.get("price", 0) or 0)
-    line_total = float(line.get("line_total", 0) or 0)
-    disc_pct = float(line.get("discount_percent", 0) or 0)
-    net_unit = (line_total / qty) if qty else price
-    disc_rp_per_unit = max(price - net_unit, 0.0)
-
-    from config_registry import default_of   # KF-T2 (KF-06) — cadangan = bawaan registry (dulu 0 dan 1,0)
-    thr_type = cfg.get("discount_threshold_type", "pct")
-    threshold = float(cfg.get("discount_threshold", default_of("commission.discount_threshold")) or 0)
-    over = (disc_pct > threshold) if thr_type == "pct" else (disc_rp_per_unit > threshold)
-    if not over:
-        return per_unit, 1.0
-
-    mech = cfg.get("discount_mechanic", "tier_factor")
-    if mech == "cutoff":
-        return per_unit, 0.0
-    if mech == "potong_rp":
-        return max(per_unit - float(cfg.get("discount_potong_rp", 0) or 0), 0.0), 1.0
-    return per_unit, float(cfg.get("discount_factor", default_of("commission.discount_factor")) or 0)  # tier_factor
+_discount_factor = faktor_diskon   # KA-3 — rumus pindah ke commission_rules; nama lama tetap untuk pemanggil lama
 
 
 async def _compute_commission_per_sku(
