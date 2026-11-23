@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 PRICE_KEYS = ("commission.price_basis", "commission.price_bands", "commission.price_source_rules")
 ACH_KEYS = ("commission.achievement_multiplier", "commission.achievement_basis", "commission.achievement_tiers")
@@ -444,12 +444,19 @@ def akhir_bulan_wib(bulan: str) -> datetime:
     return datetime.fromisoformat(f"{akhir_periode(bulan)}T23:59:59").replace(tzinfo=WIB)
 
 
-async def capaian_aktif(entity_id: Optional[str]) -> bool:
-    """Pengali capaian menyala SAAT INI di PT itu ("Semua PT"/kosong → `False`). Mesin memakainya untuk memutuskan
-    periode triwulan/tahun dihitung sebagai Σ hasil per bulan (`sales_force_service.compute_commission`)."""
+async def capaian_aktif(entity_id: Optional[str], bulan: Optional[Iterable[str]] = None) -> bool:
+    """Pengali capaian menyala di PT itu ("Semua PT"/kosong → `False`). Tanpa `bulan`: nilai SAAT INI. Dengan `bulan`
+    (`YYYY-MM`): menyala di SALAH SATU bulan itu menurut aturan bulannya (`_aturan_bulan`: dokumen beku, selain itu
+    nilai pada akhir bulan) — mesin memakainya untuk memutuskan triwulan/tahun dihitung sebagai Σ hasil per bulan
+    (`sales_force_service.compute_commission`), tidak bergantung pada pengaturan hari ini."""
     if not entity_id or entity_id == "all":
         return False
-    return (await aturan_capaian(entity_id))["aktif"]
+    if bulan is None:
+        return bool((await aturan_capaian(entity_id))["aktif"])
+    for b in bulan:
+        if (await _aturan_bulan(entity_id, b))[0]["aktif"]:
+            return True
+    return False
 
 
 async def _aturan_beku(entity_id: str, bulan: str) -> Optional[Dict[str, Any]]:
@@ -457,6 +464,15 @@ async def _aturan_beku(entity_id: str, bulan: str) -> Optional[Dict[str, Any]]:
     doc = await db.commission_period_rules.find_one({"entity_id": entity_id, "period": bulan},
                                                     {"_id": 0, "achievement": 1})
     return (doc or {}).get("achievement")
+
+
+async def _aturan_bulan(entity_id: str, bulan: str) -> Tuple[Dict[str, Any], str]:
+    """`(aturan capaian bulan itu, sumber)`: dokumen beku `commission_period_rules` (`"beku"`), selain itu nilai kunci
+    yang berlaku pada akhir bulan 23.59.59 WIB (`"akhir_bulan"`)."""
+    beku = await _aturan_beku(entity_id, bulan)
+    if beku:
+        return beku, "beku"
+    return await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan)), "akhir_bulan"
 
 
 async def _capaian_pct(entity_id: str, sales_id: str, bulan: str, basis: str) -> Optional[float]:
@@ -482,9 +498,8 @@ async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) 
         aturan = await aturan_capaian(entity_id)
         info.update(aktif=aturan["aktif"], basis=aturan["basis"])
         return 1.0, {**info, "alasan": "bukan_bulan" if aturan["aktif"] else "mati"}
-    beku = await _aturan_beku(entity_id, bulan)
-    aturan = beku or await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan))
-    info.update(aktif=bool(aturan["aktif"]), basis=aturan["basis"], sumber_jenjang="beku" if beku else "akhir_bulan")
+    aturan, sumber = await _aturan_bulan(entity_id, bulan)
+    info.update(aktif=bool(aturan["aktif"]), basis=aturan["basis"], sumber_jenjang=sumber)
     if not info["aktif"]:
         return 1.0, {**info, "alasan": "mati"}
     pct = await _capaian_pct(entity_id, sales_id, bulan, info["basis"])

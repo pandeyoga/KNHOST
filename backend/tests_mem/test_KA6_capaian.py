@@ -17,12 +17,19 @@ Hitung tangan (harga jual Rp 50.000/yd, Andi = sales pesanan 100 %):
           → fraksi 0,2 → 800 yd × 350 = 280.000 (komisi dasar Okt).
   SO-NOV  10.000 yd = 500.000.000, dibuat 2 Nov, terkirim penuh 5 Nov → omzet bersih Nov 500 jt; bayar 10 Nov 50 jt
           → fraksi 0,1 → 1.000 yd × 350 = 350.000 (komisi dasar Nov). Uang masuk Nov 50 jt.
-  Target bulanan Andi: Okt omzet 400 jt (pencairan 400 jt) · Nov omzet 400 jt, pencairan 100 jt · Des tidak ada.
+  Target bulanan Andi: Okt omzet 400 jt (pencairan 400 jt) · Nov omzet 400 jt, pencairan 100 jt · Des omzet 100 jt
+  (tanpa omzet Des → capaian 0 %).
   Jenjang J = mulai 0 % ×0,5 · 80 % ×1 · 100 % ×1,2.
   U3  Nov omzet 500/400 = 125,0 % → ×1,2 → 350.000 × 1,2 = 420.000. Basis uang masuk: 50/100 = 50,0 % → ×0,5 → 175.000.
-  U6  Okt 200/400 = 50,0 % → ×0,5 → 140.000 · Nov ×1,2 → 420.000 · Des tanpa target → ×1 → 0. Triwulan IV = 560.000
-      (dihitung sekali untuk triwulan tanpa pemecahan bulan = 280.000 + 350.000 = 630.000 × 1). Proyeksi penuh: Okt
-      SO-OKT 4.000 × 350 × 0,5 = 700.000 · Nov SO-NOV 10.000 × 350 × 1,2 = 4.200.000 → 4.900.000.
+  U6  Okt 200/400 = 50,0 % → ×0,5 → 140.000 · Nov ×1,2 → 420.000 · Des 0 % → ×0,5 → 0. Triwulan IV = 560.000
+      (dihitung sekali untuk triwulan tanpa pemecahan bulan = 280.000 + 350.000 = 630.000 × 1). Proyeksi penuh = SATU
+      lintasan triwulan × pengali bulan terakhir (Des ×0,5): (4.000 + 10.000) × 350 × 0,5 = 2.450.000 (bukan Σ proyeksi
+      bulanan 700.000 + 4.200.000 = 4.900.000).
+  U6b Citra (pengali menyala HANYA Oktober: berlaku 1 Okt, mati 1 Nov). SO-CIT 1.000 yd = 50.000.000, dibuat 3 Okt,
+      terkirim 6 Okt → omzet Okt 50 jt / target Okt 50 jt = 100,0 % → ×1,2; bayar 25 Okt 10 jt (fraksi 0,2) dan
+      10 Nov 20 jt (0,4). Okt 200 yd × 350 × 1,2 = 84.000 · Nov (mati) 400 yd × 350 = 140.000 · Des 0 → Triwulan IV
+      224.000 (tanpa pemecahan: 600 × 350 = 210.000). Proyeksi: SO-CIT dihitung sekali × pengali Des (mati, ×1) =
+      1.000 × 350 = 350.000 (Σ proyeksi bulanan menghitungnya dua kali: 420.000 + 350.000 = 770.000).
   U4  Budi: pesanan 100 yd lunas 12 Nov (tanpa surat jalan, tanpa omzet) → 100 × 350 = 35.000; hanya target TRIWULAN
       IV → pengali 1, alasan "tanpa_target_bulanan".
 """
@@ -43,7 +50,7 @@ KSC = "ent_ksc"
 NOV, OKT, DES, Q4 = "2026-11", "2026-10", "2026-12", "2026-Q4"
 PRD = "prd_ka6_batik"
 TPL = {"id": "tpl_ka6_batik", "nama": "Batik KA6", "kode": "BTK-KA6"}
-CA, CB = "cus_ka6_andi", "cus_ka6_budi"
+CA, CB, CC = "cus_ka6_andi", "cus_ka6_budi", "cus_ka6_citra"
 JENJANG = [{"capaian_min_pct": 0, "pengali": 0.5}, {"capaian_min_pct": 80, "pengali": 1.0},
            {"capaian_min_pct": 100, "pengali": 1.2}]
 AKTIF, BASIS = "commission.achievement_multiplier", "commission.achievement_basis"
@@ -96,7 +103,7 @@ async def f6(db, akun, kepala_admin):
     from services import incentive_targets as itg
     from services.commission_rules import aturan_pt
     u: Dict[str, Dict[str, Any]] = {}
-    for kode, nama in (("andi", "Andi KA6"), ("budi", "Budi KA6")):
+    for kode, nama in (("andi", "Andi KA6"), ("budi", "Budi KA6"), ("citra", "Citra KA6")):
         u[kode] = await akun("sales", entitas=(KSC,))
         await db.users.update_one({"id": u[kode]["id"]}, {"$set": {"name": nama}})
     await db.product_templates.insert_one({"id": TPL["id"], "name": TPL["nama"], "sku_prefix": TPL["kode"],
@@ -108,7 +115,7 @@ async def f6(db, akun, kepala_admin):
         {"id": c, "name": f"Toko KA6 {k}", "entity_id": KSC, "status": "active", "deposit_balance": 0.0,
          "assigned_sales_id": u[k]["id"], "created_at": _iso("2026-01-05"),
          "sales_team": [{"sales_id": u[k]["id"], "role": "pic", "split_pct": 100.0}]}
-        for c, k in ((CA, "andi"), (CB, "budi"))])
+        for c, k in ((CA, "andi"), (CB, "budi"), (CC, "citra"))])
     pot = _potret(await aturan_pt(KSC))
     await _pesanan(db, gl, "so_ka6_okt", CA, u["andi"]["id"], 4_000, pot, dibuat="2026-10-02", dikirim="2026-10-05",
                    bayar=[(40_000_000, "2026-10-20")])
@@ -116,8 +123,13 @@ async def f6(db, akun, kepala_admin):
                    bayar=[(50_000_000, "2026-11-10")])
     await _pesanan(db, gl, "so_ka6_bdi", CB, u["budi"]["id"], 100, pot, dibuat="2026-11-03", dikirim=None,
                    bayar=[(5_000_000, "2026-11-12")])
+    await _pesanan(db, gl, "so_ka6_cit", CC, u["citra"]["id"], 1_000, pot, dibuat="2026-10-03", dikirim="2026-10-06",
+                   bayar=[(10_000_000, "2026-10-25"), (20_000_000, "2026-11-10")])
     for sid, jenis, per, omzet, cair in ((u["andi"]["id"], "month", OKT, 400e6, 400e6),
                                          (u["andi"]["id"], "month", NOV, 400e6, 100e6),
+                                         (u["andi"]["id"], "month", DES, 100e6, 100e6),
+                                         (u["citra"]["id"], "month", OKT, 50e6, 50e6),
+                                         (u["citra"]["id"], "month", NOV, 100e6, 100e6),
                                          (u["budi"]["id"], "quarter", Q4, 1e6, 1e6)):
         await itg.save_target(KSC, {"sales_id": sid, "period_type": jenis, "period": per,
                                     "target_sales_amount": omzet, "target_collection_amount": cair}, AKTOR_UJI)
@@ -163,7 +175,7 @@ def _faktor_rincian(hasil: Dict[str, Any]) -> List[float]:
 async def test_KA6_U1_jenjang_akhir_bulan(db, f6):
     from services.commission_rules import aturan_capaian
     jenjang_30nov = [{"capaian_min_pct": 0, "pengali": 1.0}, {"capaian_min_pct": 100, "pengali": 1.5}]
-    jenjang_1des = [{"capaian_min_pct": 0, "pengali": 1.0}, {"capaian_min_pct": 100, "pengali": 2.0}]
+    jenjang_1des = [{"capaian_min_pct": 0, "pengali": 0.8}, {"capaian_min_pct": 100, "pengali": 2.0}]
     # menyala sejak 1 Nov (sudah lewat): tidak dipakai untuk Oktober — nilai yang berlaku SESUDAH bulan itu tidak ikut
     async with _aturan(db, *_menyala(AWAL_NOV)):
         akhir_okt = await aturan_capaian(KSC, at=datetime.fromisoformat("2026-10-31T23:59:59+07:00"))
@@ -175,8 +187,8 @@ async def test_KA6_U1_jenjang_akhir_bulan(db, f6):
             assert faktor == 1.5   # 125 % → baris "mulai 100 %" jenjang berlaku 30 Nov; jenjang 1 Des tidak dipakai
             assert info == {"aktif": True, "basis": "omzet_bersih", "capaian_pct": 125.0,
                             "sumber_jenjang": "akhir_bulan", "alasan": "jenjang"}
-            faktor, _ = await _pengali(f6, "andi", DES)
-            assert faktor == 1.0   # Desember: tanpa target bulanan (jenjang 1 Des berlaku, tapi tidak ada capaian)
+            faktor, info = await _pengali(f6, "andi", DES)
+            assert (faktor, info["capaian_pct"]) == (0.8, 0.0)   # Desember: capaian 0 % → jenjang 1 Des "mulai 0 %"
 
 
 # ═══ U2 — pengali capaian mati (bawaan) → ×1 ════════════════════════════════════════════════════════════════════════
@@ -236,7 +248,7 @@ async def test_KA6_U5_semua_pt(db, f6):
         assert q["total_incentive"] == 630_000 and q["achievement_multiplier"]["info"]["alasan"] == "semua_pt"
 
 
-# ═══ U6 — triwulan = Σ hasil per bulan (Review Focus 3) ════════════════════════════════════════════════════════════
+# ═══ U6 — triwulan = Σ hasil per bulan; proyeksi satu lintasan × pengali bulan terakhir (Review Focus 3) ══════════════
 async def test_KA6_U6_triwulan_jumlah_bulanan(db, f6):
     from services import sales_force_service as sfs
     sid = f6["u"]["andi"]["id"]
@@ -247,20 +259,41 @@ async def test_KA6_U6_triwulan_jumlah_bulanan(db, f6):
         assert langsung["achievement_multiplier"]["info"]["alasan"] == "bukan_bulan"
         bulan = [await _komisi(f6, "andi", m) for m in (OKT, NOV, DES)]
         assert [b["total_incentive"] for b in bulan] == [140_000, 420_000, 0]
-        assert [b["achievement_multiplier"]["factor"] for b in bulan] == [0.5, 1.2, 1.0]
+        assert [b["achievement_multiplier"]["factor"] for b in bulan] == [0.5, 1.2, 0.5]
         q = await _komisi(f6, "andi", Q4)
         assert q["period"] == Q4 and q["strategy"] == "per_sku"
         assert q["total_incentive"] == q["commission"] == 560_000
-        assert q["projection_full"] == sum(b["projection_full"] for b in bulan) == 4_900_000
+        # proyeksi: satu lintasan triwulan (tiap pesanan sekali) × pengali Desember 0,5 — bukan Σ proyeksi bulanan
+        assert q["projection_full"] == 2_450_000
+        assert sum(b["projection_full"] for b in bulan) == 4_900_000
+        assert (q["base_amount"], q["kpi"]) == (langsung["base_amount"], langsung["kpi"])
         rincian = sorted((r["achievement_factor"], r["qty_base"], r["commission"]) for r in q["breakdown"]
                          if r["commission"])
         assert rincian == [(0.5, 800, 140_000), (1.2, 1_000, 420_000)]
         am = q["achievement_multiplier"]
         assert am["factor"] is None and am["info"]["alasan"] == "per_bulan"
-        assert [(b["period"], b["factor"]) for b in am["per_bulan"]] == [(OKT, 0.5), (NOV, 1.2), (DES, 1.0)]
+        assert [(b["period"], b["factor"]) for b in am["per_bulan"]] == [(OKT, 0.5), (NOV, 1.2), (DES, 0.5)]
     # pengali mati → triwulan dihitung sekali seperti sebelum fitur ini (bukan dipecah)
     q = await _komisi(f6, "andi", Q4)
     assert q["total_incentive"] == 630_000 and q["achievement_multiplier"]["info"]["alasan"] == "mati"
+
+
+# ═══ U6b — pengali menyala hanya Oktober: triwulan tetap dipecah; pesanan dibayar dua bulan diproyeksi sekali ═════════
+async def test_KA6_U6b_menyala_satu_bulan_proyeksi_sekali(db, f6):
+    from services.commission_rules import capaian_aktif
+    sid = f6["u"]["citra"]["id"]
+    async with _aturan(db, *_menyala(), (AKTIF, False, AWAL_NOV)):
+        assert await capaian_aktif(KSC) is False                    # hari ini mati …
+        assert await capaian_aktif(KSC, [OKT, NOV, DES]) is True    # … tetapi menyala di Oktober
+        bulan = [await _komisi(f6, "citra", m) for m in (OKT, NOV, DES)]
+        assert [b["total_incentive"] for b in bulan] == [84_000, 140_000, 0]
+        assert [(b["achievement_multiplier"]["factor"], b["achievement_multiplier"]["info"]["alasan"])
+                for b in bulan] == [(1.2, "jenjang"), (1.0, "mati"), (1.0, "mati")]
+        q = await _komisi(f6, "citra", Q4)
+        assert q["sales_id"] == sid and q["total_incentive"] == 224_000      # bukan 210.000 (tanpa pemecahan)
+        assert [b["factor"] for b in q["achievement_multiplier"]["per_bulan"]] == [1.2, 1.0, 1.0]
+        assert q["projection_full"] == 350_000                              # SO-CIT sekali × pengali Des (×1)
+        assert sum(b["projection_full"] for b in bulan) == 770_000           # Σ bulanan menghitungnya dua kali
 
 
 # ═══ U7 — aturan dibekukan saat akrual dibukukan ═══════════════════════════════════════════════════════════════════

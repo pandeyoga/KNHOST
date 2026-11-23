@@ -3,7 +3,7 @@
 Semua KPI DERIVED dari sales_orders/payments/customers. Komisi default basis PENCAIRAN
 (tertagih) + TIERED capaian target (S36).
 """
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 from db import db
 from core_utils import safe_doc
 from services.customer_service import (
@@ -201,7 +201,8 @@ async def compute_commission(sales_id: str, period: str, entity_id: Optional[str
     if strategy == "achievement_tiered":
         return await _compute_commission_tiered(sales_id, period, entity_id)
     bulan = _bulan_periode(period)
-    if bulan and await capaian_aktif(entity_id):   # KA-6 — pengali capaian menyala: triwulan/tahun = Σ per bulan
+    # KA-6 — triwulan/tahun yang salah satu bulannya berpengali capaian menyala (aturan bulan itu) = Σ per bulan
+    if bulan and await capaian_aktif(entity_id, bulan):
         return await _jumlah_bulanan(sales_id, period, entity_id, settings, bulan)
     return await _compute_commission_per_sku(sales_id, period, entity_id, settings)
 
@@ -219,18 +220,17 @@ def _bulan_periode(period: str) -> List[str]:
     return []
 
 
-async def _capaian_pencairan(sales_id: str, period: str, entity_id: Optional[str], kpi: Dict[str, Any]) -> tuple:
-    """(target pencairan, % capaian pencairan) — angka ringkasan hasil mesin per-SKU (bukan pengali capaian KA-6)."""
-    target_collection = await _target_collection_for(sales_id, period, entity_id)
-    return target_collection, ((kpi["total_collected"] / target_collection * 100) if target_collection else 0)
-
-
 async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any],
                           bulan: List[str]) -> Dict[str, Any]:
-    """KA-6 (Review Focus 3) — triwulan/tahun dengan pengali capaian menyala = Σ hasil `_compute_commission_per_sku`
-    tiap bulan, masing-masing dengan pengali capaian bulannya. Rincian digabung (baris dengan faktor sama dijumlah;
-    pengali capaian berbeda = baris berbeda); `projection_full` dijumlah per bulan."""
+    """KA-6 (Review Focus 3) — triwulan/tahun berpengali capaian: komisi = Σ hasil `_compute_commission_per_sku` tiap
+    bulan, masing-masing dengan pengali capaian bulannya; rincian digabung (baris dengan faktor sama dijumlah, pengali
+    capaian berbeda = baris berbeda). `projection_full` = SATU lintasan mesin atas seluruh periode (tiap pesanan yang
+    ikut dihitung sekali, seperti mesin lama) dengan pengali capaian bulan TERAKHIR periode itu; angka ringkasan
+    (pencairan, target, KPI) dari lintasan yang sama."""
     hasil = [await _compute_commission_per_sku(sales_id, m, entity_id, settings) for m in bulan]
+    akhir = hasil[-1]["achievement_multiplier"]
+    utuh = await _compute_commission_per_sku(sales_id, period, entity_id, settings,
+                                             capaian_tetap=(akhir["factor"], akhir["info"]))
     gabung: Dict[tuple, Dict[str, Any]] = {}
     for h in hasil:
         for r in h["breakdown"]:
@@ -241,28 +241,16 @@ async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], 
     rows = sorted(gabung.values(), key=lambda x: x["commission"], reverse=True)
     for r in rows:
         r["qty_base"], r["commission"] = round(r["qty_base"], 2), round(r["commission"], 2)
-    kpi = await sales_kpi(sales_id, period, entity_id)
-    target_collection, achievement = await _capaian_pencairan(sales_id, period, entity_id, kpi)
     total = round(sum(h["total_incentive"] for h in hasil), 2)
     per_bulan = [{"period": m, **h["achievement_multiplier"]} for m, h in zip(bulan, hasil)]
     return {
-        "sales_id": sales_id,
-        "period": period,
-        "strategy": "per_sku",
-        "basis": "per_sku_collection",
-        "base_amount": round(kpi["total_collected"], 2),
-        "target_amount": round(target_collection, 2),
-        "achievement_pct": round(achievement, 2),
-        "applied_rate": None,
+        **utuh,
         "commission": total,
-        "bonus_new_customer": 0.0,
         "total_incentive": total,
-        "projection_full": round(sum(h["projection_full"] for h in hasil), 2),
         "breakdown": rows,
         "achievement_multiplier": {"factor": None, "info": {"aktif": True, "basis": None, "capaian_pct": None,
                                                             "sumber_jenjang": None, "alasan": "per_bulan"},
                                    "per_bulan": per_bulan},
-        "kpi": kpi,
     }
 
 
@@ -344,6 +332,7 @@ def _label_rincian(alasan: str, selisih: set) -> str:
 async def _compute_commission_per_sku(
     sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any], *,
     sumber_aturan: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
+    capaian_tetap: Optional[Tuple[float, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Engine per-SKU, margin-aware, on-collection (EPIC4) — aturan tiap baris dari potret pesanan (KA-5).
 
@@ -353,8 +342,9 @@ async def _compute_commission_per_sku(
     Komisi baris = `commission_rules.hitung_baris`: qty dasar terbayar × tarif × pengali harga × pengali capaian × bobot
     tim, dibatasi batas margin (margin_cap_pct% × margin baris terbayar) hanya bila HPP diketahui. Baris tanpa tarif
     (dipotret kosong atau ≤ 0) tidak berkomisi. `settings` tidak dibaca lagi (nilai PT ada di potret).
-    KA-6 — pengali capaian = `commission_rules.pengali_capaian` (sekali per proses hitung, sama untuk semua baris);
-    hasil + `achievement_multiplier` `{factor, info}`.
+    KA-6 — pengali capaian = `commission_rules.pengali_capaian` (sekali per proses hitung, sama untuk semua baris),
+    atau `capaian_tetap` `(faktor, info)` dari pemanggil (proyeksi triwulan/tahun, `_jumlah_bulanan`); hasil +
+    `achievement_multiplier` `{factor, info}`.
     """
     kpi = await sales_kpi(sales_id, period, entity_id)
     cache: Dict[Any, Any] = {}   # indeks tarif, aturan PT, produk, artikel — sekali per proses hitung
@@ -364,7 +354,7 @@ async def _compute_commission_per_sku(
 
     ambil_aturan = sumber_aturan or _aturan_sekarang
     # KA-6 — pengali capaian target sales periode ini: dihitung SEKALI, dipakai semua baris.
-    faktor_capaian, info_capaian = await pengali_capaian(entity_id, sales_id, period)
+    faktor_capaian, info_capaian = capaian_tetap or await pengali_capaian(entity_id, sales_id, period)
     wac_cache: Dict[str, float] = {}
     prod_cache: Dict[str, Dict[str, Any]] = {}
     ent_for_wac = entity_id if entity_id and entity_id != "all" else None
@@ -472,7 +462,8 @@ async def _compute_commission_per_sku(
             if h["selisih_pct"] is not None:
                 b["_selisih"].add(h["selisih_pct"])
 
-    target_collection, achievement = await _capaian_pencairan(sales_id, period, entity_id, kpi)
+    target_collection = await _target_collection_for(sales_id, period, entity_id)
+    achievement = (kpi["total_collected"] / target_collection * 100) if target_collection else 0
     rows = sorted(breakdown.values(), key=lambda x: x["commission"], reverse=True)
     for r in rows:
         r["price_reason_label"] = _label_rincian(r["price_reason"], r.pop("_selisih"))
