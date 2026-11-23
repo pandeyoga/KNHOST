@@ -481,6 +481,9 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
     commission: 420000, rate: 3500, rate_origin: "artikel_pt", price_factor: 1, price_reason: "harga_penuh",
     price_reason_label: "Harga jual tidak di bawah harga acuan", achievement_factor: 1, capped: false, ...over });
   const rows = gabungSimulasi([BARIS()], [BARIS({ rate: 4000, commission: 480000 })]);
+  // KA-11 — kolom kanan memuat pesanan yang dipotret tanpa tarif (tidak berkomisi sekarang): yard dua sisi berbeda
+  const lebih = gabungSimulasi([BARIS()], [BARIS(), BARIS({ qty_base: 30, rate: 4000, commission: 120000 })]);
+  expect([lebih[0].a.yard, lebih[0].b.yard]).toEqual([120, 150]);
   expect(rows).toHaveLength(1);
   expect(rows[0]).toMatchObject({ kunci: "t_mega", nama: "Batik Mega", yard: 120 });
   expect(rows[0].a.komisi).toBe(420000);
@@ -501,6 +504,7 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
   expect(body).toMatchObject({ entity_id: "ent_kanda", sales_id: "u_andi", draft_rates: [{ category: "Batik", per_unit_amount: 4000 }] });
   expect(body.period).toMatch(/^\d{4}-\d{2}$/);
   expect(txt(q(host, "scheme-sim-row-t_mega"))).toContain("Rp 3.500 → Rp 4.000");
+  expect(txt(q(host, "scheme-sim-yard-t_mega"))).toBe("120");   // yard sama di dua sisi → satu angka
   expect(txt(q(host, "scheme-sim-total-now"))).toBe("Rp 420.000");
   expect(txt(q(host, "scheme-sim-total-new"))).toBe("Rp 480.000");
   expect(txt(q(host, "scheme-sim-note"))).toBe("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan.");

@@ -49,6 +49,9 @@ const kali = (v) => (v === null || v === undefined ? "—" : `×${formatDecimal(
 const teksTarif = (s) => (s ? s.tarif.map((t) => formatCurrency(t)).join(" / ") : "—");
 const teksHarga = (s) => (s ? s.harga.map((h) => `${kali(h.faktor)}${h.alasan ? ` (${h.alasan})` : ""}`).join("; ") : "—");
 const teksCapaian = (s) => (s ? s.capaian.map(kali).join(" / ") : "—");
+// KA-11 — yard dua sisi: kolom kanan bisa memuat pesanan bulan ini yang dipotret TANPA tarif (tidak berkomisi sekarang),
+// jadi yard-nya bisa lebih besar dari kolom kiri; satu angka saja menyesatkan (uji layar KA-11: 179,59 vs 1.981,78).
+const teksYard = (s) => (s ? formatDecimal(s.yard, 2, 0) : "—");
 const banding = (a, b) => (a === b ? a : `${a} → ${b}`);
 
 export const BATAS_ARTIKEL = 200;
@@ -193,7 +196,7 @@ export default function SchemeSimulation({ entityId, roster, rosterAlasan = "" }
                     <tr key={r.kunci} data-testid={`scheme-sim-row-${r.kunci}`}>
                       <td className="min-w-[150px] break-words"><span className="block font-semibold">{r.nama}</span>
                         <span className="block font-mono text-fs-12 text-kn-text-2">{r.kode}</span></td>
-                      <td className="text-right tabular-nums">{formatDecimal(r.yard, 2, 0)}</td>
+                      <td className="whitespace-nowrap text-right tabular-nums" data-testid={`scheme-sim-yard-${r.kunci}`}>{banding(teksYard(r.a), teksYard(r.b))}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">{banding(teksTarif(r.a), teksTarif(r.b))}</td>
                       <td className="min-w-[180px] text-fs-12">{banding(teksHarga(r.a), teksHarga(r.b))}</td>
                       <td className="text-right tabular-nums">{banding(teksCapaian(r.a), teksCapaian(r.b))}</td>
