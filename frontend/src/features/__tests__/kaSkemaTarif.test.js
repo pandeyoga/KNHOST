@@ -40,6 +40,7 @@ const mockConfirm = jest.fn();
 const mockReason = jest.fn();
 const mockSettings = [];
 const mockBrowsers = [];
+const mockAsli = { pakai: false };   // true = mesin & tampilan Pusat Pengaturan yang asli (uji simpan cakupan grup)
 jest.mock("../../services/apiClient", () => ({
   __esModule: true,
   default: {
@@ -69,16 +70,23 @@ jest.mock("../../components/EntityScopeBanner", () => () => <div data-testid="sc
 jest.mock("../../components/KNDatePicker", () => (p) => (
   <input data-testid={p["data-testid"]} value={p.value || ""} disabled={p.disabled} onChange={(e) => p.onChange(e.target.value)} />));
 // Pusat Pengaturan tertanam: yang diuji di sini = kunci yang dikunci tiap bagian (mesinnya diuji di suite Pengaturan).
-jest.mock("../settings/config/SettingsHub", () => ({
-  ...jest.requireActual("../settings/config/SettingsHub"),
+jest.mock("../settings/config/SettingsHub", () => {
+  const asli = jest.requireActual("../settings/config/SettingsHub");
+  return {
+  ...asli,
   useSettingsBrowser: (opts) => {
     mockSettings.push(opts);
+    if (mockAsli.pakai) return asli.useSettingsBrowser(opts);
     const batas = (opts.includeKeys || []).includes("commission.default_margin_cap_pct");
     return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [] };
   },
-  SettingsBrowser: (p) => { mockBrowsers.push(p); return <div data-testid={`cfg-browser-${p.embedded || "lepas"}`} />; },
-  SettingsNotice: () => null,
-}));
+  SettingsBrowser: (p) => {
+    mockBrowsers.push(p);
+    return mockAsli.pakai ? <asli.SettingsBrowser {...p} /> : <div data-testid={`cfg-browser-${p.embedded || "lepas"}`} />;
+  },
+  SettingsNotice: (p) => (mockAsli.pakai ? <asli.SettingsNotice {...p} /> : null),
+  };
+});
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || function scrollIntoView() {};   // jsdom
 
@@ -180,6 +188,7 @@ beforeEach(() => {
   [mockGet, mockPost, mockPut, mockPatch, mockDelete, mockConfirm, mockReason].forEach((m) => m.mockReset());
   mockSettings.length = 0;
   mockBrowsers.length = 0;
+  mockAsli.pakai = false;
   document.body.innerHTML = "";
   mockReason.mockResolvedValue("alasan uji");
   mockConfirm.mockResolvedValue(true);
@@ -720,7 +729,8 @@ test("KA9 R16 kecil: fokus deep link dilepas di cabang tanpa isi; label isian ta
   const lepas = jest.fn();
   izin(PENUH);
   api({ extra: { "/api/incentive-rates": TARIF_GRUP } });
-  let host = await mount(<IncentiveSchemeView focusKey="commission.price_bands" focusNonce={1} onFocusConsumed={lepas} />, { entity: "all" });
+  // "Semua PT": kunci yang tidak tampil di tab ini (satuan) langsung dilepas; kunci bagian diteruskan ke bagian grup
+  let host = await mount(<IncentiveSchemeView focusKey="commission.incentive_unit" focusNonce={1} onFocusConsumed={lepas} />, { entity: "all" });
   expect(lepas).toHaveBeenCalledTimes(1);
   document.body.innerHTML = "";
   izin({ incentive: ["view"] });
@@ -736,6 +746,43 @@ test("KA9 R16 kecil: fokus deep link dilepas di cabang tanpa isi; label isian ta
   expect(q(host, "rate-form-amount").id).toBe("rate-form-amount");
   expect(host.querySelector('label[for="rate-form-margin"]')).not.toBeNull();
   expect(q(host, "rate-form-margin").id).toBe("rate-form-margin");
+});
+
+test("KA9 R16 mode Semua PT: bagian 3–5 & Lanjutan tampil pada cakupan aturan grup; simpan = scope_type global", async () => {
+  izin(PENUH);
+  const KARTU = { key: "commission.achievement_multiplier", group: "penjualan", section: "komisi-pengali",
+    label: "Kalikan komisi dengan pengali capaian target", type: "bool", value: false, default: false, stored_value: false,
+    can_edit: true, source_layer: "code_default", scopes: ["global", "entity"], status: "active", risk: "medium" };
+  api({ extra: {
+    "/api/incentive-rates": TARIF_GRUP,
+    "/api/config/registry": { groups: [{ id: "penjualan", label: "Penjualan & harga", count: 1,
+      sections: [{ id: "komisi-pengali", label: "Komisi sales: pengali", advanced: false }] }],
+    entries: [{ key: KARTU.key, group: "penjualan" }], caps: { global_write: true, settings_manage: true, settings_view: true } },
+    "/api/config/effective": { groups: [], items: [KARTU] },
+  } });
+  mockAsli.pakai = true;
+  const host = await mount(<IncentiveSchemeView />, { entity: "all" });
+  expect(q(host, "scheme-group-rates-card")).not.toBeNull();
+  expect(txt(q(host, "scheme-settings-scope"))).toContain("aturan grup (Semua PT)");
+  const grupKunci = mockSettings.filter((o) => o.selectedEntity === "all").map((o) => (o.includeKeys || []).join());
+  expect(grupKunci).toEqual(expect.arrayContaining([
+    "commission.price_basis,commission.price_bands,commission.price_source_rules,commission.discount_",
+    "commission.achievement_multiplier,commission.achievement_basis,commission.achievement_tiers",
+    "commission.default_margin_cap_pct"]));
+  const eff = dipanggil("/config/effective");
+  expect(eff.length).toBeGreaterThan(0);
+  expect(eff.every((c) => c[1].params.scope === "global" && c[1].params.entity_id === "")).toBe(true);
+  expect(q(host, "scheme-advanced")).not.toBeNull();                   // Lanjutan (strategi) juga di cakupan grup
+  expect(host.querySelectorAll('[data-testid="cfg-search"]')).toHaveLength(0);
+  // kartu di bagian 4 (pengali capaian): buka → ubah → simpan pada aturan grup
+  const kartu = q(host, "scheme-achievement-card");
+  await klik(kartu.querySelector('[data-testid="cfg-card-toggle-commission.achievement_multiplier"]'));
+  await klik(kartu.querySelector('[data-testid="cfg-input-commission.achievement_multiplier"]'));
+  await klik(kartu.querySelector('[data-testid="cfg-save-commission.achievement_multiplier"]'));
+  expect(mockPut).toHaveBeenCalledTimes(1);
+  expect(mockPut.mock.calls[0][0]).toBe("/api/config/values");
+  expect(mockPut.mock.calls[0][1].items[0]).toMatchObject({ key: "commission.achievement_multiplier", value: true,
+    scope_type: "global", scope_id: "" });
 });
 
 test("KA9 R16 SettingsBrowser tertanam: tanpa kotak cari & pemilih cakupan, testid berawalan", async () => {

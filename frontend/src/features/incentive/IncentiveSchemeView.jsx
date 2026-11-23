@@ -13,7 +13,8 @@
  *
  * PT = pemilih PT di kepala aplikasi (D-14). Tanpa `sales_force.view` = kalimat izin, tanpa panggilan API. "Semua PT" =
  * kalimat "Pilih satu PT …" + daftar tarif Semua PT yang bisa diubah lewat pop-up tarif yang sama (`GroupRatesList`, R15;
- * rute pohon tarif menolak "Semua PT"). Mode PT & daftar sales dari `GET /api/incentive/targets` (`commission_mode`,
+ * rute pohon tarif menolak "Semua PT") + bagian 3–5 dan Lanjutan pada cakupan ATURAN GRUP (`BagianPengaturanGrup`; Pusat
+ * Pengaturan menyembunyikan `commission.*` dan menautkan ke tab ini, jadi di sinilah nilai grup komisi diubah). Mode PT & daftar sales dari `GET /api/incentive/targets` (`commission_mode`,
  * `roster`; 403 = kalimat izin modul Kinerja & Insentif — R16). Deep link kunci `commission.*` (`COMMISSION_HOME`)
  * membuka bagian yang memuat kuncinya (`bagianUntukKunci`); di cabang tanpa isi, permintaan fokus langsung dilepas.
  */
@@ -40,7 +41,7 @@ import { TEKS_BERLAKU } from "./RateFormModal";
 import { komisiOtomatisJalan } from "./incentiveModes";
 
 export const TEKS_SEMUA_PT = "Pilih satu PT di pemilih PT (kanan atas) untuk mengatur sumber insentif, tarif per PT, "
-  + "pengali, dan simulasi. Di mode Semua PT hanya tarif yang berlaku untuk Semua PT yang bisa diubah (di bawah).";
+  + "nilai khusus PT, dan simulasi. Di mode Semua PT yang bisa diubah: tarif Semua PT dan aturan grup bagian 3–5 (di bawah).";
 export const TEKS_STRATEGI_LANJUTAN = "Skema tarif per artikel di atas hanya dipakai bila cara menghitung komisi = "
   + "“Per SKU (tarif per barang)”.";
 export const TEKS_TANPA_LIHAT = "Melihat skema & tarif komisi butuh akses Lihat di modul Pengawasan Tim Sales & Kredit.";
@@ -96,10 +97,11 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
   const { canWrite, selectedEntity, entities } = useEntityScope();
   const lihat = canCurrent("sales_force", "view");
   const siap = lihat && canWrite;
-  // R16 — cabang tanpa isi (tanpa izin / "Semua PT") tidak punya bagian pengaturan: permintaan fokus dilepas.
+  // R16 — cabang tanpa izin tidak punya bagian pengaturan: permintaan fokus dilepas. ("Semua PT" punya bagian pengaturan
+  // grup — fokusnya diteruskan ke sana.)
   useEffect(() => {
-    if (focusNonce && !siap && onFocusConsumed) onFocusConsumed();
-  }, [focusNonce, siap]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (focusNonce && !lihat && onFocusConsumed) onFocusConsumed();
+  }, [focusNonce, lihat]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!lihat) {
     return (
       <div className="space-y-4" data-testid="incentive-scheme-view">
@@ -116,6 +118,7 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
           help="Tarif tingkat grup: berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat yang sama. Tarif baru untuk Semua PT dibuat dari satu PT (pop-up tarif › Berlaku untuk: Semua PT).">
           <GroupRatesList />
         </Bagian>
+        <BagianPengaturanGrup entities={entities} cfgFocus={{ focusKey, focusGroup, focusNonce, onFocusConsumed }} />
       </div>
     );
   }
@@ -165,6 +168,60 @@ function PengaturanStrategi({ entityId, entities, grup, onStrategi, cfgFocus }) 
   return <PengaturanBagian s={s} entities={entities} testIdPrefix="scheme-advanced-cfg" />;
 }
 
+/** Deep link kunci komisi → hanya bagian yang memuat kuncinya menerima fokus; kunci yang tidak tampil (satuan) langsung
+ *  dilepas supaya permintaan fokus tidak menggantung. */
+function useFokusKomisi(cfgFocus) {
+  const bagianFokus = bagianUntukKunci(cfgFocus.focusKey);
+  useEffect(() => {
+    if (cfgFocus.focusNonce && !bagianFokus && cfgFocus.onFocusConsumed) cfgFocus.onFocusConsumed();
+  }, [cfgFocus.focusNonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (b) => (bagianFokus === b ? cfgFocus : {});
+}
+
+/** Bagian 3–5 pada satu cakupan (`selectedEntity` = PT, atau "all" = aturan grup). Mengembalikan mesin ⑤ (bawaan batas). */
+function BagianPengali({ selectedEntity, entities, grup, fokus, kalimatCakupan, onBatas }) {
+  const harga = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.harga, ...fokus("harga") });
+  const capaian = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.capaian, ...fokus("capaian") });
+  const batas = useSettingsBrowser({ selectedEntity, groupIds: grup, includeKeys: KUNCI_BAGIAN.batas, ...fokus("batas") });
+  const bawaanBatas = (batas.items || []).find((i) => i.key === KUNCI_BATAS)?.value;
+  useEffect(() => { if (onBatas) onBatas(bawaanBatas); }, [bawaanBatas]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <>
+      <Bagian nomor={3} icon={SlidersHorizontal} judul="Pengali harga" testId="scheme-price-card"
+        help="Komisi dikalikan menurut seberapa jauh harga jual di bawah harga acuan (atau menurut diskon baris, cara lama). Artikel boleh punya pita sendiri di pop-up tarifnya.">
+        <p className="text-fs-12 text-kn-text-2" data-testid="scheme-settings-scope">{kalimatCakupan}</p>
+        <PengaturanBagian s={harga} entities={entities} testIdPrefix="scheme-price-cfg" />
+      </Bagian>
+
+      <Bagian nomor={4} icon={Gauge} judul="Pengali capaian" testId="scheme-achievement-card"
+        help="Opsional: komisi bulan itu dikalikan menurut capaian target bulanan sales.">
+        <PengaturanBagian s={capaian} entities={entities} testIdPrefix="scheme-achievement-cfg" />
+      </Bagian>
+
+      <Bagian nomor={5} icon={Shield} judul="Batas margin" testId="scheme-cap-card"
+        help="Bawaan batas margin untuk tarif baru. Batas tiap tarif tampil dan diubah di baris tarifnya (bagian 2).">
+        <PengaturanBagian s={batas} entities={entities} testIdPrefix="scheme-cap-cfg" />
+      </Bagian>
+    </>
+  );
+}
+
+/** Mode "Semua PT" — bagian 3–5 dan Lanjutan pada cakupan aturan grup (nilai untuk PT yang tidak punya nilai sendiri),
+ *  boleh diubah menurut izin kunci di registri. */
+function BagianPengaturanGrup({ entities, cfgFocus }) {
+  const fokus = useFokusKomisi(cfgFocus);
+  const [strategi, setStrategi] = useState("");
+  const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
+  return (
+    <>
+      <BagianPengali selectedEntity="all" entities={entities} grup={grup} fokus={fokus}
+        kalimatCakupan={<>Bagian 3–5 dan Lanjutan di bawah adalah <b>aturan grup (Semua PT)</b>: berlaku untuk setiap PT yang tidak punya nilai sendiri. Nilai khusus satu PT diubah sesudah memilih PT itu.</>} />
+      <BagianLanjutan entityId="all" entities={entities} grup={grup} strategi={strategi} labelStrategi=""
+        stratErr="" onRetry={() => {}} onStrategi={setStrategi} cfgFocus={cfgFocus} />
+    </>
+  );
+}
+
 function IsiSkema({ entityId, entities, cfgFocus }) {
   const pt = entityFullById(entities, entityId, "PT ini");
   const ptPendek = entityShortById(entities, entityId, "pt");
@@ -174,18 +231,9 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
   const [stratErr, setStratErr] = useState("");
   const [stratMuat, setStratMuat] = useState(0);
 
-  // Deep link kunci komisi → hanya bagian yang memuat kuncinya menerima fokus; kunci yang tidak tampil (strategi,
-  // satuan) langsung dilepas supaya permintaan fokus tidak menggantung.
-  const bagianFokus = bagianUntukKunci(cfgFocus.focusKey);
-  const fokus = (b) => (bagianFokus === b ? cfgFocus : {});
-  useEffect(() => {
-    if (cfgFocus.focusNonce && !bagianFokus && cfgFocus.onFocusConsumed) cfgFocus.onFocusConsumed();
-  }, [cfgFocus.focusNonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fokus = useFokusKomisi(cfgFocus);
   const grup = [groupForKey(KUNCI_BAGIAN.harga[0])].filter(Boolean);
-  const harga = useSettingsBrowser({ selectedEntity: entityId, groupIds: grup, includeKeys: KUNCI_BAGIAN.harga, ...fokus("harga") });
-  const capaian = useSettingsBrowser({ selectedEntity: entityId, groupIds: grup, includeKeys: KUNCI_BAGIAN.capaian, ...fokus("capaian") });
-  const batas = useSettingsBrowser({ selectedEntity: entityId, groupIds: grup, includeKeys: KUNCI_BAGIAN.batas, ...fokus("batas") });
-  const bawaanBatas = (batas.items || []).find((i) => i.key === KUNCI_BATAS)?.value;
+  const [bawaanBatas, setBawaanBatas] = useState(undefined);   // ⑤ — isian awal batas margin tarif baru
 
   /** `diam` = muat ulang sesudah menyimpan: kartu tidak berganti "Memuat…" (pesan simpan & kartu akrual tetap). */
   const muatSakelar = useCallback(async (diam = false) => {
@@ -240,22 +288,8 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
         <ArticleRatesTable entityId={entityId} pt={pt} ptPendek={ptPendek} bawaanBatas={bawaanBatas} />
       </Bagian>
 
-      <Bagian nomor={3} icon={SlidersHorizontal} judul="Pengali harga" testId="scheme-price-card"
-        help="Komisi dikalikan menurut seberapa jauh harga jual di bawah harga acuan (atau menurut diskon baris, cara lama). Artikel boleh punya pita sendiri di pop-up tarifnya.">
-        <p className="text-fs-12 text-kn-text-2" data-testid="scheme-settings-scope">
-          Pengaturan bagian 3–5 dan Lanjutan berlaku untuk <b>{pt}</b> (pemilih PT di kanan atas). Nilai untuk semua PT diatur di Pusat Pengaturan.</p>
-        <PengaturanBagian s={harga} entities={entities} testIdPrefix="scheme-price-cfg" />
-      </Bagian>
-
-      <Bagian nomor={4} icon={Gauge} judul="Pengali capaian" testId="scheme-achievement-card"
-        help="Opsional: komisi bulan itu dikalikan menurut capaian target bulanan sales.">
-        <PengaturanBagian s={capaian} entities={entities} testIdPrefix="scheme-achievement-cfg" />
-      </Bagian>
-
-      <Bagian nomor={5} icon={Shield} judul="Batas margin" testId="scheme-cap-card"
-        help="Bawaan batas margin untuk tarif baru. Batas tiap tarif tampil dan diubah di baris tarifnya (bagian 2).">
-        <PengaturanBagian s={batas} entities={entities} testIdPrefix="scheme-cap-cfg" />
-      </Bagian>
+      <BagianPengali selectedEntity={entityId} entities={entities} grup={grup} fokus={fokus} onBatas={setBawaanBatas}
+        kalimatCakupan={<>Pengaturan bagian 3–5 dan Lanjutan berlaku untuk <b>{pt}</b> (pemilih PT di kanan atas). Aturan grup (Semua PT) diubah dengan memilih "Semua PT" di pemilih PT.</>} />
 
       {otomatis && (
         <Bagian icon={Percent} judul="Akrual komisi bulanan" testId="scheme-accrual-card"
