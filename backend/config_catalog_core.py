@@ -457,6 +457,77 @@ E("commission.discount_potong_rp", group="penjualan", section="komisi", type="mo
   example="Tarif Rp 500/m dipotong Rp 200 → komisi jadi Rp 300/m",
   consumers=("services/sales_force_service.py",), risk="low")
 
+# KA-1 — pengali komisi menurut harga jual & capaian target (komisi per artikel). Pembaca: `services/commission_rules.py`.
+# Isi tabel diperiksa `commission_rules.periksa_nilai` (dikaitkan di `config_resolver.set_value`).
+_KA_SUMBER = [{"value": "special_approval", "label": "Harga khusus"},
+              {"value": "customer", "label": "Harga pelanggan"},
+              {"value": "special_order", "label": "Pesanan khusus"}]
+_KA_HARGA = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
+                 requires_reason=True, consumers=("services/commission_rules.py:aturan_pt",))
+_KA_CAPAIAN = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
+                   requires_reason=True, consumers=("services/commission_rules.py:aturan_capaian",))
+
+E("commission.price_basis", type="enum", default="diskon_baris",
+  options=({"value": "diskon_baris", "label": "Diskon baris (cara lama)"},
+           {"value": "pricelist", "label": "Selisih dari harga acuan"}),
+  label="Dasar menilai harga jual untuk komisi",
+  help="Diskon baris: komisi dipotong bila diskon pada baris pesanan melewati batas (cara lama). Selisih dari harga "
+       "acuan: komisi dikalikan pengali menurut seberapa jauh harga jual di bawah harga acuan.",
+  impact="Mengubah cara harga jual memengaruhi komisi sales pada pesanan yang dibuat sesudahnya.",
+  example="Selisih dari harga acuan · harga jual 8% di bawah acuan → pengali pita 8% dipakai",
+  related=("commission.price_bands", "commission.price_source_rules"), **_KA_HARGA)
+
+E("commission.price_bands", type="table", row_shape="list", default=[{"sampai_pct": None, "pengali": 1.0}],
+  columns=({"name": "sampai_pct", "label": "Sampai selisih (%)", "type": "decimal", "default": 100, "unit": "%",
+            "help": "Kosongkan untuk baris terakhir (tanpa batas atas)."},
+           {"name": "pengali", "label": "Pengali komisi", "type": "decimal", "default": 1.0}),
+  label="Pita pengali menurut selisih harga",
+  help="Tiap baris berlaku sampai selisih harga di bawah acuan sebesar persen yang diisi. Baris terakhir dikosongkan "
+       "(tanpa batas). Pengali 1 = komisi penuh, 0 = komisi hangus.",
+  impact="Menentukan berapa bagian komisi yang dibayar menurut seberapa murah barang dijual.",
+  example="Sampai 3% → ×1 · sampai 10% → ×0,5 · lebihnya → ×0",
+  related=("commission.price_basis",), **_KA_HARGA)
+
+E("commission.price_source_rules", type="table", row_shape="list",
+  default=[{"sumber": s, "cara": "ikut_pita", "pengali": 1.0} for s in ("special_approval", "customer", "special_order")],
+  columns=({"name": "sumber", "label": "Asal harga", "type": "enum", "default": "special_approval",
+            "options": _KA_SUMBER},
+           {"name": "cara", "label": "Cara", "type": "enum", "default": "ikut_pita",
+            "options": [{"value": "ikut_pita", "label": "Ikut cara harga"},
+                        {"value": "pengali_tetap", "label": "Pengali tetap"}]},
+           {"name": "pengali", "label": "Pengali tetap", "type": "decimal", "default": 1.0,
+            "disabled_when": {"field": "cara", "equals": "ikut_pita"}}),
+  label="Aturan harga khusus & pesanan khusus",
+  help="Harga yang bukan dari daftar harga biasa bisa dikecualikan dari pita: pakai pengali tetap, atau tetap ikut "
+       "pita. Asal harga yang tidak ditulis di sini dianggap 'Ikut cara harga'.",
+  impact="Mengubah komisi pada pesanan yang harganya berasal dari persetujuan khusus, harga pelanggan, atau pesanan khusus.",
+  example="Harga pelanggan · pengali tetap 1 → komisi penuh walau harganya di bawah acuan",
+  related=("commission.price_basis", "commission.price_bands"), **_KA_HARGA)
+
+E("commission.achievement_multiplier", type="bool", default=False,
+  label="Kalikan komisi dengan pengali capaian target",
+  help="Bila aktif, komisi bulan itu dikalikan pengali sesuai capaian target sales (jenjang di bawah).",
+  impact="Komisi sales naik atau turun menurut capaian targetnya pada bulan itu.",
+  example="Capaian 95% · jenjang 90% → ×0,8 · komisi Rp 1.000.000 menjadi Rp 800.000",
+  related=("commission.achievement_basis", "commission.achievement_tiers"), **_KA_CAPAIAN)
+
+E("commission.achievement_basis", type="enum", default="omzet_bersih",
+  options=({"value": "omzet_bersih", "label": "Omzet bersih"}, {"value": "uang_masuk", "label": "Uang masuk"}),
+  label="Capaian target dihitung dari",
+  help="Omzet bersih: penjualan sesudah retur. Uang masuk: pembayaran pelanggan yang sudah diterima.",
+  impact="Menentukan angka mana yang dibandingkan dengan target untuk mencari pengali capaian.",
+  example="Uang masuk · target Rp 750.000.000 · terima Rp 700.000.000 → capaian 93,3%",
+  related=("commission.achievement_multiplier",), **_KA_CAPAIAN)
+
+E("commission.achievement_tiers", type="table", row_shape="list", default=[{"capaian_min_pct": 0, "pengali": 1.0}],
+  columns=({"name": "capaian_min_pct", "label": "Capaian mulai (%)", "type": "pct", "default": 100, "unit": "%"},
+           {"name": "pengali", "label": "Pengali komisi", "type": "decimal", "default": 1.0}),
+  label="Jenjang pengali menurut capaian",
+  help="Baris dengan capaian terbesar yang sudah terlewati menentukan pengali. Wajib ada baris yang mulai dari 0%.",
+  impact="Menentukan pengali komisi untuk tiap tingkat capaian target.",
+  example="Mulai 0% → ×0,5 · mulai 80% → ×1 · mulai 100% → ×1,2",
+  related=("commission.achievement_multiplier",), **_KA_CAPAIAN)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # PERSETUJUAN & AMBANG
 # ═══════════════════════════════════════════════════════════════════════════

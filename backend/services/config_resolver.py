@@ -548,6 +548,9 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
             validate_extra_levels(clean)
         from services.reminder_policy import periksa_nilai   # KP-T7 — penerima/rantai/peran/hari/nomor PIC pengingat
         clean = periksa_nilai(key, clean)
+        from services import commission_rules   # KA-1 — pita/aturan sumber/jenjang pengali komisi
+        if key in commission_rules.PRICE_KEYS + commission_rules.ACH_KEYS:
+            clean = commission_rules.periksa_nilai(key, clean)
         if key == "tax.pemicu_faktur":   # TX-T2 (K-32) — pilihan "uang muka" terdaftar tetapi belum bisa dipakai (H4)
             from services.tax_config_service import periksa_pemicu_faktur
             clean = periksa_pemicu_faktur(clean)

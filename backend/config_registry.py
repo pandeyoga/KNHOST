@@ -79,7 +79,7 @@ def _S(sid: str, label: str, advanced: bool = False) -> Dict[str, Any]:
 GROUPS: List[Dict[str, Any]] = [
     {"id": "penjualan", "label": "Penjualan & harga", "order": 1,
      "question": "Siapa boleh menurunkan harga, kapan pesanan boleh jalan, dan bagaimana komisi sales dihitung?",
-     "sections": [_S("harga", "Harga & diskon"), _S("alur-pesanan", "Alur pesanan"), _S("komisi", "Komisi sales"),
+     "sections": [_S("harga", "Harga & diskon"), _S("alur-pesanan", "Alur pesanan"), _S("komisi", "Komisi sales"), _S("komisi-pengali", "Komisi sales: pengali"),
                   _S("saran-pos", "Saran produk di kasir (POS)")]},
     {"id": "pembayaran-pelanggan", "label": "Pembayaran pelanggan", "order": 2,
      "question": "Kapan pelanggan harus bayar, dan apa akibatnya kalau telat atau bayarnya tidak pas?",
