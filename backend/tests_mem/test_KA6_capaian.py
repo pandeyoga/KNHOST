@@ -334,7 +334,7 @@ async def test_KA6_U7_beku_saat_akrual(klien, db, f6):
         assert r.status_code == 200, r.text
         assert r.json()["created"] is True, r.json()
         doc = await db.commission_period_rules.find_one({"entity_id": KSC, "period": NOV}, {"_id": 0})
-        assert doc and doc["id"].startswith("cpr_")
+        assert doc and doc["id"].startswith("cmpr_")
         assert doc["achievement"] == {"aktif": True, "basis": "omzet_bersih", "jenjang": JENJANG}
         andi = next(s for s in doc["sales"] if s["sales_id"] == sid)
         assert andi["total"] == 420_000

@@ -60,7 +60,8 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Meja Insentif — data dasar *(KM-T1)* | `sales_targets` (kunci baru PT × sales × jenis periode × periode), `incentive_components`, `incentive_definitions`, `fact_shipment_sales`, `fact_collections` (turunan) | `routers/incentive.py` (`GET/PUT /api/incentive/targets`, `POST …/targets/copy`, `GET/POST/PATCH /api/incentive/components`, `GET …/definitions/current`, `GET …/reconciliation`, `POST …/facts/rebuild`; KM-T2 hanya baca: `GET …/achievement`, `GET …/achievement/sources`, `GET …/achievement/export`), `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`, `incentive_achievement.py` (KM-T2) | `IncentiveTargetSave`, `IncentiveTargetCopy`, `IncentiveComponentCreate`, `IncentiveComponentUpdate`, `IncentiveFactRebuild` (`schemas_incentive.py`) | `IncentiveSetupView` (SDM › Kinerja & Insentif › Target & Aturan), `CapaianView` + `CapaianSourcesPanel` (… › Capaian, KM-T2) |
 | Meja Insentif — Lembar Insentif *(KM-T3)* | `incentive_sheets` (dokumen keputusan per PT per periode bayar; baris + potret angka dasar) | `routers/incentive.py` (`GET/POST /api/incentive/sheets`, `GET …/sheets/options`, `GET …/sheets/adjustable-lines`, `GET …/sheets/{id}` (+ `drift`), `POST/PATCH/DELETE …/{id}/lines[/{line_id}]`, `POST …/{id}/refresh · submit · approve · return · cancel`, `GET …/{id}/export`), `services/incentive_sheet_service.py` | `IncentiveSheetCreate`, `IncentiveSheetLineRef`, `IncentiveSheetLineAdd`, `IncentiveSheetLinePatch`, `IncentiveSheetApprove`, `IncentiveSheetCorrection`, `IncentiveSheetReason` (`schemas_incentive.py`) | `IncentiveSheetsView` + `IncentiveSheetDetail` (SDM › Kinerja & Insentif › Lembar Insentif); tombol "Buat lembar insentif dari tampilan ini" di `CapaianView` |
 | Lembar Insentif → gaji & buku besar; tagihan insentif antar-PT *(KM-T4)* | `incentive_sheets` (+ `payroll_linked`, `gl_status`, `journal_entry_id`, `journal_date`, status `approving`; baris `employee_id`, `pay_entity_id`, `input_key`, `paid_run_id`), `hr_pay_inputs` (sumber `incentive_sheet`), `hr_pay_components` (`INSENTIF`), `interco_charges` | `routers/incentive.py` (`POST …/sheets/{id}/approve` bercabang menurut `hr.payroll_commission_mode`; `GET /api/incentive/switch-readiness`), `routers/interco_charges.py` (`GET /api/interco/charges[/{id}]`, `POST …/{id}/settle`), `services/incentive_payroll.py`, `services/interco_charge_service.py`, `services/hr_payroll_service.py` (`commission_mode`, `post_run_gl`, `void_run`) | `ChargeSettleInput` (`routers/interco_charges.py`) | `IncentiveSheetDetail` (lencana jurnal, "Dibayar lewat …", pita PT belum dialihkan); kartu Kesiapan di `IncentiveSetupView`; `IntercoChargesPanel` (Antar-PT › Pinjaman Antar-PT); tarif komisi tanpa Satuan |
-| Kartu "Capaian & Insentif Saya"; layar insentif lama dicabut *(KM-T5)* | — (tanpa koleksi/field baru; membaca `fact_*`, `sales_targets`, `incentive_sheets`; `incentive_rates` & `sales_incentives` tetap untuk PT bermode komisi otomatis) | `routers/incentive.py` (`GET /api/incentive/me` — login, milik sendiri; `GET …/targets` + `commission_mode(s)`), `services/incentive_me.py`; `routers/home.py` (`/api/home/sales` + `incentive_mode`, `/api/home/admin` + `incentive_payout_label`); `routers/crm.py` (`/api/sales-users` & papan peringkat dari `sales_roster`; `/api/sales/commission[-history]` 409 di PT `sheet`/`off`; `GET /api/sales/incentive/gl-status` + `mode`, `estimate`; **`GET`/`POST /api/sales-targets` dihapus**) | — | `MyIncentiveCard` (Beranda Sales, Profil Saya, HP Target & Insentif, HP Beranda PT Lembar Insentif); bagian "Komisi otomatis (cara lama)" di `IncentiveSetupView` (`LegacyRatesEditor`, `LegacySchemeEditor`); `SalesForceDashboard`, `IncentiveSchemeEditor`, `IncentiveRatesEditor` dihapus |
+| Kartu "Capaian & Insentif Saya"; layar insentif lama dicabut *(KM-T5)* | — (tanpa koleksi/field baru; membaca `fact_*`, `sales_targets`, `incentive_sheets`; `incentive_rates` & `sales_incentives` tetap untuk PT bermode komisi otomatis) | `routers/incentive.py` (`GET /api/incentive/me` — login, milik sendiri; `GET …/targets` + `commission_mode(s)`), `services/incentive_me.py`; `routers/home.py` (`/api/home/sales` + `incentive_mode`, `/api/home/admin` + `incentive_payout_label`); `routers/crm.py` (`/api/sales-users` & papan peringkat dari `sales_roster`; `/api/sales/commission[-history]` 409 di PT `sheet`/`off`; `GET /api/sales/incentive/gl-status` + `mode`, `estimate`; **`GET`/`POST /api/sales-targets` dihapus**) | — | `MyIncentiveCard` (Beranda Sales, Profil Saya, HP Target & Insentif, HP Beranda PT Lembar Insentif); bagian "Komisi otomatis (cara lama)" di `IncentiveSetupView` (`LegacyRatesEditor`, `LegacySchemeEditor`) — KA-9: dipindah ke tab Skema & Tarif (`IncentiveSchemeView`), `LegacyRatesEditor` dihapus; `SalesForceDashboard`, `IncentiveSchemeEditor`, `IncentiveRatesEditor` dihapus |
+| Komisi per artikel + tab Skema & Tarif *(KA-1…KA-10)* | `incentive_rates` (+ `template_id`, `product_id`, `rate_key`, `target_name`, `target_code`, `price_bands`, `price_source_rules`; indeks `uq_incentive_rate_key`), `commission_period_rules` (baru, potret aturan bulan saat akrual; indeks `uq_commission_period`), `sales_orders.items[].commission_rule` (potret aturan baris); kunci `commission.price_basis`/`price_bands`/`price_source_rules`/`achievement_multiplier`/`achievement_basis`/`achievement_tiers`; pilihan `hr.payroll_commission_mode` = `auto_and_sheet` | `routers/incentive_rates.py` (`GET …/categories`, `…/articles`, `…/articles/{template_id}/variants`, `POST …/bulk`, `GET …/export`, `POST …/import/preview`, `…/import/apply`, `…/simulate`; POST/PATCH tarif + isian artikel/varian), `services/commission_rules.py` (tarif, potret, pengali harga, hitung baris, pengali capaian, `bekukan_periode`), `services/commission_rate_service.py` (pohon, ubah banyak, Excel), `services/sales_force_service.py` (`_compute_commission_per_sku` membaca potret, `simulate_commission`), `routers/sales_orders.py:create_order` (`potret_pesanan`), `bootstrap.py` (`backfill_incentive_rate_key`, `backfill_so_line_commission_rule`), `gl_service.post_incentive_accrual` (beku sesudah jurnal), `services/incentive_payroll.py` (`MODE_BOTH`, `akru`, `lembar_ke_gaji`), `services/incentive_me.py` (rincian daftar putih) | `RatePayload`, `GenericPatch`, `BulkPayload`, `ImportApplyPayload`, `SimulatePayload` | `IncentiveSchemeView` (SDM › Kinerja & Insentif › Skema & Tarif: `SchemeSourcePicker`, `ArticleRatesTable`, `RateFormModal`, `RatesExcelImport`, `GroupRatesList`, `KartuAkrual`, `SchemeSimulation`); rincian faktor di `MyIncentiveCard` & `SalesHome` |
 | Titipan Tunai Sales & Setoran *(PM-T4)* | `cash_holdings` (satu per kwitansi tunai yang menjadi titipan, nomor `TTP-`), `cash_deposits` (setoran, nomor `STT-`) (+ field `ar_receipts.cash_holding_id`) | `routers/cash_holdings.py` (`GET /api/cash-holdings`, `GET /api/cash-holdings/me/summary`, `GET/POST /api/cash-deposits`, `POST …/{id}/receive` · `/reject` · `/cancel`), `services/cash_holding_service.py` (`mode_tunai`, `periksa_batas`, `buat_titipan` dipanggil `ar_receipt_service.create_receipt`; `terima_setoran` → `cash_ledger.create_cash(ref_type="cash_deposit")`; `rekonsiliasi` = INV-TTP-01), `gl_service.post_cash_holding` / `reverse_cash_holding` | `DepositIn`, `ReceiveIn`, `ReasonIn` | `CashHoldingsView` (Keuangan › Kas & Bank › Titipan Sales), `MobileCashHoldingCard` (Beranda HP sales "Titipan Saya"), `ARReceiptModal` (teks bantu tunai) |
 | Kartu Tindakan Asisten *(AG-T1, AG-T3, AG-T5)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions?box=`, `GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`, `POST …/{id}/second` — orang kedua AG-T5), `services/ai_actions.py` (jenis lama, alat `propose_action`), `services/ai_cards.py` (golongan A/B/C, alat `prepare_action`, `POST /api/ai/tools/prepare_action`), `services/ai_card_rules.py` (daftar larangan) | — | `TanyaActionCard` (percakapan & tab), `TanyaActions` (Tanya KN › Tindakan) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
@@ -607,8 +608,10 @@ pernah masuk daftar belum terverifikasi; `older_than_days` tanpa nilai = `paymen
 ```
 Collection:  incentive_rates             Prefix: irate_
 Router:      routers/incentive_rates.py
-Service:     services/sales_force_service.py (_compute_commission_per_sku)
-Component:   features/crm/IncentiveRatesEditor.jsx (matrix entity×category)
+Service:     services/sales_force_service.py (_compute_commission_per_sku), services/commission_rules.py
+             (rate_key, muat_indeks_tarif, pilih_tarif, potret), services/commission_rate_service.py (pohon, ubah banyak, Excel)
+Component:   features/incentive/ArticleRatesTable.jsx + RateFormModal.jsx (tab Skema & Tarif, KA-9; pohon kategori →
+             artikel → varian) · GroupRatesList.jsx (tarif Semua PT). `IncentiveRatesEditor`/`LegacyRatesEditor` dihapus
 Key Fields:
   id                      string  prefix "irate_"
   entity_id               string  FK entities.id | "all" (fallback semua entitas)
@@ -631,6 +634,9 @@ Key Fields:
   created_at / updated_at
 
 ℹ️ UNIK per (entity_id, rate_key) — indeks `uq_incentive_rate_key` (KA-2; bootstrap `backfill_incentive_rate_key`). Lookup engine: entity spesifik → fallback "all".
+ℹ️ KA-3/KA-4 — urutan pencarian varian → artikel → kategori (tiap tingkat PT dulu lalu "all"); hasilnya DIPOTRET ke
+   `sales_orders.items[].commission_rule` saat pesanan dibuat. Mengubah/menghapus tarif tidak mengubah pesanan lama.
+   Tulisan banyak (`POST …/bulk`, `…/import/apply`) lewat `commission_rate_service.terapkan_tarif` (jejak audit beralasan).
 ℹ️ Mode strategi di system_settings.commission.strategy (per_sku default | achievement_tiered arsip).
 ℹ️ Engine on-collection: iterasi line terbayar (pro-rata partial payment), cap by margin.
 ⚠️ JANGAN BUAT: incentive_rate, commission_rates, rates, sku_rates (sebagai koleksi).
@@ -638,14 +644,14 @@ Key Fields:
 
 ### commission_period_rules  [KA-6 — potret aturan komisi per PT per bulan saat akrual dibukukan]
 ```
-Collection:  commission_period_rules     Prefix: cpr_
+Collection:  commission_period_rules     Prefix: cmpr_  (`cpr_` sudah dipakai credit_profile_requests & customer_prices)
 Penulis:     services/commission_rules.py (bekukan_periode) — dipanggil gl_service.post_incentive_accrual SESUDAH jurnal
              akrual pertama tersimpan dan SEBELUM jurnal koreksi (bulan yang diakru sebelum KA-6 dibekukan pada koreksi
              pertamanya). Akrual ditolak (mis. periode tertutup) → tidak ada potret.
 Pembaca:     services/commission_rules.py (pengali_capaian, capaian_aktif — jenjang beku menang atas nilai kunci akhir
              bulan, HANYA selama jurnal `journal_id` tidak dianulir)
 Key Fields:
-  id            string  prefix "cpr_"
+  id            string  prefix "cmpr_"
   entity_id     string  FK business_entities.id (PT spesifik, bukan "all")
   period        string  "YYYY-MM" bulan komisi (bulan uang masuk)
   achievement   object  {aktif, basis, jenjang} = kunci `commission.achievement_*` yang berlaku pada akhir bulan
@@ -3687,6 +3693,7 @@ pmeth_  → payment_methods           [PM-T1]
 bac_    → bank_account_changes      [PM-T1]
 ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
+cmpr_   → commission_period_rules   [KA-6]
 cgr_    → credit_gate_rejections    [CR-T3]
 aiact_  → ai_action_proposals       [AG-T1]
 pyc_    → payment_codes             [PM-T2]
@@ -4790,6 +4797,9 @@ Tidak ada koleksi atau field tersimpan baru. Endpoint baru dan perubahan jawaban
 Tetap: `GET/POST /api/sales-incentives`, `GET/POST/PATCH/DELETE /api/incentive-rates` (bagian "Komisi otomatis (cara lama)"),
 koleksi `incentive_rates` dan `sales_incentives` (dibaca mesin komisi PT bermode otomatis). Menghapus mesin komisi dan kedua
 koleksi = pekerjaan lanjutan sesudah tidak ada PT bermode komisi otomatis.
+**KA (23 Nov 2026):** mesin komisi otomatis tidak lagi dianggap "cara lama" — dikembangkan menjadi komisi per artikel
+(tarif varian/artikel/kategori, pengali harga & capaian, potret aturan per baris pesanan) dan diatur di tab **Skema & Tarif**;
+PT boleh memakai keduanya bersama Lembar Insentif (`auto_and_sheet`). Rute `/api/incentive-rates` + rute layar KA-8 tetap.
 
 ### saved_views — Tampilan Tersimpan Daftar Gudang  [FIX-8 IMPLEMENTED — K-B4-12, 10 Nov 2026]
 Satu dokumen = kombinasi **saringan + urut + kolom (+ mode)** satu daftar, milik satu pengguna, opsional dibagikan

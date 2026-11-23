@@ -559,7 +559,7 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id:
     """Bekukan aturan komisi bulan itu saat akrual dibukukan (rancangan §6.4, §6.5a; `02_STANDAR.md` §5 D3).
 
     Dipanggil `gl_service.post_incentive_accrual` SESUDAH jurnal akrual pertama tersimpan, dan sebelum jurnal koreksi.
-    `commission_period_rules` `{id "cpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
+    `commission_period_rules` `{id "cmpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
     pada akhir bulan), sales [{sales_id, total, breakdown}] (catatan hasil mesin per sales daftar PT saat dibekukan),
     journal_id (jurnal akrual yang membekukan), recorded_at, recorded_by, replaces?}`.
 
@@ -589,7 +589,7 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id:
         c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
         sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
                       "breakdown": c.get("breakdown") or []})
-    doc = {"id": new_id("cpr"), **q, "achievement": achievement, "sales": sales, "journal_id": jid,
+    doc = {"id": new_id("cmpr"), **q, "achievement": achievement, "sales": sales, "journal_id": jid,
            "recorded_at": now_iso(), "recorded_by": oleh or ""}
     if ada:   # potret lama tanpa jurnal akrual hidup (akrual gagal / dianulir) → diganti, tetap satu per PT·bulan
         doc["replaces"] = {k: ada.get(k) for k in ("id", "journal_id", "recorded_at", "recorded_by")}
