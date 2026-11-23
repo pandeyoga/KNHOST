@@ -738,13 +738,6 @@
   },
   {
    "file": "backend/services/sales_force_service.py",
-   "key": "commission.default_margin_cap_pct",
-   "line_text": "cfg.get(\"default_margin_cap_pct\", 50.0)",
-   "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 50.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/sales_force_service.py",
    "key": "commission.discount_factor",
    "line_text": "cfg.get(\"discount_factor\", default_of(\"commission.discount_factor\")) or 0",
    "jenis": "hanya_bila_kosong",

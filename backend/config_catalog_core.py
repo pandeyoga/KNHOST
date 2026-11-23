@@ -404,7 +404,8 @@ E("commission.default_margin_cap_pct", group="penjualan", section="komisi", type
        "lebih besar dari keuntungan. Isi 0 = komisi tidak dibatasi margin.",
   impact="Komisi yang melewati batas dipotong otomatis dan diberi catatan pemotongan.",
   example="Margin baris Rp 1.000.000 · batas 50% · komisi hitung Rp 700.000 → dibayar Rp 500.000",
-  consumers=("services/sales_force_service.py",), risk="medium")
+  # KA-5 — dibaca ke aturan PT (`susun_aturan_pt`), dipotret per baris pesanan, dipakai mesin lewat `hitung_baris`.
+  consumers=("services/commission_rules.py:susun_aturan_pt",), risk="medium")
 
 E("commission.discount_threshold_type", group="penjualan", section="komisi", type="enum", default="pct",
   options=({"value": "pct", "label": "Persen diskon"},

@@ -3,14 +3,14 @@
 Semua KPI DERIVED dari sales_orders/payments/customers. Komisi default basis PENCAIRAN
 (tertagih) + TIERED capaian target (S36).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 from db import db
 from core_utils import safe_doc
 from services.customer_service import (
     compute_customer_credit, _order_grand_total, _order_paid, DEAD_STATUSES,
 )
 from services import costing_service
-from services.commission_rules import faktor_diskon
+from services.commission_rules import ALASAN_LABEL, aturan_baris, faktor_diskon, hitung_baris, label_alasan
 from services.config_service import get_effective_settings
 
 DEFAULT_TIERS = [
@@ -234,7 +234,10 @@ async def _compute_commission_tiered(sales_id: str, period: str, entity_id: Opti
 
 
 async def _load_incentive_rates(entity_id: Optional[str]) -> Dict[str, Dict[str, Any]]:
-    """Map category -> rate doc. Prioritas entity spesifik, fallback 'all'."""
+    """Map category -> rate doc. Prioritas entity spesifik, fallback 'all'.
+
+    KA-5 — mesin komisi tidak memakainya lagi (tarif lewat potret baris / `commission_rules.aturan_baris`); tetap untuk
+    pemanggil lama dan uji KA-2."""
     rows = await db.incentive_rates.find({"status": "active"}, {"_id": 0}).to_list(1000)
     # KA-2 — baris artikel/varian memotret kategori katalog; jangan menimpa tarif kategori (mesin lama hanya per kategori).
     rows = [r for r in rows if not (r.get("template_id") or r.get("product_id"))]
@@ -251,20 +254,51 @@ async def _load_incentive_rates(entity_id: Optional[str]) -> Dict[str, Dict[str,
 
 _discount_factor = faktor_diskon   # KA-3 — rumus pindah ke commission_rules; nama lama tetap untuk pemanggil lama
 
+_TINGKAT_TARIF = {"artikel": "Tarif artikel", "varian": "Tarif varian", "kategori": "Tarif kategori"}
+_LINGKUP_TARIF = {"pt": "PT ini", "semua_pt": "Semua PT"}
+
+
+def _asal_tarif(tarif: Dict[str, Any]) -> str:
+    """KA-5 — teks asal tarif di rincian: "Tarif artikel (PT ini)", "Tarif kategori (Semua PT)", dst."""
+    dasar = _TINGKAT_TARIF.get(tarif.get("asal_tingkat") or "", "Tarif")
+    lingkup = _LINGKUP_TARIF.get(tarif.get("asal_lingkup") or "")
+    return f"{dasar} ({lingkup})" if lingkup else dasar
+
+
+def _persen_teks(n: float) -> str:
+    return f"{round(float(n), 2):.2f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _label_rincian(alasan: str, selisih: set) -> str:
+    """KA-5 — label alasan harga satu baris rincian gabungan. Baris pita yang menggabung selisih berbeda (pita sama)
+    menulis rentangnya, mis. "2–2,5% di bawah harga acuan"."""
+    if alasan == "pita" and len(selisih) > 1:
+        return ALASAN_LABEL["pita"].format(selisih=f"{_persen_teks(min(selisih))}–{_persen_teks(max(selisih))}")
+    return label_alasan(alasan, next(iter(selisih), None))
+
 
 async def _compute_commission_per_sku(
-    sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any]
+    sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any], *,
+    sumber_aturan: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
-    """Engine per-SKU, 3 faktor, margin-aware, on-collection (EPIC4).
+    """Engine per-SKU, margin-aware, on-collection (EPIC4) — aturan tiap baris dari potret pesanan (KA-5).
 
-    Untuk tiap order, fraksi terbayar = Σpembayaran-dalam-periode / grand_total (≤1).
-    Per line: qty_terbayar = base_quantity × fraksi; komisi = qty × per_unit × factor,
-    di-cap oleh margin (margin_cap_pct% × margin line terbayar; pakai WAC EPIC3).
+    Untuk tiap order, fraksi terbayar = Σpembayaran-dalam-periode / grand_total (≤1). Aturan baris = potret
+    `items[].commission_rule` (aturan saat pesanan dibuat); baris tanpa potret memakai aturan PT saat ini lewat
+    `commission_rules.aturan_baris` (hanya dibaca, tidak ditulis). `sumber_aturan` (simulasi) menggantikan keduanya.
+    Komisi baris = `commission_rules.hitung_baris`: qty dasar terbayar × tarif × pengali harga × pengali capaian × bobot
+    tim, dibatasi batas margin (margin_cap_pct% × margin baris terbayar) hanya bila HPP diketahui. Baris tanpa tarif
+    (dipotret kosong atau ≤ 0) tidak berkomisi. `settings` tidak dibaca lagi (nilai PT ada di potret).
     """
-    cfg = settings.get("commission") or {}
-    margin_cap_pct_default = float(cfg.get("default_margin_cap_pct", 50.0) or 0)
     kpi = await sales_kpi(sales_id, period, entity_id)
-    rates = await _load_incentive_rates(entity_id)
+    cache: Dict[Any, Any] = {}   # indeks tarif, aturan PT, produk, artikel — sekali per proses hitung
+
+    async def _aturan_sekarang(line: Dict[str, Any]) -> Dict[str, Any]:
+        return await aturan_baris(line, entity_id, cache)
+
+    ambil_aturan = sumber_aturan or _aturan_sekarang
+    # KA-6 menggantinya dengan pengali capaian target sales periode ini (`commission_rules.pengali_capaian`).
+    pengali_capaian = 1.0
     wac_cache: Dict[str, float] = {}
     prod_cache: Dict[str, Dict[str, Any]] = {}
     ent_for_wac = entity_id if entity_id and entity_id != "all" else None
@@ -339,55 +373,47 @@ async def _compute_commission_per_sku(
         order_in_period = _in_period(o.get("created_at"), period)
         contributes = order_in_period or paid_in_period > 0
         for line in (o.get("items") or []):
-            pid = line.get("product_id")
-            category = line.get("category", "")
             base_qty = float(line.get("base_quantity", line.get("quantity", 0)) or 0)
             if base_qty <= 0:
                 continue
-            rate_cfg = rates.get(category)
-            per_unit0 = float((rate_cfg or {}).get("per_unit_amount", 0) or 0)
-            if per_unit0 <= 0:
-                continue
-            eff_cfg = {**cfg, **(rate_cfg or {})}
-            per_unit, factor = _discount_factor(eff_cfg, line, per_unit0)
-            margin_cap_pct = float((rate_cfg or {}).get("margin_cap_pct", margin_cap_pct_default) or 0)
-
-            qty_line = float(line.get("quantity", 0) or 0)
-            line_total = float(line.get("line_total", 0) or 0)
-            # P3-8: net revenue per BASE unit (konsisten dgn qty_paid base, bukan unit order).
-            net_base = (line_total / base_qty) if base_qty else (
-                (line_total / qty_line) if qty_line else float(line.get("price", 0) or 0))
-            cost, cost_known = await cost_for_line(line, pid)
-            unit_margin = net_base - cost  # per base-unit
-
-            def _comm(fr: float) -> float:
-                qty_paid = base_qty * fr
-                gross = qty_paid * per_unit * factor
-                # P2-3: margin cap HANYA bila cost diketahui (cegah cap raksasa diam-diam).
-                if margin_cap_pct > 0 and cost_known:
-                    cap = (margin_cap_pct / 100.0) * max(qty_paid * unit_margin, 0.0)
-                    return max(min(gross, cap), 0.0)
-                return max(gross, 0.0)
-
-            line_comm = _comm(frac_paid) * weight
-            total += line_comm
+            aturan = await ambil_aturan(line)
+            tarif = (aturan or {}).get("tarif")
+            if not tarif or float(tarif.get("per_unit_amount", 0) or 0) <= 0:
+                continue   # tanpa tarif (dipotret kosong / ≤ 0) = tanpa komisi, seperti dulu
+            cost, cost_known = await cost_for_line(line, line.get("product_id"))
+            h = hitung_baris(aturan, line, fraksi=frac_paid, bobot=weight, biaya=cost, biaya_diketahui=cost_known,
+                             pengali_capaian=pengali_capaian)
+            total += h["komisi"]
             if contributes:
-                projection_full += _comm(1.0) * weight
+                projection_full += h["komisi_penuh"]
 
-            key = (category, line.get("sku", ""))
+            # Rincian per artikel (tanpa angka margin/HPP): gabung per artikel (atau SKU bila tanpa artikel) × tarif ×
+            # pengali harga & alasannya × dibatasi × asal tarif.
+            artikel = aturan.get("artikel") or {}
+            tpl = artikel.get("id") or ""
+            asal = _asal_tarif(tarif)
+            key = (("artikel", tpl) if tpl else ("sku", line.get("sku", "")), h["tarif"], h["pengali_harga"],
+                   h["alasan_harga"], h["dibatasi"], asal)
             b = breakdown.setdefault(key, {
-                "category": category, "sku": line.get("sku", ""),
-                "name": line.get("product_name", ""), "qty_base": 0.0, "commission": 0.0,
+                "category": line.get("category", ""), "sku": artikel.get("kode") or line.get("sku", ""),
+                "name": artikel.get("nama") or line.get("product_name", ""), "template_id": tpl,
+                "qty_base": 0.0, "commission": 0.0, "rate": h["tarif"], "rate_origin": asal,
+                "price_factor": h["pengali_harga"], "price_reason": h["alasan_harga"], "price_reason_label": "",
+                "achievement_factor": h["pengali_capaian"], "capped": h["dibatasi"], "_selisih": set(),
             })
-            b["qty_base"] += base_qty * frac_paid * weight
-            b["commission"] += line_comm
+            b["qty_base"] += h["qty_dasar_terbayar"] * weight
+            b["commission"] += h["komisi"]
+            if h["selisih_pct"] is not None:
+                b["_selisih"].add(h["selisih_pct"])
 
     target_collection = await _target_collection_for(sales_id, period, entity_id)
     achievement = (kpi["total_collected"] / target_collection * 100) if target_collection else 0
     rows = sorted(breakdown.values(), key=lambda x: x["commission"], reverse=True)
     for r in rows:
+        r["price_reason_label"] = _label_rincian(r["price_reason"], r.pop("_selisih"))
         r["qty_base"] = round(r["qty_base"], 2)
         r["commission"] = round(r["commission"], 2)
+        r["rate"] = round(r["rate"], 2)
 
     return {
         "sales_id": sales_id,
