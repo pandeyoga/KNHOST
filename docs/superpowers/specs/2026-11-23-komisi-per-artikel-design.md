@@ -1,6 +1,8 @@
 # Rancangan — Komisi per artikel, pengali yang bisa diatur, dan satu layar "Skema & Tarif"
 
-Tanggal: 23 Nov 2026 · Pemilik keputusan: pemilik KNHOST · Status: **draf, menunggu persetujuan pemilik**
+Tanggal: 23 Nov 2026 · Pemilik keputusan: pemilik KNHOST · Status: **draf, menunggu persetujuan pemilik** · Sudah diputus
+pemilik: pendekatan A; tarif per **artikel** dengan pengecualian per varian (1.a); aturan mengikuti **tanggal pesanan dibuat**,
+bulan yang sudah diakrualkan dibekukan (2.a).
 
 ## 1. Maksud dan alasannya
 
@@ -13,6 +15,9 @@ Kata pemilik (22–23 Nov):
 - Sumber insentif bisa dipilih: "dari komisi otomatis saja atau dengan [Lembar Insentif] sales jadi bisa double atau
   bisa salah satu saja".
 - Pendekatan dipilih pemilik: **A — kembangkan komisi otomatis yang ada** (23 Nov, "ya a").
+- Tarif per **artikel** (induk), dengan pengecualian per **varian** (warna/grade) bila perlu (23 Nov, "1.a").
+- Aturan (tarif & pengali) yang dipakai = yang berlaku pada **tanggal pesanan dibuat**; bulan yang sudah dibukukan
+  akrualnya dibekukan beserta rinciannya (23 Nov, "2.a").
 
 Alasannya (dibaca dari percakapan): pemilik ingin komisi yang mendorong sales menjual artikel tertentu dan menjual di
 harga pricelist, dengan aturan yang ia atur sendiri tanpa ubah kode, dan dengan satu tempat yang jelas untuk mengaturnya.
@@ -31,7 +36,15 @@ harga pricelist, dengan aturan yang ia atur sendiri tanpa ubah kode, dan dengan 
 - **Baris pesanan sudah menyimpan** `price_source` (`special_approval` = harga khusus ACC Manajer per pesanan,
   `customer` = harga pelanggan, `entity` = harga PT, `global` = harga umum, `special_order` = pesanan khusus) dan potret
   pembanding KM-T1 `list_price` (+ `global_price`, `floor_price`) per satuan jual — `backend/routers/sales_orders.py`
-  `_price_refs`. Baris lama sebelum KM-T1 tidak punya `list_price`.
+  `_price_refs`. Baris lama sebelum KM-T1 tidak punya `list_price`. Pesanan khusus satu produk tersimpan dengan
+  `price_source="global"` dan bendera `special_order_price` (bukan `price_source="special_order"`).
+- Mesin menghitung dengan bilangan pecahan + `round(…, 2)` (bukan sen). Mesin selalu memakai aturan yang berlaku saat
+  dihitung (`get_effective_settings`), bukan aturan bulan/pesanan yang dihitung; `incentive_rates` tidak bertanggal.
+- Tiap baris tarif menyimpan `margin_cap_pct` dan isian diskonnya sendiri yang **menimpa** kunci PT
+  (`eff_cfg = {**cfg, **rate_cfg}`), jadi `commission.default_margin_cap_pct`/`commission.discount_*` praktis hanya
+  bawaan isian tarif baru.
+- "Artikel" di sistem ini = induk produk (`product_templates`, `products.template_id`); tiap warna/grade = varian (SKU
+  sendiri). Rute Produk memakai pola "per artikel, pengecualian per varian" (K-65, `product_route_service.py`).
 - **Pengaturan bawaan komisi** `commission.*` (8 kunci, `backend/config_catalog_core.py` ±376–460).
 - **Cara insentif masuk gaji** `hr.payroll_commission_mode` (`backend/config_catalog_ops.py` ±793):
   `accrue_then_settle` · `pay_on_invoice` · `off` · `sheet`. `sheet` mematikan komisi otomatis
@@ -70,14 +83,14 @@ menambah mode "keduanya"; komisi dari margin/omzet persen (strategi arsip tetap 
 - Standar proyek: aturan bisnis = pengaturan (`02_STANDAR.md` §2, termasuk uji wajib kunci baru §2.4); wewenang = izin
   (§3); angka keputusan disimpan dengan potretnya (§5 D3); bahasa layar Indonesia, tanpa kode mentah (§4).
 - Titik henti H5 (KM-T4): agen tidak mengubah sakelar mode PT nyata; bawaan untuk PT yang ada tetap seperti sekarang.
-- Uang bersen: hitung dengan sen (`to_cents`) seperti mesin sekarang; layar menampilkan sen bila ada (K-07).
+- Uang bersen: hasil per baris dibulatkan 2 desimal seperti mesin sekarang; layar menampilkan sen bila ada (K-07).
 - Tanggal = tanggal buku WIB (`services/book_date.tanggal_buku`).
 
 ## 5. Pendekatan (dipilih: A)
 
 | | Pendekatan | Untung | Rugi |
 |---|---|---|---|
-| **A** ✔ | Kembangkan komisi otomatis yang ada: tarif per artikel di tabel tarif sekarang (+ kolom artikel); semua pengali = kunci Pusat Pengaturan per PT (riwayat, jadwal "berlaku mulai"); diedit dari satu tab baru; mode gaji + "keduanya" | Akrual, jurnal, gaji, dan uji yang ada dipakai ulang; sesuai §2; risiko terkecil | Perubahan aturan ikut memengaruhi bulan yang belum diakrualkan (diredam "berlaku mulai") |
+| **A** ✔ | Kembangkan komisi otomatis yang ada: tarif per artikel di tabel tarif sekarang (+ kolom artikel); semua pengali = kunci Pusat Pengaturan per PT (riwayat, jadwal "berlaku mulai"); diedit dari satu tab baru; mode gaji + "keduanya" | Akrual, jurnal, gaji, dan uji yang ada dipakai ulang; sesuai §2; risiko terkecil | Aturan di Pusat Pengaturan tidak bertanggal per pesanan → perlu potret aturan per baris pesanan (6.5a) |
 | B | Dokumen "Skema Komisi" ber-versi (draf → disahkan → berlaku) | Paling rapi untuk audit | Sumber aturan kedua di luar Pusat Pengaturan (melanggar §2); migrasi tarif & 8 kunci; kerja terbesar |
 | C | Hitungan per artikel hanya usulan baris Lembar Insentif | Kecil | Tidak bisa "komisi otomatis saja" — tidak sesuai permintaan |
 
@@ -94,29 +107,35 @@ komisi_baris = qty_dasar_terbayar × tarif × pengali_harga × pengali_capaian �
 - Rincian per baris menyimpan tiap faktor (tarif + asalnya, pengali harga + alasannya, pengali capaian) supaya layar dan
   kartu sales bisa menjelaskan angka.
 
-### 6.2 Tarif (urutan pencarian)
+### 6.2 Tarif (urutan pencarian) — per artikel, pengecualian per varian (keputusan 1.a)
 
-1. Tarif **artikel** di PT itu → 2. tarif artikel "Semua PT" → 3. tarif **kategori** di PT → 4. tarif kategori "Semua PT"
-   → 5. tidak ada tarif = tidak ada komisi baris itu (seperti sekarang).
-- Data: `incentive_rates` mendapat isian opsional `product_id` (+ potret `sku`, `product_name` untuk tampilan). Baris
-  tanpa `product_id` = tarif kategori (baris lama tidak diubah). Satu tarif aktif per (PT, artikel) dan per (PT,
-  kategori) — dijaga indeks unik.
-- Isian ambang/mekanik diskon lama tetap ada di baris kategori untuk kompatibilitas (lihat 6.3, cadangan).
+1. tarif **varian** (`product_id`) di PT itu → 2. varian "Semua PT" → 3. tarif **artikel** (`template_id`) di PT →
+   4. artikel "Semua PT" → 5. tarif **kategori** di PT → 6. kategori "Semua PT" → 7. tidak ada tarif = tidak ada komisi
+   baris itu (seperti sekarang).
+- Data: `incentive_rates` mendapat isian opsional `template_id` (tarif artikel) atau `product_id` (pengecualian varian),
+  dengan potret nama/kode untuk tampilan. Baris tanpa keduanya = tarif kategori (baris lama tidak diubah). Satu tarif
+  aktif per (PT, kategori), (PT, artikel), (PT, varian) — dijaga indeks unik.
+- Varian/warna baru otomatis ikut tarif artikelnya. Produk tanpa `template_id` hanya bisa diberi tarif varian.
+- **Batas margin tetap per baris tarif** (seperti sekarang, supaya angka PT yang tidak disentuh tidak berubah); kunci
+  `commission.default_margin_cap_pct` = isian bawaan saat membuat tarif baru (keputusan penulis, lihat §8).
+- Isian ambang/mekanik diskon lama tetap ada di baris tarif dan tetap dipakai pada basis `diskon_baris` (6.3).
 
 ### 6.3 Pengali harga (kunci Pusat Pengaturan per PT)
 
-**Selisih terhadap pricelist** per satuan dasar: `selisih% = (list_price − harga_bersih) / list_price × 100`, memakai
-potret `list_price` baris pesanan (KM-T1) dan harga bersih baris (`line_total / quantity`). Harga ≥ pricelist → 0%.
+**Selisih terhadap harga acuan** per satuan jual: `selisih% = (acuan − harga_bersih) / acuan × 100`, harga bersih =
+`line_total / quantity`. **Acuan mengikuti kunci yang sudah ada `insentif.harga_acuan`** (`daftar_pt` → `list_price`,
+`umum` → `global_price`, `batas_bawah` → `floor_price`, semua dari potret baris KM-T1) supaya Capaian/Lembar dan komisi
+memakai definisi "di bawah harga" yang sama (keputusan penulis). Harga ≥ acuan → 0%.
 
 - `commission.price_bands` (tabel, baru): baris berurutan `{sampai_pct_di_bawah, pengali}`; baris terakhir tanpa batas.
   Bawaan: satu baris "berapa pun → ×1,0" (= tanpa pita).
 - `commission.price_source_rules` (tabel, baru): per sumber harga (`special_approval` "Harga khusus", `customer` "Harga
-  pelanggan", `special_order` "Pesanan khusus") → `ikut_pita` atau `pengali_tetap` + nilai. Bawaan: semua `ikut_pita`.
-  Harga PT/umum selalu ikut pita.
+  pelanggan", "Pesanan khusus" = `price_source` `special_order` **atau** bendera `special_order_price`) → `ikut_pita`
+  atau `pengali_tetap` + nilai. Bawaan: semua `ikut_pita`. Harga PT/umum selalu ikut pita.
 - `commission.price_basis` (enum, baru): `diskon_baris` (cara lama, bawaan) · `pricelist` (pita di atas).
   **Bawaan `diskon_baris`** supaya PT yang tidak disentuh berhasil sama persis (anti-tujuan 1).
-- Baris pesanan lama tanpa `list_price` → memakai cara lama (diskon baris) walau basis `pricelist`; rincian menulis
-  alasannya ("pesanan lama tanpa harga pembanding").
+- Baris pesanan tanpa harga acuan (pesanan lama sebelum KM-T1, atau acuan kosong) → memakai cara lama (diskon baris)
+  walau basis `pricelist`; rincian menulis alasannya ("tanpa harga pembanding").
 - Pengali khusus artikel (opsional): baris tarif artikel boleh membawa `price_bands`/`price_source_rules` sendiri yang
   menimpa milik PT untuk artikel itu.
 
@@ -124,8 +143,12 @@ potret `list_price` baris pesanan (KM-T1) dan harga bersih baris (`line_total / 
 
 - `commission.achievement_multiplier` (bool, bawaan mati) · `commission.achievement_basis` (enum: `omzet_bersih` ·
   `uang_masuk`) · `commission.achievement_tiers` (tabel `{capaian_min_pct, pengali}`).
-- Capaian = angka sales periode itu dari pengumpul Capaian KM-T2 dibanding target KM-T1 (target per sales per PT per
-  jenis periode). Tanpa target → pengali 1,0 dan rincian menulis "tanpa target".
+- Capaian = angka sales **bulan** itu dari pengumpul Capaian KM-T2 dibanding **target bulanan** KM-T1. Tanpa target
+  bulanan → pengali 1,0 dan rincian menulis "tanpa target bulanan". Target triwulan/tahunan + penyesuaian akhir periode
+  = di luar tahap ini (keputusan penulis).
+- Capaian dihitung untuk **bulan komisi** (bulan uang masuk), bukan bulan pesanan. Jenjang yang dipakai = jenjang yang
+  berlaku pada akhir bulan komisi itu, dipotret saat akrual dibukukan — pengecualian dari 6.5a karena capaian sifatnya
+  bulanan, bukan per pesanan (keputusan penulis).
 - Strategi arsip `achievement_tiered` dan editor jenjangnya tidak diubah; di layar baru jenjang arsip hanya tampil bila
   strategi itu yang dipakai.
 
@@ -134,8 +157,25 @@ potret `list_price` baris pesanan (KM-T1) dan harga bersih baris (`line_total / 
 - `hr.payroll_commission_mode` mendapat pilihan baru **`auto_and_sheet`** "Komisi otomatis + Lembar Insentif (keduanya
   dibayar)": komisi otomatis berjalan seperti `accrue_then_settle` **dan** lembar yang disahkan berjalan seperti `sheet`.
   Slip memuat keduanya sebagai baris terpisah; jurnalnya terpisah (akrual komisi otomatis dan beban lembar).
-- Layar menampilkan peringatan jelas di pilihan ini: insentif dari dua sumber dibayar bersama.
+- Pemetaan pilihan ① di layar (keputusan penulis): "Komisi otomatis" → `accrue_then_settle`, **kecuali** PT sedang
+  `pay_on_invoice` (nilai itu dipertahankan; cara pembukuan tidak diubah diam-diam); "Lembar Insentif" → `sheet`;
+  "Keduanya" → `auto_and_sheet`. `off` dan `pay_on_invoice` tampil apa adanya dengan tautan ke Pusat Pengaturan; memilih
+  "Keduanya" dari `pay_on_invoice` meminta konfirmasi yang menyebut perubahan cara pembukuan ke akrual.
+- Layar menampilkan peringatan jelas di pilihan "Keduanya": insentif dari dua sumber dibayar bersama.
 - Bawaan tidak berubah (`accrue_then_settle`); sakelar PT nyata tidak diubah agen (H5).
+
+### 6.5a Aturan mana yang berlaku — tanggal pesanan (keputusan 2.a)
+
+- Saat **pesanan dibuat**, setiap baris memotret aturan komisinya: tarif + asalnya (varian/artikel/kategori, PT/Semua
+  PT), basis harga, pita, aturan sumber harga, ambang/mekanik diskon lama, batas margin. Mesin memakai potret ini, bukan
+  aturan terkini. Contoh: tarif Batik Mega naik Rp 3.000 → Rp 3.500 mulai 1 Des; pesanan 25 Nov dibayar 5 Des → Rp 3.000.
+- Amandemen pesanan yang mengubah harga/qty baris **tidak** memotret ulang aturan (tetap tanggal pesanan dibuat);
+  baris baru hasil amandemen memotret aturan saat baris itu ditambahkan (keputusan penulis).
+- Pesanan yang dibuat **sebelum** fitur ini tidak punya potret → memakai aturan yang berlaku saat pertama kali dihitung
+  sesudah rilis, lalu dipotret ke pesanan itu (sekali), sehingga sejak itu tidak berubah lagi.
+- Saat **akrual bulanan dibukukan**, rincian per sales per baris (qty terbayar, tarif, tiap pengali, batas, hasil)
+  disimpan bersama jurnalnya (`02_STANDAR.md` §5 D3). Gaji, "Insentif saya", dan laporan bulan itu membaca rincian
+  beku ini; koreksi akrual hanya menghitung selisih akibat data sumber berubah (pembayaran/retur), bukan akibat aturan.
 
 ### 6.6 Layar — tab "Skema & Tarif"
 
@@ -163,7 +203,11 @@ PT Sukacita ▾                                         [Simulasi]  [Riwayat per
   komisi; total "sekarang" vs "dengan perubahan belum disimpan".
 - Dibersihkan dari layar: isian "Bonus per produk fokus" (tidak pernah dihitung; data tetap disimpan), label satuan
   "Meter" diganti "yard / satuan dasar barang".
-- Kartu "Insentif saya" (sales) menampilkan rincian faktor per artikel.
+- Kartu "Insentif saya" (sales) menampilkan rincian faktor per artikel; langkah batas margin hanya ditulis
+  "dibatasi batas margin" **tanpa angka margin** (margin tetap dijaga izin `incentive.view_margin`).
+- Tabel ② menampilkan **artikel** (bukan kode varian); baris artikel bisa dibuka untuk melihat/menambah pengecualian
+  varian. Excel berisi baris artikel + baris pengecualian varian.
+- ⑤ "Batas" = bawaan batas margin untuk tarif baru; batas tiap tarif tampil dan diubah di baris tarifnya.
 
 ### 6.7 Izin
 
@@ -175,10 +219,23 @@ ubah kunci pengaturan = izin pengaturan kunci masing-masing (registri); ubah mod
 
 - Bentuk penyimpanan pita/aturan khusus per artikel (isian di baris tarif), nama kunci final, indeks.
 - Cara menampilkan simulasi (pop-up atau panel), ukuran halaman tabel artikel, format Excel.
-- Pengujian: tests_mem untuk rumus (tiap faktor, urutan tarif, baris lama tanpa `list_price`, mode keduanya ke gaji &
-  jurnal, kesetaraan hasil PT yang tidak disentuh) dan jest untuk layar; uji layar satu alur ujung ke ujung.
+- Satu fungsi potret aturan dipakai semua jalur pembuatan baris pesanan (pesanan biasa, konversi penawaran, pesanan
+  khusus, baris baru amandemen); bentuk isian potret di baris pesanan.
+- Pengujian: tests_mem untuk rumus (tiap faktor, urutan tarif varian→artikel→kategori, baris lama tanpa `list_price`,
+  potret tanggal pesanan vs aturan baru, bulan beku, mode keduanya ke gaji & jurnal, kesetaraan hasil PT yang tidak
+  disentuh) dan jest untuk layar; uji layar satu alur ujung ke ujung.
 
-## 8. Catatan untuk keputusan pemilik sesudahnya (tidak menghalangi pembangunan)
+## 8. Keputusan penulis (boleh dikoreksi pemilik saat membaca)
+
+1. Batas margin tetap per baris tarif; kunci PT = bawaan tarif baru (menjaga angka PT yang tidak disentuh).
+2. Kartu sales hanya menulis "dibatasi batas margin", tanpa angka margin/HPP.
+3. Acuan pita harga mengikuti `insentif.harga_acuan` (sama dengan Capaian/Lembar).
+4. Pengali capaian memakai target bulanan saja pada tahap ini.
+5. Pilihan "Keduanya" memakai cara pembukuan akrual; PT `pay_on_invoice` tidak diubah tanpa konfirmasi.
+6. Amandemen tidak memotret ulang aturan baris lama; pesanan lama dipotret sekali saat pertama dihitung sesudah rilis.
+7. Pengali capaian ikut bulan komisi (jenjang akhir bulan itu), bukan tanggal pesanan.
+
+## 9. Catatan untuk keputusan pemilik sesudahnya (tidak menghalangi pembangunan)
 
 - Nilai awal pita dan pengali untuk PT nyata diisi pemilik di layar (bawaan = tanpa perubahan perilaku).
 - Memilih "keduanya dibayar" untuk PT nyata dilakukan pemilik sendiri (H5).
