@@ -9,8 +9,9 @@
  * server dengan fungsi mesin komisi (`commission_rules.pilih_tarif`), jadi layar = angka yang dipakai mesin.
  *
  * Bilah daftar: cari artikel lintas kategori · Kategori ▾ · jumlah · [Ubah banyak (n)] [Unduh Excel] [Unggah Excel]. Ubah
- * satu tarif = pop-up `RateFormModal`; "Hapus tarif" (artikel/varian: kembali ikut tingkat di atasnya) beralasan; Riwayat
- * per tarif = Jejak Audit (`audit.view`). Tombol menurut izin: ubah `sales_force.update`, hapus `sales_force.delete`
+ * satu tarif = pop-up `RateFormModal` (R15: "Berlaku untuk" PT ini / Semua PT; tarif Semua PT diubah di tempat); "Hapus
+ * tarif" milik PT ini (artikel/varian: kembali ikut tingkat di atasnya) beralasan — tarif Semua PT dihapus dari mode
+ * "Semua PT" (`GroupRatesList`); Riwayat per tarif = Jejak Audit (`audit.view`). Tombol menurut izin: ubah `sales_force.update`, hapus `sales_force.delete`
  * (`canCurrent`, sama dengan izin endpoint). Unggah Excel = `RatesExcelImport`.
  */
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -35,20 +36,23 @@ export const TEKS_MULAI = "Mulai dari tarif kategori: cukup atur tarif tiap kate
 const UKURAN = 50;
 const CARI = "__cari__";
 
-/** Ringkasan tarif satu baris pohon: { teks, sub, sendiri (tarif PT ini di tingkat itu), kosong }. */
+/** Ringkasan tarif satu baris pohon: { teks, sub, sendiri (tarif PT ini di tingkat itu), adaDiTingkat (tarif di tingkat
+ *  itu ada — milik PT ini atau Semua PT; R15: keduanya diubah di tempat lewat pop-up), lingkup, kosong }. */
 export function ringkasTarif(tingkat, rate) {
   if (!rate) {
     return { teks: tingkat === "kategori" ? TEKS_KATEGORI_TANPA_TARIF : "Belum ada tarif — kategorinya belum bertarif",
-      sub: "", sendiri: false, kosong: true };
+      sub: "", sendiri: false, adaDiTingkat: false, lingkup: "", kosong: true };
   }
   const asal = tingkat === "kategori" ? "kategori" : (rate.asal_tingkat || "kategori");
   const semuaPt = rate.asal_lingkup === "semua_pt";
   const rp = formatCurrency(rate.per_unit_amount);
+  const lingkup = semuaPt ? "semua_pt" : "pt";
   if (asal === tingkat) {
     return { teks: rp, sub: semuaPt ? "tarif Semua PT" : tingkat === "kategori" ? "tarif kategori" : "tarif sendiri",
-      sendiri: !semuaPt, kosong: false };
+      sendiri: !semuaPt, adaDiTingkat: true, lingkup, kosong: false };
   }
-  return { teks: `ikut ${asal} ${rp}${semuaPt ? " (Semua PT)" : ""}`, sub: "", sendiri: false, kosong: false };
+  return { teks: `ikut ${asal} ${rp}${semuaPt ? " (Semua PT)" : ""}`, sub: "", sendiri: false, adaDiTingkat: false, lingkup,
+    kosong: false };
 }
 
 /** Batas margin tampil: "50 %" · 0/kosong = "tidak dibatasi". */
@@ -187,11 +191,11 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
       <div className="flex items-center justify-end gap-1">
         {canUpdate && (
           <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid={`${prefix}-edit-${id}`}
-            onClick={() => setSasaran(sasaranBaru)}>{info.sendiri ? <><Pencil size={12} aria-hidden="true" />Ubah</> : labelAtur}</button>)}
+            onClick={() => setSasaran(sasaranBaru)}>{info.adaDiTingkat ? <><Pencil size={12} aria-hidden="true" />Ubah</> : labelAtur}</button>)}
         {canDelete && info.sendiri && (
           <button type="button" className="secondary-button btn-sm whitespace-nowrap text-kn-danger-text" data-testid={`${prefix}-delete-${id}`}
             onClick={() => hapus(sasaranBaru)}><Trash2 size={12} aria-hidden="true" />Hapus tarif</button>)}
-        {canAudit && info.sendiri && (
+        {canAudit && info.adaDiTingkat && (
           <button type="button" className="icon-button" aria-label={`Riwayat tarif ${sasaranBaru.nama}`} data-testid={`${prefix}-history-${id}`}
             onClick={() => setRiwayat({ id: sasaranBaru.rate.rate_id, nama: sasaranBaru.nama })}><History size={13} /></button>)}
       </div>
@@ -211,9 +215,9 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
           <td className="pl-16"><span className="block break-words text-fs-13">{p.name || p.sku}</span>
             <span className="block font-mono text-fs-12 text-kn-text-2">{p.sku}</span></td>
           <SelTarif r={info} testId={`rates-var-rate-${p.product_id}`} />
-          <td className={`text-right tabular-nums ${info.sendiri ? "" : "text-kn-text-2"}`}>{teksBatas(p.rate)}</td>
+          <td className={`text-right tabular-nums ${info.adaDiTingkat ? "" : "text-kn-text-2"}`}>{teksBatas(p.rate)}</td>
           {aksi({ prefix: "rates-var", id: p.product_id, info, sasaranBaru: { tingkat: "varian", nama: p.sku || p.name,
-            product_id: p.product_id, rate: p.rate, sendiri: info.sendiri } })}
+            product_id: p.product_id, rate: p.rate, sendiri: info.sendiri, adaDiTingkat: info.adaDiTingkat } })}
         </tr>
       );
     });
@@ -248,9 +252,10 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
                   </button>
                 </td>
                 <SelTarif r={info} testId={`rates-art-rate-${a.template_id}`} />
-                <td className={`text-right tabular-nums ${info.sendiri ? "" : "text-kn-text-2"}`}>{teksBatas(a.rate)}</td>
+                <td className={`text-right tabular-nums ${info.adaDiTingkat ? "" : "text-kn-text-2"}`}>{teksBatas(a.rate)}</td>
                 {aksi({ prefix: "rates-art", id: a.template_id, info, sasaranBaru: { tingkat: "artikel", nama: a.name,
-                  template_id: a.template_id, kategori: a.category, rate: a.rate, sendiri: info.sendiri } })}
+                  template_id: a.template_id, kategori: a.category, rate: a.rate, sendiri: info.sendiri,
+                  adaDiTingkat: info.adaDiTingkat } })}
               </tr>
               {bukaArt[a.template_id] && barisVarian(a)}
             </Fragment>
@@ -324,7 +329,8 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
                       <SelTarif r={info} testId={`rates-cat-rate-${c.category}`} />
                       <td className="text-right tabular-nums">{teksBatas(c.rate)}</td>
                       {aksi({ prefix: "rates-cat", id: c.category, info, labelAtur: "Atur tarif kategori",
-                        sasaranBaru: { tingkat: "kategori", nama: c.category, category: c.category, rate: c.rate, sendiri: info.sendiri } })}
+                        sasaranBaru: { tingkat: "kategori", nama: c.category, category: c.category, rate: c.rate, sendiri: info.sendiri,
+                          adaDiTingkat: info.adaDiTingkat } })}
                     </tr>
                     {buka[c.category] && barisArtikel(c.category, false)}
                   </Fragment>

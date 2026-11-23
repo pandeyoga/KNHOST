@@ -16,7 +16,7 @@
  * bagian yang memuat kuncinya (`bagianUntukKunci`).
  */
 import { useCallback, useEffect, useState } from "react";
-import { Calculator, Coins, Gauge, Percent, Shield, SlidersHorizontal, Wallet } from "lucide-react";
+import { Calculator, ChevronDown, ChevronRight, Coins, Gauge, Percent, Settings2, Shield, SlidersHorizontal, Wallet } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityRequiredNotice from "../../components/EntityRequiredNotice";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
@@ -29,6 +29,7 @@ import { useEntityScope } from "../../context/EntityScopeContext";
 import { SettingsBrowser, SettingsNotice, useSettingsBrowser } from "../settings/config/SettingsHub";
 import { groupForKey } from "../settings/config/configDeepLink";
 import ArticleRatesTable from "./ArticleRatesTable";
+import GroupRatesList from "./GroupRatesList";
 import KartuAkrual from "./KartuAkrual";
 import LegacySchemeEditor from "./LegacySchemeEditor";
 import SchemeSimulation from "./SchemeSimulation";
@@ -36,22 +37,27 @@ import SchemeSourcePicker from "./SchemeSourcePicker";
 import { TEKS_BERLAKU } from "./RateFormModal";
 import { komisiOtomatisJalan } from "./incentiveModes";
 
-export const TEKS_SEMUA_PT = "Pilih satu PT di pemilih PT (kanan atas) untuk melihat dan mengatur skema & tarif komisi. "
-  + "Sumber insentif, tarif, dan pengali berlaku per PT.";
+export const TEKS_SEMUA_PT = "Pilih satu PT di pemilih PT (kanan atas) untuk mengatur sumber insentif, tarif per PT, "
+  + "pengali, dan simulasi. Di mode Semua PT hanya tarif yang berlaku untuk Semua PT yang bisa diubah (di bawah).";
+export const TEKS_STRATEGI_LANJUTAN = "Skema tarif per artikel di atas hanya dipakai bila cara menghitung komisi = "
+  + "“Per SKU (tarif per barang)”.";
 export const TEKS_TANPA_LIHAT = "Melihat skema & tarif komisi butuh akses Lihat di modul Pengawasan Tim Sales & Kredit.";
 export const TEKS_TARIF_TIDAK_DIPAKAI = "PT ini tidak memakai komisi otomatis, jadi tarif dan pengali di bawah tidak dipakai "
   + "sampai sumber insentif diubah ke Komisi otomatis atau Keduanya dibayar.";
 
-/** Kunci Pusat Pengaturan per bagian (prefiks `includeKeys`). */
+/** Kunci Pusat Pengaturan per bagian (prefiks `includeKeys`). R15 — `commission.strategy` di bagian Lanjutan (tertutup);
+ *  `commission.incentive_unit` tidak ditampilkan di mana pun. */
 export const KUNCI_BAGIAN = {
   harga: ["commission.price_basis", "commission.price_bands", "commission.price_source_rules", "commission.discount_"],
   capaian: ["commission.achievement_multiplier", "commission.achievement_basis", "commission.achievement_tiers"],
   batas: ["commission.default_margin_cap_pct"],
+  lanjutan: ["commission.strategy"],
 };
 const KUNCI_BATAS = "commission.default_margin_cap_pct";
 const KUNCI_STRATEGI = "commission.strategy";
+const STRATEGI_ARSIP = "achievement_tiered";
 
-/** Bagian yang memuat kunci `key` ("harga" | "capaian" | "batas"), "" bila kunci tidak tampil di tab ini. */
+/** Bagian yang memuat kunci `key` ("harga" | "capaian" | "batas" | "lanjutan"), "" bila kunci tidak tampil di tab ini. */
 export function bagianUntukKunci(key) {
   return Object.keys(KUNCI_BAGIAN).find((b) => KUNCI_BAGIAN[b].some((p) => String(key || "").startsWith(p))) || "";
 }
@@ -93,9 +99,14 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
     );
   }
   if (!siap) {
+    // R15 — rute pohon tarif menolak "Semua PT"; tarif tingkat grup tetap bisa diubah lewat pop-up yang sama.
     return (
       <div className="space-y-4" data-testid="incentive-scheme-view">
         <EntityRequiredNotice what="skema & tarif komisi" reason={TEKS_SEMUA_PT} when testId="scheme-all-pt" />
+        <Bagian icon={Coins} judul="Tarif Semua PT" testId="scheme-group-rates-card"
+          help="Tarif tingkat grup: berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat yang sama. Tarif baru untuk Semua PT dibuat dari satu PT (pop-up tarif › Berlaku untuk: Semua PT).">
+          <GroupRatesList />
+        </Bagian>
       </div>
     );
   }
@@ -104,11 +115,47 @@ export default function IncentiveSchemeView({ focusKey = "", focusGroup = "", fo
     cfgFocus={{ focusKey, focusGroup, focusNonce, onFocusConsumed }} />;
 }
 
+/** R15 — bagian tertutup "Lanjutan": `commission.strategy` (Pusat Pengaturan tertanam). Mesin pengaturan baru dipasang saat
+ *  dibuka; deep link ke kunci strategi membukanya. Nilai yang termuat diteruskan ke induk (jenjang arsip tampil/hilang). */
+function BagianLanjutan({ entityId, entities, grup, strategi, labelStrategi, onStrategi, cfgFocus }) {
+  const fokusDiSini = bagianUntukKunci(cfgFocus.focusKey) === "lanjutan";
+  const [buka, setBuka] = useState(fokusDiSini);
+  useEffect(() => { if (cfgFocus.focusNonce && fokusDiSini) setBuka(true); }, [cfgFocus.focusNonce, fokusDiSini]);
+  return (
+    <section className="section-card" data-testid="scheme-advanced">
+      <div className="section-head">
+        <button type="button" className="ghost-button text-left" aria-expanded={buka} data-testid="scheme-advanced-toggle"
+          onClick={() => setBuka((v) => !v)}>
+          {buka ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+          <Settings2 size={14} className="text-kn-action" aria-hidden="true" />
+          <span className="font-bold text-kn-text">Lanjutan</span>
+          <span className="font-normal text-kn-text-2">{strategi ? `· Cara menghitung komisi: ${labelStrategi || strategi}` : ""}</span>
+        </button>
+      </div>
+      {buka && (
+        <div className="section-body space-y-2">
+          <p className="text-fs-12 text-kn-text-2" data-testid="scheme-advanced-help">{TEKS_STRATEGI_LANJUTAN}</p>
+          <PengaturanStrategi entityId={entityId} entities={entities} grup={grup} onStrategi={onStrategi} cfgFocus={cfgFocus} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PengaturanStrategi({ entityId, entities, grup, onStrategi, cfgFocus }) {
+  const s = useSettingsBrowser({ selectedEntity: entityId, groupIds: grup, includeKeys: KUNCI_BAGIAN.lanjutan,
+    ...(bagianUntukKunci(cfgFocus.focusKey) === "lanjutan" ? cfgFocus : {}) });
+  const nilai = (s.items || []).find((i) => i.key === KUNCI_STRATEGI)?.value;
+  useEffect(() => { if (nilai) onStrategi(nilai); }, [nilai]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <PengaturanBagian s={s} entities={entities} />;
+}
+
 function IsiSkema({ entityId, entities, cfgFocus }) {
   const pt = entityFullById(entities, entityId, "PT ini");
   const ptPendek = entityShortById(entities, entityId, "pt");
   const [sakelar, setSakelar] = useState({ state: "loading", mode: "", roster: [], err: "" });
   const [strategi, setStrategi] = useState("");
+  const [opsiStrategi, setOpsiStrategi] = useState([]);
 
   // Deep link kunci komisi → hanya bagian yang memuat kuncinya menerima fokus; kunci yang tidak tampil (strategi,
   // satuan) langsung dilepas supaya permintaan fokus tidak menggantung.
@@ -134,13 +181,14 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
   useEffect(() => {
     let hidup = true;
     axios.get(`${API}/config/explain`, { params: { key: KUNCI_STRATEGI, entity_id: entityId } })
-      .then((r) => { if (hidup) setStrategi(r.data?.value || ""); })
+      .then((r) => { if (hidup) { setStrategi(r.data?.value || ""); setOpsiStrategi(r.data?.entry?.options || []); } })
       .catch(() => { if (hidup) setStrategi(""); });
     return () => { hidup = false; };
   }, [entityId]);
 
   const mode = sakelar.mode;
   const otomatis = sakelar.state === "ready" && komisiOtomatisJalan(mode);
+  const labelStrategi = opsiStrategi.find((o) => o.value === strategi)?.label || "";
   return (
     <div className="space-y-4" data-testid="incentive-scheme-view">
       <EntityScopeBanner testId="scheme-scope" />
@@ -160,6 +208,10 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
         help="Tarif rupiah per satuan dasar barang (yard). Urutan pencarian: tarif varian → tarif artikel → tarif kategori. Tanpa tarif di ketiganya, baris pesanan itu tidak berkomisi.">
         {sakelar.state === "ready" && !otomatis && (
           <p className="text-fs-12 text-kn-warning-text" data-testid="scheme-rates-unused">{TEKS_TARIF_TIDAK_DIPAKAI}</p>
+        )}
+        {strategi === STRATEGI_ARSIP && (
+          <p className="text-fs-12 text-kn-warning-text" data-testid="scheme-rates-strategy">
+            {`Cara menghitung komisi PT ini “${labelStrategi || "Berjenjang dari pencapaian target"}”: tarif di bawah tidak dipakai. Ubah di bagian Lanjutan.`}</p>
         )}
         <p className="text-fs-12 text-kn-text-2" data-testid="scheme-rates-effective">{TEKS_BERLAKU}</p>
         <ArticleRatesTable entityId={entityId} pt={pt} ptPendek={ptPendek} bawaanBatas={bawaanBatas} />
@@ -187,7 +239,10 @@ function IsiSkema({ entityId, entities, cfgFocus }) {
         </Bagian>
       )}
 
-      {strategi === "achievement_tiered" && <LegacySchemeEditor />}
+      {strategi === STRATEGI_ARSIP && <LegacySchemeEditor />}
+
+      <BagianLanjutan entityId={entityId} entities={entities} grup={grup} strategi={strategi} labelStrategi={labelStrategi}
+        onStrategi={setStrategi} cfgFocus={cfgFocus} />
 
       <Bagian icon={Calculator} judul="Simulasi" testId="scheme-sim-card"
         help="Coba dulu: komisi seorang sales pada satu bulan dengan aturan sekarang dibanding dengan tarif percobaan. Tidak menyimpan apa pun.">

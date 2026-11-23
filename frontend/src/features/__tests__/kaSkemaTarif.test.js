@@ -131,6 +131,15 @@ const VARIAN = { items: [
   { product_id: "p_blu", sku: "BTK-MEGA-001-BLU", name: "Batik Mega Biru", follows: "varian",
     rate: TARIF(3800, { margin_cap_pct: 40, asal_tingkat: "varian", rate_id: "r_blu" }) },
 ] };
+/** `GET /api/incentive-rates?entity_id=all`: tarif Semua PT (kategori Batik, artikel Batik Mega) + satu tarif PT lain. */
+const TARIF_GRUP = [
+  { id: "r_cat_all", entity_id: "all", category: "Batik", template_id: "", product_id: "", target_name: "", target_code: "",
+    per_unit_amount: 3000, margin_cap_pct: 50, status: "active" },
+  { id: "r_art_all", entity_id: "all", category: "Batik", template_id: "t_mega", product_id: "", target_name: "Batik Mega",
+    target_code: "BTK-MEGA-001", per_unit_amount: 3500, margin_cap_pct: 40, status: "active", price_bands: null, price_source_rules: null },
+  { id: "r_pt", entity_id: "ent_kanda", category: "Tenun", template_id: "", product_id: "", per_unit_amount: 2000,
+    margin_cap_pct: 50, status: "active" },
+];
 const TARGETS = (mode) => ({ period_type: "month", period: "2026-11", entity_id: "ent_kanda", all_pt: false, items: [],
   roster: [{ id: "u_andi", name: "Andi" }], commission_mode: mode, commission_modes: { ent_kanda: mode } });
 const REGISTRI = { entries: [{ key: "hr.payroll_commission_mode", can_edit: true, options: [
@@ -213,7 +222,8 @@ test("KA9 tab Skema & Tarif terdaftar dan alias lama mengarah ke sana", () => {
   expect(COMMISSION_LINK).toMatchObject({ view: "incentive-scheme", where: "SDM › Kinerja & Insentif › Skema & Tarif" });
   // deep link kunci komisi → bagian yang memuat kuncinya
   expect(["commission.price_bands", "commission.discount_factor", "commission.achievement_tiers",
-    "commission.default_margin_cap_pct", "commission.strategy"].map(bagianUntukKunci)).toEqual(["harga", "harga", "capaian", "batas", ""]);
+    "commission.default_margin_cap_pct", "commission.strategy", "commission.incentive_unit"].map(bagianUntukKunci)).toEqual(
+    ["harga", "harga", "capaian", "batas", "lanjutan", ""]);   // R15 — strategi di bagian Lanjutan; satuan tetap tersembunyi
 });
 
 // ═══ ② pohon tarif ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -253,6 +263,7 @@ test("KA9 pohon tarif: kategori → artikel (ikut kategori / sendiri) → varian
   // varian bertarif sendiri → PATCH tarifnya; tanpa isian pengali khusus
   await klik(q(host, "rates-var-edit-p_blu"));
   expect(txt(q(host, "rate-form-title"))).toBe("Ubah tarif varian BTK-MEGA-001-BLU");
+  expect(txt(q(host, "rate-form-scope-fixed"))).toBe("PT ini (CV Kanda Suka)");   // tarif milik PT ini: diubah di tempat
   expect(q(host, "rate-form-bands-own")).toBeNull();
   expect(q(host, "rate-form-margin").value).toBe("40");
   await isi(q(host, "rate-form-amount"), "3900");
@@ -384,13 +395,18 @@ test("KA9 tanpa izin ubah: tombol ubah/ubah banyak/unggah tidak tampil", async (
   host = await mount(<IncentiveSchemeView />);
   expect(txt(q(host, "scheme-no-access"))).toBe(TEKS_TANPA_LIHAT);
   expect(mockGet).not.toHaveBeenCalled();
-  // "Semua PT": hanya baca berkalimat, tanpa panggilan API
+  // "Semua PT": kalimat "Pilih satu PT …" + daftar tarif Semua PT (R15); tanpa izin ubah = hanya baca
   document.body.innerHTML = "";
-  izin(PENUH);
+  mockGet.mockClear();
+  izin({ sales_force: ["view"], incentive: ["view"] });
+  api({ extra: { "/api/incentive-rates": TARIF_GRUP } });
   host = await mount(<IncentiveSchemeView />, { entity: "all" });
   expect(txt(q(host, "scheme-all-pt"))).toContain(TEKS_SEMUA_PT);
   expect(TEKS_SEMUA_PT).toMatch(/^Pilih satu PT/);
-  expect(mockGet).not.toHaveBeenCalled();
+  expect(mockGet.mock.calls.map((c) => c[0])).toEqual(["/api/incentive-rates"]);   // rute pohon menolak "Semua PT"
+  expect(q(host, "group-rates-row-r_cat_all")).not.toBeNull();
+  expect(q(host, "group-rates-edit-r_cat_all")).toBeNull();
+  expect(q(host, "group-rates-delete-r_cat_all")).toBeNull();
 });
 
 // ═══ ① sumber insentif, ③④⑤ pengaturan, akrual, jenjang arsip ═════════════════════════════════════════════════════
@@ -471,6 +487,94 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
     data: { detail: "Anda tidak berwenang melihat komisi sales ini." } } }));
   await klik(q(host, "scheme-sim-run"));
   expect(txt(q(host, "scheme-sim-error"))).toContain("Anda tidak berwenang melihat komisi sales ini.");
+});
+
+// ═══ R15 — tarif Semua PT & strategi komisi tetap bisa diubah ═══════════════════════════════════════════════════════
+test("KA9 R15 pop-up Berlaku untuk: Semua PT → POST entity_id all; tarif Semua PT diubah di tempat atau diganti tarif PT", async () => {
+  izin(PENUH);
+  api({ extra: { "/api/incentive-rates/categories": { items: [
+    { category: "Batik", rate: TARIF(3000, { asal_lingkup: "semua_pt", rate_id: "r_cat_all" }), articles: 2, articles_own_rate: 1 },
+    { category: "Tenun", rate: null, articles: 1, articles_own_rate: 0 }] } } });
+  const host = await mount(<IncentiveSchemeView />);
+  expect(txt(q(host, "rates-cat-rate-Batik"))).toBe("Rp 3.000tarif Semua PT");
+  expect(txt(q(host, "rates-cat-edit-Batik"))).toBe("Ubah");
+  expect(q(host, "rates-cat-delete-Batik")).toBeNull();                 // tarif grup dihapus dari mode "Semua PT"
+  // kategori tanpa tarif → pilih Semua PT → POST entity_id "all"
+  await klik(q(host, "rates-cat-edit-Tenun"));
+  expect(q(host, "rate-form-scope-pt").checked).toBe(true);
+  await klik(q(host, "rate-form-scope-semua_pt"));
+  expect(txt(q(host, "rate-form-scope-warning"))).toBe("Tarif Semua PT berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat ini.");
+  await isi(q(host, "rate-form-amount"), "2500");
+  await kirim(host, "rate-form");
+  expect(mockPost).toHaveBeenLastCalledWith("/api/incentive-rates", { entity_id: "all", category: "Tenun",
+    per_unit_amount: 2500, margin_cap_pct: 45 });
+  // tarif Semua PT yang terlihat → diubah di tempat (PATCH)
+  await klik(q(host, "rates-cat-edit-Batik"));
+  expect(txt(q(host, "rate-form-title"))).toBe("Ubah tarif kategori Batik");
+  expect(q(host, "rate-form-scope-semua_pt").checked).toBe(true);
+  expect(q(host, "rate-form-amount").value).toBe("3000");
+  await isi(q(host, "rate-form-amount"), "3100");
+  await kirim(host, "rate-form");
+  expect(mockPatch).toHaveBeenLastCalledWith("/api/incentive-rates/r_cat_all", { data: { per_unit_amount: 3100, margin_cap_pct: 50 } });
+  // … atau diganti tarif khusus PT ini (POST lapisan PT)
+  await klik(q(host, "rates-cat-edit-Batik"));
+  await klik(q(host, "rate-form-scope-pt"));
+  expect(txt(q(host, "rate-form-title"))).toBe("Atur tarif kategori Batik");
+  expect(q(host, "rate-form-amount").value).toBe("");
+  await isi(q(host, "rate-form-amount"), "3300");
+  await kirim(host, "rate-form");
+  expect(mockPost).toHaveBeenLastCalledWith("/api/incentive-rates", { entity_id: "ent_kanda", category: "Batik",
+    per_unit_amount: 3300, margin_cap_pct: 45 });
+});
+
+test("KA9 R15 mode Semua PT: tarif Semua PT diubah lewat pop-up yang sama; tarif per PT tidak tampil", async () => {
+  izin(PENUH);
+  api({ extra: { "/api/incentive-rates": TARIF_GRUP } });
+  const host = await mount(<IncentiveSchemeView />, { entity: "all" });
+  expect(dipanggil("/incentive-rates")[0][1]).toEqual({ params: { entity_id: "all" } });
+  expect(dipanggil("/incentive-rates/categories")).toHaveLength(0);
+  expect(txt(q(host, "group-rates-row-r_cat_all"))).toContain("Kategori");
+  expect(txt(q(host, "group-rates-row-r_art_all"))).toContain("BTK-MEGA-001");
+  expect(q(host, "group-rates-row-r_pt")).toBeNull();
+  await klik(q(host, "group-rates-edit-r_art_all"));
+  expect(txt(q(host, "rate-form-title"))).toBe("Ubah tarif artikel Batik Mega");
+  expect(txt(q(host, "rate-form-scope-fixed"))).toBe("Semua PT");
+  expect(q(host, "rate-form-scope-pt")).toBeNull();
+  expect(q(host, "rate-form-amount").value).toBe("3500");
+  await isi(q(host, "rate-form-amount"), "3600");
+  await kirim(host, "rate-form");
+  expect(mockPatch).toHaveBeenLastCalledWith("/api/incentive-rates/r_art_all", { data: { per_unit_amount: 3600,
+    margin_cap_pct: 40, price_bands: null, price_source_rules: null } });
+  await klik(q(host, "group-rates-delete-r_cat_all"));
+  expect(mockReason.mock.calls[0][0].message).toContain("semua PT");
+  expect(mockDelete).toHaveBeenCalledWith("/api/incentive-rates/r_cat_all", { params: { reason: "alasan uji" } });
+});
+
+test("KA9 R15 Lanjutan: commission.strategy di bagian tertutup (Per SKU); jenjang arsip hanya strategi arsip", async () => {
+  izin(PENUH);
+  const OPSI = [{ value: "per_sku", label: "Per SKU (tarif per barang)" },
+    { value: "achievement_tiered", label: "Berjenjang dari pencapaian target" }];
+  api({ extra: { "/api/config/explain": { value: "per_sku", entry: { key: "commission.strategy", options: OPSI } } } });
+  let host = await mount(<IncentiveSchemeView />);
+  expect(txt(q(host, "scheme-advanced-toggle"))).toContain("Cara menghitung komisi: Per SKU (tarif per barang)");
+  expect(q(host, "scheme-advanced-toggle").getAttribute("aria-expanded")).toBe("false");
+  expect(mockSettings.some((o) => (o.includeKeys || []).includes("commission.strategy"))).toBe(false);   // tertutup = belum dimuat
+  await klik(q(host, "scheme-advanced-toggle"));
+  const lanjut = mockSettings.filter((o) => (o.includeKeys || []).includes("commission.strategy"));
+  expect(lanjut.length).toBeGreaterThan(0);
+  expect(lanjut[0].includeKeys).toEqual(["commission.strategy"]);
+  expect(lanjut[0].selectedEntity).toBe("ent_kanda");
+  expect(q(host, "scheme-advanced").querySelector('[data-testid="cfg-browser"]')).not.toBeNull();
+  expect(txt(q(host, "scheme-advanced-help"))).toContain("Per SKU");
+  expect(mockSettings.map((o) => (o.includeKeys || []).join(",")).join(",")).not.toMatch(/incentive_unit/);
+  expect(q(host, "legacy-scheme-editor")).toBeNull();
+  expect(q(host, "scheme-rates-strategy")).toBeNull();
+  // strategi arsip: tarif tidak dipakai (kalimat di bagian 2) + jenjang per sales tampil
+  document.body.innerHTML = "";
+  api({ extra: { "/api/config/explain": { value: "achievement_tiered", entry: { key: "commission.strategy", options: OPSI } } } });
+  host = await mount(<IncentiveSchemeView />);
+  expect(txt(q(host, "scheme-rates-strategy"))).toContain("Berjenjang dari pencapaian target");
+  expect(q(host, "legacy-scheme-editor")).not.toBeNull();
 });
 
 // ═══ Layar lama ══════════════════════════════════════════════════════════════════════════════════════════════════

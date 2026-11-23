@@ -3,10 +3,13 @@
  * ("Ubah banyak" beberapa artikel sekaligus).
  *
  * Tingkat kategori / artikel / varian (rancangan komisi per artikel §6.2, §6.6): isian tarif (Rp per satuan dasar) dan
- * batas margin (%); pengali harga khusus (pita + aturan asal harga) hanya di tingkat artikel. Tarif sendiri PT ini →
- * `PATCH /api/incentive-rates/{id}` (`{data:{…}}`); belum ada → `POST /api/incentive-rates` lapisan PT (tarif "Semua PT"
- * tidak pernah diubah dari sini — PT ini mendapat tarif sendiri). Batas margin tarif baru terisi bawaan PT
- * (`commission.default_margin_cap_pct`, bagian 5). Ubah banyak = `POST /api/incentive-rates/bulk` dengan alasan.
+ * batas margin (%); pengali harga khusus (pita + aturan asal harga) hanya di tingkat artikel. Batas margin tarif baru
+ * terisi bawaan PT (`commission.default_margin_cap_pct`, bagian 5). Ubah banyak = `POST /api/incentive-rates/bulk`.
+ *
+ * Keputusan R15 — **Berlaku untuk**: "PT ini" / "Semua PT". Tarif yang sudah ada di tingkat itu diubah DI TEMPAT
+ * (`PATCH /api/incentive-rates/{id}`, `{data:{…}}`) dan lingkupnya ditulis; tarif Semua PT yang terlihat dari satu PT boleh
+ * diubah di tempat atau diganti tarif khusus PT ini. Belum ada tarif → `POST /api/incentive-rates` dengan `entity_id` = PT
+ * atau `"all"`. Mode "Semua PT" di kepala aplikasi (`semuaPtSaja`) = hanya lingkup Semua PT.
  */
 import { useEffect, useState } from "react";
 import { Layers, Percent, Plus, Trash2 } from "lucide-react";
@@ -110,26 +113,32 @@ function PengaliKhusus({ pita, setPita, sumber, setSumber, terkunci }) {
 
 /**
  * `sasaran` = { tingkat: "kategori"|"artikel"|"varian", nama, category?, template_id?, product_id?, rate (tarif yang
- * berlaku, boleh null), sendiri (tarif PT ini di tingkat itu) }.
+ * berlaku, boleh null), adaDiTingkat (tarif yang berlaku ada di tingkat ini — milik PT ini atau Semua PT) }.
  */
-export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, onClose, onSaved }) {
+export const LINGKUP = [{ key: "pt", label: "PT ini" }, { key: "semua_pt", label: "Semua PT" }];
+export const TEKS_LINGKUP_SEMUA = "Tarif Semua PT berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat ini.";
+
+export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semuaPtSaja = false, onClose, onSaved }) {
   const [jumlah, setJumlah] = useState("");
   const [batas, setBatas] = useState("");
+  const [lingkup, setLingkup] = useState("pt");
   const [pita, setPita] = useState(null);
   const [sumber, setSumber] = useState(null);
   const [khusus, setKhusus] = useState("");       // "" = siap; selain itu alasan isian khusus terkunci
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const artikel = sasaran?.tingkat === "artikel";
+  const ada = !!(sasaran?.rate && sasaran?.adaDiTingkat);
+  const lingkupAda = ada ? (sasaran.rate.asal_lingkup === "semua_pt" ? "semua_pt" : "pt") : null;
 
-  useEffect(() => {
-    if (!sasaran) return;
-    const r = sasaran.sendiri ? sasaran.rate : null;
+  /** Isi awal untuk lingkup `l`: tarif yang ada bila lingkupnya sama (diubah di tempat), selain itu isian baru. */
+  const isiAwal = (l) => {
+    const r = ada && l === lingkupAda ? sasaran.rate : null;
     setJumlah(r ? String(r.per_unit_amount ?? 0) : "");
     setBatas(r ? String(r.margin_cap_pct ?? 0) : bawaanBatas === null || bawaanBatas === undefined ? "" : String(bawaanBatas));
     setPita(null); setSumber(null); setErr(""); setKhusus("");
     if (artikel && r?.rate_id) {
-      // Pita/aturan khusus tarif ini tidak ikut di daftar artikel — dibaca dari daftar tarif PT supaya tidak tertimpa.
+      // Pita/aturan khusus tarif ini tidak ikut di daftar artikel — dibaca dari daftar tarif supaya tidak tertimpa.
       setKhusus("Memuat pengali khusus…");
       axios.get(`${API}/incentive-rates`, { params: { entity_id: entityId } }).then((res) => {
         const doc = (Array.isArray(res.data) ? res.data : []).find((d) => d.id === r.rate_id);
@@ -138,12 +147,23 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, onCl
         setKhusus("");
       }).catch(() => setKhusus("Pengali khusus artikel ini tidak bisa dimuat; isiannya tidak diubah saat menyimpan."));
     }
+  };
+  useEffect(() => {
+    if (!sasaran) return;
+    const l = semuaPtSaja ? "semua_pt" : lingkupAda || "pt";
+    setLingkup(l);
+    isiAwal(l);
   }, [sasaran]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!sasaran) return null;
-  const ubah = !!sasaran.sendiri;
+  const ubah = ada && lingkup === lingkupAda;     // ubah tarif yang ada di tempat
+  // Lingkup boleh dipilih bila belum ada tarif di tingkat ini, atau tarif yang terlihat milik Semua PT (boleh diganti
+  // tarif khusus PT ini). Tarif milik PT ini diubah di tempat saja.
+  const bolehPilih = !semuaPtSaja && (!ada || lingkupAda === "semua_pt");
+  const namaLingkup = (l) => (l === "semua_pt" ? "Semua PT" : `PT ini (${pt})`);
   const judul = `${ubah ? "Ubah" : "Atur"} tarif ${TINGKAT[sasaran.tingkat]} ${sasaran.nama}`;
-  const ikut = !ubah && sasaran.rate ? `Sekarang memakai tarif ${sasaran.rate.asal_tingkat || "kategori"}: ${formatCurrency(sasaran.rate.per_unit_amount)}.` : "";
+  const ikut = !ada && sasaran.rate ? `Sekarang memakai tarif ${sasaran.rate.asal_tingkat || "kategori"}: ${formatCurrency(sasaran.rate.per_unit_amount)}.` : "";
+  const gantiLingkup = (l) => { setLingkup(l); isiAwal(l); };
 
   const simpan = async () => {
     const salah = periksaTarif(jumlah, batas);
@@ -160,9 +180,9 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, onCl
       else {
         const kunci = sasaran.tingkat === "kategori" ? { category: sasaran.category }
           : sasaran.tingkat === "artikel" ? { template_id: sasaran.template_id } : { product_id: sasaran.product_id };
-        await axios.post(`${API}/incentive-rates`, { entity_id: entityId, ...kunci, ...isi });
+        await axios.post(`${API}/incentive-rates`, { entity_id: lingkup === "semua_pt" ? "all" : entityId, ...kunci, ...isi });
       }
-      await onSaved(`Tarif ${TINGKAT[sasaran.tingkat]} ${sasaran.nama} tersimpan untuk ${pt}.`);
+      await onSaved(`Tarif ${TINGKAT[sasaran.tingkat]} ${sasaran.nama} tersimpan untuk ${lingkup === "semua_pt" ? "Semua PT" : pt}.`);
     } catch (e) { setErr(apiErrorText(e) || "Tarif gagal disimpan."); } finally { setBusy(false); }
   };
 
@@ -170,6 +190,24 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, onCl
     <FormModal open onClose={onClose} testId="rate-form" icon={Percent} size="md" title={judul} subtitle={pt}
       onSubmit={simpan} busy={busy} error={err} submitLabel={busy ? "Menyimpan…" : "Simpan tarif"} submitTestId="rate-form-save">
       <div className="space-y-3">
+        <div data-testid="rate-form-scope">
+          <span className="field-label">Berlaku untuk</span>
+          {bolehPilih ? (
+            <div className="flex flex-wrap gap-4 pt-1" role="radiogroup" aria-label="Berlaku untuk">
+              {LINGKUP.map((l) => (
+                <label key={l.key} className="flex items-center gap-1.5 text-fs-13">
+                  <input type="radio" name="lingkup-tarif" value={l.key} data-testid={`rate-form-scope-${l.key}`}
+                    checked={lingkup === l.key} onChange={() => gantiLingkup(l.key)} />
+                  {l.key === "pt" ? namaLingkup("pt") : l.label}
+                  {ada && l.key === lingkupAda ? <span className="text-kn-text-2">(ubah tarif ini)</span> : null}
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="pt-1 text-fs-13 font-semibold text-kn-text" data-testid="rate-form-scope-fixed">{namaLingkup(lingkup)}</p>
+          )}
+          {lingkup === "semua_pt" && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="rate-form-scope-warning">{TEKS_LINGKUP_SEMUA}</p>}
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div><label className="field-label">Tarif (Rp per satuan dasar) <span className="req">*</span></label>
             <MoneyInput testId="rate-form-amount" className="field" value={jumlah} onChange={setJumlah} />
