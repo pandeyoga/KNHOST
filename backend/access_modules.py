@@ -901,6 +901,17 @@ VIEW_ACTION_REQUIREMENTS["settings-cfg-hr"] = [("hr", _a) for _a in full_actions
 VIEW_ACTION_REQUIREMENTS["hr-payroll-remittances"] = [("hr", "view"), ("payroll", "pay")]
 del _v
 
+# KA-9 — modul Pengawasan Tim Sales & Kredit (`sales_force`) membuka grup `hrd`, hub `hr-kpi-hub`, dan tab Skema & Tarif
+# hanya lewat sumber daya `sales_force` (GET /api/incentive-rates/* = `sales_force.view`). Sumber daya keduanya,
+# `credit_override` (Sales bawaan: lihat & ajukan izin kredit), TIDAK membuka ketiganya — sama dengan keadaan KM-T5
+# (`_KMT5_TANPA_HUB`). Tanpa syarat ini Sales bawaan dianggap sudah membuka grup SDM (`nav_allowed_for_perms` bertingkat
+# modul), sehingga pratinjau editor peran tidak lagi menyebut SDM sebagai menu tambahan saat Sales diberi akses SDM
+# (PR-T6 U4). Syarat = aksi apa pun dari sumber daya modul lain yang membuka menu itu, jadi pemegangnya tidak berubah.
+for _v in ("hrd", "hr-kpi-hub", "incentive-scheme"):
+    _res = sorted({r for m in MODULE_CATALOG if _v in m["nav"] for r in m["resources"]} - {"credit_override"})
+    VIEW_ACTION_REQUIREMENTS[_v] = [(r, a) for r in _res for a in full_actions(r)]
+del _v, _res
+
 
 def view_actions_index() -> Dict[str, List[List[str]]]:
     return {k: [list(p) for p in v] for k, v in VIEW_ACTION_REQUIREMENTS.items()}
