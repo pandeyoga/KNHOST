@@ -246,3 +246,40 @@ async def test_KA12_M7_tarif_baru_ikut_kunci_diskon_pt(klien, kepala_admin, db, 
         assert r.json()["margin_cap_pct"] == 40.0             # batas margin kosong = bawaan PT
     finally:
         await db.config_values.delete_many({"id": {"$in": [b["id"] for b in baris]}})
+
+
+# ═══ M6 — pohon tarif membawa tarif pengganti (untuk kalimat konfirmasi hapus) ═════════════════════════════════════
+async def test_KA12_M6_tarif_pengganti_di_pohon(klien, kepala_admin, db, f12):
+    """Kategori KA12Songket: PT 900, Semua PT 700 · artikel Songket A12: PT 1.200, Semua PT 1.100 · varian A12 Merah:
+    PT 750 (dari M4). Hapus tarif PT → kategori 700 (Semua PT), artikel 1.100 (artikel Semua PT; tanpa itu kategori PT
+    900), varian 1.200 (artikel PT). Kategori tanpa tarif Semua PT → tanpa tarif."""
+    h = kepala_admin
+    for isi in ({"entity_id": KSC, "category": "KA12Songket", "per_unit_amount": 900},
+                {"entity_id": "all", "category": "KA12Songket", "per_unit_amount": 700},
+                {"entity_id": KSC, "template_id": TPL[0], "per_unit_amount": 1200},
+                {"entity_id": "all", "template_id": TPL[0], "per_unit_amount": 1100},
+                {"entity_id": KSC, "category": "KA12Kosong", "per_unit_amount": 50}):
+        r = await klien.post("/api/incentive-rates", headers=h, json=isi)
+        assert r.status_code == 200, r.text
+    kat = {c["category"]: c for c in (await klien.get("/api/incentive-rates/categories", headers=h,
+                                                      params={"entity_id": KSC})).json()["items"]}
+    pengganti = kat["KA12Songket"]["fallback"]
+    assert (pengganti["per_unit_amount"], pengganti["asal_tingkat"], pengganti["asal_lingkup"]) == (700, "kategori", "semua_pt")
+    assert kat["KA12Kosong"]["fallback"] == {"tanpa_tarif": True}
+
+    async def _artikel():
+        r = await klien.get("/api/incentive-rates/articles", headers=h, params={"entity_id": KSC, "category": "KA12Songket"})
+        return {a["template_id"]: a for a in r.json()["items"]}
+    art = await _artikel()
+    assert (art[TPL[0]]["fallback"]["per_unit_amount"], art[TPL[0]]["fallback"]["asal_lingkup"]) == (1100, "semua_pt")
+    assert art[TPL[2]]["fallback"]["per_unit_amount"] == 900   # artikel I5b (PT, tanpa Semua PT) → kategori PT
+    var = {v["product_id"]: v for v in (await klien.get(f"/api/incentive-rates/articles/{TPL[0]}/variants", headers=h,
+                                                         params={"entity_id": KSC})).json()["items"]}
+    f = var["prd_ka12_sa1"]["fallback"]
+    assert (f["per_unit_amount"], f["asal_tingkat"], f["asal_lingkup"]) == (1200, "artikel", "pt")
+    # tarif tingkat itu bukan milik PT ini → tanpa `fallback` (tidak ada tombol Hapus di pohon)
+    grup = await db.incentive_rates.find_one({"entity_id": "all", "rate_key": f"artikel:{TPL[0]}"}, {"_id": 0, "id": 1})
+    assert (await klien.delete(f"/api/incentive-rates/{grup['id']}", headers=h)).status_code == 200
+    art = await _artikel()
+    assert (art[TPL[0]]["fallback"]["per_unit_amount"], art[TPL[0]]["fallback"]["asal_tingkat"]) == (900, "kategori")
+    assert art[TPL[1]]["fallback"] is None                     # tarif artikel B12 nonaktif → bukan tarif PT yang berlaku

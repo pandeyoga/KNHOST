@@ -199,8 +199,25 @@ def _varian_aktif_filter(**lebih: Any) -> Dict[str, Any]:
     return {"status": {"$nin": list(STATUS_TAK_AKTIF)}, "is_active": {"$ne": False}, **lebih}
 
 
+def _pengganti(indeks: Dict[str, Dict[str, Any]], semua: Dict[str, Dict[str, Any]], kunci: str, pt: Dict[str, Any], *,
+               product_id: str = "", template_id: str = "", category: str = "") -> Optional[Dict[str, Any]]:
+    """Tinjauan akhir M6 — tarif yang berlaku bila tarif PT INI di `kunci` dihapus (tarif Semua PT di tingkat yang sama bila
+    ada, selain itu tingkat di atasnya), untuk kalimat konfirmasi hapus. `None` bila `kunci` bukan milik PT ini, atau
+    tanpa tarif sesudah dihapus → `{"tanpa_tarif": True}`."""
+    if (indeks.get(kunci) or {}).get("_lingkup") != "pt":
+        return None
+    sisa = dict(indeks)
+    if kunci in semua:
+        sisa[kunci] = semua[kunci]
+    else:
+        sisa.pop(kunci, None)
+    tarif = pilih_tarif(sisa, product_id=product_id, template_id=template_id, category=category)
+    return _ringkas(tarif, pt) if tarif else {"tanpa_tarif": True}
+
+
 async def daftar_kategori(entity_id: str) -> List[Dict[str, Any]]:
     indeks, pt = await muat_indeks_tarif(entity_id), await aturan_pt(entity_id)
+    semua = await muat_indeks_tarif(None)
     artikel = await _artikel_aktif()
     kat: Dict[str, Dict[str, int]] = {}
     for t in artikel:
@@ -217,13 +234,15 @@ async def daftar_kategori(entity_id: str) -> List[Dict[str, Any]]:
     out = []
     for c in sorted(kat):
         tarif = pilih_tarif(indeks, product_id="", template_id="", category=c)
-        out.append({"category": c, "rate": _ringkas(tarif, pt, tingkat=False), **kat[c]})
+        out.append({"category": c, "rate": _ringkas(tarif, pt, tingkat=False), **kat[c],
+                    "fallback": _pengganti(indeks, semua, f"kategori:{c}", pt, category=c)})
     return out
 
 
 async def daftar_artikel(entity_id: str, *, search: str = "", category: str = "", page: int = 1,
                          page_size: int = 50) -> Dict[str, Any]:
     indeks, pt = await muat_indeks_tarif(entity_id), await aturan_pt(entity_id)
+    semua = await muat_indeks_tarif(None)
     q = (search or "").strip().lower()
     cat = (category or "").strip()
     rows = [t for t in await _artikel_aktif()
@@ -245,7 +264,9 @@ async def daftar_artikel(entity_id: str, *, search: str = "", category: str = ""
         items.append({"template_id": t["id"], "name": t.get("name") or "", "code": t.get("sku_prefix") or "",
                       "category": t.get("category") or "", "rate": _ringkas(tarif, pt),
                       "own_rate_id": sendiri.get("id") if sendiri else None,
-                      "variant_exceptions": pengecualian.get(t["id"], 0)})
+                      "variant_exceptions": pengecualian.get(t["id"], 0),
+                      "fallback": _pengganti(indeks, semua, f"artikel:{t['id']}", pt, template_id=t["id"],
+                                             category=t.get("category") or "")})
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
@@ -254,6 +275,7 @@ async def daftar_varian(entity_id: str, template_id: str) -> List[Dict[str, Any]
     if not t:
         raise HTTPException(status_code=404, detail="Artikel tidak ditemukan.")
     indeks, pt = await muat_indeks_tarif(entity_id), await aturan_pt(entity_id)
+    semua = await muat_indeks_tarif(None)
     rows = await db.products.find(_varian_aktif_filter(template_id=template_id),
                                   {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1}).to_list(None)
     rows.sort(key=lambda p: ((p.get("sku") or ""), p["id"]))
@@ -263,7 +285,9 @@ async def daftar_varian(entity_id: str, template_id: str) -> List[Dict[str, Any]
                             category=p.get("category") or t.get("category") or "")
         out.append({"product_id": p["id"], "sku": p.get("sku") or "", "name": p.get("name") or "",
                     "rate": _ringkas(tarif, pt),
-                    "follows": tarif["asal_tingkat"] if tarif else "tanpa_tarif"})
+                    "follows": tarif["asal_tingkat"] if tarif else "tanpa_tarif",
+                    "fallback": _pengganti(indeks, semua, f"varian:{p['id']}", pt, product_id=p["id"],
+                                           template_id=template_id, category=p.get("category") or t.get("category") or "")})
     return out
 
 
