@@ -1124,6 +1124,17 @@ REQUIRED_UNIQUE_INDEXES += [
                            "$id")},
 ]
 
+# KA-6 (D7) — satu potret aturan komisi per (PT, bulan): akrual pertama membekukan, akrual/koreksi berikutnya membaca
+# dokumen yang sama; dua akrual bersamaan → yang kalah membaca dokumen pemenang (`commission_rules.bekukan_periode`).
+# Koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "commission_period_rules", "name": "uq_commission_period",
+     "label": "satu potret aturan komisi per PT dan bulan",
+     "keys": [("entity_id", 1), ("period", 1)], "partial": {"period": dict(_NONEMPTY)},
+     "finder": _finder_dup("commission_period_rules", '{period:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",p:"$period"}', "$id")},
+]
+
 
 class RequiredIndexError(RuntimeError):
     """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""

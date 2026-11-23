@@ -132,7 +132,8 @@ def test_U02_pemeriksa_hijau():
     # KM-T4 menambah `interco_charges.uq_charge_run_to` (satu tagihan insentif antar-PT per proses gaji dan PT
     # tertagih): + 1.
     # KA-2 menambah `incentive_rates.uq_incentive_rate_key` (satu tarif insentif per PT dan kunci tarif): + 1.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 39
+    # KA-6 menambah `commission_period_rules.uq_commission_period` (satu potret aturan komisi per PT dan bulan): + 1.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 40
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

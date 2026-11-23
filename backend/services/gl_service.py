@@ -3594,6 +3594,10 @@ async def post_incentive_accrual(entity_id: str, period: str,
     PK-22 (FY-02, FY-08) — `total` (opsional) = Σ komisi slip gaji: posting gaji mengakru TEPAT angka yang dilunasi slip
     (dulu dihitung ulang dari daftar akun sales, bisa berbeda dari slip). `date` = tanggal buku jurnal periodik
     (`periodic_posting.journal_date`); kosong = hari ini (perilaku lama).
+
+    KA-6 — sebelum jurnal (akrual pertama MAUPUN koreksi) aturan komisi bulan itu dibekukan
+    (`commission_rules.bekukan_periode`, sisip-bila-belum-ada; galatnya menggagalkan akrual). Bulan yang diakru sebelum
+    fitur ini dibekukan pada koreksi pertamanya.
     """
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Akrual insentif membutuhkan entitas spesifik & periode (mis. 2026-06).")
@@ -3603,9 +3607,11 @@ async def post_incentive_accrual(entity_id: str, period: str,
         total = await incentive_accrual_estimate(entity_id, period)
     total = round(float(total or 0), 2)
     tgl = date or now_iso()
+    from services.commission_rules import bekukan_periode   # lokal: modul aturan memanggil mesin komisi
     if not await _already_posted("incentive_accrual", src_id):
         if total <= EPS:
             return None
+        await bekukan_periode(entity_id, period, oleh=created_by)
         lines = _balanced_pair(ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF, total,
                                f"Akrual insentif penjualan {period}")
         return await _insert_entry(
@@ -3617,6 +3623,7 @@ async def post_incentive_accrual(entity_id: str, period: str,
     delta = round(total - accrued, 2)
     if abs(delta) <= EPS:
         return None
+    await bekukan_periode(entity_id, period, oleh=created_by)
     dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if delta > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
     desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
     try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat

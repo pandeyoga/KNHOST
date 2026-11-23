@@ -466,9 +466,12 @@ _KA_SUMBER = [{"value": "special_approval", "label": "Harga khusus"},
 _KA_HARGA = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
                  requires_reason=True, consumers=("services/commission_rules.py:susun_aturan_pt",),
                  simulate="commission_price")
+# KA-6 — kunci capaian `bertanggal` (PK-46): mesin membaca nilai yang berlaku pada AKHIR bulan komisi
+# (`aturan_capaian(at=…)`). Tanpa itu nilai yang mulai berlaku sesudah bulan itu ikut terbaca lewat proyeksi ke
+# `system_settings` (lapisan lama tidak bertanggal) — mis. pengali dinyalakan 1 Des ikut mengalikan komisi November.
 _KA_CAPAIAN = dict(group="penjualan", section="komisi-pengali", scopes=("global", "entity"), risk="high",
                    requires_reason=True, consumers=("services/commission_rules.py:aturan_capaian",),
-                   simulate="commission_achievement")
+                   simulate="commission_achievement", bertanggal=True)
 
 E("commission.price_basis", type="enum", default="diskon_baris",
   options=({"value": "diskon_baris", "label": "Diskon baris (cara lama)"},

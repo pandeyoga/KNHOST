@@ -636,6 +636,31 @@ Key Fields:
 ⚠️ JANGAN BUAT: incentive_rate, commission_rates, rates, sku_rates (sebagai koleksi).
 ```
 
+### commission_period_rules  [KA-6 — potret aturan komisi per PT per bulan saat akrual dibukukan]
+```
+Collection:  commission_period_rules     Prefix: cpr_
+Penulis:     services/commission_rules.py (bekukan_periode) — dipanggil gl_service.post_incentive_accrual sebelum jurnal
+             akrual pertama MAUPUN koreksi (bulan yang diakru sebelum KA-6 dibekukan pada koreksi pertamanya)
+Pembaca:     services/commission_rules.py (pengali_capaian — jenjang beku menang atas nilai kunci akhir bulan)
+Key Fields:
+  id            string  prefix "cpr_"
+  entity_id     string  FK business_entities.id (PT spesifik, bukan "all")
+  period        string  "YYYY-MM" bulan komisi (bulan uang masuk)
+  achievement   object  {aktif, basis, jenjang} = kunci `commission.achievement_*` yang berlaku pada akhir bulan
+                        23.59.59 WIB (kunci bertanggal)
+  sales         list    [{sales_id, total, breakdown[]}] — catatan hasil mesin per sales daftar PT saat dibekukan
+                        (`incentive_targets.sales_roster`; baris rincian = `compute_commission().breakdown`, tanpa margin/HPP)
+  recorded_at   string  ISO UTC
+  recorded_by   string  nama pembuat akrual
+
+ℹ️ UNIK per (entity_id, period) — indeks wajib `uq_commission_period` (PK-14 REQUIRED_UNIQUE_INDEXES). Sisip-bila-belum-
+   ada: dokumen yang ada dikembalikan, tidak pernah ditimpa; dua akrual bersamaan → yang kalah membaca pemenang.
+ℹ️ Yang dibekukan = ATURAN (jenjang capaian bulan itu; aturan per baris sudah dipotret di `items[].commission_rule`).
+   Gaji/kartu/koreksi akrual tetap menghitung dari aturan beku ini, sehingga angka hanya berubah karena data sumber
+   (bayar/retur). `sales[]` adalah catatan (D3), bukan sumber angka.
+⚠️ JANGAN BUAT: commission_freezes, commission_snapshots, period_commission (sebagai koleksi).
+```
+
 ### cash_holdings + cash_deposits  [PM-T4 — tunai yang diterima sales dicatat sebagai titipan sampai disetor]
 
 Bila PT memilih `pembayaran.sales_terima_tunai = titipan` (bawaan `kas_langsung` = perilaku lama), kwitansi tunai yang

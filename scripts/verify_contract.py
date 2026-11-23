@@ -130,6 +130,8 @@ CANONICAL_COLLECTIONS = {
     "ar_receipts",
     # ── EPIC4 (Incentive Engine v2 — rate matrix entity×category) ──
     "incentive_rates",
+    # ── KA-6 — potret aturan komisi per (PT, bulan) saat akrual dibukukan ──
+    "commission_period_rules",
     # ── EPIC7-B (Kas & Bank — multi-akun + rekonsiliasi) ──
     "bank_accounts",
     # ── EPIC7-C (Chart of Accounts + General Ledger) ──

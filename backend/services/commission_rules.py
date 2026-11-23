@@ -416,3 +416,113 @@ async def aturan_baris(line: Dict[str, Any], entity_id: Optional[str], cache: Di
                         category=line.get("category") or prod.get("category") or "")
     return potret(tarif, cache[("pt", ent)], artikel=_artikel_ringkas(cache.get(("artikel", tpl))),
                   sumber="saat_hitung", waktu=now_iso())
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KA-6 — pengali capaian target + pembekuan aturan bulan saat akrual
+# ═══════════════════════════════════════════════════════════════════════════
+#: Kode alasan `pengali_capaian` (info["alasan"]).
+ALASAN_CAPAIAN = ("mati", "semua_pt", "bukan_bulan", "tanpa_target_bulanan", "jenjang")
+#: Basis capaian → kolom persen pengumpul Capaian KM-T2 (`None` = tanpa target periode itu).
+_KOLOM_CAPAIAN = {"omzet_bersih": "pct_omzet", "uang_masuk": "pct_pencairan"}
+PESAN_BUKAN_BULAN = "Periode komisi yang dibekukan harus satu bulan, contoh: 2026-11."
+
+
+def bulan_komisi(period: Any) -> Optional[str]:
+    """`YYYY-MM` bila `period` satu bulan; selain itu `None` (triwulan, tahun, bentuk lain)."""
+    from services import incentive_periods as ip
+    try:
+        return ip.normalize("month", str(period or ""))[1]
+    except ip.PeriodeError:
+        return None
+
+
+def akhir_bulan_wib(bulan: str) -> datetime:
+    """Detik terakhir bulan `YYYY-MM` jam dinding WIB (hari terakhir 23.59.59) — saat jenjang bulan itu dibaca."""
+    from services.book_date import WIB
+    from services.periodic_posting import akhir_periode
+    return datetime.fromisoformat(f"{akhir_periode(bulan)}T23:59:59").replace(tzinfo=WIB)
+
+
+async def capaian_aktif(entity_id: Optional[str]) -> bool:
+    """Pengali capaian menyala SAAT INI di PT itu ("Semua PT"/kosong → `False`). Mesin memakainya untuk memutuskan
+    periode triwulan/tahun dihitung sebagai Σ hasil per bulan (`sales_force_service.compute_commission`)."""
+    if not entity_id or entity_id == "all":
+        return False
+    return (await aturan_capaian(entity_id))["aktif"]
+
+
+async def _aturan_beku(entity_id: str, bulan: str) -> Optional[Dict[str, Any]]:
+    from db import db
+    doc = await db.commission_period_rules.find_one({"entity_id": entity_id, "period": bulan},
+                                                    {"_id": 0, "achievement": 1})
+    return (doc or {}).get("achievement")
+
+
+async def _capaian_pct(entity_id: str, sales_id: str, bulan: str, basis: str) -> Optional[float]:
+    """Persen capaian sales bulan itu = sel tabel Capaian KM-T2 (fakta disegarkan dulu; target BULANAN saja)."""
+    from services.incentive_me import capaian_saya
+    return (await capaian_saya(entity_id, sales_id, bulan)).get(_KOLOM_CAPAIAN.get(basis, "pct_omzet"))
+
+
+async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) -> Tuple[float, Dict[str, Any]]:
+    """`(pengali, info)` capaian target sales untuk komisi `period` (rancangan §6.4).
+
+    Aturan = dokumen beku `commission_period_rules` bulan itu bila ada (`sumber_jenjang="beku"`), selain itu nilai
+    kunci `commission.achievement_*` yang berlaku pada akhir bulan komisi 23.59.59 WIB (`"akhir_bulan"`). Capaian =
+    angka bulan komisi (bulan uang masuk) dibanding target BULANAN. Pengali 1 dengan alasan: `semua_pt` ("Semua PT" —
+    definisi angka berbeda per PT) · `bukan_bulan` (triwulan/tahun dihitung langsung; `compute_commission` memecahnya
+    per bulan) · `mati` · `tanpa_target_bulanan`; selain itu `jenjang` (`pilih_jenjang`).
+    info = `{"aktif", "basis", "capaian_pct", "sumber_jenjang", "alasan"}`."""
+    info: Dict[str, Any] = {"aktif": None, "basis": None, "capaian_pct": None, "sumber_jenjang": None, "alasan": ""}
+    if not entity_id or entity_id == "all":
+        return 1.0, {**info, "alasan": "semua_pt"}
+    bulan = bulan_komisi(period)
+    if bulan is None:
+        aturan = await aturan_capaian(entity_id)
+        info.update(aktif=aturan["aktif"], basis=aturan["basis"])
+        return 1.0, {**info, "alasan": "bukan_bulan" if aturan["aktif"] else "mati"}
+    beku = await _aturan_beku(entity_id, bulan)
+    aturan = beku or await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan))
+    info.update(aktif=bool(aturan["aktif"]), basis=aturan["basis"], sumber_jenjang="beku" if beku else "akhir_bulan")
+    if not info["aktif"]:
+        return 1.0, {**info, "alasan": "mati"}
+    pct = await _capaian_pct(entity_id, sales_id, bulan, info["basis"])
+    if pct is None:
+        return 1.0, {**info, "alasan": "tanpa_target_bulanan"}
+    return pilih_jenjang(aturan["jenjang"], float(pct)), {**info, "capaian_pct": pct, "alasan": "jenjang"}
+
+
+async def bekukan_periode(entity_id: str, period: str, *, oleh: str) -> Dict[str, Any]:
+    """Bekukan aturan komisi bulan itu saat akrual dibukukan (rancangan §6.4, §6.5a; `02_STANDAR.md` §5 D3).
+
+    Sisip-bila-belum-ada `commission_period_rules` `{id "cpr_…", entity_id, period, achievement {aktif, basis,
+    jenjang} (nilai yang berlaku pada akhir bulan), sales [{sales_id, total, breakdown}] (catatan hasil mesin per sales
+    daftar PT saat dibekukan), recorded_at, recorded_by}`. Idempoten: dokumen yang sudah ada dikembalikan, tidak
+    ditimpa — koreksi akrual sesudahnya tetap memakai jenjang beku, angka hanya berubah karena data sumber
+    (bayar/retur)."""
+    from pymongo.errors import DuplicateKeyError
+    from core_utils import new_id, now_iso
+    from db import db
+    bulan = bulan_komisi(period)
+    if not entity_id or entity_id == "all" or bulan is None:
+        raise ValueError(PESAN_BUKAN_BULAN)
+    q = {"entity_id": entity_id, "period": bulan}
+    ada = await db.commission_period_rules.find_one(q, {"_id": 0})
+    if ada:
+        return ada
+    from services import sales_force_service as sf          # lokal: sales_force_service mengimpor modul ini
+    from services.incentive_targets import sales_roster
+    achievement = await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan))
+    sales: List[Dict[str, Any]] = []
+    for u in await sales_roster(entity_id, "month", bulan):
+        c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
+        sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
+                      "breakdown": c.get("breakdown") or []})
+    doc = {"id": new_id("cpr"), **q, "achievement": achievement, "sales": sales, "recorded_at": now_iso(),
+           "recorded_by": oleh or ""}
+    try:
+        await db.commission_period_rules.insert_one(dict(doc))
+    except DuplicateKeyError:   # dua akrual bersamaan: dokumen pemenang yang berlaku (indeks uq_commission_period)
+        return await db.commission_period_rules.find_one(q, {"_id": 0})
+    return doc
