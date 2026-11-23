@@ -235,6 +235,8 @@ async def _compute_commission_tiered(sales_id: str, period: str, entity_id: Opti
 async def _load_incentive_rates(entity_id: Optional[str]) -> Dict[str, Dict[str, Any]]:
     """Map category -> rate doc. Prioritas entity spesifik, fallback 'all'."""
     rows = await db.incentive_rates.find({"status": "active"}, {"_id": 0}).to_list(1000)
+    # KA-2 — baris artikel/varian memotret kategori katalog; jangan menimpa tarif kategori (mesin lama hanya per kategori).
+    rows = [r for r in rows if not (r.get("template_id") or r.get("product_id"))]
     by_cat: Dict[str, Dict[str, Any]] = {}
     ent = entity_id if entity_id and entity_id != "all" else None
     for r in rows:

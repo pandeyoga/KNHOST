@@ -100,14 +100,44 @@ async def test_KA2_U4_pita_khusus_artikel_divalidasi(klien, kepala_admin, uji):
 
 
 async def test_KA2_U5_isi_awal_rate_key(db):
-    await db.incentive_rates.insert_one({"id": "irate_ka_lama", "entity_id": "all", "category": "Tenun",
+    await db.incentive_rates.insert_one({"id": "irate_ka_lama", "entity_id": "all", "category": "TenunLama",
                                          "per_unit_amount": 2500, "status": "active"})
     await bootstrap.backfill_incentive_rate_key()
-    assert (await db.incentive_rates.find_one({"id": "irate_ka_lama"}))["rate_key"] == "kategori:Tenun"
+    assert (await db.incentive_rates.find_one({"id": "irate_ka_lama"}))["rate_key"] == "kategori:TenunLama"
     await bootstrap.backfill_incentive_rate_key()   # idempoten
-    assert (await db.incentive_rates.find_one({"id": "irate_ka_lama"}))["rate_key"] == "kategori:Tenun"
+    assert (await db.incentive_rates.find_one({"id": "irate_ka_lama"}))["rate_key"] == "kategori:TenunLama"
 
 
 def test_KA2_U6_indeks_wajib_terdaftar():
     assert any(i["name"] == "uq_incentive_rate_key" and i["collection"] == "incentive_rates"
                for i in REQUIRED_UNIQUE_INDEXES)
+
+
+async def test_KA2_U7_mesin_lama_tidak_tertimpa_tarif_artikel(db):
+    """Tarif kategori 500 + tarif artikel 900 (kategori potret sama): pembaca mesin tetap 500 untuk kategori itu."""
+    from services import sales_force_service as sfs
+    ent = "ent_ka2_mesin"
+    await db.incentive_rates.insert_many([
+        {"id": "irate_ka2m_kat", "entity_id": ent, "category": "KA2Mesin", "per_unit_amount": 500, "status": "active"},
+        {"id": "irate_ka2m_art", "entity_id": ent, "category": "KA2Mesin", "template_id": "tpl_ka_mega",
+         "per_unit_amount": 900, "status": "active"},
+        {"id": "irate_ka2m_var", "entity_id": ent, "category": "KA2Mesin", "product_id": "prd_ka_mega_mrh",
+         "per_unit_amount": 700, "status": "active"}])
+    for urut in (1, 2):   # urutan baris tidak boleh berpengaruh
+        if urut == 2:
+            await db.incentive_rates.delete_one({"id": "irate_ka2m_kat"})
+            await db.incentive_rates.insert_one({"id": "irate_ka2m_kat", "entity_id": ent, "category": "KA2Mesin",
+                                                 "per_unit_amount": 500, "status": "active"})
+        rates = await sfs._load_incentive_rates(ent)
+        assert rates["KA2Mesin"]["per_unit_amount"] == 500, rates
+
+
+async def test_KA2_U8_kategori_bawaan_seed_ditolak_kembar(klien, kepala_admin, db):
+    from bootstrap import seed_incentive_rates
+    await db.incentive_rates.delete_many({})
+    await db.products.update_one({"id": "prd_ka_mega_mrh"}, {"$set": {"category": "Batik"}})
+    await seed_incentive_rates()
+    seed = await db.incentive_rates.find_one({"entity_id": "all", "category": "Batik"}, {"_id": 0})
+    assert seed and seed["rate_key"] == "kategori:Batik", seed
+    r = await klien.post("/api/incentive-rates", headers=kepala_admin, json={"entity_id": "all", "category": "Batik"})
+    assert (r.status_code, r.json()["detail"]) == (409, "Tarif untuk Batik di PT ini sudah ada."), r.text

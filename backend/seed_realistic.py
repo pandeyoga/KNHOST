@@ -2328,7 +2328,7 @@ async def finalize_epic3_costing_and_ar():
         irate_docs = []
         for cat in sorted(set(cats) | set(rate_default)):
             irate_docs.append({
-                "id": new_id("irate"), "entity_id": "all", "category": cat,
+                "id": new_id("irate"), "entity_id": "all", "category": cat, "rate_key": f"kategori:{cat}",
                 "incentive_unit": "yard", "per_unit_amount": float(rate_default.get(cat, 2500)),
                 "discount_threshold_type": "pct", "discount_threshold": 10.0,
                 "discount_mechanic": "tier_factor", "discount_factor": 0.5,
