@@ -85,21 +85,28 @@ async def lembar_saya(entity_id: str, user_id: str, period: str) -> List[Dict[st
     return out
 
 
-async def komisi_otomatis(entity_id: str, user_id: str, period: str, mode: str) -> Optional[Dict[str, float]]:
+# Daftar putih rincian komisi untuk sales: tanpa angka margin/HPP (jangan menyalin baris mesin apa adanya).
+KUNCI_RINCIAN = ("name", "sku", "qty_base", "rate", "rate_origin", "price_factor", "price_reason_label",
+                 "achievement_factor", "capped", "commission")
+
+
+async def komisi_otomatis(entity_id: str, user_id: str, period: str, mode: str) -> Optional[Dict[str, Any]]:
     """Komisi berjalan mesin lama — hanya untuk PT yang masih bermode komisi otomatis."""
     from services import incentive_payroll as ipay
     if mode in ipay.TANPA_MESIN:
         return None
     from services import sales_force_service as sf
     from services.book_date import tanggal_buku
-    total = round(float((await sf.compute_commission(user_id, period, entity_id))["total_incentive"] or 0), 2)
+    hasil = await sf.compute_commission(user_id, period, entity_id)
+    total = round(float(hasil["total_incentive"] or 0), 2)
     hari_ini = tanggal_buku()
     if hari_ini[:7] == period:
         day, dim = int(hari_ini[8:10]), monthrange(int(period[:4]), int(period[5:7]))[1]
         proyeksi = round(total / day * dim, 2) if day else total
     else:
         proyeksi = total
-    return {"mtd": total, "projection_month_end": proyeksi}
+    return {"mtd": total, "projection_month_end": proyeksi,
+            "breakdown": [{k: r.get(k) for k in KUNCI_RINCIAN} for r in hasil.get("breakdown") or []]}
 
 
 async def kartu(entity_id: str, user_id: str, period: str = "") -> Dict[str, Any]:

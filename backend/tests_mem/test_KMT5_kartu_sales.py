@@ -305,7 +305,7 @@ async def test_KMT5_U5_komisi_otomatis_pt_bawaan(klien, f5):
     j = await _me(klien, f5["h"]["citra"])   # periode bawaan = bulan berjalan WIB (beku: November 2026)
     assert (j["period"], j["entity_id"], j["mode"]) == ("2026-11", KSC, "accrue_then_settle"), j
     assert j["auto_commission"]["mtd"] == 500_000, j["auto_commission"]   # 1.000 m × Rp 500
-    assert set(j["auto_commission"]) == {"mtd", "projection_month_end"}
+    assert set(j["auto_commission"]) == {"mtd", "projection_month_end", "breakdown"}
     assert j["sheets"] == []
 
 

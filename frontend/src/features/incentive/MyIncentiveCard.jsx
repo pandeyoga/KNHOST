@@ -18,6 +18,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDecimal, formatPeriod, todayWib } from "../../utils/formatters";
 import { MODE_KEDUANYA, MODE_TANPA_MESIN } from "./incentiveModes";
+import { ringkasRincian } from "./rincianKomisi";
 
 export const TEKS_MEMUAT = "Memuat capaian…";
 /** Galat: kalimat + tombol "Coba lagi" bawaan `ErrorNotice` (tampil "Capaian belum bisa dimuat. ⟳ Coba lagi"). */
@@ -229,6 +230,29 @@ export default function MyIncentiveCard({ variant = "page", hideWhenEmpty = fals
                 </div>
               )}
             </dl>
+
+            {otomatis && (data.auto_commission.breakdown || []).length > 0 && (
+              <div data-testid={`${testId}-auto-rincian`}>
+                <h3 className="text-fs-14 font-bold text-kn-text">Rincian komisi otomatis</h3>
+                <ul className="mt-1 divide-y divide-kn-divider">
+                  {data.auto_commission.breakdown.map((b, i) => {
+                    const r = ringkasRincian(b);
+                    return (
+                      <li key={`${b.sku}-${i}`} className="py-1.5 text-fs-12" data-testid={`${testId}-auto-rincian-${i}`}>
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="font-semibold text-kn-text">{b.name}<span className="font-mono text-kn-text-2"> · {b.sku}</span></span>
+                          <span className="whitespace-nowrap font-bold text-kn-text"><Rupiah v={b.commission} /></span>
+                        </div>
+                        <p className="text-kn-text-2">
+                          {formatDecimal(b.qty_base || 0)} m · tarif {r.tarif} · harga {r.pengaliHarga} · capaian {r.pengaliCapaian}
+                          {r.dibatasi && <span className="font-semibold" data-testid={`${testId}-auto-rincian-${i}-batas`}> · {r.catatanBatas}</span>}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
             <div data-testid={`${testId}-sheets`}>
               <h3 className="text-fs-14 font-bold text-kn-text">Insentif yang sudah disahkan</h3>

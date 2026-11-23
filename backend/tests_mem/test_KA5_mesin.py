@@ -58,7 +58,7 @@ MEGA = {"id": "tpl_ka5_mega", "nama": "Batik Mega KA5", "kode": "BTK-MEGA"}
 KAWUNG = {"id": "tpl_ka5_kwg", "nama": "Batik Kawung KA5", "kode": "BTK-KWG"}
 KUNCI_RINCIAN = {"category", "sku", "name", "template_id", "qty_base", "commission", "rate", "rate_origin",
                  "price_factor", "price_reason", "price_reason_label", "achievement_factor", "capped"}
-UJI = ("u1", "u1b", "u2", "u3", "u4", "u4b", "u5", "u6", "u7", "u8", "f2", "f2s", "f3")
+UJI = ("u1", "u1b", "u2", "u3", "u4", "u4b", "u5", "u6", "u7", "u8", "f2", "f2s", "f3", "u9")
 
 
 def _tarif_kategori(kode: str, kategori: str, *, cap: float = 0.0, **lain) -> Dict[str, Any]:
@@ -155,7 +155,7 @@ async def f(db, akun, sesi, kepala_admin):
                                           {"id": "rate_ka5_absen", "entity_id": KSC, "category": "KA5-ABSEN",
                                            "per_unit_amount": 500.0, "status": "active"}])
     return {"u": u, "pt": await aturan_pt(KSC), "adm": kepala_admin,
-            "h_sales": await sesi(u["u4"], entitas=KSC)}
+            "h_sales": await sesi(u["u4"], entitas=KSC), "h_u9": await sesi(u["u9"], entitas=KSC)}
 
 
 async def test_KA5_U1_tanpa_potret_sama_dengan_lama(db, f):
@@ -259,6 +259,23 @@ async def test_KA5_U5_batas_margin_ditandai_tanpa_angka(db, f):
     b = _satu(hasil)
     assert b["capped"] is True and b["commission"] == 50_000
     assert set(b) == KUNCI_RINCIAN
+    assert not [k for k in b if "margin" in k or "cost" in k], b
+
+
+async def test_KA5_U9_kartu_sales_rincian_tanpa_margin(klien, db, f):
+    # 100 yd @ Rp 50.000, HPP 49.000, tarif Rp 3.500/yd, batas margin 50 % → komisi dibatasi 50.000 (seperti U5).
+    pot = _potret(f["pt"], 3500, cap=50.0)
+    await _pesanan(db, "so_ka5_u9", "cus_ka5_u9", [_baris(100, 50_000, pid="prd_ka5_mega_mrh", kategori="KA5Batik",
+                                                          unit_cost=49_000, commission_rule=pot)])
+    r = await klien.get("/api/incentive/me", headers=f["h_u9"], params={"period": PERIODE})
+    assert r.status_code == 200, r.text
+    ac = r.json()["auto_commission"]
+    assert set(ac) == {"mtd", "projection_month_end", "breakdown"}, ac
+    assert ac["mtd"] == 50_000
+    b = ac["breakdown"][0]
+    assert set(b) == {"name", "sku", "qty_base", "rate", "rate_origin", "price_factor", "price_reason_label",
+                      "achievement_factor", "capped", "commission"}
+    assert b["capped"] is True and b["commission"] == 50_000
     assert not [k for k in b if "margin" in k or "cost" in k], b
 
 
