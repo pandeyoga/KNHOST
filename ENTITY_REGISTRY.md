@@ -1714,6 +1714,11 @@ Key Fields:
                           discount_percent, discount_amount, line_total}]
                         (FIELD item = "quantity" & "price"; BUKAN "qty"/"unit_price")
                         subtotal = price×quantity (GROSS, invarian); line_total = subtotal−discount_amount
+                        items[].commission_rule  KA-4 — potret aturan komisi baris (v1) saat pesanan dibuat:
+                          {v, sumber (pesanan|isi_awal), dipotret_pada, artikel{id,nama,kode}|null,
+                           tarif{id, asal_tingkat (varian|artikel|kategori), asal_lingkup (pt|semua_pt), per_unit_amount,
+                           margin_cap_pct, discount_*}|null, price_basis, acuan, price_bands, price_source_rules}
+                          Pesanan lama diisi sekali oleh `bootstrap.backfill_so_line_commission_rule` (sumber "isi_awal").
   allocations  list    [{warehouse_id, warehouse_name, warehouse_city, product_id, quantity}]
                         SNAPSHOT fulfillment (top-level, dipakai render dokumen)
   status       enum    (lihat lifecycle di atas)

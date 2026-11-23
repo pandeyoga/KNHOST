@@ -28,6 +28,7 @@ from services.customer_service import group_sales_max, resolve_customer_sales_te
 from services import credit_gate as _cg   # CR-T3 — satu mesin gerbang kredit
 from entity_scope import entity_ctx, assert_entity_access
 from services import costing_service
+from services import commission_rules   # KA-4 — potret aturan komisi per baris
 from services import pricelist_service
 from services import customer_price_service  # F1b — harga langganan per pelanggan
 from services import product_exclusivity as pexcl
@@ -392,6 +393,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         if cost <= 0:
             cost = float(prod.get("harga_pokok") or 0)
         it["unit_cost"] = round(cost, 2)
+    # KA-4 — potret aturan komisi (tarif artikel/varian/kategori + aturan harga PT) saat pesanan dibuat.
+    await commission_rules.potret_pesanan(entity_id, items, products)
     # FASE G-0 — `inventory.min_cut_qty` DULU tombol palsu (0 consumer di kode). Sekarang
     # benar-benar menjaga: panjang potong di bawah minimum ditolak agar tidak lahir sisa
     # roll yang terlalu pendek untuk dijual.

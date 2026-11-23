@@ -1181,6 +1181,38 @@ async def backfill_so_line_cost() -> None:
             await db.sales_orders.update_one({"id": order["id"]}, {"$set": {"items": items}})
 
 
+async def backfill_so_line_commission_rule() -> None:
+    """KA-4 — potret aturan komisi (`commission_rule`, sumber "isi_awal") ke baris pesanan lama. Idempotent.
+
+    Aturan saat itu = aturan hari ini, jadi komisi pesanan lama tidak berubah. Hanya pesanan yang punya minimal satu
+    baris tanpa potret; indeks tarif & aturan PT disimpan per PT, artikel dimuat satu kueri per kelompok pesanan.
+    """
+    from core_utils import now_iso
+    from services import commission_rules as cr
+    products = {p["id"]: p for p in await db.products.find({}, {"_id": 0, "id": 1, "template_id": 1, "category": 1}).to_list(20000)}
+    cache: dict = {}
+    async for order in db.sales_orders.find({"items.commission_rule": {"$exists": False}},
+                                            {"_id": 0, "id": 1, "items": 1, "entity_id": 1}):
+        ent = order.get("entity_id")
+        if ent not in cache:
+            cache[ent] = (await cr.muat_indeks_tarif(ent), await cr.aturan_pt(ent))
+        indeks, pt = cache[ent]
+        items = order.get("items") or []
+        todo = [it for it in items if not it.get("commission_rule")]
+        if not todo:
+            continue
+        artikel = await cr._muat_artikel([(products.get(it.get("product_id")) or {}).get("template_id") or "" for it in todo])
+        waktu = now_iso()
+        for it in todo:
+            prod = products.get(it.get("product_id")) or {}
+            tpl = prod.get("template_id") or ""
+            tarif = cr.pilih_tarif(indeks, product_id=it.get("product_id") or "", template_id=tpl,
+                                   category=it.get("category") or prod.get("category") or "")
+            it["commission_rule"] = cr.potret(tarif, pt, artikel=cr._artikel_ringkas(artikel.get(tpl)),
+                                              sumber="isi_awal", waktu=waktu)
+        await db.sales_orders.update_one({"id": order["id"]}, {"$set": {"items": items}})
+
+
 async def backfill_ar_cash_postings() -> None:
     """P0-1 — pastikan tiap AR receipt (posted, kas baru>0) punya cash_transaction in.
 
@@ -2121,6 +2153,7 @@ async def run_bootstrap() -> None:
     await backfill_incentive_rate_key()   # KA-2 — sebelum `assert_required_indexes` (indeks unik `uq_incentive_rate_key`)
     await backfill_costing_data()
     await backfill_so_line_cost()
+    await backfill_so_line_commission_rule()   # KA-4 — sesudah tarif ber-`rate_key` & biaya baris
     await backfill_ar_cash_postings()
     await backfill_epic6_pr_po_links()
     await seed_incentive_rates()

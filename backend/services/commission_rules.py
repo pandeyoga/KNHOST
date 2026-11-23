@@ -346,3 +346,59 @@ async def muat_indeks_tarif(entity_id: Optional[str]) -> Dict[str, Dict[str, Any
         if ent and r.get("entity_id") == ent:
             indeks[r.get("rate_key") or rate_key(r)] = {**r, "_lingkup": "pt"}
     return indeks
+
+
+# ── KA-4 — potret aturan komisi per baris pesanan ───────────────────────────
+def _artikel_ringkas(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not doc:
+        return None
+    return {"id": doc.get("id"), "nama": doc.get("name"), "kode": doc.get("sku_prefix")}
+
+
+async def _muat_artikel(template_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+    from db import db
+    ids = sorted({t for t in template_ids if t})
+    if not ids:
+        return {}
+    rows = await db.product_templates.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "name": 1, "sku_prefix": 1}).to_list(len(ids))
+    return {r["id"]: r for r in rows}
+
+
+async def potret_pesanan(entity_id: str, items: List[Dict[str, Any]], products: Dict[str, Dict[str, Any]], *,
+                         sumber: str = "pesanan") -> None:
+    """Isi `it["commission_rule"]` tiap baris pesanan dengan aturan yang berlaku SEKARANG (satu kueri artikel)."""
+    from core_utils import now_iso
+    indeks = await muat_indeks_tarif(entity_id)
+    pt = await aturan_pt(entity_id)
+    artikel = await _muat_artikel([(products.get(it.get("product_id")) or {}).get("template_id") or "" for it in items])
+    waktu = now_iso()
+    for it in items:
+        prod = products.get(it.get("product_id")) or {}
+        tpl = prod.get("template_id") or ""
+        tarif = pilih_tarif(indeks, product_id=it.get("product_id") or "", template_id=tpl,
+                            category=it.get("category") or prod.get("category") or "")
+        it["commission_rule"] = potret(tarif, pt, artikel=_artikel_ringkas(artikel.get(tpl)), sumber=sumber, waktu=waktu)
+
+
+async def aturan_baris(line: Dict[str, Any], entity_id: Optional[str], cache: Dict[str, Any]) -> Dict[str, Any]:
+    """Potret baris bila ada; bila tidak, potret dari aturan sekarang (`sumber="saat_hitung"`, tidak ditulis ke basis data).
+    `cache` menyimpan indeks tarif, aturan PT, produk dan artikel selama satu proses hitung."""
+    if line.get("commission_rule"):
+        return line["commission_rule"]
+    from core_utils import now_iso
+    from db import db
+    ent = entity_id or ""
+    if ("indeks", ent) not in cache:
+        cache[("indeks", ent)] = await muat_indeks_tarif(entity_id)
+        cache[("pt", ent)] = await aturan_pt(entity_id)
+    pid = line.get("product_id") or ""
+    if ("produk", pid) not in cache:
+        cache[("produk", pid)] = await db.products.find_one({"id": pid}, {"_id": 0, "template_id": 1, "category": 1}) or {}
+    prod = cache[("produk", pid)]
+    tpl = prod.get("template_id") or ""
+    if tpl and ("artikel", tpl) not in cache:
+        cache[("artikel", tpl)] = (await _muat_artikel([tpl])).get(tpl)
+    tarif = pilih_tarif(cache[("indeks", ent)], product_id=pid, template_id=tpl,
+                        category=line.get("category") or prod.get("category") or "")
+    return potret(tarif, cache[("pt", ent)], artikel=_artikel_ringkas(cache.get(("artikel", tpl))),
+                  sumber="saat_hitung", waktu=now_iso())
