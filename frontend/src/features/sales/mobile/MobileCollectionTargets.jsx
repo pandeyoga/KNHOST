@@ -4,7 +4,8 @@ import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
-import MyIncentiveCard, { bulanIni, MODE_TANPA_MESIN } from "../../incentive/MyIncentiveCard";   // KM-T5
+import MyIncentiveCard, { bulanIni } from "../../incentive/MyIncentiveCard";   // KM-T5
+import { MODE_TANPA_MESIN } from "../../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
 const thisMonth = () => todayWib().slice(0, 7);   // bulan berjalan WIB (dulu potongan ISO UTC)

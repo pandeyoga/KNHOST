@@ -152,8 +152,9 @@ export const VIEW_ALIASES = {
   // Aturan bagian "Komisi otomatis (cara lama)". Rute cadangan `activeView === "<lama>"` merender layar tujuannya; sales
   // (dulu memegang Kinerja Sales) tidak mendapat pintu ke Capaian — angkanya di kartu "Capaian & Insentif Saya".
   "sales-performance": { to: "incentive-capaian", nav: "hr-kpi-hub", label: "Kinerja Sales", since: "KM-T5" },
-  "incentive-rates": { to: "incentive-setup", nav: "hr-kpi-hub", label: "Komisi Otomatis", since: "KM-T5" },
-  "incentive-schemes": { to: "incentive-setup", nav: "hr-kpi-hub", label: "Skema Insentif (Arsip)", since: "KM-T5" },
+  // KA-9 — tarif, bawaan komisi, dan jenjang kini di tab Skema & Tarif (`incentive-scheme`), bukan Target & Aturan.
+  "incentive-rates": { to: "incentive-scheme", nav: "hr-kpi-hub", label: "Komisi Otomatis", since: "KA-9" },
+  "incentive-schemes": { to: "incentive-scheme", nav: "hr-kpi-hub", label: "Skema Insentif (Arsip)", since: "KA-9" },
 };
 
 /** Alias untuk `view` → `{ from, to, nav, preset, label, since, legacy }`, atau null bila bukan alias. */

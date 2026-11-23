@@ -120,7 +120,8 @@ describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
     setAccessContext({ role, permissions, view_resources: BUILTIN.view_resources, hidden_views: [], view_actions: BUILTIN.view_actions });
     return { kredit: hubTabsForRole("ar-aging", role).some((t) => t.view === "credit-overrides"),
              // KM-T3 — "Skema (Arsip)" tab tersembunyi; KM-T5 — layar lamanya dihapus: jenjang komisi kini bagian "Komisi
-             // otomatis (cara lama)" di Target & Aturan (alias `incentive-schemes` → `incentive-setup`), gerbang izin
+             // otomatis (cara lama)" di Target & Aturan; KA-9 — tab Skema & Tarif (alias `incentive-schemes` →
+             // `incentive-scheme`, jenjang hanya untuk strategi achievement_tiered), gerbang izin
              // `sales_force` di dalam bagian itu (uji `kmt5KartuSales.test.js`). Yang diuji di sini: tidak ada lagi tab
              // Skema di hub mana pun.
              skema: Object.values(HUB_TABS).flat().some((t) => t.view === "incentive-schemes") };

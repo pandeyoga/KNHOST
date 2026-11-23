@@ -401,8 +401,11 @@ async def test_KMT5_U11_sales_targets_dihapus(klien, aplikasi, f5, tmp_path):
             g = runpy.run_path(str(skrip), run_name="__main__")
     finally:
         sys.argv = argv
-    berkas_unit = ("MyIncentiveCard", "LegacyRatesEditor", "LegacySchemeEditor", "IncentiveSetupView", "SalesHome",
-                   "MobileCollectionTargets", "EmployeeSelfService", "AdminHome", "IncentiveSheetsView")
+    # KA-9 — `LegacyRatesEditor` dihapus (tarif & bawaan komisi kini tab Skema & Tarif); berkas layar barunya ikut diperiksa.
+    berkas_unit = ("MyIncentiveCard", "LegacySchemeEditor", "IncentiveSetupView", "SalesHome",
+                   "MobileCollectionTargets", "EmployeeSelfService", "AdminHome", "IncentiveSheetsView",
+                   "IncentiveSchemeView", "ArticleRatesTable", "RateFormModal", "RatesExcelImport", "SchemeSimulation",
+                   "SchemeSourcePicker", "KartuAkrual")
     tanpa = [x for x in g["miss"] if "sales-targets" in x[1] or any(b in x[2] for b in berkas_unit)]
     jalur_unit = ("/incentive/me", "/sales/commission", "/sales/incentive/", "/incentive-rates", "/sales-incentives",
                   "/sales-users", "/sales/my-rank", "/incentive/targets")

@@ -571,9 +571,10 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Capaian (`incentive-capaian`) — KM-T2: tab pertama; angka dasar insentif per sales per PT (cari, telusur ke dokumen, jumlah pilihan, ekspor Excel; hanya baca, `incentive.view`, kolom margin `incentive.view_margin`) | A M F |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Lembar Insentif (`incentive-sheets`) — KM-T3: tab kedua; dokumen keputusan insentif per PT per periode bayar (nominal diketik, angka dasar dipotret; ajukan · sahkan · kembalikan · batalkan · penyesuaian · ekspor Excel). Siapkan `incentive.prepare`, sahkan `incentive.approve`; dibuka juga dari Pusat Persetujuan (antrean "Lembar insentif menunggu pengesahan") dan tombol "Buat lembar insentif dari tampilan ini" di Capaian | A M F SA |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Kinerja Sales (`sales-performance`)~~ — KM-T5: tab dicabut; id lama = alias ke Capaian. Sales melihat angkanya di kartu "Capaian & Insentif Saya" (Beranda Sales, Profil Saya, HP) | — |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan. KM-T5: + bagian "Komisi otomatis (cara lama)" (akrual bulanan, bawaan komisi, tarif per kategori, jenjang per sales; lihat `sales_force.view`) hanya untuk PT yang belum beralih ke Lembar Insentif | A M F |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Komisi Otomatis (`incentive-rates`)~~ — KM-T5: tab dicabut; id lama = alias ke Target & Aturan (bagian "Komisi otomatis (cara lama)") | — |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Skema (Arsip) (`incentive-schemes`)~~ — KM-T5: tab tersembunyi & tautan "Skema insentif lama (arsip)" dicabut; id lama = alias ke Target & Aturan | — |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema & Tarif (`incentive-scheme`) — KA-9: tab ketiga; per PT: 1. Sumber insentif (`hr.payroll_commission_mode` lapisan PT: Komisi otomatis · Lembar Insentif · Keduanya dibayar), 2. Tarif komisi pohon Kategori → Artikel → Varian (ubah satu/ubah banyak, Unduh/Unggah Excel, hapus tarif, riwayat), 3. Pengali harga, 4. Pengali capaian, 5. Batas margin (kunci `commission.*` tertanam per bagian), akrual komisi bulanan, jenjang per sales (hanya strategi `achievement_tiered`), simulasi. Lihat `sales_force.view` (modul Pengawasan Tim Sales & Kredit), ubah tarif `sales_force.update`, hapus `sales_force.delete`, akrual `sales_force.post`. "Semua PT" = hanya kalimat "Pilih satu PT …" | A M F |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan. KM-T5: + bagian "Komisi otomatis (cara lama)"; KA-9: bagian itu dicabut (pindah ke Skema & Tarif), tinggal kartu tautan | A M F |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Komisi Otomatis (`incentive-rates`)~~ — KM-T5: tab dicabut; id lama = alias (KA-9: ke Skema & Tarif) | — |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Skema (Arsip) (`incentive-schemes`)~~ — KM-T5: tab tersembunyi & tautan "Skema insentif lama (arsip)" dicabut; id lama = alias (KA-9: ke Skema & Tarif) | — |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | KPI Karyawan (`cs-kpi`) | A M |
 
 KM-T5 — hub Kinerja & Insentif kini empat tab (Capaian · Lembar Insentif · Target & Aturan · KPI Karyawan); grup SDM tidak
@@ -581,6 +582,12 @@ lagi tampil untuk sales (Admin Sales tetap: Lembar Insentif). CRM & Pelanggan te
 Penjualan tanpa Komisi & Insentif. Alamat lama: `sales-performance` → Capaian (`incentive-capaian`), `incentive-rates` dan
 `incentive-schemes` → Target & Aturan (`incentive-setup`), `since: "KM-T5"`; rute cadangan merender layar tujuan. Kunci
 `commission.*` dari Pusat Pengaturan membuka Target & Aturan (`COMMISSION_HOME`).
+
+KA-9 — hub Kinerja & Insentif lima tab (Capaian · Lembar Insentif · **Skema & Tarif** · Target & Aturan · KPI Karyawan).
+`incentive-rates` dan `incentive-schemes` kini alias ke Skema & Tarif (`incentive-scheme`, `since: "KA-9"`); kunci
+`commission.*` (`COMMISSION_HOME`, tautan "Bawaan komisi sales" di Pengaturan, Master per Badan Usaha › tarif insentif)
+membuka Skema & Tarif. Modul akses Pengawasan Tim Sales & Kredit (`sales_force`) memuat `hrd` · `hr-kpi-hub` ·
+`incentive-scheme`; sumber izin tab = `sales_force` (`VIEW_RESOURCE_OVERRIDES`).
 
 Dipindah ke luar keuangan: **Pembelian › Pesanan Pembelian › Landed Cost** (`landed-cost`, A M; hub kini 7 tab — baseline
 INV-UI-13) dan **Gudang & Logistik › Kendaraan** (`vehicle-logs`, A M G S). CRM & Pelanggan tinggal tiga sub-tab
@@ -602,7 +609,7 @@ menampilkan "nama lama → kini di …"):
 Id yang tetap tetapi berpindah induk: `finance-desk` (kini tab pertama Beranda Keuangan; beranda peran Finance tetap,
 menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tutup Buku), `payment-plans`,
 `finance-cases` (tab Piutang), `interco-transactions` (Keuangan), `fixed-assets` (Akuntansi & Pajak), `incentive-rates`
-(SDM › Kinerja & Insentif; KM-T5: alias ke Target & Aturan). Penjaga: `verify_access_catalog_nav.py`, `verify_view_aliases.py`, `verify_desk_targets.py`,
+(SDM › Kinerja & Insentif; KM-T5: alias ke Target & Aturan; KA-9: alias ke Skema & Tarif). Penjaga: `verify_access_catalog_nav.py`, `verify_view_aliases.py`, `verify_desk_targets.py`,
 `verify_page_tabs.py` (INV-UI-12/13/14), jest `roleReach.test.js`, `serverAccessReach.test.js`, `navAccess.test.js`,
 `mnt1MenuKeuangan.test.js`.
 
@@ -855,7 +862,7 @@ SIDEBAR (grouped, collapsible, role-filtered)
   (💼 Kas & Aset — DIHAPUS MN-T1: Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap →
      Akuntansi & Pajak; alamat `?view=kas-aset` → Kas Kecil)
   👥 SDM (HRD) ✅
-     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran & Pajak — PK-22, PY-T4 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1; KM-T5: Capaian · Lembar Insentif · Target & Aturan · KPI Karyawan)
+     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran & Pajak — PK-22, PY-T4 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1; KM-T5/KA-9: Capaian · Lembar Insentif · Skema & Tarif · Target & Aturan · KPI Karyawan)
   📊 Analitik (BI)
      └── Sales / Stock / Finance / HR dashboards 🆕
   📝 Dokumen

@@ -45,6 +45,7 @@
   "incentive-capaian": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/achievement"},
   "incentive-setup": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/targets"},
   "incentive-sheets": {"izin": [["incentive", "view"], ["incentive", "prepare"], ["incentive", "approve"]], "endpoint": "/api/incentive/sheets"},
+  "incentive-scheme": {"izin": [["sales_force", "view"]], "endpoint": "/api/incentive-rates/categories"},
   "incentive-rates": {"izin": [["sales_force", "view"]], "endpoint": "/api/incentive-rates"},
   "incentive-schemes": {"izin": [["sales_force", "view"]], "endpoint": "/api/sales-users"},
   "cs-kpi": {"izin": [["hr", "view"]], "endpoint": "/api/hr/kpi"},

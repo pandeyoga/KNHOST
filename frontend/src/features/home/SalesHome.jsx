@@ -12,7 +12,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import { selectWaitingBoards } from "../../config/waitingBoards";
 import HomeWaitingBoards from "./HomeWaitingBoards";
-import MyIncentiveCard, { MODE_TANPA_MESIN } from "../incentive/MyIncentiveCard";
+import MyIncentiveCard from "../incentive/MyIncentiveCard";
+import { MODE_TANPA_MESIN } from "../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;

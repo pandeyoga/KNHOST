@@ -14,21 +14,19 @@
  * cara insentif yang berlaku di PT ini dan empat butir periksa (ikon + teks + warna). Tidak ada tombol alih di sini —
  * sakelarnya diubah di Pusat Pengaturan (tautan "Ubah di Pusat Pengaturan"; titik henti H5: pemilik yang menyalakan).
  *
- * KM-T5 — bagian **Komisi otomatis (cara lama)**, tampil hanya bila sakelar PT (`commission_mode` jawaban
- * `GET /api/incentive/targets`) bukan `sheet` dan bukan `off` (mode "Semua PT": bila ada PT yang masih komisi
- * otomatis): akrual bulanan ("Bukukan akrual komisi {bulan}", konfirmasi menyebut nominal & PT; `sales_force.post`),
- * tarif per kategori + bawaan komisi (`LegacyRatesEditor`, dulu tab "Komisi Otomatis") dan jenjang per sales
- * (`LegacySchemeEditor`, dulu "Skema (Arsip)"). Lihat = `sales_force.view`. Id lama `incentive-rates` /
- * `incentive-schemes` = alias ke layar ini (`viewAliases.js`); fokus deep link kunci `commission.*` diteruskan ke
- * "Bawaan komisi".
+ * KA-9 — bagian **Komisi otomatis (cara lama)** (KM-T5: akrual bulanan, bawaan komisi, tarif per kategori, jenjang
+ * per sales) dicabut dari layar ini: semuanya kini di tab **Skema & Tarif** (`incentive-scheme`,
+ * `IncentiveSchemeView`), termasuk alias `incentive-rates` / `incentive-schemes` dan deep link kunci `commission.*`.
+ * Di sini tinggal kartu tautan ke tab itu.
  */
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, CircleSlash, Clock, Copy, Layers, Pencil, Plus, RefreshCw, Scale, Search, Settings2, Target } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, CircleSlash, Copy, Layers, Pencil, Plus, RefreshCw, Scale, Search, Settings2, Target } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
+import LinkCard from "../../components/LinkCard";
 import { askConfirm } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate, formatPeriod, todayWib } from "../../utils/formatters";
@@ -36,14 +34,7 @@ import { entityFullById } from "../../utils/entityLabel";
 import { canCurrent } from "../../config/roles";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { openConfig } from "../settings/config/configDeepLink";
-import { bulanIni, MODE_TANPA_MESIN, pilihanBulan } from "./MyIncentiveCard";
-
-/** Sakelar PT (`hr.payroll_commission_mode`) yang mengakru komisi otomatis (KA-7: termasuk "keduanya dibayar"). */
-const MODE_AKRU = ["accrue_then_settle", "auto_and_sheet"];
-
-// KM-T5 — dimuat hanya bila bagian "Komisi otomatis (cara lama)" tampil (PT yang belum beralih ke Lembar Insentif).
-const LegacyRatesEditor = lazy(() => import("./LegacyRatesEditor"));
-const LegacySchemeEditor = lazy(() => import("./LegacySchemeEditor"));
+import { MODE_KEDUANYA, MODE_LEMBAR } from "./incentiveModes";
 
 export const TEKS_SEMUA_PT = "Pilih satu PT untuk mengatur target.";
 export const TEKS_TANPA_IZIN = "Mengatur target dan komponen butuh akses Konfigurasi di modul Kinerja & Insentif.";
@@ -166,7 +157,7 @@ function BagianTarget({ canWrite, canConfigure, entity, entities, pt, onSakelar 
       const r = await axios.get(`${API}/incentive/targets`, { params: { period_type: jenis, period: periode || undefined } });
       setData(r.data); setRows(barisTarget(r.data?.roster, r.data?.items)); setErr(""); setState("ready");
       if (!periode && r.data?.period) setPeriode(r.data.period);
-      if (onSakelar) onSakelar(r.data);   // KM-T5 — sakelar insentif PT untuk bagian "Komisi otomatis (cara lama)"
+      if (onSakelar) onSakelar(r.data);   // KA-9 — tautan ke tab Skema & Tarif tampil sesudah target termuat
     } catch (e) { setErr(apiErrorText(e) || ""); setState("error"); }
   }, [jenis, periode]);
   useEffect(() => { load(); }, [load, entity]);
@@ -506,6 +497,14 @@ function BagianDefinisi({ canWrite, canConfigure, entity, pt }) {
 }
 
 /** KM-T4 — butir kesiapan beralih: ikon + teks + warna (kelas `status-*` yang ada). */
+/** KM-T4 / KA-9 — kalimat ringkas kartu Kesiapan menurut sakelar PT (konstanta mode `incentiveModes.js`). */
+export function ringkasanKesiapan(mode, siap) {
+  if (mode === MODE_LEMBAR) return "PT ini sudah memakai Lembar Insentif.";
+  if (mode === MODE_KEDUANYA) return "PT ini sudah memakai Lembar Insentif bersama komisi otomatis (keduanya dibayar).";
+  return siap ? "Semua butir siap. Pemilik bisa mengalihkan PT ini di Pusat Pengaturan."
+    : "Selesaikan butir yang belum siap sebelum PT ini dialihkan.";
+}
+
 export function ButirKesiapan({ c }) {
   const Icon = c.ok ? CheckCircle2 : AlertTriangle;
   return (
@@ -544,9 +543,7 @@ function BagianKesiapan({ canWrite, canConfigure, entity }) {
           <p className="text-fs-13 text-kn-text" data-testid="ins-ready-mode">Cara insentif sales masuk penggajian di PT ini: <b>{data?.mode_label}</b></p>
           <ul className="space-y-2" data-testid="ins-ready-list">{(data?.checks || []).map((c) => <ButirKesiapan key={c.code} c={c} />)}</ul>
           <div className="flex flex-wrap items-center gap-3 text-fs-12 text-kn-text-2">
-            <span data-testid="ins-ready-summary">{data?.mode === "sheet" ? "PT ini sudah memakai Lembar Insentif." : siap
-              ? "Semua butir siap. Pemilik bisa mengalihkan PT ini di Pusat Pengaturan."
-              : "Selesaikan butir yang belum siap sebelum PT ini dialihkan."}</span>
+            <span data-testid="ins-ready-summary">{ringkasanKesiapan(data?.mode, siap)}</span>
             <button type="button" data-testid="ins-ready-open-config" className="link-button text-fs-12"
               onClick={() => openConfig({ key: "hr.payroll_commission_mode" })}>
               <Settings2 size={12} aria-hidden="true" /> Ubah di Pusat Pengaturan</button>
@@ -557,134 +554,21 @@ function BagianKesiapan({ canWrite, canConfigure, entity }) {
   );
 }
 
-// ── KM-T5 — Komisi otomatis (cara lama) ─────────────────────────────────────────────────────────────────────────────
-export const TEKS_KOMISI_LAMA = "Bagian ini hilang setelah PT beralih ke Lembar Insentif.";
-export const TEKS_KOMISI_LAMA_IZIN = "Melihat komisi otomatis butuh akses Lihat di modul Pengawasan Tim Sales & Kredit.";
-export const TEKS_KOMISI_TIDAK_DIPAKAI = "Bawaan komisi otomatis tidak dipakai di PT ini: insentifnya memakai Lembar Insentif.";
-export const TEKS_AKRUAL_SEMUA_PT = "Pilih satu PT untuk membukukan akrual komisi.";
-export const TEKS_AKRUAL_TIDAK_DIPAKAI = "PT ini mengakui beban komisi saat gaji diposting, jadi akrual bulanan tidak dipakai.";
-export const TEKS_AKRUAL_IZIN = "Membukukan akrual butuh akses Posting di modul Pengawasan Tim Sales & Kredit.";
-
-/** Bagian komisi otomatis tampil? Hanya bila sakelar PT diketahui dan bukan `sheet`/`off` ("Semua PT": salah satu PT). */
-export function komisiOtomatisTampil(sakelar) {
-  if (!sakelar) return false;
-  const otomatis = (m) => !!m && !MODE_TANPA_MESIN.includes(m);
-  return sakelar.all_pt ? Object.values(sakelar.commission_modes || {}).some(otomatis) : otomatis(sakelar.commission_mode);
-}
-
-/** Tombol akrual: { label, nilai, alasan } — alasan "" = boleh. */
-export function rencanaAkrual(st, bulan, bolehPosting) {
-  const nama = formatPeriod(bulan);
-  const est = Number(st?.estimate || 0);
-  const sudah = Number(st?.amount || 0);
-  const koreksi = !!st?.posted;
-  const nilai = koreksi ? est - sudah : est;
-  let alasan = "";
-  if (!bolehPosting) alasan = TEKS_AKRUAL_IZIN;
-  else if (koreksi && Math.abs(nilai) < 1) alasan = `Akrual komisi ${nama} sudah dibukukan.`;
-  else if (!koreksi && est < 1) alasan = `Tidak ada komisi untuk dibukukan pada ${nama}.`;
-  return { label: `${koreksi ? "Bukukan koreksi akrual komisi" : "Bukukan akrual komisi"} ${nama}`, nilai, alasan };
-}
-
-function KartuAkrual({ canWrite, mode, pt }) {
-  const [bulan, setBulan] = useState(bulanIni());
-  const [st, setSt] = useState(null);
-  const [state, setState] = useState("loading");
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
-  const aktif = canWrite && MODE_AKRU.includes(mode);
-  const load = useCallback(async () => {
-    if (!aktif) return;
-    setState("loading");
-    try { const r = await axios.get(`${API}/sales/incentive/gl-status`, { params: { period: bulan } }); setSt(r.data); setErr(""); setState("ready"); }
-    catch (e) { setErr(apiErrorText(e) || ""); setState("error"); }
-  }, [aktif, bulan]);
-  useEffect(() => { load(); }, [load]);
-  if (!canWrite) return <p className="text-fs-13 text-kn-text-2" data-testid="ins-accrual-all">{TEKS_AKRUAL_SEMUA_PT}</p>;
-  if (!MODE_AKRU.includes(mode)) return <p className="text-fs-13 text-kn-text-2" data-testid="ins-accrual-na">{TEKS_AKRUAL_TIDAK_DIPAKAI}</p>;
-  const rencana = rencanaAkrual(st, bulan, canCurrent("sales_force", "post"));
-  const bukukan = async () => {
-    const ok = await askConfirm({ title: `${rencana.label}?`,
-      message: `Beban komisi ${formatCurrency(rencana.nilai)} dibukukan ke buku ${pt}: Dr Beban Insentif Penjualan / Cr Hutang Insentif Penjualan.`,
-      confirmLabel: "Ya, bukukan" });
-    if (!ok) return;
-    setBusy(true); setMsg("");
-    try { const r = await axios.post(`${API}/sales/incentive/post-gl`, null, { params: { period: bulan } }); setMsg(r.data?.message || "Akrual dibukukan."); await load(); }
-    catch (e) { setErr(apiErrorText(e) || ""); setState("error"); }
-    finally { setBusy(false); }
-  };
+// ── KA-9 — tautan ke tab Skema & Tarif (dulu bagian "Komisi otomatis (cara lama)") ───────────────────────────────────
+function TautanSkema({ sakelar }) {
+  if (!sakelar) return null;
   return (
-    <div className="rounded-md border border-kn-divider p-3 space-y-2" data-testid="ins-accrual">
-      <h3 className="text-fs-14 font-bold text-kn-text">Akrual komisi bulanan</h3>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-[200px]"><label className="field-label">Bulan</label>
-          <KNSelect data-testid="ins-accrual-month" value={bulan} className="field" options={pilihanBulan(bulanIni())} onValueChange={(v) => v && setBulan(v)} /></div>
-        {state === "ready" && (st?.posted ? (
-          <span className="status-pill status-done" data-testid="ins-accrual-status"><CheckCircle2 size={12} aria-hidden="true" />Sudah dibukukan</span>
-        ) : (
-          <span className="status-pill status-pending" data-testid="ins-accrual-status"><Clock size={12} aria-hidden="true" />Belum dibukukan</span>
-        ))}
-      </div>
-      {state === "loading" ? (
-        <p className="text-fs-13 text-kn-text-2" role="status" data-testid="ins-accrual-loading">Memeriksa akrual…</p>
-      ) : state === "error" ? (
-        <ErrorNotice testId="ins-accrual-error" message={`Akrual tidak bisa diperiksa. ${err}`.trim()} onRetry={load} />
-      ) : (
-        <>
-          <p className="text-fs-13 text-kn-text" data-testid="ins-accrual-text">
-            {st?.posted ? <>Sudah dibukukan <span className="whitespace-nowrap">{formatCurrency(st.amount)}</span> (jurnal {st.journal_number || "—"}). Komisi otomatis saat ini <span className="whitespace-nowrap">{formatCurrency(st.estimate)}</span>.</>
-              : <>Komisi otomatis {formatPeriod(bulan)} di {pt}: <span className="whitespace-nowrap font-semibold">{formatCurrency(st?.estimate)}</span>.</>}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" data-testid="ins-accrual-post" className="primary-button btn-sm whitespace-nowrap"
-              disabled={!!rencana.alasan || busy} onClick={bukukan}>{busy ? "Membukukan…" : rencana.label}</button>
-            {rencana.alasan && <span className="text-fs-12 text-kn-text-2" data-testid="ins-accrual-why">{rencana.alasan}</span>}
-          </div>
-          {msg && <div className="notice-bar success" data-testid="ins-accrual-msg"><span className="text-fs-12">{msg}</span></div>}
-        </>
-      )}
-    </div>
+    <LinkCard testId="ins-scheme-link" what="Sumber insentif, tarif komisi, pengali, dan akrual komisi"
+      where="SDM › Kinerja & Insentif › Skema & Tarif" view="incentive-scheme" hideWhenDenied />
   );
 }
 
-function BagianKomisiLama({ canWrite, sakelar, pt, entity, entities, cfgFocus }) {
-  const tampil = komisiOtomatisTampil(sakelar);
-  const fokus = cfgFocus?.focusKey || cfgFocus?.focusGroup;
-  const lepas = cfgFocus?.onFocusConsumed;
-  useEffect(() => { if (sakelar && !tampil && fokus && lepas) lepas(); }, [sakelar, tampil, fokus, lepas]);
-  if (!tampil) {
-    return sakelar && fokus ? <p className="notice-bar" data-testid="ins-legacy-unused"><span className="text-fs-12">{TEKS_KOMISI_TIDAK_DIPAKAI}</span></p> : null;
-  }
-  const lihat = canCurrent("sales_force", "view");
-  return (
-    <div className="section-card" data-testid="ins-legacy">
-      <div className="section-head"><h2 className="flex items-center gap-2"><Settings2 size={16} className="text-kn-action" aria-hidden="true" />Komisi otomatis (cara lama)</h2></div>
-      <div className="section-body space-y-3">
-        <p className="text-fs-13 text-kn-text-2" data-testid="ins-legacy-note">{TEKS_KOMISI_LAMA}</p>
-        {!lihat ? (
-          <p className="text-fs-13 text-kn-text-2" data-testid="ins-legacy-why">{TEKS_KOMISI_LAMA_IZIN}</p>
-        ) : (
-          <>
-            <KartuAkrual canWrite={canWrite} mode={sakelar.all_pt ? "" : sakelar.commission_mode} pt={pt} />
-            <Suspense fallback={<p className="text-fs-13 text-kn-text-2" role="status">Memuat komisi otomatis…</p>}>
-              <LegacyRatesEditor selectedEntity={entity} entities={entities} {...(cfgFocus || {})} />
-              <LegacySchemeEditor />
-            </Suspense>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function IncentiveSetupView({ focusKey = "", focusGroup = "", focusNonce = 0, onFocusConsumed } = {}) {
+export default function IncentiveSetupView() {
   const { canWrite, selectedEntity, entities } = useEntityScope();
   const canConfigure = canCurrent("incentive", "configure");
   const pt = entityFullById(entities, selectedEntity, "PT ini");
   const [sakelar, setSakelar] = useState(null);
   const props = { canWrite, canConfigure, entity: selectedEntity, entities, pt };
-  const cfgFocus = { focusKey, focusGroup, focusNonce, onFocusConsumed };
   return (
     <div className="space-y-4" data-testid="incentive-setup-view">
       <EntityScopeBanner testId="ins-scope" />
@@ -692,7 +576,7 @@ export default function IncentiveSetupView({ focusKey = "", focusGroup = "", foc
       <BagianKomponen {...props} />
       <BagianDefinisi {...props} />
       <BagianKesiapan {...props} />
-      <BagianKomisiLama canWrite={canWrite} sakelar={sakelar} pt={pt} entity={selectedEntity} entities={entities} cfgFocus={cfgFocus} />
+      <TautanSkema sakelar={sakelar} />
     </div>
   );
 }

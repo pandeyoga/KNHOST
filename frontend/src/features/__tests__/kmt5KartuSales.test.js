@@ -5,13 +5,17 @@
 //    `incentive-rates`; id lama = alias (sales tidak mendapat pintu ke Capaian);
 //  · U15 pengganti uji jalan: Beranda Sales PT Lembar Insentif → kartu tampil, "Komisi MTD" tidak; Profil Saya → kartu di
 //    bawah slip hanya bila berisi; HP Target → kartu + komisi otomatis hanya untuk PT bermode otomatis;
-//  · U16 pengganti uji jalan: Target & Aturan — bagian "Komisi otomatis (cara lama)" tampil di PT bermode bawaan, tidak di
-//    PT Lembar Insentif; tombol akrual dengan konfirmasi yang menyebut nominal & PT.
+//  · U16 pengganti uji jalan: kartu akrual komisi bulanan tampil di PT bermode bawaan, tidak di PT Lembar Insentif;
+//    tombol akrual dengan konfirmasi yang menyebut nominal & PT. KA-9 — bagian "Komisi otomatis (cara lama)" dicabut
+//    dari Target & Aturan: kartu akrual kini di tab Skema & Tarif (`IncentiveSchemeView`), alias `incentive-rates` /
+//    `incentive-schemes` mengarah ke tab itu, dan catatan kartu sales tidak lagi menulis "sampai PT ini beralih".
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import MyIncentiveCard, { adaIsi, jamWib, persen, pilihanBulan } from "../incentive/MyIncentiveCard";
-import IncentiveSetupView, { komisiOtomatisTampil, rencanaAkrual } from "../incentive/IncentiveSetupView";
+import IncentiveSchemeView from "../incentive/IncentiveSchemeView";
+import { rencanaAkrual } from "../incentive/KartuAkrual";
+import { komisiOtomatisJalan } from "../incentive/incentiveModes";
 import SalesHome from "../home/SalesHome";
 import EmployeeSelfService from "../hr/EmployeeSelfService";
 import MobileCollectionTargets from "../sales/mobile/MobileCollectionTargets";
@@ -45,8 +49,11 @@ jest.mock("../../components/KNSelect", () => {
 });
 jest.mock("../../components/KNDatePicker", () => () => null);
 jest.mock("../../components/EntityScopeBanner", () => () => <div data-testid="scope" />);
-jest.mock("../incentive/LegacyRatesEditor", () => () => <div data-testid="legacy-rates" />);
 jest.mock("../incentive/LegacySchemeEditor", () => () => <div data-testid="legacy-scheme" />);
+// KA-9 — Pusat Pengaturan tertanam di Skema & Tarif tidak diuji di sini (suite kaSkemaTarif / Pengaturan).
+jest.mock("../settings/config/SettingsHub", () => ({ useSettingsBrowser: () => ({ items: [] }), SettingsBrowser: () => null,
+  SettingsNotice: () => null }));
+jest.mock("../incentive/ArticleRatesTable", () => () => <div data-testid="rates-tree" />);
 jest.mock("../sales_admin/KeepPendingPanel", () => () => null);
 jest.mock("../home/HomeWaitingBoards", () => () => null);
 jest.mock("../crm/CustomerList", () => () => null);
@@ -158,7 +165,13 @@ test("U13 kartu: lembar dibayar, penyesuaian negatif, kosong, memuat, galat, kom
   rute({ "/incentive/me": KARTU({ mode: "accrue_then_settle", sheets: [], auto_commission: { mtd: 500000, projection_month_end: 1500000 } }) });
   host = await mount(<MyIncentiveCard period="2026-11" />);
   expect(txt(q(host, "my-incentive-auto"))).toBe("Komisi berjalan (hitungan otomatis)Rp 500.000");
-  expect(txt(q(host, "my-incentive-note"))).toMatch(/Komisi berjalan dihitung otomatis sampai PT ini beralih ke Lembar Insentif\.$/);
+  expect(txt(q(host, "my-incentive-note"))).toMatch(/Komisi berjalan dihitung otomatis dari tarif komisi PT ini\.$/);
+  // KA-9 — PT "keduanya dibayar": catatan menyebut kedua sumber, bukan "sampai PT ini beralih"
+  document.body.innerHTML = "";
+  rute({ "/incentive/me": KARTU({ mode: "auto_and_sheet", sheets: [], auto_commission: { mtd: 500000, projection_month_end: 1500000 } }) });
+  host = await mount(<MyIncentiveCard period="2026-11" />);
+  expect(txt(q(host, "my-incentive-note"))).toMatch(/^PT ini membayar keduanya: komisi berjalan dihitung otomatis/);
+  expect(txt(host)).not.toMatch(/beralih ke Lembar Insentif/);
 });
 
 test("pembantu kartu: pilihan bulan, persen, jam WIB, isi", () => {
@@ -172,17 +185,18 @@ test("pembantu kartu: pilihan bulan, persen, jam WIB, isi", () => {
 });
 
 // ═══ U14 — sub-tab & tab lama dicabut ══════════════════════════════════════════════════════════════════════════════
-test("U14 CRM manajer tanpa Kinerja Sales / Skema (Arsip); hub tanpa incentive-rates; id lama = alias", () => {
+test("U14 CRM manajer tanpa Kinerja Sales / Skema (Arsip); hub tanpa incentive-rates; id lama = alias (KA-9: ke Skema & Tarif)", () => {
   setAccessContext({ role: "manager", permissions: {}, view_resources: {}, hidden_views: [], view_actions: {} });
   const html = renderToStaticMarkup(<CrmView currentUser={{ role: "manager", permissions: {} }} selectedEntity="ent_ksc" />);
   expect(html).not.toMatch(/Kinerja Sales|Skema \(Arsip\)/);
   expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");
   const kpi = HUB_TABS["hr-kpi-hub"];
-  expect(kpi.map((t) => t.view)).toEqual(["incentive-capaian", "incentive-sheets", "incentive-setup", "cs-kpi"]);
+  // KA-9 — + tab Skema & Tarif (`incentive-scheme`) sesudah Lembar Insentif.
+  expect(kpi.map((t) => t.view)).toEqual(["incentive-capaian", "incentive-sheets", "incentive-scheme", "incentive-setup", "cs-kpi"]);
   expect(kpi.map((t) => t.label).join(" | ")).not.toMatch(/Kinerja Sales|Skema \(Arsip\)|Komisi Otomatis/);
   expect(Object.values(HUB_TABS).flat().some((t) => ["incentive-rates", "sales-performance", "incentive-schemes"].includes(t.view))).toBe(false);
-  expect(resolveDeepLinkTarget("incentive-rates", "manager")).toMatchObject({ view: "incentive-setup", navId: "hr-kpi-hub" });
-  expect(resolveDeepLinkTarget("incentive-schemes", "admin")).toMatchObject({ view: "incentive-setup", navId: "hr-kpi-hub" });
+  expect(resolveDeepLinkTarget("incentive-rates", "manager")).toMatchObject({ view: "incentive-scheme", navId: "hr-kpi-hub" });
+  expect(resolveDeepLinkTarget("incentive-schemes", "admin")).toMatchObject({ view: "incentive-scheme", navId: "hr-kpi-hub" });
   expect(resolveDeepLinkTarget("sales-performance", "manager")).toMatchObject({ view: "incentive-capaian", navId: "hr-kpi-hub" });
   expect(resolveDeepLinkTarget("sales-performance", "sales")).toBeNull();   // tidak ada pintu baru ke Capaian
   expect(resolveDeepLinkTarget("hr-kpi-hub", "sales_admin")).toMatchObject({ view: "incentive-sheets" });
@@ -246,43 +260,41 @@ test("U15 HP Target: kartu versi HP; komisi otomatis dipanggil hanya untuk PT be
   expect(txt(q(host, "m-targets-incentive"))).toContain("Rp 500.000");
 });
 
-// ═══ U16 pengganti — Target & Aturan: bagian Komisi otomatis (cara lama) menurut sakelar PT ═══════════════════════
+// ═══ U16 pengganti — kartu akrual komisi bulanan menurut sakelar PT (KA-9: kini di tab Skema & Tarif) ═══════════
 const TARGETS = (mode) => ({ period_type: "month", period: "2026-11", period_label: "November 2026", previous_period: "2026-10",
   entity_id: "ent_kanda", all_pt: false, items: [], roster: [], commission_mode: mode, commission_modes: { ent_kanda: mode },
   period_types: [] });
 
-test("U16 Target & Aturan: bagian Komisi otomatis (cara lama) tampil di PT bermode bawaan, tidak di PT Lembar Insentif", async () => {
+test("U16 Skema & Tarif: kartu akrual komisi tampil di PT bermode bawaan, tidak di PT Lembar Insentif", async () => {
   setAccessContext({ role: "manager", permissions: { incentive: ["view", "configure"], sales_force: ["view", "update", "post"] },
     view_resources: {}, hidden_views: [], view_actions: {} });
-  rute({ "/incentive/targets": TARGETS("accrue_then_settle"),
+  rute({ "/incentive/targets": TARGETS("accrue_then_settle"), "/config/explain": { value: "per_sku" },
     "/sales/incentive/gl-status": { posted: false, amount: 0, estimate: 1250000, mode: "accrue_then_settle" } });
   mockConfirm.mockResolvedValue(true);
   mockPost.mockResolvedValue({ data: { created: true, message: "Akrual insentif 2026-11 diposting (JE KANDA/JE-1)." } });
-  let host = await mount(<IncentiveSetupView />);
-  expect(q(host, "ins-legacy")).not.toBeNull();
-  expect(txt(q(host, "ins-legacy-note"))).toBe("Bagian ini hilang setelah PT beralih ke Lembar Insentif.");
-  expect(q(host, "legacy-rates")).not.toBeNull();
-  expect(q(host, "legacy-scheme")).not.toBeNull();
+  let host = await mount(<IncentiveSchemeView />);
+  expect(q(host, "scheme-accrual-card")).not.toBeNull();
+  expect(q(host, "rates-tree")).not.toBeNull();
+  expect(q(host, "legacy-scheme")).toBeNull();                         // jenjang arsip hanya untuk achievement_tiered
   const tombol = q(host, "ins-accrual-post");
   expect(txt(tombol)).toMatch(/^Bukukan akrual komisi \S+ \d{4}$/);
   await klik(tombol);
   const arg = mockConfirm.mock.calls[0][0];
-  expect(arg.message.replace(/ /g, " ")).toContain("Beban komisi Rp 1.250.000 dibukukan ke buku CV Kanda Suka");
+  expect(arg.message.replace(/\u00a0/g, " ")).toContain("Beban komisi Rp 1.250.000 dibukukan ke buku CV Kanda Suka");
   expect(mockPost.mock.calls[0][0]).toBe("/api/sales/incentive/post-gl");
   document.body.innerHTML = "";
   rute({ "/incentive/targets": TARGETS("sheet") });
-  host = await mount(<IncentiveSetupView />);
-  expect(q(host, "ins-legacy")).toBeNull();
-  expect(txt(host)).not.toContain("Komisi otomatis (cara lama)");
+  host = await mount(<IncentiveSchemeView />);
+  expect(q(host, "scheme-accrual-card")).toBeNull();
+  expect(q(host, "ins-accrual")).toBeNull();
 });
 
-test("U16 aturan bagian & tombol akrual", () => {
-  expect(komisiOtomatisTampil(null)).toBe(false);
-  expect(komisiOtomatisTampil({ all_pt: false, commission_mode: "sheet" })).toBe(false);
-  expect(komisiOtomatisTampil({ all_pt: false, commission_mode: "off" })).toBe(false);
-  expect(komisiOtomatisTampil({ all_pt: false, commission_mode: "pay_on_invoice" })).toBe(true);
-  expect(komisiOtomatisTampil({ all_pt: true, commission_modes: { a: "sheet", b: "accrue_then_settle" } })).toBe(true);
-  expect(komisiOtomatisTampil({ all_pt: true, commission_modes: { a: "sheet", b: "off" } })).toBe(false);
+test("U16 aturan komisi otomatis & tombol akrual", () => {
+  expect(komisiOtomatisJalan("")).toBe(false);
+  expect(komisiOtomatisJalan("sheet")).toBe(false);
+  expect(komisiOtomatisJalan("off")).toBe(false);
+  expect(komisiOtomatisJalan("pay_on_invoice")).toBe(true);
+  expect(komisiOtomatisJalan("auto_and_sheet")).toBe(true);
   expect(rencanaAkrual({ posted: false, estimate: 0 }, "2026-11", true).alasan).toBe("Tidak ada komisi untuk dibukukan pada November 2026.");
   expect(rencanaAkrual({ posted: true, amount: 100, estimate: 100 }, "2026-11", true).alasan).toBe("Akrual komisi November 2026 sudah dibukukan.");
   expect(rencanaAkrual({ posted: true, amount: 100, estimate: 250 }, "2026-11", true)).toEqual(

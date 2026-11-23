@@ -224,7 +224,8 @@ export const HUB_TABS = {
   // Penjualan › Komisi & Insentif) + KPI Karyawan. KM-T5 — tiga tab lama dicabut: "Kinerja Sales" (`sales-performance`
   // → alias Capaian; sales melihat kartu "Capaian & Insentif Saya" di Beranda, Profil Saya, HP), "Komisi Otomatis"
   // (`incentive-rates`) dan "Skema (Arsip)" (`incentive-schemes`) → alias Target & Aturan, bagian "Komisi otomatis
-  // (cara lama)" (hanya PT yang belum beralih ke Lembar Insentif). Lihat `viewAliases.js`.
+  // (cara lama)" (hanya PT yang belum beralih ke Lembar Insentif). KA-9 — bagian itu kini tab "Skema & Tarif"
+  // (`incentive-scheme`); kedua id lama menjadi aliasnya. Lihat `viewAliases.js`.
   "hr-kpi-hub": [
     // KM-T2 — Meja Insentif › Capaian: angka dasar insentif per sales per PT (hanya baca; `incentive.view`, margin
     // `incentive.view_margin`). Tab pertama hub (spesifikasi KM-T2 "Layar").
@@ -232,6 +233,10 @@ export const HUB_TABS = {
     // KM-T3 — Meja Insentif › Lembar Insentif: dokumen keputusan (nominal diketik, angka dasar dipotret). Penyiap
     // `incentive.prepare` (admin · manajer · Finance · Admin Sales), pemutus `incentive.approve` (admin · manajer).
     { view: "incentive-sheets",  label: "Lembar Insentif",       roles: ["admin", "manager", "finance", "sales_admin"] },
+    // KA-9 — Skema & Tarif: sumber insentif PT, tarif komisi Kategori → Artikel → Varian, pengali harga & capaian, batas
+    // margin, akrual bulanan, simulasi (dulu bagian "Komisi otomatis (cara lama)" di Target & Aturan). Lihat
+    // `sales_force.view` (katalog akses: modul Pengawasan Tim Sales & Kredit); alias `incentive-rates`/`incentive-schemes`.
+    { view: "incentive-scheme",  label: "Skema & Tarif",         roles: ["admin", "manager", "finance"] },
     // KM-T1 — Meja Insentif: target per PT per jenis periode, komponen, definisi angka, pencocokan (`incentive.*`).
     { view: "incentive-setup",   label: "Target & Aturan",       roles: ["admin", "manager", "finance"] },
     { view: "cs-kpi",            label: "KPI Karyawan",          roles: ["admin", "manager"] },

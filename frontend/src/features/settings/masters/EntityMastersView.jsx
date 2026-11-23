@@ -29,8 +29,8 @@ import EntityMasterKindPanel, { EntityScopeRibbon } from "./EntityMasterKindPane
 export const DOMAIN_HOME = {
   "document-templates": { view: "pdf-templates", preset: { tab: "dasar" }, where: "Pengaturan › Dokumen & Notifikasi › Template Dokumen" },
   "expense-categories": { view: "expense-categories", where: "Pengaturan › Keuangan & Pajak › Kategori Beban" },
-  // MN-T1; KM-T5 — tab Komisi Otomatis dicabut: tarif di Target & Aturan › "Komisi otomatis (cara lama)"
-  "incentive-rates": { view: "incentive-setup", where: "SDM › Kinerja & Insentif › Target & Aturan › Komisi otomatis (cara lama)" },
+  // MN-T1; KM-T5 — tab Komisi Otomatis dicabut; KA-9 — tarif per kategori/artikel/varian di tab Skema & Tarif
+  "incentive-rates": { view: "incentive-scheme", where: "SDM › Kinerja & Insentif › Skema & Tarif" },
   "approval-rules": { view: "approval-rules", where: "Pengaturan › Persetujuan › Aturan Persetujuan" },
   "sales-return-policies": { view: "return-policies", where: "Pengaturan › Penjualan › Kebijakan Retur" },
 };

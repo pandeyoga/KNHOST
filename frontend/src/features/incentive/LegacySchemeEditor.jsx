@@ -1,6 +1,7 @@
 /**
- * LegacySchemeEditor — KM-T5 · jenjang komisi otomatis per sales & bulan (bagian **Komisi otomatis (cara lama)** di
- * SDM › Kinerja & Insentif › Target & Aturan).
+ * LegacySchemeEditor — KM-T5 · jenjang komisi otomatis per sales & bulan. KA-9: tampil di SDM › Kinerja & Insentif ›
+ * Skema & Tarif hanya bila `commission.strategy` PT = `achievement_tiered` (strategi arsip); dulu bagian "Komisi
+ * otomatis (cara lama)" di Target & Aturan.
  *
  * Dipindah dari bagian "Skema Insentif / Tier" `features/crm/IncentiveSchemeEditor.jsx` (KN_17 §6.2; tab tersembunyi
  * "Skema (Arsip)"). Bagian TARGET berkas lama dihapus: target per sales per PT per jenis periode diatur di bagian Target
@@ -9,7 +10,7 @@
  * untuk PT yang belum beralih ke Lembar Insentif.
  *
  * Sumber: `GET /api/sales-users` (daftar sales PT), `GET`/`POST /api/sales-incentives`. Lihat = `sales_force.view`
- * (gerbang di `IncentiveSetupView`), simpan = `sales_force.update` (`canCurrent`, sama dengan izin endpoint).
+ * (gerbang di `IncentiveSchemeView`), simpan = `sales_force.update` (`canCurrent`, sama dengan izin endpoint).
  */
 import { useEffect, useState } from "react";
 import { Award, Plus, Save, Trash2 } from "lucide-react";
@@ -154,11 +155,11 @@ export default function LegacySchemeEditor() {
                 </tbody>
               </table>
             </div>
+            {/* KA-9 — isian "Bonus per produk fokus" dicabut dari layar: tidak pernah dihitung mesin. Nilai tersimpan tidak
+                dihapus — dikirim ulang apa adanya saat jenjang disimpan. */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Angka label="Bonus per pelanggan baru (Rp)" value={scheme.bonus_new_customer} disabled={!canUpdate}
                 testId="legacy-bonus-new" onChange={(v) => setScheme((s) => ({ ...s, bonus_new_customer: v }))} />
-              <Angka label="Bonus per produk fokus (Rp)" value={scheme.bonus_focus_product} disabled={!canUpdate}
-                testId="legacy-bonus-focus" onChange={(v) => setScheme((s) => ({ ...s, bonus_focus_product: v }))} />
             </div>
             <div><label className="field-label">Catatan</label>
               <textarea data-testid="legacy-scheme-notes" rows="2" className="field" disabled={!canUpdate} value={scheme.notes}

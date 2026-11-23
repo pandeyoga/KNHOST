@@ -75,7 +75,7 @@ const ALAMAT = {
   "settings-cfg-approval": ["settings-cfg-approval", "settings-approval"],
   "settings-dual-control": ["settings-dual-control", "settings-approval"],
   "settings-cfg-sales": ["settings-cfg-sales", "settings-sales"],
-  "incentive-rates": ["incentive-setup", "hr-kpi-hub"],   // KM-T5 — alias ke Target & Aturan (Komisi otomatis cara lama)
+  "incentive-rates": ["incentive-scheme", "hr-kpi-hub"],   // KM-T5 — alias ke Target & Aturan; KA-9 — ke Skema & Tarif
   "return-policies": ["return-policies", "settings-sales"],
   "amendment-reasons": ["amendment-reasons", "settings-sales"],
   "settings-cfg-warehouse": ["settings-cfg-warehouse", "settings-warehouse"],

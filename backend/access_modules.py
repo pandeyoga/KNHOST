@@ -404,6 +404,16 @@ for _m in MODULE_CATALOG:
                  and not (_m["id"] in _KMT5_TANPA_HUB and v in ("hrd", "hr-kpi-hub"))]
 del _m
 
+# ─── KA-9 — tab SDM › Kinerja & Insentif › Skema & Tarif (`incentive-scheme`; rancangan komisi per artikel §6.6–§6.7) ───
+# Sumber insentif, tarif komisi Kategori → Artikel → Varian, pengali, akrual, simulasi. Endpoint utamanya
+# (`GET /api/incentive-rates/*`) dijaga `sales_force.view` → modul Pengawasan Tim Sales & Kredit (`sales_force`) kembali
+# membuka hub SDM lewat tab ini (id grup `hrd` + hub `hr-kpi-hub` + tab). Modul Kinerja & Insentif (`incentive`) TIDAK
+# ikut: pemegang `incentive.*` tanpa `sales_force.*` tidak melihat tab ini (sumber izin layar, `VIEW_RESOURCE_OVERRIDES`).
+for _m in MODULE_CATALOG:
+    if _m["id"] == "sales_force":
+        _m["nav"].extend(v for v in ("hrd", "hr-kpi-hub", "incentive-scheme") if v not in _m["nav"])
+del _m
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
 #: `custom_roles.levels` lama); jawaban selalu memakai id baru.
@@ -788,6 +798,9 @@ VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 VIEW_RESOURCE_OVERRIDES["settings-doc-numbering"] = ["settings"]
 # KM-T5 — `incentive-rates` & `incentive-schemes` (MN-T1: sumber izin `sales_force`) dicabut dari menu; tidak ada lagi
 # penimpaan sumber izinnya (alias ke Target & Aturan, sumber izin `incentive`).
+# KA-9 — tab Skema & Tarif dibuka izin `sales_force` saja (GET /api/incentive-rates/* = `sales_force.view`), bukan semua
+# sumber daya modulnya (`credit_override` saja tidak cukup — layarnya hanya akan berisi kalimat izin).
+VIEW_RESOURCE_OVERRIDES["incentive-scheme"] = ["sales_force"]
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]

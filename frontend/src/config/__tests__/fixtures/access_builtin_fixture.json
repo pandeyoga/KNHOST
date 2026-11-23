@@ -4092,9 +4092,11 @@
    "payroll"
   ],
   "hr-kpi-hub": [
+   "credit_override",
    "hr",
    "incentive",
-   "payroll"
+   "payroll",
+   "sales_force"
   ],
   "hr-leave": [
    "hr",
@@ -4140,12 +4142,17 @@
    "customer"
   ],
   "hrd": [
+   "credit_override",
    "hr",
    "incentive",
-   "payroll"
+   "payroll",
+   "sales_force"
   ],
   "incentive-capaian": [
    "incentive"
+  ],
+  "incentive-scheme": [
+   "sales_force"
   ],
   "incentive-setup": [
    "incentive"

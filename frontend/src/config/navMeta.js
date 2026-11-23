@@ -124,7 +124,8 @@ export const PAGE_META = {
   "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Alasan Koreksi" },
   // Fase 3 · P2 (D-03) — tarif per kategori + bawaan komisi (`commission.*`) digabung di satu layar.
   // KM-T5 — id lama = alias (viewAliases.js); judul rute cadangannya = layar tujuan.
-  "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },
+  "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Skema & Tarif Komisi" },   // KA-9 — alias
+  "incentive-scheme":     { kicker: "SDM · Kinerja & Insentif", title: "Skema & Tarif Komisi" },   // KA-9
   "incentive-setup":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T1
   "incentive-capaian":    { kicker: "SDM · Kinerja & Insentif", title: "Capaian Insentif" },   // KM-T2
   "incentive-sheets":     { kicker: "SDM · Kinerja & Insentif", title: "Lembar Insentif" },   // KM-T3
@@ -230,7 +231,7 @@ export const PAGE_META = {
   "customer-credit":      { kicker: "Keuangan \u00b7 Piutang", title: "Titipan & Saldo Kredit Pelanggan" },
   "credit-overrides":     { kicker: "Keuangan \u00b7 Piutang", title: "Kredit & Plafon \u00b7 Daftar Kerja Kredit" },   // CR-T5
   "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Capaian Insentif" },   // KM-T5 — alias
-  "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T5 — alias
+  "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema & Tarif Komisi" },   // KM-T5/KA-9 — alias
   "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },
   "cash-holdings":        { kicker: "Keuangan \u00b7 Kas & Bank", title: "Titipan Sales \u00b7 Tunai yang Dipegang Sales & Setorannya" },
 };

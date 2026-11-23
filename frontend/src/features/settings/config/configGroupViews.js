@@ -16,12 +16,13 @@
  */
 import { groupForKey, resolveGroupId } from "./configDeepLink";
 
-/** Kunci bawaan komisi (D-03) — rumahnya Target & Aturan › "Komisi otomatis (cara lama)" (KM-T5; dulu tab
- *  `incentive-rates`), bukan kelompok "Harga, Diskon & Komisi". */
+/** Kunci bawaan komisi (D-03) — rumahnya SDM › Kinerja & Insentif › Skema & Tarif (KA-9; dulu Target & Aturan ›
+ *  "Komisi otomatis (cara lama)", sebelumnya tab `incentive-rates`), bukan kelompok "Harga, Diskon & Komisi". */
 export const COMMISSION_PREFIX = "commission.";
 // MN-T1 — Komisi & Insentif kini SDM › Kinerja & Insentif › Target & Aturan (view sama, menu `hr-kpi-hub`).
-// KM-T5 — tab "Komisi Otomatis" dicabut; bawaan komisi kini di Target & Aturan › "Komisi otomatis (cara lama)".
-export const COMMISSION_HOME = { view: "incentive-setup", nav: "hr-kpi-hub" };
+// KM-T5 — tab "Komisi Otomatis" dicabut; bawaan komisi di Target & Aturan › "Komisi otomatis (cara lama)".
+// KA-9 — kunci `commission.*` kini tampil per bagian di tab Skema & Tarif (pengali harga · capaian · batas margin).
+export const COMMISSION_HOME = { view: "incentive-scheme", nav: "hr-kpi-hub" };
 
 /** KF-T6 — kunci `kontrol.*` (kontrol dua orang) hanya diubah di tab Persetujuan › Kontrol dua orang. */
 export const DUAL_CONTROL_PREFIX = "kontrol.";

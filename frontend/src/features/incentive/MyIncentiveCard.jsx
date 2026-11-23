@@ -17,17 +17,19 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDecimal, formatPeriod, todayWib } from "../../utils/formatters";
+import { MODE_KEDUANYA, MODE_TANPA_MESIN } from "./incentiveModes";
 
 export const TEKS_MEMUAT = "Memuat capaian…";
 /** Galat: kalimat + tombol "Coba lagi" bawaan `ErrorNotice` (tampil "Capaian belum bisa dimuat. ⟳ Coba lagi"). */
 export const TEKS_GALAT = "Capaian belum bisa dimuat.";
 export const TEKS_KOSONG_LEMBAR = "Belum ada insentif yang disahkan untuk Anda.";
 export const TEKS_CATATAN = "Nominal insentif diputuskan pimpinan dengan melihat capaian. Tidak ada rumus otomatis.";
+// KA-9 — kalimat lama "… sampai PT ini beralih ke Lembar Insentif" tidak cocok untuk PT "keduanya dibayar" (KA-7).
 export const TEKS_CATATAN_OTOMATIS = "Nominal di lembar insentif diputuskan pimpinan dengan melihat capaian. Komisi "
-  + "berjalan dihitung otomatis sampai PT ini beralih ke Lembar Insentif.";
+  + "berjalan dihitung otomatis dari tarif komisi PT ini.";
+export const TEKS_CATATAN_KEDUANYA = "PT ini membayar keduanya: komisi berjalan dihitung otomatis dari tarif komisi, dan "
+  + "nominal di lembar insentif diputuskan pimpinan dengan melihat capaian.";
 export const TEKS_TARGET_KOSONG = "target belum diisi";
-/** Sakelar PT (`hr.payroll_commission_mode`) yang mematikan komisi otomatis. */
-export const MODE_TANPA_MESIN = ["sheet", "off"];
 
 const STATUS = {
   approved: { cls: "status-done", Icon: CheckCircle2, label: "Disahkan", teks: (b) => `Dibayar bersama gaji ${b}` },
@@ -238,7 +240,7 @@ export default function MyIncentiveCard({ variant = "page", hideWhenEmpty = fals
             </div>
             <p className="flex items-start gap-1.5 text-fs-12 text-kn-text-2" data-testid={`${testId}-note`}>
               <Info size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
-              {otomatis ? TEKS_CATATAN_OTOMATIS : TEKS_CATATAN}
+              {!otomatis ? TEKS_CATATAN : data.mode === MODE_KEDUANYA ? TEKS_CATATAN_KEDUANYA : TEKS_CATATAN_OTOMATIS}
             </p>
           </>
         )}

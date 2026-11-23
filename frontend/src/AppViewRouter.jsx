@@ -33,7 +33,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   AmendmentCenterView, ApprovalRulesSettings, EntityMastersView, MakloonClaimRecapView, ClientDatasetImportView,
   GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
   ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
-  AmendmentReasonsPanel, IncentiveSetupView, CapaianView, IncentiveSheetsView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
+  AmendmentReasonsPanel, IncentiveSetupView, IncentiveSchemeView, CapaianView, IncentiveSheetsView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
   CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, APBySupplierView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
@@ -352,9 +352,10 @@ export default function AppViewRouter(props) {
       {activeView === "internal-prices" && <InternalPricesView />}
       {activeView === "supplier-internal-prices" && <InternalPricesView />}
       {activeView === "amendment-reasons" && <AmendmentReasonsPanel currentUser={user} />}
-      {/* KM-T5 — `incentive-rates` (Komisi Otomatis) & `incentive-schemes` (Skema Arsip) = alias Target & Aturan; rute
-          cadangan merender layar tujuan (bagian "Komisi otomatis (cara lama)"). Fokus kunci `commission.*` ikut. */}
-      {["incentive-setup", "incentive-rates", "incentive-schemes"].includes(activeView) && <IncentiveSetupView {...cfgFocus} />}
+      {/* KA-9 — tab Skema & Tarif; `incentive-rates` (Komisi Otomatis) & `incentive-schemes` (Skema Arsip) = aliasnya
+          (KM-T5: dulu alias Target & Aturan); rute cadangan merender layar tujuan. Fokus kunci `commission.*` ikut. */}
+      {activeView === "incentive-setup" && <IncentiveSetupView />}
+      {["incentive-scheme", "incentive-rates", "incentive-schemes"].includes(activeView) && <IncentiveSchemeView {...cfgFocus} />}
       {activeView === "incentive-capaian" && <CapaianView currentUser={user} />}
       {activeView === "incentive-sheets" && <IncentiveSheetsView currentUser={user} {...focusDocProps} />}
       {activeView === "bank-recon-rules" && <BankRulesSettingsView />}

@@ -53,7 +53,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih). S5 (pelatihan 18 Nov) — + Hutang per Pemasok.
     ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
     // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian; KM-T5 — − Kinerja Sales, − Komisi Otomatis.
-    ["hr-kpi-hub", 4], ["purchase-orders", 7],
+    // KA-9 — + Skema & Tarif.
+    ["hr-kpi-hub", 5], ["purchase-orders", 7],
   ])("%s = %i tab", (hub, n) => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
   });
@@ -77,7 +78,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     // KM-T3 — tab "Lembar Insentif" (`incentive-sheets`) sesudah Capaian; "Skema (Arsip)" tersembunyi (batas enam tab L3,
     // layarnya tetap terbuka lewat tautan di Lembar Insentif).
     // KM-T5 — "Kinerja Sales", "Komisi Otomatis", dan "Skema (Arsip)" dicabut (alias ke Capaian / Target & Aturan).
-    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Lembar Insentif", "Target & Aturan", "KPI Karyawan"]);
+    // KA-9 — tab "Skema & Tarif" (`incentive-scheme`) sesudah Lembar Insentif; Komisi Otomatis & Skema (Arsip) aliasnya.
+    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Lembar Insentif", "Skema & Tarif", "Target & Aturan", "KPI Karyawan"]);
     expect(HUB_TABS["purchase-orders"].map((t) => t.view)).toContain("landed-cost");
     expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");
     expect(HUB_TABS["petty-cash"]).toBeUndefined();
@@ -188,8 +190,9 @@ describe("U7–U10 — menu per peran", () => {
   test("Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif", () => {
     const m = menu("manager");
     expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-tower", "bi-finance"]);
-    // KM-T1, KM-T2; KM-T3 — + Lembar Insentif; KM-T5 — Kinerja Sales, Komisi Otomatis, Skema (Arsip) dicabut.
-    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "incentive-setup", "cs-kpi"]);
+    // KM-T1, KM-T2; KM-T3 — + Lembar Insentif; KM-T5 — Kinerja Sales, Komisi Otomatis, Skema (Arsip) dicabut; KA-9 — +
+    // Skema & Tarif.
+    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "incentive-scheme", "incentive-setup", "cs-kpi"]);
     expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
   });
 });

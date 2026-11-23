@@ -13,7 +13,8 @@ import { getStage, stageMeta } from "../../../utils/soStatus";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
 import { roleIs } from "../../../config/roles";
 import MobileCashHoldingCard from "./MobileCashHoldingCard";   // PM-T4 — kartu "Titipan Saya" (tunai belum disetor)
-import MyIncentiveCard, { MODE_TANPA_MESIN } from "../../incentive/MyIncentiveCard";   // KM-T5
+import MyIncentiveCard from "../../incentive/MyIncentiveCard";   // KM-T5
+import { MODE_TANPA_MESIN } from "../../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
