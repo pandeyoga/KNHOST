@@ -285,6 +285,32 @@ ubah kunci pengaturan = izin pengaturan kunci masing-masing (registri); ubah mod
 24. Kunci `commission.achievement_*` bertanggal ("berlaku mulai"), sehingga nilai yang mulai sesudah bulan komisi tidak
     terbaca untuk bulan itu.
 
+**Keputusan gelombang perbaikan tinjauan akhir (23 Nov 2026, ledger R18/R19 — boleh dikoreksi pemilik):**
+
+25. Baris pesanan lama yang kategorinya **kosong** tetap tanpa tarif kategori (mesin lama: kategori kosong = tanpa tarif);
+    isi awal tidak mengambil kategori produk untuk baris itu. Pesanan **baru** memakai kategori produk bila baris kosong.
+26. Saat akrual dibukukan, yang dibekukan dan dibaca mesin hanya jenjang capaian bulan itu. Rincian per sales di potret
+    bulan adalah catatan dari angka yang **diakru**: posting gaji mencatat komisi slip (mesin tidak dijalankan ulang di
+    dalam posting gaji); akrual manual menjalankan mesin sekali per sales dan memakai hasil itu untuk total jurnal sekaligus
+    catatannya. Catatan tidak pernah menggagalkan akrual: sales yang tidak bisa dihitung ditandai galat.
+27. Simulasi (R18): kolom **"Aturan sekarang"** dan **"Dengan perubahan"** sama-sama menghitung pesanan bulan itu dengan
+    aturan hari ini (tanpa potret pesanan), jadi selisihnya murni efek perubahan; angka yang akan dibayar (aturan saat
+    pesanan dibuat) tampil sebagai baris info "Komisi bulan ini menurut aturan saat pesanan dibuat". Simulasi menandai PT
+    bercara hitung berjenjang ("Draf tidak berpengaruh") dan PT bermode gaji Lembar Insentif/tanpa komisi ("Komisi otomatis
+    tidak dibayar di PT ini").
+28. Tarif **baru** tanpa isian diskon cara lama tidak menyimpan nilai bawaan tertulis: potretnya memakai kunci PT
+    `commission.discount_*` (nilai bawaan registri sama dengan bawaan lama, jadi PT tanpa pengaturan sendiri tidak berubah);
+    batas margin kosong = `commission.default_margin_cap_pct` PT itu. Tarif lama tetap memakai nilai yang tersimpan.
+29. Tarif "Semua PT" dibuat, diubah, dan dihapus hanya oleh peran lintas PT — kemampuan yang sama dengan mengubah aturan
+    grup di Pusat Pengaturan; tarif PT hanya dalam penugasan pelaku. Pilihan "Semua PT" di pop-up tidak tampil tanpa
+    kemampuan itu.
+30. Membuat tarif untuk sasaran yang tarifnya ada tetapi **nonaktif** mengaktifkannya lagi (dengan isian baru), sama dengan
+    ubah banyak/Excel.
+31. Sel **teks** Excel dibaca cara tulis Indonesia (titik ribuan, koma desimal); teks ragu ("3,500", "3.5", "Rp 3.500")
+    ditolak berkalimat. Batas margin 0–100 dijaga server (Excel dan API).
+32. Isi awal potret pesanan lama berjalan sesudah tarif bawaan dibuat, per kelompok 200 pesanan; pesanan/tarif/PT yang
+    rusak dicatat di log dan dilewati (dicoba lagi saat aplikasi menyala berikutnya), bukan menghentikan aplikasi.
+
 ## 9. Catatan untuk keputusan pemilik sesudahnya (tidak menghalangi pembangunan)
 
 - Nilai awal pita dan pengali untuk PT nyata diisi pemilik di layar (bawaan = tanpa perubahan perilaku).

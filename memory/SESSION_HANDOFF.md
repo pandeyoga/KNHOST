@@ -18,6 +18,17 @@
 > PT nyata diisi pemilik (H5); kesetaraan angka berlaku per PT ("Semua PT" bisa beda); galat komisi di gaji ditelan menjadi 0
 > (lama — penting bila pengali capaian dinyalakan); jurnal akrual yang dibalik tetap membekukan aturan bulannya; simulasi
 > "Dengan perubahan" ikut menghitung pesanan yang dipotret tanpa tarif.
+>
+> **23 Nov 2026 (lanjutan) — gelombang perbaikan tinjauan akhir komisi per artikel (R18/R19)** — hasil di laporan hasil
+> bagian 7, keputusan di rancangan §8 butir 25–32. **Berubah untuk pemilik:** simulasi kini "Aturan sekarang" vs "Dengan
+> perubahan" (keduanya tanpa potret, selisih = murni efek perubahan) + baris info komisi menurut aturan saat pesanan dibuat;
+> tarif **baru** tanpa isian diskon ikut kunci diskon PT (angka sama selama PT memakai bawaan); tarif "Semua PT" hanya
+> peran lintas PT; potret bulan saat posting gaji mencatat komisi slip (posting gaji tidak lagi menghitung ulang semua
+> sales). **Bukti anti-tujuan 1:** mesin `d7b367b` vs kepala pada data acuan, 3 putaran × 76 baris, **0 beda**
+> (`scripts/komisi/banding_mesin_komisi.py`). **Sebelum rilis (pemilik/operator):** `mongosh <db> scripts/komisi/prarilis_tarif.js`
+> di produksi harus 0 kembar · 0 tarif rusak; ulangi pembanding mesin dan ukur waktu isi awal di **salinan** produksi
+> (di sini 20.056 pesanan → 20,4 dtk). **Uji akhir:** tests_mem 2697 lulus / 0 merah; jest 1819 lulus / 1 merah (zona waktu
+> lingkungan, sama seperti sebelumnya); gate 37 merah = garis dasar main, 0 pelanggaran baru (juga baris ❌/[FAIL]).
 
 ## 2026-11-15 — akhir eksekusi blueprint, sesi berikutnya review pemilik (catatan lama)
 > **16 Nov 2026 — gelombang Master Produk & Makloon (MP-T1…MP-T5) dikerjakan** di cabang `claude/nifty-carson-jjx3c8`
