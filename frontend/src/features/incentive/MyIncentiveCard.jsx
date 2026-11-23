@@ -244,7 +244,9 @@ export default function MyIncentiveCard({ variant = "page", hideWhenEmpty = fals
                           <span className="whitespace-nowrap font-bold text-kn-text"><Rupiah v={b.commission} /></span>
                         </div>
                         <p className="text-kn-text-2">
-                          {formatDecimal(b.qty_base || 0)} {r.satuan} · tarif {r.tarif} · harga {r.pengaliHarga} · capaian {r.pengaliCapaian}
+                          {formatDecimal(b.qty_base || 0)} {r.satuan} · tarif {r.tarif}
+                          {r.asal && <span data-testid={`${testId}-auto-rincian-${i}-asal`}> ({r.asal})</span>}
+                          {" "}· harga {r.pengaliHarga} · capaian {r.pengaliCapaian}
                           {r.dibatasi && <span className="font-semibold" data-testid={`${testId}-auto-rincian-${i}-batas`}> · {r.catatanBatas}</span>}
                         </p>
                       </li>

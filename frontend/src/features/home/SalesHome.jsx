@@ -176,10 +176,10 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                         <td className="px-3 py-2 font-semibold">{b.category || "—"}</td>
                         <td className="px-3 py-2 text-[#3C3C43]">{b.name}<span className="text-[10px] text-[#9A9BA3] font-mono"> · {b.sku}</span></td>
                         <td className="px-3 py-2 text-right tabular-nums">{fmt.format(b.qty_base || 0)} {r.satuan}</td>
-                        <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-rate-${i}`}>{r.tarif}</td>
+                        <td className="px-3 py-2 text-right tabular-nums"><span data-testid={`commission-breakdown-rate-${i}`}>{r.tarif}</span>{r.asal && <span className="block text-fs-12 text-kn-text-2" data-testid={`commission-breakdown-origin-${i}`}>{r.asal}</span>}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-price-${i}`}>{r.pengaliHarga}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-ach-${i}`}>{r.pengaliCapaian}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-[#1B7F4B]">{fmtCur(b.commission)}{r.dibatasi && <span className="block text-[10px] font-normal text-[#9A6700]" data-testid={`commission-breakdown-capped-${i}`}>{r.catatanBatas}</span>}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-[#1B7F4B]">{fmtCur(b.commission)}{r.dibatasi && <span className="block text-fs-12 font-normal text-kn-warning-text" data-testid={`commission-breakdown-capped-${i}`}>{r.catatanBatas}</span>}</td>
                       </tr>
                     ); })}
                     <tr className="bg-[#FAFBFC] font-bold">

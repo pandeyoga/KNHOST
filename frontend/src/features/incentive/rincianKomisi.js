@@ -13,13 +13,16 @@ export function formatPengali(v) {
   return `×${formatDecimal(Number(v), 2)}`;
 }
 
-/** Satu baris rincian → teks siap tampil. Pengali harga disertai alasannya bila ada ("×0,8 · diskon 2–3%"). */
+/** Satu baris rincian → teks siap tampil. Pengali harga disertai alasannya bila ada ("×0,8 · diskon 2–3%"); `asal` = asal
+ *  tarif dari server ("Tarif artikel (PT ini)", "Tarif varian (PT ini)", "Tarif kategori (Semua PT)") — KA-11: dua baris
+ *  artikel yang sama bisa bertarif beda (pengecualian varian), sales perlu tahu sebabnya (rancangan 6.1 "tarif + asalnya"). */
 export function ringkasRincian(b) {
   const alasan = b?.price_reason_label ? ` · ${b.price_reason_label}` : "";
   const satuan = b?.unit || "satuan";
   return {
     satuan,
     tarif: `${formatCurrency(b?.rate || 0)}/${satuan}`,
+    asal: b?.rate_origin || "",
     pengaliHarga: `${formatPengali(b?.price_factor)}${alasan}`,
     pengaliCapaian: formatPengali(b?.achievement_factor),
     dibatasi: !!b?.capped,
