@@ -256,20 +256,34 @@ async def durable_receipt_void(receipt: Dict[str, Any], created_by: str = "syste
                                  source_type=st, source_id=sid, field="void_gl_status", raise_on_fail=raise_on_fail)
 
 
-async def _komisi_proses_lain(run: Dict[str, Any]) -> float:
-    """Σ komisi slip (bagian yang diakru, tanpa baris Lembar Insentif) proses gaji LAIN di PT·periode yang sama yang
-    sudah diposting (`posted`/`paying`/`paid`) dengan mode akru `accrue_then_settle`. Proses batal/void/draf tidak."""
-    from services.hr_pay_components import commission_parts
+async def _slip_proses_lain(run: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Slip proses gaji LAIN di PT·periode yang sama yang sudah diposting (`posted`/`paying`/`paid`) dengan mode akru
+    `accrue_then_settle`. Proses batal/void/draf tidak."""
     from services.incentive_payroll import akru
-    total = 0.0
+    out: List[Dict[str, Any]] = []
     async for other in db.hr_payroll_runs.find(
             {"entity_id": run.get("entity_id"), "period": run.get("period"), "id": {"$ne": run.get("id")},
              "status": {"$in": ["posted", "paying", "paid"]}}, {"_id": 0, "id": 1, "commission_mode": 1}):
         if not akru(other.get("commission_mode") or "accrue_then_settle"):
             continue
-        slips = await db.hr_payslips.find({"run_id": other["id"]}, {"_id": 0}).to_list(5000)
-        total += commission_parts(slips)[0]
-    return round(total, 2)
+        out += await db.hr_payslips.find({"run_id": other["id"]}, {"_id": 0}).to_list(5000)
+    return out
+
+
+def _rincian_komisi_slip(slips: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Tinjauan akhir I2 — catatan per sales untuk potret bulan komisi = komisi mesin yang DIAKRU per slip (tanpa baris
+    Lembar Insentif), dijumlah per akun sales (`user_id`; tanpa akun → per karyawan). Murni, tanpa mesin komisi."""
+    from services.hr_pay_components import commission_parts
+    per: Dict[str, Dict[str, Any]] = {}
+    for s in slips:
+        nilai = commission_parts([s])[0]
+        if abs(nilai) <= 0.005:
+            continue
+        kunci = s.get("user_id") or f"karyawan:{s.get('employee_id') or ''}"
+        r = per.setdefault(kunci, {"sales_id": s.get("user_id") or "", "employee_id": s.get("employee_id") or "",
+                                   "total": 0.0})
+        r["total"] = round(r["total"] + nilai, 2)
+    return list(per.values())
 
 
 async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
@@ -293,8 +307,14 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
         # turun/naik ke komisi susulan itu, padahal jurnal gajinya tetap mendebit Hutang Insentif sebesar komisinya →
         # Beban Insentif kurang dan 2-1500 bersaldo debit. Kini total = Σ komisi slip semua proses PT·periode yang
         # sudah diposting (reguler + susulan, mode akru) + proses ini.
-        commission = round(commission + await _komisi_proses_lain(run), 2)
-        inc = await gl.post_incentive_accrual(run["entity_id"], run["period"], created_by, total=commission, date=date)
+        lain = await _slip_proses_lain(run)
+        commission = round(commission + commission_parts(lain)[0], 2)
+        try:   # tinjauan akhir I2 — catatan per sales potret bulan = komisi slip yang diakru (bukan hitung ulang mesin)
+            rincian = _rincian_komisi_slip(list(slips) + lain)
+        except Exception as exc:  # noqa: BLE001 — catatan saja: tidak boleh menggagalkan posting gaji
+            rincian = [{"sales_id": "", "galat": f"Rincian komisi slip tidak bisa disusun: {exc}"}]
+        inc = await gl.post_incentive_accrual(run["entity_id"], run["period"], created_by, total=commission, date=date,
+                                              rincian_sales=rincian)
         incentive_je_id = (inc or {}).get("id", "")
         if not incentive_je_id:
             st = await gl.incentive_accrual_status(run["entity_id"], run["period"])

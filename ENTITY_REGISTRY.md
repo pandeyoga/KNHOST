@@ -656,8 +656,13 @@ Key Fields:
   period        string  "YYYY-MM" bulan komisi (bulan uang masuk)
   achievement   object  {aktif, basis, jenjang} = kunci `commission.achievement_*` yang berlaku pada akhir bulan
                         23.59.59 WIB (kunci bertanggal)
-  sales         list    [{sales_id, total, breakdown[]}] — catatan hasil mesin per sales daftar PT saat dibekukan
-                        (`incentive_targets.sales_roster`; baris rincian = `compute_commission().breakdown`, tanpa margin/HPP)
+  sales         list    CATATAN per sales (tinjauan akhir I2 — tidak pernah menggagalkan akrual):
+                        posting gaji → [{sales_id (user_id slip), employee_id, total}] = komisi mesin slip yang diakru;
+                        akrual manual → [{sales_id, total, breakdown[]}] = hasil mesin yang sama dengan total jurnal;
+                        tanpa rincian pemanggil → dihitung ulang upaya terbaik, sales yang mesinnya galat =
+                        {sales_id, total: null, galat}
+  sales_sumber  string  "slip_gaji" | "akrual" | "hitung_ulang" — asal catatan `sales`
+  sales_galat   string? kalimat bila daftar sales / rincian slip tidak bisa disusun (sales = [])
   journal_id    string  FK journal_entries.id — jurnal `incentive_accrual` (source_id "<entity_id>:<period>") yang
                         membekukan; dianulir → dokumen diabaikan pembaca dan DIGANTI pada akrual berikutnya
   recorded_at   string  ISO UTC

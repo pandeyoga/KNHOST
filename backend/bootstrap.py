@@ -1181,46 +1181,96 @@ async def backfill_so_line_cost() -> None:
             await db.sales_orders.update_one({"id": order["id"]}, {"$set": {"items": items}})
 
 
-async def backfill_so_line_commission_rule() -> None:
+async def backfill_so_line_commission_rule(kelompok: int = 200) -> None:
     """KA-4 — potret aturan komisi (`commission_rule`, sumber "isi_awal") ke baris pesanan lama. Idempotent.
 
     Aturan saat itu = aturan hari ini, jadi komisi pesanan lama tidak berubah. Hanya pesanan yang punya minimal satu
-    baris tanpa potret; hanya baris tanpa potret yang ditulis (`items.<i>.commission_rule`). Indeks tarif & aturan PT
-    di-cache per PT; produk dimuat per pesanan (`$in`, tanpa batas jumlah) dan di-cache.
+    baris tanpa potret; hanya baris tanpa potret yang ditulis (`items.<i>.commission_rule`). Kategori baris =
+    `commission_rules.kategori_baris` (kategori baris kosong tetap kosong = tanpa tarif kategori, seperti mesin lama).
+
+    Tahan galat (tinjauan akhir M2): pesanan diproses per kelompok `kelompok` — produk dan artikel satu kelompok dimuat
+    dengan SATU kueri masing-masing (di-cache); indeks tarif & aturan PT di-cache per PT. Satu pesanan / tarif / PT yang
+    rusak hanya dicatat (peringatan log, nomor pesanan) dan dilewati — proses awal aplikasi tidak gagal; pesanan itu
+    dicoba lagi saat aplikasi menyala berikutnya.
     """
+    import logging
     from core_utils import now_iso
     from services import commission_rules as cr
-    produk: dict = {}
-    cache: dict = {}
-    async for order in db.sales_orders.find({"items.commission_rule": {"$exists": False}},
-                                            {"_id": 0, "id": 1, "items": 1, "entity_id": 1}):
-        items = order.get("items") or []
-        todo = [(i, it) for i, it in enumerate(items) if not it.get("commission_rule")]
-        if not todo:
-            continue
-        ent = order.get("entity_id")
-        if ent not in cache:
-            cache[ent] = (await cr.muat_indeks_tarif(ent), await cr.aturan_pt(ent))
-        indeks, pt = cache[ent]
-        baru = sorted({it.get("product_id") for _, it in todo if it.get("product_id")} - set(produk))
-        if baru:
-            for p in await db.products.find({"id": {"$in": baru}}, {"_id": 0, "id": 1, "template_id": 1,
-                                                                    "category": 1}).to_list(len(baru)):
-                produk[p["id"]] = p
-            for pid in baru:
-                produk.setdefault(pid, {})
-        artikel = await cr._muat_artikel([(produk.get(it.get("product_id")) or {}).get("template_id") or ""
-                                          for _, it in todo])
-        waktu = now_iso()
-        ubah = {}
-        for i, it in todo:
-            prod = produk.get(it.get("product_id")) or {}
-            tpl = prod.get("template_id") or ""
-            tarif = cr.pilih_tarif(indeks, product_id=it.get("product_id") or "", template_id=tpl,
-                                   category=it.get("category") or prod.get("category") or "")
-            ubah[f"items.{i}.commission_rule"] = cr.potret(tarif, pt, artikel=cr._artikel_ringkas(artikel.get(tpl)),
-                                                           sumber="isi_awal", waktu=waktu)
-        await db.sales_orders.update_one({"id": order["id"]}, {"$set": ubah})
+    log = logging.getLogger("bootstrap")
+    produk: Dict[str, Dict[str, Any]] = {}
+    artikel: Dict[str, Optional[Dict[str, Any]]] = {}
+    per_pt: Dict[Any, Any] = {}            # PT → (indeks, aturan PT) atau galat pemuatnya
+    hitung = {"pesanan": 0, "dilewati": 0}
+
+    async def _aturan_pt(ent: Any) -> Any:
+        if ent not in per_pt:
+            try:
+                per_pt[ent] = (await cr.muat_indeks_tarif(ent), await cr.aturan_pt(ent))
+            except Exception as exc:  # noqa: BLE001 — satu PT rusak tidak menghentikan proses awal
+                log.warning("[KA-4] potret komisi PT %s dilewati: %s", ent, exc)
+                per_pt[ent] = exc
+        return per_pt[ent]
+
+    def _belum(order: Dict[str, Any]) -> List[Any]:
+        items = order.get("items")
+        return [(i, it) for i, it in enumerate(items if isinstance(items, list) else [])
+                if isinstance(it, dict) and not it.get("commission_rule")]   # baris bukan objek dilewati
+
+    async def _proses(orders: List[Dict[str, Any]]) -> None:
+        try:   # satu kueri produk + satu kueri artikel per kelompok (bukan per pesanan)
+            baru = sorted({it.get("product_id") for o in orders for _, it in _belum(o)
+                           if isinstance(it.get("product_id"), str) and it.get("product_id")} - set(produk))
+            if baru:
+                for p in await db.products.find({"id": {"$in": baru}}, {"_id": 0, "id": 1, "template_id": 1,
+                                                                        "category": 1}).to_list(None):
+                    produk[p["id"]] = p
+                for pid in baru:
+                    produk.setdefault(pid, {})
+            tpl_baru = sorted({(produk.get(pid) or {}).get("template_id") or "" for pid in baru} - {""} - set(artikel))
+            if tpl_baru:
+                artikel.update(await cr._muat_artikel(tpl_baru))
+                for t in tpl_baru:
+                    artikel.setdefault(t, None)
+        except Exception as exc:  # noqa: BLE001 — kelompok ini dicoba lagi saat aplikasi menyala berikutnya
+            hitung["dilewati"] += len(orders)
+            log.warning("[KA-4] potret komisi %d pesanan dilewati (produk/artikel gagal dimuat): %s", len(orders), exc)
+            return
+        for order in orders:
+            try:
+                todo = _belum(order)
+                if not todo:
+                    continue
+                aturan = await _aturan_pt(order.get("entity_id"))
+                if isinstance(aturan, Exception):
+                    hitung["dilewati"] += 1
+                    continue
+                indeks, pt = aturan
+                waktu = now_iso()
+                ubah = {}
+                for i, it in todo:
+                    prod = (produk.get(it.get("product_id")) if isinstance(it.get("product_id"), str) else None) or {}
+                    tpl = prod.get("template_id") or ""
+                    tarif = cr.pilih_tarif(indeks, product_id=it.get("product_id") or "", template_id=tpl,
+                                           category=cr.kategori_baris(it, prod))
+                    ubah[f"items.{i}.commission_rule"] = cr.potret(tarif, pt, artikel=cr._artikel_ringkas(artikel.get(tpl)),
+                                                                   sumber="isi_awal", waktu=waktu)
+                await db.sales_orders.update_one({"id": order["id"]}, {"$set": ubah})
+                hitung["pesanan"] += 1
+            except Exception as exc:  # noqa: BLE001 — satu pesanan rusak tidak menghentikan proses awal
+                hitung["dilewati"] += 1
+                log.warning("[KA-4] potret komisi pesanan %s dilewati: %s", order.get("number") or order.get("id"), exc)
+
+    antre: List[Dict[str, Any]] = []
+    async for order in db.sales_orders.find({"items": {"$elemMatch": {"commission_rule": {"$exists": False}}}},
+                                            {"_id": 0, "id": 1, "number": 1, "items": 1, "entity_id": 1}):
+        antre.append(order)
+        if len(antre) >= kelompok:
+            await _proses(antre)
+            antre = []
+    if antre:
+        await _proses(antre)
+    if hitung["pesanan"] or hitung["dilewati"]:
+        log.info("[KA-4] potret komisi isi awal: %d pesanan ditulis, %d dilewati", hitung["pesanan"], hitung["dilewati"])
 
 
 async def backfill_ar_cash_postings() -> None:
@@ -2163,10 +2213,11 @@ async def run_bootstrap() -> None:
     await backfill_incentive_rate_key()   # KA-2 — sebelum `assert_required_indexes` (indeks unik `uq_incentive_rate_key`)
     await backfill_costing_data()
     await backfill_so_line_cost()
-    await backfill_so_line_commission_rule()   # KA-4 — sesudah tarif ber-`rate_key` & biaya baris
     await backfill_ar_cash_postings()
     await backfill_epic6_pr_po_links()
     await seed_incentive_rates()
+    # KA-4 — sesudah tarif ber-`rate_key`, biaya baris, DAN tarif bawaan (basis data baru: potret memakai tarif seed)
+    await backfill_so_line_commission_rule()
     await seed_initial_notifications()
     # FASE H0 — HRD foundation (config HR + struktur org + backfill karyawan)
     await seed_hr_foundation()

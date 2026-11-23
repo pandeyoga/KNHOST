@@ -3582,7 +3582,8 @@ async def backfill_journals(entity_id: Optional[str] = None) -> Dict[str, Any]:
 
 async def post_incentive_accrual(entity_id: str, period: str,
                                  created_by: str = "system", *, total: Optional[float] = None,
-                                 date: str = "") -> Optional[Dict[str, Any]]:
+                                 date: str = "", rincian_sales: Optional[List[Dict[str, Any]]] = None
+                                 ) -> Optional[Dict[str, Any]]:
     """F0-E — Akrual beban insentif penjualan per (entitas, periode).
 
     Model 1 (silo selling): biaya insentif ditanggung entitas SO (= entitas sales).
@@ -3598,15 +3599,21 @@ async def post_incentive_accrual(entity_id: str, period: str,
     KA-6 — aturan komisi bulan itu dibekukan (`commission_rules.bekukan_periode`): SESUDAH jurnal akrual pertama
     tersimpan (jurnal ditolak, mis. periode tertutup → tidak ada potret), dan pada setiap panggilan berikutnya selama
     akrual hidup ada, sebelum jurnal koreksi (idempoten). Potret terikat ke jurnal akrual itu: bila dianulir, potret
-    diabaikan dan diganti saat akrual berikutnya. Galat pembekuan merambat (gagal sesudah jurnal → panggilan akrual
-    berikutnya membekukan). Bulan yang diakru sebelum fitur ini dibekukan pada panggilan akrual berikutnya.
+    diabaikan dan diganti saat akrual berikutnya. Galat pembekuan aturan merambat (gagal sesudah jurnal → panggilan
+    akrual berikutnya membekukan). Bulan yang diakru sebelum fitur ini dibekukan pada panggilan akrual berikutnya.
+
+    Tinjauan akhir I2 — catatan per sales di potret bulan = angka yang DIAKRU, tanpa menghitung ulang: `rincian_sales`
+    dari pemanggil (posting gaji: komisi slip); tanpa `total` (akrual manual) mesin dijalankan SEKALI per sales
+    (`incentive_accrual_rincian`) dan hasilnya menjadi total jurnal sekaligus catatannya.
     """
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Akrual insentif membutuhkan entitas spesifik & periode (mis. 2026-06).")
     src_id = f"{entity_id}:{period}"
     await seed_default_coa()
+    sumber_rincian = "slip_gaji" if rincian_sales is not None else ""
     if total is None:
-        total = await incentive_accrual_estimate(entity_id, period)
+        total, rincian_sales = await incentive_accrual_rincian(entity_id, period)
+        sumber_rincian = "akrual"
     total = round(float(total or 0), 2)
     tgl = date or now_iso()
     from services.commission_rules import bekukan_periode   # lokal: modul aturan memanggil mesin komisi
@@ -3621,11 +3628,13 @@ async def post_incentive_accrual(entity_id: str, period: str,
             lines=lines, description=f"Akrual insentif penjualan {period}",
             date=tgl, source_type="incentive_accrual", source_id=src_id,
             entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}")
-        await bekukan_periode(entity_id, period, oleh=created_by, journal_id=entry["id"])
+        await bekukan_periode(entity_id, period, oleh=created_by, journal_id=entry["id"], rincian_sales=rincian_sales,
+                              sumber_rincian=sumber_rincian)
         return entry
     # KA-6 — akrual hidup sudah ada: pastikan potretnya ada (idempoten), juga bila tidak ada selisih — pembekuan yang
     # gagal sesudah jurnal akrual pertama dibuat di panggilan berikutnya.
-    await bekukan_periode(entity_id, period, oleh=created_by, journal_id=akrual["id"])
+    await bekukan_periode(entity_id, period, oleh=created_by, journal_id=akrual["id"], rincian_sales=rincian_sales,
+                          sumber_rincian=sumber_rincian)
     # P17 COMM-04 — komisi on-collection berubah (pembayaran batal/susulan) → jurnal koreksi selisih.
     accrued = await _incentive_accrued(src_id)
     delta = round(total - accrued, 2)
@@ -3656,18 +3665,25 @@ async def _incentive_accrued(src_id: str) -> float:
     return round(total, 2)
 
 
+async def incentive_accrual_rincian(entity_id: str, period: str) -> Tuple[float, List[Dict[str, Any]]]:
+    """`(Σ komisi, [{sales_id, total, breakdown}])` — mesin komisi SEKALI per sales daftar PT (`sales_roster`). Galat
+    mesin merambat: akrual manual tidak boleh membukukan total yang kurang satu sales."""
+    from services import sales_force_service as sf
+    from services.incentive_targets import sales_roster
+    rincian: List[Dict[str, Any]] = []
+    for u in await sales_roster(entity_id, "month", period):
+        c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
+        rincian.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive", 0) or 0), 2),
+                        "breakdown": c.get("breakdown") or []})
+    return round(sum(float(r["total"]) for r in rincian), 2), rincian
+
+
 async def incentive_accrual_estimate(entity_id: str, period: str) -> float:
     """Σ komisi otomatis bulan itu untuk daftar sales PT — angka yang dibukukan akrual manual (`post_incentive_accrual`
     tanpa `total`). KM-T4 (KM-07) — daftar = `sales_roster` (akun berperan acuan sales yang ditugaskan di PT + yang punya
     fakta/target bulan itu), sama dengan Meja Insentif; dulu semua akun berkategori sales seluruh grup. KM-T5 — juga
     dibaca layar sebelum konfirmasi "Bukukan akrual komisi {bulan}" (nominal di kalimat konfirmasi)."""
-    from services import sales_force_service as sf
-    from services.incentive_targets import sales_roster
-    total = 0.0
-    for u in await sales_roster(entity_id, "month", period):
-        c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
-        total += float(c.get("total_incentive", 0) or 0)
-    return round(total, 2)
+    return (await incentive_accrual_rincian(entity_id, period))[0]
 
 
 async def incentive_accrual_status(entity_id: str, period: str) -> Dict[str, Any]:

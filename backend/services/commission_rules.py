@@ -395,6 +395,14 @@ async def potret_pesanan(entity_id: str, items: List[Dict[str, Any]], products: 
         it["commission_rule"] = potret(tarif, pt, artikel=_artikel_ringkas(artikel.get(tpl)), sumber=sumber, waktu=waktu)
 
 
+def kategori_baris(line: Dict[str, Any], prod: Dict[str, Any]) -> str:
+    """Kategori baris pesanan YANG SUDAH ADA untuk mencari tarif kategori: isian `category` baris bila kuncinya ada — juga
+    bila kosong (mesin lama: `rates.get(line.get("category", ""))`, kategori kosong = tanpa tarif kategori) — selain itu
+    kategori produk (baris tanpa kunci itu diisi `bootstrap.backfill_so_line_category` dari produk). Pesanan BARU
+    (`potret_pesanan`) memakai kategori produk bila baris kosong."""
+    return (line.get("category") or "") if "category" in line else (prod.get("category") or "")
+
+
 async def aturan_dari_sekarang(line: Dict[str, Any], entity_id: Optional[str], cache: Dict[str, Any], *,
                                sumber: str) -> Dict[str, Any]:
     """Potret aturan baris dari aturan SEKARANG (tidak ditulis ke basis data). `cache` menyimpan indeks tarif
@@ -414,8 +422,7 @@ async def aturan_dari_sekarang(line: Dict[str, Any], entity_id: Optional[str], c
     tpl = prod.get("template_id") or ""
     if tpl and ("artikel", tpl) not in cache:
         cache[("artikel", tpl)] = (await _muat_artikel([tpl])).get(tpl)
-    tarif = pilih_tarif(cache[("indeks", ent)], product_id=pid, template_id=tpl,
-                        category=line.get("category") or prod.get("category") or "")
+    tarif = pilih_tarif(cache[("indeks", ent)], product_id=pid, template_id=tpl, category=kategori_baris(line, prod))
     return potret(tarif, cache[("pt", ent)], artikel=_artikel_ringkas(cache.get(("artikel", tpl))),
                   sumber=sumber, waktu=now_iso())
 
@@ -555,13 +562,57 @@ async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) 
     return pilih_jenjang(aturan["jenjang"], float(pct)), {**info, "capaian_pct": pct, "alasan": "jenjang"}
 
 
-async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id: str = "") -> Dict[str, Any]:
+def _rincian_bersih(rincian: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Baris catatan per sales dari pemanggil (`{sales_id, total, breakdown?, employee_id?}` atau `{sales_id, galat}`);
+    total dibulatkan 2 desimal."""
+    out = []
+    for r in rincian:
+        if r.get("galat"):
+            out.append({"sales_id": r.get("sales_id") or "", "total": None, "galat": str(r["galat"])})
+            continue
+        baris = {"sales_id": r.get("sales_id") or "", "total": round(float(r.get("total") or 0), 2)}
+        for k in ("employee_id", "breakdown"):
+            if r.get(k) is not None:
+                baris[k] = r[k]
+        out.append(baris)
+    return out
+
+
+async def _rincian_hitung_ulang(entity_id: str, bulan: str) -> Tuple[List[Dict[str, Any]], str]:
+    """Catatan per sales dihitung ulang dengan mesin (cadangan bila pemanggil tidak membawa rincian). Upaya terbaik:
+    galat satu sales → baris itu bertanda `galat` (sales lain tetap dicatat); galat daftar sales → `([], kalimat)`."""
+    from services import sales_force_service as sf          # lokal: sales_force_service mengimpor modul ini
+    from services.incentive_targets import sales_roster
+    try:
+        daftar = await sales_roster(entity_id, "month", bulan)
+    except Exception as exc:  # noqa: BLE001 — catatan saja; jurnal & aturan beku tidak boleh gagal karenanya
+        return [], f"Daftar sales tidak bisa dimuat saat dibekukan: {exc}"
+    sales: List[Dict[str, Any]] = []
+    for u in daftar:
+        try:
+            c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
+            sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
+                          "breakdown": c.get("breakdown") or []})
+        except Exception as exc:  # noqa: BLE001 — catatan saja (tinjauan akhir I2)
+            sales.append({"sales_id": u["id"], "total": None, "galat": f"Komisi sales ini gagal dihitung saat dibekukan: {exc}"})
+    return sales, ""
+
+
+async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id: str = "",
+                          rincian_sales: Optional[List[Dict[str, Any]]] = None, sumber_rincian: str = "") -> Dict[str, Any]:
     """Bekukan aturan komisi bulan itu saat akrual dibukukan (rancangan §6.4, §6.5a; `02_STANDAR.md` §5 D3).
 
     Dipanggil `gl_service.post_incentive_accrual` SESUDAH jurnal akrual pertama tersimpan, dan sebelum jurnal koreksi.
     `commission_period_rules` `{id "cmpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
-    pada akhir bulan), sales [{sales_id, total, breakdown}] (catatan hasil mesin per sales daftar PT saat dibekukan),
-    journal_id (jurnal akrual yang membekukan), recorded_at, recorded_by, replaces?}`.
+    pada akhir bulan — SATU-SATUNYA yang dibekukan & dibaca mesin), sales [{sales_id, total, breakdown?, employee_id?,
+    galat?}] (CATATAN per sales), sales_sumber, sales_galat?, journal_id (jurnal akrual yang membekukan), recorded_at,
+    recorded_by, replaces?}`.
+
+    Tinjauan akhir I2 — `sales` hanya catatan dan tidak pernah menggagalkan akrual: `rincian_sales` dari pemanggil
+    dipakai apa adanya (posting gaji: komisi slip yang diakru, `sales_sumber="slip_gaji"`; akrual manual: hasil mesin yang
+    sama dengan total jurnal, `"akrual"`), tanpa menghitung ulang. Tanpa `rincian_sales` → dihitung ulang upaya terbaik
+    (`"hitung_ulang"`; galat satu sales = baris bertanda `galat`, galat daftar sales = `sales_galat`). Galat membaca aturan
+    capaian (yang dibekukan) tetap merambat — akrual berikutnya membekukan ulang.
 
     Dokumen yang ada dan jurnal akrualnya masih hidup dikembalikan, tidak ditimpa — koreksi akrual sesudahnya tetap
     memakai jenjang beku, angka hanya berubah karena data sumber (bayar/retur). Dokumen yang jurnal akrualnya tidak ada
@@ -581,16 +632,19 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id:
     ada = await db.commission_period_rules.find_one(q, {"_id": 0})
     if ada and await _beku_berlaku(ada):
         return ada
-    from services import sales_force_service as sf          # lokal: sales_force_service mengimpor modul ini
-    from services.incentive_targets import sales_roster
-    achievement = await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan))
-    sales: List[Dict[str, Any]] = []
-    for u in await sales_roster(entity_id, "month", bulan):
-        c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
-        sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
-                      "breakdown": c.get("breakdown") or []})
-    doc = {"id": new_id("cmpr"), **q, "achievement": achievement, "sales": sales, "journal_id": jid,
-           "recorded_at": now_iso(), "recorded_by": oleh or ""}
+    achievement = await aturan_capaian(entity_id, at=akhir_bulan_wib(bulan))   # yang dibekukan: dulu, dan merambat
+    galat_daftar = ""
+    try:
+        if rincian_sales is not None:
+            sales, sumber = _rincian_bersih(rincian_sales), sumber_rincian or "pemanggil"
+        else:
+            (sales, galat_daftar), sumber = await _rincian_hitung_ulang(entity_id, bulan), "hitung_ulang"
+    except Exception as exc:  # noqa: BLE001 — catatan saja; jurnal sudah tersimpan
+        sales, sumber, galat_daftar = [], sumber_rincian or "hitung_ulang", f"Rincian per sales tidak bisa disusun: {exc}"
+    doc = {"id": new_id("cmpr"), **q, "achievement": achievement, "sales": sales, "sales_sumber": sumber,
+           "journal_id": jid, "recorded_at": now_iso(), "recorded_by": oleh or ""}
+    if galat_daftar:
+        doc["sales_galat"] = galat_daftar
     if ada:   # potret lama tanpa jurnal akrual hidup (akrual gagal / dianulir) → diganti, tetap satu per PT·bulan
         doc["replaces"] = {k: ada.get(k) for k in ("id", "journal_id", "recorded_at", "recorded_by")}
         await db.commission_period_rules.replace_one(q, dict(doc))
