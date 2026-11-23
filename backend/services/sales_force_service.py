@@ -14,8 +14,9 @@ from services.commission_rules import (ALASAN_LABEL, aturan_baris, bulan_periode
                                       hitung_baris, label_alasan, pengali_capaian)
 from services.config_service import get_effective_settings
 
-CATATAN_SIMULASI = ("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan. Kolom kanan menunjukkan angka "
-                    "bila pesanan bulan ini dibuat dengan aturan baru.")
+CATATAN_SIMULASI = ("Kedua kolom menghitung semua pesanan bulan ini dengan aturan hari ini (kiri) dan dengan perubahan "
+                    "(kanan), jadi selisihnya murni akibat perubahan. Perubahan tarif berlaku untuk pesanan yang dibuat "
+                    "sesudah disimpan; pesanan lama tetap memakai aturan saat pesanan dibuat.")
 
 DEFAULT_TIERS = [
     {"min_achievement": 0, "rate": 1.0},
@@ -225,24 +226,47 @@ async def boleh_lihat_komisi_sales(actor: Dict[str, Any], sales_id: str) -> bool
     return bool(sales_id) and await has_permission(actor, "order", "view_sales_kpi")
 
 
+TANDA_SIMULASI = {
+    "strategi_berjenjang": "Draf tidak berpengaruh: PT ini memakai cara hitung berjenjang.",
+    "tanpa_komisi_otomatis": "Komisi otomatis tidak dibayar di PT ini.",
+}
+
+
 async def simulate_commission(sales_id: str, period: str, entity_id: str, draft_rates: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """KA-8 — simulasi "coba dulu": komisi `sales_id` pada `period` dengan aturan SEKARANG (hasil mesin biasa, memakai potret
-    pesanan) dan dengan aturan sekarang + tarif draf (tiap baris dihitung ulang dari aturan sekarang + draf, potret
-    pesanan diabaikan). Tidak menulis apa pun. `draft_rates` = `[{template_id|product_id|category, per_unit_amount,
+    """KA-8 — simulasi "coba dulu" (keputusan R18, tinjauan akhir I3). Dua kolom pembanding SAMA-SAMA mengabaikan potret
+    pesanan, jadi selisihnya murni efek draf:
+      * `sekarang` ("Aturan sekarang") — tiap baris dihitung dari aturan SEKARANG (`aturan_dari_sekarang` atas indeks
+        tarif tersimpan + aturan PT saat ini);
+      * `dengan_perubahan` — sama, atas indeks tarif + draf (`indeks_dengan_draf`) dengan aturan PT yang sama.
+    `komisi_menurut_potret` = hasil mesin biasa (aturan saat pesanan dibuat) — angka yang akan dibayar, untuk baris info.
+    `tanda` = `[{kode, pesan}]`: strategi arsip berjenjang (draf tidak berpengaruh) dan mode gaji `sheet`/`off` (komisi
+    otomatis tidak dibayar). Tidak menulis apa pun. `draft_rates` = `[{template_id|product_id|category, per_unit_amount,
     margin_cap_pct?}]`; draf tidak sah → `HTTPException` 400."""
     from services.commission_rate_service import indeks_dengan_draf
-    from services.commission_rules import aturan_dari_sekarang, aturan_pt
+    from services.commission_rules import aturan_dari_sekarang, aturan_pt, muat_indeks_tarif
+    from services.incentive_payroll import TANPA_MESIN, mode_pt
     ent = entity_id or ""
-    sekarang = await compute_commission(sales_id, period, entity_id)
-    cache: Dict[Any, Any] = {("indeks", ent): await indeks_dengan_draf(entity_id, draft_rates),
-                             ("pt", ent): await aturan_pt(entity_id)}
+    pt = await aturan_pt(entity_id)
 
-    async def _dengan_draf(line: Dict[str, Any]) -> Dict[str, Any]:
-        return await aturan_dari_sekarang(line, entity_id, cache, sumber="simulasi")
+    def _sumber(indeks: Dict[str, Any]):
+        cache: Dict[Any, Any] = {("indeks", ent): indeks, ("pt", ent): pt}
 
-    return {"sekarang": sekarang,
-            "dengan_perubahan": await compute_commission(sales_id, period, entity_id, sumber_aturan=_dengan_draf),
-            "catatan": CATATAN_SIMULASI}
+        async def _aturan(line: Dict[str, Any]) -> Dict[str, Any]:
+            return await aturan_dari_sekarang(line, entity_id, cache, sumber="simulasi")
+        return _aturan
+
+    menurut_potret = await compute_commission(sales_id, period, entity_id)
+    sekarang = await compute_commission(sales_id, period, entity_id, sumber_aturan=_sumber(await muat_indeks_tarif(entity_id)))
+    dengan = await compute_commission(sales_id, period, entity_id,
+                                      sumber_aturan=_sumber(await indeks_dengan_draf(entity_id, draft_rates)))
+    tanda = []
+    if menurut_potret.get("strategy") == "achievement_tiered":
+        tanda.append({"kode": "strategi_berjenjang", "pesan": TANDA_SIMULASI["strategi_berjenjang"]})
+    if await mode_pt(entity_id) in TANPA_MESIN:
+        tanda.append({"kode": "tanpa_komisi_otomatis", "pesan": TANDA_SIMULASI["tanpa_komisi_otomatis"]})
+    return {"sekarang": sekarang, "dengan_perubahan": dengan,
+            "komisi_menurut_potret": round(float(menurut_potret.get("total_incentive") or 0), 2),
+            "tanda": tanda, "catatan": CATATAN_SIMULASI}
 
 
 async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any],

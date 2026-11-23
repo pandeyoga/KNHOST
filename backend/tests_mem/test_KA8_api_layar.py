@@ -7,8 +7,10 @@ Rancangan `docs/superpowers/specs/2026-11-23-komisi-per-artikel-design.md` §6.2
   Tarif           kategori KA8Batik Rp 3.000 (Semua PT) · artikel Mega Rp 3.500 (PT ini, batas margin 0) ·
                   varian biru Rp 4.000 (PT ini).
 
-Hitung tangan simulasi (U7, periode 2026-11, fraksi terbayar 1): pesanan dipotret saat tarif artikel Mega 3.500 →
-100 yd × 3.500 = 350.000 (sekarang). Draf tarif artikel Mega 4.000 → 100 × 4.000 = 400.000 (dengan perubahan).
+Hitung tangan simulasi (U7, periode 2026-11, fraksi terbayar 1; keputusan R18 — kedua kolom mengabaikan potret):
+pesanan dipotret saat tarif artikel Mega 3.500 → menurut potret 100 yd × 3.500 = 350.000 (baris info). Sesudahnya tarif
+artikel Mega diubah ke 3.800 → "Aturan sekarang" 100 × 3.800 = 380.000. Draf tarif artikel Mega 4.000 → 100 × 4.000 =
+400.000 ("Dengan perubahan"); selisih 20.000 = murni efek draf (bukan 50.000 yang mencampur efek potret).
 """
 from __future__ import annotations
 
@@ -263,22 +265,25 @@ async def test_KA8_U7_simulasi(klien, kepala_admin, db, akun, f8):
         "items": [item], "subtotal": 5_000_000, "grand_total": 5_000_000,
         "payments": [{"amount": 5_000_000, "created_at": "2026-11-10T03:00:00+00:00"}],
         "created_at": "2026-11-02T03:00:00+00:00", "updated_at": now_iso()})
+    r = await klien.patch("/api/incentive-rates/irate_ka8_mega", headers=kepala_admin,
+                          json={"data": {"per_unit_amount": 3800}})           # aturan sekarang ≠ potret pesanan
+    assert r.status_code == 200, r.text
     badan = {"entity_id": KSC, "sales_id": sales["id"], "period": PERIODE,
              "draft_rates": [{"template_id": MEGA, "per_unit_amount": 4000, "margin_cap_pct": 0}]}
     r = await klien.post("/api/incentive-rates/simulate", headers=kepala_admin, json=badan)
     assert r.status_code == 200, r.text
     j = r.json()
-    assert (j["sekarang"]["total_incentive"], j["dengan_perubahan"]["total_incentive"]) == (350_000, 400_000)
-    assert j["dengan_perubahan"]["breakdown"][0]["rate"] == 4000
-    assert j["catatan"] == ("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan. Kolom kanan menunjukkan "
-                            "angka bila pesanan bulan ini dibuat dengan aturan baru.")
+    assert (j["sekarang"]["total_incentive"], j["dengan_perubahan"]["total_incentive"]) == (380_000, 400_000)
+    assert j["komisi_menurut_potret"] == 350_000 and j["tanda"] == []
+    assert (j["sekarang"]["breakdown"][0]["rate"], j["dengan_perubahan"]["breakdown"][0]["rate"]) == (3800, 4000)
+    assert j["catatan"].startswith("Kedua kolom menghitung semua pesanan bulan ini dengan aturan hari ini")
     # simulasi tidak menulis apa pun
-    assert (await db.incentive_rates.find_one({"id": "irate_ka8_mega"}))["per_unit_amount"] == 3500
+    assert (await db.incentive_rates.find_one({"id": "irate_ka8_mega"}))["per_unit_amount"] == 3800
     assert (await db.sales_orders.find_one({"id": "so_ka8"}))["items"][0]["commission_rule"]["tarif"]["per_unit_amount"] == 3500
-    # draf kategori (tarif artikel Mega masih menang) → tetap 350.000; draf varian merah 5.000 → 500.000
+    # draf kategori (tarif artikel Mega masih menang) → sama dengan aturan sekarang; draf varian merah 5.000 → 500.000
     r = await klien.post("/api/incentive-rates/simulate", headers=kepala_admin,
                          json={**badan, "draft_rates": [{"category": "KA8Batik", "per_unit_amount": 9000}]})
-    assert r.json()["dengan_perubahan"]["total_incentive"] == 350_000
+    assert r.json()["dengan_perubahan"]["total_incentive"] == r.json()["sekarang"]["total_incentive"] == 380_000
     r = await klien.post("/api/incentive-rates/simulate", headers=kepala_admin,
                          json={**badan, "draft_rates": [{"product_id": MRH, "per_unit_amount": 5000}]})
     assert r.json()["dengan_perubahan"]["total_incentive"] == 500_000
@@ -288,6 +293,24 @@ async def test_KA8_U7_simulasi(klien, kepala_admin, db, akun, f8):
     assert r.status_code == 400, r.text
     r = await klien.post("/api/incentive-rates/simulate", headers=kepala_admin, json={**badan, "entity_id": "all"})
     assert r.status_code == 400, r.text
+    # tanda: strategi arsip berjenjang (draf tidak berpengaruh) dan mode gaji tanpa komisi otomatis
+    from services import config_resolver as resolver
+    baris = [await resolver.set_value("commission.strategy", "achievement_tiered", scope_type="entity", scope_id=KSC,
+                                      actor="uji", reason="uji KA-8 tanda"),
+             await resolver.set_value("hr.payroll_commission_mode", "sheet", scope_type="entity", scope_id=KSC,
+                                      actor="uji", reason="uji KA-8 tanda")]
+    try:
+        j = (await klien.post("/api/incentive-rates/simulate", headers=kepala_admin, json=badan)).json()
+        assert [t["kode"] for t in j["tanda"]] == ["strategi_berjenjang", "tanpa_komisi_otomatis"], j["tanda"]
+        assert [t["pesan"] for t in j["tanda"]] == ["Draf tidak berpengaruh: PT ini memakai cara hitung berjenjang.",
+                                                    "Komisi otomatis tidak dibayar di PT ini."]
+        assert j["sekarang"]["total_incentive"] == j["dengan_perubahan"]["total_incentive"]
+    finally:   # kunci strategi diproyeksikan ke penyimpanan lama → dikembalikan lewat set_value, lalu barisnya dihapus
+        for kunci, nilai in (("commission.strategy", "per_sku"), ("hr.payroll_commission_mode", "accrue_then_settle")):
+            baris.append(await resolver.set_value(kunci, nilai, scope_type="entity", scope_id=KSC, actor="uji",
+                                                  reason="uji KA-8 tanda selesai"))
+        await db.config_values.delete_many({"id": {"$in": [b["id"] for b in baris]}})
+    await db.incentive_rates.update_one({"id": "irate_ka8_mega"}, {"$set": {"per_unit_amount": 3500.0}})
 
 
 async def test_KA8_F1_kode_kembar_id_menentukan_dan_pesan_baris(klien, kepala_admin, db, f8):
@@ -375,8 +398,9 @@ async def test_KA8_F4_simulasi_dibatasi_izin_lihat_sales_lain(klien, akun, sesi,
 
 
 async def test_KA8_F5_simulasi_sama_dengan_hasil_sesudah_disimpan(klien, kepala_admin, db, akun, f8):
-    """PT berambang diskon 5 % (bawaan tarif baru 10 %): baris diskon 8 %. Tarif baru yang disimpan membawa ambang 10 %
-    (×1) → 100 yd × 4.000 = 400.000; simulasi harus sama (bukan 200.000 dari ambang PT)."""
+    """PT berambang diskon 5 % (bawaan registri 10 %): baris diskon 8 %. Tinjauan akhir M7 — tarif baru yang disimpan TIDAK
+    membawa isian diskon sendiri, jadi potretnya memakai ambang PT 5 % (8 % > 5 % → ×0,5) → 100 yd × 4.000 × 0,5 = 200.000;
+    simulasi harus sama dengan hasil sesudah disimpan."""
     from services import config_resolver as resolver
     from services.commission_rules import potret_pesanan
     sales = await akun("sales", entitas=(KSC,))
@@ -404,7 +428,9 @@ async def test_KA8_F5_simulasi_sama_dengan_hasil_sesudah_disimpan(klien, kepala_
         await db.sales_orders.update_one({"id": "so_ka8_f5"}, {"$set": {"items": [item]}})
         from services import sales_force_service as sfs
         nyata = await sfs.compute_commission(sales["id"], PERIODE, KSC)
-        assert sim["dengan_perubahan"]["total_incentive"] == nyata["total_incentive"] == 400_000
+        assert sim["dengan_perubahan"]["total_incentive"] == nyata["total_incentive"] == 200_000
+        simpan = await db.incentive_rates.find_one({"entity_id": KSC, "rate_key": f"artikel:{LURIK}"}, {"_id": 0})
+        assert not any(k.startswith("discount_") for k in simpan), simpan   # isian diskon tidak tersimpan
     finally:
         await db.config_values.delete_one({"id": row["id"]})
         await db.incentive_rates.delete_many({"entity_id": KSC, "rate_key": f"artikel:{LURIK}"})
