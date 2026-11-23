@@ -9,6 +9,11 @@
  * dikumpulkan di bawah. Saringan: Semua · Sudah diubah · Risiko tinggi · Persetujuan · Pengingat & batas waktu ·
  * Toleransi selisih (di "Semua pengaturan" tiga saringan tema berlaku lintas kelompok). Tiap kelompok punya tautan
  * "Riwayat perubahan kelompok ini".
+ *
+ * KA-9 (R16) — `embedded` (awalan testid, mis. "scheme-price"): mode tertanam di layar domain yang memuat beberapa daftar
+ * terkunci sekaligus (tab Skema & Tarif). Tanpa bilah cari/cakupan (`SettingsScopeBar`), tanpa kepala kelompok & chip;
+ * cakupan = PT dari pemilih PT halaman (ditulis sekali oleh layar itu); testid bagian/kosong/galat memakai awalan itu
+ * supaya tidak kembar. Bawaan (`embedded` kosong) = perilaku lama untuk semua layar lain.
  */
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, History, ShieldCheck, SlidersHorizontal } from "lucide-react";
@@ -32,7 +37,7 @@ function bySection(items, sections) {
   return [...out, lain].filter((x) => x.items.length);
 }
 
-function Section({ s, sec, entities, scopeName, defaultOpen, peers }) {
+function Section({ s, sec, entities, scopeName, defaultOpen, peers, tid = "cfg" }) {
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => { if (defaultOpen) setOpen(true); }, [defaultOpen]);
   const cards = (
@@ -56,16 +61,16 @@ function Section({ s, sec, entities, scopeName, defaultOpen, peers }) {
   );
   if (!sec.advanced) {
     return (
-      <section className="cfg-section" data-testid={`cfg-section-${sec.id}`}>
+      <section className="cfg-section" data-testid={`${tid}-section-${sec.id}`}>
         <h4 className="cfg-section-title">{sec.label}</h4>
         {cards}
       </section>
     );
   }
   return (
-    <section className="cfg-section cfg-section-adv" data-testid={`cfg-section-${sec.id}`}>
+    <section className="cfg-section cfg-section-adv" data-testid={`${tid}-section-${sec.id}`}>
       <button type="button" className="cfg-section-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}
-        data-testid={`cfg-section-toggle-${sec.id}`}>
+        data-testid={`${tid}-section-toggle-${sec.id}`}>
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span>Lanjutan (teknis): {sec.label}</span>
         <span className="cfg-group-count">{sec.items.length}</span>
@@ -75,7 +80,9 @@ function Section({ s, sec, entities, scopeName, defaultOpen, peers }) {
   );
 }
 
-export default function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLink = null, searchPlaceholder = "" }) {
+export default function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLink = null, searchPlaceholder = "",
+  embedded = "" }) {
+  const tid = embedded || "cfg";
   const scopeName = useMemo(
     () => (s.scopeType === "entity" && s.scopeId ? entityShortById(entities, s.scopeId) : "Semua PT"),
     [s.scopeType, s.scopeId, entities]);
@@ -100,15 +107,15 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
 
   return (
     <>
-      <SettingsScopeBar s={s} entities={entities} scopeName={scopeName} searchPlaceholder={searchPlaceholder} />
+      {!embedded && <SettingsScopeBar s={s} entities={entities} scopeName={scopeName} searchPlaceholder={searchPlaceholder} />}
 
       {/* KF-T4 — kelompok selalu FilterChips (tingkat ke-3 = chip, aturan L-01); dulu "Semua pengaturan" memakai kolom
           tombol buatan sendiri (`cfg-group-btn`, ratchet verify_page_tabs). `groupNav` dipertahankan untuk pemanggil lama. */}
-      {s.lockedGroup ? (
+      {!embedded && s.lockedGroup ? (
         <button type="button" className="cfg-link-btn" data-testid="cfg-group-show-all"
           onClick={() => s.setLockedGroup("")}>Tampilkan semua kelompok</button>
       ) : null}
-      {groups.length > 1 ? (
+      {!embedded && groups.length > 1 ? (
         <FilterChips testId="cfg-group-chips" chipTestId={(k) => `cfg-group-${k}`} ariaLabel="Kelompok pengaturan"
           value={term || crossTheme ? null : group} onChange={(k) => k && s.pickGroup(k)}
           options={shownGroups.map((g) => ({ key: g.id, label: g.label, count: g.count, title: g.question }))} />
@@ -117,11 +124,11 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
       <div className="cfg-body cfg-body-single" data-testid={groupNav === "side" ? "cfg-group-nav" : undefined}>
         <section className="cfg-list">
           {s.denied ? (
-            <div className="cfg-notice info" data-testid="cfg-denied">
+            <div className="cfg-notice info" data-testid={`${tid}-denied`}>
               <ShieldCheck size={15} />
               <span>{s.denied}</span>
             </div>
-          ) : <ErrorNotice message={s.error} onRetry={s.load} />}
+          ) : <ErrorNotice message={s.error} onRetry={s.load} testId={embedded ? `${tid}-error` : undefined} />}
           {term ? (
             <div className="cfg-result-head" data-testid="cfg-search-result-head">
               <h3>Hasil pencarian “{term}”</h3>
@@ -137,7 +144,7 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
               <h3>{(CARD_FILTERS.find((f) => f.key === s.filter) || {}).label} — semua kelompok</h3>
               <p className="cfg-hint-sm">{shown.length} pengaturan</p>
             </div>
-          ) : activeGroup ? (
+          ) : activeGroup && !embedded ? (
             // Pola UI 16 Nov (M43) — kepala kelompok SATU baris: nama · ? (pertanyaan kelompok) · jumlah · riwayat.
             <div className="cfg-group-line" data-testid="cfg-group-head">
               <b>{activeGroup.label}</b>
@@ -157,7 +164,7 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
 
           {s.loading ? <p className="cfg-hint">Memuat pengaturan…</p> : null}
           {!s.loading && shown.length === 0 ? (
-            <p className="cfg-empty" data-testid="cfg-empty">
+            <p className="cfg-empty" data-testid={`${tid}-empty`}>
               {term ? `Tidak ada pengaturan yang cocok dengan “${term}”. Coba kata lain, mis. “denda”, “PPN”, “lot”.`
                 : s.filter !== "all" ? "Tidak ada pengaturan yang cocok dengan saringan ini."
                   : "Belum ada pengaturan di kelompok ini."}
@@ -182,11 +189,11 @@ export default function SettingsBrowser({ s, entities = [], groupNav = "side", e
           ))}
 
           {!s.loading && blocks.map((sec) => (
-            <Section key={sec.id} s={s} sec={sec} entities={entities} scopeName={scopeName} peers={peers}
+            <Section key={sec.id} s={s} sec={sec} entities={entities} scopeName={scopeName} peers={peers} tid={tid}
               defaultOpen={s.section === sec.id || sec.items.some((i) => i.key === s.highlight)} />
           ))}
           {!s.loading && tidakDipakai.length ? (
-            <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false} peers={peers}
+            <Section s={s} entities={entities} scopeName={scopeName} defaultOpen={false} peers={peers} tid={tid}
               sec={{ id: "tidak-dipakai", label: "Tidak dipakai sistem", advanced: false, items: tidakDipakai }} />
           ) : null}
           {/* Pengaturan yang diatur di layar lain — di bawah daftar, tidak menghalangi isi (pola UI 16 Nov). */}

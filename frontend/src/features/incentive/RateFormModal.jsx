@@ -7,11 +7,13 @@
  * terisi bawaan PT (`commission.default_margin_cap_pct`, bagian 5). Ubah banyak = `POST /api/incentive-rates/bulk`.
  *
  * Keputusan R15 — **Berlaku untuk**: "PT ini" / "Semua PT". Tarif yang sudah ada di tingkat itu diubah DI TEMPAT
- * (`PATCH /api/incentive-rates/{id}`, `{data:{…}}`) dan lingkupnya ditulis; tarif Semua PT yang terlihat dari satu PT boleh
- * diubah di tempat atau diganti tarif khusus PT ini. Belum ada tarif → `POST /api/incentive-rates` dengan `entity_id` = PT
- * atau `"all"`. Mode "Semua PT" di kepala aplikasi (`semuaPtSaja`) = hanya lingkup Semua PT.
+ * (`PATCH /api/incentive-rates/{id}`, `{data:{…}}`) dan lingkupnya ditulis. Belum ada tarif → `POST /api/incentive-rates`
+ * dengan `entity_id` = PT atau `"all"`. Mode "Semua PT" di kepala aplikasi (`semuaPtSaja`) = hanya lingkup Semua PT.
+ * R16 — tarif Semua PT yang terlihat dari satu PT: bawaan "PT ini" (membuat tarif khusus PT); "Semua PT" harus dipilih
+ * sendiri dan memunculkan "Mengubah tarif ini berlaku untuk semua PT.". Muat pita khusus diabaikan bila sasaran/lingkup
+ * sudah berganti sebelum jawabannya datang.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layers, Percent, Plus, Trash2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
@@ -117,6 +119,7 @@ function PengaliKhusus({ pita, setPita, sumber, setSumber, terkunci }) {
  */
 export const LINGKUP = [{ key: "pt", label: "PT ini" }, { key: "semua_pt", label: "Semua PT" }];
 export const TEKS_LINGKUP_SEMUA = "Tarif Semua PT berlaku untuk setiap PT yang tidak punya tarif sendiri di tingkat ini.";
+export const TEKS_UBAH_SEMUA = "Mengubah tarif ini berlaku untuk semua PT.";
 
 export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semuaPtSaja = false, onClose, onSaved }) {
   const [jumlah, setJumlah] = useState("");
@@ -127,6 +130,7 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
   const [khusus, setKhusus] = useState("");       // "" = siap; selain itu alasan isian khusus terkunci
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const muatKe = useRef(0);                       // R16 — nomor muat pita terakhir; jawaban lama diabaikan
   const artikel = sasaran?.tingkat === "artikel";
   const ada = !!(sasaran?.rate && sasaran?.adaDiTingkat);
   const lingkupAda = ada ? (sasaran.rate.asal_lingkup === "semua_pt" ? "semua_pt" : "pt") : null;
@@ -137,20 +141,29 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
     setJumlah(r ? String(r.per_unit_amount ?? 0) : "");
     setBatas(r ? String(r.margin_cap_pct ?? 0) : bawaanBatas === null || bawaanBatas === undefined ? "" : String(bawaanBatas));
     setPita(null); setSumber(null); setErr(""); setKhusus("");
+    const no = muatKe.current + 1;
+    muatKe.current = no;
     if (artikel && r?.rate_id) {
       // Pita/aturan khusus tarif ini tidak ikut di daftar artikel — dibaca dari daftar tarif supaya tidak tertimpa.
       setKhusus("Memuat pengali khusus…");
       axios.get(`${API}/incentive-rates`, { params: { entity_id: entityId } }).then((res) => {
+        if (muatKe.current !== no) return;          // sasaran/lingkup sudah berganti
         const doc = (Array.isArray(res.data) ? res.data : []).find((d) => d.id === r.rate_id);
         setPita(doc?.price_bands ? pitaDari(doc.price_bands) : null);
         setSumber(doc?.price_source_rules ? sumberDari(doc.price_source_rules) : null);
         setKhusus("");
-      }).catch(() => setKhusus("Pengali khusus artikel ini tidak bisa dimuat; isiannya tidak diubah saat menyimpan."));
+      }).catch(() => {
+        if (muatKe.current !== no) return;
+        setKhusus("Pengali khusus artikel ini tidak bisa dimuat; isiannya tidak diubah saat menyimpan.");
+      });
     }
   };
+  // Pop-up ditutup: jawaban muat yang masih berjalan tidak boleh mengisi pop-up berikutnya.
+  useEffect(() => { if (!sasaran) muatKe.current += 1; }, [sasaran]);
   useEffect(() => {
     if (!sasaran) return;
-    const l = semuaPtSaja ? "semua_pt" : lingkupAda || "pt";
+    // R16 — tarif Semua PT dilihat dari satu PT: bawaan "PT ini"; "Semua PT" harus dipilih sendiri.
+    const l = semuaPtSaja ? "semua_pt" : "pt";
     setLingkup(l);
     isiAwal(l);
   }, [sasaran]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -206,14 +219,15 @@ export default function RateFormModal({ sasaran, entityId, pt, bawaanBatas, semu
           ) : (
             <p className="pt-1 text-fs-13 font-semibold text-kn-text" data-testid="rate-form-scope-fixed">{namaLingkup(lingkup)}</p>
           )}
-          {lingkup === "semua_pt" && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="rate-form-scope-warning">{TEKS_LINGKUP_SEMUA}</p>}
+          {lingkup === "semua_pt" && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="rate-form-scope-warning">
+            {ubah ? TEKS_UBAH_SEMUA : TEKS_LINGKUP_SEMUA}</p>}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div><label className="field-label">Tarif (Rp per satuan dasar) <span className="req">*</span></label>
-            <MoneyInput testId="rate-form-amount" className="field" value={jumlah} onChange={setJumlah} />
+          <div><label className="field-label" htmlFor="rate-form-amount">Tarif (Rp per satuan dasar) <span className="req">*</span></label>
+            <MoneyInput id="rate-form-amount" testId="rate-form-amount" className="field" value={jumlah} onChange={setJumlah} />
             {ikut && <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="rate-form-inherit">{ikut}</p>}</div>
-          <div><label className="field-label">Batas margin (%) <span className="req">*</span></label>
-            <input className="field text-right" inputMode="decimal" data-testid="rate-form-margin" value={batas}
+          <div><label className="field-label" htmlFor="rate-form-margin">Batas margin (%) <span className="req">*</span></label>
+            <input id="rate-form-margin" className="field text-right" inputMode="decimal" data-testid="rate-form-margin" value={batas}
               onChange={(e) => setBatas(e.target.value)} />
             <p className="mt-1 text-fs-12 text-kn-text-2">Komisi satu baris paling banyak persen ini dari margin barisnya. 0 = tidak dibatasi.</p></div>
         </div>
@@ -247,15 +261,15 @@ export function BulkRateModal({ ids, entityId, pt, onClose, onSaved }) {
       subtitle={pt} onSubmit={simpan} busy={busy} error={err} submitLabel={busy ? "Menyimpan…" : `Simpan tarif ${ids.length} artikel`}>
       <div className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div><label className="field-label">Tarif (Rp per satuan dasar) <span className="req">*</span></label>
-            <MoneyInput testId="rates-bulk-amount" className="field" value={jumlah} onChange={setJumlah} /></div>
-          <div><label className="field-label">Batas margin (%)</label>
-            <input className="field text-right" inputMode="decimal" data-testid="rates-bulk-margin" value={batas}
+          <div><label className="field-label" htmlFor="rates-bulk-amount">Tarif (Rp per satuan dasar) <span className="req">*</span></label>
+            <MoneyInput id="rates-bulk-amount" testId="rates-bulk-amount" className="field" value={jumlah} onChange={setJumlah} /></div>
+          <div><label className="field-label" htmlFor="rates-bulk-margin">Batas margin (%)</label>
+            <input id="rates-bulk-margin" className="field text-right" inputMode="decimal" data-testid="rates-bulk-margin" value={batas}
               onChange={(e) => setBatas(e.target.value)} />
             <p className="mt-1 text-fs-12 text-kn-text-2">Kosong = batas tarif yang ada tidak diubah; tarif baru memakai bawaan PT.</p></div>
         </div>
-        <div><label className="field-label">Alasan perubahan <span className="req">*</span></label>
-          <textarea className="field" rows={2} data-testid="rates-bulk-reason" value={alasan} onChange={(e) => setAlasan(e.target.value)}
+        <div><label className="field-label" htmlFor="rates-bulk-reason">Alasan perubahan <span className="req">*</span></label>
+          <textarea id="rates-bulk-reason" className="field" rows={2} data-testid="rates-bulk-reason" value={alasan} onChange={(e) => setAlasan(e.target.value)}
             placeholder="Contoh: penyesuaian tarif Batik mulai Desember" /></div>
         <p className="text-fs-12 text-kn-text-2">{TEKS_BERLAKU}</p>
       </div>

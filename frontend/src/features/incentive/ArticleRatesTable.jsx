@@ -110,8 +110,15 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
       const r = await axios.get(`${API}/incentive-rates/articles`, { params });
       if (urutan.current[kunci] !== no) return;   // pencarian lebih baru sudah dikirim
       const d = r.data || {};
-      setArtikel((a) => ({ ...a, [kunci]: { state: "ready", err: "", total: d.total || 0, page,
-        items: page > 1 ? [...(a[kunci]?.items || []), ...(d.items || [])] : (d.items || []) } }));
+      setArtikel((a) => {
+        const lama = page > 1 ? (a[kunci]?.items || []) : [];
+        const ada = new Set(lama.map((x) => x.template_id));
+        const items = [...lama, ...(d.items || []).filter((x) => !ada.has(x.template_id))];
+        // R16 — `page` = jumlah halaman ber-UKURAN yang sudah termuat (muat ulang berukuran besar sesudah menyimpan
+        // tetap membuat "berikutnya" meminta halaman yang benar, tanpa baris kembar).
+        return { ...a, [kunci]: { state: "ready", err: "", total: d.total || 0, items,
+          page: Math.max(1, Math.ceil(items.length / UKURAN)) } };
+      });
     } catch (e) {
       if (urutan.current[kunci] !== no) return;
       setArtikel((a) => ({ ...a, [kunci]: { items: [], ...(a[kunci] || {}), state: "error", err: apiErrorText(e) || "" } }));
@@ -126,10 +133,13 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
     } catch (e) { setVarian((v) => ({ ...v, [tid]: { items: [], state: "error", err: apiErrorText(e) || "" } })); }
   }, [entityId]);
 
-  /** Sesudah menulis: kategori + daftar artikel yang terbuka (sebanyak yang sudah dimuat) + varian yang terbuka. */
+  /** Sesudah menulis: kategori + daftar artikel yang terbuka (sebanyak yang sudah dimuat) + varian yang terbuka. Daftar
+   *  yang tertutup dibuang dari simpanan (R16) supaya dibuka lagi = dimuat baru, bukan angka lama. */
   const muatUlang = useCallback(async () => {
     const s = status.current;
     const kunci = [...(s.term ? [CARI] : []), ...Object.keys(s.buka).filter((k) => s.buka[k])];
+    setArtikel((a) => Object.fromEntries(Object.entries(a).filter(([k]) => kunci.includes(k))));
+    setVarian((v) => Object.fromEntries(Object.entries(v).filter(([t]) => s.bukaArt[t])));
     await Promise.all([muatKategori(),
       ...kunci.map((k) => muatArtikel(k, 1, Math.min(200, Math.max(UKURAN, (s.artikel[k]?.items || []).length)))),
       ...Object.keys(s.bukaArt).filter((t) => s.bukaArt[t]).map(muatVarian)]);
@@ -148,11 +158,13 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
   }, [filterKat, term, muatArtikel]);
 
   const togKategori = (c) => {
+    setNotice("");
     const jadi = !buka[c];
     setBuka((b) => ({ ...b, [c]: jadi }));
     if (jadi && !artikel[c]) muatArtikel(c);
   };
   const togArtikel = (tid) => {
+    setNotice("");
     const jadi = !bukaArt[tid];
     setBukaArt((b) => ({ ...b, [tid]: jadi }));
     if (jadi && !varian[tid]) muatVarian(tid);
@@ -167,6 +179,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
       message: `${akibat} Berlaku untuk pesanan yang dibuat sesudah dihapus.`, reasonLabel: "Alasan penghapusan",
       confirmLabel: "Hapus tarif", danger: true, testId: "rates-delete-confirm" });
     if (reason === null) return;
+    setNotice("");
     try {
       await axios.delete(`${API}/incentive-rates/${rate.rate_id}`, { params: { reason } });
       setNotice(`Tarif ${tingkat} ${nama} dihapus.`); setErr("");
@@ -175,6 +188,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
   };
 
   const unduh = async () => {
+    setNotice("");
     try {
       const r = await axios.get(`${API}/incentive-rates/export`, { params: { entity_id: entityId }, responseType: "blob" });
       const url = URL.createObjectURL(r.data);
@@ -191,7 +205,7 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
       <div className="flex items-center justify-end gap-1">
         {canUpdate && (
           <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid={`${prefix}-edit-${id}`}
-            onClick={() => setSasaran(sasaranBaru)}>{info.adaDiTingkat ? <><Pencil size={12} aria-hidden="true" />Ubah</> : labelAtur}</button>)}
+            onClick={() => { setNotice(""); setSasaran(sasaranBaru); }}>{info.adaDiTingkat ? <><Pencil size={12} aria-hidden="true" />Ubah</> : labelAtur}</button>)}
         {canDelete && info.sendiri && (
           <button type="button" className="secondary-button btn-sm whitespace-nowrap text-kn-danger-text" data-testid={`${prefix}-delete-${id}`}
             onClick={() => hapus(sasaranBaru)}><Trash2 size={12} aria-hidden="true" />Hapus tarif</button>)}
@@ -279,11 +293,11 @@ export default function ArticleRatesTable({ entityId, pt, ptPendek, bawaanBatas 
       <ListToolbar testId="rates-toolbar" count={kat.state !== "ready" ? null : term ? `${artikel[CARI]?.total ?? 0} artikel` : `${kategori.length} kategori`}
         actions={<>
           {canUpdate && <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="rates-bulk"
-            disabled={!nPilih} onClick={() => setBulk(true)}><Layers size={13} aria-hidden="true" />{nPilih ? `Ubah banyak (${nPilih})` : "Ubah banyak"}</button>}
+            disabled={!nPilih} onClick={() => { setNotice(""); setBulk(true); }}><Layers size={13} aria-hidden="true" />{nPilih ? `Ubah banyak (${nPilih})` : "Ubah banyak"}</button>}
           <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="rates-download" onClick={unduh}>
             <Download size={13} aria-hidden="true" />Unduh Excel</button>
           {canUpdate && <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="rates-upload"
-            onClick={() => setImpor(true)}><Upload size={13} aria-hidden="true" />Unggah Excel</button>}
+            onClick={() => { setNotice(""); setImpor(true); }}><Upload size={13} aria-hidden="true" />Unggah Excel</button>}
         </>}>
         <SearchInput value={cari} onChange={setCari} placeholder="Cari artikel (nama atau kode)" testId="rates-search" />
         <div className="w-[200px]"><KNSelect data-testid="rates-category-filter" className="field" value={filterKat}

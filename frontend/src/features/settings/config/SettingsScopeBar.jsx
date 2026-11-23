@@ -14,10 +14,10 @@ import { CARD_FILTERS, SCOPE_LABEL } from "./configApi";
 import { entityOptions } from "../../../utils/entityLabel";
 
 /** Pita notifikasi simpan/galat. */
-export function SettingsNotice({ s }) {
+export function SettingsNotice({ s, testId = "cfg-notice" }) {
   if (!s.notice) return null;
   return (
-    <div className={`cfg-notice ${s.notice.tone}`} data-testid="cfg-notice">
+    <div className={`cfg-notice ${s.notice.tone}`} data-testid={testId}>
       {s.notice.tone === "err" ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
       <span>{s.notice.msg}</span>
       <button className="icon-button" onClick={() => s.setNotice(null)} aria-label="Tutup"><X size={14} /></button>

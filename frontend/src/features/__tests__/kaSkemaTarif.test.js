@@ -14,11 +14,13 @@
 //    produk fokus".
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import IncentiveSchemeView, { bagianUntukKunci, TEKS_SEMUA_PT, TEKS_TANPA_LIHAT } from "../incentive/IncentiveSchemeView";
+import IncentiveSchemeView, { bagianUntukKunci, TEKS_SALES_TANPA_IZIN, TEKS_SEMUA_PT, TEKS_SUMBER_TANPA_IZIN, TEKS_TANPA_LIHAT }
+  from "../incentive/IncentiveSchemeView";
+import { gabungSimulasi, TEKS_ARTIKEL_TERPOTONG } from "../incentive/SchemeSimulation";
+import SettingsBrowserAsli from "../settings/config/SettingsBrowser";
 import { butuhKonfirmasiAkru, komisiOtomatisJalan, MODE_AKRU, MODE_KEDUANYA, MODE_TANPA_MESIN, modeDariPilihan,
   pilihanSumber } from "../incentive/incentiveModes";
 import { ringkasTarif, TEKS_KATEGORI_TANPA_TARIF } from "../incentive/ArticleRatesTable";
-import { gabungSimulasi } from "../incentive/SchemeSimulation";
 import IncentiveSetupView from "../incentive/IncentiveSetupView";
 import LegacySchemeEditor from "../incentive/LegacySchemeEditor";
 import { HUB_TABS, resolveDeepLinkTarget } from "../../config/navigationConfig";
@@ -37,6 +39,7 @@ const mockDelete = jest.fn();
 const mockConfirm = jest.fn();
 const mockReason = jest.fn();
 const mockSettings = [];
+const mockBrowsers = [];
 jest.mock("../../services/apiClient", () => ({
   __esModule: true,
   default: {
@@ -63,6 +66,8 @@ jest.mock("../../components/KNSelect", () => {
   return { __esModule: true, default: S, KNSelect: S };
 });
 jest.mock("../../components/EntityScopeBanner", () => () => <div data-testid="scope" />);
+jest.mock("../../components/KNDatePicker", () => (p) => (
+  <input data-testid={p["data-testid"]} value={p.value || ""} disabled={p.disabled} onChange={(e) => p.onChange(e.target.value)} />));
 // Pusat Pengaturan tertanam: yang diuji di sini = kunci yang dikunci tiap bagian (mesinnya diuji di suite Pengaturan).
 jest.mock("../settings/config/SettingsHub", () => ({
   ...jest.requireActual("../settings/config/SettingsHub"),
@@ -71,7 +76,7 @@ jest.mock("../settings/config/SettingsHub", () => ({
     const batas = (opts.includeKeys || []).includes("commission.default_margin_cap_pct");
     return { items: batas ? [{ key: "commission.default_margin_cap_pct", value: 45 }] : [] };
   },
-  SettingsBrowser: () => <div data-testid="cfg-browser" />,
+  SettingsBrowser: (p) => { mockBrowsers.push(p); return <div data-testid={`cfg-browser-${p.embedded || "lepas"}`} />; },
   SettingsNotice: () => null,
 }));
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -174,6 +179,7 @@ const dipanggil = (path) => mockGet.mock.calls.filter((c) => c[0] === `/api${pat
 beforeEach(() => {
   [mockGet, mockPost, mockPut, mockPatch, mockDelete, mockConfirm, mockReason].forEach((m) => m.mockReset());
   mockSettings.length = 0;
+  mockBrowsers.length = 0;
   document.body.innerHTML = "";
   mockReason.mockResolvedValue("alasan uji");
   mockConfirm.mockResolvedValue(true);
@@ -424,7 +430,7 @@ test("KA9 sumber insentif: keduanya dari pay_on_invoice → peringatan + konfirm
   const arg = mockReason.mock.calls[0][0];
   expect(arg.message).toContain("Cara pembukuan berubah menjadi dicadangkan tiap bulan.");
   expect(mockPut).toHaveBeenCalledWith("/api/config/values", { items: [{ key: "hr.payroll_commission_mode",
-    value: "auto_and_sheet", scope_type: "entity", scope_id: "ent_kanda", reason: "alasan uji" }] });
+    value: "auto_and_sheet", scope_type: "entity", scope_id: "ent_kanda", reason: "alasan uji", effective_from: "" }] });
   // ③ ④ ⑤ — kunci Pusat Pengaturan per bagian; incentive_unit & strategy tidak ikut
   const kunci = mockSettings.map((o) => (o.includeKeys || []).join(","));
   expect(kunci).toEqual(expect.arrayContaining([
@@ -433,6 +439,11 @@ test("KA9 sumber insentif: keduanya dari pay_on_invoice → peringatan + konfirm
     "commission.default_margin_cap_pct"]));
   expect(kunci.join(",")).not.toMatch(/incentive_unit|commission\.strategy/);
   expect(mockSettings.every((o) => o.selectedEntity === "ent_kanda")).toBe(true);
+  // R16 — tertanam: tanpa kotak cari & pemilih cakupan per bagian; awalan testid unik; cakupan PT ditulis sekali
+  expect(mockBrowsers.map((b) => b.embedded)).toEqual(expect.arrayContaining(["scheme-price-cfg", "scheme-achievement-cfg", "scheme-cap-cfg"]));
+  expect(mockBrowsers.every((b) => !!b.embedded && !b.searchPlaceholder)).toBe(true);
+  expect(txt(q(host, "scheme-settings-scope"))).toContain("CV Kanda Suka");
+  expect(host.querySelectorAll('[data-testid="scheme-settings-scope"]')).toHaveLength(1);
   expect(q(host, "legacy-scheme-editor")).toBeNull();                  // strategi per_sku
 });
 
@@ -483,6 +494,10 @@ test("KA9 simulasi: Sekarang vs Dengan perubahan + catatan server; 403 berkalima
   expect(txt(q(host, "scheme-sim-total-now"))).toBe("Rp 420.000");
   expect(txt(q(host, "scheme-sim-total-new"))).toBe("Rp 480.000");
   expect(txt(q(host, "scheme-sim-note"))).toBe("Perubahan tarif berlaku untuk pesanan yang dibuat sesudah disimpan.");
+  expect(txt(q(host, "scheme-sim-for"))).toMatch(/^Hasil untuk Andi · \S+ \d{4}$/);
+  // R16 — masukan berubah = hasil lama dibuang
+  await isi(q(host, "scheme-sim-draft-rate-0"), "4100");
+  expect(q(host, "scheme-sim-result")).toBeNull();
   mockPost.mockRejectedValueOnce(Object.assign(new Error("x"), { response: { status: 403,
     data: { detail: "Anda tidak berwenang melihat komisi sales ini." } } }));
   await klik(q(host, "scheme-sim-run"));
@@ -508,17 +523,19 @@ test("KA9 R15 pop-up Berlaku untuk: Semua PT → POST entity_id all; tarif Semua
   await kirim(host, "rate-form");
   expect(mockPost).toHaveBeenLastCalledWith("/api/incentive-rates", { entity_id: "all", category: "Tenun",
     per_unit_amount: 2500, margin_cap_pct: 45 });
-  // tarif Semua PT yang terlihat → diubah di tempat (PATCH)
+  // R16 — tarif Semua PT yang terlihat dari satu PT: bawaan "PT ini"; "Semua PT" dipilih sendiri → diubah di tempat (PATCH)
   await klik(q(host, "rates-cat-edit-Batik"));
+  expect(q(host, "rate-form-scope-pt").checked).toBe(true);
+  expect(q(host, "rate-form-scope-warning")).toBeNull();
+  await klik(q(host, "rate-form-scope-semua_pt"));
   expect(txt(q(host, "rate-form-title"))).toBe("Ubah tarif kategori Batik");
-  expect(q(host, "rate-form-scope-semua_pt").checked).toBe(true);
+  expect(txt(q(host, "rate-form-scope-warning"))).toBe("Mengubah tarif ini berlaku untuk semua PT.");
   expect(q(host, "rate-form-amount").value).toBe("3000");
   await isi(q(host, "rate-form-amount"), "3100");
   await kirim(host, "rate-form");
   expect(mockPatch).toHaveBeenLastCalledWith("/api/incentive-rates/r_cat_all", { data: { per_unit_amount: 3100, margin_cap_pct: 50 } });
-  // … atau diganti tarif khusus PT ini (POST lapisan PT)
+  // … bawaannya = tarif khusus PT ini (POST lapisan PT)
   await klik(q(host, "rates-cat-edit-Batik"));
-  await klik(q(host, "rate-form-scope-pt"));
   expect(txt(q(host, "rate-form-title"))).toBe("Atur tarif kategori Batik");
   expect(q(host, "rate-form-amount").value).toBe("");
   await isi(q(host, "rate-form-amount"), "3300");
@@ -564,7 +581,7 @@ test("KA9 R15 Lanjutan: commission.strategy di bagian tertutup (Per SKU); jenjan
   expect(lanjut.length).toBeGreaterThan(0);
   expect(lanjut[0].includeKeys).toEqual(["commission.strategy"]);
   expect(lanjut[0].selectedEntity).toBe("ent_kanda");
-  expect(q(host, "scheme-advanced").querySelector('[data-testid="cfg-browser"]')).not.toBeNull();
+  expect(q(host, "scheme-advanced").querySelector('[data-testid="cfg-browser-scheme-advanced-cfg"]')).not.toBeNull();
   expect(txt(q(host, "scheme-advanced-help"))).toContain("Per SKU");
   expect(mockSettings.map((o) => (o.includeKeys || []).join(",")).join(",")).not.toMatch(/incentive_unit/);
   expect(q(host, "legacy-scheme-editor")).toBeNull();
@@ -575,6 +592,168 @@ test("KA9 R15 Lanjutan: commission.strategy di bagian tertutup (Per SKU); jenjan
   host = await mount(<IncentiveSchemeView />);
   expect(txt(q(host, "scheme-rates-strategy"))).toContain("Berjenjang dari pencapaian target");
   expect(q(host, "legacy-scheme-editor")).not.toBeNull();
+});
+
+// ═══ R16 — temuan tinjauan putaran 1 ═══════════════════════════════════════════════════════════════════════════════
+test("KA9 R16 sesudah simpan: daftar tertutup dimuat baru saat dibuka lagi; pesan berhasil hilang pada aksi berikutnya", async () => {
+  izin(PENUH);
+  let tarifKat = 3000;
+  api({ extra: { "/api/incentive-rates/articles": () => Promise.resolve({ data: { ...ARTIKEL,
+    items: [ARTIKEL.items[0], { ...ARTIKEL.items[1], rate: TARIF(tarifKat, { asal_tingkat: "kategori" }) }] } }) } });
+  const host = await mount(<IncentiveSchemeView />);
+  await klik(q(host, "rates-cat-toggle-Batik"));
+  expect(txt(q(host, "rates-art-rate-t_prg"))).toBe("ikut kategori Rp 3.000");
+  await klik(q(host, "rates-cat-toggle-Batik"));                        // tutup Batik
+  tarifKat = 3200;                                                       // tarif kategori Batik diubah
+  await klik(q(host, "rates-cat-edit-Batik"));
+  await isi(q(host, "rate-form-amount"), "3200");
+  await kirim(host, "rate-form");
+  expect(q(host, "rates-notice")).not.toBeNull();
+  const sebelum = dipanggil("/incentive-rates/articles").length;
+  await klik(q(host, "rates-cat-toggle-Batik"));                        // buka lagi → dimuat baru, bukan simpanan lama
+  expect(dipanggil("/incentive-rates/articles")).toHaveLength(sebelum + 1);
+  expect(txt(q(host, "rates-art-rate-t_prg"))).toBe("ikut kategori Rp 3.200");
+  expect(q(host, "rates-notice")).toBeNull();
+});
+
+test("KA9 R16 'artikel berikutnya' sesudah simpan: halaman benar, tanpa baris kembar", async () => {
+  izin(PENUH);
+  const SEMUA = Array.from({ length: 120 }, (_, i) => ({ template_id: `t_${i}`, name: `Artikel ${i}`, code: `A-${i}`,
+    category: "Batik", rate: TARIF(3000, { asal_tingkat: "kategori" }), own_rate_id: null, variant_exceptions: 0 }));
+  api({ extra: { "/api/incentive-rates/articles": ({ params }) => Promise.resolve({ data: { total: 120, page: params.page,
+    page_size: params.page_size, items: SEMUA.slice((params.page - 1) * params.page_size, params.page * params.page_size) } }) } });
+  const host = await mount(<IncentiveSchemeView />);
+  const baris = () => [...host.querySelectorAll('[data-testid^="rates-art-t_"]')].map((e) => e.getAttribute("data-testid"));
+  await klik(q(host, "rates-cat-toggle-Batik"));
+  await klik(q(host, "rates-more-Batik"));
+  expect(baris()).toHaveLength(100);
+  await klik(q(host, "rates-art-edit-t_5"));
+  await isi(q(host, "rate-form-amount"), "3100");
+  await kirim(host, "rate-form");
+  let p = dipanggil("/incentive-rates/articles");
+  expect(p[p.length - 1][1].params).toMatchObject({ category: "Batik", page: 1, page_size: 100 });   // muat ulang sebanyak yang termuat
+  await klik(q(host, "rates-more-Batik"));
+  p = dipanggil("/incentive-rates/articles");
+  expect(p[p.length - 1][1].params).toMatchObject({ page: 3, page_size: 50 });
+  expect(baris()).toHaveLength(120);
+  expect(new Set(baris()).size).toBe(120);
+  expect(q(host, "rates-more-Batik")).toBeNull();
+});
+
+test("KA9 R16 pop-up tarif: muat pita yang terlambat diabaikan bila sasaran berganti", async () => {
+  izin(PENUH);
+  let lepas;
+  api({ extra: { "/api/incentive-rates": () => new Promise((r) => { lepas = r; }) } });
+  const host = await mount(<IncentiveSchemeView />);
+  await klik(q(host, "rates-cat-toggle-Batik"));
+  await klik(q(host, "rates-art-edit-t_mega"));                         // tarif sendiri → pita dimuat (tertahan)
+  expect(txt(q(host, "rate-form-special-locked"))).toBe("Memuat pengali khusus…");
+  await klik(q(host, "rate-form-close"));
+  await klik(q(host, "rates-art-edit-t_prg"));
+  expect(txt(q(host, "rate-form-title"))).toBe("Atur tarif artikel Batik Parang");
+  await act(async () => { lepas({ data: [{ id: "r_mega", price_bands: [{ sampai_pct: null, pengali: 0.5 }], price_source_rules: null }] }); });
+  await settle();
+  expect(q(host, "rate-form-bands-own").checked).toBe(false);            // jawaban lama tidak mengisi artikel lain
+  expect(q(host, "rate-form-bands")).toBeNull();
+});
+
+test("KA9 R16 sumber insentif: Berlaku mulai, Riwayat, pesan tetap sesudah simpan (muat ulang diam)", async () => {
+  izin(PENUH);
+  api({ mode: "pay_on_invoice" });
+  const host = await mount(<IncentiveSchemeView />);
+  const kartuAkrual = q(host, "ins-accrual-na");
+  expect(kartuAkrual).not.toBeNull();
+  const buka = jest.fn();
+  window.addEventListener("kn-open-config", buka);
+  await klik(q(host, "scheme-source-history"));
+  window.removeEventListener("kn-open-config", buka);
+  expect(buka.mock.calls[0][0].detail.key).toBe("hr.payroll_commission_mode");
+  await klik(q(host, "scheme-source-lembar"));
+  await isi(q(host, "scheme-source-from"), "2026-12-01");
+  const nTarget = dipanggil("/incentive/targets").length;
+  await klik(q(host, "scheme-source-save"));
+  expect(mockReason.mock.calls[0][0].message).toContain("berlaku mulai");
+  expect(mockPut).toHaveBeenCalledWith("/api/config/values", { items: [{ key: "hr.payroll_commission_mode", value: "sheet",
+    scope_type: "entity", scope_id: "ent_kanda", reason: "alasan uji", effective_from: "2026-12-01" }] });
+  expect(dipanggil("/incentive/targets")).toHaveLength(nTarget + 1);
+  expect(txt(q(host, "scheme-source-msg"))).toMatch(/^Sumber insentif CV Kanda Suka dijadwalkan menjadi Dari Lembar Insentif yang disahkan mulai /);
+  expect(q(host, "scheme-source-loading")).toBeNull();
+  expect(q(host, "ins-accrual-na")).toBe(kartuAkrual);                   // kartu akrual tidak dipasang ulang
+});
+
+test("KA9 R16 tanpa incentive.view: kalimat izin di bagian 1 dan di pemilih sales simulasi", async () => {
+  izin({ sales_force: ["view"] });
+  api({ extra: { "/api/incentive/targets": Object.assign(new Error("x"), { response: { status: 403,
+    data: { detail: "Anda belum punya akses." } } }) } });
+  const host = await mount(<IncentiveSchemeView />);
+  expect(txt(q(host, "scheme-source-denied"))).toBe(TEKS_SUMBER_TANPA_IZIN);
+  expect(TEKS_SUMBER_TANPA_IZIN).toBe("Melihat sumber insentif butuh akses Lihat di modul Kinerja & Insentif.");
+  expect(q(host, "scheme-source-load-error")).toBeNull();
+  expect(txt(q(host, "scheme-sim-sales-denied"))).toBe(TEKS_SALES_TANPA_IZIN);
+  expect(q(host, "scheme-sim-sales")).toBeNull();
+  expect(q(host, "scheme-sim-run").disabled).toBe(true);
+});
+
+test("KA9 R16 simulasi: daftar artikel terpotong ditulis + bisa dicari; galat baca strategi tertulis", async () => {
+  izin(PENUH);
+  api({ extra: {
+    "/api/incentive-rates/articles": ({ params }) => Promise.resolve({ data: { ...ARTIKEL, total: params.search ? 1 : 250 } }),
+    "/api/config/explain": Object.assign(new Error("x"), { response: { status: 500, data: { detail: "Server sibuk." } } }),
+  } });
+  const host = await mount(<IncentiveSchemeView />);
+  expect(txt(q(host, "scheme-strategy-error"))).toContain("Cara menghitung komisi PT ini tidak bisa dibaca.");
+  await klik(q(host, "scheme-sim-draft-add"));
+  await isi(q(host, "scheme-sim-draft-cat-0"), "Batik");
+  let p = dipanggil("/incentive-rates/articles");
+  expect(p[p.length - 1][1].params).toMatchObject({ category: "Batik", page: 1, page_size: 200 });
+  expect(txt(q(host, "scheme-sim-draft-capped-0"))).toBe(TEKS_ARTIKEL_TERPOTONG);
+  expect(TEKS_ARTIKEL_TERPOTONG).toBe("Menampilkan 200 artikel pertama — cari untuk mempersempit");
+  await isi(q(host, "scheme-sim-draft-search-0"), "mega");
+  await act(async () => { q(host, "scheme-sim-draft-search-0").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  await settle();
+  p = dipanggil("/incentive-rates/articles");
+  expect(p[p.length - 1][1].params).toMatchObject({ category: "Batik", search: "mega", page_size: 200 });
+  expect(q(host, "scheme-sim-draft-capped-0")).toBeNull();
+});
+
+test("KA9 R16 kecil: fokus deep link dilepas di cabang tanpa isi; label isian tarif terikat ke isiannya", async () => {
+  const lepas = jest.fn();
+  izin(PENUH);
+  api({ extra: { "/api/incentive-rates": TARIF_GRUP } });
+  let host = await mount(<IncentiveSchemeView focusKey="commission.price_bands" focusNonce={1} onFocusConsumed={lepas} />, { entity: "all" });
+  expect(lepas).toHaveBeenCalledTimes(1);
+  document.body.innerHTML = "";
+  izin({ incentive: ["view"] });
+  host = await mount(<IncentiveSchemeView focusKey="commission.price_bands" focusNonce={2} onFocusConsumed={lepas} />);
+  expect(q(host, "scheme-no-access")).not.toBeNull();
+  expect(lepas).toHaveBeenCalledTimes(2);
+  document.body.innerHTML = "";
+  izin(PENUH);
+  api();
+  host = await mount(<IncentiveSchemeView />);
+  await klik(q(host, "rates-cat-edit-Tenun"));
+  expect(host.querySelector('label[for="rate-form-amount"]')).not.toBeNull();
+  expect(q(host, "rate-form-amount").id).toBe("rate-form-amount");
+  expect(host.querySelector('label[for="rate-form-margin"]')).not.toBeNull();
+  expect(q(host, "rate-form-margin").id).toBe("rate-form-margin");
+});
+
+test("KA9 R16 SettingsBrowser tertanam: tanpa kotak cari & pemilih cakupan, testid berawalan", async () => {
+  const s = { items: [], term: "", groups: [{ id: "penjualan", label: "Penjualan & harga", count: 0 }], group: "penjualan",
+    filter: "all", health: {}, caps: { settings_view: true, settings_manage: true }, openKeys: new Set(), lockedGroup: "",
+    locked: true, highlight: "", section: "", setEntities: () => {}, cardRefs: { current: {} }, q: "", setQ: () => {},
+    scopeType: "entity", scopeId: "ent_kanda", loading: false, error: "", denied: "", restore: null };
+  let host = await mount(<SettingsBrowserAsli s={s} entities={ENT} groupNav="chips" embedded="scheme-price-cfg" />);
+  expect(q(host, "cfg-search")).toBeNull();
+  expect(q(host, "cfg-scope-box")).toBeNull();
+  expect(q(host, "cfg-group-head")).toBeNull();
+  expect(q(host, "scheme-price-cfg-empty")).not.toBeNull();
+  expect(q(host, "cfg-empty")).toBeNull();
+  document.body.innerHTML = "";
+  host = await mount(<SettingsBrowserAsli s={s} entities={ENT} groupNav="chips" />);   // bawaan layar lain tidak berubah
+  expect(q(host, "cfg-search")).not.toBeNull();
+  expect(q(host, "cfg-scope-box")).not.toBeNull();
+  expect(q(host, "cfg-empty")).not.toBeNull();
 });
 
 // ═══ Layar lama ══════════════════════════════════════════════════════════════════════════════════════════════════
