@@ -26,6 +26,11 @@
      "advanced": false
     },
     {
+     "id": "komisi-pengali",
+     "label": "Komisi sales: pengali",
+     "advanced": false
+    },
+    {
      "id": "saran-pos",
      "label": "Saran produk di kasir (POS)",
      "advanced": false
@@ -613,6 +618,30 @@
   "commission.discount_potong_rp": [
    "penjualan",
    "komisi"
+  ],
+  "commission.price_basis": [
+   "penjualan",
+   "komisi-pengali"
+  ],
+  "commission.price_bands": [
+   "penjualan",
+   "komisi-pengali"
+  ],
+  "commission.price_source_rules": [
+   "penjualan",
+   "komisi-pengali"
+  ],
+  "commission.achievement_multiplier": [
+   "penjualan",
+   "komisi-pengali"
+  ],
+  "commission.achievement_basis": [
+   "penjualan",
+   "komisi-pengali"
+  ],
+  "commission.achievement_tiers": [
+   "penjualan",
+   "komisi-pengali"
   ],
   "approval.extra_levels": [
    "persetujuan",
