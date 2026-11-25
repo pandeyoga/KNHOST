@@ -21,11 +21,12 @@ export default function CuttingReceiveDialog({ row, locations = [], siblings = 1
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
+  const semua = all && siblings > 1;
   const kirim = async () => {
     if (busy) return;
     setBusy(true); setErr("");
     try {
-      if (all) {
+      if (semua) {
         const res = await receiveOrderCuts(row.order_id, dest);
         if ((res?.failed || []).length) {
           setErr(`${res.received} diterima; gagal: ${res.failed.map((f) => `${f.product_name} (${f.error})`).join("; ")}`);
@@ -40,7 +41,7 @@ export default function CuttingReceiveDialog({ row, locations = [], siblings = 1
         else onDone?.(`${row.number}: hasil potong diterima.`);
       }
     } catch (e) {
-      setErr(apiErrorText(e, all ? "Gagal menerima hasil potong pesanan ini." : "Gagal menerima hasil potong."));
+      setErr(apiErrorText(e, semua ? "Gagal menerima hasil potong pesanan ini." : "Gagal menerima hasil potong."));
     } finally {
       setBusy(false);
     }

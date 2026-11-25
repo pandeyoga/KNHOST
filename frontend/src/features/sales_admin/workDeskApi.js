@@ -145,6 +145,7 @@ const BADGE_LABEL = {
   partial: "Tertutup sebagian",
   uncovered: "Belum ada penutup",
   lewat: "Lewat tempo",
+  terlambat: "Terlambat",
   segera: "Segera jatuh tempo",
   pending_approval: "Menunggu persetujuan",
   pending_process: "Menunggu diproses",
@@ -179,7 +180,7 @@ const BADGE_TONE = {
 };
 
 const BADGE_GROUP = {
-  danger: ["lewat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high"],
+  danger: ["lewat", "terlambat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high"],
   warn: ["segera", "partial", "menunggu", "menunggu acc", "ditahan", "waiting_approval", "waiting_stock",
          "pending_approval", "pending_process", "pending", "draft", "warning", "medium"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],

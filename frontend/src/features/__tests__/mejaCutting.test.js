@@ -109,3 +109,56 @@ test("tanpa px mentah & hex", () => {
     expect(src).not.toMatch(/text-\[\d/); expect(src).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
   }
 });
+
+// ── Putaran perbaikan 1 ──
+const READY = { key: "ready", label: "Siap dikirim", rows: [
+  { task_id: "r1", order_id: "o5", order_number: "SOS-5", customer_name: "Toko Ayu", product_name: "Satin", sku: "ST-1",
+    sample_kind: "hanger", quantity: 2, unit: "meter", warehouse_id: "w1", warehouse_name: "Gudang A", wait_minutes: 90,
+    roll_owner_entity_id: "ent_ksc" }] };
+const LATE = { ...DATA, queues: [DATA.queues[0], { ...DATA.queues[1], rows: [
+  { ...DATA.queues[1].rows[0], wait_minutes: 300 }, { ...DATA.queues[1].rows[1], wait_minutes: 90 }] }, READY] };
+
+test("baris ready: tanpa jalur terima (pop-up rincian tanpa aksi & tanpa layar penuh)", async () => {
+  routeGet({ "/cutting/desk": LATE, "/cutting/locations": [{ id: "w1", name: "Gudang A" }] });
+  await mount(<CuttingDesk canReceive />);
+  expect(q("cutting-action-r1")).toBeNull();
+  await klik("cutting-row-r1");
+  expect(q("cutting-detail")).not.toBeNull();
+  expect(q("cutting-detail-action")).toBeNull();
+  expect(q("cutting-detail-open-full")).toBeNull();
+  expect(q("cutting-receive-submit")).toBeNull();
+});
+
+test("tanpa izin: baris to_receive tidak membuka pop-up terima", async () => {
+  routeGet({ "/cutting/desk": LATE, "/cutting/locations": [] });
+  await mount(<CuttingDesk canReceive={false} />);
+  await klik("cutting-row-t9");
+  expect(q("cutting-detail-action")).toBeNull();
+  expect(q("cutting-receive-submit")).toBeNull();
+  const rows = toCuttingQueues(LATE, { canReceive: false }).flatMap((x) => x.rows);
+  expect(rows.every((r) => r.action_kind === "")).toBe(true);
+});
+
+test("waktu tunggu: subtitle + lencana terlambat/perhatian; ready = 'diterima setelah'", () => {
+  const [tr, rd] = toCuttingQueues(LATE, { canReceive: true });
+  expect(tr.rows[0].subtitle).toContain("menunggu 5 j 0 mnt");
+  expect(tr.rows[0].badge).toBe("terlambat");
+  expect(tr.rows[1].subtitle).toContain("menunggu 1 j 30 mnt");
+  expect(tr.rows[1].badge).toBe("warning");
+  expect(rd.rows[0].subtitle).toContain("diterima setelah 1 j 30 mnt");
+  expect(rd.rows[0].subtitle).not.toMatch(/menunggu/);
+  expect(rd.rows[0].badge).toBe("");
+  expect(rd.rows[0].action_kind).toBe("");
+});
+
+test("Terlambat tampil sebagai lencana baris", async () => {
+  routeGet({ "/cutting/desk": LATE, "/cutting/locations": [] });
+  await mount(<CuttingDesk canReceive />);
+  expect(teks(q("cutting-badge-t9"))).toBe("Terlambat");
+});
+
+test("ringkasan 'menunggu dipotong' sama ukuran tetap dengan kartu lain", async () => {
+  routeGet({ "/cutting/desk": DATA, "/cutting/locations": [] });
+  await mount(<CuttingDesk canReceive />);
+  expect(q("cutting-queue-to_cut").className).toContain("sm:h-[412px]");
+});

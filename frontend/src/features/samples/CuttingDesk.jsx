@@ -8,7 +8,8 @@ import { entityShortById } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import { toast } from "@/hooks/use-toast";
-import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
+import DeskQueueCard, { DESK_CARD_CLASS, DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
+import { queueMeta } from "../sales_admin/workDeskApi";
 import { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { cuttingDesk, cuttingLocations } from "./sampleApi";
 import CuttingReceiveDialog from "./CuttingReceiveDialog";
@@ -25,12 +26,20 @@ const fmtWait = (m) => (m < 60 ? `${m} mnt` : m < 1440 ? `${Math.floor(m / 60)} 
 export function toCuttingQueues(data, { canReceive = false, entities = [] } = {}) {
   const list = Array.isArray(data?.queues) ? data.queues : [];
   return list.filter((q) => KEYS.includes(q.key)).map((q) => {
-    const rows = (q.rows || []).map((r) => ({
+    const th = data?.wait_thresholds;
+    const rows = (q.rows || []).map((r) => {
+      const m = r.wait_minutes;
+      const done = q.key === "ready";
+      const wait = m == null ? "" : done ? `diterima setelah ${fmtWait(m)}` : `menunggu ${fmtWait(m)}`;
+      const level = !th || m == null || done ? "" : m >= th.late_minutes ? "terlambat" : m >= th.warn_minutes ? "warning" : "";
+      const canAct = q.key === "to_receive" && canReceive;
+      return {
       ref_type: "wms_task", ref_id: r.task_id, row_key: r.task_id, number: r.order_number, title: r.customer_name || "—",
       subtitle: [
         [r.product_name, r.sku].filter(Boolean).join(" · "),
         KIND[r.sample_kind] || r.sample_kind,
         `${formatQty(r.quantity)} ${r.unit || ""}`.trim(),
+        wait,
         r.warehouse_name || r.warehouse_id,
         r.child_roll_no ? `potongan ${r.child_roll_no} dari ${r.parent_roll_no}` : "",
         r.source_owner_entity_id ? `stok milik ${entityShortById(entities, r.source_owner_entity_id, "PT lain")} — tunggu pembelian internal` : "",
@@ -40,8 +49,10 @@ export function toCuttingQueues(data, { canReceive = false, entities = [] } = {}
       value: Number(r.quantity) || 0, unit: r.unit, age_days: Math.floor((r.wait_minutes || 0) / 1440), at: r.cut_at || "",
       entity_id: r.roll_owner_entity_id || "", order_id: r.order_id, warehouse_id: r.warehouse_id,
       roll_owner_entity_id: r.roll_owner_entity_id,
-      action: q.key === "to_receive" && canReceive ? "Terima" : "", action_kind: "receive_cut",
-    }));
+      badge: level,
+      action: canAct ? "Terima" : "", action_kind: canAct ? "receive_cut" : "",
+      };
+    });
     return { id: q.key, label: q.label, count: rows.length, value_kind: "qty", value_label: "Qty", action_label: "", rows };
   });
 }
@@ -69,7 +80,7 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
   }, [load]);
 
   const handleAction = (row) => {
-    if (row.action_kind === "receive_cut") setRecvRow(row);
+    if (canReceive && row.action_kind === "receive_cut" && row.action) setRecvRow(row);
   };
   const toCut = (data?.queues || []).find((x) => x.key === "to_cut");
   const queues = toCuttingQueues(data, { canReceive, entities });
@@ -90,7 +101,10 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
           antrean terbuka melebihi batas, tanda ini muncul (dulu tugas baru hilang diam-diam setelah 500 tugas sample). */}
       <ListLimitNote meta={data?.truncated ? { total: data.total_open, truncated: true, shown: data.shown, skip: 0 } : null}
         noun="tugas potong terbuka" hint="yang tampil = tugas terbuka TERBARU; tugas terbuka paling lama tidak ikut — tuntaskan atau batalkan di Operasi Gudang › Cutting." testId="cutting-desk-limit" />
-      {!data ? (
+      {!data && error ? (
+        <div data-testid="cutting-empty" className="section-card section-pad text-center text-fs-13 text-kn-text-2">
+          Meja Cutting belum bisa dimuat — gunakan tombol muat ulang.</div>
+      ) : !data ? (
         <div data-testid="cutting-loading" className={DESK_GRID_CLASS}>
           {[0, 1].map((i) => <DeskQueueCardSkeleton key={i} testPrefix={P} index={i} />)}
         </div>
@@ -99,7 +113,7 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
           {toCut && <ToCutSummary queue={toCut} />}
           {queues.map((qq) => (
             <DeskQueueCard key={qq.id} queue={qq} testPrefix={P} stateKey={`${P}:${qq.id}`} inPlace={IN_PLACE}
-              onAction={handleAction} onOpenFull={handleAction} />
+              onAction={handleAction} />
           ))}
         </div>
       )}
@@ -122,12 +136,20 @@ function ToCutSummary({ queue }) {
   const numbers = [...new Set(rows.map((r) => r.order_number).filter(Boolean))];
   const shown = numbers.slice(0, 8).join(", ");
   const more = numbers.length > 8 ? ` +${numbers.length - 8} lainnya` : "";
+  const meta = queueMeta(queue.key);
+  const Icon = meta.icon;
   return (
-    <div data-testid={`cutting-queue-${queue.key}`} className="section-card overflow-hidden">
-      <p className="flex items-center justify-between border-b border-kn-divider px-3 py-2 text-fs-14 font-semibold text-kn-text">
-        {queue.label}<span data-testid={`cutting-queue-count-${queue.key}`} className="rounded-full bg-kn-neutral-soft px-2 py-0.5 text-fs-12 font-medium tabular-nums">{rows.length}</span></p>
-      <div className="grid gap-2 p-3 text-fs-13">
-        {rows.length === 0 ? <p className="text-center text-fs-12 text-kn-text-2">Kosong.</p> : (
+    <div data-testid={`cutting-queue-${queue.key}`} className={`section-card ${DESK_CARD_CLASS}`}>
+      <header className="flex h-11 shrink-0 items-center gap-2 px-3">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: meta.bg }}>
+          <Icon size={15} style={{ color: meta.tone }} aria-hidden="true" />
+        </span>
+        <h3 className="min-w-0 truncate text-fs-14 font-semibold text-kn-text" title={queue.label}>{queue.label}</h3>
+        <span data-testid={`cutting-queue-count-${queue.key}`} className="shrink-0 rounded-full px-2 py-0.5 text-fs-12 font-medium tabular-nums"
+          style={{ background: meta.bg, color: meta.tone }}>{rows.length}</span>
+      </header>
+      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-3 text-fs-13">
+        {rows.length === 0 ? <p className="grid h-full place-items-center text-center text-fs-12 text-kn-text-2">Kosong.</p> : (
           <p data-testid="cutting-to-cut-numbers" className="text-fs-13 text-kn-text">
             {rows.length} baris potong dari {numbers.length} pesanan: <b>{shown}</b>{more}.
           </p>
