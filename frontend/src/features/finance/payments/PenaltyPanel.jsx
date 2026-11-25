@@ -21,6 +21,7 @@ import KNSelect from "../../../components/KNSelect";
 import FormModal from "../../../components/FormModal";
 import { askConfirm } from "../../../services/confirmService";
 import { openTrace } from "../../documents/trace/traceDeepLink";
+import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — dasar denda (pesanan) membuka rincian
 import {
   adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyAccounts, penaltyMeta, waivePenalty,
 } from "./paymentApi";
@@ -157,6 +158,12 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                       {Number(p.days_prior || 0) > 0 ? ` (${p.billable_days} hari di nota ini)` : ""}
                       {p.reason_label ? ` · ${p.reason_label}` : ""}
                     </p>
+                    {p.doc_type === "sales_order" && p.doc_id && (
+                      <p className="text-fs-12 text-kn-text-2" data-testid={`penalty-base-wrap-${p.id}`}>Dasar:{" "}
+                        <DocLink docType="sales_order" docId={p.doc_id} number={p.doc_number} entityId={p.entity_id}
+                          perms={currentUser?.permissions} testId={`penalty-base-${p.id}`} />
+                      </p>
+                    )}
                     {(p.explain || []).length > 0 && (
                       <p className="truncate text-[9.5px] text-[#9A9BA3]" title={(p.explain || []).join(" · ")}>
                         {(p.explain || [])[2] || (p.explain || [])[0]}

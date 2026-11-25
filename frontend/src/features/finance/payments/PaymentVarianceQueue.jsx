@@ -15,6 +15,7 @@ import {
 import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { openTrace } from "../../documents/trace/traceDeepLink";
+import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — nomor kwitansi membuka rincian
 import PaymentVarianceDialog from "./PaymentVarianceDialog";
 import {
   decideVariance, directionMeta, errText, listVariances, money, reverseVariance,
@@ -204,10 +205,12 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
                       <tr key={p.receipt_id} data-testid={`pv-pending-row-${p.receipt_id}`}
                         className="border-b border-[#F5F5F7] hover:bg-[#FAFBFC]">
                         <td className="px-2 py-2 font-semibold text-[#0058CC]">
-                          <button type="button" className="hover:underline"
-                            data-testid={`pv-pending-trace-${p.receipt_id}`}
+                          <DocLink docType="ar_receipt" docId={p.receipt_id} number={p.number} entityId={p.entity_id}
+                            perms={currentUser?.permissions} testId={`pv-pending-doc-${p.receipt_id}`} />
+                          <button type="button" className="icon-button ml-1 align-middle" title="Buka Jejak Dokumen"
+                            aria-label={`Jejak dokumen ${p.number}`} data-testid={`pv-pending-trace-${p.receipt_id}`}
                             onClick={() => openTrace({ docType: "ar_receipt", docId: p.receipt_id, number: p.number })}>
-                            {p.number}
+                            <Route size={12} aria-hidden="true" />
                           </button>
                           <EntityBadge entityId={p.entity_id} />
                         </td>
@@ -294,7 +297,10 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
                         )}
                       </td>
                       <td className="px-2 py-2 text-[#3C3C43]">
-                        {d.receipt_number || d.bill_number || "—"}
+                        {d.receipt_id ? (
+                          <DocLink docType="ar_receipt" docId={d.receipt_id} number={d.receipt_number} entityId={d.entity_id}
+                            perms={currentUser?.permissions} testId={`pv-decision-doc-${d.id}`} />
+                        ) : (d.receipt_number || d.bill_number || "—")}
                         {onOpenDocument && d.receipt_id && (
                           <button type="button" title="Buka Jejak Dokumen"
                             data-testid={`pv-decision-src-${d.id}`}

@@ -20,6 +20,8 @@ import FocusNotice from "../../components/FocusNotice";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { useAppNav } from "../../context/AppNavContext";
 import { ROW_TARGET } from "../sales_admin/workDeskApi";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — nomor pesanan membuka rincian barang
+import { PreviewLines } from "../documents/preview/previewParts";
 import TaxOutputRecon from "./TaxOutputRecon";
 import TaxIssueDialog from "./TaxIssueDialog";
 
@@ -91,13 +93,11 @@ function IncompletePill({ fkt, onOpen }) {
 }
 
 /** TX-T2 — kolom "Sumber": pesanan (bisa dibuka) + surat jalan / nota kredit di bawahnya. */
-function SourceCell({ fkt, onOpenOrder }) {
+function SourceCell({ fkt, perms }) {
   return (
     <div className="min-w-0">
-      {fkt.order_id && onOpenOrder ? (
-        <button type="button" className="link-button whitespace-nowrap" data-testid={`fkt-source-${fkt.id}`}
-          onClick={() => onOpenOrder(fkt)}>{fkt.order_number || "Pesanan"}</button>
-      ) : <span className="whitespace-nowrap">{fkt.order_number || "—"}</span>}
+      <DocLink docType="sales_order" docId={fkt.order_id} number={fkt.order_number || "Pesanan"} entityId={fkt.entity_id}
+        perms={perms} className="whitespace-nowrap" testId={`fkt-source-${fkt.id}`}>{fkt.order_number || (fkt.order_id ? "Pesanan" : "—")}</DocLink>
       {fkt.trigger === "surat_jalan" && fkt.shipment_no && (
         <span className="block text-fs-12 text-kn-text-2">Surat jalan <span className="whitespace-nowrap">{fkt.shipment_no}</span></span>
       )}
@@ -131,8 +131,6 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
   const canIssue = can(perms, "tax_invoice", "create");   // TX-T2 — terbitkan draf / bangun ulang draf
   const { entities } = useEntityScope();
   const nav = useAppNav();
-  const openOrder = (f) => nav?.openDocument && nav.openDocument({ ...ROW_TARGET.sales_order, focus_id: f.order_id,
-    number: f.order_number });
   const openCustomer = (f) => nav?.openDocument && nav.openDocument({ ...ROW_TARGET.customer, focus_id: f.customer_id,
     number: f.customer_name });
 
@@ -347,7 +345,7 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                               : <span className="text-kn-warning-text">belum diisi</span>}
                           </span>
                         </td>
-                        <td><SourceCell fkt={f} onOpenOrder={openOrder} /></td>
+                        <td><SourceCell fkt={f} perms={perms} /></td>
                         <td>
                           <span className="block max-w-[150px] truncate" title={f.customer_name}>{f.customer_name}</span>
                           <span className="block text-fs-12 text-kn-text-2">{buyerId(f)}</span>
@@ -541,6 +539,18 @@ function TaxInvoiceDetail({ fkt, onClose }) {
         </div>
         <div className="section-body space-y-3">
           <div className="flex flex-wrap items-center gap-2"><StatusPill status={fkt.status} /><IncompletePill fkt={fkt} /></div>
+          <section data-testid="fkt-detail-items">
+            <h3 className="field-label">Barang</h3>
+            <PreviewLines testId="fkt-detail-lines" empty="Faktur ini tidak membawa rincian barang."
+              rows={fkt.items || []}
+              columns={[
+                { key: "product_name", label: "Barang", render: (r) => (
+                  <>{r.product_name || "—"}{r.sku ? <span className="block text-fs-12 text-kn-text-2">{r.sku}</span> : null}</>) },
+                { key: "quantity", label: "Jumlah", align: "right", render: (r) => `${Number(r.quantity || 0)} ${r.unit || ""}`.trim() },
+                { key: "price", label: "Harga", align: "right", render: (r) => formatCurrency(r.price) },
+                { key: "line_total", label: "Subtotal", align: "right", render: (r) => formatCurrency(r.line_total ?? r.subtotal) },
+              ]} />
+          </section>
           <section data-testid="fkt-detail-rules">
             <h3 className="field-label">Aturan pajak saat terbit</h3>
             {aturan ? (

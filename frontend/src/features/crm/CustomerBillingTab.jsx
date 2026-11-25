@@ -12,7 +12,7 @@
  * MN-T3 — `show`: "schedule" (bagian kartu "Tagihan & Jadwal"), "penalty" (bagian "Denda & Kasus"), bawaan keduanya.
  */
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, ShieldAlert, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Route, ShieldAlert, XCircle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import { docStatusLabel } from "../../utils/docStatus";
 import { can } from "../../config/roles";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — nomor pesanan membuka rincian barang
 import PenaltyPanel from "../finance/payments/PenaltyPanel";
 import { SCOPE_LABEL } from "./creditOverrideUi";   // CR-T3 — lingkup izin kredit
 
@@ -95,9 +96,12 @@ export default function CustomerBillingTab({ customer, currentUser, selectedEnti
                   {rows.map((ln) => (
                     <tr key={`${ln.order_id}:${ln.line_id || ln.seq}`} data-testid={`customer-billing-row-${ln.order_id}-${ln.seq}`}>
                       <td className="whitespace-nowrap">
-                        <button type="button" className="link-button font-semibold"
+                        <DocLink docType="sales_order" docId={ln.order_id} number={ln.order_number} entityId={entityId}
+                          perms={perms} className="font-semibold" testId={`customer-billing-doc-${ln.order_id}-${ln.seq}`} />
+                        <button type="button" className="icon-button ml-1 align-middle" title="Jejak Dokumen"
+                          aria-label={`Jejak dokumen ${ln.order_number}`} data-testid={`customer-billing-trace-${ln.order_id}-${ln.seq}`}
                           onClick={() => openTrace({ docType: "sales_order", docId: ln.order_id, number: ln.order_number })}>
-                          {ln.order_number}
+                          <Route size={13} aria-hidden="true" />
                         </button>
                       </td>
                       <td className="min-w-[110px]">

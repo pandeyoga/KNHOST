@@ -125,7 +125,7 @@ test("Draf: status ikon+teks, kolom Sumber, saringan Draf/Diganti, sakelar jenis
   routeGet({ "/tax-invoices": [DRAF, DIGANTI, RETUR], "/tax/output-reconciliation": RECON,
     "/settings/effective": { tax: { kode_transaksi_diizinkan: ["01", "04"] } } });
   const buka = jest.fn();
-  await mount(wrap(<TaxInvoices currentUser={{ role: "admin", permissions: PERMS }} />, { onOpen: buka }));
+  await mount(wrap(<TaxInvoices currentUser={{ role: "admin", permissions: { ...PERMS, order: ["view"] } }} />, { onOpen: buka }));
   // Cek layar integrator (1024 px): 8 kolom = 1069 px > kartu ±730 px → 5 kolom; NSFP di bawah nomor, DPP · PPN · total
   // satu kolom berlabel.
   expect([...q("fkt-table").querySelectorAll("thead th")].map((t) => t.textContent)).toEqual([
@@ -143,8 +143,9 @@ test("Draf: status ikon+teks, kolom Sumber, saringan Draf/Diganti, sakelar jenis
   expect(q("fkt-nsfp-d1")).toBeNull();                                 // draf: NSFP diisi saat terbit
   expect(q("fkt-cancel-d1")).toBeNull();
   expect(q("fkt-replace-f0")).toBeNull();                              // diganti: tidak bisa diganti lagi
+  // Meja gelombang 2 (Tugas 4): nomor pesanan membuka pratinjau pop-up, tidak lagi pindah layar.
   await click(q("fkt-source-d1"));
-  expect(buka).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "sales_order", focus_id: "so1" }));
+  expect(buka).not.toHaveBeenCalled();
   await click(q("fkt-incomplete-d1"));
   expect(buka).toHaveBeenCalledWith(expect.objectContaining({ focus_type: "customer", focus_id: "cus1" }));
   await pilih(q("fkt-kind"), "retur");

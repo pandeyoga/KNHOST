@@ -23,12 +23,13 @@
 import { useState } from "react";
 import {
   FileText, Loader2, Receipt, X, BadgeDollarSign, Wallet, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Truck,
-  BookOpen, PhoneCall,
+  BookOpen, PhoneCall, Route,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
 import PenaltyPanel from "./payments/PenaltyPanel";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — nomor pesanan membuka rincian barang
 import { penaltyMeta } from "./payments/paymentApi";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
@@ -168,7 +169,8 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                           aria-label={`${open[it.order_id] ? "Tutup" : "Buka"} rincian surat jalan ${it.order_number}`}>
                           {open[it.order_id] ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
                         </button>
-                        {it.order_number}
+                        <DocLink docType="sales_order" docId={it.order_id} number={it.order_number} entityId={it.entity_id}
+                          perms={perms} testId={`ar-aging-order-${it.order_id}`} />
                         {it.has_plan && (
                           <span className="ml-1 rounded bg-[#EFF4FF] px-1 text-[9px] font-bold text-[#0058CC]"
                             title={`Rencana pembayaran ${it.plan_number}`}>RPB</span>
@@ -237,7 +239,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
               </table>
             </div>
 
-            <BillingSchedule items={detail.items || []} />
+            <BillingSchedule items={detail.items || []} perms={perms} />
 
             {/* Nota denda nyata + keputusannya (terbitkan / ubah / bebaskan / catat bayar) */}
             <div>
@@ -376,12 +378,12 @@ function LateCell({ ln }) {
 const SCHEDULE_FILTER_FROM = 8;
 
 /** CR-T2 — Jadwal Tagihan pelanggan: baris jadwal tersimpan (tanpa bagian belum dikirim), jatuh tempo tertua dulu. */
-function BillingSchedule({ items }) {
+function BillingSchedule({ items, perms }) {
   const [cari, setCari] = useState("");
   const [hanyaTelat, setHanyaTelat] = useState(false);
   const semua = items
     .flatMap((it) => (it.lines || []).filter((ln) => ln.sumber !== "belum_dikirim")
-      .map((ln) => ({ ...ln, order_id: it.order_id, order_number: it.order_number })))
+      .map((ln) => ({ ...ln, order_id: it.order_id, order_number: it.order_number, entity_id: it.entity_id })))
     .sort((a, b) => String(a.jatuh_tempo || "9999").localeCompare(String(b.jatuh_tempo || "9999")));
   const kata = cari.trim().toLowerCase();
   const rows = semua.filter((ln) => (!hanyaTelat || ln.hari_lewat > 0)
@@ -425,9 +427,12 @@ function BillingSchedule({ items }) {
               {rows.map((ln) => (
                 <tr key={`${ln.order_id}:${ln.line_id || ln.ref_id}:${ln.jurnal_id || ""}`} data-testid={`ar-schedule-${ln.order_id}-${ln.sumber}`}>
                   <td className="whitespace-nowrap">
-                    <button type="button" className="link-button font-semibold"
+                    <DocLink docType="sales_order" docId={ln.order_id} number={ln.order_number} entityId={ln.entity_id}
+                      perms={perms} className="font-semibold" testId={`ar-schedule-doc-${ln.order_id}-${ln.sumber}`} />
+                    <button type="button" className="icon-button ml-1 align-middle" title="Jejak Dokumen"
+                      aria-label={`Jejak dokumen ${ln.order_number}`} data-testid={`ar-schedule-trace-${ln.order_id}-${ln.sumber}`}
                       onClick={() => openTrace({ docType: "sales_order", docId: ln.order_id, number: ln.order_number })}>
-                      {ln.order_number}
+                      <Route size={13} aria-hidden="true" />
                     </button>
                   </td>
                   <td>

@@ -10,6 +10,7 @@ import { can } from "../../config/roles";
 import { KpiTile, fmtDate } from "./crmUtils";
 import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import { CustomerCardLink } from "../finance/cards/partyCards";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — nomor pesanan membuka rincian barang
 import ARReceiptsHistory from "./ARReceiptsHistory";
 import FocusNotice from "../../components/FocusNotice";
 import useFocusDoc from "../../hooks/useFocusDoc";
@@ -114,7 +115,10 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                         perms={currentUser?.permissions} testId={`collection-card-${r.order_id}`} /></p>
                       <p className="text-[10px] text-[#6B6B73]">{r.sales_name}{r.reminded && <span className="ml-1 text-[#1E8E5A]">· diingatkan</span>}</p>
                     </div>
-                    <span className="text-[#0058CC] font-semibold">{r.order_number}</span>
+                    <span className="min-w-0 break-words font-semibold">
+                      <DocLink docType="sales_order" docId={r.order_id} number={r.order_number} entityId={r.entity_id}
+                        perms={currentUser?.permissions} testId={`collection-order-${r.order_id}`} />
+                    </span>
                     <span className="tabular-nums font-semibold">{formatCurrency(r.outstanding)}</span>
                     <span className="text-[#6B6B73]">{fmtDate(r.due_date)}</span>
                     <span>{r.overdue ? (

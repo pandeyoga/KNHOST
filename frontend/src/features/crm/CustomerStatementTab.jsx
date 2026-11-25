@@ -12,7 +12,7 @@
  *  · Mode "Semua PT": rekening koran memakai PT pemilik data pelanggan (server menolak gabungan).
  */
 import { useCallback, useEffect, useState } from "react";
-import { Copy, FileDown, Search } from "lucide-react";
+import { Copy, FileDown, Route, Search } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNDatePicker from "../../components/KNDatePicker";
@@ -20,6 +20,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { can } from "../../config/roles";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — nomor pesanan / kwitansi membuka rincian
 import { copyText } from "../finance/creditDeskParts";
 
 const awalBulan = (tgl) => `${tgl.slice(0, 8)}01`;
@@ -30,7 +31,10 @@ export const namaBerkas = (s) => String(s || "").normalize("NFKD").replace(/[^\w
   .replace(/^-|-$/g, "").toLowerCase() || "pelanggan";
 const Money = ({ v }) => <span className="whitespace-nowrap tabular-nums">{formatCurrency(v)}</span>;
 
-function StatementTable({ part, from, to, testId }) {
+/** Jenis baris yang punya pratinjau (selain itu tetap tombol Jejak). */
+const PREVIEW_TYPES = ["sales_order", "ar_receipt"];
+
+function StatementTable({ part, from, to, testId, perms, entityId }) {
   return (
     <div className="table-wrap">
       <table className="data-table head-wrap" data-testid={testId}>
@@ -51,10 +55,24 @@ function StatementTable({ part, from, to, testId }) {
               <td className="whitespace-nowrap">{formatDate(r.date)}</td>
               <td className="min-w-[120px]">
                 <span className="block text-fs-12 text-kn-text-2">{r.doc_label}</span>
-                <button type="button" className="link-button font-semibold" data-testid={`${testId}-doc-${r.je_id}`}
-                  onClick={() => openTrace({ docType: r.trace_type, docId: r.doc_id, number: r.doc_number })}>
-                  {r.doc_number || "—"}
-                </button>
+                {PREVIEW_TYPES.includes(r.trace_type) ? (
+                  <>
+                    <DocLink docType={r.trace_type} docId={r.doc_id} number={r.doc_number} entityId={entityId} perms={perms}
+                      className="font-semibold" testId={`${testId}-doc-${r.je_id}`} />
+                    {r.doc_id && (
+                      <button type="button" className="icon-button ml-1 align-middle" title="Jejak Dokumen"
+                        aria-label={`Jejak dokumen ${r.doc_number || ""}`} data-testid={`${testId}-trace-${r.je_id}`}
+                        onClick={() => openTrace({ docType: r.trace_type, docId: r.doc_id, number: r.doc_number })}>
+                        <Route size={13} aria-hidden="true" />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button type="button" className="link-button font-semibold" data-testid={`${testId}-doc-${r.je_id}`}
+                    onClick={() => openTrace({ docType: r.trace_type, docId: r.doc_id, number: r.doc_number })}>
+                    {r.doc_number || "—"}
+                  </button>
+                )}
                 {r.je_number && (
                   <button type="button" className="link-button block text-fs-12" data-testid={`${testId}-je-${r.je_id}`}
                     onClick={() => openTrace({ docType: "journal_entry", docId: r.je_id, number: r.je_number })}>
@@ -165,14 +183,14 @@ export default function CustomerStatementTab({ customer, currentUser, selectedEn
         : loading && !data ? <p className="py-6 text-center text-fs-13 text-kn-text-2" data-testid="customer-statement-loading">Memuat rekening koran…</p>
           : data && (
             <>
-              <StatementTable part={data} from={data.from} to={data.to} testId="customer-statement-table" />
+              <StatementTable part={data} from={data.from} to={data.to} testId="customer-statement-table" perms={perms} entityId={entityId} />
               {data.rows.length === 0 && (
                 <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="customer-statement-empty">Tidak ada mutasi piutang pada periode ini.</p>
               )}
               <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="customer-statement-note">{data.note}</p>
               <h4 className="mb-1 mt-3 text-fs-13 font-bold text-kn-text">Denda</h4>
               {pen && (pen.rows.length > 0 || pen.opening_balance || pen.closing_balance)
-                ? <StatementTable part={pen} from={data.from} to={data.to} testId="customer-statement-penalty" />
+                ? <StatementTable part={pen} from={data.from} to={data.to} testId="customer-statement-penalty" perms={perms} entityId={entityId} />
                 : <p className="text-fs-12 text-kn-text-2" data-testid="customer-statement-penalty-empty">Tidak ada denda pada periode ini.</p>}
               {data.reminder && (
                 <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-kn-divider bg-kn-neutral-soft p-2 text-fs-12"

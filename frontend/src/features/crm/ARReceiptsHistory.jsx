@@ -27,6 +27,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { fmtDate } from "./crmUtils";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — kwitansi & pesanan teralokasi membuka rincian
 import { can } from "../../config/roles";
 // FASE G-3 — status selisih pembayaran per kwitansi (diputus / menunggu keputusan).
 import { directionMeta, varianceKindMeta } from "../finance/payments/paymentApi";
@@ -207,7 +208,10 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
                   const StIcon = st.icon;
                   return (
                     <tr key={r.id} data-testid={`ar-history-row-${r.id}`} className={r.id === sorot ? "row-focus" : undefined}>
-                      <td className="font-mono whitespace-nowrap text-kn-action">{r.number}</td>
+                      <td className="font-mono whitespace-nowrap">
+                        <DocLink docType="ar_receipt" docId={r.id} number={r.number} entityId={r.entity_id}
+                          perms={currentUser?.permissions} testId={`ar-history-number-${r.id}`} />
+                      </td>
                       <td className="whitespace-nowrap text-kn-text-2">{fmtDate(r.receipt_date)}</td>
                       <td className="font-semibold">{r.customer_name}</td>
                       <td data-testid={`ar-history-account-${r.id}`}>
@@ -222,7 +226,15 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
                       </td>
                       <td className="font-mono text-fs-12" data-testid={`ar-history-ref-${r.id}`}>{r.reference_no || "—"}</td>
                       <td className={`text-right tabular-nums font-semibold ${isVoid ? "line-through text-kn-text-2" : "text-kn-success-text"}`}>{formatCurrency(r.amount)}</td>
-                      <td className="text-fs-12 text-kn-text-2">{(r.allocations || []).map((a) => a.order_number).join(", ") || "—"}</td>
+                      <td className="text-fs-12 text-kn-text-2" data-testid={`ar-history-allocs-${r.id}`}>
+                        {(r.allocations || []).length === 0 ? "—" : r.allocations.map((a, i) => (
+                          <span key={`${a.order_id || a.order_number}-${i}`}>
+                            {i > 0 && ", "}
+                            <DocLink docType="sales_order" docId={a.order_id} number={a.order_number} entityId={r.entity_id}
+                              perms={currentUser?.permissions} testId={`ar-history-order-${r.id}-${a.order_id}`} />
+                          </span>
+                        ))}
+                      </td>
                       <td data-testid={`ar-history-variance-${r.id}`}><VarianceCell v={r.variance} isVoid={isVoid} /></td>
                       <td>
                         <div className="flex flex-col items-start gap-1">
