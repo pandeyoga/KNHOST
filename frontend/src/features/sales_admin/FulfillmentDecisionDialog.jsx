@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, PackageSearch } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import { formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { fulfillmentPlan, fulfillmentPlanDecide } from "./workDeskApi";
@@ -98,31 +99,37 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
     finally { setBusy(false); }
   }
 
+  // Galat eksekusi menempel di kaki (di atas tombol) supaya tetap terlihat saat badan di-scroll.
+  const footer = lines.length > 0 ? (
+    <>
+    {execError && (
+      <div data-testid="fulfill-exec-error" className="mb-2 rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11.5px] text-[#9B1C1C]">
+        <p className="font-bold">Proses pemenuhan belum tuntas</p>
+        <p>{execError}</p>
+        <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-[11px] font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
+      </div>
+    )}
+    <div className="flex items-center justify-end gap-2">
+      <button type="button" className="secondary-button" data-testid="fulfill-cancel" onClick={onClose} disabled={busy}>Batal</button>
+      <button type="button" className="primary-button" data-testid="fulfill-submit" disabled={busy || loading || !anyQty || !!over} onClick={submit}>
+        {busy ? "Menjalankan…" : "Jalankan rencana"}
+      </button>
+    </div>
+    </>
+  ) : null;
+
   return (
-    <div className="modal-overlay" data-testid="fulfill-dialog" onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 920, maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex min-w-0 items-start gap-2">
-            <PackageSearch size={17} className="mt-0.5 shrink-0 text-[#B23B14]" />
-            <div className="min-w-0">
-              <p className="modal-title" data-testid="fulfill-dialog-title">Rencana pemenuhan {orderNumber}</p>
-              <p className="modal-subtitle">
-                {customerName} · entitas penjual {data?.entity_name || "—"}. Bagi kekurangan tiap baris — penuh atau sebagian; sisa tetap backorder.
-              </p>
-            </div>
-          </div>
-          {onOpenFull && (
-            <button data-testid="fulfill-open-full" onClick={onOpenFull}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#CBDFFF] bg-[#F2F7FF] px-2.5 py-1 text-[10.5px] font-bold text-[#0058CC]">
+    <>
+      <FormModal open onClose={onClose} size="xl" icon={PackageSearch} testId="fulfill-dialog"
+        title={`Rencana pemenuhan ${orderNumber}`}
+        subtitle={`${customerName} · entitas penjual ${data?.entity_name || "—"}. Bagi kekurangan tiap baris — penuh atau sebagian; sisa tetap backorder.`}
+        busy={busy} footer={footer}>
+        {onOpenFull && (
+          <div className="flex justify-end">
+            <button type="button" data-testid="fulfill-open-full" onClick={onOpenFull}
+              className="link-button btn-sm inline-flex shrink-0 items-center gap-1">
               <ExternalLink size={11} /> Buka Pesanan Lengkap
             </button>
-          )}
-        </div>
-        {execError && (
-          <div data-testid="fulfill-exec-error" className="mt-2 rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11.5px] text-[#9B1C1C]">
-            <p className="font-bold">Proses pemenuhan belum tuntas</p>
-            <p>{execError}</p>
-            <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-[11px] font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
           </div>
         )}
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fulfill-error" />
@@ -141,12 +148,6 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
             <textarea data-testid="fulfill-note" className="field w-full text-[12px]" rows={2} placeholder="Catatan (opsional)"
               value={note} onChange={(e) => setNote(e.target.value)} />
             {over && <p data-testid="fulfill-over" className="text-[11px] font-semibold text-[#C0392B]">{over.product_name}: total rencana melebihi kekurangan {formatQty(over.backorder_qty)}.</p>}
-            <div className="flex justify-end gap-2">
-              <button className="secondary-button" data-testid="fulfill-cancel" onClick={onClose}>Batal</button>
-              <button className="primary-button" data-testid="fulfill-submit" disabled={busy || !anyQty || !!over} onClick={submit}>
-                {busy ? "Menjalankan…" : "Jalankan rencana"}
-              </button>
-            </div>
           </div>
         )}
         {history.length > 0 && (
@@ -157,11 +158,11 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
             ))}
           </div>
         )}
-      </div>
+      </FormModal>
       {priceTarget && (
         <InternalPriceModal target={priceTarget} onClose={() => setPriceTarget(null)}
           onSaved={() => { setPriceTarget(null); setNotice(`Harga internal ${priceTarget.sku} tersimpan — transfer sekarang bisa dijalankan.`); load(); }} />
       )}
-    </div>
+    </>
   );
 }

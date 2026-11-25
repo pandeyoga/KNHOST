@@ -16,9 +16,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, CheckCircle2, ClipboardCheck, ExternalLink, Info, XCircle,
 } from "lucide-react";
-import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
-import { useEscapeClose } from "../../utils/escapeLayers";
+import FormModal from "../../components/FormModal";
 import OrderPreviewCard from "./OrderPreviewCard";
 import { releaseMessage, reviewRelease, verificationPreview } from "./workDeskApi";
 
@@ -31,7 +30,6 @@ export default function VerifyOrderDialog({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [hold, setHold] = useState(false);
-  useEscapeClose(true, onClose);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,34 +58,43 @@ export default function VerifyOrderDialog({
   // Sudah diverifikasi (mis. data lama) tetap boleh dilepas lewat tombol yang sama.
   const bisa = !!data?.verifiable && !!data?.ready;
 
+  const footer = (
+    <div className="flex items-center justify-end gap-2">
+      <button type="button" className="secondary-button" data-testid="verify-cancel" onClick={onClose}
+              disabled={busy}>
+        {bisa ? "Batal" : "Tutup"}
+      </button>
+      {(bisa || !sudah) && (
+        <button type="button" data-testid="verify-submit" className="primary-button"
+                disabled={busy || loading || !bisa}
+                title={!data?.verifiable
+                  ? "Pesanan ini sudah dilepas ke gudang / ditutup."
+                  : gaps.length > 0
+                    ? `Lengkapi dulu: ${gaps.join(" · ")}`
+                    : ""}
+                onClick={submit}>
+          {busy ? "Memproses…" : hold ? "Periksa & tahan" : "Periksa & lepas ke gudang"}
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="modal-overlay" data-testid="verify-dialog"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}
-           style={{ maxWidth: 1020, maxHeight: "90vh", overflowY: "auto" }}>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex min-w-0 items-start gap-2">
-            <ClipboardCheck size={17} className="mt-0.5 shrink-0 text-[#0058CC]" />
-            <div className="min-w-0">
-              <p className="modal-title" data-testid="verify-dialog-title">
-                Periksa & lepas ke gudang · {orderNumber}
-              </p>
-              <p className="modal-subtitle">
-                {customerName} · cocokkan data pesanan (kiri) dengan daftar periksa (kanan). Harga khusus & nilai
-                tetap diputus manajer — bila masih menunggu, pesanan dilepas <b>otomatis</b> sesudah ACC.
-              </p>
-            </div>
-          </div>
-          {onOpenFull && (
-            <button data-testid="verify-open-full" onClick={onOpenFull}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#CBDFFF] bg-[#F2F7FF] px-2.5 py-1 text-[10.5px] font-bold text-[#0058CC] hover:bg-[#EAF2FF]">
-              <ExternalLink size={11} /> Buka Pesanan Lengkap
-            </button>
-          )}
+    <FormModal open onClose={onClose} size="xl" icon={ClipboardCheck} testId="verify-dialog"
+      title={`Periksa & lepas ke gudang · ${orderNumber}`}
+      subtitle={<>
+        {customerName} · cocokkan data pesanan (kiri) dengan daftar periksa (kanan). Harga khusus & nilai
+        tetap diputus manajer — bila masih menunggu, pesanan dilepas <b>otomatis</b> sesudah ACC.
+      </>}
+      busy={busy} error={error} footer={footer}>
+      {onOpenFull && (
+        <div className="flex justify-end">
+          <button type="button" data-testid="verify-open-full" onClick={onOpenFull}
+                  className="link-button btn-sm inline-flex shrink-0 items-center gap-1">
+            <ExternalLink size={11} /> Buka Pesanan Lengkap
+          </button>
         </div>
-
-        <ErrorNotice message={error} onDismiss={() => setError("")} testId="verify-error" />
-
+      )}
         {loading ? (
           <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="verify-loading">
             Memuat data pesanan & daftar periksa…
@@ -167,26 +174,7 @@ export default function VerifyOrderDialog({
             </div>
           </div>
         )}
-
-        <div className="modal-actions">
-          <button className="btn-secondary" data-testid="verify-cancel" onClick={onClose}>
-            {bisa ? "Batal" : "Tutup"}
-          </button>
-          {(bisa || !sudah) && (
-            <button data-testid="verify-submit" className="btn-primary"
-                    disabled={busy || loading || !bisa}
-                    title={!data?.verifiable
-                      ? "Pesanan ini sudah dilepas ke gudang / ditutup."
-                      : gaps.length > 0
-                        ? `Lengkapi dulu: ${gaps.join(" · ")}`
-                        : ""}
-                    onClick={submit}>
-              {busy ? "Memproses…" : hold ? "Periksa & tahan" : "Periksa & lepas ke gudang"}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
