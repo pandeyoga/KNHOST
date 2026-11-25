@@ -296,9 +296,31 @@ Jest: dialog (perlu persetujuan / langsung, ringkasan tutup sisa), bilah pending
 7. "Sales pesanan" yang tidak boleh memutus = `sales_id` + anggota `sales_team`; bukan `created_by`, bukan cakupan tim.
 8. Nilai pesanan sesudah tutup sisa = yang sudah dibukukan per Surat Jalan; selisih di luar pembulatan → ditolak.
 9. Versi pertama menolak tutup sisa untuk: pesanan bernota amandemen/`extra_billing_lines`, berjurnal per pesanan,
-   baris terkirim lebih dari dipesan, dan baris Pesanan Khusus yang belum terkirim penuh.
+   baris terkirim lebih dari dipesan, dan baris Pesanan Khusus yang belum terkirim penuh. Ditambah saat dibangun
+   (dicatat 25 Nov, tinjauan akhir): **rencana cicilan buatan orang yang aktif** (jadwalnya tidak ikut nilai baru —
+   "Sesuaikan atau batalkan rencana cicilan dulu (Finance), lalu tutup sisa", ruling R10); **Surat Jalan yang belum
+   berjurnal pendapatan** (nilai baru = yang dibukukan, jadi jurnal yang gagal diselesaikan dulu; Surat Jalan yang
+   memang tidak butuh jurnal lolos); dan, saat eksekusi, **tugas gudang yang sedang dikirim** (kunci saga pengiriman)
+   atau **eskalasi yang sedang diselesaikan** (`escalation.status = resolving`) → 409 "sedang diproses", tanpa tulisan.
 10. Jalur sejajar (eskalasi gudang, batal item Pesanan Khusus) dibiarkan tetapi diblok selama ada permintaan pending;
     batal Pesanan Sample di luar cakupan.
+11. Jumlah satuan jual baris sesudah tutup sisa disimpan **6 desimal** (`PRESISI_JUMLAH_JUAL`; konversi yard/meter
+    jarang bulat, dua desimal bisa menggeser nilai ratusan rupiah); layar menampilkannya maksimal 2 desimal (R11, R22).
+12. **Pembatalan satu jenjang persetujuan** (ruling R26): Aturan Persetujuan jenis `sales_order.batal` menolak disimpan
+    dengan jenjang > 1 ("Pembatalan pesanan hanya satu jenjang persetujuan."), dan pemutus hanya dinilai pada jenjang 1
+    (baris jenjang > 1 yang terlanjur ada diabaikan + dicatat di log). Alasan: A2-2 "penyetuju" tunggal — satu keputusan
+    menjalankan eksekusi; bertingkat membuat permintaan tak bisa diputus. Biaya: pemilik tidak bisa memasang dua
+    jenjang untuk pembatalan.
+13. **Bulan final sebelum rilis dibaca dari jurnal** (ruling R25): komisi (PT, sales, bulan) tanpa catatan finalisasi
+    `commission_carry_balances` dianggap final sejak `created_at` paling awal jurnal akrual insentif yang hidup atau
+    jurnal gaji terposting (tidak void/dibalik) PT·bulan itu; tanpa keduanya = belum final. Catatan yang ada selalu
+    menang; tanpa backfill/tulis data (catatan pertama yang lahir dari finalisasi ulang memakai waktu cadangan itu supaya
+    bulan tidak berbalik "belum final").
+14. Koreksi komisi di bulan penutupan memakai **pengali capaian bulan penutupan** (bukan bulan bayar asli) — batasan
+    versi pertama (ruling R15): pengali capaian masih nonaktif bawaan; daftar periksa sebelum dinyalakan ada di
+    `_commission_for`.
+15. "Barang sudah disiapkan" = roll `picked`/`packed` (+ `in_transit_sales` untuk batal penuh) atau bukti ambil/kemas di
+    tugas; roll `committed` tidak dihitung (ruling R27 — lihat ralat §5.2).
 
 ## 8. Diserahkan ke builder
 

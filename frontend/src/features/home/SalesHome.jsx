@@ -14,7 +14,7 @@ import { selectWaitingBoards } from "../../config/waitingBoards";
 import HomeWaitingBoards from "./HomeWaitingBoards";
 import MyIncentiveCard from "../incentive/MyIncentiveCard";
 import { MODE_TANPA_MESIN } from "../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
-import { ringkasRincian } from "../incentive/rincianKomisi";
+import { kelasNilaiKomisi, nilaiKomisi, ringkasRincian } from "../incentive/rincianKomisi";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -174,7 +174,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                     {comm.breakdown.map((b, i) => { const r = ringkasRincian(b); return r.jenis === "saldo" ? (
                       <tr key={`${b.price_reason}-${i}`} data-testid={`commission-breakdown-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
                         <td className="px-3 py-2 text-[#3C3C43]" colSpan={6} data-testid={`commission-breakdown-ket-${i}`}>{r.keterangan}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtCur(b.commission)}</td>
+                        <td className={`px-3 py-2 text-right tabular-nums font-semibold ${kelasNilaiKomisi(b)}`} data-testid={`commission-breakdown-amount-${i}`}>{fmtCur(nilaiKomisi(b).nilai)}</td>
                       </tr>
                     ) : (
                       <tr key={`${b.sku}-${i}`} data-testid={`commission-breakdown-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
@@ -184,7 +184,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                         <td className="px-3 py-2 text-right tabular-nums"><span data-testid={`commission-breakdown-rate-${i}`}>{r.tarif}</span>{r.asal && <span className="block text-fs-12 text-kn-text-2" data-testid={`commission-breakdown-origin-${i}`}>{r.asal}</span>}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-price-${i}`}>{r.pengaliHarga}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-ach-${i}`}>{r.pengaliCapaian}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-[#1B7F4B]">{fmtCur(b.commission)}{r.dibatasi && <span className="block text-fs-12 font-normal text-kn-warning-text" data-testid={`commission-breakdown-capped-${i}`}>{r.catatanBatas}</span>}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold"><span className={kelasNilaiKomisi(b)} data-testid={`commission-breakdown-amount-${i}`}>{fmtCur(nilaiKomisi(b).nilai)}</span>{r.dibatasi && <span className="block text-fs-12 font-normal text-kn-warning-text" data-testid={`commission-breakdown-capped-${i}`}>{r.catatanBatas}</span>}</td>
                       </tr>
                     ); })}
                     <tr className="bg-[#FAFBFC] font-bold">

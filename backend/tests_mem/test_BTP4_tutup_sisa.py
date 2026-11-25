@@ -68,8 +68,9 @@ async def _kirim_sebagian(klien, db, siap, monkeypatch, *, qty: float = 100.0, k
                           ambil_sisa: float = 0.0, satu_tugas: bool = False, backorder: float = 0.0,
                           unit: str = "meter", base_qty: Optional[float] = None,
                           items: Optional[List[Dict[str, Any]]] = None, gl_harus_posted: bool = True,
-                          **lain) -> Dict[str, Any]:
-    """Pesanan `partially_shipped` lewat alur nyata: harga mesin harga, kirim `kirim` m lewat `dispatch_task`."""
+                          ppn_mode: Optional[str] = None, **lain) -> Dict[str, Any]:
+    """Pesanan `partially_shipped` lewat alur nyata: harga mesin harga, kirim `kirim` m lewat `dispatch_task`.
+    `ppn_mode` ("included") = harga termasuk PPN (dipotret di `tax_snapshot` pesanan)."""
     from services import config_service
     from services import shipment_service as shs
     cus = _id("cus")
@@ -78,7 +79,7 @@ async def _kirim_sebagian(klien, db, siap, monkeypatch, *, qty: float = 100.0, k
     base = float(base_qty if base_qty is not None else qty)
     items = items or [{"product_id": siap["pid"], "product_name": "Kain Uji BTP4", "sku": "SKU-BTP4",
                        "quantity": qty, "base_quantity": base, "unit": unit, "base_unit": "meter", "price": HARGA}]
-    pr = await config_service.compute_order_pricing(items, entity_id=KSC)
+    pr = await config_service.compute_order_pricing(items, entity_id=KSC, ppn_mode_override=ppn_mode)
     sisa = round(base - kirim - backorder, 2)
     a1, a2 = _id("alc"), _id("alc")
     so = {"id": _id("so"), "number": f"SO-BTP4-{uuid.uuid4().hex[:5]}", "entity_id": KSC, "customer_id": cus,
@@ -232,6 +233,31 @@ async def test_BTP4_tempo_jumlah_turun_ke_terkirim(klien, db, siap, monkeypatch)
     assert o["payment_status"] == "unpaid" and o["fulfillment"]["remaining_qty"] == 0
     assert await _piutang_buku(db, so) == round(o["grand_total"] - o["paid_total"], 2) == 4_440_000, \
         "piutang buku = sisa tagihan pesanan"
+
+
+async def test_BTP4_harga_termasuk_ppn(klien, db, siap, monkeypatch):
+    """T4 — harga TERMASUK PPN (`ppn_mode == "included"`, dipotret di pesanan). 100 m × 100.000 = 10.000.000 sudah
+    termasuk PPN (efektif 11 %: PPN = 10.000.000 − 10.000.000 / 1,11 = 990.990,99). Kirim 40 m: jurnal Surat Jalan
+    pendapatan 3.603.603,60 + PPN 396.396,40 = 4.000.000. Tutup sisa → nilai pesanan = 4.000.000 (= dibukukan),
+    `net_subtotal` = `grand_total` (harga termasuk PPN), PPN = PPN jurnal, DPP 11/12 × 3.603.603,60 = 3.303.303,30, tanpa
+    jurnal baru; piutang buku = sisa tagihan."""
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch, ppn_mode="included")
+    so = k["so"]
+    assert so["ppn_mode"] == "included" and so["tax_snapshot"]["ppn_mode"] == "included"
+    assert round(so["grand_total"], 2) == 10_000_000 and round(so["ppn_amount"], 2) == 990_990.99
+    buku = await _dibukukan(so)
+    jurnal = await _jumlah_jurnal(db)
+    r = await _tutup(klien, siap["hs"], so, "Pelanggan hanya mau 40 m")
+    assert r.status_code == 200, r.text
+    o = await _so(db, so)
+    assert (buku["revenue"], buku["ppn"]) == (3_603_603.6, 396_396.4), buku
+    assert round(o["grand_total"], 2) == round(buku["revenue"] + buku["ppn"], 2) == 4_000_000
+    assert round(o["ppn_amount"], 2) == 396_396.4 and round(o["dpp"], 2) == 3_303_303.3
+    assert round(o["net_subtotal"], 2) == 4_000_000, "harga termasuk PPN: dasar = total"
+    assert round(float(o["items"][0]["line_total"]), 2) == 4_000_000 and o["items"][0]["base_quantity"] == 40
+    assert o["ppn_mode"] == "included" and o["tax_snapshot"]["ppn_mode"] == "included"
+    assert o["status"] == "shipped" and await _jumlah_jurnal(db) == jurnal, "tanpa jurnal baru"
+    assert await _piutang_buku(db, so) == round(o["grand_total"] - o["paid_total"], 2)
 
 
 async def test_BTP4_plafon_kembali(klien, db, siap, monkeypatch):

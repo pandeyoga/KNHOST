@@ -74,6 +74,16 @@ from _common import Guard, G, R, Y, B, X  # noqa: E402
 DOOR_RE = re.compile(r'@router\.(?:post|patch)\("(/[^"]*(?:approve|reject|verify|decide)[^"]*)"')
 PREFIX_RE = re.compile(r'APIRouter\(prefix="([^"]*)"')
 
+#: Pintu keputusan yang path-nya TIDAK memuat kata kunci `DOOR_RE` — didaftarkan EKSPLISIT (regex sengaja tidak
+#: diperluas: kata seperti "decision" juga dipakai path non-keputusan). Pintu ini ikut dinilai invarian A hanya bila
+#: dekoratornya benar-benar ada di berkasnya (`@router.post("…")` dengan path tanpa awalan router); hilang/di-rename →
+#: klasifikasinya di `DOOR_QUEUE` basi → MERAH. Nilai = alasan pintu ini keputusan manusia.
+DOOR_EXPLICIT: Dict[str, str] = {
+    "sales_orders_extra.py::/api/sales-orders/{order_id}/cancel-request/decision":
+        "Setujui/tolak permintaan batal & tutup sisa pesanan (BTP-2, izin order.approve_cancel) — keputusan orang "
+        "atas `sales_orders.cancel_request` yang menunggu; path berakhiran `decision`, bukan `decide`.",
+}
+
 #: pintu → kunci antrean di `approval_backlog_service.QUEUES` yang menghitungnya.
 DOOR_QUEUE: Dict[str, str] = {
     "cash_advances.py::/api/cash-advances/{ca_id}/approve": "cash_advance",
@@ -165,6 +175,8 @@ DOOR_QUEUE: Dict[str, str] = {
     "purchase_orders_extra.py::/api/po-variance-tasks/{task_id}/decide": "po_variance",
     "sales_return_exceptions.py::/api/sales-returns/{return_id}/exceptions/{exc_id}/decide":
         "sales_return_exception",
+    # BTP (tinjauan akhir M8) — pintu putusan pembatalan/tutup sisa pesanan (didaftarkan di `DOOR_EXPLICIT`).
+    "sales_orders_extra.py::/api/sales-orders/{order_id}/cancel-request/decision": "so_cancel",
 }
 
 #: pintu yang SENGAJA tak punya antrean — alasannya WAJIB ditulis (dan diperiksa).
@@ -275,16 +287,28 @@ DATA_EXEMPT: Dict[Tuple[str, str], str] = {
 
 
 # ─── Pengumpul bukti ─────────────────────────────────────────────────────────
-def doors_from_code() -> Dict[str, str]:
-    """Semua pintu keputusan di `backend/routers/*.py` → `{"file::path": nama_fungsi}`."""
+def doors_in_texts(texts: Dict[str, str], explicit: Dict[str, str]) -> Dict[str, str]:
+    """MURNI — pintu keputusan dari teks berkas router `{nama_berkas: isi}`: temuan `DOOR_RE` + pintu `explicit` yang
+    dekoratornya ADA di berkasnya. → `{"file::path": nama_berkas}`."""
     out: Dict[str, str] = {}
-    for f in sorted((ROOT / "backend" / "routers").glob("*.py")):
-        txt = f.read_text(encoding="utf-8")
+    for name, txt in sorted(texts.items()):
         pre_m = PREFIX_RE.search(txt)
         pre = pre_m.group(1) if pre_m else ""
         for m in DOOR_RE.finditer(txt):
-            out[f"{f.name}::{pre + m.group(1)}"] = f.name
+            out[f"{name}::{pre + m.group(1)}"] = name
+        for door in explicit:
+            berkas, _, path = door.partition("::")
+            if berkas != name or not path.startswith(pre):
+                continue
+            if re.search(r'@router\.(?:post|patch)\("' + re.escape(path[len(pre):]) + '"', txt):
+                out[door] = name
     return out
+
+
+def doors_from_code() -> Dict[str, str]:
+    """Semua pintu keputusan di `backend/routers/*.py` (+ `DOOR_EXPLICIT`) → `{"file::path": nama_berkas}`."""
+    texts = {f.name: f.read_text(encoding="utf-8") for f in sorted((ROOT / "backend" / "routers").glob("*.py"))}
+    return doors_in_texts(texts, DOOR_EXPLICIT)
 
 
 def views_in_router() -> Set[str]:
@@ -444,6 +468,16 @@ def self_test() -> int:
              lambda g: check_doors(g, {},
                                    {"hilang.py::/api/x/{id}/approve": "transfer"},
                                    {}, QK), 1)
+    ekspl = {"orders.py::/api/orders/{id}/cancel-request/decision": "Putusan permintaan batal — uji."}
+    src_ada = 'router = APIRouter(prefix="/api")\n@router.post("/orders/{id}/cancel-request/decision")'
+    jalankan("A: pintu EKSPLISIT yang ada di kode & terpetakan → hijau",
+             lambda g: check_doors(g, doors_in_texts({"orders.py": src_ada}, ekspl),
+                                   {"orders.py::/api/orders/{id}/cancel-request/decision": "transfer"}, {}, QK), 0)
+    jalankan("A: pintu EKSPLISIT ada di kode tetapi tak terpetakan → merah",
+             lambda g: check_doors(g, doors_in_texts({"orders.py": src_ada}, ekspl), {}, {}, QK), 1)
+    jalankan("A: pintu EKSPLISIT sudah hilang dari kode → klasifikasi basi → merah",
+             lambda g: check_doors(g, doors_in_texts({"orders.py": 'router = APIRouter(prefix="/api")'}, ekspl),
+                                   {"orders.py::/api/orders/{id}/cancel-request/decision": "transfer"}, {}, QK), 1)
     jalankan("B: antrean bayangan di data → merah",
              lambda g: check_data(g, {("warehouse_transfers", "waiting_approval"): 3},
                                   set(), {}), 1)

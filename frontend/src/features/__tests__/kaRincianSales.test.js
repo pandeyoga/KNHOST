@@ -4,8 +4,9 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import MyIncentiveCard from "../incentive/MyIncentiveCard";
-import { formatPengali, ringkasRincian, TEKS_DIBATASI } from "../incentive/rincianKomisi";
+import { formatPengali, nilaiKomisi, ringkasRincian, TEKS_DIBATASI } from "../incentive/rincianKomisi";
 import SalesHome from "../home/SalesHome";
+import MobileSalesHome from "../sales/mobile/MobileSalesHome";
 import { AppNavProvider } from "../../context/AppNavContext";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 
@@ -49,6 +50,8 @@ jest.mock("../hr/MyPayslipCard", () => ({ MyPayslipCard: () => <div data-testid=
 jest.mock("../hr/MyLeaveCard", () => ({ MyLeaveCard: () => null }));
 jest.mock("../hr/MyKpiCard", () => ({ MyKpiCard: () => null }));
 jest.mock("../hr/MyDesignerKpiSection", () => ({ __esModule: true, default: () => null, showMyDesignerKpi: () => false }));
+jest.mock("../sales/mobile/MobileCashHoldingCard", () => () => null);
+jest.mock("../../components/WaitingQueueBoard", () => () => null);
 jest.mock("recharts", () => {
   const P = ({ children }) => <div>{children}</div>;
   return { LineChart: P, Line: () => null, XAxis: () => null, YAxis: () => null, CartesianGrid: () => null,
@@ -175,4 +178,63 @@ test("BTP5 baris koreksi & saldo potongan berlabel pesanan dan alasannya", async
   expect(saldo).toContain("Sisa potongan komisi dibawa ke bulan berikutnya");
   expect(saldo).not.toMatch(/tarif|capaian/);
   expect(q(host, "my-incentive-auto-rincian-0-ket")).toBeNull();
+});
+
+// M6 (tinjauan akhir) — potongan tampil sebagai PENGURANG yang jelas: baris "dibawa ke bulan berikutnya" (server menulisnya
+// positif sebagai penyeimbang Σ rincian = total) tampil bertanda minus, dan setiap nilai negatif (koreksi, potongan
+// terbawa) berwarna merah — dulu semua komisi hijau dan potongan dibawa tampak seperti komisi tambahan.
+const MERAH = "text-[#C0392B]";
+const HIJAU = "text-[#1B7F4B]";
+const KOREKSI_M6 = { ...BARIS_A, category: "Batik", qty_base: -60, commission: -210000, price_factor: 1, achievement_factor: 1,
+  price_reason: "koreksi_tutup_sisa", price_reason_label: "Koreksi komisi: sisa pesanan SO-BTP5-1 ditutup" };
+const TERBAWA_M6 = { name: "Potongan komisi terbawa dari Oktober 2026", sku: "", category: "", qty_base: 0, unit: "", rate: 0,
+  rate_origin: "", price_factor: null, achievement_factor: null, capped: false, commission: -50000,
+  price_reason: "potongan_terbawa", price_reason_label: "Potongan komisi terbawa dari Oktober 2026" };
+const DIBAWA_M6 = { name: "Sisa potongan komisi dibawa ke bulan berikutnya", sku: "", category: "", qty_base: 0, unit: "",
+  rate: 0, rate_origin: "", price_factor: null, achievement_factor: null, capped: false, commission: 260000,
+  price_reason: "potongan_dibawa", price_reason_label: "Sisa potongan komisi dibawa ke bulan berikutnya" };
+const BERANDA_M6 = { period: "2026-11", incentive_mode: "accrue_then_settle", target: { amount: 0, achievement_pct: 0 },
+  kpi: { total_sales: 1000, total_collected: 0, overdue_amount: 0 }, history: [], customers: [], collections: [],
+  recent_orders: [], waiting_boards: [],
+  commission: { mtd_accrual: 0, projection_month_end: 0, strategy: "per_sku", base_amount: 0,
+    breakdown: [{ ...BARIS_A, category: "Batik", commission: 0 }, KOREKSI_M6, TERBAWA_M6, DIBAWA_M6] } };
+
+test("M6 nilai tampil: potongan dibawa jadi pengurang; negatif ditandai", () => {
+  expect(nilaiKomisi(DIBAWA_M6)).toEqual({ nilai: -260000, negatif: true });
+  expect(nilaiKomisi(KOREKSI_M6)).toEqual({ nilai: -210000, negatif: true });
+  expect(nilaiKomisi(TERBAWA_M6)).toEqual({ nilai: -50000, negatif: true });
+  expect(nilaiKomisi(BARIS_A)).toEqual({ nilai: 336000, negatif: false });
+});
+
+test("M6 beranda sales (desktop): potongan merah bertanda minus, komisi biasa hijau", async () => {
+  rute({ "/home/sales": BERANDA_M6, "/incentive/me": KARTU([]) });
+  const host = await mount(<SalesHome user={{ role: "sales", name: "Rina" }} />);
+  const nilai = (i) => q(host, `commission-breakdown-amount-${i}`);
+  expect(nilai(0).className).toContain(HIJAU);
+  for (const i of [1, 2, 3]) expect(nilai(i).className).toContain(MERAH);
+  // Beranda desktop memakai pemformat rupiah tabelnya sendiri ("Rp -210.000"); yang dinilai: bertanda minus.
+  expect(txt(nilai(1))).toMatch(/^(-Rp\s?|Rp\s?-)210\.000$/);
+  expect(txt(nilai(3))).toMatch(/^(-Rp\s?|Rp\s?-)260\.000$/);
+  expect(txt(q(host, "commission-breakdown-ket-3"))).toBe("Sisa potongan komisi dibawa ke bulan berikutnya");
+});
+
+test("M6 beranda sales (HP): potongan merah bertanda minus, komisi biasa hijau", async () => {
+  rute({ "/home/sales": BERANDA_M6, "/incentive/me": KARTU([]) });
+  const host = await mount(<MobileSalesHome user={{ role: "sales", name: "Rina" }} />);
+  const nilai = (i) => q(host, `m-home-commission-amount-${i}`);
+  expect(nilai(0).className).toContain(HIJAU);
+  for (const i of [1, 2, 3]) expect(nilai(i).className).toContain(MERAH);
+  expect(txt(nilai(1))).toMatch(/^-Rp\s?210\.000$/);
+  expect(txt(nilai(3))).toMatch(/^-Rp\s?260\.000$/);
+  expect(txt(q(host, "m-home-commission-row-3"))).toContain("Sisa potongan komisi dibawa ke bulan berikutnya");
+});
+
+test("M6 kartu Capaian & Insentif: potongan dibawa bertanda minus & merah", async () => {
+  rute({ "/incentive/me": KARTU([BARIS_A, KOREKSI_M6, DIBAWA_M6]) });
+  const host = await mount(<MyIncentiveCard period="2026-11" />);
+  const dibawa = q(host, "my-incentive-auto-rincian-2-nilai");
+  expect(txt(dibawa)).toMatch(/^-Rp\s?260\.000$/);
+  expect(dibawa.className).toContain(MERAH);
+  expect(q(host, "my-incentive-auto-rincian-1-nilai").className).toContain(MERAH);
+  expect(q(host, "my-incentive-auto-rincian-0-nilai").className).not.toContain(MERAH);
 });

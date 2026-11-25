@@ -18,7 +18,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDecimal, formatPeriod, todayWib } from "../../utils/formatters";
 import { MODE_KEDUANYA, MODE_TANPA_MESIN } from "./incentiveModes";
-import { ringkasRincian } from "./rincianKomisi";
+import { KELAS_NEGATIF, nilaiKomisi, ringkasRincian } from "./rincianKomisi";
 
 export const TEKS_MEMUAT = "Memuat capaian…";
 /** Galat: kalimat + tombol "Coba lagi" bawaan `ErrorNotice` (tampil "Capaian belum bisa dimuat. ⟳ Coba lagi"). */
@@ -241,7 +241,8 @@ export default function MyIncentiveCard({ variant = "page", hideWhenEmpty = fals
                       <li key={`${b.sku}-${i}`} className="py-1.5 text-fs-12" data-testid={`${testId}-auto-rincian-${i}`}>
                         <div className="flex items-baseline justify-between gap-3">
                           <span className="font-semibold text-kn-text">{b.name}{r.jenis !== "saldo" && <span className="font-mono text-kn-text-2"> · {b.sku}</span>}</span>
-                          <span className="whitespace-nowrap font-bold text-kn-text"><Rupiah v={b.commission} /></span>
+                          <Rupiah v={nilaiKomisi(b).nilai} testId={`${testId}-auto-rincian-${i}-nilai`}
+                            className={`font-bold ${nilaiKomisi(b).negatif ? KELAS_NEGATIF : "text-kn-text"}`} />
                         </div>
                         {r.jenis !== "saldo" && (
                           <p className="text-kn-text-2">

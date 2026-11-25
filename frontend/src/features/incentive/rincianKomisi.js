@@ -21,6 +21,24 @@ export function formatPengali(v) {
   return `×${formatDecimal(Number(v), 2)}`;
 }
 
+/** M6 (tinjauan akhir) — nilai komisi satu baris untuk layar: `{nilai, negatif}`. Server menulis baris
+ *  `potongan_dibawa` POSITIF (penyeimbang supaya Σ rincian = total bulan ini, yang tidak pernah negatif), padahal maknanya
+ *  POTONGAN yang dipindah ke bulan berikutnya → ditampilkan sebagai pengurang (bertanda minus). Koreksi dan potongan
+ *  terbawa memang negatif dari server. `negatif` → layar mewarnainya merah (`KELAS_NEGATIF`). */
+export function nilaiKomisi(b) {
+  const v = Number(b?.commission || 0);
+  const nilai = b?.price_reason === "potongan_dibawa" ? -Math.abs(v) : v;
+  return { nilai, negatif: nilai < 0 };
+}
+
+export const KELAS_NEGATIF = "text-[#C0392B]";
+export const KELAS_POSITIF = "text-[#1B7F4B]";
+
+/** Kelas warna nilai komisi: merah untuk pengurang (negatif), hijau selain itu. */
+export function kelasNilaiKomisi(b) {
+  return nilaiKomisi(b).negatif ? KELAS_NEGATIF : KELAS_POSITIF;
+}
+
 /** Jenis baris rincian: "koreksi" | "saldo" | "biasa". */
 export function jenisRincian(b) {
   const kode = b?.price_reason || "";

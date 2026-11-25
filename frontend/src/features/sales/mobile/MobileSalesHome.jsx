@@ -15,7 +15,7 @@ import { roleIs } from "../../../config/roles";
 import MobileCashHoldingCard from "./MobileCashHoldingCard";   // PM-T4 — kartu "Titipan Saya" (tunai belum disetor)
 import MyIncentiveCard from "../../incentive/MyIncentiveCard";   // KM-T5
 import { MODE_TANPA_MESIN } from "../../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
-import { jenisRincian } from "../../incentive/rincianKomisi";   // BTP-5 — baris koreksi & saldo potongan komisi
+import { jenisRincian, kelasNilaiKomisi, nilaiKomisi } from "../../incentive/rincianKomisi";   // BTP-5 / M6 — koreksi & saldo potongan
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
@@ -193,7 +193,7 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
             ) : comm.breakdown.map((b, i) => (
               <div key={`${b.sku}-${i}`} className="m-list-row" data-testid={`m-home-commission-row-${i}`}>
                 <div className="min-w-0 flex-1"><p className="truncate text-[12.5px] font-semibold">{b.name}</p><p className="text-[10.5px] m-muted">{jenisRincian(b) === "biasa" ? `${b.category || "—"} · ${b.sku} · ${Number(b.qty_base || 0).toLocaleString("id-ID")} terbayar` : b.price_reason_label}</p></div>
-                <span className="text-[12px] font-bold tabular-nums text-[#1B7F4B]">{formatCurrency(b.commission)}</span>
+                <span className={`text-[12px] font-bold tabular-nums ${kelasNilaiKomisi(b)}`} data-testid={`m-home-commission-amount-${i}`}>{formatCurrency(nilaiKomisi(b).nilai)}</span>
               </div>
             ))}
             <div className="flex justify-between py-2 text-[12px] font-bold"><span>Total akrual MTD</span><span className="tabular-nums text-[#1B7F4B]" data-testid="m-home-commission-total">{formatCurrency(comm.mtd_accrual)}</span></div>
