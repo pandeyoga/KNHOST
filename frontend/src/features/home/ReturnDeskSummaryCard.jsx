@@ -4,16 +4,35 @@ import axios, { API } from "../../services/apiClient";
 
 const entityParam = (sel) => (sel && sel !== "all" ? (sel.id || sel) : "");
 
-// LN-093 — kartu Beranda tim PT pemasok (mis. CST): retur internal masuk, roll menunggu keputusan,
-// dan roll yang batas retur suppliernya tinggal ≤ N hari. Tersembunyi bila semuanya nol.
-export default function ReturnDeskSummaryCard({ selectedEntity, onNavigate }) {
-  const [d, setD] = useState(null);
+/** Kartu tampil (ada isi) — aturan yang SAMA dengan penyembunyian kartu ini. */
+export const returnSummaryHasContent = (d) => Boolean(d && (d.incoming || d.rolls || d.due_soon));
+
+/**
+ * Ringkasan retur internal (`GET /return-dispositions/summary`). `undefined` = sedang dimuat; `null` = tidak dimuat
+ * (`enabled` false) atau gagal. Meja gelombang 1 — meja memakai hook ini supaya tab Pantau tahu apakah kartu benar-benar
+ * tampil (kartu kosong menyembunyikan diri) sebelum memutuskan "Tidak ada pantauan".
+ */
+export function useReturnDeskSummary(selectedEntity, { enabled = true, refreshKey = 0 } = {}) {
+  const [d, setD] = useState(enabled ? undefined : null);
   const ent = entityParam(selectedEntity);
   useEffect(() => {
+    if (!enabled) { setD(null); return undefined; }
+    let live = true;
+    setD(undefined);
     axios.get(`${API}/return-dispositions/summary`, { params: ent ? { entity_id: ent } : {} })
-      .then((r) => setD(r.data)).catch(() => setD(null));
-  }, [ent]);
-  if (!d || !(d.incoming || d.rolls || d.due_soon)) return null;
+      .then((r) => { if (live) setD(r.data); }).catch(() => { if (live) setD(null); });
+    return () => { live = false; };
+  }, [ent, enabled, refreshKey]);
+  return d;
+}
+
+// LN-093 — kartu Beranda tim PT pemasok (mis. CST): retur internal masuk, roll menunggu keputusan,
+// dan roll yang batas retur suppliernya tinggal ≤ N hari. Tersembunyi bila semuanya nol.
+// `summary` (opsional) = data yang sudah dimuat pemanggil (`useReturnDeskSummary`); tanpa itu kartu memuat sendiri.
+export default function ReturnDeskSummaryCard({ selectedEntity, onNavigate, summary }) {
+  const own = useReturnDeskSummary(selectedEntity, { enabled: summary === undefined });
+  const d = summary === undefined ? own : summary;
+  if (!returnSummaryHasContent(d)) return null;
   const open = () => { sessionStorage.setItem("interco_tab", "return-inbox"); onNavigate?.("interco-transactions"); };
   const stat = (n, label, testid, warn) => (
     <div className="min-w-[120px]" data-testid={testid}>

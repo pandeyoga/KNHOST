@@ -36,7 +36,11 @@ jest.mock("../../components/KNSelect", () => {
 jest.mock("../sales_admin/SoTrackerCard", () => () => <div data-testid="so-tracker-stub" />);
 jest.mock("../sales_admin/KeepPendingPanel", () => () => <div data-testid="kp-stub" />);
 jest.mock("../sales_admin/CustomerGradeRulesCard", () => () => <div data-testid="grade-stub" />);
-jest.mock("../home/ReturnDeskSummaryCard", () => () => <div data-testid="return-desk-stub" />);
+// Kartu digambar sebagai stub; hook ringkasannya ASLI (memuat lewat apiClient tiruan) — Pantau kosong diputuskan darinya.
+jest.mock("../home/ReturnDeskSummaryCard", () => ({
+  __esModule: true, ...jest.requireActual("../home/ReturnDeskSummaryCard"),
+  default: () => <div data-testid="return-desk-stub" />,
+}));
 jest.mock("../sales_admin/VerifyOrderDialog", () => () => null);
 jest.mock("../sales_admin/FulfillmentDecisionDialog", () => () => null);
 jest.mock("../finance/payments/ReceivePaymentModal", () => () => null);
@@ -126,16 +130,41 @@ test("Pelacak SO di Pantau hanya dengan izin order.view (RoleDesk MD)", async ()
 });
 
 test("Gudang: kartu retur internal & Pelacak SO (izin) di Pantau", async () => {
-  routeGet({ "/warehouse-admin/desk": { queues: [] } });
-  await mount(<RoleDesk desk="warehouse_admin" currentUser={{ permissions: { wms: ["view"], order: ["view"] } }} onOpenDocument={() => {}} />);
+  routeGet({ "/warehouse-admin/desk": { queues: [] }, "/return-dispositions/summary": { incoming: 2, rolls: 0, due_soon: 0 } });
+  await mount(<RoleDesk desk="warehouse_admin" currentUser={{ permissions: { wms: ["view"], order: ["view"], sales_return: ["view"] } }}
+    onOpenDocument={() => {}} />);
   expect(q("return-desk-stub")).toBeNull();
   await klik("wh-desk-tabs-pantau");
   expect(q("return-desk-stub")).not.toBeNull(); expect(q("so-tracker-stub")).not.toBeNull();
+  expect(q("wh-desk-pantau-empty")).toBeNull();
+});
+
+test("Pantau kosong = yang benar-benar tampil: tanpa order.view & retur internal nol → pesan kosong", async () => {
+  // Gudang: berizin retur, ringkasan dimuat dulu (memuat…), lalu semua nol → kartu menyembunyikan diri → pesan kosong.
+  let lepas;
+  mockGet.mockImplementation((u) => (u.includes("/return-dispositions/summary")
+    ? new Promise((r) => { lepas = r; })
+    : Promise.resolve({ data: { queues: [] } })));
+  await mount(<RoleDesk desk="warehouse_admin" currentUser={{ permissions: { wms: ["view"], sales_return: ["view"] } }}
+    onOpenDocument={() => {}} />);
+  await klik("wh-desk-tabs-pantau");
+  expect(q("wh-desk-pantau-loading")).not.toBeNull(); expect(q("wh-desk-pantau-empty")).toBeNull();
+  await act(async () => lepas({ data: { incoming: 0, rolls: 0, due_soon: 0 } }));
+  expect(q("wh-desk-pantau-loading")).toBeNull();
+  expect(q("return-desk-stub")).toBeNull(); expect(q("so-tracker-stub")).toBeNull();
+  expect(teks(q("wh-desk-pantau-empty"))).toContain("Tidak ada pantauan untuk meja ini.");
+  await lepasSemua(); mockGet.mockReset();
+  // Keuangan (tab hub Pantau): tanpa izin retur, ringkasan bahkan tidak diminta; tanpa order.view → pesan kosong.
+  routeGet({ "/finance/desk": { queues: [], not_my_desk: [] }, "/return-dispositions/summary": { incoming: 3 } });
+  await mount(<FinanceDesk currentUser={{ permissions: { payment_variance: ["decide"] } }} selectedEntity="ent_ksc" tab="pantau" />);
+  expect(mockGet.mock.calls.some(([u]) => u.includes("/return-dispositions/summary"))).toBe(false);
+  expect(teks(q("fin-desk-pantau-empty"))).toContain("Tidak ada pantauan untuk meja ini.");
 });
 
 test("Keuangan (R4): di dalam tab hub tanpa tab sendiri; Pantau = tab hub saudara berisi retur internal & Pelacak SO", async () => {
-  routeGet({ "/finance/desk": { queues: [], not_my_desk: [] } });
-  const user = { permissions: { payment_variance: ["decide"], order: ["view"] } };
+  routeGet({ "/finance/desk": { queues: [], not_my_desk: ["Konfirmasi pesanan"] },
+    "/return-dispositions/summary": { incoming: 0, rolls: 1, due_soon: 0 } });
+  const user = { permissions: { payment_variance: ["decide"], order: ["view"], sales_return: ["view"], contra_bon: ["view"] } };
   await mount(<FinanceDesk currentUser={user} selectedEntity="ent_ksc" />);
   expect(q("fin-desk-title")).toBeNull(); expect(q("fin-desk-summary")).toBeNull();
   expect(q("fin-desk-tabs")).toBeNull();                              // tidak ada tab tingkat ketiga
@@ -143,10 +172,13 @@ test("Keuangan (R4): di dalam tab hub tanpa tab sendiri; Pantau = tab hub saudar
   expect(q("return-desk-stub")).toBeNull(); expect(q("so-tracker-stub")).toBeNull();
   await lepasSemua();
   mockGet.mockClear();
-  await mount(<FinanceDesk currentUser={user} selectedEntity="ent_ksc" tab="pantau" />);
+  await mount(<PageHelpProvider><PageHelpButton /><FinanceDesk currentUser={user} selectedEntity="ent_ksc" tab="pantau" /></PageHelpProvider>);
   expect(q("fin-desk-tabs")).toBeNull(); expect(q("fin-desk-antrean")).toBeNull();
   expect(q("return-desk-stub")).not.toBeNull(); expect(q("so-tracker-stub")).not.toBeNull();
-  expect(mockGet.mock.calls.some(([u]) => u.includes("/finance/desk"))).toBe(false);   // Pantau tidak memuat antrean
+  // Pantau memuat antrean meja saja (untuk ikon ?), bukan papan hutang / posting gagal.
+  expect(mockGet.mock.calls.some(([u]) => u.includes("/home/finance") || u.includes("posting-failures"))).toBe(false);
+  await klik("page-help");
+  expect(teks(q("page-help-text"))).toMatch(/Bukan wewenang meja ini: Konfirmasi pesanan/);
 });
 
 test("R4: hub Beranda Keuangan punya tab 'Pantau' tepat sesudah tab meja; router & judul layar tersedia", () => {

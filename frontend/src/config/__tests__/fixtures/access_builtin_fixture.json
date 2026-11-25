@@ -375,6 +375,7 @@
     "override",
     "cancel",
     "approve_price_edit",
+    "approve_cancel",
     "release_unpaid",
     "tax_override",
     "view_sales_kpi"
@@ -1037,6 +1038,7 @@
    "order": [
     "view",
     "approve_price_edit",
+    "approve_cancel",
     "release_unpaid",
     "view_sales_kpi",
     "create",
@@ -1627,6 +1629,7 @@
     "override",
     "cancel",
     "approve_price_edit",
+    "approve_cancel",
     "release_unpaid",
     "tax_override",
     "view_sales_kpi"
@@ -2982,6 +2985,12 @@
     "decide"
    ]
   ],
+  "finance-desk-pantau": [
+   [
+    "payment_variance",
+    "decide"
+   ]
+  ],
   "hr-attendance": [
    [
     "hr",
@@ -4215,6 +4224,14 @@
    "finance_case"
   ],
   "finance-desk": [
+   "ar_receipt",
+   "credit_profile",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "finance-desk-pantau": [
    "ar_receipt",
    "credit_profile",
    "payment_plan",

@@ -5,8 +5,9 @@
  *  · SATU kepala = judul halaman di bilah atas. Penjelasan meja (`help`) dan daftar "Bukan wewenang meja ini"
  *    (`notMine`) masuk ke ikon ? di samping judul (`usePageHelp`), bukan kotak di atas antrean.
  *  · Tab "Antrean" (bawaan) | "Pantau" (`PageTabs`); tab aktif diingat per meja di sessionStorage `kn.meja.<deskKey>`
- *    (bidang `tab`). Hanya panel aktif yang dirender: `${p}-antrean` / `${p}-pantau`; Pantau tanpa isi →
- *    `${p}-pantau-empty`.
+ *    (bidang `tab`). Hanya panel aktif yang dirender: `${p}-antrean` / `${p}-pantau`. Meja memberi `pantau = null`
+ *    bila tidak ada yang BENAR-BENAR tampil untuk pengguna ini (izin + kartu yang menyembunyikan diri saat kosong) →
+ *    `${p}-pantau-empty`; selama isi itu masih ditentukan (`pantauLoading`) → `${p}-pantau-loading`.
  *  · `tabsInHub` (R4): meja yang sudah menjadi tab hub (Meja Keuangan di Beranda Keuangan) TIDAK menggambar tab sendiri
  *    — tab Pantau-nya tab hub saudara; meja hanya menggambar panel `tab` yang dipilih hub (tanpa tab tingkat ketiga).
  *  · Muat ulang global (tombol muat ulang bilah atas → `MUAT_ULANG_EVENT`) → `onReload()`.
@@ -30,7 +31,7 @@ const isEmptyNode = (n) => n === null || n === undefined || n === false
   || (Array.isArray(n) && n.every(isEmptyNode));
 
 export default function DeskFrame({
-  deskKey, testPrefix, help, notMine = [], antrean, pantau = null, ready = true, onReload,
+  deskKey, testPrefix, help, notMine = [], antrean, pantau = null, pantauLoading = false, ready = true, onReload,
   tabsInHub = false, tab: hubTab = "antrean",
 }) {
   const p = testPrefix;
@@ -67,7 +68,12 @@ export default function DeskFrame({
         <div data-testid={`${p}-antrean`}>{antrean}</div>
       ) : (
         <div data-testid={`${p}-pantau`}>
-          {isEmptyNode(pantau) ? (
+          {isEmptyNode(pantau) && pantauLoading ? (
+            <p data-testid={`${p}-pantau-loading`} role="status"
+              className="section-card section-pad text-center text-fs-13 text-kn-text-2">
+              Memuat pantauan…
+            </p>
+          ) : isEmptyNode(pantau) ? (
             <div data-testid={`${p}-pantau-empty`}
               className="section-card section-pad text-center text-fs-13 text-kn-text-2">
               Tidak ada pantauan untuk meja ini.

@@ -126,3 +126,21 @@ async def test_MNT1_U13b_izin_bawaan_finance_dan_manajer(klien, kepala_admin):
     assert {"create", "void", "manage"} <= set(f["accounting"])
     m = (await klien.get("/api/access/roles/manager", headers=kepala_admin)).json()["permissions"]
     assert "disburse" in m["cash_advance"]
+
+
+async def test_MEJA6_tab_pantau_keuangan_ikut_izin_meja(klien, kepala_admin, akun, sesi, peran_tanpa_acuan):
+    """Meja gelombang 1 (R4) — tab hub Pantau Meja Keuangan (`finance-desk-pantau`) bersyarat IZIN yang sama dengan tab
+    meja (`payment_variance.decide`), bukan nama peran; peran kustom tanpa acuan pemegang izin itu ikut mendapatkannya."""
+    boleh = await peran_tanpa_acuan({"payment_variance": ["decide"]}, label="Tanpa Acuan Putus Selisih")
+    tidak = await peran_tanpa_acuan({"ar_receipt": ["view"]}, label="Tanpa Acuan Lihat Kwitansi")
+    roles = {x["id"]: x for x in (await klien.get("/api/roles", headers=kepala_admin)).json()["roles"]}
+    for rid, harap in ((boleh, True), (tidak, False)):
+        me = (await klien.get("/api/auth/me", headers=await sesi(await akun(rid)))).json()
+        # syarat tampil (dipakai `roles.accessBlocks` di layar) = syarat tab meja
+        assert me["view_actions"]["finance-desk-pantau"] == me["view_actions"]["finance-desk"] \
+            == [["payment_variance", "decide"]], me.get("view_actions")
+        assert "finance-desk-pantau" in roles[rid]["nav"]["add"], roles[rid]["nav"]   # modul `ar` membuka tabnya
+        r = await klien.post("/api/access/roles/preview", headers=kepala_admin, json={"role_id": rid})
+        assert r.status_code == 200, r.text
+        layar = set(r.json()["screens"])
+        assert ("finance-desk-pantau" in layar) is harap and ("finance-desk" in layar) is harap, sorted(layar)

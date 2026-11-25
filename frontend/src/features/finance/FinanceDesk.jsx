@@ -18,7 +18,9 @@
  * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
  * gulir). Meja ini SUDAH tab hub Beranda Keuangan, jadi tidak menggambar tab Antrean/Pantau sendiri (R4: tanpa tab
  * tingkat ketiga): Pantau (kartu retur internal + Pelacak SO) adalah tab hub saudara `finance-desk-pantau` yang
- * merender komponen ini dengan `tab="pantau"`.
+ * merender komponen ini dengan `tab="pantau"`. Tab itu tampil dengan syarat izin yang sama dengan tab meja
+ * (`access_modules.VIEW_ACTION_REQUIREMENTS`: `payment_variance.decide`); di sana hanya antrean meja (untuk daftar
+ * "Bukan wewenang" di ikon ?) yang dimuat, bukan papan hutang & posting gagal.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { compareFilledQueues } from "../sales_admin/deskQueueOrder";   // perapian Meja Finance 14 Nov: urutan kelompok
@@ -32,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import { boardRowLink } from "../../config/waitingBoards";
 import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
-import ReturnDeskSummaryCard from "../home/ReturnDeskSummaryCard";
+import ReturnDeskSummaryCard, { returnSummaryHasContent, useReturnDeskSummary } from "../home/ReturnDeskSummaryCard";
 import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { markDeskReturn } from "../desks/deskSession";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
@@ -138,13 +140,13 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const perms = currentUser?.permissions || {};
   const { go, canOpen, openSupplierCard, cardsEnabled } = useAppNav();
   const pantauTab = tab === "pantau";
-  // Tab Pantau tidak memuat antrean (isinya kartu retur internal & Pelacak SO yang memuat datanya sendiri).
-  const pakaiDesk = !pantauTab && can(perms, "payment_variance", "decide");
+  // Tab Pantau hanya memuat antrean meja (untuk ikon ?); kartu retur internal & Pelacak SO memuat datanya sendiri.
+  const pakaiDesk = can(perms, "payment_variance", "decide");
   const pakaiPapan = !pantauTab && (can(perms, "contra_bon", "view") || can(perms, "vendor_bill", "view"));
   const pakaiPosting = !pantauTab && can(perms, "accounting", "view") && canOpen("posting-failures");
   const [src, setSrc] = useState({ desk: null, boards: null, posting: null });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(!pantauTab);
+  const [loading, setLoading] = useState(true);
   const [refreshingId, setRefreshingId] = useState("");
   const [tick, setTick] = useState(0);
   const [busyRef, setBusyRef] = useState("");
@@ -152,7 +154,6 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
 
   // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
   const load = useCallback(async ({ quiet = false } = {}) => {
-    if (pantauTab) return;
     if (!quiet) setLoading(true);
     const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
     const tugas = {
@@ -172,7 +173,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     setSrc(Object.fromEntries(hasil.map(([k, d]) => [k, d])));
     setErrors(Object.fromEntries(hasil.filter(([, , e]) => e).map(([k, , e]) => [k, e])));
     if (!quiet) setLoading(false);
-  }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting, pantauTab]);
+  }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting]);
   useEffect(() => { load(); }, [load]);
 
   const groups = useMemo(() => susunKelompok(perms, src, canOpen).map((g) => ({ ...g, rows: g.rows.map((r) => {
@@ -260,15 +261,20 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   );
 
   // Meja gelombang 1 (§5.1) — kartu retur internal (dulu di atas meja, AppViewRouter) dan Pelacak SO (izin `order.view`).
-  const pantau = pantauTab ? (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
-      <ReturnDeskSummaryCard key={`ret-${tick}`} selectedEntity={selectedEntity}
-        onNavigate={(t) => { markDeskReturn(DESK_KEY); go(t); }} />
-      {can(perms, "order", "view") && (
-        <SoTrackerCard desk="finance" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
-          onOpen={(r) => open(soTrackerLink(r))} />
-      )}
-    </div>
+  // Pantau "kosong" diputuskan dari yang benar-benar tampil: kartu retur hanya bila berizin DAN ada isinya.
+  const retSummary = useReturnDeskSummary(selectedEntity, {
+    enabled: pantauTab && (can(perms, "sales_return", "view") || can(perms, "interco", "view")), refreshKey: tick,
+  });
+  const returns = pantauTab && returnSummaryHasContent(retSummary) && (
+    <ReturnDeskSummaryCard key="returns" selectedEntity={selectedEntity} summary={retSummary}
+      onNavigate={(t) => { markDeskReturn(DESK_KEY); go(t); }} />
+  );
+  const tracker = pantauTab && can(perms, "order", "view") && (
+    <SoTrackerCard key="tracker" desk="finance" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
+      onOpen={(r) => open(soTrackerLink(r))} />
+  );
+  const pantau = returns || tracker ? (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">{returns}{tracker}</div>
   ) : null;
 
   return (
@@ -282,7 +288,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
 
       <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={src.desk?.not_my_desk || []}
         tabsInHub tab={pantauTab ? "pantau" : "antrean"} antrean={antrean} pantau={pantau}
-        ready={!loading} onReload={reloadAll} />
+        pantauLoading={retSummary === undefined} ready={!loading} onReload={reloadAll} />
 
       {payRow && (
         <ReceivePaymentModal

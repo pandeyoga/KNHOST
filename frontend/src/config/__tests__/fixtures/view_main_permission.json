@@ -2,7 +2,7 @@
  "_keterangan": "MN-T1 — tabel bantu: tiap view pada tabel lama → baru (docs/blueprint/unit/MN-T1.md) → pasangan izin alternatif (salah satu cukup) dan satu endpoint GET utama layarnya. Dipakai uji jest U3 (menu tampak = izin dipegang) dan uji backend U4 (tests_mem/test_MNT1_menu_keuangan.py: satu pasangan → tidak 403).",
  "views": {
   "finance-desk": {"izin": [["payment_variance", "decide"]], "endpoint": "/api/finance/desk"},
-  "finance-desk-pantau": {"izin": [["order", "view"]], "endpoint": "/api/desks/so-tracker?desk=finance"},
+  "finance-desk-pantau": {"izin": [["payment_variance", "decide"]], "endpoint": "/api/finance/desk"},
   "finance-tower": {"izin": [["accounting", "view"]], "endpoint": "/api/finance/tower"},
   "bi-finance": {"izin": [["accounting", "view"]], "endpoint": "/api/finance/bi"},
   "ar-aging": {"izin": [["accounting", "view"], ["penalty", "issue"]], "endpoint": "/api/ar/aging"},

@@ -17,7 +17,7 @@ import { useAppNav } from "../../context/AppNavContext";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard, { DeskQueueCardSkeleton } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
-import ReturnDeskSummaryCard from "../home/ReturnDeskSummaryCard";
+import ReturnDeskSummaryCard, { returnSummaryHasContent, useReturnDeskSummary } from "../home/ReturnDeskSummaryCard";
 import { orderDeskQueues, splitPantau } from "../sales_admin/deskQueueOrder";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import { resolveView } from "../../utils/viewAlias";
@@ -132,8 +132,14 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
     <SoTrackerCard key="tracker" desk={desk} selectedEntity={selectedEntity} testPrefix={p} refreshKey={tick}
       onOpen={(r) => open(soTrackerLink(r))} />
   );
-  const returns = cfg.returns && (
-    <ReturnDeskSummaryCard key={`ret-${tick}`} selectedEntity={selectedEntity}
+  // Kartu retur internal (Meja Gudang) hanya dimuat untuk pemegang izin endpoint-nya dan hanya digambar bila ada isinya —
+  // Pantau "kosong" diputuskan dari yang benar-benar tampil, bukan dari daftar komponen.
+  const retSummary = useReturnDeskSummary(selectedEntity, {
+    enabled: Boolean(cfg.returns) && (can(perms, "sales_return", "view") || can(perms, "interco", "view")),
+    refreshKey: tick,
+  });
+  const returns = returnSummaryHasContent(retSummary) && (
+    <ReturnDeskSummaryCard key="returns" selectedEntity={selectedEntity} summary={retSummary}
       onNavigate={(t) => { markDeskReturn(deskKey); go(t); }} />
   );
   const pantau = tracker || returns ? (
@@ -144,7 +150,8 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
     <div data-testid={`${p}`} className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId={`${p}-error`} />
       <DeskFrame deskKey={deskKey} testPrefix={p} help={cfg.intro} notMine={data?.not_my_desk || []}
-        antrean={antrean} pantau={pantau} ready={!loading} onReload={() => { load(); setTick((t) => t + 1); }} />
+        antrean={antrean} pantau={pantau} pantauLoading={retSummary === undefined} ready={!loading}
+        onReload={() => { load(); setTick((t) => t + 1); }} />
     </div>
   );
 }

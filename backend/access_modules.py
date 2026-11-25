@@ -305,7 +305,8 @@ for _m in MODULE_CATALOG:
 _MNT1_NAV_ADD = {
     "accounting": ["keuangan", "finance-tower", "bi-finance", "cash-bank", "petty-cash"],
     "finance_ops": ["ar-aging"],                                   # induk tab Kasus
-    "ar": ["customer-credit", "finance-tower", "finance-desk"],
+    # Meja gelombang 1 (R4) — tab hub Pantau Meja Keuangan (`finance-desk-pantau`) ikut modul & syarat tab mejanya.
+    "ar": ["customer-credit", "finance-tower", "finance-desk", "finance-desk-pantau"],
     "penjualan": ["keuangan", "ar-aging", "collection-worklist", "hrd", "hr-kpi-hub", "sales-performance"],
     "customer": ["keuangan", "ar-aging", "credit-overrides"],
     "payable": ["keuangan", "purchase-orders"],                    # Hutang + induk tab Landed Cost
@@ -865,6 +866,8 @@ del _v
 VIEW_ACTION_REQUIREMENTS: Dict[str, List[Tuple[str, str]]] = {
     "sales-admin-desk": [("order", "confirm")],
     "finance-desk": [("payment_variance", "decide")],
+    # Meja gelombang 1 (R4) — tab Pantau Meja Keuangan = bagian meja yang sama: syaratnya sama dengan tab mejanya.
+    "finance-desk-pantau": [("payment_variance", "decide")],
     "md-desk": [("design_request", "view")],
     "warehouse-admin-desk": [("wms", "view")],
     "sample-admin-desk": [("sample_order", "view")],
