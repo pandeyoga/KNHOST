@@ -98,7 +98,7 @@ cancel_request = {
 
 ### 5.2 Kapan wajib persetujuan (A2-1, pengaturan)
 
-Kunci Pusat Pengaturan baru **`order.cancel_approval_when`** (per PT, enum), bawaan `dibayar_atau_disiapkan`:
+Kunci Pusat Pengaturan baru **`sales.cancel_approval_when`** (per PT, enum), bawaan `dibayar_atau_disiapkan`:
 
 | Nilai | Arti |
 |---|---|
@@ -285,7 +285,7 @@ Jest: dialog (perlu persetujuan / langsung, ringkasan tutup sisa), bilah pending
 
 ## 7. Keputusan implementer (bukan dari pemilik — periksa)
 
-1. Pengaturan `order.cancel_approval_when` dengan tiga nilai (standar §2: aturan bisnis = pengaturan); bawaan = keputusan A2-1.
+1. Pengaturan `sales.cancel_approval_when` dengan tiga nilai (standar §2: aturan bisnis = pengaturan); bawaan = keputusan A2-1.
 2. Tutup sisa: wajib-setuju bila ada **kelebihan uang yang pindah ke titipan** atau barang **sisa** sudah disiapkan
    (bukan sekadar `paid_total > 0`).
 3. Endpoint batal lama mengembalikan **202** saat menjadi permintaan.
