@@ -1,0 +1,15 @@
+11_faktur_keluaran: klik "SO-0003" → pratinjau MUNCUL, baris barang 2
+12_penagihan: klik "SO-0001" → pratinjau MUNCUL, baris barang 2
+13_transaksi_kas: pratinjau tidak terbuka (tak ada nomor berpratinjau di layar)
+14_rencana_bayar: klik "SO-0001" → pratinjau MUNCUL, baris barang 2
+15_kontrabon: klik "VB-00001" → pratinjau MUNCUL, baris barang 1
+16_hutang_pemasok: klik "VB-00001" → pratinjau MUNCUL, baris barang 1
+17_piutang: klik "SO-0008" → pratinjau MUNCUL, baris barang 1
+meja keuangan baris 1: pop-up berisi rincian dokumen
+meja keuangan baris 2: pop-up berisi rincian dokumen
+meja keuangan baris 3: pop-up berisi rincian dokumen
+admin sales baris 1: pop-up berisi rincian dokumen
+admin sales baris 2: pop-up berisi rincian dokumen
+admin sales baris 3: pop-up berisi rincian dokumen
+admin sales baris 4: pop-up berisi rincian dokumen
+HP admin sales: pop-up dibuka; tombol Jejak tidak ada (benar)
