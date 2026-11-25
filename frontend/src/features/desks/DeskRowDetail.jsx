@@ -19,7 +19,8 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
   const sub = [ptShown, badgeLabel(row.badge), isi(row.age_days) || row.age_kind === "overdue" ? ageText(row) : ""].filter(Boolean).join(" · ");
   const run = (r) => { onClose && onClose(); onAction && onAction(r, queue); };
   // Sama dengan tombol baris di kartu: baris tanpa aksi sendiri memakai aksi antreannya.
-  const actionLabel = row.action || queue.action_label || "";
+  // `action_kind: "view"` ("Lihat") = membuka pop-up ini saja; tak ada aksi utama lagi (ubah → "Buka layar penuh").
+  const actionLabel = row.action_kind === "view" ? "" : row.action || queue.action_label || "";
   const more = Array.isArray(row._moreActions) ? row._moreActions : [];
 
   return (

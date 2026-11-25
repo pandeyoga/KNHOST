@@ -7,7 +7,7 @@
  * menanganinya (pesanan / retur / permintaan internal / pesanan khusus); jenis lain
  * dibuka tampilan penuh.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Inbox, Layers, RefreshCw, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { HelpTip } from "../../../components/ListPageParts";
@@ -19,12 +19,16 @@ import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
 import ReleaseToWarehouseDialog from "../../sales_admin/ReleaseToWarehouseDialog";
+import AssignSalesDialog from "../../sales_admin/AssignSalesDialog";
 import { inPlaceOf } from "../../sales_admin/DeskQueueCard";
+import { adminSalesQueues, catatDiingatkan, inPlaceAdminSales, tolakPermintaanInternal } from "../../sales_admin/deskRowActions";
 import { ageTone, badgeClass, badgeLabel, queueMeta, releaseMessage, releaseOrder, rowLink, salesAdminDesk } from "../../sales_admin/workDeskApi";
 
 const PREVIEW = 5;
 // ref_type → sub-halaman HP (menu Lainnya) atau tab Pesanan.
-const IN_PLACE = inPlaceOf(["verify", "fulfill", "release"]);
+// Aksi Meja gelombang 2 (Task 8) — tetapkan sales, catat diingatkan, tolak PIN — sama dengan desktop (`deskRowActions`).
+const IN_PLACE_LAMA = inPlaceOf(["verify", "fulfill", "release"]);
+const IN_PLACE = (row) => IN_PLACE_LAMA(row) || inPlaceAdminSales(row);
 const HELP_ALUR = "Periksa kelengkapan → putuskan pemenuhan → konfirmasi → dokumen → retur. Nilai besar, kredit & harga khusus tetap keputusan manajer.";
 const MOBILE_TARGET = { sales_return: "returns", internal_request: "internal", special_order: "special" };
 
@@ -122,6 +126,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
   const [releaseRow, setReleaseRow] = useState(null);
+  const [assignRow, setAssignRow] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,11 +156,26 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   // dibuka lewat pop-up rincian dulu (aksi di pop-up bertanda "pindah layar" + "Buka layar penuh").
   const isMobileTarget = (row) => Boolean(MOBILE_TARGET[row.ref_type]) || row.ref_type === "sales_order" || Boolean(row.order_id);
   function onRowAction(row, queue) {
+    if (row.action_kind === "view") return setDetail({ row, queue });   // "Lihat" = pop-up rincian saja
     if (IN_PLACE(row) || isMobileTarget(row)) return handleAction(row, queue);
     setDetail({ row, queue });
   }
 
+  /** Aksi satu langkah: sukses → toast + muat ulang; galat → kotak galat meja. */
+  async function aksiLangsung(row, fn) {
+    setError(""); setErrorAction(null); setBusyRef(row.ref_id);
+    try {
+      const pesan = await fn(row);
+      if (pesan) { flash(pesan); load(); }
+    } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); }
+    finally { setBusyRef(""); }
+  }
+
   function handleAction(row, queue) {
+    if (row.action_kind === "view") return setDetail({ row, queue });
+    if (row.action_kind === "assign_sales") return setAssignRow({ id: row.ref_id, name: row.title, entity_id: row.entity_id || "" });
+    if (row.action_kind === "mark_reminded") return aksiLangsung(row, catatDiingatkan);
+    if (row.action_kind === "reject_internal") return aksiLangsung(row, tolakPermintaanInternal);
     if (row.action_kind === "verify") return setVerifyRow(row);
     if (row.action_kind === "fulfill") return setFulfillRow(row);
     if (row.action_kind === "release") return doRelease(row);
@@ -163,7 +183,8 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   }
 
   const notMine = (desk?.not_my_desk || []).filter(Boolean);
-  const queues = Array.isArray(desk?.queues) ? desk.queues : [];
+  const perms = currentUser?.permissions;
+  const queues = useMemo(() => adminSalesQueues(desk?.queues, perms || {}), [desk, perms]);
   const openItems = desk?.totals?.open_items || 0;
   const totalMoney = queues.filter((q) => q.value_kind !== "qty").reduce((s, q) => s + (q.total_value || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
@@ -210,6 +231,10 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
           onClose={() => setVerifyRow(null)}
           onVerified={(msg) => { setVerifyRow(null); flash(msg); load(); }}
           onOpenFull={() => { const r = verifyRow; setVerifyRow(null); onOpenOrder?.(r.ref_id); }} />
+      )}
+      {assignRow && (
+        <AssignSalesDialog customer={assignRow} onClose={() => setAssignRow(null)}
+          onDone={(msg) => { setAssignRow(null); flash(msg); load(); }} />
       )}
       {releaseRow && (
         <ReleaseToWarehouseDialog

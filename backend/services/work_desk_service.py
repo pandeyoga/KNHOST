@@ -324,8 +324,12 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               age_days=max(0, int(r.get("days_late") or 0)),
               at=(r.get("due_date") or "") if r.get("overdue") else "",
               age_kind="overdue" if r.get("overdue") else "wait",
-              badge="lewat" if r.get("overdue") else "segera",
-              action="Follow-up", action_kind="open", entity_id=r.get("entity_id", "")) for r in tagih],
+              badge=("sudah diingatkan" if r.get("reminded") else "lewat" if r.get("overdue") else "segera"),
+              action="Follow-up", action_kind="open", entity_id=r.get("entity_id", ""),
+              # Meja gelombang 2 (Task 8) — meja menukar aksi jadi "Catat sudah diingatkan" hanya bila belum `reminded`
+              # (tindak lanjut ≤ 7 hari, sama dengan layar penagihan & Meja Keuangan).
+              extra={"customer_id": r.get("customer_id", ""), "order_id": r.get("order_id"),
+                     "reminded": bool(r.get("reminded"))}) for r in tagih],
         action_label="Follow-up"))
 
     # UAT 24 Okt (P14) — pelanggan tanpa sales penanggung jawab. Sejak sales hanya melihat pelanggannya sendiri,

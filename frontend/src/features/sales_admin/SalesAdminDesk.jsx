@@ -11,7 +11,7 @@
  * Aksi di tempat (periksa, pemenuhan, lepas) → pop-up aksinya / langsung; hasil sukses = toast, lalu hanya kartu
  * terkait yang dimuat ulang. Aksi pindah layar menyimpan posisi gulir (`markDeskReturn`) lebih dulu.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { can } from "../../config/roles";
@@ -22,6 +22,8 @@ import VerifyOrderDialog from "./VerifyOrderDialog";
 import ReleaseToWarehouseDialog from "./ReleaseToWarehouseDialog";
 import OrderPrintModal from "../documents/OrderPrintModal";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
+import AssignSalesDialog from "./AssignSalesDialog";
+import { adminSalesQueues, catatDiingatkan, inPlaceAdminSales, tolakPermintaanInternal } from "./deskRowActions";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
 import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
@@ -32,7 +34,9 @@ import { apiErrorText } from "../../utils/apiError";
 
 const DESK_KEY = "sales_admin";
 const P = "desk";
-const IN_PLACE = inPlaceOf(["verify", "fulfill", "release", "print"]);
+// Aksi baru Meja gelombang 2 (Task 8: tetapkan sales, catat sudah diingatkan, tolak PIN) didaftarkan di `deskRowActions`.
+const IN_PLACE_LAMA = inPlaceOf(["verify", "fulfill", "release", "print"]);
+const IN_PLACE = (row) => IN_PLACE_LAMA(row) || inPlaceAdminSales(row);
 
 const HELP = (
   <>
@@ -53,6 +57,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const [fulfillRow, setFulfillRow] = useState(null);
   const [releaseRow, setReleaseRow] = useState(null);
   const [printRow, setPrintRow] = useState(null);
+  const [assignRow, setAssignRow] = useState(null);
   // Uji alur A1 (pelatihan 18 Nov) — Pelacak SO & Keep/Pending dimuat sendiri; sesudah aksi meja (periksa & lepas,
   // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang (`trackerTick`), supaya status SO yang baru dilepas tidak basi.
   const [trackerTick, setTrackerTick] = useState(0);
@@ -72,7 +77,8 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
 
   useEffect(() => { load(); }, [load]);
 
-  const queues = Array.isArray(desk?.queues) ? desk.queues : [];
+  // Baris ditukar aksinya menurut izin (tetapkan sales · catat diingatkan · tolak PIN · "Lihat") — tanpa izin = navigasi lama.
+  const queues = useMemo(() => adminSalesQueues(desk?.queues, perms), [desk, perms]);   // eslint-disable-line react-hooks/exhaustive-deps
   const reloadAll = () => { load(); setTrackerTick((t) => t + 1); };
   async function reloadQueue(queueId) {
     setRefreshingId(queueId || "");
@@ -104,8 +110,24 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     open(rowLink(row, queue?.id || row?._qid, DESK_KEY));
   }
 
+  /** Aksi satu langkah: sukses → toast + muat ulang kartu; galat → kotak galat meja. */
+  async function aksiLangsung(row, qid, fn) {
+    setError(""); setBusyRef(row.ref_id);
+    try {
+      const pesan = await fn(row);
+      if (pesan) done(pesan, qid);
+    } catch (e) {
+      setError(apiErrorText(e, "Aksi gagal."));
+    } finally { setBusyRef(""); }
+  }
+
   function handleAction(row, queue) {
     const qid = queue?.id || "";
+    if (row.action_kind === "assign_sales") {
+      setAssignRow({ id: row.ref_id, name: row.title, entity_id: row.entity_id || "", _qid: qid }); return;
+    }
+    if (row.action_kind === "mark_reminded") { aksiLangsung(row, qid, catatDiingatkan); return; }
+    if (row.action_kind === "reject_internal") { aksiLangsung(row, qid, tolakPermintaanInternal); return; }
     if (row.action_kind === "verify") { setVerifyRow({ ...row, _qid: qid }); return; }
     if (row.action_kind === "fulfill") { setFulfillRow({ ...row, _qid: qid }); return; }
     if (row.action_kind === "release") { startRelease(row, qid); return; }
@@ -169,6 +191,11 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           onVerified={(msg) => { const qid = verifyRow._qid; setVerifyRow(null); done(msg, qid); }}
           onOpenFull={() => openFull(verifyRow)}
         />
+      )}
+
+      {assignRow && (
+        <AssignSalesDialog customer={assignRow} onClose={() => setAssignRow(null)}
+          onDone={(msg) => { const qid = assignRow._qid; setAssignRow(null); done(msg, qid); }} />
       )}
 
       {printRow && (

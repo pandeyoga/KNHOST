@@ -11,6 +11,7 @@ import PagedRows from "../../components/PagedRows";
 import { CreditStatusPill, SegmentBadge, OutcomePill, fmtDate, money, paymentMethodLabel, payStatusLabel, lotPolicyLabel } from "./crmUtils";
 import { docStatusLabel } from "../../utils/docStatus";
 import { apiErrorText } from "../../utils/apiError";
+import { CONTOH_ALASAN, TEKS_BERHASIL_PINDAH, TEKS_GAGAL_PINDAH, TEKS_PILIH_SALES, reassignCustomer, salesTujuanOptions } from "./customerReassign";
 import CustomerFormModal from "./CustomerFormModal";
 import CustomerColorsSection from "./CustomerColorsSection";
 import CustomerMergeSection from "./CustomerMergeSection";
@@ -386,12 +387,12 @@ function ReassignModal({ customer, salesUsers, onClose, onDone, onError }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   async function go() {
-    if (!sid) { onError?.("Pilih sales tujuan."); return; }
+    if (!sid) { onError?.(TEKS_PILIH_SALES); return; }
     setBusy(true);
     try {
-      await axios.post(`${API}/customers/${customer.id}/reassign`, { assigned_sales_id: sid, reason });
-      onDone?.("Pelanggan dipindahkan ke sales baru.");
-    } catch (e) { onError?.(apiErrorText(e, "Gagal memindahkan pelanggan.")); } finally { setBusy(false); }
+      await reassignCustomer(customer.id, { assigned_sales_id: sid, reason });
+      onDone?.(TEKS_BERHASIL_PINDAH);
+    } catch (e) { onError?.(apiErrorText(e, TEKS_GAGAL_PINDAH)); } finally { setBusy(false); }
   }
   return (
     <MiniModal title="Pindahkan ke Sales Lain" icon={<UserCog size={16} className="text-[#0058CC]" />} onClose={onClose} testId="reassign-modal"
@@ -402,11 +403,11 @@ function ReassignModal({ customer, salesUsers, onClose, onDone, onError }) {
       <div>
         <MLabel req>Sales tujuan</MLabel>
         <KNSelect value={sid} onValueChange={setSid} className="field" data-testid="reassign-sales-select"
-          placeholder="Pilih sales tujuan" options={(salesUsers || []).filter((s) => s.id !== customer.assigned_sales_id).map((s) => ({ value: s.id, label: s.name }))} />
+          placeholder="Pilih sales tujuan" options={salesTujuanOptions(salesUsers, customer.assigned_sales_id)} />
       </div>
       <div>
         <MLabel optional>Alasan</MLabel>
-        <input data-testid="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" placeholder="mis. wilayah sales berubah" />
+        <input data-testid="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" placeholder={CONTOH_ALASAN} />
       </div>
     </MiniModal>
   );

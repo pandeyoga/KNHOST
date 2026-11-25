@@ -51,7 +51,9 @@ test("registri: tabel pemetaan dan pencarian kunci antrean lebih dulu, lalu ref_
   expect(DESK_DOC_OF["queue:uang_masuk"]).toBeTruthy();
   expect(DESK_DOC_OF.customer).toBeUndefined();          // dua arti → Tugas 8
   expect(panelFor(ROW, QUEUE)).toBe(DESK_PANELS.sales_order);
-  expect(panelFor({ ref_type: "customer", ref_id: "c1" }, { id: "pelanggan_tanpa_sales" })).toBeNull();
+  // Tugas 8: antrean pelanggan_tanpa_sales punya panelnya sendiri (kunci antrean); `customer` polos tetap tanpa panel.
+  expect(panelFor({ ref_type: "customer", ref_id: "c1" }, { id: "pelanggan_tanpa_sales" })).toBe(DESK_PANELS["queue:pelanggan_tanpa_sales"]);
+  expect(panelFor({ ref_type: "customer", ref_id: "c1" }, { id: "lain" })).toBeNull();
   expect(panelFor({ ref_type: "customer", ref_id: "c1" }, { id: "uang_masuk" })).toBe(DESK_PANELS["queue:uang_masuk"]);
   expect(docOfRow({ ref_type: "customer", ref_id: "c1", order_id: "so9" }, { id: "uang_masuk" })).toEqual({ docType: "sales_order", docId: "so9" });
   expect(docOfRow({ ref_type: "penalty", doc_type: "sales_order", doc_id: "so5" }, { id: "denda_draft" })).toEqual({ docType: "sales_order", docId: "so5" });

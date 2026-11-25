@@ -5,7 +5,9 @@
 // Kontrak props panel: { row, queue, currentUser, testPrefix, pt, onAction(row, queue), onClose(), onOpenFull(row, queue) }.
 //
 // `DESK_DOC_OF` = satu tabel pemetaan kunci → dokumen yang dipratinjau (`docType`, `docId` dari baris). Kunci `customer`
-// SENGAJA tidak dipetakan (dua arti: pelanggan tanpa sales vs uang masuk) — ditangani Tugas 8.
+// SENGAJA tidak dipetakan (dua arti: pelanggan tanpa sales vs uang masuk) — antrean `pelanggan_tanpa_sales` punya
+// `CustomerQueuePanel` sendiri (Tugas 8).
+import CustomerQueuePanel from "./CustomerQueuePanel";
 import DeskDocPanel from "./DeskDocPanel";
 
 const dari = (docType, kunci) => (row) => ({ docType, docId: row?.[kunci] });
@@ -34,7 +36,10 @@ function MappedDocPanel(props) {
 }
 
 /** Panel per kunci: setiap kunci terpetakan memakai `MappedDocPanel`; jenis lain dapat diisi gelombang berikut. */
-export const DESK_PANELS = Object.fromEntries(Object.keys(DESK_DOC_OF).map((k) => [k, MappedDocPanel]));
+export const DESK_PANELS = {
+  ...Object.fromEntries(Object.keys(DESK_DOC_OF).map((k) => [k, MappedDocPanel])),
+  "queue:pelanggan_tanpa_sales": CustomerQueuePanel,
+};
 
 const kunciCari = (row, queue) => [
   row?._queue ? `queue:${row._queue}` : "", queue?.id ? `queue:${queue.id}` : "", row?.ref_type || "",
