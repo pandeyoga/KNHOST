@@ -49,6 +49,9 @@ for _r, _tambah in {"admin": {"order": {"tax_override"}},
                     "manager": {"order": {"tax_override"}}}.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# BTP-1 — `order.approve_cancel` (setujui pembatalan & tutup sisa pesanan): bawaan admin, manager, finance.
+for _r in ("admin", "manager", "finance"):
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("order", set()).add("approve_cancel")
 # MN-T1 (K-09, K-17) — Finance melihat & membayar hutang, Finance & Manajer mencairkan uang muka
 # (`permissions_config.MNT1_DEFAULT_PAIRS`).
 for _r, _tambah in _pc.MNT1_DEFAULT_PAIRS.items():
