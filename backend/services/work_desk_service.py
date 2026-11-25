@@ -561,6 +561,37 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               extra={"order_id": o["id"], "row_key": o["id"]}, entity_id=o.get("entity_id", "")) for o, h in tahan],
         action_label="Catat kwitansi", owner="finance"))
 
+    # 2c — LB-T4 (ketetapan R2): laporan bayar CBD/DP menunggu keputusan Finance (Terima → kwitansi otomatis; Tolak →
+    # alasan). Antrean pintu `POST /payment-reports/{id}/terima|tolak` (terdaftar di `verify_approval_queues`).
+    # `memproses` ikut tampil: laporan yang tertinggal di tengah Terima bisa dicoba lagi (klaim basi diambil alih).
+    from dependencies import has_permission
+    if await has_permission(actor, "payment_report", "decide"):
+        from services import payment_report_service as _prs
+        laporan = await db.payment_reports.find(
+            {**_ent_q(scope), "status": {"$in": [_prs.MENUNGGU, _prs.MEMPROSES]}},
+            {"_id": 0, "id": 1, "number": 1, "status": 1, "entity_id": 1, "order_id": 1, "order_number": 1,
+             "customer_name": 1, "amount": 1, "transfer_date": 1, "account_name": 1, "attachments.is_deleted": 1,
+             "created_by_name": 1, "created_at": 1}
+        ).sort("created_at", 1).to_list(500)
+        queues.append(_queue(
+            "lapor_bayar", "Lapor bayar menunggu dicek",
+            "Sales melaporkan pelanggan sudah membayar. Cek bukti lalu Terima (kwitansi + jurnal otomatis, pesanan lepas "
+            "ke gudang bila lunas) atau Tolak dengan alasan.",
+            [_row(ref_type="payment_report", ref_id=lp["id"], number=lp.get("number", ""),
+                  title=lp.get("customer_name", "—"),
+                  subtitle=f"{lp.get('order_number', '')} · transfer {lp.get('transfer_date', '')} · "
+                           f"{lp.get('account_name', '')}",
+                  value=float(lp.get("amount") or 0), age_days=_age_days(lp.get("created_at")), at=lp.get("created_at"),
+                  badge="sedang diproses" if lp.get("status") == _prs.MEMPROSES else "menunggu",
+                  action="Putuskan", action_kind="decide_payment_report",
+                  extra={"order_id": lp.get("order_id", ""), "order_number": lp.get("order_number", ""),
+                         "amount": float(lp.get("amount") or 0), "transfer_date": lp.get("transfer_date", ""),
+                         "account_label": lp.get("account_name", ""),
+                         "attachments_count": len([a for a in lp.get("attachments") or [] if not a.get("is_deleted")]),
+                         "reported_by_name": lp.get("created_by_name", ""), "row_key": lp["id"]},
+                  entity_id=lp.get("entity_id", "")) for lp in laporan],
+            action_label="Putuskan", owner="finance"))
+
     # 3 — selisih bayar (lebih/kurang bayar) dalam batas kewenangan Finance
     from services import payment_variance_service as pvs
     ent_scope: Any = scope.get("entity_id") if isinstance(scope, dict) else ""

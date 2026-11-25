@@ -25,8 +25,10 @@ kalau tidak, gate MEMERAH.
 INVARIAN YANG DITEGAKKAN
 ------------------------
   A. **Pintu terklasifikasi.** Setiap endpoint keputusan di `backend/routers/*.py` harus
-     terdaftar di `DOOR_QUEUE` (menunjuk kunci antrean yang ADA di `QUEUES`) atau di
-     `DOOR_EXEMPT` **dengan alasan tertulis**. Pintu baru = gate merah sampai diputuskan.
+     terdaftar di `DOOR_QUEUE` (menunjuk kunci antrean yang ADA di `QUEUES`), di
+     `DOOR_DESK_QUEUE` (menunjuk antrean MEJA KERJA yang dibangun di `work_desk_service.py` —
+     keputusan rutin satu peran, LB-T4), atau di `DOOR_EXEMPT` **dengan alasan tertulis**.
+     Pintu baru = gate merah sampai diputuskan.
   B. **Data tak boleh punya antrean bayangan.** Setiap `(koleksi, status)` di MongoDB
      yang berbunyi "menunggu keputusan" wajib tercakup satu baris `QUEUES` atau
      dibebaskan beralasan di `DATA_EXEMPT`.
@@ -82,7 +84,25 @@ DOOR_EXPLICIT: Dict[str, str] = {
     "sales_orders_extra.py::/api/sales-orders/{order_id}/cancel-request/decision":
         "Setujui/tolak permintaan batal & tutup sisa pesanan (BTP-2, izin order.approve_cancel) — keputusan orang "
         "atas `sales_orders.cancel_request` yang menunggu; path berakhiran `decision`, bukan `decide`.",
+    # LB-T4 — Lapor Bayar CBD & DP: nama pintu sengaja berbahasa Indonesia (`terima`/`tolak`), jadi tidak tertangkap
+    # `DOOR_RE`; keputusan Finance atas `payment_reports.status == "menunggu"`.
+    "payment_reports.py::/api/payment-reports/{report_id}/terima":
+        "Finance menerima laporan bayar pelanggan (izin payment_report.decide) → kwitansi AR otomatis — keputusan "
+        "orang atas `payment_reports` berstatus `menunggu`.",
+    "payment_reports.py::/api/payment-reports/{report_id}/tolak":
+        "Finance menolak laporan bayar pelanggan dengan alasan (izin payment_report.decide) — keputusan orang atas "
+        "`payment_reports` berstatus `menunggu`.",
 }
+
+#: pintu → kunci antrean MEJA KERJA (`backend/services/work_desk_service.py`, `_queue("<kunci>", …)`) yang memuat
+#: dokumen menunggunya. Untuk keputusan RUTIN satu peran yang dikerjakan dari mejanya sendiri, bukan ACC Manajer di
+#: Pusat Persetujuan (rancangan Lapor Bayar §7-3) — jadi bukan baris `QUEUES` dan tidak dihitung KPI "Persetujuan
+#: Menunggu". Kunci wajib benar-benar dibangun di berkas meja; antrean yang dihapus/di-rename → MERAH.
+DOOR_DESK_QUEUE: Dict[str, str] = {
+    "payment_reports.py::/api/payment-reports/{report_id}/terima": "lapor_bayar",   # LB-T4 — Meja Keuangan
+    "payment_reports.py::/api/payment-reports/{report_id}/tolak": "lapor_bayar",
+}
+DESK_QUEUE_RE = re.compile(r'_queue\(\s*"([a-z0-9_]+)"')
 
 #: pintu → kunci antrean di `approval_backlog_service.QUEUES` yang menghitungnya.
 DOOR_QUEUE: Dict[str, str] = {
@@ -311,6 +331,13 @@ def doors_from_code() -> Dict[str, str]:
     return doors_in_texts(texts, DOOR_EXPLICIT)
 
 
+def desk_queue_keys(text: str = "") -> Set[str]:
+    """Kunci antrean meja kerja yang DIBANGUN di `work_desk_service.py` (`_queue("<kunci>", …)`)."""
+    if not text:
+        text = (ROOT / "backend" / "services" / "work_desk_service.py").read_text(encoding="utf-8")
+    return set(DESK_QUEUE_RE.findall(text))
+
+
 def views_in_router() -> Set[str]:
     txt = (ROOT / "frontend" / "src" / "AppViewRouter.jsx").read_text(encoding="utf-8")
     return set(re.findall(r'activeView\s*===\s*"([\w-]+)"', txt))
@@ -335,8 +362,12 @@ def queues_from_backend() -> List[tuple]:
 
 # ─── Invarian (fungsi MURNI supaya bisa diuji-merah) ─────────────────────────
 def check_doors(g: Guard, doors: Dict[str, str], door_queue: Dict[str, str],
-                door_exempt: Dict[str, str], queue_keys: Set[str]) -> None:
-    """Invarian A — tiap pintu keputusan terklasifikasi & klasifikasinya sah."""
+                door_exempt: Dict[str, str], queue_keys: Set[str],
+                door_desk: Dict[str, str] = None, desk_keys: Set[str] = None) -> None:
+    """Invarian A — tiap pintu keputusan terklasifikasi & klasifikasinya sah (antrean Pusat Persetujuan, antrean meja
+    kerja, atau dibebaskan beralasan)."""
+    door_desk = door_desk or {}
+    desk_keys = desk_keys or set()
     for door in sorted(doors):
         g.bump()
         if door in door_queue:
@@ -344,6 +375,11 @@ def check_doors(g: Guard, doors: Dict[str, str], door_queue: Dict[str, str],
                 g.add(f"pintu `{door}` menunjuk antrean `{door_queue[door]}` yang TIDAK "
                       f"ADA di `approval_backlog_service.QUEUES` → keputusan yang tak "
                       f"pernah dihitung KPI.")
+        elif door in door_desk:
+            if door_desk[door] not in desk_keys:
+                g.add(f"pintu `{door}` menunjuk antrean meja `{door_desk[door]}` yang TIDAK dibangun di "
+                      f"`work_desk_service.py` → dokumen yang menunggu keputusan di pintu ini tidak tampil di "
+                      f"meja mana pun.")
         elif door in door_exempt:
             if len((door_exempt.get(door) or "").strip()) < 20:
                 g.add(f"pembebasan pintu `{door}` tanpa alasan tertulis yang bisa dinilai "
@@ -353,7 +389,7 @@ def check_doors(g: Guard, doors: Dict[str, str], door_queue: Dict[str, str],
                   f"maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini "
                   f"tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.")
     # Klasifikasi yang menunjuk pintu yang sudah tidak ada (kode dihapus/di-rename)
-    for door in sorted(set(door_queue) | set(door_exempt)):
+    for door in sorted(set(door_queue) | set(door_exempt) | set(door_desk)):
         g.bump()
         if door not in doors:
             g.add(f"klasifikasi menyebut pintu `{door}` yang TIDAK ADA lagi di kode → "
@@ -475,6 +511,14 @@ def self_test() -> int:
                                    {"orders.py::/api/orders/{id}/cancel-request/decision": "transfer"}, {}, QK), 0)
     jalankan("A: pintu EKSPLISIT ada di kode tetapi tak terpetakan → merah",
              lambda g: check_doors(g, doors_in_texts({"orders.py": src_ada}, ekspl), {}, {}, QK), 1)
+    desk = {"transfers.py::/api/transfers/{id}/approve": "lapor_bayar"}
+    jalankan("A: pintu ber-antrean MEJA yang dibangun di work_desk_service → hijau",
+             lambda g: check_doors(g, doors_ok, {}, {}, QK, desk,
+                                   desk_queue_keys('queues.append(_queue(\n        "lapor_bayar", "L", "h", []))')), 0)
+    jalankan("A: pintu menunjuk antrean MEJA yang tidak dibangun → merah",
+             lambda g: check_doors(g, doors_ok, {}, {}, QK, desk, desk_queue_keys('_queue("lain", "L", "h", [])')), 1)
+    jalankan("A: klasifikasi antrean MEJA basi (pintu sudah tak ada di kode) → merah",
+             lambda g: check_doors(g, {}, {}, {}, QK, desk, {"lapor_bayar"}), 1)
     jalankan("A: pintu EKSPLISIT sudah hilang dari kode → klasifikasi basi → merah",
              lambda g: check_doors(g, doors_in_texts({"orders.py": 'router = APIRouter(prefix="/api")'}, ekspl),
                                    {"orders.py::/api/orders/{id}/cancel-request/decision": "transfer"}, {}, QK), 1)
@@ -538,10 +582,11 @@ def main(verbose: bool = False) -> int:
     print(f"  pintu keputusan di kode: {len(doors)} · baris antrean: {len(queues)}")
     if verbose:
         for d in sorted(doors):
-            tag = DOOR_QUEUE.get(d) or ("BEBAS: " + (DOOR_EXEMPT.get(d, "?")[:48]))
+            tag = (DOOR_QUEUE.get(d) or (f"MEJA: {DOOR_DESK_QUEUE[d]}" if d in DOOR_DESK_QUEUE else "")
+                   or ("BEBAS: " + (DOOR_EXEMPT.get(d, "?")[:48])))
             print(f"    {d:70s} → {tag}")
 
-    check_doors(g, doors, DOOR_QUEUE, DOOR_EXEMPT, queue_keys)
+    check_doors(g, doors, DOOR_QUEUE, DOOR_EXEMPT, queue_keys, DOOR_DESK_QUEUE, desk_queue_keys())
     check_kinds(g, queue_keys, kinds_from_backend())   # KP-T4 — invarian G
     check_generic_retired(
         g,

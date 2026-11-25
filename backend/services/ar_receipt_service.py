@@ -527,6 +527,53 @@ async def isi_tagih_sekarang(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     return rows
 
 
+#: LB-T4 (B3) — pesan pemandu kwitansi transfer sales ke pesanan yang menunggu lapor bayar.
+PESAN_PAKAI_LAPOR_BAYAR = "Pesanan ini menunggu lapor bayar — pakai Lapor bayar"
+
+
+async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, entity_id: str, method: str,
+                             customer_id: str, total_funds: float) -> None:
+    """LB-T4 (B3, rancangan §5.4) — 409 bila KETIGANYA: pencatat tidak memegang `payment_report.decide`; cara bayar bukan
+    tunai (pengertian tunai daftar induk, `payment_method_service.is_cash`); salah satu pesanan yang akan dialokasi
+    (eksplisit, atau rencana FIFO yang sama dengan efeknya) sedang ber-`pay_hold` aktif. Tunai tetap diatur
+    `pembayaran.sales_terima_tunai`; kwitansi Finance (pemegang `decide`, termasuk jalur Terima) tidak terpengaruh."""
+    from services import payment_method_service as _pms
+    if await _pms.is_cash(entity_id, method):
+        return
+    from dependencies import has_permission
+    if await has_permission(actor or {}, "payment_report", "decide"):
+        return
+    ids = await _rencana_pesanan(customer_id, entity_id, payload.get("allocations") or [], total_funds)
+    if ids and await db.sales_orders.find_one(
+            {"id": {"$in": ids}, "status": "approved", "pay_hold": {"$exists": True, "$ne": None}}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
+
+
+async def _buka_tahan_bayar(allocations: List[Dict[str, Any]], actor: Dict[str, Any], number: str) -> List[str]:
+    """LB-T4 (R5) — sesudah SETIAP kwitansi tuntas: pesanan teralokasi yang sedang ditahan bayar diperiksa ulang
+    (`pay_hold_service.clear_if_paid`: buka tahan bila bagian wajib sudah terbayar, lalu lepas otomatis bila Admin Sales
+    sudah "Periksa & lepas"). Satu tempat untuk semua pemanggil (`POST /ar-receipts`, Terima lapor bayar) supaya tidak
+    ada yang lupa. Efek samping: galat dicatat, kwitansi tetap sah. → id pesanan yang dilepas ke gudang."""
+    out: List[str] = []
+    try:
+        ids = list(dict.fromkeys(a.get("order_id") for a in allocations or [] if a.get("order_id")))
+        if not ids:
+            return out
+        tahan = [o["id"] async for o in db.sales_orders.find(
+            {"id": {"$in": ids}, "$or": [{"pay_hold": {"$exists": True}}, {"release.waiting": "bayar"}]},
+            {"_id": 0, "id": 1})]
+        from services import pay_hold_service as _phs
+        for oid in tahan:
+            try:
+                if await _phs.clear_if_paid(oid, actor, why=f"kwitansi {number}"):
+                    out.append(oid)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("[create_receipt] buka tahan bayar %s sesudah %s gagal: %s", oid, number, exc)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[create_receipt] pemeriksaan tahan bayar sesudah %s gagal: %s", number, exc)
+    return out
+
+
 async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     customer = await db.customers.find_one({"id": payload.get("customer_id")}, {"_id": 0})
     if not customer:
@@ -559,6 +606,10 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
     except _pms.CaraBayarError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     method = cara["code"]
+    # LB-T4 (B3) — kwitansi non-tunai dari pencatat tanpa `payment_report.decide` ke pesanan yang tertahan bayar ditolak
+    # SEBELUM apa pun ditulis: uangnya dilaporkan lewat Lapor bayar dan diterima Finance (`payment_report_service.terima`).
+    await _pagar_lapor_bayar(payload, actor, entity_id=entity_id, method=method, customer_id=customer["id"],
+                             total_funds=total_funds)
     # FN-10 — periode tertutup ditolak SEBELUM kwitansi/alokasi/deposit dimutasi.
     from services import gl_service as _glp
     try:
@@ -739,6 +790,11 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "updated_at": now_iso(),
         # AG-T3 — kwitansi dari kartu tindakan asisten yang disetujui (hanya kartu `running` milik sesi ini).
         **card_field(),
+        # LB-T4 — rujukan balik ke laporan bayar yang diterima Finance (opsional; hanya pemanggil layanan yang mengisinya —
+        # `POST /ar-receipts` tidak menerima isian ini). Kunci pemulihan Terima: satu laporan = satu kwitansi.
+        **({"source": "payment_report", "payment_report_id": str(payload["payment_report_id"]),
+            "payment_report_number": str(payload.get("payment_report_number") or "")}
+           if payload.get("payment_report_id") else {}),
     }
     await db.ar_receipts.insert_one(doc)
     # FASE G-4 — kwitansi menaut ke SETIAP pesanan yang dilunasinya (dua arah).
@@ -802,6 +858,8 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
     # CR-T2 — kwitansi tersimpan (pembayaran terakhir, giro belum cair): saldo piutang tersimpan pasangan dihitung ulang
     from services import customer_balance_service as _cbs
     await _cbs.refresh_safe(out.get("customer_id") or "", out.get("entity_id") or None)
+    # LB-T4 (R5) — tahan bayar pesanan yang dialokasi diperiksa ulang (buka + lepas otomatis); tidak disimpan di kwitansi.
+    out["released_order_ids"] = await _buka_tahan_bayar(allocations, actor, number)
     return out
 
 

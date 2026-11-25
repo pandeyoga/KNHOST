@@ -1,11 +1,15 @@
-"""Lapor Bayar CBD & DP (LB-T1, LB-T3) — laporan bayar pelanggan: buat, lampiran bukti, baca per pesanan.
+"""Lapor Bayar CBD & DP (LB-T1, LB-T3, LB-T4) — laporan bayar pelanggan: buat, lampiran bukti, baca per pesanan, dan
+keputusan Finance terima/tolak.
 
-Rancangan `docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md` §5.4. Keputusan terima/tolak menyusul di Tugas 4.
+Rancangan `docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md` §5.4. Pintu keputusan bernama `terima`/`tolak`
+(bukan kata `approve|reject|…`), terdaftar di `verify_approval_queues` sebagai pintu ber-antrean Meja Keuangan
+`lapor_bayar`. Mesin status laporan: `services/payment_report_service.py`.
 Setiap rute melewati urutan pagar yang sama: izin → pesanan ada → PT pengguna (403 untuk PT lain) → pemilik pesanan
 (sales hanya pesanan miliknya). Lampiran mengikuti pola bukti persetujuan SO (`storage_service`; unduh inline lewat blob).
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, Optional
 
 from urllib.parse import quote
@@ -22,6 +26,11 @@ from services import payment_report_service as prs
 from services import sales_ownership, storage_service as storage
 
 router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
+
+
+class TolakIn(BaseModel):
+    reason: Optional[str] = ""   # panjang diperiksa layanan (400 berkalimat, bukan 422)
 
 
 class LaporBayarIn(BaseModel):
@@ -113,6 +122,39 @@ async def upload_attachment(report_id: str, request: Request, file: UploadFile =
     out = await prs.add_attachment(rep, att)
     await audit(actor["name"], "payment_report_attachment_added", "payment_report", report_id,
                 {"file": file.filename, "number": rep.get("number", "")})
+    return out
+
+
+@router.post("/payment-reports/{report_id}/terima")
+async def terima_payment_report(report_id: str, request: Request) -> Dict[str, Any]:
+    """Finance menerima laporan → kwitansi AR + kas + jurnal (lewat `create_receipt`), tahan bayar dibuka, lepas otomatis
+    ke gudang bila Admin Sales sudah "Periksa & lepas". Klaim CAS pada status laporan: Terima ganda = satu kwitansi."""
+    actor = await require_permission(request, "payment_report", "decide")
+    rep, order = await _laporan_berpagar(request, actor, report_id)
+    out = await prs.terima(rep, order, actor)
+    await audit(actor["name"], "payment_report_accepted", "payment_report", report_id,
+                {"number": rep.get("number", ""), "order_id": order["id"], "amount": rep.get("amount"),
+                 "receipt_number": out["receipt_number"], "released": out["released"],
+                 "waiting_bank": out["waiting_bank"]})
+    # Sama dengan `POST /ar-receipts`: kirim WhatsApp kwitansi bila ada aturan aktif (efek samping, tidak menggagalkan).
+    try:
+        from services import delivery_service as _ds
+        rid = (out.get("report") or {}).get("receipt_id")
+        if rid:
+            await _ds.dispatch_event("ar_receipt", rid, "created", order.get("entity_id"), actor.get("name"))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[payment_report] kirim kwitansi %s gagal diabaikan: %s", report_id, exc)
+    return out
+
+
+@router.post("/payment-reports/{report_id}/tolak")
+async def tolak_payment_report(report_id: str, body: TolakIn, request: Request) -> Dict[str, Any]:
+    """Finance menolak laporan (alasan wajib) — tanpa uang; sales diberi tahu alasannya dan boleh lapor ulang."""
+    actor = await require_permission(request, "payment_report", "decide")
+    rep, order = await _laporan_berpagar(request, actor, report_id)
+    out = await prs.tolak(rep, order, body.reason or "", actor)
+    await audit(actor["name"], "payment_report_rejected", "payment_report", report_id,
+                {"number": rep.get("number", ""), "order_id": order["id"], "reason": out.get("reason", "")})
     return out
 
 

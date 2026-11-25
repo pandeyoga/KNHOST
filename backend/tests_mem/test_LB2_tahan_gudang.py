@@ -5,7 +5,8 @@ hanya dari `dispatch_payment_gate.evaluate`. Penanda `pay_hold` + sub-status `me
 
 Persiapan: rekening penerimaan `ent_ksc`, pelanggan + produk Rp 10.000/m + gudang + roll 100 m (fixture, disisipkan
 langsung). Pesanan, ajukan, Periksa & lepas, ACC, konfirmasi, lepas tanpa bayar = alur lewat API. Kwitansi Finance lewat
-`ar_receipt_service.create_receipt` (pintu kas satu-satunya), lalu `pay_hold_service.clear_if_paid` (dipanggil Tugas 4).
+`ar_receipt_service.create_receipt` (pintu kas satu-satunya), yang sejak Tugas 4 (R5) memanggil
+`pay_hold_service.clear_if_paid` sendiri.
 
 Hitung tangan (PT `ent_ksc`, pesanan "tanpa PPN" supaya total = harga × jumlah):
   100 m × Rp 10.000 = Rp 1.000.000 · CBD (DP 100 %) → wajib Rp 1.000.000 · DP50 → wajib Rp 500.000 · NET30 → 0.
@@ -255,13 +256,15 @@ async def test_kwitansi_finance_cukup_melepas(klien, db, siap):
     from services import pay_hold_service as phs
     so = await _pesan(klien, db, siap)
     await _periksa_lepas(klien, siap, so["id"])
-    await _kwitansi_finance(siap, so["id"], 400_000)          # sebagian: masih kurang → tetap tertahan
+    kw = await _kwitansi_finance(siap, so["id"], 400_000)     # sebagian: masih kurang → tetap tertahan
+    assert kw["released_order_ids"] == []
     assert await phs.clear_if_paid(so["id"]) is False
     cur = await _so(db, so["id"])
     assert cur["status"] == "approved" and cur["pay_hold"]
-    await _kwitansi_finance(siap, so["id"], 600_000)          # lunas bagian wajib
-    assert (await _so(db, so["id"]))["status"] == "approved"   # kwitansi sendiri tidak melepas
-    assert await phs.clear_if_paid(so["id"]) is True
+    kw = await _kwitansi_finance(siap, so["id"], 600_000)     # lunas bagian wajib
+    # LB-T4 (R5) — kwitansi itu sendiri membuka tahan dan melepas (`create_receipt` → `clear_if_paid`)
+    assert kw["released_order_ids"] == [so["id"]]
+    assert await phs.clear_if_paid(so["id"]) is False         # tidak ada lagi yang dibuka
     so = await _so(db, so["id"])
     assert so["status"] == "confirmed" and "pay_hold" not in so
     assert await _tugas_keluar(db, so["id"]) >= 1
@@ -419,9 +422,7 @@ async def test_buka_tahan_sekali_walau_dua_pemanggil(klien, db, siap, monkeypatc
     from services import so_release_service as rel
     so = await _pesan(klien, db, siap)
     await _ajukan(klien, siap, so["id"])                       # tanpa "Periksa & lepas": status tetap approved
-    await _kwitansi_finance(siap, so["id"], 1_000_000)
-    basi = await _so(db, so["id"])                              # potret sesudah bayar, sebelum tahan dibuka
-    assert basi["pay_hold"]
+    hold = (await _so(db, so["id"]))["pay_hold"]
     coba = []
     asli = rel.auto_release
 
@@ -429,7 +430,9 @@ async def test_buka_tahan_sekali_walau_dua_pemanggil(klien, db, siap, monkeypatc
         coba.append(a[0])
         return await asli(*a, **kw)
     monkeypatch.setattr(rel, "auto_release", _hitung)
-    assert await phs.clear_if_paid(so["id"]) is False          # pertama: tahan dibuka (belum diperiksa → tidak lepas)
+    # pertama: kwitansi itu sendiri membuka tahan (LB-T4 R5; belum diperiksa → tidak lepas)
+    assert (await _kwitansi_finance(siap, so["id"], 1_000_000))["released_order_ids"] == []
+    basi = {**await _so(db, so["id"]), "pay_hold": hold}       # potret sesudah bayar, sebelum tahan dibuka
     assert await phs.clear_if_paid(so["id"]) is False          # kedua, berurutan
     asli_muat = phs._muat
 
