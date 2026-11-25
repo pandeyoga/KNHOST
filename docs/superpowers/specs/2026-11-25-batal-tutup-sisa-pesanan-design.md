@@ -1,6 +1,6 @@
 # Rancangan — Tutup sisa pesanan & persetujuan pembatalan (A1 + A2)
 
-Tanggal: 25 Nov 2026 · Status: **menunggu persetujuan pemilik** (sudah diperiksa pembaca-builder; 7 pertanyaan dijawab) · Basis kode: `main` @ `a30efa0`
+Tanggal: 25 Nov 2026 · Status: **disetujui pemilik 25 Nov** (sudah diperiksa pembaca-builder; 7 pertanyaan dijawab) · Basis kode: `main` @ `a30efa0`
 
 ## 1. Maksud dan alasan
 
