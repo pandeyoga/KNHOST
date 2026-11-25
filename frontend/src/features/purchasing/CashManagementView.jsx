@@ -20,6 +20,10 @@ import FocusNotice from "../../components/FocusNotice";
 import { BudgetPreview } from "../../components/BudgetCheckNotice";   // PK-39 — pratinjau anggaran kas keluar
 import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
 import { useAppNav } from "../../context/AppNavContext";
+import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — kolom Sumber membuka rincian dokumen
+import { previewFor } from "../documents/preview/docPreviewRegistry";
+import JournalDetailModal from "../finance/JournalDetailModal";   // Meja gelombang 2 — "Jurnal" membuka jurnal kas
+import { sourceLabel } from "../finance/glSourceLabels";
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
@@ -78,6 +82,16 @@ export const REF_LABEL = {
   payroll_run: "Proses Gaji", statutory_remittance: "Setoran gaji",
 };
 
+/**
+ * Meja gelombang 2 — `ref_type` kas yang `ref_id`-nya terbukti id dokumen berpratinjau (bukti di laporan Tugas 5):
+ * kwitansi (`ar_receipt_service` `ref_id=receipt.id`), pembayaran tagihan & kelebihan bayarnya (`ap_payment_service`
+ * `ref_id=bill.id`), pembayaran kontrabon (`ref_id=cb.id`), refund retur jual (`return_service` `ref_id=ret.id`).
+ * Jenis lain (retur beli, denda, gaji, setoran, LPJ, …) tak punya pratinjau / `ref_id` bukan id dokumen → teks.
+ */
+export const CASH_REF_DOC = {
+  ar_receipt: "ar_receipt", vendor_bill: "vendor_bill", ap_advance: "vendor_bill", contra_bon: "contra_bon", sales_return: "sales_return",
+};
+
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const { go, canOpen } = useAppNav();   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
@@ -95,6 +109,8 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const [saving, setSaving] = useState(false);
   const [accState, setAccState] = useState("memuat");
   const [voidingId, setVoidingId] = useState("");
+  const [journal, setJournal] = useState(null);   // jurnal kas yang sedang dibuka (`GET /gl/journal/{id}`)
+  const [journalErr, setJournalErr] = useState("");
   const createIntent = useIntentKey("kas");
   const voidIntent = useIntentKey("kasv");
 
@@ -105,6 +121,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   // dulu tetap dipanggil dan selalu dijawab 403 (galat merah di konsol tiap mengetik nominal). Peringatan anggaran
   // tetap muncul sesudah simpan (`budget_check.warnings`) dan mode Tolak tetap ditegakkan server.
   const canBudget = can(currentUser?.permissions, "budget", "view");
+  const canJournal = can(currentUser?.permissions, "accounting", "view");   // izin yang sama dengan `GET /gl/journal/{id}`
 
   // PK-42 — daftar berhalaman di server; saringan jenis kas & cari ikut kueri (kembali ke halaman 1 saat berubah).
   const scoped = !!selectedEntity && selectedEntity !== "all";
@@ -167,6 +184,28 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const derivedFrom = (t) => (t.ref_type === "manual" ? ""
     : (t.ref_type || t.ref_id ? (t.ref_number || REF_LABEL[t.ref_type] || "dokumen lain") : ""));
 
+  /** Meja gelombang 2 — sumber kas: DocLink bila jenisnya punya pratinjau & id; selain itu teks nomor / label jenis. */
+  const sourceCell = (t) => {
+    const text = derivedFrom(t);
+    if (!text) return null;
+    const docType = CASH_REF_DOC[t.ref_type];
+    return (
+      <p className="text-fs-12 text-kn-text-2" data-testid={`cash-source-row-${t.id}`}>
+        Sumber:{" "}
+        {docType && previewFor(docType) ? (
+          <DocLink docType={docType} docId={t.ref_id} number={text} entityId={t.source_entity_id ? t.source_entity_id : t.entity_id}
+            perms={currentUser?.permissions} testId={`cash-source-${t.id}`} />
+        ) : <span data-testid={`cash-source-${t.id}-text`}>{text}</span>}
+      </p>
+    );
+  };
+
+  async function openJournal(id) {
+    setJournalErr("");
+    try { setJournal((await axios.get(`${API}/gl/journal/${id}`)).data); }
+    catch (e) { setJournalErr(apiErrorText(e, "Jurnal kas belum bisa dimuat.")); }
+  }
+
   async function handleVoid(t) {
     const dir = t.direction === "in" ? "masuk" : "keluar";
     const reason = await askReason({
@@ -222,6 +261,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
     <div data-testid="cash-management-view">
       {notice && <div className="notice-bar success" data-testid="cash-notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={13} /></button></div>}
       <ErrorNotice message={error} onDismiss={() => setError("")} testId="cash-error" />
+      <ErrorNotice message={journalErr} onDismiss={() => setJournalErr("")} testId="cash-journal-error" />
       <ErrorNotice message={loadError} onRetry={reloadAll} onDismiss={() => setLoadError("")} testId="cash-load-error" />
       <FocusNotice {...fokus} testId="cash-focus-notice" />
       <EntityScopeBanner meta={summary.scope_meta} />
@@ -394,11 +434,18 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
               <tbody>
                 {txns.map((t) => (
                   <tr key={t.id} data-testid={`cash-row-${t.id}`} className={t.id === sorot ? "row-focus" : undefined}>
-                    <td className="font-mono whitespace-nowrap font-bold text-kn-action">{t.number}</td>
+                    <td className="whitespace-nowrap">
+                      <span className="font-mono font-bold text-kn-action">{t.number}</span>
+                      {canJournal && t.journal_entry_id && (
+                        <button type="button" className="link-button ml-2 text-fs-12" data-testid={`cash-journal-${t.id}`}
+                          title={`Lihat jurnal ${t.number}`} onClick={() => openJournal(t.journal_entry_id)}>Jurnal</button>
+                      )}
+                    </td>
                     <td className="whitespace-nowrap text-kn-text-2" data-testid={`cash-row-date-${t.id}`}>{fmtDate(t.txn_date)}</td>
                     <td className="min-w-[200px]">
                       <p className="font-semibold">{t.description || "—"}</p>
                       <p className="text-fs-12 text-kn-text-2">{categoryLabel(t.category)}</p>
+                      {sourceCell(t)}
                     </td>
                     <td className="whitespace-nowrap">
                       <p>{t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}</p>
@@ -442,6 +489,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         )}
       </div>
 
+      {journal && (
+        <JournalDetailModal je={journal} sourceMeta={(c) => ({ label: sourceLabel(c), tone: "bg-kn-neutral-soft text-kn-text-2" })}
+          entities={entities} selectedEntity={selectedEntity} onClose={() => setJournal(null)} />
+      )}
     </div>
   );
 }

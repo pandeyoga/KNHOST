@@ -226,7 +226,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
           </p>
         )}
 
-        <BillsSection cb={cb} canDecide={canEdit} onDecide={(e) => setDecideOn(e)} />
+        <BillsSection cb={cb} canDecide={canEdit} onDecide={(e) => setDecideOn(e)} perms={currentUser?.permissions} />
 
         <DeductionsSection cb={cb} canEdit={canEdit} busy={busy}
           onAdd={() => setModal("deduction")} onRemove={removeDeduction} />

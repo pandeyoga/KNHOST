@@ -138,7 +138,15 @@ export default function Supplier360Panel({ supplierId, currentUser, selectedEnti
         { label: "Grand Total", value: money(fin.grand_total ?? b.grand_total) },
         { label: "Belum Lunas", value: money(fin.outstanding) },
       ],
-      items: b.items || [], itemColumns: [],
+      items: b.items || [],
+      // Meja gelombang 2 — barang yang ditagih (`billed_qty`; `line_total` menyusul `subtotal` untuk tagihan lama).
+      itemColumns: [
+        { label: "Barang", render: (r) => <span className="font-medium">{r.product_name || r.sku || "—"}</span> },
+        { label: "SKU", render: (r) => r.sku || "—" },
+        { label: "Ditagih", align: "right", render: (r) => `${r.billed_qty ?? r.quantity ?? 0} ${r.unit || ""}`.trim() },
+        { label: "Harga", align: "right", render: (r) => money(r.price) },
+        { label: "Jumlah", align: "right", render: (r) => money(r.line_total ?? r.subtotal ?? Number(r.price || 0) * Number(r.billed_qty ?? r.quantity ?? 0)) },
+      ],
       totals: [{ label: "Grand Total", value: money(fin.grand_total ?? b.grand_total), bold: true }],
     });
   }
@@ -153,7 +161,14 @@ export default function Supplier360Panel({ supplierId, currentUser, selectedEnti
         { label: "Total", value: money(r.total_amount) },
         { label: "Alasan", value: r.reason || "—" },
       ],
-      items: r.items || [], itemColumns: [],
+      items: r.items || [],
+      itemColumns: [
+        { label: "Barang", render: (it) => <span className="font-medium">{it.product_name || it.sku || "—"}</span> },
+        { label: "SKU", render: (it) => it.sku || "—" },
+        { label: "Jumlah", align: "right", render: (it) => `${it.quantity ?? 0} ${it.unit || ""}`.trim() },
+        { label: "Harga", align: "right", render: (it) => money(it.price) },
+        { label: "Subtotal", align: "right", render: (it) => money(it.subtotal) },
+      ],
       totals: [{ label: "Total Retur", value: money(r.total_amount), bold: true }],
     });
   }

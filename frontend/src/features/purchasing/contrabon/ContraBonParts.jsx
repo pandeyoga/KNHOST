@@ -6,6 +6,7 @@
 import { Scissors, Trash2, Scale, Banknote, History, PackageCheck, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { docStatusLabel } from "../../../utils/docStatus";
+import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — nomor faktur membuka rincian barang
 import { EVENT_LABEL, EXCEPTION_TYPE_LABEL, fmtDate, fmtDateTime } from "./contraBonApi";
 
 export function TotalsGrid({ totals }) {
@@ -56,7 +57,7 @@ export function TotalsGrid({ totals }) {
   );
 }
 
-export function BillsSection({ cb, canDecide, onDecide }) {
+export function BillsSection({ cb, canDecide, onDecide, perms }) {
   const decided = new Set((cb.decisions || []).map((d) => d.exception_key));
   return (
     <div data-testid="cb-detail-bills">
@@ -81,7 +82,10 @@ export function BillsSection({ cb, canDecide, onDecide }) {
                 <tr key={b.bill_id} className="border-t border-[#F2F2F5] align-top"
                   data-testid={`cb-bill-${b.bill_id}`}>
                   <td className="px-2 py-1.5">
-                    <p className="font-bold text-[#0058CC]">{b.bill_number}</p>
+                    <p className="font-bold">
+                      <DocLink docType="vendor_bill" docId={b.bill_id} number={b.bill_number} entityId={cb.entity_id} perms={perms}
+                        testId={`cb-bill-doc-${b.bill_id}`} />
+                    </p>
                     <p className="text-[9.5px] text-[#8E8E93]">
                       faktur supplier {b.supplier_invoice_no || "—"}
                     </p>

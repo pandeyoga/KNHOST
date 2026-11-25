@@ -13,7 +13,7 @@
  *  · Semua PT: tombol bayar mati + alasan tertulis (L4).
  */
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, FileText, Layers, PiggyBank, Wallet, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, FileText, Layers, PiggyBank, Route, Wallet, X } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 import { ListToolbar, MetricRow, SearchInput } from "../../../components/ListPageParts";
 import KNSelect from "../../../components/KNSelect";
@@ -21,6 +21,7 @@ import PagedRows from "../../../components/PagedRows";
 import { can } from "../../../config/roles";
 import { buildCsv, csvFilename, downloadCsv } from "../../../utils/csvExport";
 import { openTrace } from "../../documents/trace/traceDeepLink";
+import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — nomor tagihan/kontrabon membuka rincian barang
 import { DocPill, SupplierCardLink } from "../cards/partyCards";
 import StatusBadge from "../../../components/StatusBadge";
 import EmptyState from "../../../components/EmptyState";
@@ -162,8 +163,15 @@ export default function APSupplierDetail({ detail, loading, error, onRetry, onCl
                           )}
                         </td>
                         <td className="whitespace-nowrap">
-                          <button type="button" className="link-button font-semibold"
-                            onClick={() => openTrace({ docType: "vendor_bill", docId: b.bill_id, number: b.bill_number })}>{b.bill_number}</button>
+                          <DocLink docType="vendor_bill" docId={b.bill_id} number={b.bill_number} entityId={b.entity_id} perms={perms}
+                            className="font-semibold" testId={`ap-detail-bill-doc-${b.bill_id}`} />
+                          {b.bill_id && (
+                            <button type="button" className="icon-button ml-1 align-middle" title="Jejak Dokumen"
+                              aria-label={`Jejak dokumen ${b.bill_number}`} data-testid={`ap-detail-bill-trace-${b.bill_id}`}
+                              onClick={() => openTrace({ docType: "vendor_bill", docId: b.bill_id, number: b.bill_number })}>
+                              <Route size={13} aria-hidden="true" />
+                            </button>
+                          )}
                           {b.supplier_invoice_no && <span className="block text-fs-12 text-kn-text-2">{b.supplier_invoice_no}</span>}
                         </td>
                         <td className="whitespace-nowrap">{b.po_number || "—"}</td>
@@ -205,8 +213,15 @@ export default function APSupplierDetail({ detail, loading, error, onRetry, onCl
                         {(detail.contra_bons || []).map((c) => (
                           <tr key={c.id} data-testid={`ap-detail-cb-${c.id}`}>
                             <td className="whitespace-nowrap">
-                              <button type="button" className="link-button font-semibold"
-                                onClick={() => openTrace({ docType: "contra_bon", docId: c.id, number: c.number })}>{c.number}</button>
+                              <DocLink docType="contra_bon" docId={c.id} number={c.number} entityId={c.entity_id} perms={perms}
+                                className="font-semibold" testId={`ap-detail-cb-doc-${c.id}`} />
+                              {c.id && (
+                                <button type="button" className="icon-button ml-1 align-middle" title="Jejak Dokumen"
+                                  aria-label={`Jejak dokumen ${c.number}`} data-testid={`ap-detail-cb-trace-${c.id}`}
+                                  onClick={() => openTrace({ docType: "contra_bon", docId: c.id, number: c.number })}>
+                                  <Route size={13} aria-hidden="true" />
+                                </button>
+                              )}
                             </td>
                             <td><DocPill status={c.status === "scheduled_payment" ? "scheduled" : c.status} label={c.status_label} /></td>
                             <td className="text-right tabular-nums">{c.bill_count}</td>
