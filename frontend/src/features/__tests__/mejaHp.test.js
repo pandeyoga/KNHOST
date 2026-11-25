@@ -58,6 +58,19 @@ test("sentuh baris → rincian utuh (sekali); tombol aksi tidak membuka rincian"
   expect(document.body.querySelectorAll('[data-testid="verify-stub"]')).toHaveLength(1);
 });
 
+test("aksi baris: tujuan layar desktop buka pop-up dulu; tujuan layar HP langsung pindah", async () => {
+  const onOpenFull = jest.fn(); const onOpenOrder = jest.fn();
+  const baris = (ref_type, ref_id) => ({ ref_type, ref_id, number: `N-${ref_id}`, title: "T", age_days: 1, value: 1, action: "Buka", action_kind: "open" });
+  routeGet({ "/sales-admin/desk": { queues: [{ id: "k", label: "K", count: 2, rows: [baris("tax_invoice", "x1"), baris("sales_order", "so9")] }] } });
+  await mount(<MobileSalesAdminDesk selectedEntity="ent_ksc" onOpenFull={onOpenFull} onOpenOrder={onOpenOrder} />);
+  await klik("m-desk-action-k-x1");
+  expect(q("m-desk-detail")).not.toBeNull(); expect(onOpenFull).not.toHaveBeenCalled();
+  await klik("m-desk-detail-action");
+  expect(q("m-desk-detail")).toBeNull(); expect(onOpenFull).toHaveBeenCalledTimes(1); expect(q("m-desk-detail")).toBeNull();
+  await klik("m-desk-action-k-so9");
+  expect(onOpenOrder).toHaveBeenCalledWith("so9"); expect(q("m-desk-detail")).toBeNull();
+});
+
 test("tombol nomor dokumen (jalur papan ketik) membuka rincian", async () => {
   routeGet({ "/sales-admin/desk": DESK });
   await mount(<MobileSalesAdminDesk selectedEntity="ent_ksc" />);
@@ -72,7 +85,7 @@ test("kartu tetap bisa dibuka-tutup; ? menggantikan kotak 'Meja Finance'", async
   await mount(<MobileSalesAdminDesk selectedEntity="ent_ksc" />);
   expect(q("m-desk-not-mine")).toBeNull();
   await klik("m-desk-help");
-  expect(teks(q("m-desk-help-text"))).toMatch(/Bukan wewenang meja ini: Faktur Pajak keluaran/);
+  expect(teks(q("m-desk-help-text"))).toMatch(/Bukan wewenang meja ini: Faktur Pajak keluaran \(ada di Meja Keuangan\)/);
   expect(document.body.textContent).not.toContain("Meja Finance");
   await klik("m-desk-queue-toggle-perlu_verifikasi");
   expect(q("m-desk-row-perlu_verifikasi-so1")).toBeNull();

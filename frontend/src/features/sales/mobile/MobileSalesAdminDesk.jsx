@@ -147,6 +147,14 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
     onOpenFull?.(link.nav_id, link.view);
   }
 
+  // R20: tombol aksi di baris langsung bertindak bila aksinya di tempat atau tujuannya layar HP; tujuan layar desktop
+  // dibuka lewat pop-up rincian dulu (aksi di pop-up bertanda "pindah layar" + "Buka layar penuh").
+  const isMobileTarget = (row) => Boolean(MOBILE_TARGET[row.ref_type]) || row.ref_type === "sales_order" || Boolean(row.order_id);
+  function onRowAction(row, queue) {
+    if (IN_PLACE(row) || isMobileTarget(row)) return handleAction(row, queue);
+    setDetail({ row, queue });
+  }
+
   function handleAction(row, queue) {
     if (row.action_kind === "verify") return setVerifyRow(row);
     if (row.action_kind === "fulfill") return setFulfillRow(row);
@@ -164,7 +172,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
     <div className="space-y-3" data-testid="m-sales-admin-desk">
       <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-2"><ClipboardCheck size={16} className="text-kn-action" /><h2 className="m-section-title" data-testid="m-desk-title">Meja Admin Sales</h2>
-          <HelpTip testId="m-desk-help" label="Penjelasan Meja Admin Sales" text={<>{HELP_ALUR}{notMine.length > 0 && <><br /><b>Bukan wewenang meja ini:</b> {notMine.join(" · ")}</>}</>} /></div>
+          <HelpTip testId="m-desk-help" label="Penjelasan Meja Admin Sales" text={<>{HELP_ALUR}{notMine.length > 0 && <><br /><b>Bukan wewenang meja ini:</b> {notMine.join(" · ")} (ada di Meja Keuangan)</>}</>} /></div>
         <button onClick={load} className="text-kn-text-2" aria-label="Muat ulang" data-testid="m-desk-refresh"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /></button>
       </div>
       {error && (
@@ -191,7 +199,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
         <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-kn-neutral-soft" />)}</div>
       ) : queues.length === 0 ? (
         <div className="py-12 text-center text-fs-12 m-muted" data-testid="m-desk-empty">Belum ada antrean untuk badan usaha ini.</div>
-      ) : queues.map((q) => <DeskQueue key={q.id} queue={q} busyRef={busyRef} onAction={handleAction} onOpen={(row, queue) => setDetail({ row, queue })} />)}
+      ) : queues.map((q) => <DeskQueue key={q.id} queue={q} busyRef={busyRef} onAction={onRowAction} onOpen={(row, queue) => setDetail({ row, queue })} />)}
 
       {detail && (
         <DeskRowDetail row={detail.row} queue={detail.queue} testPrefix="m-desk" inPlace={IN_PLACE} onAction={handleAction}
