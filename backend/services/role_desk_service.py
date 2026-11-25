@@ -7,7 +7,7 @@ membuka satu layar tiap pagi dan melihat apa yang menunggu keputusannya.
 from typing import Any, Dict, List, Optional
 
 from db import db
-from services.work_desk_service import _queue, _row, _age_days
+from services.work_desk_service import _queue, _row, _age_days, _so_extra
 
 ROLES = ("admin", "manager", "sales", "warehouse", "designer", "driver")
 #: PR-T4 — jenis meja dari KATEGORI KERJA peran (`role_registry.category_of`), bukan peran dasarnya.
@@ -94,7 +94,7 @@ def _so_rows(docs: List[Dict[str, Any]], action: str) -> List[Dict[str, Any]]:
     return [_row(ref_type="sales_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
                  subtitle=f"{o.get('status')} · {o.get('sales_name') or o.get('created_by') or '—'}",
                  value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("updated_at") or o.get("created_at")), at=o.get("updated_at") or o.get("created_at"),
-                 badge=o.get("status", ""), action=action, entity_id=o.get("entity_id", "")) for o in docs]
+                 badge=o.get("status", ""), action=action, entity_id=o.get("entity_id", ""), extra=_so_extra(o)) for o in docs]
 
 
 async def _find(coll: str, q: Dict[str, Any], limit: int = 100) -> List[Dict[str, Any]]:

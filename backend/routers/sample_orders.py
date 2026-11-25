@@ -19,7 +19,7 @@ from services import sales_ownership, so_approvals
 from services.fulfillment_status import create_outbound_tasks_for_order, recompute_so_status
 from services.sales_order_helpers import norm_backorder, so_transition
 from services.sample_sale_service import SAMPLE_LIMITS
-from services.work_desk_service import _age_days, _queue, _row
+from services.work_desk_service import _age_days, _lines_of, _queue, _row
 from services.data_scope import own_scoped  # PR-T4 — cakupan data peran
 
 router = APIRouter(prefix="/api")
@@ -145,7 +145,11 @@ def _rows(docs: List[Dict[str, Any]], action: str, kind: str) -> List[Dict[str, 
                         at=o.get("updated_at") or o.get("created_at") or "", entity_id=o.get("entity_id", ""),
                         badge=("persetujuan ulang" if o.get("sample_payment_status") == "reapproval_required" else o.get("status", "")),
                         action=action, action_kind=kind,
-                        extra={"sales_name": o.get("sales_name"), "fulfillment_method": o.get("fulfillment_method"), "items": len(items)}))
+                        extra={"sales_name": o.get("sales_name"), "fulfillment_method": o.get("fulfillment_method"), "items": len(items),
+                               "sample_billing": o.get("sample_billing") or "", "grand_total": float(o.get("grand_total") or 0),
+                               "paid_total": float(o.get("paid_total") or 0),
+                               "sample_payment_status": o.get("sample_payment_status") or "",
+                               "order_lines": _lines_of(o)}))
     return out
 
 

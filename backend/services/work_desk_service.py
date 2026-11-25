@@ -145,6 +145,36 @@ def _queue(qid: str, label: str, hint: str, rows: List[Dict[str, Any]], *,
     }
 
 
+def _lines_of(order: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """MEJA-3 (R6) — satu aturan baris barang untuk pratinjau/pop-up meja: `quantity` + `unit` = satuan jual pesanan
+    (pasangan yang sama dengan Faktur Komersial), BUKAN `base_quantity`/`base_unit`. `warehouse` = nama gudang unik
+    (urutan muncul) dari alokasi + gudang barang, digabung ", "; kosong bila tak ada."""
+    out: List[Dict[str, Any]] = []
+    for it in order.get("items") or []:
+        names: List[str] = []
+        for n in [a.get("warehouse_name") for a in (it.get("allocations") or [])] + [it.get("warehouse_name")]:
+            if n and n not in names:
+                names.append(n)
+        out.append({"product_name": it.get("product_name") or "", "sku": it.get("sku") or "",
+                    "quantity": float(it.get("quantity") or 0), "unit": it.get("unit") or "",
+                    "warehouse": ", ".join(names)})
+    return out
+
+
+async def _order_lines_by_id(order_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    """Satu kueri `sales_orders` untuk barang banyak pesanan → `_lines_of`."""
+    if not order_ids:
+        return {}
+    docs = await db.sales_orders.find({"id": {"$in": list(order_ids)}}, {"_id": 0, "id": 1, "items": 1}).to_list(len(order_ids) + 50)
+    return {d["id"]: _lines_of(d) for d in docs}
+
+
+def _so_extra(o: Dict[str, Any]) -> Dict[str, Any]:
+    """MEJA-3 — isian baris pesanan untuk pratinjau konfirmasi (sales · kota · batas booking)."""
+    return {"sales_name": o.get("sales_name") or "", "customer_city": o.get("customer_city") or "",
+            "booking_until": o.get("reservation_expires_at") or ""}
+
+
 async def _orders(scope: Dict[str, Any], statuses, *, verified: Optional[bool] = None
                   ) -> List[Dict[str, Any]]:
     flt = _q(scope, {"status": {"$in": list(statuses)}, "order_type": {"$ne": "sample"}})
@@ -153,7 +183,7 @@ async def _orders(scope: Dict[str, Any], statuses, *, verified: Optional[bool] =
         "grand_total": 1, "total_amount": 1, "created_at": 1, "status": 1, "stage": 1,
         "sales_name": 1, "verification": 1, "entity_id": 1, "is_pkp": 1, "ppn_amount": 1,
         "payment_status": 1, "pending_approvals": 1, "required_approval_role": 1,
-        "release": 1, "has_backorder": 1, "reservation_expires_at": 1,
+        "release": 1, "has_backorder": 1, "reservation_expires_at": 1, "dpp": 1, "customer_id": 1,
     }).sort("created_at", 1).to_list(500)
     out = []
     for o in rows:
@@ -199,11 +229,12 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("stage") or o.get("status"),
               action="Periksa & lepas", action_kind="verify",
-              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in belum],
+              extra=_so_extra(o), entity_id=o.get("entity_id", "")) for o in belum],
         action_label="Periksa & lepas", value_label=TOTAL_LABEL))
 
     # 2 — ditahan Admin Sales ("Tahan dulu") → tombol Lepas ke gudang
     tahan = [o for o in sudah if (o.get("release") or {}).get("hold")]
+    baris_tahan = await _order_lines_by_id([o["id"] for o in tahan])
     queues.append(_queue(
         "siap_dikonfirmasi", "Ditahan — siap dilepas",
         "Sudah diperiksa tetapi ditahan Admin Sales (mis. pelanggan minta tunda). Tekan Lepas ke gudang bila sudah boleh.",
@@ -211,7 +242,8 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=o.get("customer_name", "—"), subtitle=f"Ditahan {(o.get('release') or {}).get('by') or ''} · {_ket(o)}",
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="ditahan",
-              action="Lepas ke gudang", action_kind="release", entity_id=o.get("entity_id", "")) for o in tahan],
+              action="Lepas ke gudang", action_kind="release",
+              extra={**_so_extra(o), "order_lines": baris_tahan.get(o["id"], [])}, entity_id=o.get("entity_id", "")) for o in tahan],
         action_label="Lepas ke gudang", value_label=TOTAL_LABEL))
 
     # 3 — sudah diperiksa, menunggu keputusan manajer → dilepas otomatis sesudah ACC (memantau)
@@ -226,7 +258,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="menunggu ACC",
               action="Lihat", action_kind="open",
-              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in tunggu],
+              extra=_so_extra(o), entity_id=o.get("entity_id", "")) for o in tunggu],
         action_label="Lihat", value_label=TOTAL_LABEL))
 
     # 4 — siap cetak Surat Jalan / Invoice
@@ -241,7 +273,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=" · ".join(x for x in (o.get("customer_city"), o.get("sales_name")) if x),
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status"),
-              action="Cetak", action_kind="open", entity_id=o.get("entity_id", "")) for o in dok],
+              action="Cetak", action_kind="print", extra=_so_extra(o), entity_id=o.get("entity_id", "")) for o in dok],
         action_label="Cetak", value_label=TOTAL_LABEL))
 
     # 5 — perlu dipenuhi (kurang stok) → TIGA tombol keputusan pemenuhan (US16)
@@ -406,7 +438,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"], title=o.get("customer_name", "—"),
               subtitle=f"Sales {o.get('sales_name') or '—'}", value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="ditolak", action="Lihat", action_kind="open",
-              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in tolak],
+              extra=_so_extra(o), entity_id=o.get("entity_id", "")) for o in tolak],
         action_label="Lihat", value_label=TOTAL_LABEL))
 
     return {"desk": "sales_admin", "desk_label": "Meja Admin Sales",
@@ -442,6 +474,11 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     kandidat = [o for o in layak
                 if o.get("is_pkp") is not False and float(o.get("ppn_amount") or 0) > 0
                 and o["id"] not in ber_faktur and pemicu.get(o.get("entity_id") or "") == "pesanan"]
+    npwp_of: Dict[str, str] = {}
+    cids = list({o.get("customer_id") for o in kandidat if o.get("customer_id")})
+    if cids:
+        npwp_of = {c["id"]: c.get("npwp") or "" for c in await db.customers.find(
+            {"id": {"$in": cids}}, {"_id": 0, "id": 1, "npwp": 1}).to_list(len(cids))}
     queues.append(_queue(
         "siap_faktur_pajak", "Siap terbitkan Faktur Pajak",
         "Pesanan ber-PPN yang belum punya faktur pajak keluaran aktif.",
@@ -450,7 +487,11 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=f"PPN {float(o.get('ppn_amount') or 0):,.0f}".replace(",", "."),
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status", ""),
-              action="Terbitkan", action_kind="issue_tax", entity_id=o.get("entity_id", "")) for o in kandidat],
+              action="Terbitkan", action_kind="issue_tax",
+              extra={"ppn_amount": float(o.get("ppn_amount") or 0),
+                     "dpp": (float(o["dpp"]) if o.get("dpp") is not None else None),
+                     "customer_id": o.get("customer_id") or "", "customer_npwp": npwp_of.get(o.get("customer_id") or "", "")},
+              entity_id=o.get("entity_id", "")) for o in kandidat],
         action_label="Terbitkan", owner="finance", value_label=TOTAL_LABEL))
 
     # 2 & 5 — uang masuk perlu dicatat + jatuh tempo (dari pengingat penagihan)
@@ -1079,7 +1120,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="sales_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
               subtitle=("QC seluruh roll" if (o.get("qc_request") or {}).get("mode") == "full"
                         else f"QC sampling {float((o.get('qc_request') or {}).get('sample_pct') or 10):g}%"),
-              value=0, age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="perlu SPK QC", action="Buat SPK QC", action_kind="open",
+              value=0, age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="perlu SPK QC", action="Buat SPK QC", action_kind="create_qc_spk",
               extra={"link_view": "inspections"}, entity_id=o.get("entity_id", "")) for o in qso if o["id"] not in open_spk],
         action_label="Buat SPK QC", owner="warehouse_admin", value_kind="count", value_label="Pesanan"))
 
