@@ -311,7 +311,8 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     # 6 — jatuh tempo & pengingat (Admin Sales memantau SELURUH pelanggan)
     from services.customer_service import collection_reminders
     tagih = await collection_reminders(actor, days_ahead=30,
-                                       entity_id=entity_ids[0] if len(entity_ids) == 1 else None)
+                                       entity_id=entity_ids[0] if len(entity_ids) == 1 else None,
+                                       entity_ids=entity_ids)
     queues.append(_queue(
         "jatuh_tempo", "Jatuh tempo & pengingat",
         "Tagihan lewat/nyaris jatuh tempo. Pencatatan uangnya di Meja Keuangan.",
@@ -497,7 +498,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     # 2 & 5 — uang masuk perlu dicatat + jatuh tempo (dari pengingat penagihan)
     from services.customer_service import collection_reminders
     tagih = await collection_reminders(actor, days_ahead=30,
-                                       entity_id=entity_ids[0] if len(entity_ids) == 1 else None)
+                                       entity_id=entity_ids[0] if len(entity_ids) == 1 else None,
+                                       entity_ids=entity_ids)
     # Cek UI UAT v3 (S3) — pesanan TUNAI dianggap lunas di kasir sehingga tidak masuk daftar tagih; pesanan tunai
     # yang sudah dikirim/diambil tetapi belum dibayar dulu tidak terlihat Finance sama sekali.
     from services.customer_service import NON_AR_METHODS, order_payment_method, _order_grand_total, _order_paid

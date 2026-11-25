@@ -66,7 +66,7 @@ async def test_barang_kurang_semua_baris(klien, kepala_admin, monkeypatch):
 
 
 async def test_jatuh_tempo_at_nyata_dan_lewat(klien, kepala_admin, monkeypatch):
-    async def tagih(actor, days_ahead=30, sales_id=None, entity_id=None):
+    async def tagih(actor, days_ahead=30, sales_id=None, entity_id=None, entity_ids=None):
         return [{"order_id": "so_jt", "order_number": "SO-JT", "customer_id": "cus_jt", "customer_name": "Toko JT",
                  "outstanding": 500000, "days_late": 8, "overdue": True, "due_date": "2026-11-17", "sales_name": "Ayu",
                  "entity_id": "ent_ksc"},

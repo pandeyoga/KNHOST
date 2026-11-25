@@ -22,7 +22,7 @@ from services.sales_force_service import (sales_kpi, compute_commission, leaderb
                                           boleh_lihat_komisi_sales)
 from services import credit_override_service as cos   # CR-T3 — izin kredit
 from services import gl_service
-from entity_scope import entity_ctx, guard_doc, resolve_list_scope
+from entity_scope import entity_ctx, guard_doc, resolve_list_scope, resolve_scope_ids
 from ai_card_context import card_field
 # PR-T4 — cakupan data & kategori kerja dari sifat peran (bukan nama peran).
 from role_registry import roles_in_category
@@ -278,7 +278,10 @@ async def decide_credit_override(override_id: str, payload: CreditOverrideDecisi
 @router.get("/collection-worklist")
 async def get_collection_worklist(request: Request, sales_id: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
     actor = await require_permission(request, "order", "view")
-    return await collection_worklist(actor, sales_id=sales_id, entity_id=entity_id)
+    # Gate Meja gelombang 1 — cakupan PT: eksplisit di luar izin → 403; "all" = semua PT yang diizinkan.
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)
+    return await collection_worklist(actor, sales_id=sales_id, entity_id=entity_id if entity_id != "all" else None,
+                                     entity_ids=ids)
 
 
 @router.get("/customers/{customer_id}/credit-status")
@@ -315,7 +318,9 @@ async def get_credit_status(customer_id: str, request: Request, amount: float = 
 @router.get("/collection-reminders")
 async def get_collection_reminders(request: Request, days_ahead: int = 7, sales_id: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
     actor = await require_permission(request, "order", "view")
-    return await collection_reminders(actor, days_ahead=days_ahead, sales_id=sales_id, entity_id=entity_id)
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)
+    return await collection_reminders(actor, days_ahead=days_ahead, sales_id=sales_id,
+                                      entity_id=entity_id if entity_id != "all" else None, entity_ids=ids)
 
 
 @router.post("/collection-reminders/mark")

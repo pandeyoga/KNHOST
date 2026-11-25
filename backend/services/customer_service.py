@@ -393,9 +393,13 @@ def can_view_credit(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
 
 
 async def collection_worklist(
-    user: Dict[str, Any], sales_id: Optional[str] = None, entity_id: Optional[str] = None
+    user: Dict[str, Any], sales_id: Optional[str] = None, entity_id: Optional[str] = None,
+    entity_ids: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """Daftar tagihan (order outstanding) untuk follow-up penagihan (KN_17 paragraf 7)."""
+    """Daftar tagihan (order outstanding) untuk follow-up penagihan (KN_17 paragraf 7).
+
+    `entity_ids` (bukan `None`) = cakupan PT yang boleh dibaca pengguna: PESANAN dibatasi ke PT itu (gate Meja
+    gelombang 1 — sales PT-A tak boleh melihat baris PT lain). `entity_id` tetap menyaring PELANGGAN."""
     cust_filter: Dict[str, Any] = {}
     # PR-T4 — cakupan data peran: pemilik = `owner_ids` (bawaan Sales: dirinya; "tim": + anggota timnya).
     own = (await owner_ids(user) or None) if own_scoped(user) else None
@@ -421,6 +425,8 @@ async def collection_worklist(
     if own_sales:
         oq = {"$or": [{"customer_id": {"$in": assigned_ids}}, {"customer_id": {"$in": cust_ids}, "sales_id": own_sales}]}
     oq = {"$and": [oq, {"status": {"$nin": sorted(DEAD_STATUSES)}, "payment_status": {"$ne": "paid"}}]}
+    if entity_ids is not None:
+        oq["$and"].append({"entity_id": {"$in": list(entity_ids)}})
     orders = [o async for o in db.sales_orders.find(
         oq,
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
@@ -456,10 +462,11 @@ async def collection_worklist(
 
 
 async def collection_reminders(
-    user: Dict[str, Any], days_ahead: int = 7, sales_id: Optional[str] = None, entity_id: Optional[str] = None
+    user: Dict[str, Any], days_ahead: int = 7, sales_id: Optional[str] = None, entity_id: Optional[str] = None,
+    entity_ids: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """Reminder penagihan (KN_17 §7 / 4b): overdue + akan jatuh tempo <= days_ahead, + flag reminded."""
-    rows = await collection_worklist(user, sales_id=sales_id, entity_id=entity_id)
+    rows = await collection_worklist(user, sales_id=sales_id, entity_id=entity_id, entity_ids=entity_ids)
     span = abs(int(days_ahead or 0))
     sel = [r for r in rows if r["days_late"] >= -span]
     if not sel:
