@@ -107,7 +107,7 @@ Pemilik: *"pastikan setiap customer memiliki akunnya sendiri untuk akuntansi dan
 customer bisa deposit tanpa membuat SO; supplier juga sama; butuh kartu customer/supplier yang menggabungkan piutang dan
 deposit serta ringkasan saldonya."*
 
-Tafsiran (menunggu konfirmasi pemilik):
+Tafsiran — **dikonfirmasi pemilik 25 Nov** ("ya saya setuju"):
 - **"Akun per pelanggan/pemasok" = buku pembantu per pihak, bukan akun baru di bagan akun.** Akun kontrol tetap satu: Piutang, Titipan/Uang Muka Pelanggan, Hutang, Uang Muka Pemasok. Setiap baris jurnal di akun-akun itu wajib membawa ID pelanggan/pemasok. Bukunya ada otomatis begitu pelanggan/pemasok dibuat, tidak perlu dibuat manual.
 - **Deposit pelanggan tanpa SO** sudah bisa: kwitansi tanpa memilih pesanan menjadi titipan pelanggan. Yang kurang: tombol "Terima deposit" yang jelas di kartu pelanggan.
 - **Uang muka ke pemasok tanpa PO/tagihan** belum ada (hanya lahir dari kelebihan bayar tagihan). Perlu fitur baru dengan persetujuan; dipotong otomatis saat membayar tagihan berikutnya.
