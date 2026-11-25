@@ -76,6 +76,13 @@ async def expire_old_reservations() -> int:
         )
         if _closed:
             await so_approvals.close_detail_docs(db, _closed, _closed[0].get("cancel_reason", ""), "system")
+        # BTP-2 — permintaan batal yang masih menunggu ditutup `void` (pesanannya sudah mati; tidak ada yang diputus).
+        try:
+            from services import so_cancel_service as _scs
+            await _scs.void_pending(order["id"], "Reservasi pesanan kedaluwarsa — permintaan ditutup otomatis.")
+        except Exception as exc:  # noqa: BLE001 — pesanan sudah kedaluwarsa; permintaan basi dicatat untuk ditindak
+            import logging
+            logging.getLogger(__name__).error("Permintaan batal order expired %s gagal ditutup: %s", order["id"], exc)
         from dependencies import audit
         await audit(
             "system", "reservation_expired", "sales_order",

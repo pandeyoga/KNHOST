@@ -67,7 +67,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("sample_orders.py", "POST /sample-orders/{order_id}/confirm"): ("cas", "so_transition CAS status $in [approved] → confirmed; create_outbound_tasks_for_order dedupe per order+product; recompute_so_status idempoten"),
     ("outbound_picking.py", "POST /outbound/tasks/{task_id}/resolve-escalation"): ("cas", "T-01 Langkah 1: find_one_and_update berprasyarat escalation.status $nin [resolved,resolving] → resolving (2026-09-05)"),
     ("inbound_receiving.py", "POST /inbound/tasks/{task_id}/complete"): ("service", "klaim wms_tasks sebelum roll/mutasi/PO ditulis; tulisan akhir $unset saga_lock (GRN Fase 1: logika dipindah ke layanan)", "inbound_complete_service.complete_task"),
-    ("sales_orders_extra.py", "POST /sales-orders/{order_id}/cancel"): ("claim", "klaim sales_orders sebelum roll dilepas; so_transition CAS + $unset"),
+    # BTP-2 — isi batal pindah ke `so_cancel_service.execute_cancel` (dipanggil `submit` dan `decide`); permintaan baru
+    # dipasang lewat klaim bersyarat `cancel_request.status != pending` + finish_set.
+    ("sales_orders_extra.py", "POST /sales-orders/{order_id}/cancel"): ("service", "klaim sales_orders sebelum roll dilepas; so_transition CAS + $unset (di layanan, dipanggil lewat submit)", "so_cancel_service.execute_cancel"),
     ("so_approvals.py", "POST /sales-orders/{order_id}/approvals/{approval_id}/decide"): ("claim", "klaim sales_orders per entri approval ($elemMatch pending); release di akhir"),
     ("transfers.py", "POST /transfers/{transfer_id}/approve"): ("claim", "klaim warehouse_transfers sebelum kepemilikan roll + jurnal; finish_set"),
     ("transfers.py", "POST /transfers/{transfer_id}/reject"): ("claim", "klaim warehouse_transfers sebelum roll dilepas; finish_set"),

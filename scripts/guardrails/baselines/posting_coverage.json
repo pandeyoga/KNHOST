@@ -76,7 +76,7 @@
  },
  "panggilan": [
   {
-   "lokasi": "routers/sales_orders_extra.py:cancel_order",
+   "lokasi": "services/so_cancel_service.py:execute_cancel",
    "fungsi_gl": "reverse_order_journals",
    "jumlah": 1,
    "pemilik": "belum ada",

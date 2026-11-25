@@ -9,6 +9,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo import ReturnDocument
 from db import db
@@ -18,6 +20,7 @@ from schemas import (AllocationPreviewIn, RollReconcilePreviewIn, RepeatRestockI
                      SoReleaseRollsIn, SoCancelIn)
 from services import restock_service        # PS-21 — repeat/restock SO → PR
 from services import sales_ownership        # FASE E-8 (E8.4/US11) — "Pesanan Saya"
+from services import so_cancel_service      # BTP-2 — permintaan batal + persetujuan
 from services import line_scope             # FASE L — pagar & penyaring lini produk
 from services import alert_ops_service as _alerts   # R5 — satu definisi Backorder (status) & baris pendingan
 from pagination import (is_paged, get_page_params, build_search, merge_query,
@@ -34,7 +37,7 @@ from services import so_approvals
 from services.fulfillment_service import classify_lines
 from services.so_status import stage_fields
 from services.uom_service import to_base, load_fixed_factors
-from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
+from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access, assert_active_entity_access,
                           resolve_requested_entity)
 from services.sales_order_helpers import (
     norm_backorder as _norm_backorder,
@@ -886,103 +889,74 @@ async def release_reservation(order_id: str, request: Request) -> Dict[str, Any]
 
 
 @router.post("/sales-orders/{order_id}/cancel")
-async def cancel_order(order_id: str, request: Request, payload: Optional[SoCancelIn] = None) -> Dict[str, Any]:
+async def cancel_order(order_id: str, request: Request, payload: Optional[SoCancelIn] = None) -> Any:
+    """Batalkan pesanan — BTP-2: lewat `so_cancel_service.submit` (rancangan 2026-11-25 §5.4). Tanpa persetujuan atau
+    disetujui sendiri → 200 hasil batal (bentuk lama); wajib disetujui orang lain → **202** + permintaan, supaya klien
+    lama tidak membaca "sudah batal"."""
     actor = await require_permission(request, "order", "cancel")
+    await _cancel_target(order_id, request, actor)   # sales hanya membatalkan SO miliknya
+    from input_rules import require_reason   # FIX-3b — K-14 dihitung HURUF (validator bersama)
+    reason = require_reason((payload.reason if payload else "") or "", label="Alasan pembatalan")
+    code, body = await so_cancel_service.submit(order_id, "cancel", actor, reason)
+    body = strip_cost_fields(body, actor.get("role"))
+    if code == 202:
+        return JSONResponse(status_code=202, content=jsonable_encoder(body))
+    return body
+
+
+async def _cancel_target(order_id: str, request: Request, actor: Dict[str, Any]) -> Dict[str, Any]:
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
-    sales_ownership.assert_may_open(order, actor)   # sales hanya membatalkan SO miliknya
-    from input_rules import require_reason   # FIX-3b — K-14 dihitung HURUF (validator bersama)
-    reason = require_reason((payload.reason if payload else "") or "", label="Alasan pembatalan")
-    if order["status"] in ["done", "cancelled", "expired", "partially_shipped", "shipped"]:
-        raise HTTPException(status_code=409, detail="Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)")
-    # P16 (SALE-03) — Faktur Pajak aktif sudah/akan dilaporkan (NSFP); membatalkan SO diam-diam
-    # meninggalkan PPN Keluaran tanpa transaksi. Batalkan Faktur Pajaknya dulu (beralasan).
-    fkt = await db.tax_invoices.find_one({"order_id": order_id, "status": {"$ne": "batal"}},
-                                         {"_id": 0, "number": 1})
-    if fkt:
-        raise HTTPException(status_code=409, detail=(
-            f"Pesanan ini sudah punya Faktur Pajak aktif ({fkt.get('number')}). "
-            "Batalkan Faktur Pajak tersebut dulu (menu Faktur Pajak → Batalkan, alasan wajib), "
-            "lalu batalkan pesanan."))
-    # T-01 Opsi B (INV-ATOMIC-01) — klaim SO sebelum roll dilepas + task gudang dibatalkan
-    # + jurnal dibalik (3 koleksi tanpa transaksi). Kunci dicabut oleh `so_transition`.
-    from services import atomic_claim as _saga
-    await _saga.claim("sales_orders", order_id, "order_cancel",
-                      precondition={"status": order["status"]}, actor=actor["name"])
-    # FIX-3b — (STM-OUT-4) roll SELALU dilepas untuk status non-terminal mana pun, termasuk `draft` (Ganti Roll pada
-    # draf dulu meninggalkan roll `reserved` untuk pesanan mati). (FLW-OUT-4) roll yang SUDAH diambil dari rak →
-    # "kembalikan ke rak" (bin dikosongkan, antrean Penempatan Rak), bukan langsung tampil di bin asal yang kosong.
-    picked_ids: List[str] = []
-    async for t in db.wms_tasks.find({"order_id": order_id, "flow_type": "outbound",
-                                      "status": {"$nin": ["dispatched", "cancelled", "completed"]}},
-                                     {"_id": 0, "scan_log": 1, "roll_id": 1, "task_subtype": 1}):
-        picked_ids += [e.get("roll_id") for e in t.get("scan_log") or []
-                       if e.get("scan_type") == "pick" and e.get("roll_id")]
-        if t.get("task_subtype") == "sample_cut" and t.get("roll_id"):
-            picked_ids.append(t["roll_id"])
-    await release_order_rolls(order_id, return_to_rack_ids=picked_ids, why=f"SO dibatalkan: {reason}")
-    result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled",
-                               {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso()})
-    # S3 (pelatihan 18 Nov) — uang muka yang sudah diterima pesanan ini menjadi TITIPAN pelanggan (tanpa jurnal:
-    # sama-sama 2-1400). Dulu tertinggal di pesanan mati: tidak bisa dikembalikan maupun dipakai pesanan lain.
-    from services import ar_receipt_service as _ar
-    try:
-        result["advance_to_deposit"] = await _ar.uang_muka_pesanan_batal_ke_titipan(order_id, actor, reason)
-    except Exception as exc:  # noqa: BLE001 — pesanan sudah batal; pemindahan aman diulang (dicatat untuk Finance)
-        logging.getLogger(__name__).error("Uang muka pesanan batal %s gagal dipindah ke titipan: %s", order_id, exc)
-        result["advance_to_deposit"] = 0.0
-        result["advance_to_deposit_error"] = "Uang muka pesanan ini belum terpindah ke titipan pelanggan — hubungi Finance."
-    if result.get("advance_to_deposit"):
-        await audit(actor["name"], "advance_moved_to_deposit", "sales_order", order_id,
-                    {"amount": result["advance_to_deposit"], "customer_id": order.get("customer_id", ""),
-                     "reason": reason})
-    # 2026-10 — dokumen pemenuhan (transfer/PR) dari keputusan Admin Sales TIDAK ikut batal otomatis:
-    # disebut di respons agar ditindaklanjuti, dan sales pemilik diberi tahu di aplikasi.
-    result["open_fulfillment_refs"] = sorted({p.get("ref_number") for d in (order.get("fulfillment_decisions") or [])
-                                              for p in (d.get("parts") or []) if p.get("ref_number")})
-    from services.so_override_service import notify_sales
-    await notify_sales(order, actor, f"{order.get('number')} dibatalkan oleh {actor['name']}",
-                       f"Alasan: {reason or '-'}")
-    # S-4 (Gelombang 2) — batalkan task picking gudang yang masih aktif utk order ini
-    # (antrean gudang bersih; barang order batal tidak ikut disiapkan).
-    # FIX-3b (STM-OUT-2) — lewat tabel transisi (CAS daftar-izin); eskalasi yang menunggu ikut ditutup.
-    from services import outbound_task_state as _ots
-    n_cancelled = await _ots.cancel_for_order(order_id, actor["name"], "SO dibatalkan")
-    if n_cancelled:
-        await audit(actor["name"], "outbound_tasks_cancelled", "sales_order", order_id,
-                    {"count": n_cancelled, "reason": "SO dibatalkan",
-                     "return_to_rack": len(picked_ids)})
-    # Gelombang 1 F-1 — jurnal balik otomatis bila order sudah berjurnal (best-effort).
-    try:
-        from services import gl_service
-        await gl_service.reverse_order_journals(order_id, reason="order dibatalkan",
-                                                actor_name=actor["name"])
-    except Exception as exc:  # noqa: BLE001 — `logging` modul (impor lokal di sini dulu membuat `logging` variabel lokal
-        # seluruh fungsi: cabang galat titipan di atas jatuh UnboundLocalError → 500 sesudah pesanan terlanjur batal)
-        logging.getLogger(__name__).error("Gagal reversal GL utk order %s: %s", order_id, exc)
-    if order.get("replacement_for_return"):
-        from services import return_replacement_service as rpl
-        await rpl.on_replacement_cancelled(order, actor)
-    if order.get("sample_billing") == "paid" and order.get("sample_payment_status") in ("approved", "reapproval_required"):
-        # FIX-3b (B2b CUT-6) — sample berbayar yang dibatalkan: status bayar tidak lagi "disetujui"; Finance diberi tahu
-        # untuk pengembalian/pembatalan tagihan.
-        await db.sales_orders.update_one({"id": order_id}, {"$set": {
-            "sample_payment_status": "refund_pending", "sample_payment_cancelled_at": now_iso(),
-            "sample_payment_cancel_reason": reason}})
-        result["sample_payment_status"] = "refund_pending"
-        try:
-            from services import notification_service as _ns
-            await _ns.create_notification(
-                notif_type="sample_payment_refund", ref=f"sample_refund:{order_id}",
-                title=f"Sample berbayar {order.get('number', '')} dibatalkan",
-                body=f"{order.get('customer_name', '')} — pembayaran sample perlu dikembalikan/dibatalkan. Alasan: {reason}"[:400],
-                severity="warning", link="sample-orders", entity_id=order.get("entity_id") or None,
-                recipient_role="finance")
-        except Exception:  # noqa: BLE001
-            pass
-    return strip_cost_fields(result, actor.get("role"))
+    sales_ownership.assert_may_open(order, actor)
+    return order
+
+
+class _CancelDecisionIn(BaseModel):
+    decision: str = ""   # approve | reject
+    note: str = ""       # wajib (K-14) saat menolak
+
+
+@router.get("/sales-orders/cancel-requests")
+async def list_cancel_requests(request: Request, status: str = "pending",
+                               entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """BTP-2 — antrean permintaan batal/tutup sisa untuk penyetuju (Ruling R1), tercakup PT aktor."""
+    actor = await require_permission(request, "order", "approve_cancel")
+    q = resolve_list_scope("sales_orders", {}, await entity_ctx(request), entity_id)
+    return await so_cancel_service.list_requests(sales_ownership.apply_scope(q, actor), status)
+
+
+@router.get("/sales-orders/{order_id}/cancel-check")
+async def cancel_check(order_id: str, request: Request, action: str = "cancel") -> Dict[str, Any]:
+    """BTP-2 — untuk dialog Batalkan/Tutup sisa: perlu persetujuan? alasannya? pengaju boleh menyetujui sendiri?"""
+    actor = await require_permission(request, "order", "cancel")
+    order = await _cancel_target(order_id, request, actor)
+    return await so_cancel_service.check(order, action, actor)
+
+
+@router.post("/sales-orders/{order_id}/cancel-request/decision")
+async def decide_cancel_request(order_id: str, body: _CancelDecisionIn, request: Request) -> Dict[str, Any]:
+    """BTP-2 — setujui/tolak permintaan batal/tutup sisa. Pemeriksa server izin `order.approve_cancel`; aturan memutus
+    lengkap (rentang nominal, bukan sales pesanan, bukan pengaju) di `so_cancel_service.can_decide`."""
+    actor = await require_permission(request, "order", "approve_cancel")
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "entity_id": 1, "number": 1,
+                                                              "created_by": 1, "sales_id": 1, "sales_team": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order tidak ditemukan")
+    # Memutus = menulis atas nama PT pesanan: dokumen wajib milik PT AKTIF (mode gabungan → pagar penugasan).
+    assert_active_entity_access(order, "sales_orders", await entity_ctx(request))
+    sales_ownership.assert_may_open(order, actor)   # cakupan data peran (sama dengan daftar antrean)
+    out = await so_cancel_service.decide(order_id, actor, body.decision, body.note)
+    return strip_cost_fields(out, actor.get("role"))
+
+
+@router.post("/sales-orders/{order_id}/cancel-request/withdraw")
+async def withdraw_cancel_request(order_id: str, request: Request) -> Dict[str, Any]:
+    """BTP-2 — tarik permintaan yang menunggu (pengaju atau pemegang `order.cancel` atas pesanan itu)."""
+    actor = await require_permission(request, "order", "cancel")
+    await _cancel_target(order_id, request, actor)
+    return await so_cancel_service.withdraw(order_id, actor)
 
 
 # ─── F-10 (keputusan owner Q-02, 2026-10-21) — gerbang bayar-sebelum-kirim termin CBD/DP ─────────────────────────
