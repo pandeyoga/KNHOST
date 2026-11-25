@@ -13,7 +13,7 @@
 
 **Tech Stack:** FastAPI + MongoDB (`backend/`, uji `backend/tests_mem` mongomock), React 18 + Tailwind token (`frontend/src`, Jest + RTL).
 
-**Spec:** `docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md` (keputusan pemilik B1–B7; keputusan builder §7). Inventaris kode: `.superpowers/sdd/lapor-bayar-inv/inventaris.md` (dianalisis di `a5199a4`).
+**Spec:** `docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md` (keputusan pemilik B1–B7; keputusan builder §7). Inventaris kode: `.superpowers/sdd/2026-11-25-lapor-bayar-cbd/inventaris.md` (dianalisis di `a5199a4`).
 
 ## Global Constraints
 
