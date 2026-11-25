@@ -350,6 +350,23 @@ async def test_BTP2_jenjang_dua_terlanjur_ada_diabaikan(klien, db, siap, caplog)
         await db.approval_policies.delete_many({"id": {"$in": ["btp2_j1_ksc", "btp2_j2_ksc"]}})
 
 
+async def test_BTP2_umur_antrean_sejak_diajukan(klien, db, siap):
+    """I4 tinjauan akhir — umur tunggu antrean `so_cancel` dihitung sejak permintaan DIAJUKAN
+    (`cancel_request.requested_at`) dan judulnya nama pelanggan; dulu dari `created_at` pesanan (permintaan baru di
+    pesanan 55 hari tampil "menunggu 55 hari", judul "—" → kartu Paling Lama Menunggu & pengingat "MANDEK" palsu)."""
+    from services import approval_backlog_service as abl
+    so = await _pesanan(klien, db, siap, bayar=1_000_000, created_at="2026-10-01T03:00:00+00:00")
+    r = await _batal(klien, siap["hs"], so)
+    assert r.status_code == 202, r.text
+    diajukan = r.json()["request"]["requested_at"]
+    baris = next(x for x in await abl.oldest(KSC, limit=500) if x["key"] == "so_cancel" and x["id"] == so["id"])
+    assert (baris["since"], baris["days_waiting"]) == (diajukan, 0), baris
+    assert (baris["title"], baris["number"]) == ("Uji BTP2 · Toko Kain", so["number"]), baris
+    papan = await abl.queue_detail("so_cancel", KSC, actor=siap["fin"], limit=200)
+    b = next(x for x in papan["rows"] if x["id"] == so["id"])
+    assert (b["since"], b["days_waiting"], b["title"]) == (diajukan, 0, "Uji BTP2 · Toko Kain"), b
+
+
 # ── Fokus review ────────────────────────────────────────────────────────────────────────────────────────────────────
 async def test_BTP2_ajukan_dua_kali_409(klien, db, siap):
     so = await _pesanan(klien, db, siap, bayar=1_000_000)

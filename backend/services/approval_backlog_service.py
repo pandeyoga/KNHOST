@@ -374,12 +374,20 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
                     "title": ["product_name", "supplier_name"]},
     "sales_return_exception": {"since": ["updated_at", "created_at"], "number": ["number"],
                                "title": ["customer_name", "order_number"]},
+    # BTP (tinjauan akhir I4) — permintaan batal/tutup sisa menunggu sejak DIAJUKAN (`cancel_request.requested_at`,
+    # ditulis `so_cancel_service.submit`), bukan sejak pesanan dibuat: dulu permintaan baru di pesanan 55 hari tampil
+    # "menunggu 55 hari" (judul "—") → kartu Paling Lama Menunggu & pengingat MANDEK palsu.
+    "so_cancel": {"since": ["cancel_request.requested_at", "created_at"], "number": ["number"],
+                  "title": ["customer_name"]},
 }
 
 
 def _pick(doc: Dict[str, Any], fields: List[str], default: str = "") -> str:
+    """Field pertama yang terisi (teks); titik = jalur bersarang (`cancel_request.requested_at`)."""
     for f in fields:
-        v = doc.get(f)
+        v: Any = doc
+        for part in f.split("."):
+            v = v.get(part) if isinstance(v, dict) else None
         if v not in (None, "", [], {}):
             return str(v)
     return default
