@@ -1,0 +1,24 @@
+01_admin_sales: tinggi halaman 2790px (3.1 layar); kartu tetap 12 buah, tinggi unik 412
+01_admin_sales: klik nomor → pop-up MUNCUL; url /?view=sales-admin-desk&entity=ent_ksc
+01_admin_sales: tab Pantau dibuka
+02_meja_keuangan: tinggi halaman 1564px (1.7 layar); kartu tetap 5 buah, tinggi unik 412
+02_meja_keuangan: klik nomor → pop-up MUNCUL; url /?view=finance-desk&entity=ent_ksc
+02_meja_keuangan: tab Pantau dibuka
+03_meja_saya_manajer: tinggi halaman 1518px (1.7 layar); kartu tetap 6 buah, tinggi unik 412
+03_meja_saya_manajer: klik nomor → pop-up MUNCUL; url /?view=my-desk&entity=ent_ksc
+03_meja_saya_manajer: tab Pantau dibuka
+04_meja_saya_sales: tinggi halaman 1518px (1.7 layar); kartu tetap 5 buah, tinggi unik 412
+04_meja_saya_sales: klik nomor → pop-up MUNCUL; url /?view=my-desk&entity=ent_ksc
+04_meja_saya_sales: tab Pantau dibuka
+05_meja_md: tinggi halaman 1942px (2.2 layar); kartu tetap 8 buah, tinggi unik 412
+05_meja_md: klik nomor → pop-up MUNCUL; url /?view=md-desk&entity=ent_ksc
+05_meja_md: tab Pantau dibuka
+06_meja_gudang: tinggi halaman 1942px (2.2 layar); kartu tetap 8 buah, tinggi unik 412
+06_meja_gudang: klik nomor → pop-up MUNCUL; url /?view=warehouse-admin-desk&entity=ent_d0073be24630
+06_meja_gudang: tab Pantau dibuka
+07_meja_sample: tinggi halaman 900px (1.0 layar); kartu tetap 2 buah, tinggi unik 412
+07_meja_sample: klik nomor → pop-up MUNCUL; url /?view=sample-admin-desk&entity=ent_ksc
+07_meja_sample: tab Pantau dibuka
+08_hp_admin_sales: tinggi halaman 3427px (4.1 layar)
+08_hp_admin_sales: pop-up HP MUNCUL
+10_hp_md: tinggi halaman 1021px (1.2 layar)
