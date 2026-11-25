@@ -424,12 +424,13 @@ IZIN_MEJA_FINANCE = ("payment_variance", "decide")
 NOTIF_TITIPAN_BATAL = "titipan_pesanan_batal"
 
 
-async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: float, reason: str = "", galat: str = "",
-                                     kata: str = "") -> None:
+async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: Optional[float], reason: str = "",
+                                     galat: str = "", kata: str = "") -> None:
     """Uang muka pesanan batal/kedaluwarsa/sisa ditutup sudah (atau GAGAL) menjadi titipan → beri tahu pemegang izin
     Meja Finance di PT pesanan. Dulu hanya sales pemilik yang diberi tahu; Finance yang harus mengembalikan uang atau
     memakainya untuk pesanan lain harus mengecek daftar titipan sendiri. Best-effort: tidak pernah menggagalkan
-    pemindahan. Gagal = tingkat `critical` (audit notifikasi N-17: `"danger"` tidak dikenal)."""
+    pemindahan. Gagal = tingkat `critical` (audit notifikasi N-17: `"danger"` tidak dikenal). `amount=None` = nominal
+    belum terhitung (galat sebelum kelebihan dihitung, tutup sisa langkah 6)."""
     from services import notification_service as _ns
     kata = kata or ("kedaluwarsa" if order.get("status") == "expired" else "dibatalkan")
     nomor = order.get("number") or order.get("id")
@@ -437,8 +438,9 @@ async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: float, reaso
     alasan = f" Alasan: {reason}." if reason else ""
     if galat:
         jenis, severity = f"{NOTIF_TITIPAN_BATAL}_gagal", "critical"
+        jumlah = rupiah(amount) if amount is not None else "uang (nominal belum terhitung)"
         title = f"{nomor} {kata}: uang muka BELUM jadi titipan pelanggan"
-        body = (f"{pelanggan} — {rupiah(amount)} masih tertahan di pesanan ini (pesanan {kata}) dan belum masuk "
+        body = (f"{pelanggan} — {jumlah} masih tertahan di pesanan ini (pesanan {kata}) dan belum masuk "
                 f"titipan. Periksa pesanan dan titipan pelanggan ini.{alasan} Galat: {galat}")
     else:
         jenis, severity = NOTIF_TITIPAN_BATAL, "warning"

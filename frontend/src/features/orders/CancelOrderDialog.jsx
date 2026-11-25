@@ -4,7 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { overlayDismiss } from "../../utils/overlayDismiss";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency } from "../../utils/formatters";
-import { alasanPersetujuan, diajukan, pesanDiajukan } from "./cancelRequestUtil";
+import { alasanPersetujuan, diajukan, pesanDiajukan, pesanHasil } from "./cancelRequestUtil";
 
 /** 2026-10 — Batalkan SO dengan alasan (izin order.cancel); reservasi dilepas, sales diberi tahu.
  *  S3 (pelatihan 18 Nov) — pesanan yang sudah menerima pembayaran (uang muka): uangnya dipindah server menjadi titipan
@@ -35,12 +35,7 @@ export default function CancelOrderDialog({ order, onClose, onDone }) {
     try {
       const res = await axios.post(`${API}/sales-orders/${order.id}/cancel`, { reason: reason.trim() });
       if (diajukan(res)) { onDone?.(pesanDiajukan(order, res.data)); return; }
-      const refs = res.data.open_fulfillment_refs || [];
-      const titip = Number(res.data.advance_to_deposit || 0);
-      onDone?.(`${order.number} dibatalkan, stok dilepas.`
-        + (titip > 0 ? ` Uang muka ${formatCurrency(titip)} menjadi titipan pelanggan.` : "")
-        + (res.data.advance_to_deposit_error ? ` ${res.data.advance_to_deposit_error}` : "")
-        + (refs.length ? ` Tindak lanjuti dokumen pemenuhan: ${refs.join(", ")}.` : ""));
+      onDone?.(pesanHasil(order, "cancel", res.data));
     } catch (e) { setError(apiErrorText(e, "Gagal membatalkan pesanan.")); }
     finally { setBusy(false); }
   }

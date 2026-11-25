@@ -34,7 +34,7 @@ tutup sisa 409) → rencana dihitung ulang dari keadaan terkunci → tulisan. Ga
 sama.
 """
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 
@@ -438,21 +438,30 @@ def _patch(order: Dict[str, Any], plan: Dict[str, Any], actor: Dict[str, Any], r
 
 
 async def _pindah_kelebihan(order_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
-    """Langkah 6 — kelebihan = min(uang muka belum diakui, terbayar − nilai baru) → titipan (inti pesanan batal)."""
+    """Langkah 6 — kelebihan = min(uang muka belum diakui, terbayar − nilai baru) → titipan (inti pesanan batal).
+
+    Galat APA PUN di langkah ini — sebelum inti (memuat pesanan, `order_advance_unrecognized`, terbayar) maupun di
+    dalamnya — tidak menggagalkan tutup sisa yang sudah terjadi: hasil membawa `advance_to_deposit_error` (layar
+    menampilkannya) dan Finance diberi tahu tingkat `critical` (tinjauan akhir I3; dulu galat sebelum inti merambat
+    sesudah pesanan tertutup — langkah 8 terlewat, Finance tidak tahu). Galat di dalam inti sudah diberitahukan inti;
+    pemberitahuan kembarnya disaring dedupe notifikasi (jenis & ref sama, belum dibaca)."""
     from services import ar_receipt_service as _ar
     from services import gl_service as gl
     from services.customer_service import _order_paid as order_paid
-    fresh = await _load(order_id)
-    kelebihan = 0.0
-    if not fresh.get("advance_to_deposit"):
-        kelebihan = max(0.0, min(await gl.order_advance_unrecognized(fresh),
-                                 round(order_paid(fresh), 2) - float(fresh.get("grand_total") or 0)))
+    fresh: Dict[str, Any] = {"id": order_id}
+    kelebihan: Optional[float] = None   # None = belum terhitung saat galat
     try:
+        fresh = await _load(order_id)
+        kelebihan = 0.0 if fresh.get("advance_to_deposit") else max(0.0, min(
+            await gl.order_advance_unrecognized(fresh),
+            round(order_paid(fresh), 2) - float(fresh.get("grand_total") or 0)))
         moved = await _ar.pindah_uang_muka_ke_titipan(fresh, actor, reason, round(kelebihan, 2),
                                                       f"{SUMBER_TITIPAN}:{order_id}", KATA_TITIPAN)
         return {"advance_to_deposit": moved}
-    except Exception as exc:  # noqa: BLE001 — sisa sudah ditutup; pemindahan aman diulang (Finance sudah diberi tahu)
+    except Exception as exc:  # noqa: BLE001 — sisa sudah ditutup; pemindahan aman diulang (Finance diberi tahu)
         logger.error("Kelebihan uang pesanan %s (tutup sisa) gagal dipindah ke titipan: %s", order_id, exc)
+        await _ar._beri_tahu_finance_titipan(fresh, kelebihan, reason, galat=str(exc) or type(exc).__name__,
+                                             kata=KATA_TITIPAN)
         return {"advance_to_deposit": 0.0, "advance_to_deposit_error": PESAN_TITIPAN_GAGAL}
 
 

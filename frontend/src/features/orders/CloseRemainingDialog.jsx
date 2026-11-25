@@ -4,7 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { overlayDismiss } from "../../utils/overlayDismiss";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatQty } from "../../utils/formatters";
-import { alasanPersetujuan, diajukan, pesanDiajukan } from "./cancelRequestUtil";
+import { alasanPersetujuan, diajukan, pesanDiajukan, pesanHasil } from "./cancelRequestUtil";
 
 /** BTP-4/6 — Tutup sisa pesanan `partially_shipped`: yang belum terkirim dilepas, nilai pesanan turun ke yang sudah
  *  terkirim, uang berlebih jadi titipan. Dialog menampilkan ringkasan sebelum → sesudah dari `cancel-check` (tanpa
@@ -38,9 +38,7 @@ export default function CloseRemainingDialog({ order, onClose, onDone }) {
     try {
       const res = await axios.post(`${API}/sales-orders/${order.id}/close-remaining`, { reason: reason.trim() });
       if (diajukan(res)) { onDone?.(pesanDiajukan(order, res.data)); return; }
-      const t = Number(res.data?.advance_to_deposit || 0);
-      onDone?.(`${order.number}: sisa pesanan ditutup, stok dilepas.`
-        + (t > 0 ? ` ${formatCurrency(t)} menjadi titipan pelanggan.` : ""));
+      onDone?.(pesanHasil(order, "close_remaining", res.data));
     } catch (e) { setError(apiErrorText(e, "Gagal menutup sisa pesanan.")); }
     finally { setBusy(false); }
   }

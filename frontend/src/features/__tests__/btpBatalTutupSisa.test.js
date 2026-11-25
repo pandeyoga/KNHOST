@@ -106,6 +106,22 @@ describe("dialog tutup sisa", () => {
     expect(q("close-remaining-confirm").disabled).toBe(true);
   });
 
+  test("200: pesan hasil memuat titipan, galat pemindahan titipan, dan dokumen pemenuhan (I3)", async () => {
+    mockGet.mockResolvedValue({ data: { needs_approval: false, basis: [], can_self_approve: false, amount: 0, preview: PREVIEW } });
+    mockPost.mockResolvedValue({ status: 200, data: { status: "shipped", advance_to_deposit: 0,
+      advance_to_deposit_error: "Kelebihan uang pesanan ini belum terpindah ke titipan pelanggan — hubungi Finance.",
+      open_fulfillment_refs: ["KSC/TRF-00009"] } });
+    const onDone = jest.fn();
+    await render(<CloseRemainingDialog order={PESANAN} onClose={() => {}} onDone={onDone} />);
+    await isi("close-remaining-reason", "Pelanggan hanya mau sebagian");
+    await klik("close-remaining-confirm");
+    const m = onDone.mock.calls[0][0];
+    expect(m).toMatch(/sisa pesanan ditutup/);
+    expect(m).toMatch(/belum terpindah ke titipan pelanggan — hubungi Finance/);
+    expect(m).toMatch(/Tindak lanjuti dokumen pemenuhan: KSC\/TRF-00009/);
+    expect(m).not.toMatch(/menjadi titipan pelanggan\./);
+  });
+
   test("kirim: 202 -> pesan menunggu persetujuan; 200 -> pesan sisa ditutup", async () => {
     mockGet.mockResolvedValue({ data: { needs_approval: true, basis: ["excess"], can_self_approve: false, amount: 1, preview: PREVIEW } });
     mockPost.mockResolvedValue({ status: 202, data: { request: { id: "scr_2" }, message: MENUNGGU } });
@@ -137,6 +153,35 @@ describe("bilah menunggu persetujuan", () => {
     await klik("cancel-request-reject");
     expect(mockPost).toHaveBeenCalledWith("/api/sales-orders/so_1/cancel-request/decision", { decision: "reject", note: "Belum bisa" });
     expect(onDone).toHaveBeenCalled();
+  });
+
+  test("Setujui: pesan memuat hasil eksekusi — titipan, galat titipan, dokumen pemenuhan (I3)", async () => {
+    mockPost.mockResolvedValue({ status: 200, data: { order_status: "cancelled", message: "Permintaan disetujui — pesanan dibatalkan.",
+      request: { id: "scr_9", status: "approved" },
+      result: { status: "cancelled", advance_to_deposit: 5000000,
+        advance_to_deposit_error: "Uang muka pesanan ini belum terpindah ke titipan pelanggan — hubungi Finance.",
+        open_fulfillment_refs: ["KSC/PR-00012", "KSC/TRF-00003"] } } });
+    const onDone = jest.fn();
+    await render(<CancelRequestBar order={order} perms={{ order: ["approve_cancel"] }} userId="u_budi" onDone={onDone} />);
+    await klik("cancel-request-approve");
+    const m = onDone.mock.calls[0][0].replace(/\s+/g, " ");
+    expect(m).toMatch(/KSC\/SO-00100: permintaan pembatalan disetujui/);
+    expect(m).toMatch(/Uang muka Rp\s?5\.000\.000 menjadi titipan pelanggan/);
+    expect(m).toMatch(/belum terpindah ke titipan pelanggan — hubungi Finance/);
+    expect(m).toMatch(/Tindak lanjuti dokumen pemenuhan: KSC\/PR-00012, KSC\/TRF-00003/);
+  });
+
+  test("Setujui tutup sisa: kelebihan yang jadi titipan disebut", async () => {
+    mockPost.mockResolvedValue({ status: 200, data: { order_status: "shipped", request: { id: "scr_8", status: "approved" },
+      result: { status: "shipped", advance_to_deposit: 6660000, open_fulfillment_refs: [] } } });
+    const onDone = jest.fn();
+    const tutup = { ...PESANAN, cancel_request: { ...REQ, id: "scr_8", action: "close_remaining", approval_basis: ["excess"] } };
+    await render(<CancelRequestBar order={tutup} perms={{ order: ["approve_cancel"] }} userId="u_budi" onDone={onDone} />);
+    await klik("cancel-request-approve");
+    const m = onDone.mock.calls[0][0].replace(/\s+/g, " ");
+    expect(m).toMatch(/permintaan tutup sisa disetujui/);
+    expect(m).toMatch(/Rp\s?6\.660\.000 menjadi titipan pelanggan/);
+    expect(m).not.toMatch(/Tindak lanjuti/);
   });
 
   test("pengaju melihat Tarik, bukan Setujui", async () => {

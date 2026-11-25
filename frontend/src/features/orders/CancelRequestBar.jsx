@@ -4,7 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { can } from "../../config/roles";
-import { alasanPersetujuan } from "./cancelRequestUtil";
+import { alasanPersetujuan, rincianHasil } from "./cancelRequestUtil";
 
 /** BTP-2/6 — bilah "menunggu persetujuan" di rincian pesanan: siapa mengajukan, alasan, kapan. Setujui/Tolak untuk
  *  pemegang `order.approve_cancel` (bukan pengaju; aturan nominal & sales pemilik ditegakkan server), Tarik untuk
@@ -22,12 +22,14 @@ export default function CancelRequestBar({ order, perms, userId = "", onDone }) 
   const jenis = req.action === "close_remaining" ? "tutup sisa" : "pembatalan";
   const alasan = alasanPersetujuan(req.approval_basis, order);
 
-  async function jalan(path, body, ok) {
+  // I3 — Setujui menjalankan aksinya: hasil eksekusi (`result` — titipan, galat titipan, dokumen pemenuhan) ikut
+  // ditampilkan, sama dengan dialog batal/tutup sisa langsung.
+  async function jalan(path, body, ok, denganHasil = false) {
     setBusy(true); setError("");
     try {
-      await (body === undefined ? axios.post(`${API}/sales-orders/${order.id}/cancel-request/${path}`)
+      const res = await (body === undefined ? axios.post(`${API}/sales-orders/${order.id}/cancel-request/${path}`)
         : axios.post(`${API}/sales-orders/${order.id}/cancel-request/${path}`, body));
-      onDone?.(`${order.number}: ${ok}`);
+      onDone?.(`${order.number}: ${ok}${denganHasil ? rincianHasil(res?.data?.result, req.action) : ""}`);
     } catch (e) { setError(apiErrorText(e, "Aksi gagal. Muat ulang lalu coba lagi.")); }
     finally { setBusy(false); }
   }
@@ -55,7 +57,7 @@ export default function CancelRequestBar({ order, perms, userId = "", onDone }) 
               Tolak
             </button>
             <button data-testid="cancel-request-approve" className="primary-button" disabled={busy}
-              onClick={() => jalan("decision", { decision: "approve", note: note.trim() }, `permintaan ${jenis} disetujui dan dijalankan.`)}>
+              onClick={() => jalan("decision", { decision: "approve", note: note.trim() }, `permintaan ${jenis} disetujui dan dijalankan.`, true)}>
               Setujui
             </button>
           </>

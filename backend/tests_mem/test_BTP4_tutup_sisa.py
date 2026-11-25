@@ -286,6 +286,42 @@ async def test_BTP4_cbd_kelebihan_ke_titipan(klien, db, siap, monkeypatch):
     assert all("sisa ditutup" in f"{n['title']} {n['body']}" for n in rows)
 
 
+async def test_BTP4_galat_langkah6_sebelum_inti_finance_diberi_tahu(klien, db, siap, monkeypatch):
+    """I3 tinjauan akhir — galat langkah 6 SEBELUM inti pemindahan (mis. `order_advance_unrecognized` gagal) dulu ditelan
+    diam-diam. Kini sisa tetap tertutup, respons persetujuan membawa `advance_to_deposit_error` (layar menampilkannya),
+    dan Finance diberi tahu tingkat `critical` (jenis `…_gagal`)."""
+    from services import gl_service
+    from services import so_close_remaining_service as scr
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch, termin="CBD", bayar_awal=11_100_000)
+    so = k["so"]
+    r = await _tutup(klien, siap["hs"], so, "Pelanggan membatalkan sisa 60 m")
+    assert r.status_code == 202, r.text
+    asli = gl_service.order_advance_unrecognized
+
+    async def _gagal_sesudah_ditutup(order, *a, **kw):
+        if (order or {}).get("closed_short"):   # hanya di langkah 6 (pesanan sudah tertutup)
+            raise RuntimeError("order_advance_unrecognized gagal (uji)")
+        return await asli(order, *a, **kw)
+    monkeypatch.setattr(gl_service, "order_advance_unrecognized", _gagal_sesudah_ditutup)
+    r = await klien.post(f"/api/sales-orders/{so['id']}/cancel-request/decision", headers=siap["hf"],
+                         json={"decision": "approve", "note": ""})
+    assert r.status_code == 200, r.text
+    j = r.json()
+    assert j["order_status"] == "shipped"
+    assert j["result"]["advance_to_deposit_error"] == scr.PESAN_TITIPAN_GAGAL
+    assert j["request"]["result"]["advance_to_deposit_error"] == scr.PESAN_TITIPAN_GAGAL
+    assert j["result"]["open_fulfillment_refs"] == []
+    o = await _so(db, so)
+    assert o["status"] == "shipped" and not o.get("advance_to_deposit"), "belum ada yang dipindah"
+    rows = await db.notifications.find({"type": f"{NOTIF_FINANCE}_gagal",
+                                        "ref": {"$regex": f"^{NOTIF_FINANCE}_gagal:{so['id']}"}},
+                                       {"_id": 0}).to_list(50)
+    assert rows and all(n["severity"] == "critical" for n in rows), rows
+    assert siap["fin"]["id"] in {n["recipient_user"] for n in rows}
+    assert all("order_advance_unrecognized gagal" in n["body"] and "nominal belum terhitung" in n["body"]
+               for n in rows), rows
+
+
 async def test_BTP4_tempo_sudah_bayar_terkirim_tidak_wajib_setuju(klien, db, siap, monkeypatch):
     k = await _kirim_sebagian(klien, db, siap, monkeypatch, bayar_sesudah=4_440_000)
     so = k["so"]
