@@ -159,3 +159,62 @@ test("berkas baru bebas px & hex", () => {
     expect([f, /#[0-9A-Fa-f]{3,6}\b/.test(isi)]).toEqual([f, false]);
   });
 });
+
+test("tumpukan LINTAS JENIS: push A→B lalu Kembali tanpa galat; judul/isi selalu milik target teratas", async () => {
+  const galat = jest.spyOn(console, "error").mockImplementation(() => {});
+  DOC_PREVIEWS.uji_a = {
+    label: "Jenis A", perm: ["order", "view"], full: null,
+    load: async (id) => ({ id, kind: "a", number: `A-${id}` }),
+    Body: ({ doc, push }) => {
+      if (doc.kind !== "a") throw new Error("Body A menerima dokumen bukan A");
+      return <button type="button" className="link-button" data-testid="uji-ke-b" onClick={() => push({ docType: "uji_b", docId: "b1" })}>{`isi-a ${doc.id}`}</button>;
+    },
+  };
+  DOC_PREVIEWS.uji_b = {
+    label: "Jenis B", perm: ["order", "view"], full: null,
+    load: async (id) => ({ id, kind: "b", number: `B-${id}` }),
+    Body: ({ doc }) => {
+      if (doc.kind !== "b") throw new Error("Body B menerima dokumen bukan B");
+      return <span data-testid="uji-isi-b">{`isi-b ${doc.id}`}</span>;
+    },
+  };
+  try {
+    await mount(wrap(<DocPreviewModal target={{ docType: "uji_a", docId: "a1" }} onClose={() => {}} currentUser={{ permissions: PERMS }} />));
+    expect(teks(q("doc-preview-title"))).toBe("Jenis A · A-a1");
+    await klik(q("uji-ke-b")); await act(async () => {});
+    expect(teks(q("doc-preview-title"))).toBe("Jenis B · B-b1");
+    expect(teks(q("uji-isi-b"))).toBe("isi-b b1");
+    await klik(q("doc-preview-back")); await act(async () => {});
+    expect(teks(q("doc-preview-title"))).toBe("Jenis A · A-a1");
+    expect(teks(q("uji-ke-b"))).toBe("isi-a a1");
+  } finally { delete DOC_PREVIEWS.uji_a; delete DOC_PREVIEWS.uji_b; galat.mockRestore(); }
+});
+
+test("push jenis tanpa izin tidak mengubah tumpukan; canPush dipasok ke Body", async () => {
+  let kunci = null;
+  DOC_PREVIEWS.uji_p = {
+    label: "Uji P", perm: ["order", "view"], full: null,
+    load: async (id) => ({ id }),
+    Body: ({ doc, push, canPush }) => {
+      kunci = canPush;
+      return <button type="button" className="link-button" data-testid="uji-push-vb" onClick={() => push({ docType: "uji_vb", docId: "v1" })}>{doc.id}</button>;
+    },
+  };
+  DOC_PREVIEWS.uji_vb = { label: "Uji VB", perm: ["vendor_bill", "view"], full: null, load: async (id) => ({ id }), Body: () => <span /> };
+  try {
+    await mount(wrap(<DocPreviewModal target={{ docType: "uji_p", docId: "p1" }} onClose={() => {}} currentUser={{ permissions: PERMS }} />));
+    expect(kunci("uji_vb")).toBe(false);
+    expect(kunci("uji_p")).toBe(true);
+    await klik(q("uji-push-vb")); await act(async () => {});
+    expect(q("doc-preview-back")).toBeNull();
+    expect(teks(q("doc-preview-title"))).toContain("Uji P");
+  } finally { delete DOC_PREVIEWS.uji_p; delete DOC_PREVIEWS.uji_vb; }
+});
+
+test("nama pelanggan di fakta pesanan tidak semi-tebal (nilai biasa 400)", async () => {
+  mockGet.mockResolvedValue({ data: SO1 });
+  await mount(wrap(<DocPreviewModal target={{ docType: "sales_order", docId: "so1" }} onClose={() => {}} currentUser={{ permissions: PERMS }} />));
+  const dd = q("doc-preview-facts-customer").querySelector("dd");
+  expect(dd.className).not.toMatch(/font-semibold/);
+  expect(q("doc-preview-facts-sales").querySelector("dd").className).not.toMatch(/font-semibold/);
+});

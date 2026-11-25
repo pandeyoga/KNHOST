@@ -3,7 +3,7 @@
  * Dipakai semua `bodies/*` supaya semua jenis dokumen tampil serupa (huruf: label 12/400, nilai 13/600, label kolom 12/600).
  */
 
-/** Pasangan label–nilai. `items` = [{ key, label, content }]; item dengan `content` kosong dilewati. */
+/** Pasangan label–nilai. `items` = [{ key, label, content, strong? }] — `strong` (600) hanya untuk uang/angka kunci, bawaan 400; item dengan `content` kosong dilewati. */
 export function PreviewFacts({ items = [], testId = "doc-preview-facts" }) {
   const rows = items.filter((i) => i && i.content !== "" && i.content !== null && i.content !== undefined && i.content !== false);
   if (!rows.length) return null;
@@ -12,7 +12,7 @@ export function PreviewFacts({ items = [], testId = "doc-preview-facts" }) {
       {rows.map((i) => (
         <div key={i.key} className="flex items-baseline gap-2" data-testid={`${testId}-${i.key}`}>
           <dt className="shrink-0 text-fs-12 text-kn-text-2">{i.label}</dt>
-          <dd className="min-w-0 break-words text-fs-13 font-semibold text-kn-text">{i.content}</dd>
+          <dd className={`min-w-0 break-words text-fs-13 text-kn-text ${i.strong ? "font-semibold" : "font-normal"}`}>{i.content}</dd>
         </div>
       ))}
     </dl>

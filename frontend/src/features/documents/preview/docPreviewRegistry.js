@@ -7,7 +7,8 @@
  *   · `load(id, { entityId })` — memuat dokumen lewat endpoint baca yang sudah ada. Bila `entityId` (PT dokumen, mode
  *     "Semua PT") diberikan, PT itu diingat di `docEntityRegistry`; interseptor `apiClient` lalu mengirim `X-Entity-Id`
  *     PT dokumen HANYA bila PT itu ada di penugasan akun, dan server tetap memeriksa;
- *   · `Body`  — komponen isi `{ doc, push(target), currentUser }`; dipakai di `DocPreviewModal` maupun mandiri
+ *   · `Body`  — komponen isi `{ doc, push(target), canPush(docType), currentUser }`; `push` mengabaikan jenis tanpa izin,
+ *     `canPush(docType)` dipakai Body untuk memilih tombol (`canPush` benar) atau teks biasa; dipakai di `DocPreviewModal` maupun mandiri
  *     (mis. di pop-up meja — `push` boleh no-op);
  *   · `full(doc)` — tautan navigasi untuk "Buka layar penuh" (`null` = tombol tidak ditampilkan).
  */
