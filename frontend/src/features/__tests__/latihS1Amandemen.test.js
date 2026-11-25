@@ -117,7 +117,7 @@ test("S1 (b): rincian pesanan tidak menawarkan [Terbitkan Faktur Pajak] selama d
       unit: "yard", price: 25000 }], total_amount: 250000, net_subtotal: 250000, ppn_amount: 27500, grand_total: 277500,
     created_at: "2026-11-17T03:00:00Z" };
   const user = { role: "finance", permissions: { tax_invoice: ["view", "create"], order: ["view"] } };
-  const host = await mount(<OrderDetailPanel order={SO} user={user} embedded onIssueTaxInvoice={() => Promise.resolve()} />);
+  const host = await mount(<OrderDetailPanel order={SO} user={user} embedded />);
   expect(q(host, "order-tax-invoice-section")).not.toBeNull();
   expect(q(host, "order-tax-invoice-empty").textContent).toContain("Memuat faktur pajak");
   expect(q(host, "issue-tax-invoice-btn")).toBeNull();

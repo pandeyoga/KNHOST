@@ -220,7 +220,9 @@ async function terbitkanFaktur(r, no) {
   await r.tid("finance-desk").waitFor();
   await r.tid("fin-desk-search-faktur_pajak").fill(order.number);
   await r.tid(`fin-desk-faktur_pajak-action-${so.so_id}`).click();
-  await tungguToast(r, /diterbitkan/, 20000);   // meja gelombang 1 — hasil aksi di tempat = toast
+  await r.tid("fkt-modal").waitFor();   // pop-up pratinjau faktur → [Terbitkan]
+  await r.tid("fkt-modal-submit").click();
+  await tungguToast(r, /diterbitkan/, 20000);   // hasil aksi = toast
   f = mongo(`return db.tax_invoices.findOne({order_id:"${so.so_id}",status:"normal"},{_id:0})`);
   return { f, order, so };
 }
@@ -391,7 +393,11 @@ async function sample(r, no, no2) {
       await bukaSos(r, sos.number, s.sos_id);
       const t = await r.text("sample-detail-paid");
       assert(t.includes("50.000") && t.includes(rpLayar(T - 50000).replace("Rp ", "")), `rincian: ${t}`);
-      const msg = await intipKonfirmasi(r, "sample-detail-approve-payment", "sample-approve-short");
+      await r.tid("sample-detail-approve-payment").click();
+      await r.tid("sample-approve").waitFor({ timeout: 6000 });
+      const msg = (await r.tid("sample-approve-short").innerText()).replace(/\s+/g, " ").trim();
+      await r.tid("sample-approve").getByRole("button", { name: "Batal" }).click();
+      await r.tid("sample-approve").waitFor({ state: "detached", timeout: 6000 });
       const o = mongo(`return db.sales_orders.findOne({id:"${s.sos_id}"},{_id:0,status:1,sample_payment_status:1})`);
       assert(o.status === "waiting_approval", `SOS ${o.status}`);
       return `${t} · dialog "${msg}" → batal → ${o.status}`;
@@ -405,6 +411,8 @@ async function sample(r, no, no2) {
       await bukaSos(r, sos.number, s.sos_id);
       assert(/lunas/.test(await r.text("sample-detail-paid")), `rincian: ${await r.text("sample-detail-paid")}`);
       await r.tid("sample-detail-approve-payment").click();
+      await r.tid("sample-approve").waitFor();   // pop-up pratinjau (lunas → [Setujui pembayaran])
+      await r.tid("sample-approve-submit").click();
       const msg = await tungguTeks(r, "sample-orders-toast", /pembayaran disetujui/);
       const o = mongo(`return db.sales_orders.findOne({id:"${s.sos_id}"},{_id:0,status:1,payment_status:1,paid_total:1})`);
       assert(o.status === "approved" && o.payment_status === "paid" && Math.abs(o.paid_total - T) < 0.01, `SOS ${JSON.stringify(o)}`);

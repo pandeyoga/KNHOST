@@ -42,13 +42,14 @@ export default function ReleaseToWarehouseDialog({ order, mode = "release", run,
   const [loading, setLoading] = useState(needsLoad);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);   // galat MUAT pesanan, terpisah dari galat kirim (`err`)
 
   useEffect(() => {
     if (!needsLoad) return undefined;
     let aktif = true;
     axios.get(`${API}/sales-orders/${order.id}`)
       .then((r) => { if (aktif) setLoaded(r?.data || {}); })
-      .catch((e) => { if (aktif) setErr(apiErrorText(e, "Gagal memuat barang pesanan.")); })
+      .catch(() => { if (aktif) setLoadFailed(true); })
       .finally(() => { if (aktif) setLoading(false); });
     return () => { aktif = false; };
   }, [needsLoad, order?.id]);
@@ -61,7 +62,7 @@ export default function ReleaseToWarehouseDialog({ order, mode = "release", run,
   const number = order?.number || loaded?.number || "";
 
   const kirim = async () => {
-    if (busy || loading) return;
+    if (busy || loading || loadFailed) return;
     setBusy(true); setErr("");
     try { onDone?.(await run()); }
     catch (e) { setErr(apiErrorText(e, forward ? "Gagal meneruskan ke gudang." : "Gagal melepas pesanan ke gudang.")); }
@@ -72,7 +73,7 @@ export default function ReleaseToWarehouseDialog({ order, mode = "release", run,
   return (
     <FormModal open onClose={onClose} size="md" icon={PackageCheck} title={`${label}?`}
       subtitle="Periksa pesanan, PT, gudang, dan barangnya sebelum dilanjutkan." testId={testId}
-      busy={busy} error={err} submitLabel={busy ? "Memproses…" : label} submitDisabled={loading}
+      busy={busy} error={err} submitLabel={busy ? "Memproses…" : label} submitDisabled={loading || loadFailed}
       submitTestId={`${testId}-submit`} onSubmit={kirim}>
       <div className="space-y-2" data-testid={`${testId}-preview`}>
         <dl className="rounded-md border border-kn-border px-3 py-2 text-fs-13 space-y-1">
@@ -88,11 +89,15 @@ export default function ReleaseToWarehouseDialog({ order, mode = "release", run,
           </div>
           <div className="flex justify-between gap-3">
             <dt className="text-kn-text-2">Gudang</dt>
-            <dd className="text-right" data-testid={`${testId}-warehouse`}>{loading ? "Memuat…" : (warehouses.join(", ") || "—")}</dd>
+            <dd className="text-right" data-testid={`${testId}-warehouse`}>{loading ? "Memuat…" : (loadFailed ? "—" : (warehouses.join(", ") || "—"))}</dd>
           </div>
         </dl>
         {loading ? (
           <p className="text-fs-13 text-kn-text-2" data-testid={`${testId}-loading`}>Memuat barang pesanan…</p>
+        ) : loadFailed ? (
+          <p className="text-fs-13 text-kn-danger-text" role="alert" data-testid={`${testId}-load-failed`}>
+            Gagal memuat rincian pesanan — tutup lalu coba lagi.
+          </p>
         ) : lines.length === 0 ? (
           <p className="text-fs-13 text-kn-text-2" data-testid={`${testId}-no-lines`}>Belum ada baris barang.</p>
         ) : (

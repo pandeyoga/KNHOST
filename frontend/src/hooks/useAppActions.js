@@ -523,18 +523,6 @@ export function useAppActions(state) {
     }
   };
 
-  const issueTaxInvoice = async (orderId, payload = {}) => {
-    try {
-      const response = await axios.post(`${API}/sales-orders/${orderId}/tax-invoice`, payload);
-      setNotice(`Faktur Pajak ${response.data.number} diterbitkan.`);
-      await loadAll();
-      return response.data;
-    } catch (error) {
-      setNotice(error.response?.data?.detail || "Gagal menerbitkan Faktur Pajak.");
-      return null;
-    }
-  };
-
   const generateDocument = async (documentType, orderId) => {
     try {
       const response = await axios.post(`${API}/documents/generate`, { document_type: documentType, source_id: orderId, actor: user?.name || "Admin Demo" });
@@ -857,7 +845,6 @@ export function useAppActions(state) {
     login, logout, showMetricDetail, loadAll,
     inspectProduct, addToCart, createCustomer, submitOrder, mutateOrder,
     releaseReservation, markDelivered, generateDocument, generateLabel,
-    issueTaxInvoice,
     approvePurchaseOrder,
     adminCreate, adminPatch, adminDelete, importMaster, exportMaster,
     seedDemo, previewTemplate, refreshAudit,

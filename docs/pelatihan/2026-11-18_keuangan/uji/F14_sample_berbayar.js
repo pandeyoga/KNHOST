@@ -100,7 +100,7 @@ const { REK_BCA, jurnalDari, cekJurnal, tungguTeks, menu, sorot, lepas, klikPotr
     return `konfirmasi "${msg}" → ${rc.number} · SOS ${sos.status}/${sos.payment_status}`;
   });
 
-  await r.step(5, "Finance", "Penjualan › Pesanan Sample, cari nomor SOS, pilih barisnya → [[Setujui Pembayaran]]", "Bilah hijau \"KSC/SOS-…: pembayaran disetujui.\"; status Siap ke gudang; \"Pembayaran disetujui <nama Anda>\"", async () => {
+  await r.step(5, "Finance", "Penjualan › Pesanan Sample, cari nomor SOS, pilih barisnya → [[Setujui Pembayaran]] → pop-up pratinjau uang masuk → [[Setujui pembayaran]]", "Bilah hijau \"KSC/SOS-…: pembayaran disetujui.\"; status Siap ke gudang; \"Pembayaran disetujui <nama Anda>\"", async () => {
     await menu(r, "penjualan", "sample-orders");
     await r.tid("sample-orders-view").waitFor();
     await r.tid("sample-orders-search").fill(sos0.number);
@@ -109,6 +109,9 @@ const { REK_BCA, jurnalDari, cekJurnal, tungguTeks, menu, sorot, lepas, klikPotr
     await row.click();
     await r.tid("sample-detail-approve-payment").waitFor();
     await klikPotret(r, r.tid("sample-detail-approve-payment"), "klik-setujui-pembayaran");
+    // pop-up pratinjau uang masuk (SamplePaymentApproveDialog): lunas → [Setujui pembayaran]; kurang → [Tetap setujui]
+    await r.tid("sample-approve").waitFor();
+    await r.tid("sample-approve-submit").click();
     const msg = await tungguTeks(r, "sample-orders-toast", /pembayaran disetujui/);
     await tungguTeks(r, "sample-detail-payment", /Pembayaran disetujui/);
     const sos = mongo(`return db.sales_orders.findOne({id:"${s.sos_id}"},{_id:0,status:1,sample_payment_status:1,sample_payment_approved_by:1,sample_payment_approved_amount:1})`);

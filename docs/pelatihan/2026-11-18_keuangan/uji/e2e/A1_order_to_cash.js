@@ -544,7 +544,9 @@ async function checkoutSampaiReview(r, nama = "") {
         await row.waitFor({ timeout: 20000 });
         await sorot(row);
         await klikSorot(r, r.tid(`fin-desk-faktur_pajak-action-${ctx.so1.id}`), "fin-faktur-terbitkan", { locator: kartuFp });
-        const msg = await tungguToast(r, /diterbitkan/, 20000);   // [Terbitkan] = aksi di tempat; hasil = toast
+        await r.tid("fkt-modal").waitFor();   // pop-up pratinjau faktur → [Terbitkan]
+        await r.tid("fkt-modal-submit").click();
+        const msg = await tungguToast(r, /diterbitkan/, 20000);   // hasil = toast
         const fkt = mongo(`return db.tax_invoices.findOne({order_id:"${ctx.so1.id}",status:"normal"},{_id:0})`);
         assert(fkt && msg.includes(fkt.number), `faktur: ${msg}`);
         assert(dekat(fkt.ppn_amount, ctx.so1.ppn_amount), `PPN faktur ${fkt.ppn_amount} ≠ SO ${ctx.so1.ppn_amount}`);

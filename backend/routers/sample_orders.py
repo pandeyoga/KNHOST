@@ -137,7 +137,7 @@ def _rows(docs: List[Dict[str, Any]], action: str, kind: str) -> List[Dict[str, 
     out = []
     for o in docs:
         items = o.get("items") or []
-        sub = " · ".join(f"{i.get('product_name')} {float(i.get('quantity') or 0):g} {i.get('base_unit') or i.get('unit') or ''}" for i in items)
+        sub = " · ".join(f"{i.get('product_name')} {float(i.get('quantity') or 0):g} {i.get('unit') or ''}" for i in items)
         cut = sum(1 for i in items if i.get("sample_cut_status") == "cut")
         out.append(_row(ref_type="sample_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
                         subtitle=f"{'GRATIS' if o.get('sample_billing') == 'free' else 'BERBAYAR'} · {sub}" + (f" · dipotong {cut}/{len(items)}" if cut else ""),

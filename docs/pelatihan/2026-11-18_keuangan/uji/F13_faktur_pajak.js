@@ -38,9 +38,11 @@ const nsfpLatihan = (no) => `01002611180000${no}`;
     return t;
   });
 
-  await r.step(2, "Finance", "Klik [[Terbitkan]] pada baris SO itu", "Toast hijau \"Faktur Pajak FKT-… diterbitkan untuk KSC/SO-…\"; baris hilang dari kartu", async () => {
-    // Meja gelombang 1 — [Terbitkan] aksi DI TEMPAT (`issue_tax`): langsung jalan; hasilnya toast (bukan bilah di puncak).
+  await r.step(2, "Finance", "Klik [[Terbitkan]] pada baris SO itu → pop-up pratinjau faktur → [[Terbitkan]]", "Toast hijau \"Faktur Pajak FKT-… diterbitkan untuk KSC/SO-…\"; baris hilang dari kartu", async () => {
+    // Meja gelombang 1 — [Terbitkan] membuka pop-up pratinjau (TaxIssueDialog); [Terbitkan] di pop-up menjalankan aksi; hasilnya toast.
     await r.tid(`fin-desk-faktur_pajak-action-${so.so_id}`).click();
+    await r.tid("fkt-modal").waitFor();
+    await r.tid("fkt-modal-submit").click();
     const msg = await tungguToast(r, /diterbitkan/, 20000);
     fkt = mongo(`return db.tax_invoices.findOne({order_id:"${so.so_id}",status:"normal"},{_id:0})`);
     assert(fkt, "faktur tidak tersimpan");

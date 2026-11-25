@@ -491,7 +491,9 @@ async function soTerkirimApi(cust, prod) {
           await row.waitFor({ timeout: 20000 });
           await sorot(row);
           await klikSorot(r, r.tid(`fin-desk-faktur_pajak-action-${ctx.A.so.id}`), "a-faktur");
-          const msg = await tungguToast(r, /diterbitkan/, 20000);   // [Terbitkan] = aksi di tempat; hasil = toast
+          await r.tid("fkt-modal").waitFor();   // pop-up pratinjau faktur → [Terbitkan]
+          await r.tid("fkt-modal-submit").click();
+          const msg = await tungguToast(r, /diterbitkan/, 20000);   // hasil = toast
           const fkt = mongo(`return db.tax_invoices.findOne({order_id:"${ctx.A.so.id}",status:"normal"},{_id:0})`);
           assert(fkt && msg.includes(fkt.number), `faktur: ${msg}`);
           const ppnBuku = r2(sisi(ctx.A.rev1, "2-1200", "K") + sisi(ctx.A.rev2, "2-1200", "K"));

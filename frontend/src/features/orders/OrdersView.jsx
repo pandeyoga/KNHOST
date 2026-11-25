@@ -68,7 +68,6 @@ export default function OrdersView({
   onReleaseReservation,
   onSubmitForApproval,
   onMarkDelivered,
-  onIssueTaxInvoice,
   user,
   loading = false,
   focusDoc,
@@ -267,7 +266,6 @@ export default function OrdersView({
                     onReleaseReservation={withRefresh(onReleaseReservation)}
                     onSubmitForApproval={withRefresh(onSubmitForApproval)}
                     onMarkDelivered={withRefresh(onMarkDelivered)}
-                    onIssueTaxInvoice={withRefresh(onIssueTaxInvoice)}
                     onOpenDocument={onOpenDocument}
                     onClose={() => setShowFullOrder(false)}
                     embedded

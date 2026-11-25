@@ -286,6 +286,8 @@ async function terbitkanFaktur(r, so, nama) {
   const b = r.tid("issue-tax-invoice-btn");
   await b.scrollIntoViewIfNeeded();
   await klikSorot(r, b, `${nama}-faktur`);
+  await r.tid("fkt-modal").waitFor();   // pop-up pratinjau faktur (TaxIssueDialog)
+  await r.tid("fkt-modal-submit").click();
   const f = await (async () => {
     for (let i = 0; i < 40; i += 1) {
       const x = fakturSo(so.id).find((y) => y.status === "normal" && y.doc_kind !== "retur");

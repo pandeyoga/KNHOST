@@ -70,3 +70,16 @@ async def test_sample_bayar_membawa_uang_masuk(klien, db, kepala_admin):
     row = _baris((await klien.get("/api/sample-orders/desk", headers=kepala_admin)).json(), "bayar_sampel", "sos_m3")
     assert (row["sample_billing"], row["grand_total"], row["paid_total"]) == ("paid", 83250.0, 50000.0)
     assert row["order_lines"][0]["product_name"] == "Sample A"
+
+
+async def test_sample_subjudul_pakai_satuan_jual_sama_dengan_baris(klien, db, kepala_admin):
+    """R6 — subjudul baris memakai `unit` (satuan jual), bukan `base_unit`; satu baris tak menampilkan dua satuan."""
+    t = now_iso()
+    await db.sales_orders.insert_one({
+        "id": "sos_m3u", "number": "KSC/SOS-M3U", "order_type": "sample", "status": "waiting_approval", "sample_billing": "paid",
+        "grand_total": 83250, "paid_total": 0, "entity_id": "ent_ksc", "customer_name": "Toko S", "created_at": t,
+        "updated_at": t, "items": [{"product_id": "p1", "product_name": "Kain A", "sku": "KA", "quantity": 3,
+                                    "unit": "yard", "base_unit": "meter", "base_quantity": 2.74}]})
+    row = _baris((await klien.get("/api/sample-orders/desk", headers=kepala_admin)).json(), "bayar_sampel", "sos_m3u")
+    assert "Kain A 3 yard" in row["subtitle"] and "meter" not in row["subtitle"]
+    assert row["order_lines"][0]["unit"] == "yard"

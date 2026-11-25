@@ -49,7 +49,7 @@ Judul halaman (?)                                                     ← satu b
 ### B. Meja (contoh: Meja Admin Sales, Meja Keuangan, Meja Gudang, Meja Sample, Meja MD, Meja Saya)
 Asal: keputusan pemilik 25 Nov, rancangan `docs/superpowers/specs/2026-11-25-meja-kerja-di-tempat-design.md`.
 ```
-[Antrean | Pantau]                                   ← Meja Keuangan: tab hub "Meja Keuangan" | "Pantau" | …
+[Antrean | Pantau]
 [Kartu antrean]  [Kartu antrean]        ← dua kolom, tinggi sama & tetap; kartu besar boleh satu baris penuh
 ┌ Ikon Judul (?) (jumlah) (tertua n hari)                    Nilai total ┐
 │ [Cari……] [Status ▾] [Urut ▾]                                           │
@@ -57,6 +57,8 @@ Asal: keputusan pemilik 25 Nov, rancangan `docs/superpowers/specs/2026-11-25-mej
 │ …5 baris                                                               │
 └──────────────────────────────────────────────────────────────── paging ┘
 ```
+Catatan Meja Keuangan: hidup di dalam hub Beranda Keuangan, sehingga "Antrean | Pantau" di atas berupa tab hub
+bersaudara ("Meja Keuangan" | "Pantau" | …), bukan tab internal.
 - **Satu kepala:** `TopBar` (breadcrumb + judul, nama tunggal = menu); ikon **?** di samping judul memuat penjelasan alur
   dan "Bukan wewenang meja ini". Tidak ada kepala kedua di dalam layar, tidak ada kartu angka.
 - **Tab Antrean | Pantau.** Antrean (bawaan) = pekerjaan utama meja. Pantau = Pelacak SO, Keep & Pending, Aturan Grade,
@@ -64,13 +66,13 @@ Asal: keputusan pemilik 25 Nov, rancangan `docs/superpowers/specs/2026-11-25-mej
   Meja Keuangan hidup di dalam hub Beranda Keuangan, jadi Pantau-nya adalah tab hub bersaudara ("Meja Keuangan" | "Pantau"
   | …), bukan tab tingkat ketiga; meja lain memakai tab internal.
 - **Kartu ukuran tetap**, setinggi kartu berisi 5 baris: `sm:h-[412px]` di ≥ 640 px (border 2 + kepala 44 + bilah saring 49
-  + daftar 281 + kaki 36). Sama untuk kartu berisi, kurang dari 5 baris, kosong ("bersih" di tengah), dan memuat
+  + daftar 281 + kaki 36; baris meja = 56 px karena dua baris teks, jadi 1 + 5 × 56 = 281 — berbeda dari baris daftar biasa di §3). Sama untuk kartu berisi, kurang dari 5 baris, kosong ("bersih" di tengah), dan memuat
   (kerangka). Grid `items-start`: kartu tidak diregangkan tetangganya. Urutan kartu: berisi dari yang paling mendesak,
   lalu kosong.
 - **Baris ringkas, dua baris teks:** nomor dokumen + nama pihak · satu lencana + umur · nilai + **satu** aksi. Keterangan
   lain ada di pop-up. Klik pada baris membuka `DeskRowDetail` (pop-up rincian); untuk papan ketik, nomor dokumen adalah
   `link-button` yang membukanya. Baris tidak diberi `role="button"`/`tabIndex` karena memuat tombol sungguhan.
-- **Aksi besar** (terbit faktur pajak, setujui bayar sample, lepas/teruskan ke gudang, terbitkan denda) selalu lewat
+- **Aksi besar** (terbit faktur pajak, setujui bayar sample, lepas/teruskan ke gudang, terbitkan denda — di meja: gelombang 2; kini lewat Rencana & Denda yang sudah ber-konfirmasi) selalu lewat
   pratinjau + konfirmasi di komponen bersama, juga di layar asalnya.
 - Tiap kartu: cari + saring status (dropdown) + urut (dropdown) + paginasi 5 baris; status kartu tersimpan per sesi.
 - **HP:** kartu boleh tetap bisa dibuka-tutup (tanpa tinggi tetap); baris bisa disentuh dan membuka pop-up yang sama
@@ -81,6 +83,7 @@ Asal: keputusan pemilik 25 Nov, rancangan `docs/superpowers/specs/2026-11-25-mej
   bukan dengan melemahkan logika penjaga.
 
 ### C. Rincian
+Berlaku untuk rincian di luar meja; rincian dari baris meja = pop-up (§2.B).
 - Satu tombol kembali: "← Kembali ke {layar asal}" bila datang dari layar lain, + tautan kecil "Daftar …"
   (`DetailBack`, sudah berlaku). Kepala: nomor · status · aksi. Isi: panel-panel; alur/status memakai lini masa vertikal
   (pola menyusul, M14/M15).
@@ -105,7 +108,7 @@ Sub-judul bagian
 | Hal | Baku |
 |---|---|
 | Huruf | 12–13 px; label kolom 12 px semi-tebal tanpa huruf besar; minimum 12 px untuk semua teks; token `text-fs-12\|13\|14\|16\|20` saja |
-| Tinggi baris daftar | 40–48 px (satu baris teks + satu baris keterangan bila perlu) |
+| Tinggi baris daftar | 40–48 px (satu baris teks + satu baris keterangan bila perlu); baris kartu meja = 56 px (§2.B) |
 | Jarak antar blok | 12 px; dalam kartu 8 px |
 | Bilah daftar | satu baris di ≥ 1024 px; di HP boleh turun baris, urutan tetap: cari → saringan → aksi |
 | Warna | token `kn-*` saja; status lewat `StatusBadge` |

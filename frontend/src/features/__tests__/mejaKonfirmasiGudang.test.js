@@ -115,6 +115,18 @@ test("pesanan tanpa baris barang (Pelacak SO) dimuat dulu lewat GET /sales-order
   expect(teks(q("release-confirm-line-0"))).toContain("Kain Z");
 });
 
+test("muat pesanan gagal: kirim nonaktif, pesan galat muat (bukan 'Belum ada baris barang')", async () => {
+  mockGet.mockRejectedValue({ response: { data: { detail: "Server sibuk." } } });
+  const run = jest.fn().mockResolvedValue({});
+  await mount(wrapEnt(<ReleaseToWarehouseDialog order={{ id: "so9", number: "SO-9", title: "Toko S", entity_id: "ent_ksc" }}
+    run={run} onClose={() => {}} onDone={() => {}} />));
+  expect(q("release-confirm-submit").disabled).toBe(true);
+  expect(teks(q("release-confirm-load-failed"))).toContain("Gagal memuat rincian pesanan — tutup lalu coba lagi.");
+  expect(q("release-confirm-no-lines")).toBeNull();
+  await klik("release-confirm-submit");
+  expect(run).not.toHaveBeenCalled();
+});
+
 test("sample: Teruskan ke gudang di meja lewat pop-up yang sama", async () => {
   const sos = { ref_type: "sample_order", ref_id: "sos1", number: "KSC/SOS-1", title: "Toko S", entity_id: "ent_ksc", age_days: 0,
     action: "Teruskan ke Gudang", action_kind: "confirm", order_lines: [{ product_name: "Sample A", quantity: 1, unit: "meter", warehouse: "" }] };

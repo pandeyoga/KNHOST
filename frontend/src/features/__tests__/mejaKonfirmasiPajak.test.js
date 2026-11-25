@@ -145,3 +145,10 @@ test("setiap pemanggil terbit faktur memakai TaxIssueDialog", () => {
   const salah = berkasSumber().filter((f) => pola.test(baca(f)) && !baca(f).includes("TaxIssueDialog"));
   expect(salah).toEqual([]);
 });
+
+test("URL mentah terbit faktur pesanan (/tax-invoice) hanya di workDeskApi.js (dan TaxIssueDialog.jsx)", () => {
+  const url = /sales-orders\/\$\{[^}]+\}\/tax-invoice|["'`]\/tax-invoice["'`]/;
+  const boleh = ["sales_admin/workDeskApi.js", "finance/TaxIssueDialog.jsx"];
+  const salah = berkasSumber().filter((f) => !boleh.some((k) => f.endsWith(k)) && url.test(baca(f))).map((f) => path.basename(f));
+  expect(salah).toEqual([]);
+});
