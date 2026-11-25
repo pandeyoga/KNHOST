@@ -46,6 +46,8 @@ LINK = "orders"
 MESSAGE_PENDING = "Permintaan diajukan — menunggu persetujuan."
 STATUSES = ("pending", "approved", "rejected", "withdrawn", "void")
 ACTION_LABEL = {"cancel": "pembatalan", "close_remaining": "tutup sisa"}
+FAIL_MESSAGE = {"cancel": "Pembatalan belum bisa dijalankan — coba lagi atau hubungi Admin.",
+                "close_remaining": "Tutup sisa belum bisa dijalankan — coba lagi atau hubungi Admin."}
 DONE_LABEL = {"cancel": "pesanan dibatalkan", "close_remaining": "sisa pesanan ditutup"}
 BASIS_LABEL = {"paid": "sudah ada pembayaran", "prepared": "barang sudah disiapkan gudang",
                "excess": "ada kelebihan uang yang pindah ke titipan"}
@@ -138,7 +140,7 @@ async def _assert_cancellable(order: Dict[str, Any]) -> None:
             "lalu batalkan pesanan."))
 
 
-async def execute_cancel(order_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
+async def execute_cancel(order_id: str, actor: Dict[str, Any], reason: str, request_id: str = "") -> Dict[str, Any]:
     """Batalkan pesanan — isi lama endpoint batal sesudah pemeriksaan izin/kepemilikan/alasan, TANPA perubahan
     perilaku. Status & Faktur Pajak diperiksa lagi di sini (keadaan bisa berubah selama permintaan menunggu)."""
     from dependencies import audit
@@ -164,7 +166,9 @@ async def execute_cancel(order_id: str, actor: Dict[str, Any], reason: str) -> D
             picked_ids.append(t["roll_id"])
     await release_order_rolls(order_id, return_to_rack_ids=picked_ids, why=f"SO dibatalkan: {reason}")
     result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled",
-                               {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso()})
+                               {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso(),
+                                # penanda eksekusi permintaan ini (bukan jalur batal lain) — dibaca `_execute_and_finalize`
+                                **({"cancel_request_id": request_id} if request_id else {})})
     # S3 (pelatihan 18 Nov) — uang muka yang sudah diterima pesanan ini menjadi TITIPAN pelanggan (tanpa jurnal:
     # sama-sama 2-1400). Dulu tertinggal di pesanan mati: tidak bisa dikembalikan maupun dipakai pesanan lain.
     from services import ar_receipt_service as _ar
@@ -230,8 +234,9 @@ async def _assess_cancel(order: Dict[str, Any]) -> Dict[str, Any]:
     return {"amount": float(order.get("grand_total") or 0), "excess": 0.0}
 
 
-#: Eksekutor per aksi — `(order_id, actor, reason) -> hasil`. Tugas 4 menambah `"close_remaining"`.
-EXECUTORS: Dict[str, Callable[[str, Dict[str, Any], str], Awaitable[Dict[str, Any]]]] = {"cancel": execute_cancel}
+#: Eksekutor per aksi — `(order_id, actor, reason, request_id="") -> hasil`; `request_id` (bila eksekusi atas nama
+#: permintaan) ditulis ke pesanan sebagai penanda. Tugas 4 menambah `"close_remaining"`.
+EXECUTORS: Dict[str, Callable[..., Awaitable[Dict[str, Any]]]] = {"cancel": execute_cancel}
 #: Penilai per aksi — `(order) -> {"amount", "excess"[, "preview"]}`; 409 bila aksi tidak mungkin untuk pesanan itu.
 ASSESSORS: Dict[str, Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = {"cancel": _assess_cancel}
 
@@ -415,7 +420,16 @@ def _keep_pending(exc: HTTPException, still_pending: bool) -> HTTPException:
         d = {**d, "message": f"{d.get('message') or ''}{tail}".strip()}
     else:
         d = f"{d or 'Eksekusi gagal.'}{tail}"
-    return HTTPException(status_code=409, detail=d)
+    return HTTPException(status_code=exc.status_code, detail=d)   # kode asli (403/404/400…); 409 tetap 409
+
+
+class _SudahTereksekusi(Exception):
+    """Eksekutor gagal SESUDAH pesanan terlanjur berubah: putusan sudah dicatat `approved`; pemanggil menuntaskan
+    notifikasi/audit lalu melempar ulang galat aslinya."""
+
+    def __init__(self, final: Dict[str, Any], original: Exception) -> None:
+        super().__init__(str(original))
+        self.final, self.original = final, original
 
 
 async def _execute_and_finalize(order_id: str, req: Dict[str, Any], actor: Dict[str, Any], token: str, note: str,
@@ -423,17 +437,19 @@ async def _execute_and_finalize(order_id: str, req: Dict[str, Any], actor: Dict[
     """Jalankan eksekutor aksi lalu catat putusan `approved`. Gagal → penanda dilepas, permintaan tetap menunggu
     (persetujuan) atau dibuang (disetujui sendiri: tidak pernah menunggu siapa pun), 409 berpesan."""
     name, uid = _actor_name(actor), str(actor.get("id") or "")
-    started = now_iso()
     try:
-        result = await EXECUTORS[req["action"]](order_id, actor, req["reason"])
+        result = await EXECUTORS[req["action"]](order_id, actor, req["reason"], request_id=req["id"])
     except Exception as exc:
-        cur = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "status": 1, "cancelled_at": 1}) or {}
+        cur = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "status": 1, "cancel_request_id": 1}) or {}
         if (req["action"] == "cancel" and cur.get("status") == "cancelled"
-                and str(cur.get("cancelled_at") or "") >= started):
-            # Pesanan TERLANJUR batal oleh eksekusi ini (galat sesudah transisi): putusan tetap dicatat (riwayat jujur).
-            await _close(order_id, req, _final(req, "approved", name, uid, note, self_approved=self_approved,
-                                               result={"status": "cancelled", "error": str(exc)[:300]}), token=token)
-            raise
+                and cur.get("cancel_request_id") == req["id"]):
+            # Pesanan TERLANJUR batal oleh eksekusi permintaan ini (penanda `cancel_request_id`, bukan waktu): putusan
+            # tetap dicatat (riwayat jujur); notifikasi/audit dituntaskan pemanggil.
+            final = _final(req, "approved", name, uid, note, self_approved=self_approved,
+                           result={"status": "cancelled", "error": str(exc)[:300]})
+            await _close(order_id, req, final, token=token)
+            logger.error("Eksekusi permintaan %s pesanan %s gagal SESUDAH pesanan batal: %s", req["id"], order_id, exc)
+            raise _SudahTereksekusi(final, exc) from exc
         await _release_marker(order_id, req["id"], token, drop=self_approved)
         if self_approved:
             raise
@@ -447,7 +463,8 @@ async def _execute_and_finalize(order_id: str, req: Dict[str, Any], actor: Dict[
         if isinstance(exc, HTTPException):
             raise _keep_pending(exc, still) from exc
         logger.error("Eksekusi permintaan %s pesanan %s gagal: %s", req["id"], order_id, exc)
-        raise _keep_pending(HTTPException(status_code=409, detail=f"Eksekusi gagal: {exc}"), still) from exc
+        raise _keep_pending(HTTPException(status_code=409, detail=FAIL_MESSAGE.get(req["action"], FAIL_MESSAGE["cancel"])),
+                            still) from exc
     final = _final(req, "approved", name, uid, note, self_approved=self_approved, result=_summary(result))
     if not await _close(order_id, req, final, token=token):
         logger.error("Putusan permintaan %s pesanan %s tidak tercatat (penanda hilang)", req["id"], order_id)
@@ -468,13 +485,23 @@ async def _notify_pending(order: Dict[str, Any], req: Dict[str, Any]) -> None:
                       else BASIS_LABEL.get(b, b))
     wajib = f" Perlu persetujuan karena {', '.join(alasan)}." if alasan else ""
     try:
-        await ns.create_addressed(
+        notes = await ns.create_addressed(
             permission=("order", "approve_cancel"), entity_id=order.get("entity_id") or None,
             notif_type=NOTIF_REQUEST, ref=f"{NOTIF_REQUEST}:{req['id']}",
             title=f"Permintaan {label} {order.get('number') or ''} menunggu persetujuan",
             body=(f"{order.get('customer_name') or '-'} — {rupiah(req.get('amount') or 0)}. Diajukan "
                   f"{req.get('requested_by') or '-'}: {req.get('reason') or '-'}.{wajib}")[:400],
             severity="warning", link=LINK, action_type=ACTION_TYPE, action_id=req["id"])
+        # Pengaju & sales pesanan yang memegang `order.approve_cancel` (peran kustom) tidak boleh memutus (403): tombol
+        # setujui di lonceng mereka pasti gagal — notifikasinya langsung ditutup.
+        mati = [n["id"] for n in notes or [] if n.get("id") and n.get("recipient_user")
+                and (str(n["recipient_user"]) == str(req.get("requested_by_id") or "")
+                     or is_order_sales(order, {"id": n["recipient_user"]}))]
+        if mati:
+            await db.notifications.update_many(
+                {"id": {"$in": mati}},
+                {"$set": {"read": True, "read_at": now_iso(), "resolved_at": now_iso(),
+                          "resolution": "bukan penyetuju permintaan ini", "resolved_by": "system"}})
     except Exception as exc:  # noqa: BLE001 — permintaan sudah tercatat & terhitung antrean; notifikasi pelengkap
         logger.warning("Notifikasi permintaan batal %s gagal: %s", req["id"], exc)
 
@@ -535,10 +562,15 @@ async def submit(order_id: str, action: str, actor: Dict[str, Any], reason: str)
     if (await _decide_check(order, verdict["amount"], actor))["allowed"]:
         token = new_id("lk")
         await _claim_new(order, {**req, "deciding": {"by": name, "by_id": uid, "at": now_iso(), "token": token}})
-        result, final = await _execute_and_finalize(order_id, req, actor, token, "", self_approved=True)
-        await audit(name, "so_cancel_request_approved", "sales_order", order_id,
-                    {"request_id": req["id"], "action": a, "self_approved": True, "amount": req["amount"],
-                     "approval_basis": req["approval_basis"]}, reason)
+        audit_data = {"request_id": req["id"], "action": a, "self_approved": True, "amount": req["amount"],
+                      "approval_basis": req["approval_basis"]}
+        try:
+            result, final = await _execute_and_finalize(order_id, req, actor, token, "", self_approved=True)
+        except _SudahTereksekusi as done:   # pesanan terlanjur berubah: putusan tercatat, audit tetap ditulis
+            await audit(name, "so_cancel_request_approved", "sales_order", order_id,
+                        {**audit_data, "execution_error": True}, reason)
+            raise done.original from done
+        await audit(name, "so_cancel_request_approved", "sales_order", order_id, audit_data, reason)
         return 200, result
     await _claim_new(order, req)
     await audit(name, "so_cancel_request_submitted", "sales_order", order_id,
@@ -584,11 +616,20 @@ async def decide(order_id: str, actor: Dict[str, Any], decision: str, note: str)
         return {"request": final, "order_status": order["status"],
                 "message": "Permintaan ditolak — pesanan berjalan seperti biasa."}
     token = await _mark_deciding(order_id, req["id"], actor)
-    result, final = await _execute_and_finalize(order_id, req, actor, token, note, self_approved=False)
+    audit_data = {"request_id": req["id"], "action": req.get("action"), "self_approved": False,
+                  "amount": req.get("amount"), "requested_by": req.get("requested_by")}
+    try:
+        result, final = await _execute_and_finalize(order_id, req, actor, token, note, self_approved=False)
+    except _SudahTereksekusi as done:
+        # Pesanan terlanjur berubah lalu eksekutor gagal: putusan sudah tercatat `approved` — tutup notifikasi
+        # "menunggu persetujuan", audit, dan beri tahu pengaju sebelum galat aslinya dilempar ulang.
+        await _resolve(req["id"], "disetujui (eksekusi bergalat)", name)
+        await audit(name, "so_cancel_request_approved", "sales_order", order_id,
+                    {**audit_data, "execution_error": True}, note)
+        await _notify_decided(order, done.final)
+        raise done.original from done
     await _resolve(req["id"], "disetujui", name)
-    await audit(name, "so_cancel_request_approved", "sales_order", order_id,
-                {"request_id": req["id"], "action": req.get("action"), "self_approved": False,
-                 "amount": req.get("amount"), "requested_by": req.get("requested_by")}, note)
+    await audit(name, "so_cancel_request_approved", "sales_order", order_id, audit_data, note)
     await _notify_decided(order, final)
     return {"request": final, "order_status": result.get("status") or "", "result": result,
             "message": f"Permintaan disetujui — {DONE_LABEL.get(req.get('action'), 'pesanan dibatalkan')}."}

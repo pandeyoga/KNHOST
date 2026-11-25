@@ -485,3 +485,152 @@ async def test_BTP2_izin_baku(klien, db, siap, akun, sesi, peran_tanpa_acuan, pe
     r = await _putus(klien, h, so, "approve")
     assert r.status_code == 200, r.text
     assert (await _so(db, so))["status"] == "cancelled"
+
+
+# ── Temuan tinjauan BTP-2 (jalur galat, notifikasi, cakupan uji) ──────────────────────────────────────────────────────
+def _eksekutor(monkeypatch, perilaku):
+    """Ganti eksekutor batal dengan pembungkus; `perilaku(asli, order_id, actor, reason, request_id)` boleh melempar."""
+    from services import so_cancel_service as scs
+    asli = scs.EXECUTORS["cancel"]
+
+    async def _ganti(order_id, actor, reason, request_id=""):
+        return await perilaku(asli, order_id, actor, reason, request_id)
+    monkeypatch.setitem(scs.EXECUTORS, "cancel", _ganti)
+
+
+async def test_BTP2_galat_sesudah_batal_tetap_menutup_notifikasi_dan_audit(klien, db, siap, monkeypatch):
+    async def _batal_lalu_galat(asli, order_id, actor, reason, request_id):
+        await asli(order_id, actor, reason, request_id=request_id)
+        raise RuntimeError("uji: galat sesudah transisi")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    r = await _batal(klien, siap["hs"], so)
+    assert r.status_code == 202, r.text
+    req_id = r.json()["request"]["id"]
+    _eksekutor(monkeypatch, _batal_lalu_galat)
+    r = await _putus(klien, siap["hf"], so, "approve")
+    assert r.status_code >= 500, r.text
+    o = await _so(db, so)
+    assert o["status"] == "cancelled" and "cancel_request" not in o
+    assert o["cancel_requests"][-1]["status"] == "approved" and o["cancel_requests"][-1]["id"] == req_id
+    rows = await _notif(db, AJU, req_id)
+    assert rows and all(n.get("resolved_at") for n in rows), "notifikasi 'menunggu persetujuan' ditutup"
+    assert await db.audit_logs.find_one({"action": "so_cancel_request_approved", "entity_id": so["id"]}), \
+        "putusan tetap diaudit"
+    assert await _notif(db, PUTUS, o["cancel_requests"][-1]["id"]), "pengaju diberi tahu putusannya"
+
+
+async def test_BTP2_dibatalkan_jalur_lain_sesudah_mulai_bukan_persetujuan(klien, db, siap, monkeypatch):
+    """Heuristik waktu lama menganggap pesanan yang dibatalkan jalur lain SESUDAH eksekusi dimulai sebagai hasil
+    eksekusi ini. Penandanya kini id permintaan yang ditulis eksekutor."""
+    async def _jalur_lain(asli, order_id, actor, reason, request_id):
+        await db.sales_orders.update_one({"id": order_id}, {"$set": {"status": "cancelled",
+                                                                     "cancelled_at": now_iso()}})
+        raise RuntimeError("uji: bentrok dengan jalur lain")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    assert (await _batal(klien, siap["hs"], so)).status_code == 202
+    _eksekutor(monkeypatch, _jalur_lain)
+    r = await _putus(klien, siap["hf"], so, "approve")
+    assert r.status_code == 409, r.text
+    o = await _so(db, so)
+    assert "cancel_request" not in o and o["cancel_requests"][-1]["status"] == "void"
+
+
+async def test_BTP2_galat_eksekusi_pesan_manusia(klien, db, siap, monkeypatch):
+    async def _galat(asli, order_id, actor, reason, request_id):
+        raise RuntimeError("Traceback rahasia internal XYZ")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    assert (await _batal(klien, siap["hs"], so)).status_code == 202
+    _eksekutor(monkeypatch, _galat)
+    r = await _putus(klien, siap["hf"], so, "approve")
+    assert r.status_code == 409, r.text
+    assert "XYZ" not in _teks(r) and "Pembatalan belum bisa dijalankan — coba lagi atau hubungi Admin." in _teks(r)
+    o = await _so(db, so)
+    assert o["cancel_request"]["status"] == "pending" and "deciding" not in o["cancel_request"], \
+        "tetap menunggu, penanda proses dilepas"
+
+
+async def test_BTP2_kode_galat_asli_diteruskan(klien, db, siap, monkeypatch):
+    from fastapi import HTTPException
+
+    async def _forbidden(asli, order_id, actor, reason, request_id):
+        raise HTTPException(status_code=403, detail="Tidak berwenang atas gudang ini")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    assert (await _batal(klien, siap["hs"], so)).status_code == 202
+    _eksekutor(monkeypatch, _forbidden)
+    r = await _putus(klien, siap["hf"], so, "approve")
+    assert r.status_code == 403, r.text
+    assert "Tidak berwenang atas gudang ini" in _teks(r)
+    assert (await _so(db, so))["cancel_request"]["status"] == "pending"
+
+
+async def test_BTP2_notifikasi_tidak_sampai_ke_yang_tak_boleh_memutus(klien, db, siap, akun, sesi, peran_tanpa_acuan):
+    """Sales pesanan yang memegang `order.approve_cancel` lewat peran kustom tidak boleh memutus (403) — lonceng tidak
+    boleh menawarkan tombol yang pasti gagal."""
+    peran = await peran_tanpa_acuan({"order": ["view", "approve_cancel", "cancel"]})
+    u = await akun(peran)
+    so = await _pesanan(klien, db, siap, bayar=1_000_000, sales_id=u["id"], sales_name=u["name"])
+    r = await _batal(klien, await sesi(u), so)
+    assert r.status_code == 202, r.text
+    req_id = r.json()["request"]["id"]
+    rows = [n for n in await _notif(db, AJU, req_id) if n.get("recipient_user") == u["id"]]
+    assert all(n.get("resolved_at") for n in rows), "tombol yang pasti 403 tidak ditawarkan"
+    lain = [n for n in await _notif(db, AJU, req_id) if n.get("recipient_user") == siap["fin"]["id"]]
+    assert lain and not any(n.get("resolved_at") for n in lain), "penyetuju lain tetap menerima"
+
+
+async def test_BTP2_void_batal_sample_gagal_tidak_menggagalkan(klien, db, siap, monkeypatch):
+    from services import so_cancel_service as scs
+
+    async def _rusak(*a, **k):
+        raise RuntimeError("uji: void gagal")
+    monkeypatch.setattr(scs, "void_pending", _rusak)
+    so = await _pesanan(klien, db, siap, status="waiting_approval", order_type="sample")
+    r = await klien.post(f"/api/sample-orders/{so['id']}/cancel", headers=siap["h"], json={"note": "salah input"})
+    assert r.status_code == 200, r.text
+    assert (await _so(db, so))["status"] == "cancelled"
+
+
+# ── Cakupan "sales pesanan" & kegagalan eksekusi ─────────────────────────────────────────────────────────────────────
+async def test_BTP2_created_by_bukan_sales_pesanan(klien, db, siap):
+    """Manager yang menginput atas nama sales (`created_by`) tetap boleh memutus: disetujui sendiri (200)."""
+    so = await _pesanan(klien, db, siap, bayar=1_000_000, created_by=siap["mgr"]["id"])
+    r = await _batal(klien, siap["hm"], so)
+    assert r.status_code == 200, r.text
+    assert (await _so(db, so))["cancel_requests"][-1]["self_approved"] is True
+
+
+async def test_BTP2_cakupan_tim_bukan_sales_pesanan(klien, db, siap, akun):
+    """Supervisor yang cakupannya meliputi sales pesanan (bukan `sales_id`/`sales_team`) bukan sales pesanan itu."""
+    from services import so_cancel_service as scs
+    spv = await akun("manager")
+    spv = {**spv, "supervisor_of": [siap["sales"]["id"]], "team_ids": [siap["sales"]["id"]]}
+    so = {"sales_id": siap["sales"]["id"], "sales_team": [{"sales_id": "usr_lain"}], "created_by": spv["id"]}
+    assert scs.is_order_sales(so, spv) is False
+    assert scs.is_order_sales(so, {"id": siap["sales"]["id"]}) is True
+    assert scs.is_order_sales(so, {"id": "usr_lain"}) is True
+
+
+async def test_BTP2_galat_non_http_permintaan_tetap_menunggu(klien, db, siap, monkeypatch):
+    async def _galat(asli, order_id, actor, reason, request_id):
+        raise ValueError("uji: galat non-HTTP")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    assert (await _batal(klien, siap["hs"], so)).status_code == 202
+    _eksekutor(monkeypatch, _galat)
+    r = await _putus(klien, siap["hf"], so, "approve")
+    assert r.status_code == 409, r.text
+    o = await _so(db, so)
+    assert o["status"] == "confirmed" and o["cancel_request"]["status"] == "pending"
+    assert "deciding" not in o["cancel_request"]
+    monkeypatch.undo()
+    assert (await _putus(klien, siap["hf"], so, "approve")).status_code == 200, "bisa diulang sesudah pulih"
+
+
+async def test_BTP2_disetujui_sendiri_gagal_tidak_meninggalkan_permintaan(klien, db, siap, monkeypatch):
+    async def _galat(asli, order_id, actor, reason, request_id):
+        raise ValueError("uji: galat non-HTTP")
+    so = await _pesanan(klien, db, siap, bayar=1_000_000)
+    _eksekutor(monkeypatch, _galat)
+    r = await _batal(klien, siap["hm"], so)
+    assert r.status_code >= 400, r.text
+    o = await _so(db, so)
+    assert o["status"] == "confirmed" and not o.get("cancel_request"), "tidak ada permintaan setengah jadi"

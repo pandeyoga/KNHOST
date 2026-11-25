@@ -261,9 +261,13 @@ async def cancel_sample(order_id: str, payload: NoteIn, request: Request) -> Dic
     await audit(actor["name"], "sample_cancelled", "sales_order", order_id, {"number": order["number"], "reason": payload.note})
     # BTP-2 — batal sample di luar alur persetujuan batal (rancangan §5.6a); permintaan batal yang masih menunggu
     # (diajukan lewat `POST /sales-orders/{id}/cancel`) ditutup `void` supaya tidak menggantung di antrean.
-    from services import so_cancel_service
-    await so_cancel_service.void_pending(order_id, "Pesanan sample dibatalkan lewat layar Pesanan Sample.",
-                                         actor["name"])
+    try:
+        from services import so_cancel_service
+        await so_cancel_service.void_pending(order_id, "Pesanan sample dibatalkan lewat layar Pesanan Sample.",
+                                             actor["name"])
+    except Exception as exc:  # noqa: BLE001 — sample sudah batal; permintaan basi dicatat untuk ditindak, bukan 500
+        import logging
+        logging.getLogger(__name__).error("Permintaan batal sample %s gagal ditutup: %s", order_id, exc)
     return result
 
 
