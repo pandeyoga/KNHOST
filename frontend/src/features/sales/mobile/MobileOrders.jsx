@@ -4,6 +4,7 @@ import MobileOrderJourney from "./MobileOrderJourney";
 import MobileArReceipt from "./MobileArReceipt";
 import SoApprovalsPanel from "../../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
+import ReleaseToWarehouseDialog from "../../sales_admin/ReleaseToWarehouseDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import { releaseMessage, releaseOrder } from "../../sales_admin/workDeskApi";
 import { apiErrorText } from "../../../utils/apiError";
@@ -52,11 +53,8 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
   }, [focusId]);
   const flash = (ok, text) => { setMsg({ ok, text }); if (ok) onRefresh?.(); };
   // Trial 22 Okt (E8) — pesanan yang ditahan Admin Sales dilepas ke gudang.
-  const doRelease = async (o) => {
-    setBusy(o.id); setMsg(null);
-    try { flash(true, releaseMessage(await releaseOrder(o.id), o.number)); }
-    catch (e) { flash(false, apiErrorText(e, "Gagal melepas pesanan ke gudang.")); } finally { setBusy(""); }
-  };
+  const [release, setRelease] = useState(null);
+  const doRelease = (o) => { setMsg(null); setRelease(o); };
 
   const list = useMemo(() => {
     const term = q.toLowerCase().trim();
@@ -204,6 +202,10 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
       {amend && <MobileAmendSheet order={amend} user={user} onClose={(done) => { setAmend(null); if (done) onRefresh?.(); }} />}
       {verify && <VerifyOrderDialog orderId={verify.id} orderNumber={verify.number} customerName={verify.customer_name}
         onClose={() => setVerify(null)} onVerified={(m) => { setVerify(null); flash(true, m); }} />}
+      {release && <ReleaseToWarehouseDialog
+        order={{ id: release.id, number: release.number, title: release.customer_name, entity_id: release.entity_id, items: release.items }}
+        run={() => releaseOrder(release.id)} onClose={() => setRelease(null)}
+        onDone={(res) => { const o = release; setRelease(null); flash(true, releaseMessage(res, o.number)); }} />}
       {fulfill && <FulfillmentDecisionDialog orderId={fulfill.id} orderNumber={fulfill.number} customerName={fulfill.customer_name}
         onClose={() => setFulfill(null)} onDecided={(m) => { setFulfill(null); flash(true, m); }} />}
       {pay && <MobileArReceipt customer={pay} onClose={() => setPay(null)} onDone={(m) => { setPay(null); flash(true, m || "Kwitansi tersimpan."); }} />}

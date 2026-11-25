@@ -22,6 +22,7 @@ import CuttingDesk from "./CuttingDesk";
 import CuttingLocations from "./CuttingLocations";
 import { can } from "../../config/roles";
 import { askConfirm } from "../../services/confirmService";   // pelatihan 18 Nov (V6) — uang kurang saat ACC bayar
+import ReleaseToWarehouseDialog from "../sales_admin/ReleaseToWarehouseDialog";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const FILTERS = [
@@ -131,6 +132,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   const detailRef = useRef(null);
   useEffect(() => { if (narrow && selectedId) detailRef.current?.scrollIntoView?.({ block: "start" }); }, [narrow, selectedId]);
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 5000); };
+  const [forward, setForward] = useState(null);
   const run = async (fn, okMsg) => {
     setBusy(sel.id); setError("");
     try { await fn(); flash(okMsg); await load(); } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(""); }
@@ -284,7 +286,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
                   <button data-testid="sample-detail-reapprove-payment" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => approveSamplePayment(sel.id), `${sel.number}: tagihan baru ${formatCurrency(sel.grand_total)} disetujui — kiriman dilepas.`)}><Banknote size={13} /> Setujui Ulang Pembayaran ({formatCurrency(sel.grand_total)})</button>
                 )}
                 {canConfirm && sel.status === "approved" && (
-                  <button data-testid="sample-detail-confirm" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => confirmSampleOrder(sel.id), `${sel.number} diteruskan ke gudang — tugas potong lahir.`)}><Scissors size={13} /> Teruskan ke Gudang</button>
+                  <button data-testid="sample-detail-confirm" className="primary-button" disabled={busy === sel.id} onClick={() => setForward(sel)}><Scissors size={13} /> Teruskan ke Gudang</button>
                 )}
                 {canCancel && ["waiting_approval", "approved"].includes(sel.status) && (
                   <button data-testid="sample-detail-cancel" className="secondary-button" disabled={busy === sel.id} onClick={() => run(() => cancelSampleOrder(sel.id, "Dibatalkan dari daftar pesanan sample"), `${sel.number} dibatalkan.`)}><XCircle size={13} /> Batalkan</button>
@@ -301,6 +303,12 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
           )}
         </aside>
       </div>
+      {forward && (
+        <ReleaseToWarehouseDialog mode="forward"
+          order={{ id: forward.id, number: forward.number, title: forward.customer_name, entity_id: forward.entity_id, items: forward.items || [] }}
+          run={() => confirmSampleOrder(forward.id)} onClose={() => setForward(null)}
+          onDone={(r) => { const f = forward; setForward(null); flash(`${f.number} diteruskan ke gudang — ${r?.tasks_created ?? ""} tugas potong lahir.`); load(); }} />
+      )}
     </div>
   );
 }

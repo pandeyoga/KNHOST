@@ -17,6 +17,7 @@ import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import { orderDeskQueues, splitPantau } from "../sales_admin/deskQueueOrder";
+import ReleaseToWarehouseDialog from "../sales_admin/ReleaseToWarehouseDialog";
 import { soTrackerLink } from "../sales_admin/workDeskApi";
 import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { markDeskReturn } from "../desks/deskSession";
@@ -44,6 +45,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const [error, setError] = useState("");
   const [busyRef, setBusyRef] = useState("");
   const [tick, setTick] = useState(0);
+  const [forwardRow, setForwardRow] = useState(null);
 
   // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -66,20 +68,19 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const open = (link) => { markDeskReturn(DESK_KEY); onOpenDocument?.(link); };
 
   async function handleAction(row, queue) {
-    if (row.action_kind === "approve_payment" || row.action_kind === "confirm") {
+    if (row.action_kind === "confirm") {
+      setForwardRow({ id: row.ref_id, number: row.number, title: row.title, entity_id: row.entity_id || "",
+        order_lines: row.order_lines || [], _qid: queue?.id });
+      return;
+    }
+    if (row.action_kind === "approve_payment") {
       setBusyRef(row.ref_id); setError("");
       try {
-        let msg;
-        if (row.action_kind === "approve_payment") {
-          await approveSamplePayment(row.ref_id);
-          // F-15 — persetujuan ULANG (tagihan berubah > toleransi sesudah potong): kiriman sample dilepas
-          msg = row.badge === "persetujuan ulang"
-            ? `${row.number}: tagihan baru disetujui — kiriman sample dilepas.`
-            : `${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`;
-        } else {
-          const r = await confirmSampleOrder(row.ref_id);
-          msg = `${row.number} diteruskan ke gudang — ${r?.tasks_created ?? ""} tugas potong lahir.`;
-        }
+        await approveSamplePayment(row.ref_id);
+        // F-15 — persetujuan ULANG (tagihan berubah > toleransi sesudah potong): kiriman sample dilepas
+        const msg = row.badge === "persetujuan ulang"
+          ? `${row.number}: tagihan baru disetujui — kiriman sample dilepas.`
+          : `${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`;
         toast({ title: msg });
         reloadQueue(queue?.id);
       } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); }
@@ -126,6 +127,16 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       <ErrorNotice message={error} onRetry={() => load()} onDismiss={() => setError("")} testId={`${P}-error`} />
       <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={data?.not_my_desk || []}
         antrean={antrean} pantau={pantau} ready={!loading} onReload={() => { load(); setTick((t) => t + 1); }} />
+      {forwardRow && (
+        <ReleaseToWarehouseDialog mode="forward" order={forwardRow}
+          run={() => confirmSampleOrder(forwardRow.id)}
+          onClose={() => setForwardRow(null)}
+          onDone={(r) => {
+            const f = forwardRow; setForwardRow(null);
+            toast({ title: `${f.number} diteruskan ke gudang — ${r?.tasks_created ?? ""} tugas potong lahir.` });
+            reloadQueue(f._qid);
+          }} />
+      )}
     </div>
   );
 }

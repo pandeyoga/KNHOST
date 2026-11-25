@@ -15,6 +15,7 @@ import { formatUnitTotals } from "../../../utils/qtyByUnit";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
+import ReleaseToWarehouseDialog from "../../sales_admin/ReleaseToWarehouseDialog";
 import { ageTone, badgeClass, badgeLabel, queueMeta, releaseMessage, releaseOrder, rowLink, salesAdminDesk } from "../../sales_admin/workDeskApi";
 
 const PREVIEW = 5;
@@ -104,6 +105,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   const [busyRef, setBusyRef] = useState("");
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
+  const [releaseRow, setReleaseRow] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,14 +121,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 5000); };
 
   // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang.
-  async function doRelease(row) {
-    setBusyRef(row.ref_id); setError(""); setErrorAction(null);
-    try {
-      flash(releaseMessage(await releaseOrder(row.ref_id), row.number));
-      await load();
-    } catch (e) { setError(apiErrorText(e, "Gagal melepas pesanan ke gudang.")); }
-    finally { setBusyRef(""); }
-  }
+  const doRelease = (row) => { setError(""); setErrorAction(null); setReleaseRow(row); };
 
   function openRow(row, queue) {
     const sub = MOBILE_TARGET[row.ref_type];
@@ -195,6 +190,13 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
           onClose={() => setVerifyRow(null)}
           onVerified={(msg) => { setVerifyRow(null); flash(msg); load(); }}
           onOpenFull={() => { const r = verifyRow; setVerifyRow(null); onOpenOrder?.(r.ref_id); }} />
+      )}
+      {releaseRow && (
+        <ReleaseToWarehouseDialog
+          order={{ id: releaseRow.ref_id, number: releaseRow.number, title: releaseRow.title, entity_id: releaseRow.entity_id,
+            order_lines: releaseRow.order_lines }}
+          run={() => releaseOrder(releaseRow.ref_id)} onClose={() => setReleaseRow(null)}
+          onDone={(res) => { const r = releaseRow; setReleaseRow(null); flash(releaseMessage(res, r.number)); load(); }} />
       )}
       {fulfillRow && (
         <FulfillmentDecisionDialog orderId={fulfillRow.ref_id} orderNumber={fulfillRow.number} customerName={fulfillRow.title}

@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "./DeskQueueCard";
 import SoTrackerCard from "./SoTrackerCard";
 import VerifyOrderDialog from "./VerifyOrderDialog";
+import ReleaseToWarehouseDialog from "./ReleaseToWarehouseDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
@@ -49,6 +50,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const [busyRef, setBusyRef] = useState("");
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
+  const [releaseRow, setReleaseRow] = useState(null);
   // Uji alur A1 (pelatihan 18 Nov) — Pelacak SO & Keep/Pending dimuat sendiri; sesudah aksi meja (periksa & lepas,
   // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang (`trackerTick`), supaya status SO yang baru dilepas tidak basi.
   const [trackerTick, setTrackerTick] = useState(0);
@@ -68,6 +70,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
 
   useEffect(() => { load(); }, [load]);
 
+  const queues = Array.isArray(desk?.queues) ? desk.queues : [];
   const reloadAll = () => { load(); setTrackerTick((t) => t + 1); };
   async function reloadQueue(queueId) {
     setRefreshingId(queueId || "");
@@ -84,14 +87,14 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     onOpenDocument?.(link);
   }
 
-  // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang pesanan yang sudah diperiksa tetapi ditahan.
-  async function doRelease(row, queueId) {
-    setBusyRef(row.ref_id); setError("");
-    try {
-      done(releaseMessage(await releaseOrder(row.ref_id), row.number), queueId);
-    } catch (e) {
-      setError(apiErrorText(e, "Gagal melepas pesanan ke gudang."));
-    } finally { setBusyRef(""); }
+  // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang lewat pratinjau + konfirmasi (Meja gelombang 1, Task 10).
+  // Baris Pelacak SO mencari baris `siap_dikonfirmasi` ber-id sama untuk `order_lines`; bila tidak ada, dialog
+  // memuat pesanannya sendiri.
+  function startRelease(row, queueId) {
+    const found = queues.find((qq) => qq.id === "siap_dikonfirmasi")?.rows?.find((r) => r.ref_id === row.ref_id);
+    const src = found || row;
+    setReleaseRow({ id: src.ref_id, number: src.number, title: src.title, entity_id: src.entity_id || row.entity_id || "",
+      order_lines: found?.order_lines, _qid: found ? "siap_dikonfirmasi" : queueId });
   }
 
   function openFull(row, queue) {
@@ -103,11 +106,10 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     const qid = queue?.id || "";
     if (row.action_kind === "verify") { setVerifyRow({ ...row, _qid: qid }); return; }
     if (row.action_kind === "fulfill") { setFulfillRow({ ...row, _qid: qid }); return; }
-    if (row.action_kind === "release") { doRelease(row, qid); return; }
+    if (row.action_kind === "release") { startRelease(row, qid); return; }
     open(rowLink(row, qid, DESK_KEY));
   }
 
-  const queues = Array.isArray(desk?.queues) ? desk.queues : [];
   const split = splitPantau(queues, DESK_KEY);
   const card = (q) => (
     <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading || refreshingId === q.id}
@@ -134,10 +136,10 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
         <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} showRefresh={false}
           inPlaceActions={["Atur pemenuhan", "Periksa & lepas", "Lepas ke gudang"]}
           onOpenFull={(r) => open(soTrackerLink(r))} onOpen={(r) => {
-          const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
+          const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order", entity_id: r.entity_id || "" };
           if (r.action === "Atur pemenuhan") return setFulfillRow(row);
           if (r.action === "Periksa & lepas") return setVerifyRow(row);
-          if (r.action === "Lepas ke gudang") return doRelease(row, "");
+          if (r.action === "Lepas ke gudang") return startRelease(row, "");
           return open(soTrackerLink(r));
         }} />
       )}
@@ -163,6 +165,15 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           onClose={() => setVerifyRow(null)}
           onVerified={(msg) => { const qid = verifyRow._qid; setVerifyRow(null); done(msg, qid); }}
           onOpenFull={() => openFull(verifyRow)}
+        />
+      )}
+
+      {releaseRow && (
+        <ReleaseToWarehouseDialog
+          order={releaseRow}
+          run={() => releaseOrder(releaseRow.id)}
+          onClose={() => setReleaseRow(null)}
+          onDone={(res) => { const r = releaseRow; setReleaseRow(null); done(releaseMessage(res, r.number), r._qid); }}
         />
       )}
 

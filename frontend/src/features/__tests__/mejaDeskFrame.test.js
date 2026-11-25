@@ -73,7 +73,7 @@ const DESK = { queues: [
   { id: "perlu_verifikasi", label: "Perlu diperiksa", count: 0, rows: [] },
   { id: "siap_dikonfirmasi", label: "Ditahan", count: 1, oldest_age_days: 2, rows: [
     { ref_type: "sales_order", ref_id: "so7", number: "SO-7", title: "Toko T", value: 1, age_days: 2,
-      action: "Lepas ke gudang", action_kind: "release", entity_id: "ent_ksc" }] },
+      action: "Lepas ke gudang", action_kind: "release", entity_id: "ent_ksc", order_lines: [] }] },
   { id: "jatuh_tempo", label: "Jatuh tempo", count: 1, oldest_age_days: 9, rows: [
     { ref_type: "sales_order", ref_id: "so9", number: "SO-9", title: "Toko J", value: 5, age_days: 9, age_kind: "overdue",
       action: "Follow-up", action_kind: "open", entity_id: "ent_ksc" }] },
@@ -203,6 +203,7 @@ test("aksi sukses: toast (bukan bilah puncak) dan hanya kartu terkait dimuat ula
   mockPost.mockResolvedValue({ data: { released: true, order: { number: "SO-7", status: "confirmed" } } });
   await mount(<SalesAdminDesk currentUser={USER} onOpenDocument={() => {}} />);
   await klik("desk-action-so7");
+  await klik("release-confirm-submit");                               // Task 10 — pratinjau + konfirmasi dulu
   expect(mockPost).toHaveBeenCalledWith("/api/sales-orders/so7/release");
   expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringContaining("SO-7") }));
   expect(q("desk-toast")).toBeNull();

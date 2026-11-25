@@ -45,6 +45,7 @@ import { issueTaxInvoice, releaseMessage, releaseOrder } from "../sales_admin/wo
 import TaxIssueDialog from "../finance/TaxIssueDialog";
 import { CustomerCardLink } from "../finance/cards/partyCards";
 import { useAppNav } from "../../context/AppNavContext";
+import ReleaseToWarehouseDialog from "../sales_admin/ReleaseToWarehouseDialog";
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
 const PRICE_SOURCE_BADGE = {
   special_approval: { label: "Harga khusus", fg: "#6B219A", bg: "#F3E9FA" },
@@ -89,6 +90,7 @@ export function OrderDetailPanel({
   const [showCancel, setShowCancel] = useState(false);
   const [showCloseRemaining, setShowCloseRemaining] = useState(false);
   const [flash, setFlash] = useState("");
+  const [releaseOpen, setReleaseOpen] = useState(false);   // Meja gelombang 1 (Task 10) — pratinjau lepas tahanan
   const [reviewOpen, setReviewOpen] = useState(false);   // Trial 22 Okt (E8) — Periksa & lepas ke gudang
   const FULFILL_STATUSES = ["partially_picked", "picked", "partially_shipped", "shipped", "done"];
   const TAX_ELIGIBLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
@@ -104,10 +106,7 @@ export function OrderDetailPanel({
   const canConfirm = can(perms, "order", "confirm");     // rutin → + Admin Sales
   const canDeliver = can(perms, "order", "deliver");     // gudang & Admin Sales
   const canIssueTax = can(perms, "tax_invoice", "create");   // Finance
-  const doRelease = async () => {
-    try { setFlash(releaseMessage(await releaseOrder(sel.id), sel.number)); onRefresh?.(); }
-    catch (e) { setFlash(e.response?.data?.detail?.message || e.response?.data?.detail || "Gagal melepas pesanan ke gudang."); }
-  };
+  const doRelease = () => setReleaseOpen(true);
   // AUDIT SALES vs ADMIN SALES (2026-08-15) — `GET /shipments` menuntut `wms.view`,
   // izin yang SENGAJA dicabut dari sales di E8.3. Dulu panggilannya tetap jalan dan
   // 403-nya diserap `.catch` → seksi Surat Jalan berbunyi "Belum ada pengiriman
@@ -790,6 +789,13 @@ export function OrderDetailPanel({
       {showCancel && (
         <CancelOrderDialog order={sel} onClose={() => setShowCancel(false)}
           onDone={(msg) => { setShowCancel(false); setFlash(msg); onRefresh?.(); }} />
+      )}
+      {releaseOpen && (
+        <ReleaseToWarehouseDialog
+          order={{ id: sel.id, number: sel.number, title: sel.customer_name, entity_id: sel.entity_id, items: sel.items || [] }}
+          run={() => releaseOrder(sel.id)}
+          onClose={() => setReleaseOpen(false)}
+          onDone={(res) => { setReleaseOpen(false); setFlash(releaseMessage(res, sel.number)); onRefresh?.(); }} />
       )}
       {reviewOpen && (
         <VerifyOrderDialog orderId={sel.id} orderNumber={sel.number} customerName={sel.customer_name}
