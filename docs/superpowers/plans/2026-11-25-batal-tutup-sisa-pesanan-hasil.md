@@ -36,7 +36,15 @@ Status: **selesai, menunggu pemeriksaan pemilik**. Belum digabung ke `main`.
 
 ### 2a. Gate ulang di pohon akhir
 
-(diisi sesudah gate selesai)
+`bash scripts/gate.sh --quick` di `28c4e9e`: **MERAH** (exit 1, 111 detik), sama seperti garis dasar.
+
+* Hitungan baris merah: 91 di garis dasar `f14b559`, 91 di pohon akhir. Baris lulus: 210 dan 210.
+* `bandingkan_pelanggaran_gate.py`: **"tidak ada pelanggaran baru"**.
+* Merahnya pra-ada dan di luar lingkup ini, antara lain:
+  * batas angka skema (INV-NUM-01), cakupan auth `handheld`/`design_gallery` (INV-AUTH-01);
+  * tombol buat inline (INV-UI-05), awalan uang di idempotensi, `to_list` besar (INV-PERF-01);
+  * hapus dokumen ber-tautan (INV-REF-04), label i18n, cakupan gudang.
+* `memory/GATE_RECEIPT.md` dipulihkan (tidak di-commit).
 
 ## 3. Keputusan yang diambil selama pelaksanaan (bukan dari pemilik — periksa)
 
