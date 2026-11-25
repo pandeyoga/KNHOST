@@ -375,23 +375,60 @@ async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: 
     held = round(float(tanda.get("amount") or 0), 2)
     if held <= EPS or tanda.get("deposit_done"):
         return 0.0
-    await _alloc.withdraw(
-        kind="deposit", order_id=order_id, amount=held, source_id=f"batal_titipan:{order_id}",
-        source_number=order.get("number") or order_id, customer_id=order.get("customer_id") or "",
-        entity_id=order.get("entity_id") or "", date=now_iso(), actor=actor, method="deposit",
-        note=f"Uang muka pesanan batal dipindah ke titipan pelanggan{(': ' + reason) if reason else ''}",
-        extra={"gl_bucket": _gl.ADVANCE_BUCKET, "moved_to_deposit": True})
-    klaim = await db.sales_orders.update_one(
-        {"id": order_id, "advance_to_deposit.deposit_done": False},
-        {"$set": {"advance_to_deposit.deposit_done": True, "advance_to_deposit.done_at": now_iso()}})
-    if not klaim.modified_count:
-        return 0.0
     try:
-        await _adjust_deposit(order.get("customer_id") or "", held)
-    except Exception:
-        await db.sales_orders.update_one({"id": order_id}, {"$set": {"advance_to_deposit.deposit_done": False}})
+        await _alloc.withdraw(
+            kind="deposit", order_id=order_id, amount=held, source_id=f"batal_titipan:{order_id}",
+            source_number=order.get("number") or order_id, customer_id=order.get("customer_id") or "",
+            entity_id=order.get("entity_id") or "", date=now_iso(), actor=actor, method="deposit",
+            note=f"Uang muka pesanan batal dipindah ke titipan pelanggan{(': ' + reason) if reason else ''}",
+            extra={"gl_bucket": _gl.ADVANCE_BUCKET, "moved_to_deposit": True})
+        klaim = await db.sales_orders.update_one(
+            {"id": order_id, "advance_to_deposit.deposit_done": False},
+            {"$set": {"advance_to_deposit.deposit_done": True, "advance_to_deposit.done_at": now_iso()}})
+        if not klaim.modified_count:
+            return 0.0
+        try:
+            await _adjust_deposit(order.get("customer_id") or "", held)
+        except Exception:
+            await db.sales_orders.update_one({"id": order_id}, {"$set": {"advance_to_deposit.deposit_done": False}})
+            raise
+    except Exception as exc:
+        await _beri_tahu_finance_titipan(order, held, reason, galat=str(exc) or type(exc).__name__)
         raise
+    await _beri_tahu_finance_titipan(order, held, reason)
     return held
+
+
+#: Temuan alur pembatalan 25 Nov — penerima = pemegang izin Meja Finance (`routers/work_desks.finance_desk`), per orang.
+IZIN_MEJA_FINANCE = ("payment_variance", "decide")
+NOTIF_TITIPAN_BATAL = "titipan_pesanan_batal"
+
+
+async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: float, reason: str = "", galat: str = "") -> None:
+    """Uang muka pesanan batal/kedaluwarsa sudah (atau GAGAL) menjadi titipan → beri tahu pemegang izin Meja Finance di
+    PT pesanan. Dulu hanya sales pemilik yang diberi tahu; Finance yang harus mengembalikan uang atau memakainya untuk
+    pesanan lain harus mengecek daftar titipan sendiri. Best-effort: tidak pernah menggagalkan pemindahan."""
+    from services import notification_service as _ns
+    kata = "kedaluwarsa" if order.get("status") == "expired" else "dibatalkan"
+    nomor = order.get("number") or order.get("id")
+    pelanggan = order.get("customer_name") or order.get("customer_id") or "-"
+    alasan = f" Alasan: {reason}." if reason else ""
+    if galat:
+        jenis, severity = f"{NOTIF_TITIPAN_BATAL}_gagal", "danger"
+        title = f"{nomor} {kata}: uang muka BELUM jadi titipan pelanggan"
+        body = (f"{pelanggan} — {rupiah(amount)} masih tertahan di pesanan yang sudah {kata} dan belum masuk titipan. "
+                f"Periksa pesanan dan titipan pelanggan ini.{alasan} Galat: {galat}")
+    else:
+        jenis, severity = NOTIF_TITIPAN_BATAL, "warning"
+        title = f"{nomor} {kata}: uang muka jadi titipan pelanggan"
+        body = (f"{pelanggan} — {rupiah(amount)} sekarang menjadi titipan. Kembalikan lewat Kasus › Pengembalian dana "
+                f"ke pelanggan, atau pakai untuk pesanan lain.{alasan}")
+    try:
+        await _ns.create_addressed(
+            permission=IZIN_MEJA_FINANCE, notif_type=jenis, ref=f"{jenis}:{order.get('id')}", title=title,
+            body=body[:400], severity=severity, link="advance-report", entity_id=order.get("entity_id") or None)
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Notifikasi titipan pesanan %s gagal: %s", order.get("id"), exc)
 
 
 async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict[str, Any]]:

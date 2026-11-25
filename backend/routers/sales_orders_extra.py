@@ -959,8 +959,8 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
         from services import gl_service
         await gl_service.reverse_order_journals(order_id, reason="order dibatalkan",
                                                 actor_name=actor["name"])
-    except Exception as exc:  # noqa: BLE001
-        import logging
+    except Exception as exc:  # noqa: BLE001 — `logging` modul (impor lokal di sini dulu membuat `logging` variabel lokal
+        # seluruh fungsi: cabang galat titipan di atas jatuh UnboundLocalError → 500 sesudah pesanan terlanjur batal)
         logging.getLogger(__name__).error("Gagal reversal GL utk order %s: %s", order_id, exc)
     if order.get("replacement_for_return"):
         from services import return_replacement_service as rpl
