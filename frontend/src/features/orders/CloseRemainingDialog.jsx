@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { PackageX, X } from "lucide-react";
+import { PackageX } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import axios, { API } from "../../services/apiClient";
-import { overlayDismiss } from "../../utils/overlayDismiss";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { alasanPersetujuan, diajukan, pesanDiajukan, pesanHasil } from "./cancelRequestUtil";
@@ -44,15 +44,13 @@ export default function CloseRemainingDialog({ order, onClose, onDone }) {
   }
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 180 }} data-testid="close-remaining-dialog" {...overlayDismiss(onClose)}>
-      <div className="modal-card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-2">
-          <p className="modal-title flex items-center gap-2"><PackageX size={15} className="text-[#C0392B]" /> Tutup sisa {order.number}?</p>
-          <button className="icon-button" onClick={onClose} data-testid="close-remaining-close"><X size={16} /></button>
-        </div>
-        <p className="modal-subtitle mt-1">Jumlah yang belum terkirim dihapus dari pesanan, reservasi dan tugas gudang sisanya
-          dilepas, dan nilai pesanan turun ke nilai barang yang sudah terkirim.</p>
-        {memuat && <p className="mt-2 text-[11px] text-[#8E8E93]" data-testid="close-remaining-loading">Memeriksa pesanan…</p>}
+    <FormModal open onClose={onClose} title={`Tutup sisa ${order.number}?`} icon={PackageX} size="md"
+      subtitle="Jumlah yang belum terkirim dihapus dari pesanan, reservasi dan tugas gudang sisanya dilepas, dan nilai pesanan turun ke nilai barang yang sudah terkirim."
+      testId="close-remaining-dialog" onSubmit={submit} busy={busy}
+      submitLabel={perluSetuju ? "Ajukan tutup sisa" : "Ya, Tutup Sisa"} cancelLabel="Kembali"
+      submitTestId="close-remaining-confirm" cancelTestId="close-remaining-back"
+      submitDisabled={memuat || terhalang || !p || reason.trim().length < 5}>
+      {memuat && <p className="mt-2 text-[11px] text-[#8E8E93]" data-testid="close-remaining-loading">Memeriksa pesanan…</p>}
         {terhalang && (
           <div className="notice-bar danger mt-2" data-testid="close-remaining-blockers">
             <span>Sisa belum bisa ditutup:</span>
@@ -91,14 +89,6 @@ export default function CloseRemainingDialog({ order, onClose, onDone }) {
         {error && <div className="notice-bar danger mt-2" data-testid="close-remaining-error"><span>{error}</span></div>}
         <textarea data-testid="close-remaining-reason" className="field mt-3 w-full" rows={3} placeholder="Alasan tutup sisa (wajib, min. 5 karakter)"
           value={reason} onChange={(e) => setReason(e.target.value)} />
-        <div className="mt-3 flex justify-end gap-2">
-          <button className="secondary-button" onClick={onClose} data-testid="close-remaining-back">Kembali</button>
-          <button className="primary-button !bg-[#C0392B]" data-testid="close-remaining-confirm"
-            disabled={busy || memuat || terhalang || !p || reason.trim().length < 5} onClick={submit}>
-            {busy ? "Memproses…" : (perluSetuju ? "Ajukan tutup sisa" : "Ya, Tutup Sisa")}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
