@@ -112,6 +112,19 @@ TANPA_DATA_SENDIRI = {
 #: Nilainya = ALAMAT PAGARNYA. Kalau pagar itu hilang, baris di sini menjadi salah dan
 #: audit kembali berbunyi.
 TERGATED_DI_KODE = {
+    # 25 Nov (gate pohon akhir, Meja gelombang 1): layar `my-desk` memakai berkas bersama `RoleDesk.jsx` — pagarnya NYATA.
+    # "Buat SPK QC" di tempat (InspectionFormModal + inspectionsMeta) hanya untuk desk gudang:
+    # `spkInPlace = desk === "warehouse_admin" && can(perms, "inspection", "create")`; `startSpk` hanya dipanggil bila
+    # `spkInPlace` dan modalnya dirender bila `spk` terisi — di desk `me` selalu false.
+    ("my-desk", "/inspections/meta"):
+        "features/desks/RoleDesk.jsx — hanya bila spkInPlace (desk warehouse_admin + can inspection.create)",
+    ("my-desk", "/inspections/meta/ref-docs"):
+        "features/desks/RoleDesk.jsx — hanya bila spkInPlace (desk warehouse_admin + can inspection.create)",
+    ("my-desk", "/inspections/queue/qc-tasks"):
+        "features/desks/RoleDesk.jsx — hanya bila spkInPlace (desk warehouse_admin + can inspection.create)",
+    # Pelanggaran lama designer sejak 23 Nov: SoTrackerCard hanya dirender bila can(perms, "order", "view").
+    ("my-desk", "/desks/so-tracker"):
+        "features/desks/RoleDesk.jsx — SoTrackerCard hanya bila can(perms, 'order', 'view')",
     # 18 Nov (gate pohon akhir, K-FIN-01): dua panel yang digerbang IZIN di kode — terlihat pada Manajer & Finance.
     ("md-categories", "/admin/integrations/whatsapp"):
         "features/admin/AdminView.jsx — tab 'integrations' (WhatsAppConnectionPanel) hanya bila can(integration.manage)",
