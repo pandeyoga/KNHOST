@@ -1,6 +1,6 @@
 # Hasil — Meja gelombang 1 (kerangka meja kerja di tempat)
 
-Tanggal: 25 Nov 2026 · Cabang: `claude/nifty-carson-jjx3c8` · Garis dasar: `b78d0bf` · Pohon akhir: `b88a649`.
+Tanggal: 25 Nov 2026 · Cabang: `claude/nifty-carson-jjx3c8` · Garis dasar: `b78d0bf` · Pohon akhir: `a33add3` (+ commit gate).
 Rancangan: `docs/superpowers/specs/2026-11-25-meja-kerja-di-tempat-design.md` (disetujui pemilik, A0–A9) · Rencana:
 `docs/superpowers/plans/2026-11-25-meja-gelombang-1.md` (17 tugas) · Audit awal: `docs/audit/meja-2026-11-25/`.
 
@@ -54,7 +54,27 @@ cabang (0 Critical, 3 Important — skrip latihan, lepas tanpa pratinjau, rantai
 
 ### 3a. Gate
 
-(diisi sesudah gate selesai)
+Dijalankan pada pohon akhir (`--quick` dan `--ci`). Dinilai dengan dua pembanding.
+
+**Putaran pertama** (`f0b4e1f`):
+- `--quick` dibanding garis dasar pekerjaan ini (`b78d0bf`): tidak ada pelanggaran baru.
+- `--ci` dibanding garis dasar resmi 15 Nov (`docs/blueprint/garis-dasar-gate/2026-11-15_gate_ci.log`), per pelanggaran: tiga pelanggaran baru berasal dari cabang ini. Semuanya penghalang merge, dan semuanya diperbaiki:
+
+| Pelanggaran | Sebab | Perbaikan |
+|---|---|---|
+| `audit_entity_isolation`: sales PT-A melihat baris PT KANDA di `/collection-worklist` dan `/collection-reminders` | Kebocoran lama: rute penagihan tidak dibatasi PT. Baru terlihat karena T1 menambahkan `entity_id` ke baris. | `1a8c6b2`: rute dan dua meja memakai cakupan PT baku (`resolve_scope_ids`). PT di luar izin → 403. 5 uji baru. |
+| `audit_sales_roles_ux`: Meja Saya (sales, desainer) → `/inspections/*`, `/desks/so-tracker`, `/return-dispositions/summary` | Audit statis menghitung impor `RoleDesk.jsx`. Pagarnya nyata di kode: SPK QC hanya Meja Gudang + izin, Pelacak hanya `order.view`, kartu retur hanya Meja Gudang. | `620e630` + commit gate ini: alamat pagar didaftarkan di `TERGATED_DI_KODE`. Logika audit tidak diubah. |
+| `guard:home_kpi`: antrean `so_cancel` tanpa pasangan hitung-ulang | Antrean dari pekerjaan batal/tutup sisa; gate `--ci` belum pernah dijalankan untuknya. | `a33add3`: pasangan hitung-ulang ditulis ulang di `verify_home_kpi.EXPECT`. |
+
+**Putaran kedua** (`a33add3`, `--ci`):
+- FAIL 36, garis dasar 43. Tujuh pemeriksaan menjadi hijau, termasuk isolasi entitas dan `audit_doc_refs`.
+- Satu catatan baru tersisa: desainer → `/return-dispositions/summary`. Didaftarkan di commit ini. Setelah itu `audit_sales_roles_ux` dijalankan sendiri: `my-desk` tidak lagi muncul untuk peran mana pun. Sisa 15 temuannya sama dengan garis dasar.
+- **Masih merah, bawaan dari sebelum cabang ini:**
+  - `POC Cek Kenyataan Peran` (R2/R5): manajer ditandai berkuasa berlebih.
+  - `POC FASE N`: kotak Finance menerima 0 pesan stok kain.
+
+  Keduanya sudah FAIL di gate `--ci` 23 Nov, sebelum pekerjaan batal/tutup sisa dan sebelum gelombang ini, dan PASS di 17 Nov. Tidak disentuh di sini.
+- Tiga pemeriksaan garis dasar tidak berjalan di mode `--ci`: `page_tabs` + self-test, dan self-test `atomic_claim`. `page_tabs` lulus di `--quick`.
 
 ## 4. Keputusan pelaksanaan (di luar rancangan — periksa)
 

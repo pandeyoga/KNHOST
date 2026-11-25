@@ -125,6 +125,10 @@ TERGATED_DI_KODE = {
     # Pelanggaran lama designer sejak 23 Nov: SoTrackerCard hanya dirender bila can(perms, "order", "view").
     ("my-desk", "/desks/so-tracker"):
         "features/desks/RoleDesk.jsx — SoTrackerCard hanya bila can(perms, 'order', 'view')",
+    # Kartu retur internal hanya di Meja Gudang: `useReturnDeskSummary(..., { enabled: cfg.returns && (can sales_return.view
+    # || can interco.view) })` — `cfg.returns` hanya desk warehouse_admin; kartunya menerima `summary` sehingga tidak memuat sendiri.
+    ("my-desk", "/return-dispositions/summary"):
+        "features/desks/RoleDesk.jsx — useReturnDeskSummary enabled hanya desk warehouse_admin + izin retur/interco",
     # 18 Nov (gate pohon akhir, K-FIN-01): dua panel yang digerbang IZIN di kode — terlihat pada Manajer & Finance.
     ("md-categories", "/admin/integrations/whatsapp"):
         "features/admin/AdminView.jsx — tab 'integrations' (WhatsAppConnectionPanel) hanya bila can(integration.manage)",
