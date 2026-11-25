@@ -373,6 +373,21 @@ async def test_BTP4_tolak_faktur_pajak_per_pesanan(klien, db, siap, monkeypatch)
     await _ditolak(klien, db, siap, k["so"], "Faktur Pajak")
 
 
+async def test_BTP4_cek_batal_tutup_sisa_terhalang_200_dengan_daftar_penghalang(klien, db, siap, monkeypatch):
+    """R21 — dialog butuh daftar penghalang: cancel-check 200 + preview.allowed=False; pengajuan tetap 409."""
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch)
+    await db.tax_invoices.insert_one({"id": _id("fkt"), "number": "FKT-BTP4-003", "order_id": k["so"]["id"],
+                                      "entity_id": KSC, "status": "normal", "doc_kind": "faktur", "trigger": "pesanan",
+                                      "items": [{"product_name": "Kain Uji BTP4", "quantity": 100}]})
+    r = await klien.get(f"/api/sales-orders/{k['so']['id']}/cancel-check", headers=siap["hs"],
+                        params={"action": "close_remaining"})
+    assert r.status_code == 200, r.text
+    p = r.json()["preview"]
+    assert p["allowed"] is False and p["blockers"] and "faktur pajak" in " ".join(p["blockers"]).lower()
+    assert r.json()["needs_approval"] is False
+    await _ditolak(klien, db, siap, k["so"], "Faktur Pajak")
+
+
 async def test_BTP4_faktur_per_surat_jalan_lolos(klien, db, siap, monkeypatch):
     k = await _kirim_sebagian(klien, db, siap, monkeypatch)
     await db.tax_invoices.insert_one({"id": _id("fkt"), "number": "FKT-BTP4-002", "order_id": k["so"]["id"],

@@ -11,6 +11,7 @@ import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
 import { can } from "../../config/roles";
 import OrderReleaseSummary from "./OrderReleaseSummary";
 import { continueNormalPrice } from "../sales_admin/workDeskApi";
+import { diajukan, pesanDiajukan } from "./cancelRequestUtil";
 
 const TYPE_META = {
   nilai: { label: "Persetujuan Nilai Pesanan", icon: ShieldCheck, color: "#5856D6" },
@@ -55,8 +56,8 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
   async function run(fn, okMsg, after) {
     setBusy(true); setErr(""); setMsg("");
     try {
-      await fn();
-      setMsg(okMsg);
+      const res = await fn();
+      setMsg(typeof okMsg === "function" ? okMsg(res) : okMsg);
       after && after();
       await onRefresh?.();
     } catch (e) {
@@ -92,7 +93,8 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
   const keepNormal = (entry) => run(() => continueNormalPrice(order.id, entry.id),
     "Lanjut dengan harga normal — pesanan lanjut (dilepas ke gudang otomatis bila sudah diperiksa Admin Sales).");
   const cancelOrder = () => run(() => axios.post(`${API}/sales-orders/${order.id}/cancel`, { reason: cancelReason.trim() }),
-    "Pesanan dibatalkan, booking stok dilepas.", () => { setCancelOpen(false); setCancelReason(""); });
+    // BTP-6 — 202 = permintaan diajukan (menunggu persetujuan), pesanan belum batal.
+    (res) => (diajukan(res) ? pesanDiajukan(order, res.data) : "Pesanan dibatalkan, booking stok dilepas."), () => { setCancelOpen(false); setCancelReason(""); });
 
   if (!pa.length && !canRequest) return <OrderReleaseSummary order={order} />;
 

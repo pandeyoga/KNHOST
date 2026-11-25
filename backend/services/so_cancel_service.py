@@ -354,7 +354,15 @@ async def check(order: Dict[str, Any], action: str, actor: Dict[str, Any]) -> Di
     """Untuk dialog: `{"needs_approval", "basis", "can_self_approve", "amount"}` (+ `preview` bila penilai aksi
     menyediakannya). `can_self_approve` hanya bermakna saat `needs_approval`."""
     a = _check_action(action)
-    assessed = await ASSESSORS[a](order)
+    try:
+        assessed = await ASSESSORS[a](order)
+    except HTTPException as exc:
+        if a != "close_remaining" or exc.status_code != 409:
+            raise
+        # R21 — dialog Tutup sisa perlu daftar penghalang: pemeriksaan melapor 200 + `preview.allowed=False`.
+        # Pengajuan (`submit`) tetap lewat penilai dan tetap 409.
+        return {"needs_approval": False, "basis": [], "can_self_approve": False, "amount": 0.0,
+                "preview": await _tutup_sisa.preview(order)}
     v = await needs_approval(order, a, amount=assessed["amount"], excess=float(assessed.get("excess") or 0))
     can_self = bool(v["needs"]) and (await _decide_check(order, v["amount"], actor))["allowed"]
     out = {"needs_approval": v["needs"], "basis": v["basis"], "can_self_approve": can_self, "amount": v["amount"]}

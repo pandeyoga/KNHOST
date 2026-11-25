@@ -37,6 +37,8 @@ import ReallocateRollsModal from "./ReallocateRollsModal";
 import ReleaseRollsModal from "./ReleaseRollsModal";
 import SalesOrderOverrideDialog from "./SalesOrderOverrideDialog";
 import CancelOrderDialog from "./CancelOrderDialog";
+import CloseRemainingDialog from "./CloseRemainingDialog";
+import CancelRequestBar from "./CancelRequestBar";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
@@ -85,6 +87,7 @@ export function OrderDetailPanel({
   const [releaseItem, setReleaseItem] = useState(null);   // AS-03 — Lepas roll sebagian
   const [showOverride, setShowOverride] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [showCloseRemaining, setShowCloseRemaining] = useState(false);
   const [flash, setFlash] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);   // Trial 22 Okt (E8) — Periksa & lepas ke gudang
   const FULFILL_STATUSES = ["partially_picked", "picked", "partially_shipped", "shipped", "done"];
@@ -117,6 +120,7 @@ export function OrderDetailPanel({
   const canOverride = can(perms, "order", "override") && sel?.order_type !== "sample" &&
     ["draft", "reserved", "waiting_approval", "approved", "waiting_stock", "confirmed"].includes(sel?.status);
   const canCancel = can(perms, "order", "cancel");
+  const cancelPending = sel?.cancel_request?.status === "pending";
   // Ganti Roll = KEPUTUSAN PEMENUHAN (izin inventory.pegging — Admin Sales/manajer/admin,
   // BUKAN sales lapangan), hanya sebelum pesanan dikonfirmasi/dipicking.
   const canReallocate = can(perms, "inventory", "pegging") &&
@@ -334,6 +338,11 @@ export function OrderDetailPanel({
                 <p className="text-[11px]">{item.product_name}</p>
                 <p className="text-[11px] font-semibold"><QtyDual rolls={item.qty_rolls} measure={item.quantity} unit={item.unit} factor={item.unit_factor} factorTo={item.unit_factor_to} testId={`order-item-qty-${item.product_id}`} /></p>
               </div>
+              {item.quantity_ordered_original != null && Number(item.quantity_ordered_original) !== Number(item.quantity) && (
+                <p data-testid={`order-item-original-${item.product_id}`} className="mt-0.5 text-[10px] text-[#8E8E93]">
+                  Dipesan semula {formatQty(item.quantity_ordered_original)} {item.unit} (sisa ditutup)
+                </p>
+              )}
               {item.is_sample && (
                 <p data-testid={`order-item-sample-status-${item.product_id}`} className="mt-0.5 text-[10px] text-[#9A5B00]">
                   {item.sample_cut_status === "cut"
@@ -679,6 +688,19 @@ export function OrderDetailPanel({
         <AmendmentTrailPanel order={sel} currentUser={user} onRefresh={onRefresh} />
 
 
+        {/* BTP-6 — permintaan batal / tutup sisa yang menunggu keputusan */}
+        <CancelRequestBar order={sel} perms={perms} userId={user?.id || ""}
+          onDone={(msg) => { setFlash(msg); onRefresh?.(); }} />
+        {/* BTP-6 — ringkasan sesudah sisa ditutup: nilai lama → baru, uang yang jadi titipan */}
+        {sel.closed_short && (
+          <div className="notice-bar" data-testid="closed-short-summary">
+            <span>Sisa pesanan ditutup oleh {sel.closed_short.by || "-"}: nilai {formatCurrency(sel.closed_short.grand_total_before)} →{" "}
+              {formatCurrency(sel.closed_short.grand_total_after)}
+              {Number(sel.closed_short.excess_to_deposit) > 0 ? `; ${formatCurrency(sel.closed_short.excess_to_deposit)} menjadi titipan pelanggan` : ""}.
+              {sel.closed_short.reason ? ` Alasan: ${sel.closed_short.reason}.` : ""}</span>
+          </div>
+        )}
+
         {/* F5 — Unified Approval (special price + over-credit + nilai) */}
         <SoApprovalsPanel order={sel} user={user} onRefresh={onRefresh} />
 
@@ -716,9 +738,15 @@ export function OrderDetailPanel({
               <PackageCheck size={13} /> Tandai Diterima (Selesai)
             </button>
           )}
-          {canCancel && !["done", "cancelled", "expired", "partially_shipped", "shipped"].includes(sel.status) && (
+          {/* BTP-6 — Batal & Tutup sisa disembunyikan selama ada permintaan menunggu (bilah di atas yang memutus). */}
+          {canCancel && !cancelPending && !["done", "cancelled", "expired", "partially_shipped", "shipped"].includes(sel.status) && (
             <button data-testid={`cancel-order-button-${sel.id}`} className="secondary-button text-red-600" onClick={() => setShowCancel(true)}>
               <XCircle size={13} /> Batal
+            </button>
+          )}
+          {canCancel && !cancelPending && sel.status === "partially_shipped" && (
+            <button data-testid={`close-remaining-button-${sel.id}`} className="secondary-button text-red-600" onClick={() => setShowCloseRemaining(true)}>
+              <PackageX size={13} /> Tutup sisa
             </button>
           )}
           {["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"].includes(sel.status) && (
@@ -746,6 +774,10 @@ export function OrderDetailPanel({
       {showOverride && (
         <SalesOrderOverrideDialog order={sel} onClose={() => setShowOverride(false)}
           onDone={(msg) => { setShowOverride(false); setFlash(msg); onRefresh?.(); }} />
+      )}
+      {showCloseRemaining && (
+        <CloseRemainingDialog order={sel} onClose={() => setShowCloseRemaining(false)}
+          onDone={(msg) => { setShowCloseRemaining(false); setFlash(msg); onRefresh?.(); }} />
       )}
       {showCancel && (
         <CancelOrderDialog order={sel} onClose={() => setShowCancel(false)}
