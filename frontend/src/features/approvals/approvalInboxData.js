@@ -15,7 +15,7 @@
  */
 import { Tag, ShoppingCart, RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit, Ban } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
 import { formatCurrency } from "../../utils/formatters";
 import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 import { SO_DEAD_STATUSES } from "./inboxTabs";
@@ -37,6 +37,10 @@ export const KIND_META = {
   // FASE G-1 — koreksi angka dokumen keuangan; D-06: hanya untuk tampilan sisa (tidak dirender di daftar).
   amendment:       { label: "Amandemen Dokumen", icon: FileEdit,   fg: "#7A2CA0", bg: "#F3E9FA", group: "amendment" },
 };
+
+/** Siapa yang diminta memutus: butir ber-`role` = nama peran; butir tanpa `role` (pembatalan pesanan) diputus oleh
+ * pemegang IZIN, bukan peran tertentu (02_STANDAR Z2) — teksnya berbasis izin. */
+export const butuhLabel = (it) => (it?.role ? roleLabel(it.role) : (it?.needs || roleLabel("manager")));
 
 const SO_KIND_BY_TYPE = { nilai: "so_nilai", kredit: "so_kredit", special_price: "so_special_price" };
 const arr = (d) => (Array.isArray(d) ? d : (Array.isArray(d?.items) ? d.items : []));
@@ -153,7 +157,7 @@ export async function loadInbox(perms) {
     kind: "so_cancel", id: c.request_id, orderId: c.order_id, openOrder: true,
     title: c.number || "Pesanan", subtitle: c.customer_name || "Pelanggan",
     meta: `${c.action === "close_remaining" ? "Tutup sisa" : "Batal"}${c.reason ? ` · ${c.reason}` : ""}`,
-    amount: c.amount ?? null, requester: c.requested_by, role: "manager", at: c.requested_at,
+    amount: c.amount ?? null, requester: c.requested_by, needs: "persetujuan pembatalan", at: c.requested_at,
   }));
 
   const items = [...soApprovals, ...pos, ...prices, ...salesReturns, ...purchaseReturns, ...cycleCounts, ...credits, ...cancels]

@@ -1,7 +1,7 @@
 // BTP-7 — Pusat Persetujuan memuat antrean "Pembatalan Pesanan" + tanda "Ditahan" di layar gudang + label notifikasi.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { loadInbox, KIND_META, CATEGORY_PERMS } from "../approvals/approvalInboxData";
+import { loadInbox, KIND_META, CATEGORY_PERMS, butuhLabel } from "../approvals/approvalInboxData";
 import { INBOX_TABS, BACKLOG_INBOX_TAB, LISTED_IN_INBOX } from "../approvals/inboxTabs";
 import { HeldMark } from "../wms/OutboundScanBadges";
 import { TYPE_LABEL } from "../../components/NotificationCenter";
@@ -69,4 +69,14 @@ test("label notifikasi permintaan batal pesanan", () => {
   expect(TYPE_LABEL.permintaan_batal_diputus).toBe("Keputusan batal pesanan");
   expect(TYPE_LABEL.titipan_pesanan_batal).toBe("Uang muka jadi titipan");
   expect(TYPE_LABEL.titipan_pesanan_batal_gagal).toBe("Uang muka gagal jadi titipan");
+});
+
+test("butir pembatalan tidak menyebut peran: teks berbasis izin (layar & ekspor); jenis lain tetap nama peran", async () => {
+  const res = await loadInbox({ order: ["approve_cancel"] });
+  const it = res.items.find((i) => i.kind === "so_cancel");
+  expect(it.role).toBeUndefined();
+  expect(butuhLabel(it)).toBe("persetujuan pembatalan");
+  expect(butuhLabel(it)).not.toMatch(/Manajer/i);
+  expect(butuhLabel({ kind: "po", role: "manager" })).toMatch(/Manajer/i);
+  expect(butuhLabel({ kind: "po" })).toMatch(/Manajer/i);
 });

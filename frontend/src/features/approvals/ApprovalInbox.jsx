@@ -13,11 +13,10 @@ import LinkCard from "../../components/LinkCard";
 import useViewPreset from "../../hooks/useViewPreset";
 import ApprovalDecisionModal from "./ApprovalDecisionModal";
 import MyApprovalsPanel from "./MyApprovalsPanel";
-import { KIND_META, loadInbox } from "./approvalInboxData";
+import { KIND_META, loadInbox, butuhLabel } from "./approvalInboxData";
 import { INBOX_TABS, LISTED_IN_INBOX, canSeeMatrix } from "./inboxTabs";
 import { notifySuccess } from "../../utils/feedback";
 import { actorLabel } from "../../utils/actorLabel";
-import { roleLabel } from "../../config/roles";
 
 /**
  * ApprovalInbox — "Pusat Persetujuan" (FASE 5 — terpadu).
@@ -41,7 +40,7 @@ const INBOX_CSV_COLUMNS = [
   { key: "meta", header: "Info" },
   { key: "amount", header: "Nilai", type: "num" },
   { header: "Diajukan oleh", get: (it) => actorLabel(it.requester, "") },
-  { header: "Butuh peran", get: (it) => roleLabel(it.role || "manager") },
+  { header: "Butuh peran", get: (it) => butuhLabel(it) },
   { key: "at", header: "Diajukan pada", type: "date" },
 ];
 
@@ -344,7 +343,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                     <p className="text-[11px] text-[#6B6B73] truncate">{it.subtitle}{it.meta ? ` · ${it.meta}` : ""}</p>
                     {/* Audit UI 24 Okt (000) — akun teknis ("system-seed") tidak ditampilkan mentah; peran berlabel Indonesia. */}
                     <p className="text-[11px] text-[#8E8E93] flex flex-wrap items-center gap-x-1 mt-0.5">
-                      <Clock size={10} /> {timeAgo(it.at)} · diajukan {actorLabel(it.requester)} · butuh <b>{roleLabel(it.role || "manager")}</b>
+                      <Clock size={10} /> {timeAgo(it.at)} · diajukan {actorLabel(it.requester)} · butuh <b>{butuhLabel(it)}</b>
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
