@@ -157,3 +157,33 @@ test("kelompok Meja Keuangan: antrean asal dibaca dari row._queue (id kelompok '
     { id: "denda", label: "Denda perlu diterbitkan" });
   expect(mockGet).toHaveBeenCalledWith("/api/sales-orders/so1");
 });
+
+test("fakta baris lengkap di atas pratinjau: Batas cadangan, Masuk, Kota; tanpa lencana/PT/umur (ada di judul)", async () => {
+  mockGet.mockResolvedValue({ data: SO1 });
+  await buka({ ...ROW, badge: "reserved", booking_until: "2026-11-30T10:00:00Z", at: "2026-11-20T03:00:00Z", customer_city: "Bandung" },
+    { id: "perlu_verifikasi", value_label: "Nilai" });
+  expect(teks(q("desk-detail-field-booking_until"))).toMatch(/Batas cadangan/);
+  expect(teks(q("desk-detail-field-at"))).toMatch(/Masuk/);
+  expect(teks(q("desk-detail-field-customer_city"))).toContain("Bandung");
+  expect(q("desk-detail-field-badge")).toBeNull();
+  expect(q("desk-detail-field-entity_id")).toBeNull();
+  expect(q("desk-detail-field-age")).toBeNull();
+  expect(q("doc-preview-lines")).toBeTruthy();
+});
+
+test("perlu_dipenuhi: tabel kurang stok tetap; siap_dikonfirmasi: tabel order_lines tidak diulang", async () => {
+  mockGet.mockResolvedValue({ data: SO1 });
+  await buka({ ...ROW, lines: [{ product_name: "Kain K", backorder_qty: 5, unit: "yard" }] }, { id: "perlu_dipenuhi" });
+  expect(teks(q("desk-detail-shortage"))).toContain("Kain K");
+  document.body.innerHTML = "";
+  await buka({ ...ROW, order_lines: [{ product_name: "Kain G", quantity: 3, unit: "yard", warehouse: "Gudang A" }] }, { id: "siap_dikonfirmasi" });
+  expect(q("desk-detail-lines")).toBeNull();
+  expect(q("doc-preview-lines")).toBeTruthy();
+});
+
+test("papan vendor_bill membuka pratinjau tagihan", async () => {
+  mockGet.mockResolvedValue({ data: { id: "vb1", bill_number: "TG-1", items: [], lines: [] } });
+  await buka({ ref_type: "vendor_bill", ref_id: "vb1", number: "TG-1", title: "Pemasok" }, { id: "hutang_jatuh_tempo" },
+    { permissions: { vendor_bill: ["view"] } });
+  expect(mockGet).toHaveBeenCalledWith("/api/vendor-bills/vb1");
+});

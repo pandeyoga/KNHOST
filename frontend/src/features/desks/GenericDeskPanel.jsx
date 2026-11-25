@@ -40,9 +40,9 @@ export function buildFields(row, queue, pt) {
 const TH = "px-2 py-1 text-left text-fs-12 font-medium text-kn-text-2";
 const TD = "px-2 py-1 text-fs-13 text-kn-text align-top";
 
-/** Daftar bidang (dl). `only` = kunci bidang yang ditampilkan (kosong = semua). */
-export function FieldList({ row, queue, p, pt, only }) {
-  const fields = buildFields(row, queue, pt).filter((x) => !only || only.includes(x.key));
+/** Daftar bidang (dl). `except` = kunci bidang yang disembunyikan. */
+export function FieldList({ row, queue, p, pt, except = [] }) {
+  const fields = buildFields(row, queue, pt).filter((x) => !except.includes(x.key));
   return (
     <dl className="grid gap-2">
       {fields.map((x) => (
@@ -55,12 +55,13 @@ export function FieldList({ row, queue, p, pt, only }) {
   );
 }
 
-export function GenericPanel({ row, queue, p = "desk", pt = "" }) {
-  const orderLines = Array.isArray(row.order_lines) ? row.order_lines : [];
+/** `except` = bidang yang sudah ada di judul pop-up; `withOrderLines=false` = tabel barang-per-gudang tidak diulang (sudah di pratinjau). */
+export function GenericPanel({ row, queue, p = "desk", pt = "", except = [], withOrderLines = true }) {
+  const orderLines = withOrderLines && Array.isArray(row.order_lines) ? row.order_lines : [];
   const lines = Array.isArray(row.lines) ? row.lines : [];
   return (
     <div className="grid gap-3">
-      <FieldList row={row} queue={queue} p={p} pt={pt} />
+      <FieldList row={row} queue={queue} p={p} pt={pt} except={except} />
       {orderLines.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full" data-testid={`${p}-detail-lines`}>

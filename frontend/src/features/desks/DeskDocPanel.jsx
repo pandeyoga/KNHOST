@@ -1,7 +1,7 @@
 /**
  * DeskDocPanel (Meja gelombang 2) — panel pop-up meja yang memuat rincian dokumen dari registri pratinjau.
  *
- *  · Atas: fakta ringkas baris (Keterangan utuh, nilai, umur) — judul/subjudul pop-up tidak diulang.
+ *  · Atas: SEMUA fakta baris dari pembangun yang sama dengan panel umum, kecuali yang sudah di judul/subjudul (lencana, PT, umur); tabel kurang stok tetap, tabel barang-per-gudang tidak diulang (ada di pratinjau).
  *  · Bawah: `Body` registri untuk dokumen itu, dimuat DI DALAM pop-up meja (`useDocStack`). Panel TIDAK membuka
  *    `DocPreviewModal`, jadi hanya ada satu `DetailModal`. `push` dari isi (mis. alokasi kwitansi → pesanan) menumpuk
  *    di panel ini dengan "‹ Kembali" sendiri.
@@ -13,10 +13,11 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { openTrace } from "../documents/trace/traceDeepLink";
 import { canPreview } from "../documents/preview/docPreviewRegistry";
 import useDocStack from "../documents/preview/useDocStack";
-import { FieldList, GenericPanel } from "./GenericDeskPanel";
+import { GenericPanel } from "./GenericDeskPanel";
 import { permsOf } from "./deskPerms";
 
-const FAKTA = ["subtitle", "value", "age"];
+// Sudah ada di judul/subjudul pop-up (lencana, PT, umur) → tidak diulang di panel.
+const DI_JUDUL = ["badge", "entity_id", "age"];
 
 function DocBody({ row, queue, currentUser, docType, docId, p, pt }) {
   const perms = permsOf(currentUser);
@@ -27,7 +28,7 @@ function DocBody({ row, queue, currentUser, docType, docId, p, pt }) {
   const judul = [entry?.label || "Dokumen", nomor].filter(Boolean).join(" · ");
   return (
     <div className="grid gap-3" data-testid={`${p}-doc-panel`}>
-      {depth === 1 && <FieldList row={row} queue={queue} p={p} pt={pt} only={FAKTA} />}
+      {depth === 1 && <GenericPanel row={row} queue={queue} p={p} pt={pt} except={DI_JUDUL} withOrderLines={false} />}
       {depth > 1 && (
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="link-button" data-testid={`${p}-doc-back`} onClick={back}>‹ Kembali</button>

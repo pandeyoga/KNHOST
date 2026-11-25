@@ -16,6 +16,7 @@ export const DESK_DOC_OF = {
   "queue:bayar_sebelum_kirim": dari("sales_order", "order_id"),
   "queue:selisih_bayar": dari("ar_receipt", "ref_id"),
   "queue:denda_draft": (row) => (row?.doc_type === "sales_order" ? { docType: "sales_order", docId: row.doc_id } : null),
+  vendor_bill: dari("vendor_bill", "ref_id"),                 // baris papan `vendor_bill`: ref_id = id tagihan
   purchase_order: dari("purchase_order", "ref_id"),
   sales_return: dari("sales_return", "ref_id"),
   special_order: dari("special_order", "ref_id"),
