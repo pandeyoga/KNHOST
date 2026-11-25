@@ -3647,23 +3647,25 @@ async def post_incentive_accrual(entity_id: str, period: str,
     # gagal sesudah jurnal akrual pertama dibuat di panggilan berikutnya.
     await bekukan_periode(entity_id, period, oleh=created_by, journal_id=akrual["id"], rincian_sales=rincian_sales,
                           sumber_rincian=sumber_rincian)
-    # BTP-5 (R13) — akrual diulang (koreksi) = finalisasi ulang: saldo potongan ikut diperbarui, tidak pernah basi.
-    await catat_saldo_potongan(entity_id, period, rincian_sales, oleh=created_by, sumber=sumber_saldo,
-                               journal_id=akrual["id"])
     # P17 COMM-04 — komisi on-collection berubah (pembayaran batal/susulan) → jurnal koreksi selisih.
     accrued = await _incentive_accrued(src_id)
     delta = round(total - accrued, 2)
-    if abs(delta) <= EPS:
-        return None
-    dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if delta > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
-    desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
-    try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat
-        return await _insert_entry(
-            lines=_balanced_pair(dr, cr, abs(delta), desc), description=desc, date=tgl,
-            source_type="incentive_accrual_adj", source_id=f"{src_id}@{accrued:.2f}",
-            entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}-ADJ")
-    except DuplicateKeyError:
-        return None
+    koreksi = None
+    if abs(delta) > EPS:
+        dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if delta > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
+        desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
+        try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat
+            koreksi = await _insert_entry(
+                lines=_balanced_pair(dr, cr, abs(delta), desc), description=desc, date=tgl,
+                source_type="incentive_accrual_adj", source_id=f"{src_id}@{accrued:.2f}",
+                entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}-ADJ")
+        except DuplicateKeyError:
+            koreksi = None
+    # BTP-5 (R13) — akrual diulang (koreksi) = finalisasi ulang: saldo potongan ikut diperbarui (tidak pernah basi),
+    # SESUDAH jurnal koreksinya berhasil (jurnal ditolak → galat merambat, catatan tidak berubah).
+    await catat_saldo_potongan(entity_id, period, rincian_sales, oleh=created_by, sumber=sumber_saldo,
+                               journal_id=akrual["id"])
+    return koreksi
 
 
 async def _incentive_accrued(src_id: str) -> float:

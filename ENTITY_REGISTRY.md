@@ -678,15 +678,18 @@ Key Fields:
 ⚠️ JANGAN BUAT: commission_freezes, commission_snapshots, period_commission (sebagai koleksi).
 ```
 
-### commission_carry_balances  [BTP-5 — saldo potongan komisi per PT per sales per bulan (keputusan pemilik A1-6)]
+### commission_carry_balances  [BTP-5 — finalisasi komisi & saldo potongan per PT per sales per bulan (A1-6, R13/R16/R17)]
 ```
 Collection:  commission_carry_balances   Prefix: cmsb_
 Penulis:     services/commission_rules.py (catat_saldo_potongan) — dipanggil setiap komisi PT·bulan DIFINALKAN:
              gl_service.post_incentive_accrual (akrual manual, termasuk total PT 0 tanpa jurnal; akrual diulang/koreksi)
-             dan posting_registry.post_payroll (akrual dari slip; slip berkomisi 0 → dicatat langsung). Sumber angka =
-             hasil mesin (`compute_commission`): akrual manual langsung, posting gaji dari `hr_payslips.commission_engine`.
-Pembaca:     services/commission_rules.py (saldo_potongan_awal) → sales_force_service._compute_commission_per_sku
-             (`carry_in` bulan berikutnya = `carry_out` bulan ini, PT yang sama; "Semua PT" = jumlah per PT)
+             dan posting_registry.post_payroll (akrual dari slip; tanpa akrual — mode `pay_on_invoice` atau komisi slip 0
+             — dicatat sesudah jurnal gaji, bertaut jurnal gaji). Sumber angka = hasil mesin (`compute_commission`):
+             akrual manual langsung, posting gaji dari `hr_payslips.commission_engine`. Satu catatan per sales yang
+             difinalkan (juga saldo 0).
+Pembaca:     services/commission_rules.py (saldo_potongan_awal → `carry_in` bulan berikutnya = `carry_out` bulan ini, PT
+             yang sama; "Semua PT" = jumlah per PT; penilai_final → bulan bayar final sebelum batal/tutup sisa, R16) →
+             sales_force_service._compute_commission_per_sku
 Key Fields:
   id              string  prefix "cmsb_"
   entity_id       string  FK business_entities.id (PT spesifik)
@@ -697,14 +700,16 @@ Key Fields:
   commission_raw  number  komisi mentah bulan ini (bisa negatif karena koreksi batal / tutup sisa)
   total           number  komisi yang dibayar/diakru bulan ini (≥ 0)
   source          string  "akrual" | "slip_gaji" — jalur finalisasi
-  journal_id      string  jurnal `incentive_accrual` hidup saat dicatat; "" = bulan difinalkan tanpa jurnal (total 0)
-  recorded_at     string  ISO UTC
+  journal_id      string  jurnal finalisasi: `incentive_accrual` hidup, atau jurnal gaji `payroll_run` (mode tanpa
+                          akrual / komisi slip 0); "" = bulan difinalkan tanpa jurnal (akrual bertotal 0)
+  finalized_at    string  ISO UTC — kapan bulan itu PERTAMA difinalkan ($setOnInsert, tidak pernah ditimpa)
+  recorded_at     string  ISO UTC — finalisasi terakhir
   recorded_by     string  nama pemfinal
 
 ℹ️ UNIK per (entity_id, sales_id, period) — indeks wajib `uq_commission_carry` (PK-14 REQUIRED_UNIQUE_INDEXES).
-   Saldo negatif → upsert; saldo 0 → hanya memperbarui catatan yang sudah ada (tidak membuat dokumen baru).
-ℹ️ Catatan dibaca hanya bila `journal_id` kosong atau jurnalnya tidak dianulir; akrual dianulir → saldo bulan itu
-   tidak dibaca sampai bulan itu difinalkan lagi (catatan diperbarui dengan jurnal baru).
+   Setiap finalisasi = upsert (tidak pernah basi).
+ℹ️ Catatan berlaku (`catatan_berlaku`) bila `journal_id` kosong atau jurnalnya tidak `void` dan belum dibalik (anulir
+   proses gaji membalik jurnal gaji); tidak berlaku → saldo & status final bulan itu tidak dibaca sampai difinalkan lagi.
 ⚠️ JANGAN BUAT: commission_carry, carry_balances, commission_deductions (sebagai koleksi); saldo TIDAK disimpan di
    `commission_period_rules.sales[]`.
 ```

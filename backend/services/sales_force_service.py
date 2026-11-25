@@ -13,7 +13,8 @@ from services import costing_service
 from services.commission_rules import (ALASAN_LABEL, KOREKSI_BATAL, KOREKSI_TUTUP_SISA, LABEL_DIBAWA, LABEL_TERBAWA,
                                       POTONGAN_DIBAWA, POTONGAN_TERBAWA, aturan_baris, bulan_awal_periode,
                                       bulan_periode, capaian_aktif, faktor_diskon, hitung_baris, hitung_koreksi,
-                                      label_alasan, label_koreksi, pengali_capaian, saldo_potongan_awal)
+                                      label_alasan, label_koreksi, pengali_capaian, penilai_final,
+                                      saldo_potongan_awal)
 from services.config_service import get_effective_settings
 
 CATATAN_SIMULASI = ("Kedua kolom menghitung semua pesanan bulan ini dengan aturan hari ini (kiri) dan dengan perubahan "
@@ -393,9 +394,11 @@ def _bertitipan(o: Dict[str, Any]) -> bool:
 
 
 def _ikut_komisi(o: Dict[str, Any]) -> bool:
-    """Pesanan hidup, atau pesanan mati (batal/kedaluwarsa) yang uang mukanya sudah dipindah ke titipan: bulan bayarnya
-    tetap berkomisi (bulan yang sudah berakrual tidak berubah) dan bulan pemindahannya berkoreksi negatif. Pesanan mati
-    tanpa penanda itu (batal sebelum ada uang, atau batal lama sebelum S3) tetap dikecualikan seperti dulu."""
+    """Pesanan hidup, atau pesanan mati (batal/kedaluwarsa) yang uang mukanya sudah dipindah ke titipan: bulan bayar
+    yang sudah final sebelum pembatalan tetap berkomisi dan bulan pembatalan berkoreksi negatif (R16,
+    `_bagian_peristiwa`).
+    Pesanan mati tanpa penanda itu (batal sebelum ada uang, atau batal lama sebelum S3) tetap dikecualikan seperti
+    dulu."""
     return o.get("status") not in DEAD_STATUSES or _bertitipan(o)
 
 
@@ -406,8 +409,9 @@ def _qty_dasar(line: Dict[str, Any]) -> float:
 def _dasar_komisi(o: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], float, bool]:
     """`(baris, nilai tagihan, ditutup_sisa)` dasar komisi pesanan.
 
-    Pesanan ber-`closed_short` (tutup sisa, BTP-4) memakai dasar ASLI sebelum ditutup (`closed_short.commission_basis`)
-    di SETIAP periode, supaya bulan yang sudah berakrual dihitung ulang persis sama: `grand_total` asli, dan per baris
+    Pesanan ber-`closed_short` (tutup sisa, BTP-4): dasar ASLI sebelum ditutup (`closed_short.commission_basis`) —
+    dipakai untuk bayar bulan yang final sebelum tutup sisa dan sisi asli koreksinya (R16), supaya bulan itu dihitung
+    ulang persis sama: `grand_total` asli, dan per baris
     (urutan baris asli) jumlah dasar, jumlah jual, harga, diskon, dan nilai baris asli — baris yang masih ada di `items`
     dipulihkan dari `commission_basis.items[]` (bentuk lama tanpa rincian baris: diskalakan dari baris sekarang menurut
     jumlah dasar), baris yang terkirim 0 diambil utuh dari `closed_lines[]`. Pesanan lain: `items` + nilai tagihan."""
@@ -436,17 +440,74 @@ def _dasar_komisi(o: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], float, bool]
     return baris, float(dasar.get("grand_total") or 0) or _order_grand_total(o), True
 
 
-def _uang_periode(o: Dict[str, Any], period: str) -> Tuple[float, float]:
-    """`(Σ baris bayar biasa, Σ baris uang pindah ke titipan (≤ 0))` pesanan dalam periode."""
-    biasa = pindah = 0.0
+def _peristiwa(o: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+    """BTP-5 (R16) — `(kode koreksi, waktu peristiwa)` pesanan yang ditutup sisanya atau batal sesudah bayar; `None` =
+    pesanan biasa. Waktu: tutup sisa = `closed_short.at`; batal = `cancelled_at` (dicap saat status berubah, inti
+    pembatalan), cadangan `advance_to_deposit.at` (pesanan kedaluwarsa tidak punya cap waktu batal; penanda diklaim
+    tepat sesudah status berubah) lalu `advance_to_deposit.done_at` (bisa jauh sesudahnya bila pemindahan titipan
+    diulang). Baris bayar `moved_to_deposit` hanya penanda bahwa peristiwanya terjadi, nominalnya tidak dipakai."""
+    cs = o.get("closed_short")
+    if cs:
+        return KOREKSI_TUTUP_SISA, str(cs.get("at") or "")
+    if o.get("status") in DEAD_STATUSES and _bertitipan(o):
+        atd = o.get("advance_to_deposit") or {}
+        return KOREKSI_BATAL, str(o.get("cancelled_at") or atd.get("at") or atd.get("done_at") or "")
+    return None
+
+
+def _jepit(x: float, batas: float) -> float:
+    return max(0.0, min(x, batas))
+
+
+async def _bagian_peristiwa(o: Dict[str, Any], kode: str, waktu: str, period: str,
+                            nilai_final: Callable[[str, str, str], Awaitable[bool]]
+                            ) -> Tuple[List[Tuple[Optional[str], List[Dict[str, Any]], float]], float]:
+    """BTP-5 (keputusan pemilik A1-6, ruling R16) — bagian hitungan pesanan ber-peristiwa (batal sesudah bayar / tutup
+    sisa) dalam `period`: `([(jenis, baris, fraksi)], Σ bayar dalam periode)`; jenis `None` = komisi biasa, `"asli"` /
+    `"baru"` = dua sisi baris koreksi.
+
+    Tiap baris bayar (selain penanda `moved_to_deposit`) dinilai menurut BULANNYA: final sebelum peristiwa
+    (`commission_rules.penilai_final`) → dihitung dengan dasar ASLI (bulan itu tidak berubah); belum final → dengan
+    dasar SESUDAH peristiwa (batal: tidak ada; tutup sisa: baris sekarang & nilai tagihan baru). Koreksi di periode yang
+    memuat waktu peristiwa = −(komisi dasar asli − komisi dasar baru) atas bayar bulan-bulan yang final sebelum
+    peristiwa. Nilai tagihan baru adalah satu kapasitas: dipakai lebih dulu oleh bayar bulan final, sisanya oleh bayar
+    bulan belum final urut periode — total komisi pesanan = komisi barang terkirim yang terbayar, tanpa dobel."""
+    from services.analytics_time import to_wib_date
+    lines_asli, gt_asli, _ = _dasar_komisi(o)
+    ditutup = kode == KOREKSI_TUTUP_SISA
+    lines_baru = (o.get("items") or []) if ditutup else []
+    gt_baru = _order_grand_total(o) if ditutup else 0.0
+    ent = o.get("entity_id") or ""
+    awal = bulan_awal_periode(period)
+    f_semua = f_periode = n_periode = n_sebelum = 0.0
     for p in o.get("payments") or []:
-        if not _in_period(p.get("created_at") or p.get("date"), period):
-            continue
         if p.get("moved_to_deposit"):
-            pindah += float(p.get("amount", 0) or 0)
-        else:
-            biasa += float(p.get("amount", 0) or 0)
-    return biasa, pindah
+            continue
+        tgl = p.get("created_at") or p.get("date")
+        jumlah = float(p.get("amount", 0) or 0)
+        bulan = (to_wib_date(tgl) or "")[:7]
+        dalam = _in_period(tgl, period)
+        if await nilai_final(ent, bulan, waktu):
+            f_semua += jumlah
+            if dalam:
+                f_periode += jumlah
+        elif dalam:
+            n_periode += jumlah
+        elif awal and bulan and bulan < awal:
+            n_sebelum += jumlah
+    bagian: List[Tuple[Optional[str], List[Dict[str, Any]], float]] = []
+    if f_periode and gt_asli > 0:
+        bagian.append((None, lines_asli, min(f_periode / gt_asli, 1.0)))
+    if n_periode and gt_baru > 0:
+        dipakai = f_semua + n_sebelum
+        efektif = _jepit(dipakai + n_periode, gt_baru) - _jepit(dipakai, gt_baru)
+        if efektif:
+            bagian.append((None, lines_baru, efektif / gt_baru))
+    if f_semua and gt_asli > 0 and _in_period(waktu, period):
+        bagian.append(("asli", lines_asli, min(f_semua / gt_asli, 1.0)))
+        if gt_baru > 0:
+            bagian.append(("baru", lines_baru, _jepit(f_semua, gt_baru) / gt_baru))
+    return bagian, f_periode + n_periode
 
 
 def _baris_saldo(kode: str, label: str, komisi: float) -> Dict[str, Any]:
@@ -474,13 +535,16 @@ async def _compute_commission_per_sku(
     atau `capaian_tetap` `(faktor, info)` dari pemanggil (proyeksi triwulan/tahun, `_jumlah_bulanan`); hasil +
     `achievement_multiplier` `{factor, info}`.
 
-    BTP-5 (keputusan pemilik A1-6, rancangan batal & tutup sisa §5.9) — komisi barang yang tidak jadi dikirim dipotong
-    di BULAN PENUTUPAN, bulan yang sudah berakrual tidak berubah:
-      * pesanan mati ikut dihitung hanya bila uang mukanya sudah dipindah ke titipan (`_ikut_komisi`), dan hanya di
-        periode yang ada uangnya; pesanan tutup sisa memakai dasar ASLI di setiap periode (`_dasar_komisi`);
-      * baris bayar `moved_to_deposit` di periode dibersihkan dengan bayar biasa periode itu; sisa negatif → baris
-        koreksi `commission_rules.hitung_koreksi` (potret aturan yang sama, tidak dipotong nol) per pesanan, berkode
-        `koreksi_batal` / `koreksi_tutup_sisa` (+ `order_id`, `order_number`, label pesanan & alasannya);
+    BTP-5 (keputusan pemilik A1-6, rancangan batal & tutup sisa §5.9, ruling R16) — komisi barang yang tidak jadi
+    dikirim dipotong di BULAN PERISTIWA (batal / tutup sisa); bulan yang sudah FINAL sebelum peristiwa tidak berubah:
+      * pesanan mati ikut dihitung hanya bila uang mukanya sudah dipindah ke titipan (`_ikut_komisi`); peristiwa &
+        waktunya: `_peristiwa`;
+      * tiap baris bayar dinilai menurut bulannya (`_bagian_peristiwa`): bulan final sebelum peristiwa
+        (`commission_rules.penilai_final`) → dasar ASLI (`_dasar_komisi`); belum final → dasar sesudah peristiwa
+        (batal: tidak berkomisi; tutup sisa: baris & nilai sekarang). Baris `moved_to_deposit` hanya penanda;
+      * koreksi di periode yang memuat waktu peristiwa = −(komisi dasar asli − komisi dasar baru) atas bayar bulan-bulan
+        final, per artikel per pesanan (`commission_rules.hitung_koreksi` untuk sisi asli: potret aturan yang sama,
+        tidak dipotong nol), berkode `koreksi_batal` / `koreksi_tutup_sisa` (+ `order_id`, `order_number`, label);
       * per sales per PT: `total_incentive = max(0, commission_raw + carry_in)`, `carry_out = min(0, …)`; `carry_in` =
         `carry_out` bulan sebelumnya di `commission_carry_balances` (`commission_rules.saldo_potongan_awal`; ditulis
         saat bulan itu difinalkan — akrual/gaji, `catat_saldo_potongan`); "Semua PT" = jumlah per PT.
@@ -544,6 +608,7 @@ async def _compute_commission_per_sku(
     total = 0.0
     projection_full = 0.0
     mentah_pt: Dict[str, float] = {}   # BTP-5 — komisi mentah per PT pesanan (saldo potongan per sales per PT)
+    nilai_final = penilai_final(sales_id, entity_id)   # BTP-5 (R16) — bulan bayar sudah final sebelum peristiwa?
 
     for o in live:
         # F-4c — bobot atribusi insentif untuk sales_id pada order ini.
@@ -560,71 +625,79 @@ async def _compute_commission_per_sku(
             weight = 1.0
         if weight <= 0:
             continue
-        lines, gt, ditutup = _dasar_komisi(o)   # BTP-5 — tutup sisa: dasar ASLI di setiap periode
-        if gt <= 0:
-            continue
-        biasa, pindah = _uang_periode(o, period)
-        paid_in_period = biasa + pindah
-        if pindah:
-            # BTP-5 (A1-6) — uang yang pindah ke titipan di periode ini: dulu dihitung sebagai bayar negatif lalu
-            # dipotong nol (koreksinya hilang). Kini dibersihkan dengan bayar biasa periode yang sama; sisa negatif =
-            # koreksi.
-            bersih = max(biasa, 0.0) + pindah
-            frac_paid = min(bersih / gt, 1.0) if bersih > 0 else 0.0
-            frac_koreksi = min(-bersih / gt, 1.0) if bersih < 0 else 0.0
-        else:
-            frac_paid, frac_koreksi = min(biasa / gt, 1.0), 0.0
-        mati = o.get("status") in DEAD_STATUSES
-        if mati and not frac_paid and not frac_koreksi:
-            continue   # pesanan batal hanya muncul di bulan yang ada uangnya
-        order_in_period = _in_period(o.get("created_at"), period)
-        contributes = not mati and (order_in_period or paid_in_period > 0)
-        kode_koreksi = KOREKSI_TUTUP_SISA if ditutup else KOREKSI_BATAL
         ent_o = o.get("entity_id") or ""
-        for line in lines:
-            base_qty = _qty_dasar(line)
-            if base_qty <= 0:
+        order_in_period = _in_period(o.get("created_at"), period)
+        peristiwa = _peristiwa(o)
+        mati = o.get("status") in DEAD_STATUSES
+        if not peristiwa:   # pesanan biasa — persis seperti dulu
+            gt = _order_grand_total(o)
+            if gt <= 0:
                 continue
-            aturan = await ambil_aturan(line)
-            tarif = (aturan or {}).get("tarif")
-            if not tarif or float(tarif.get("per_unit_amount", 0) or 0) <= 0:
-                continue   # tanpa tarif (dipotret kosong / ≤ 0) = tanpa komisi, seperti dulu
-            cost, cost_known = await cost_for_line(line, line.get("product_id"))
-            hitung = hitung_koreksi if frac_koreksi else hitung_baris
-            h = hitung(aturan, line, fraksi=frac_koreksi or frac_paid, bobot=weight, biaya=cost,
-                       biaya_diketahui=cost_known, pengali_capaian=faktor_capaian)
-            total += h["komisi"]
-            mentah_pt[ent_o] = mentah_pt.get(ent_o, 0.0) + h["komisi"]
-            if contributes and not ditutup:
-                projection_full += abs(h["komisi_penuh"])
+            paid_in_period = sum(
+                float(p.get("amount", 0) or 0) for p in (o.get("payments") or [])
+                if _in_period(p.get("created_at") or p.get("date"), period)
+            )
+            bagian: List[Tuple[Optional[str], List[Dict[str, Any]], float]] = [
+                (None, o.get("items") or [], min(paid_in_period / gt, 1.0))]
+            contributes = order_in_period or paid_in_period > 0
+        else:   # BTP-5 (A1-6, R16) — pesanan batal sesudah bayar / tutup sisa
+            kode_koreksi, waktu = peristiwa
+            bagian, paid_in_period = await _bagian_peristiwa(o, kode_koreksi, waktu, period, nilai_final)
+            if not bagian:
+                if mati:
+                    continue   # pesanan batal hanya muncul di periode yang ada komisinya
+                bagian = [(None, _dasar_komisi(o)[0], 0.0)]   # pesanan hidup tanpa uang di periode ini: baris 0
+            contributes = not mati and (order_in_period or paid_in_period > 0)
+        for jenis, lines, fraksi in bagian:
+            for line in lines:
+                base_qty = _qty_dasar(line)
+                if base_qty <= 0:
+                    continue
+                aturan = await ambil_aturan(line)
+                tarif = (aturan or {}).get("tarif")
+                if not tarif or float(tarif.get("per_unit_amount", 0) or 0) <= 0:
+                    continue   # tanpa tarif (dipotret kosong / ≤ 0) = tanpa komisi, seperti dulu
+                cost, cost_known = await cost_for_line(line, line.get("product_id"))
+                hitung = hitung_koreksi if jenis == "asli" else hitung_baris
+                h = hitung(aturan, line, fraksi=fraksi, bobot=weight, biaya=cost, biaya_diketahui=cost_known,
+                           pengali_capaian=faktor_capaian)
+                total += h["komisi"]
+                mentah_pt[ent_o] = mentah_pt.get(ent_o, 0.0) + h["komisi"]
+                if contributes and not peristiwa:
+                    projection_full += h["komisi_penuh"]
 
-            # Rincian per artikel (tanpa angka margin/HPP): gabung per artikel (atau SKU bila tanpa artikel) × tarif ×
-            # pengali harga & alasannya × dibatasi × asal tarif. BTP-5 — baris koreksi terpisah per pesanan.
-            artikel = aturan.get("artikel") or {}
-            tpl = artikel.get("id") or ""
-            asal = _asal_tarif(tarif)
-            key = (("artikel", tpl) if tpl else ("sku", line.get("sku", "")), h["tarif"], h["pengali_harga"],
-                   h["alasan_harga"], h["dibatasi"], asal)
-            if frac_koreksi:
-                key = ("koreksi", kode_koreksi, o.get("id")) + key
-            b = breakdown.setdefault(key, {
-                "category": line.get("category", ""), "sku": artikel.get("kode") or line.get("sku", ""),
-                "name": artikel.get("nama") or line.get("product_name", ""), "template_id": tpl,
-                "qty_base": 0.0, "unit": line.get("base_unit") or "", "commission": 0.0, "rate": h["tarif"], "rate_origin": asal,
-                "price_factor": h["pengali_harga"], "price_reason": h["alasan_harga"], "price_reason_label": "",
-                "achievement_factor": h["pengali_capaian"], "capped": h["dibatasi"], "_selisih": set(),
-            })
-            if frac_koreksi and "_label" not in b:
-                kata = "kedaluwarsa" if o.get("status") == "expired" else "dibatalkan"
-                b.update({"price_reason": kode_koreksi, "order_id": o.get("id") or "",
-                          "order_number": o.get("number") or o.get("id") or "",
-                          "_label": label_koreksi(kode_koreksi, o.get("number") or o.get("id") or "", kata)})
-            b["qty_base"] += h["qty_dasar_terbayar"] * weight
-            b["commission"] += h["komisi"]
-            if h["selisih_pct"] is not None:
-                b["_selisih"].add(h["selisih_pct"])
-        if contributes and ditutup:   # proyeksi pesanan tutup sisa = barang yang terkirim (baris sekarang)
-            for line in o.get("items") or []:
+                # Rincian per artikel (tanpa angka margin/HPP): gabung per artikel (atau SKU bila tanpa artikel) × tarif
+                # × pengali harga & alasannya × dibatasi × asal tarif. BTP-5 — baris koreksi terpisah per pesanan
+                # (bagian dasar asli − dan dasar baru + digabung per artikel).
+                artikel = aturan.get("artikel") or {}
+                tpl = artikel.get("id") or ""
+                asal = _asal_tarif(tarif)
+                barang = ("artikel", tpl) if tpl else ("sku", line.get("sku", ""))
+                if jenis:
+                    key = ("koreksi", peristiwa[0], o.get("id"), barang, h["tarif"], h["pengali_harga"], asal)
+                else:
+                    key = (barang, h["tarif"], h["pengali_harga"], h["alasan_harga"], h["dibatasi"], asal)
+                b = breakdown.setdefault(key, {
+                    "category": line.get("category", ""), "sku": artikel.get("kode") or line.get("sku", ""),
+                    "name": artikel.get("nama") or line.get("product_name", ""), "template_id": tpl,
+                    "qty_base": 0.0, "unit": line.get("base_unit") or "", "commission": 0.0, "rate": h["tarif"],
+                    "rate_origin": asal,
+                    "price_factor": h["pengali_harga"], "price_reason": h["alasan_harga"], "price_reason_label": "",
+                    "achievement_factor": h["pengali_capaian"], "capped": h["dibatasi"], "_selisih": set(),
+                })
+                if jenis and "_label" not in b:
+                    kata = "kedaluwarsa" if o.get("status") == "expired" else "dibatalkan"
+                    nomor = o.get("number") or o.get("id") or ""
+                    b.update({"price_reason": peristiwa[0], "order_id": o.get("id") or "", "order_number": nomor,
+                              "_label": label_koreksi(peristiwa[0], nomor, kata)})
+                if jenis:
+                    b["capped"] = bool(b["capped"] or h["dibatasi"])
+                b["qty_base"] += h["qty_dasar_terbayar"] * weight
+                b["commission"] += h["komisi"]
+                if h["selisih_pct"] is not None:
+                    b["_selisih"].add(h["selisih_pct"])
+        if contributes and peristiwa and peristiwa[0] == KOREKSI_TUTUP_SISA:
+            for line in o.get("items") or []:   # proyeksi pesanan tutup sisa = barang yang terkirim (baris sekarang)
                 if _qty_dasar(line) <= 0:
                     continue
                 aturan = await ambil_aturan(line)
@@ -635,6 +708,11 @@ async def _compute_commission_per_sku(
                 penuh = hitung_baris(aturan, line, fraksi=1.0, bobot=weight, biaya=cost, biaya_diketahui=cost_known,
                                      pengali_capaian=faktor_capaian)
                 projection_full += penuh["komisi_penuh"]
+
+    # BTP-5 — baris koreksi yang bersih 0 (dasar asli = dasar baru) tidak ditampilkan
+    for k in [k for k, r in breakdown.items()
+              if "_label" in r and abs(r["commission"]) < 0.005 and abs(r["qty_base"]) < 0.005]:
+        del breakdown[k]
 
     target_collection = await _target_collection_for(sales_id, period, entity_id)
     achievement = (kpi["total_collected"] / target_collection * 100) if target_collection else 0

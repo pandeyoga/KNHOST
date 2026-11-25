@@ -309,7 +309,8 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
     from services.incentive_payroll import akru
     commission, _lembar = commission_parts(slips)
     incentive_je_id = ""
-    if commission > 0.005 and akru(run.get("commission_mode", "accrue_then_settle")):
+    lewat_akrual = commission > 0.005 and akru(run.get("commission_mode", "accrue_then_settle"))
+    if lewat_akrual:
         # Pelatihan 18 Nov (uji variasi V7) — `post_incentive_accrual(total=…)` menyamakan akrual PT·periode dengan
         # `total`. Dulu `total` = komisi proses INI saja: proses susulan kedua di bulan yang sama "mengoreksi" akrual
         # turun/naik ke komisi susulan itu, padahal jurnal gajinya tetap mendebit Hutang Insentif sebesar komisinya →
@@ -327,17 +328,18 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
         if not incentive_je_id:
             st = await gl.incentive_accrual_status(run["entity_id"], run["period"])
             incentive_je_id = st.get("journal_id") or ""
-    elif akru(run.get("commission_mode", "accrue_then_settle")):
-        # BTP-5 (A1-6, R13) — komisi slip proses ini 0 (mis. habis dipotong koreksi komisi): tidak ada akrual, tetapi
-        # gaji bulan ini tetap memfinalkan komisinya → saldo potongan dari hasil mesin slip dicatat supaya terbawa ke
-        # bulan berikutnya. Galatnya menggagalkan posting (ulang dari panel aman: catatan = upsert).
-        from services.commission_rules import catat_saldo_potongan
-        st = await gl.incentive_accrual_status(run["entity_id"], run["period"])
-        await catat_saldo_potongan(run["entity_id"], run["period"], _rincian_komisi_slip(list(slips)),
-                                   oleh=created_by, sumber="slip_gaji", journal_id=st.get("journal_id") or "")
     je = await gl.post_payroll_run(run, slips, created_by, date=date)
     if je:
         je["incentive_journal_id"] = incentive_je_id
+        if not lewat_akrual:
+            # BTP-5 (A1-6, R13/R17) — tanpa akrual (mode `pay_on_invoice`: komisi slip dibebankan langsung lewat jurnal
+            # gaji; atau mode akru dengan komisi slip 0, mis. habis dipotong koreksi) gaji ini tetap MEMFINALKAN komisi
+            # bulan itu → catatan finalisasi + saldo potongan dari hasil mesin slip (`commission_engine`; slip tanpa
+            # mesin dilewati), bertaut jurnal GAJI: proses dianulir (jurnalnya dibalik) → catatannya tidak dibaca.
+            # Ditulis sesudah jurnal gaji berhasil; galatnya menggagalkan posting (ulang aman: catatan = upsert).
+            from services.commission_rules import catat_saldo_potongan
+            await catat_saldo_potongan(run["entity_id"], run["period"], _rincian_komisi_slip(list(slips)),
+                                       oleh=created_by, sumber="slip_gaji", journal_id=je.get("id") or "")
     return je
 
 

@@ -596,27 +596,71 @@ def bulan_awal_periode(period: Any) -> Optional[str]:
     return daftar[0] if daftar else None
 
 
-#: BTP-5 (A1-6, ruling R13) — SATU tempat saldo potongan komisi: satu dokumen per (PT, sales, bulan), indeks wajib
-#: `uq_commission_carry`. Ditulis setiap kali komisi bulan itu difinalkan untuk PT itu (`catat_saldo_potongan`), dibaca
-#: mesin bulan berikutnya (`saldo_potongan_awal`).
+#: BTP-5 (A1-6, ruling R13/R16/R17) — SATU tempat finalisasi komisi per (PT, sales, bulan) + saldo potongannya:
+#: indeks wajib `uq_commission_carry`. Ditulis setiap kali komisi bulan itu difinalkan untuk PT itu
+#: (`catat_saldo_potongan`); dibaca mesin untuk saldo masuk bulan berikutnya (`saldo_potongan_awal`) dan untuk menilai
+#: apakah bulan bayar sebuah pesanan sudah final sebelum pesanan itu batal / ditutup sisanya (`penilai_final`).
 KOLEKSI_SALDO = "commission_carry_balances"
 
 
-async def _saldo_berlaku(doc: Dict[str, Any]) -> bool:
-    """Catatan saldo berlaku bila bulannya difinalkan tanpa jurnal akrual (total PT 0, `journal_id` kosong) atau jurnal
-    akrual yang dicatatnya masih hidup. Akrual dianulir → saldonya TIDAK dibaca sampai bulan itu difinalkan lagi."""
+async def catatan_berlaku(doc: Dict[str, Any]) -> bool:
+    """Finalisasi yang dicatat masih berlaku: tanpa jurnal (`journal_id` kosong — bulan bertotal 0 diakru tanpa jurnal),
+    atau jurnal yang dicatatnya (akrual insentif, atau jurnal gaji pada mode tanpa akrual mis. `pay_on_invoice`) masih
+    hidup: tidak `void` dan belum dibalik (`gl_service.reversal_of` — anulir proses gaji membalik jurnal gajinya).
+    Tidak berlaku → saldo & status final bulan itu TIDAK dibaca sampai bulan itu difinalkan lagi."""
     jid = (doc or {}).get("journal_id") or ""
     if not jid:
         return True
     from db import db
-    return bool(await db.journal_entries.find_one({"id": jid, "source_type": "incentive_accrual",
-                                                   "status": {"$ne": "void"}}, {"_id": 0, "id": 1}))
+    from services.gl_service import reversal_of   # lokal: gl_service memanggil modul ini
+    je = await db.journal_entries.find_one({"id": jid, "status": {"$ne": "void"}}, {"_id": 0})
+    return bool(je) and not await reversal_of(je)
+
+
+def _sebelum(a: Any, b: Any) -> bool:
+    """Waktu ISO `a` lebih awal dari `b` (zona ikut; tanpa zona = UTC). Salah satu kosong/tak terbaca → False."""
+    from datetime import timezone
+
+    def _baca(v: Any) -> Optional[datetime]:
+        try:
+            d = datetime.fromisoformat(str(v).strip().replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return None
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+    da, db_ = _baca(a), _baca(b)
+    return bool(da and db_ and da < db_)
+
+
+def penilai_final(sales_id: str, entity_id: Optional[str]):
+    """BTP-5 (R16) — `async (pt, bulan, waktu) -> bool`: komisi bulan `bulan` sales ini di PT `pt` sudah FINAL sebelum
+    `waktu` — ada catatan finalisasi (`commission_carry_balances`) yang `finalized_at`-nya (diisi sekali, saat pertama
+    dicatat) lebih awal dari `waktu` DAN finalisasinya masih berlaku (`catatan_berlaku`). Catatan dimuat sekali per
+    proses hitung (hanya bila dipanggil: sales tanpa pesanan batal/tutup sisa tidak membaca apa pun)."""
+    cache: Dict[str, Any] = {}
+
+    async def _final(pt: str, bulan: str, waktu: str) -> bool:
+        if "doc" not in cache:
+            from db import db
+            q: Dict[str, Any] = {"sales_id": sales_id}
+            if entity_id and entity_id != "all":
+                q["entity_id"] = entity_id
+            cache["doc"] = {(d.get("entity_id") or "", d.get("period") or ""): d
+                            async for d in db[KOLEKSI_SALDO].find(q, {"_id": 0})}
+            cache["sah"] = {}
+        d = cache["doc"].get((pt or "", bulan or ""))
+        if not d or not _sebelum(d.get("finalized_at"), waktu):
+            return False
+        jid = d.get("journal_id") or ""
+        if jid not in cache["sah"]:
+            cache["sah"][jid] = await catatan_berlaku(d)
+        return cache["sah"][jid]
+    return _final
 
 
 async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[str]) -> Dict[str, float]:
     """BTP-5 (A1-6) — saldo potongan komisi yang terbawa ke periode ini, per PT: `carry_out` sales itu di
     `commission_carry_balances` bulan SEBELUM bulan pertama periode, PT yang sama, hanya catatan yang berlaku
-    (`_saldo_berlaku`) dan hanya angka negatif; tidak ada → `{}` (saldo 0). PT tertentu → satu PT; "Semua PT"/kosong →
+    (`catatan_berlaku`) dan hanya angka negatif; tidak ada → `{}` (saldo 0). PT tertentu → satu PT; "Semua PT"/kosong →
     setiap PT yang menyimpan saldo sales itu (dijumlah pemanggil per PT)."""
     awal = bulan_awal_periode(period)
     if not awal or not sales_id:
@@ -628,7 +672,7 @@ async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[st
         q["entity_id"] = entity_id
     out: Dict[str, float] = {}
     async for doc in db[KOLEKSI_SALDO].find(q, {"_id": 0}):
-        if await _saldo_berlaku(doc):
+        if await catatan_berlaku(doc):
             ent = doc.get("entity_id") or ""
             out[ent] = round(out.get(ent, 0.0) + float(doc.get("carry_out") or 0), 2)
     return out
@@ -636,12 +680,13 @@ async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[st
 
 async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[Iterable[Dict[str, Any]]], *,
                                oleh: str, sumber: str, journal_id: str = "") -> int:
-    """BTP-5 (A1-6, R13) — catat saldo potongan komisi per sales untuk PT·bulan yang komisinya DIFINALKAN: akrual manual
-    (juga bila total PT 0 dan tanpa jurnal) dan posting gaji (dari hasil mesin di slip). `rincian` = baris per sales
-    yang membawa hasil mesin (`carry_out`, + `commission_raw`, `carry_in`, `total`); baris tanpa `carry_out` / bergalat
-    dilewati. Saldo negatif → upsert; saldo 0 → hanya memperbarui catatan yang sudah ada (koreksi akrual menghabiskan
-    saldo), tanpa membuat dokumen baru. Ulang finalisasi = upsert, jadi catatan tidak pernah basi. `journal_id` = jurnal
-    akrual hidup PT·bulan itu saat dicatat ("" bila tidak ada). → jumlah catatan yang ditulis."""
+    """BTP-5 (A1-6, R13/R16/R17) — catat finalisasi komisi per sales untuk PT·bulan yang komisinya DIFINALKAN: akrual
+    manual (juga bila total PT 0 dan tanpa jurnal), posting gaji (dari hasil mesin di slip, SEMUA mode gaji yang
+    menjalankan mesin), dan setiap akrual diulang. `rincian` = baris per sales yang membawa hasil mesin (`carry_out`,
+    + `commission_raw`, `carry_in`, `total`); baris tanpa `carry_out` / bergalat dilewati. Upsert untuk setiap sales
+    (juga saldo 0 — catatan menandai bulan itu final); `finalized_at` diisi SEKALI saat catatan pertama dibuat dan tidak
+    pernah ditimpa. `journal_id` = jurnal finalisasi (akrual insentif, atau jurnal gaji pada mode tanpa akrual); ""
+    bila tidak ada. Pemanggil menulis SESUDAH jurnalnya berhasil. → jumlah catatan yang ditulis."""
     from pymongo.errors import DuplicateKeyError
     from core_utils import new_id, now_iso
     from db import db
@@ -653,21 +698,19 @@ async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[It
         sid = r.get("sales_id") or ""
         if not sid or r.get("galat") or r.get("carry_out") is None:
             continue
-        carry = round(float(r.get("carry_out") or 0), 2) or 0.0
         q = {"entity_id": entity_id, "sales_id": sid, "period": bulan}
-        isi = {"carry_out": carry, "carry_in": round(float(r.get("carry_in") or 0), 2) or 0.0,
+        sekarang = now_iso()
+        isi = {"carry_out": round(float(r.get("carry_out") or 0), 2) or 0.0,
+               "carry_in": round(float(r.get("carry_in") or 0), 2) or 0.0,
                "commission_raw": round(float(r.get("commission_raw") or 0), 2) or 0.0,
                "total": round(float(r.get("total") or 0), 2), "source": sumber, "journal_id": journal_id or "",
-               "recorded_at": now_iso(), "recorded_by": oleh or ""}
-        if carry < 0:
-            try:
-                await db[KOLEKSI_SALDO].update_one(q, {"$set": isi, "$setOnInsert": {"id": new_id("cmsb")}},
-                                                   upsert=True)
-            except DuplicateKeyError:   # dua finalisasi bersamaan: dokumen pemenang diperbarui
-                await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})
-            ditulis += 1
-        elif (await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})).matched_count:
-            ditulis += 1
+               "recorded_at": sekarang, "recorded_by": oleh or ""}
+        try:
+            await db[KOLEKSI_SALDO].update_one(
+                q, {"$set": isi, "$setOnInsert": {"id": new_id("cmsb"), "finalized_at": sekarang}}, upsert=True)
+        except DuplicateKeyError:   # dua finalisasi bersamaan: dokumen pemenang diperbarui (finalized_at tetap)
+            await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})
+        ditulis += 1
     return ditulis
 
 
