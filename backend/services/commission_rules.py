@@ -617,26 +617,61 @@ async def catatan_berlaku(doc: Dict[str, Any]) -> bool:
     return bool(je) and not await reversal_of(je)
 
 
+def _baca_waktu(v: Any) -> Optional[datetime]:
+    """Waktu ISO → `datetime` berzona (tanpa zona = UTC); kosong/tak terbaca → None."""
+    from datetime import timezone
+    try:
+        d = datetime.fromisoformat(str(v).strip().replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
 def _sebelum(a: Any, b: Any) -> bool:
     """Waktu ISO `a` lebih awal dari `b` (zona ikut; tanpa zona = UTC). Salah satu kosong/tak terbaca → False."""
-    from datetime import timezone
-
-    def _baca(v: Any) -> Optional[datetime]:
-        try:
-            d = datetime.fromisoformat(str(v).strip().replace("Z", "+00:00"))
-        except (TypeError, ValueError):
-            return None
-        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
-    da, db_ = _baca(a), _baca(b)
+    da, db_ = _baca_waktu(a), _baca_waktu(b)
     return bool(da and db_ and da < db_)
 
 
+def _paling_awal(waktu: Iterable[Any]) -> str:
+    """Waktu ISO paling awal dari `waktu` (yang tak terbaca dilewati); "" bila tidak ada."""
+    terbaca = [(d, str(v)) for v in waktu for d in (_baca_waktu(v),) if d]
+    return min(terbaca)[1] if terbaca else ""
+
+
+async def waktu_final_cadangan(entity_id: str, bulan: str) -> str:
+    """BTP-5 (ruling R25, tinjauan akhir I1) — waktu final CADANGAN komisi PT·bulan untuk bulan yang difinalkan sebelum
+    catatan finalisasi ada (data sebelum rilis cabang ini): `created_at` paling awal dari jurnal akrual insentif
+    (`incentive_accrual`, kunci `PT:bulan`) yang hidup, atau jurnal gaji (`payroll_run` — kunci proses gaji PT·bulan
+    itu, atau kunci lama `PT:bulan`) yang terposting. "Hidup/terposting" = tidak `void` dan belum dibalik
+    (`gl_service.reversal_of`, sama dengan `catatan_berlaku`). Tidak ada keduanya → "" (belum final). Hanya membaca —
+    tidak ada catatan yang ditulis (tanpa backfill)."""
+    if not entity_id or entity_id == "all" or not bulan:
+        return ""
+    from db import db
+    from services.gl_service import reversal_of   # lokal: gl_service memanggil modul ini
+    kunci = f"{entity_id}:{bulan}"
+    proses = [r["id"] async for r in db.hr_payroll_runs.find({"entity_id": entity_id, "period": bulan},
+                                                              {"_id": 0, "id": 1}) if r.get("id")]
+    calon: List[str] = []
+    async for je in db.journal_entries.find(
+            {"status": {"$ne": "void"}, "$or": [
+                {"source_type": "incentive_accrual", "source_id": kunci},
+                {"source_type": "payroll_run", "source_id": {"$in": [kunci, *proses]}}]},
+            {"_id": 0}):
+        if je.get("created_at") and not await reversal_of(je):
+            calon.append(je["created_at"])
+    return _paling_awal(calon)
+
+
 def penilai_final(sales_id: str, entity_id: Optional[str]):
-    """BTP-5 (R16/R19) — `async (pt, bulan, waktu) -> bool`: komisi bulan `bulan` sales ini di PT `pt` sudah FINAL
+    """BTP-5 (R16/R19/R25) — `async (pt, bulan, waktu) -> bool`: komisi bulan `bulan` sales ini di PT `pt` sudah FINAL
     sebelum `waktu` — ada catatan finalisasi (`commission_carry_balances`) yang `finalized_at`-nya (saat angka yang
     difinalkan dihitung, `catat_saldo_potongan`) lebih awal dari `waktu` DAN finalisasinya masih berlaku
-    (`catatan_berlaku`). Catatan dimuat sekali per proses hitung (hanya bila dipanggil: sales tanpa pesanan batal/tutup
-    sisa tidak membaca apa pun)."""
+    (`catatan_berlaku`). R25 — TANPA catatan sama sekali untuk (PT, sales, bulan) (bulan yang difinalkan sebelum
+    rilis): final sejak `waktu_final_cadangan` (jurnal akrual hidup / jurnal gaji terposting PT·bulan itu, paling awal);
+    catatan yang ada selalu menang atas cadangan. Catatan dimuat sekali per proses hitung (hanya bila dipanggil: sales
+    tanpa pesanan batal/tutup sisa tidak membaca apa pun); cadangan sekali per PT·bulan."""
     cache: Dict[str, Any] = {}
 
     async def _final(pt: str, bulan: str, waktu: str) -> bool:
@@ -647,9 +682,14 @@ def penilai_final(sales_id: str, entity_id: Optional[str]):
                 q["entity_id"] = entity_id
             cache["doc"] = {(d.get("entity_id") or "", d.get("period") or ""): d
                             async for d in db[KOLEKSI_SALDO].find(q, {"_id": 0})}
-            cache["sah"] = {}
-        d = cache["doc"].get((pt or "", bulan or ""))
-        if not d or not _sebelum(d.get("finalized_at"), waktu):
+            cache["sah"], cache["cadangan"] = {}, {}
+        kunci = (pt or "", bulan or "")
+        d = cache["doc"].get(kunci)
+        if d is None:
+            if kunci not in cache["cadangan"]:
+                cache["cadangan"][kunci] = await waktu_final_cadangan(*kunci)
+            return _sebelum(cache["cadangan"][kunci], waktu)
+        if not _sebelum(d.get("finalized_at"), waktu):
             return False
         jid = d.get("journal_id") or ""
         if jid not in cache["sah"]:
@@ -681,7 +721,7 @@ async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[st
 
 async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[Iterable[Dict[str, Any]]], *,
                                oleh: str, sumber: str, journal_id: str = "") -> int:
-    """BTP-5 (A1-6, R13/R16/R17/R19) — catat finalisasi komisi per sales untuk PT·bulan yang komisinya DIFINALKAN:
+    """BTP-5 (A1-6, R13/R16/R17/R19/R25) — catat finalisasi komisi per sales untuk PT·bulan yang komisinya DIFINALKAN:
     akrual manual (juga bila total PT 0 dan tanpa jurnal), posting gaji (dari hasil mesin di slip, SEMUA mode gaji yang
     menjalankan mesin), dan setiap akrual diulang. `rincian` = baris per sales yang membawa hasil mesin (`carry_out`,
     + `commission_raw`, `carry_in`, `total`, `computed_at`); baris tanpa `carry_out` / bergalat dilewati. Upsert untuk
@@ -691,6 +731,8 @@ async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[It
     dihitung ulang, atau hitung mesin saat akrual; tanpa itu = sekarang). Ditimpa HANYA bila finalisasi lama catatan itu
     sudah tidak berlaku saat ditulis (`catatan_berlaku`: jurnalnya `void` / dibalik); selama finalisasi lama masih
     berlaku, `finalized_at` tidak pernah ditimpa (finalisasi ulang = koreksi atas angka yang sama-sama sudah final).
+    R25 — catatan PERTAMA (belum pernah ada) memakai waktu paling awal dari `computed_at` dan `waktu_final_cadangan`
+    (bulan yang difinalkan sebelum rilis tetap final sejak jurnal akrual/gajinya).
     `journal_id` = jurnal finalisasi (akrual insentif, atau jurnal gaji pada mode tanpa akrual); "" bila tidak ada.
     Pemanggil menulis SESUDAH jurnalnya berhasil. → jumlah catatan yang ditulis."""
     from pymongo.errors import DuplicateKeyError
@@ -700,6 +742,7 @@ async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[It
     if not entity_id or entity_id == "all" or not bulan:
         return 0
     ditulis = 0
+    cadangan: Optional[str] = None   # R25 — waktu final cadangan PT·bulan (dibaca sekali, hanya bila perlu)
     for r in rincian or ():
         sid = r.get("sales_id") or ""
         if not sid or r.get("galat") or r.get("carry_out") is None:
@@ -713,6 +756,14 @@ async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[It
                "recorded_at": sekarang, "recorded_by": oleh or ""}
         waktu_final = str(r.get("computed_at") or "") or sekarang
         ada = await db[KOLEKSI_SALDO].find_one(q, {"_id": 0})
+        if ada is None:
+            # R25 — catatan PERTAMA untuk bulan yang sudah difinalkan sebelum rilis (jurnal akrual hidup / jurnal gaji
+            # terposting lebih awal): waktu finalnya tetap waktu cadangan itu — tanpa ini finalisasi ulang membuat bulan
+            # itu berbalik "belum final" (catatan menang atas cadangan). Bulan baru: jurnalnya lahir sesudah angka
+            # dihitung, jadi waktu final tetap `computed_at`.
+            if cadangan is None:
+                cadangan = await waktu_final_cadangan(entity_id, bulan)
+            waktu_final = _paling_awal((waktu_final, cadangan)) or waktu_final
         if ada is not None and await catatan_berlaku(ada):
             await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})   # finalisasi lama masih berlaku: waktu final tetap
         else:

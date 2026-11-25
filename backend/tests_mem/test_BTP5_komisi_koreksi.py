@@ -840,3 +840,93 @@ async def test_BTP5_R19_N2_anulir_lalu_akrual_ulang(db, akun, f):
     apr = await _komisi(s["id"], "2026-04")
     assert (_koreksi(apr), apr["total_incentive"], apr["carry_out"]) == ([], 0, 0)
     assert (await _komisi(s["id"], "2026-03"))["total_incentive"] == 0
+
+
+# ═══ R25 — bulan yang difinalkan SEBELUM rilis (tanpa catatan finalisasi): final sejak jurnal akrual/gaji hidup ═════
+async def test_BTP5_R25_akrual_pra_rilis_tanpa_catatan(klien, db, akun, f, monkeypatch):
+    """I1 tinjauan akhir — data produksi sebelum cabang ini: Oktober sudah diakru (jurnal akrual hidup dibuat 5 Nov),
+    TANPA catatan `commission_carry_balances`. Tutup sisa 20 Nov → Oktober tetap 350.000 (final sejak jurnal akrualnya),
+    November berkoreksi −210.000, dan akrual Oktober diulang (dua kali) tidak membuat jurnal koreksi. Tidak ada data
+    yang ditulis untuk bulan itu selain finalisasi ulang biasa; catatan yang lahir dari finalisasi ulang memakai waktu
+    final yang sama (jurnal akrual), jadi Oktober tidak berbalik menjadi "belum final"."""
+    from services import gl_service as gl
+    s = await _sales(db, akun, "r25")
+    o = await _cbd_kirim_40(klien, db, f, s, monkeypatch)
+    await _tulis_tanggal(db, o["id"], bayar=TGL_BAYAR_OKT, dibuat="2026-10-05T03:00:00+00:00")
+    assert (await _komisi(s["id"], OKT))["total_incentive"] == 350_000
+    await gl.post_incentive_accrual(KSC, OKT, "Uji BTP5", date="2026-10-31")
+    akr = await _akrual_hidup(db, KSC, OKT)
+    await db.journal_entries.update_one({"id": akr["id"]}, {"$set": {"created_at": FINAL_OKT}})
+    await db.commission_carry_balances.delete_many({"sales_id": s["id"]})   # bulan pra-rilis: tanpa catatan
+
+    o = await _tutup_sisa(db, f, o["id"])
+    assert (await _komisi(s["id"], OKT))["total_incentive"] == 350_000, "Oktober final sejak jurnal akrualnya"
+    nov = await _komisi(s["id"], NOV)
+    assert [k["commission"] for k in _koreksi(nov)] == [-210_000], nov["breakdown"]
+    assert await _saldo(db, KSC, s["id"], OKT) is None, "membaca saja — tidak ada catatan yang ditulis"
+    for _ in range(2):
+        assert await gl.post_incentive_accrual(KSC, OKT, "Uji BTP5", date="2026-10-31") is None, "tanpa jurnal koreksi"
+        rec = await _saldo(db, KSC, s["id"], OKT)
+        assert rec and rec["finalized_at"] == FINAL_OKT, "finalisasi ulang memakai waktu final dari jurnal akrual"
+        assert (await _komisi(s["id"], OKT))["total_incentive"] == 350_000
+        assert [k["commission"] for k in _koreksi(await _komisi(s["id"], NOV))] == [-210_000]
+
+
+async def test_BTP5_R25_catatan_menang_dan_jurnal_mati(db, akun, f):
+    """Catatan yang ada selalu menang atas jurnal (catatan final SESUDAH peristiwa → belum final walau jurnal akrual
+    hidup lebih awal); jurnal akrual yang dianulir/dibalik bukan dasar final; tanpa jurnal & tanpa catatan → belum final
+    (perilaku lama)."""
+    from services import commission_rules as cr
+    pt, bulan = KSC, "2026-01"
+    sid = (await _sales(db, akun, "r25b"))["id"]
+    final = cr.penilai_final(sid, pt)
+    assert await final(pt, bulan, TGL_TUTUP) is False, "tanpa jurnal & tanpa catatan"
+    je = {"id": _id("je"), "source_type": "incentive_accrual", "source_id": f"{pt}:{bulan}", "status": "posted",
+          "entity_id": pt, "created_at": "2026-02-05T03:00:00+00:00", "lines": []}
+    await db.journal_entries.insert_one(dict(je))
+    assert await cr.penilai_final(sid, pt)(pt, bulan, "2026-02-20T03:00:00+00:00") is True
+    assert await cr.penilai_final(sid, pt)(pt, bulan, "2026-02-01T03:00:00+00:00") is False, "jurnal sesudah peristiwa"
+    assert await cr.penilai_final(sid, "all")(pt, bulan, "2026-02-20T03:00:00+00:00") is True, "Semua PT"
+    await _finalkan(db, pt, sid, bulan, "2026-02-25T03:00:00+00:00")
+    assert await cr.penilai_final(sid, pt)(pt, bulan, "2026-02-20T03:00:00+00:00") is False, "catatan menang"
+    await db.commission_carry_balances.delete_many({"sales_id": sid})
+    await db.journal_entries.update_one({"id": je["id"]}, {"$set": {"status": "void"}})
+    assert await cr.penilai_final(sid, pt)(pt, bulan, "2026-02-20T03:00:00+00:00") is False, "jurnal void"
+    je2 = {**je, "id": _id("je"), "status": "posted", "reversed_by_entry_id": "je_balik_r25"}
+    await db.journal_entries.insert_one(dict(je2))
+    await db.journal_entries.insert_one({"id": "je_balik_r25", "status": "posted", "source_type": "reversal",
+                                         "created_at": "2026-02-06T03:00:00+00:00", "lines": []})
+    assert await cr.penilai_final(sid, pt)(pt, bulan, "2026-02-20T03:00:00+00:00") is False, "jurnal dibalik"
+
+
+async def test_BTP5_R25_gaji_pay_on_invoice_pra_rilis_tanpa_catatan(klien, db, akun, f, gaji):
+    """Varian gaji (mode `pay_on_invoice`, tanpa akrual): gaji Maret PT Kanda terposting (jurnal gaji dibuat 5 Apr),
+    TANPA catatan finalisasi. Tutup sisa 20 Apr → Maret final sejak jurnal gaji: Maret 350.000, April koreksi −210.000.
+    Proses gaji Maret dianulir (jurnalnya dibalik) → bukan dasar final lagi: Maret dasar baru 140.000, April tanpa
+    koreksi."""
+    from services import config_resolver as resolver
+    mode = "hr.payroll_commission_mode"
+    s = await _sales(db, akun, "r25g", KANDA)
+    await _karyawan(db, s)
+    await resolver.set_value(mode, "pay_on_invoice", scope_type="entity", scope_id=KANDA, actor="uji",
+                             reason="uji BTP5 R25")
+    try:
+        run = await _gaji(klien, gaji["h"], "2026-03")
+        assert run["commission_mode"] == "pay_on_invoice" and await _akrual_hidup(db, KANDA, "2026-03") is None
+        jg = await _jurnal_gaji(db, run)
+        await db.journal_entries.update_one({"id": jg["id"]}, {"$set": {"created_at": _tgl("2026-04", 5)}})
+        await db.commission_carry_balances.delete_many({"sales_id": s["id"]})   # bulan pra-rilis: tanpa catatan
+        await _sisip_tutup_sisa(db, s, f, ent=KANDA, tgl_bayar=_tgl("2026-03"), tgl_tutup=_tgl("2026-04", 20))
+        mar = await _komisi(s["id"], "2026-03", KANDA)
+        assert mar["total_incentive"] == 350_000, mar["breakdown"]
+        apr = await _komisi(s["id"], "2026-04", KANDA)
+        assert [k["commission"] for k in _koreksi(apr)] == [-210_000], apr["breakdown"]
+
+        r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/void", headers=gaji["h"],
+                             json={"reason": "Uji anulir gaji BTP5 R25"})
+        assert r.status_code == 200 and r.json()["status"] == "void", r.text
+        assert (await _komisi(s["id"], "2026-03", KANDA))["total_incentive"] == 140_000, "gaji dianulir: belum final"
+        assert _koreksi(await _komisi(s["id"], "2026-04", KANDA)) == []
+    finally:
+        await resolver.set_value(mode, "accrue_then_settle", scope_type="entity", scope_id=KANDA, actor="uji",
+                                 reason="uji BTP5 R25 selesai")
