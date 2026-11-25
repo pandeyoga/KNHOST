@@ -278,10 +278,13 @@ def _kunci(line: Dict[str, Any]) -> Tuple[str, str]:
     return (str(line.get("source_type") or ""), str(line.get("source_id") or ""))
 
 
-def _gabung(lines: List[Dict[str, Any]], mau: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def _gabung(lines: List[Dict[str, Any]], mau: List[Dict[str, Any]], *,
+            dp_ikut_nilai: bool = False) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Gabungkan baris hasil pembangun ke baris tersimpan (kunci idempotensi = `source_type` + `source_id`). Baris yang
     ada mempertahankan `seq`, `line_id`, `pay_code`; nilai surat jalan & nota debit selalu mengikuti dokumen (jurnal),
-    nilai uang muka hanya bila belum dibayar. Baris mesin yang dokumennya hilang → nilai 0. → (baris, baris baru)."""
+    nilai uang muka hanya bila belum dibayar — KECUALI `dp_ikut_nilai` (pesanan yang sisanya ditutup, BTP-4: nilai
+    pesanan turun ke yang dikirim dan kelebihan uang muka sudah pindah ke titipan, jadi uang muka yang dibayar dulu
+    tidak lagi ditagih penuh). Baris mesin yang dokumennya hilang → nilai 0. → (baris, baris baru)."""
     hasil = [dict(x) for x in lines]
     ada = {_kunci(x): x for x in hasil}
     baru: List[Dict[str, Any]] = []
@@ -297,7 +300,7 @@ def _gabung(lines: List[Dict[str, Any]], mau: List[Dict[str, Any]]) -> Tuple[Lis
             hasil.append(row)
             baru.append(row)
             continue
-        if w["kind"] == KIND_DP and float(cur.get("paid_amount") or 0) > 0.0049:
+        if w["kind"] == KIND_DP and float(cur.get("paid_amount") or 0) > 0.0049 and not dp_ikut_nilai:
             continue   # uang muka yang sudah dibayar tidak disesuaikan
         for f in ("amount", "due_date", "billed_at", "label", "percent", "shipment_ids", "journal_ids",
                   "journal_numbers", "debit_note_number"):
@@ -342,7 +345,9 @@ async def sync_order(order_id: str, *, alasan: str = "") -> Optional[Dict[str, A
         cur = await plans.get(plan["id"])
         if not cur or cur.get("status") == "void":
             return None
-        lines, baru = _gabung(cur.get("lines") or [], mau)
+        # BTP-4 — sisa ditutup: Σ baris = nilai baru (uang muka ikut nilai pesanan yang dikirim; surat jalan penutup
+        # mengambil sisanya di `bangun_baris`). Pesanan lain: perilaku tetap.
+        lines, baru = _gabung(cur.get("lines") or [], mau, dp_ikut_nilai=bool(order.get("closed_short")))
         billed = sum(to_cents(float(x.get("amount") or 0)) for x in lines)
         rev = cur.get("rev")
         res = await db[plans.COLL].update_one({"id": cur["id"], "rev": rev}, {"$set": {

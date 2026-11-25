@@ -7,8 +7,8 @@ dihitung dari jumlah yang dipesan. Sekarang sisanya ditutup:
 
 1. Penolak (versi pertama, §7 butir 9): status bukan `partially_shipped`; Faktur Pajak aktif yang bukan per Surat Jalan;
    nota amandemen / tagihan tambahan; pendapatan berjurnal per pesanan (jalur lama); Surat Jalan yang belum berjurnal;
-   produk sama di dua baris; baris terkirim melebihi pesanan; baris Pesanan Khusus belum terkirim penuh. → 409 berpesan,
-   tanpa satu tulisan pun.
+   rencana cicilan buatan orang yang aktif (jadwalnya tidak ikut nilai baru); produk sama di dua baris; baris terkirim
+   melebihi pesanan; baris Pesanan Khusus belum terkirim penuh. → 409 berpesan, tanpa satu tulisan pun.
 2. Jumlah terkirim per produk = Σ `shipped_qty` tugas outbound pesanan (tugas `cancelled` diabaikan) — sumber yang sama
    dengan `fulfillment_status.recompute_so_status`.
 3. Tugas gudang terbuka: belum mengirim apa pun → `cancelled`; sudah mengirim sebagian → ditutup ke qty terkirimnya
@@ -71,6 +71,8 @@ PESAN_JURNAL_PESANAN = ("Pendapatan pesanan ini dibukukan per pesanan (jurnal la
                         "belum bisa dipakai untuk pesanan seperti ini — hubungi Finance.")
 PESAN_SJ_BELUM_JURNAL = ("Surat Jalan {nomor} belum berjurnal pendapatan. Selesaikan posting gagalnya dulu, lalu tutup "
                          "sisa.")
+PESAN_RENCANA_CICILAN = ("Pesanan ini punya rencana cicilan aktif ({nomor}). Sesuaikan atau batalkan rencana cicilan "
+                         "dulu (Finance), lalu tutup sisa.")
 PESAN_PRODUK_GANDA = ("Produk {produk} ada di lebih dari satu baris pesanan — jumlah terkirimnya tidak bisa dibagi "
                       "otomatis per baris. Minta Admin Sales merapikan pesanan dulu.")
 PESAN_LEBIH_KIRIM = ("Produk {produk} terkirim {kirim:g} {satuan}, lebih banyak dari yang dipesan ({pesan:g} "
@@ -157,6 +159,13 @@ async def _blockers(order: Dict[str, Any], shipped: Dict[str, float]) -> List[st
                 {"_id": 0, "id": 1}):
             out.append(PESAN_SJ_BELUM_JURNAL.format(nomor=sh.get("shipment_no") or sh.get("id")))
             break
+    # Keputusan implementer (fix BTP-4 R10): jadwal termin mesin ikut nilai baru (`billing_schedule_service`), tetapi
+    # rencana cicilan buatan orang sengaja tidak disentuh mesin — menutup sisa diam-diam akan tetap menagih cicilan atas
+    # barang yang tidak dikirim.
+    from services import payment_plan_service as _plans
+    rencana = await _plans.get_manual("sales_order", oid)
+    if rencana:
+        out.append(PESAN_RENCANA_CICILAN.format(nomor=rencana.get("number") or rencana.get("id") or "-"))
     items = order.get("items") or []
     jumlah_baris: Dict[str, int] = {}
     for it in items:

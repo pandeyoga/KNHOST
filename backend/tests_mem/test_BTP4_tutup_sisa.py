@@ -67,7 +67,8 @@ async def _kirim_sebagian(klien, db, siap, monkeypatch, *, qty: float = 100.0, k
                           termin: str = "NET30", bayar_awal: float = 0.0, bayar_sesudah: float = 0.0,
                           ambil_sisa: float = 0.0, satu_tugas: bool = False, backorder: float = 0.0,
                           unit: str = "meter", base_qty: Optional[float] = None,
-                          items: Optional[List[Dict[str, Any]]] = None, **lain) -> Dict[str, Any]:
+                          items: Optional[List[Dict[str, Any]]] = None, gl_harus_posted: bool = True,
+                          **lain) -> Dict[str, Any]:
     """Pesanan `partially_shipped` lewat alur nyata: harga mesin harga, kirim `kirim` m lewat `dispatch_task`."""
     from services import config_service
     from services import shipment_service as shs
@@ -129,7 +130,7 @@ async def _kirim_sebagian(klien, db, siap, monkeypatch, *, qty: float = 100.0, k
 
     monkeypatch.setattr(shs, "ship_order_rolls", _kirim_roll)
     _t, shp = await shs.dispatch_task(t1, kirim, "Gudang Uji")
-    assert shp["gl_status"] == "posted", shp
+    assert shp["gl_status"] == "posted" or not gl_harus_posted, shp
     if bayar_sesudah:
         await _bayar(klien, siap, so, bayar_sesudah)
     o = await _so(db, so)
@@ -484,7 +485,10 @@ async def test_BTP4_galat_sesudah_ditutup_putusan_tetap_tercatat(klien, db, siap
     assert r.status_code == 202, r.text
     req_id = r.json()["request"]["id"]
 
-    async def _rusak(*_a, **_k):
+    asli = scr._sesudah
+
+    async def _rusak(*a, **kw):   # langkah sesudah berjalan (jadwal, audit, notifikasi) lalu galat menyusul
+        await asli(*a, **kw)
         raise RuntimeError("uji: langkah sesudah gagal")
     monkeypatch.setattr(scr, "_sesudah", _rusak)
     fin = await db.users.find_one({"id": siap["fin"]["id"]}, {"_id": 0})
@@ -494,3 +498,105 @@ async def test_BTP4_galat_sesudah_ditutup_putusan_tetap_tercatat(klien, db, siap
     assert o["status"] == "shipped" and o["cancel_request_id"] == req_id and "cancel_request" not in o
     h = o["cancel_requests"][-1]
     assert h["id"] == req_id and h["status"] == "approved" and h["result"]["status"] == "shipped"
+
+
+# ── Perbaikan tinjauan 1 (I1–I3) ─────────────────────────────────────────────────────────────────────────────────────
+async def _jadwal_ikut_nilai(db, so: dict) -> Dict[str, Any]:
+    """Jadwal tagihan termin pesanan yang sisanya ditutup — setara INV-PAY-01/02 untuk satu pesanan: Σ baris = nilai
+    baru = `billed_total`; terbayar per baris ≤ nominal; Σ terbayar ≤ kas nyata pesanan."""
+    from services import payment_plan_service as plans
+    o = await _so(db, so)
+    p = await plans.get_active("sales_order", so["id"])
+    assert p and p["origin"] == "term", p
+    jumlah = round(sum(float(ln.get("amount") or 0) for ln in p["lines"]), 2)
+    assert jumlah == round(o["grand_total"], 2) == round(float(p["billed_total"]), 2), (jumlah, o["grand_total"], p)
+    assert all(float(ln.get("paid_amount") or 0) <= float(ln.get("amount") or 0) + 0.01 for ln in p["lines"])
+    assert round(sum(float(ln.get("paid_amount") or 0) for ln in p["lines"]), 2) <= plans.source_paid(o) + 0.01
+    return p
+
+
+async def _setujui(klien, siap, so: dict):
+    r = await klien.post(f"/api/sales-orders/{so['id']}/cancel-request/decision", headers=siap["hf"],
+                         json={"decision": "approve", "note": "Kelebihan jadi titipan"})
+    assert r.status_code == 200, r.text
+
+
+async def test_BTP4_jadwal_tagihan_cbd_ikut_nilai_baru(klien, db, siap, monkeypatch):
+    """I1 — CBD dibayar 11,1 jt, 40 m terkirim: sesudah tutup sisa uang muka 100 % = nilai baru 4,44 jt, lunas; jadwal
+    tidak lagi menagih 6,66 jt."""
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch, termin="CBD", bayar_awal=11_100_000)
+    assert (await _tutup(klien, siap["hs"], k["so"])).status_code == 202
+    await _setujui(klien, siap, k["so"])
+    p = await _jadwal_ikut_nilai(db, k["so"])
+    assert [(ln["kind"], ln["amount"], ln["paid_amount"], ln["status"]) for ln in p["lines"]] == \
+        [("dp", 4_440_000, 4_440_000, "paid")]
+    assert p["status"] == "closed", "tidak ada baris bersisa bila terbayar = nilai"
+
+
+async def test_BTP4_jadwal_tagihan_dp50_ikut_nilai_baru(klien, db, siap, monkeypatch, capsys):
+    """I1 — DP50 dibayar 5,55 jt, 40 m terkirim: uang muka 50 % × 4,44 jt = 2,22 jt + Surat Jalan penutup 2,22 jt,
+    keduanya lunas (kelebihan 1,11 jt ke titipan). Pemeriksaan INV-PAY-01/02 `verify_data_integrity` hijau untuk semua
+    jadwal modul ini (termasuk pesanan tutup sisa uji-uji sebelumnya)."""
+    import importlib
+    import re
+    import sys
+    from pathlib import Path
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch, termin="DP50", bayar_awal=5_550_000)
+    awal = await _titipan(db, k["cus"])
+    r = await _tutup(klien, siap["hs"], k["so"])
+    assert r.status_code == 202, r.text
+    await _setujui(klien, siap, k["so"])
+    assert await _titipan(db, k["cus"]) == round(awal + 1_110_000, 2)
+    p = await _jadwal_ikut_nilai(db, k["so"])
+    assert [(ln["kind"], ln["amount"], ln["paid_amount"], ln["status"]) for ln in p["lines"]] == \
+        [("dp", 2_220_000, 2_220_000, "paid"), ("shipment", 2_220_000, 2_220_000, "paid")]
+    assert p["status"] == "closed"
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    vdi = importlib.import_module("verify_data_integrity")
+    capsys.readouterr()
+    await vdi.layer_payment_penalty_invariants(db)
+    keluar = re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
+    baris = [ln.strip() for ln in keluar.splitlines() if "INV-PAY-01" in ln or "INV-PAY-02" in ln]
+    assert len(baris) == 2 and all(ln.startswith("[PASS]") for ln in baris), baris
+
+
+async def test_BTP4_jadwal_tempo_tidak_berubah_bentuk(klien, db, siap, monkeypatch):
+    """Pesanan tempo tanpa uang muka: jadwal tetap satu baris per Surat Jalan senilai jurnalnya (= nilai baru)."""
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch)
+    assert (await _tutup(klien, siap["hs"], k["so"])).status_code == 200
+    p = await _jadwal_ikut_nilai(db, k["so"])
+    assert [(ln["kind"], ln["amount"], ln["status"]) for ln in p["lines"]] == [("shipment", 4_440_000, "open")]
+
+
+async def test_BTP4_tolak_rencana_cicilan_manual(klien, db, siap, monkeypatch):
+    """I2 (keputusan implementer R10) — rencana cicilan buatan orang tidak diubah mesin → tutup sisa ditolak."""
+    from pembantu import AKTOR_UJI
+    from services import payment_plan_service as plans
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch)
+    rencana = await plans.create_plan("sales_order", k["so"]["id"], {"mode": "custom", "lines": [
+        {"kind": "installment", "label": "Cicilan 1", "amount": 5_550_000, "due_date": "2026-12-01"},
+        {"kind": "installment", "label": "Cicilan 2", "amount": 5_550_000, "due_date": "2027-01-01"}]}, AKTOR_UJI)
+    assert rencana["origin"] != "term"
+    await _ditolak(klien, db, siap, k["so"], "Sesuaikan atau batalkan rencana cicilan dulu (Finance), lalu tutup sisa.")
+
+
+@pytest.mark.parametrize("gl_status", ["failed", "pending"])
+async def test_BTP4_tolak_surat_jalan_belum_berjurnal(klien, db, siap, monkeypatch, paksa_jurnal_gagal, gl_status):
+    """I3 — jurnal pendapatan Surat Jalan gagal (atau belum dicoba): nilai yang dibukukan belum lengkap → ditolak."""
+    async with paksa_jurnal_gagal("sisip", source_type="shipment_revenue") as gagal:
+        k = await _kirim_sebagian(klien, db, siap, monkeypatch, gl_harus_posted=False)
+    assert gagal and k["shp"]["gl_status"] == "failed", k["shp"]
+    if gl_status == "pending":
+        await db.shipments.update_one({"id": k["shp"]["id"]}, {"$set": {"gl_status": "pending"}})
+    await _ditolak(klien, db, siap, k["so"], f"Surat Jalan {k['shp']['shipment_no']} belum berjurnal pendapatan")
+
+
+async def test_BTP4_surat_jalan_tanpa_jurnal_not_required_lolos(klien, db, siap, monkeypatch):
+    """I3 — Surat Jalan yang memang tidak perlu jurnal (`gl_status = not_required`, nilai nol) tidak menghalangi."""
+    k = await _kirim_sebagian(klien, db, siap, monkeypatch)
+    await db.shipments.insert_one({"id": _id("shp"), "shipment_no": "SJ-BTP4-NOL", "entity_id": KSC,
+                                   "order_id": k["so"]["id"], "order_number": k["so"]["number"],
+                                   "product_id": siap["pid"], "qty": 0.0, "unit": "meter", "status": "dispatched",
+                                   "gl_status": "not_required", "created_at": now_iso()})
+    r = await _tutup(klien, siap["hs"], k["so"])
+    assert r.status_code == 200, r.text
