@@ -36,6 +36,10 @@ const NOOP_NAV = {
   openCustomerCard: () => {},
   openSupplierCard: () => {},
   closeCard: () => {},
+  docPreview: null,
+  previewsEnabled: false,
+  openDocPreview: () => {},
+  closeDocPreview: () => {},
   origin: null,
   goBack: () => {},
   detailBackCount: 0,
@@ -46,6 +50,7 @@ const AppNavContext = createContext(NOOP_NAV);
 
 export function AppNavProvider({ role, onNavigateTo, onOpenDocument, origin = null, onGoBack, children }) {
   const [card, setCard] = useState(null);
+  const [docPreview, setDocPreview] = useState(null);
   const seq = useRef(0);
   // Rincian dokumen yang sedang menampilkan tombol kembali sendiri (`DetailBack`). Selama ada, bilah layar asal
   // (`BackToOriginBar`) tidak dirender sendiri — rincian menggabungkan keduanya jadi SATU baris (cek layar 16 Nov:
@@ -66,6 +71,15 @@ export function AppNavProvider({ role, onNavigateTo, onOpenDocument, origin = nu
     openCustomerCard: (id) => { if (id) { seq.current += 1; setCard({ type: "customer", id, nonce: seq.current }); } },
     openSupplierCard: (id) => { if (id) { seq.current += 1; setCard({ type: "supplier", id, nonce: seq.current }); } },
     closeCard: () => setCard(null),
+    // Meja gelombang 2 — pratinjau dokumen di pop-up: `openDocPreview({docType, docId, number?, entityId?})`;
+    // `DocPreviewHost` (`features/documents/preview/DocPreviewModal.jsx`, dipasang di AppViewRouter) merendernya.
+    // Di luar penyedia `previewsEnabled` = false (`DocLink` tampil sebagai teks biasa).
+    docPreview,
+    previewsEnabled: true,
+    openDocPreview: (target) => {
+      if (target && target.docType && target.docId) { seq.current += 1; setDocPreview({ ...target, nonce: seq.current }); }
+    },
+    closeDocPreview: () => setDocPreview(null),
     canOpen: (view) => !!(role && view && resolveDeepLinkTarget(view, role)),
     openDocument: (link) => onOpenDocument?.(link),
     go: (view, opts = {}) => {
@@ -81,7 +95,7 @@ export function AppNavProvider({ role, onNavigateTo, onOpenDocument, origin = nu
       }
       onNavigateTo?.(view, { preset: opts.preset, tab: opts.tab, navId: opts.navId });
     },
-  }), [role, onNavigateTo, onOpenDocument, card, origin, onGoBack, detailBackCount, registerDetailBack]);
+  }), [role, onNavigateTo, onOpenDocument, card, docPreview, origin, onGoBack, detailBackCount, registerDetailBack]);
   return <AppNavContext.Provider value={value}>{children}</AppNavContext.Provider>;
 }
 
