@@ -8,7 +8,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDateTime, formatPct, formatQty } from "../../utils/formatters";
 import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
-import { listSampleOrders, listSampleOrdersPage, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
+import { listSampleOrders, listSampleOrdersPage, sampleStats, cancelSampleOrder, confirmSampleOrder } from "./sampleApi";
 import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 import { SearchBox, ListToolbar } from "../../components/ListControls";
 import FilterSelect from "../../components/FilterSelect";   // pola UI 16 Nov — saringan dropdown (dulu StatusTabs)
@@ -21,7 +21,8 @@ import CatalogueComponents from "./CatalogueComponents";
 import CuttingDesk from "./CuttingDesk";
 import CuttingLocations from "./CuttingLocations";
 import { can } from "../../config/roles";
-import { askConfirm } from "../../services/confirmService";   // pelatihan 18 Nov (V6) — uang kurang saat ACC bayar
+import SamplePaymentApproveDialog from "./SamplePaymentApproveDialog";   // pelatihan 18 Nov (V6) — uang kurang saat ACC bayar
+import { sampleKurangBayar } from "./samplePayment";
 import ReleaseToWarehouseDialog from "../sales_admin/ReleaseToWarehouseDialog";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
@@ -35,12 +36,7 @@ const FILTERS = [
   { id: "cancelled", label: "Dibatalkan" },
 ];
 
-/** Kekurangan uang sample berbayar: total − uang tercatat (`paid_total` dari kwitansi); 0 bila lunas / gratis. */
-export function sampleKurangBayar(o) {
-  if (!o || o.sample_billing !== "paid") return 0;
-  const k = Math.round(((Number(o.grand_total) || 0) - (Number(o.paid_total) || 0)) * 100) / 100;
-  return k > 0.5 ? k : 0;
-}
+export { sampleKurangBayar } from "./samplePayment";
 
 const CUT = { requested: "menunggu potong", cut: "sudah dipotong", awaiting_internal: "menunggu pembelian internal (stok PT lain)" };
 // UAT 24 Okt (audit UI tahap 2) — G2-19: satu istilah "Katalog" (dulu "Catalogue").
@@ -137,22 +133,10 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
     setBusy(sel.id); setError("");
     try { await fn(); flash(okMsg); await load(); } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(""); }
   };
-  // Pelatihan 18 Nov (uji variasi V6) — dulu [Setujui Pembayaran] tidak menyebut uang yang SUDAH masuk: sample bisa dilepas
-  // ke gudang padahal kwitansinya baru sebagian / belum ada. Kini uang tercatat ditampilkan, dan bila kurang dari total
-  // diminta konfirmasi lebih dulu (keputusan tetap di tangan Finance/Admin Sample — server tidak berubah).
-  const setujuiBayar = async () => {
-    const kurang = sampleKurangBayar(sel);
-    if (kurang > 0) {
-      const ok = await askConfirm({
-        title: "Uang belum lengkap",
-        message: `Uang yang tercatat masuk untuk ${sel.number} baru ${formatCurrency(Number(sel.paid_total) || 0)} dari `
-          + `${formatCurrency(sel.grand_total)} (kurang ${formatCurrency(kurang)}). Tetap setujui pembayaran dan lepas ke gudang?`,
-        confirmLabel: "Tetap setujui", cancelLabel: "Batal", danger: true, testId: "sample-approve-short",
-      });
-      if (!ok) return;
-    }
-    await run(() => approveSamplePayment(sel.id), `${sel.number}: pembayaran disetujui.`);
-  };
+  // Pelatihan 18 Nov (V6) + Meja gelombang 1 (Task 11) — persetujuan bayar lewat satu pop-up pemeriksaan uang masuk
+  // (sama dengan Meja Sample); keputusan tetap di tangan Finance/Admin Sample — server tidak berubah.
+  const [payDlg, setPayDlg] = useState(null);
+  const setujuiBayar = () => setPayDlg(sel);
 
   const bs = stats?.by_status || {};
   const tabBar = (
@@ -283,7 +267,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
                   <button data-testid="sample-detail-approve-payment" className="primary-button" disabled={busy === sel.id} onClick={setujuiBayar}><Banknote size={13} /> Setujui Pembayaran</button>
                 )}
                 {canPay && sel.sample_payment_status === "reapproval_required" && (
-                  <button data-testid="sample-detail-reapprove-payment" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => approveSamplePayment(sel.id), `${sel.number}: tagihan baru ${formatCurrency(sel.grand_total)} disetujui — kiriman dilepas.`)}><Banknote size={13} /> Setujui Ulang Pembayaran ({formatCurrency(sel.grand_total)})</button>
+                  <button data-testid="sample-detail-reapprove-payment" className="primary-button" disabled={busy === sel.id} onClick={setujuiBayar}><Banknote size={13} /> Setujui Ulang Pembayaran ({formatCurrency(sel.grand_total)})</button>
                 )}
                 {canConfirm && sel.status === "approved" && (
                   <button data-testid="sample-detail-confirm" className="primary-button" disabled={busy === sel.id} onClick={() => setForward(sel)}><Scissors size={13} /> Teruskan ke Gudang</button>
@@ -303,6 +287,16 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
           )}
         </aside>
       </div>
+      {payDlg && (
+        <SamplePaymentApproveDialog order={payDlg} onClose={() => setPayDlg(null)}
+          onDone={() => {
+            const o = payDlg; setPayDlg(null);
+            flash(o.sample_payment_status === "reapproval_required"
+              ? `${o.number}: tagihan baru ${formatCurrency(o.grand_total)} disetujui — kiriman dilepas.`
+              : `${o.number}: pembayaran disetujui.`);
+            load();
+          }} />
+      )}
       {forward && (
         <ReleaseToWarehouseDialog mode="forward"
           order={{ id: forward.id, number: forward.number, title: forward.customer_name, entity_id: forward.entity_id, items: forward.items || [] }}

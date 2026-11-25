@@ -39,6 +39,7 @@ test("di atas toleransi: status persetujuan ulang + riwayat + tombol Setujui Ula
   expect(q(host, "sample-detail-payment").textContent).toMatch(/persetujuan ULANG/);
   expect(q(host, "sample-detail-adjustment-0").textContent).toMatch(/Melewati toleransi → persetujuan ulang.*16.67% · toleransi 5%/);
   await act(async () => { q(host, "sample-detail-reapprove-payment").click(); });
+  await act(async () => { document.body.querySelector('[data-testid="sample-approve-submit"]').click(); });
   expect(api.approveSamplePayment).toHaveBeenCalledWith("so1");
   await act(async () => { root.unmount(); });
 });

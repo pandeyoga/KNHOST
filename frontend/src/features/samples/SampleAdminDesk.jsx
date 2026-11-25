@@ -21,7 +21,8 @@ import ReleaseToWarehouseDialog from "../sales_admin/ReleaseToWarehouseDialog";
 import { soTrackerLink } from "../sales_admin/workDeskApi";
 import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { markDeskReturn } from "../desks/deskSession";
-import { sampleDesk, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
+import SamplePaymentApproveDialog from "./SamplePaymentApproveDialog";
+import { sampleDesk, confirmSampleOrder } from "./sampleApi";
 
 const DESK_KEY = "sample_admin";
 const P = "sample-desk";
@@ -43,9 +44,9 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const [loading, setLoading] = useState(true);
   const [refreshingId, setRefreshingId] = useState("");
   const [error, setError] = useState("");
-  const [busyRef, setBusyRef] = useState("");
   const [tick, setTick] = useState(0);
   const [forwardRow, setForwardRow] = useState(null);
+  const [payRow, setPayRow] = useState(null);
 
   // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -74,17 +75,9 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       return;
     }
     if (row.action_kind === "approve_payment") {
-      setBusyRef(row.ref_id); setError("");
-      try {
-        await approveSamplePayment(row.ref_id);
-        // F-15 — persetujuan ULANG (tagihan berubah > toleransi sesudah potong): kiriman sample dilepas
-        const msg = row.badge === "persetujuan ulang"
-          ? `${row.number}: tagihan baru disetujui — kiriman sample dilepas.`
-          : `${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`;
-        toast({ title: msg });
-        reloadQueue(queue?.id);
-      } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); }
-      finally { setBusyRef(""); }
+      setPayRow({ id: row.ref_id, number: row.number, title: row.title, sample_billing: row.sample_billing,
+        grand_total: row.grand_total, paid_total: row.paid_total, sample_payment_status: row.sample_payment_status
+          || (row.badge === "persetujuan ulang" ? "reapproval_required" : ""), _qid: queue?.id });
       return;
     }
     open(sampleLink(row));
@@ -93,7 +86,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const queues = Array.isArray(data?.queues) ? data.queues : [];
   const split = splitPantau(queues, DESK_KEY);
   const card = (q) => (
-    <DeskQueueCard key={q.id} queue={q} loading={loading || refreshingId === q.id} busyRef={busyRef} testPrefix={P}
+    <DeskQueueCard key={q.id} queue={q} loading={loading || refreshingId === q.id} busyRef="" testPrefix={P}
       stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} onAction={handleAction} onOpenFull={(row) => open(sampleLink(row))} />
   );
 
@@ -127,6 +120,17 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       <ErrorNotice message={error} onRetry={() => load()} onDismiss={() => setError("")} testId={`${P}-error`} />
       <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={data?.not_my_desk || []}
         antrean={antrean} pantau={pantau} ready={!loading} onReload={() => { load(); setTick((t) => t + 1); }} />
+      {payRow && (
+        <SamplePaymentApproveDialog order={payRow} onClose={() => setPayRow(null)}
+          onDone={() => {
+            const p = payRow; setPayRow(null);
+            // F-15 — persetujuan ULANG (tagihan berubah > toleransi sesudah potong): kiriman sample dilepas
+            toast({ title: p.sample_payment_status === "reapproval_required"
+              ? `${p.number}: tagihan baru disetujui — kiriman sample dilepas.`
+              : `${p.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.` });
+            reloadQueue(p._qid);
+          }} />
+      )}
       {forwardRow && (
         <ReleaseToWarehouseDialog mode="forward" order={forwardRow}
           run={() => confirmSampleOrder(forwardRow.id)}

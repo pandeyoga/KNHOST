@@ -226,6 +226,7 @@ test("Sample: aksi di tempat → toast + kartu terkait dimuat ulang", async () =
   mockPost.mockResolvedValue({ data: {} });
   await mount(<SampleAdminDesk currentUser={{ permissions: { sample_order: ["view"] } }} onOpenDocument={() => {}} />);
   await klik("sample-desk-action-sos1");
+  await klik("sample-approve-submit");                                // Task 11 — pemeriksaan uang masuk + konfirmasi dulu
   expect(mockPost).toHaveBeenCalledWith("/api/sample-orders/sos1/approve-payment", { note: "" });
   expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringContaining("SOS-1") }));
   expect(q("sample-desk-toast")).toBeNull();
