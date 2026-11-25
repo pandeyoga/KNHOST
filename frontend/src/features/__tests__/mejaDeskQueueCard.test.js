@@ -78,7 +78,7 @@ test("RF#2 — tinggi tetap di semua keadaan; catatan & muat ulang di kaki", asy
   expect(q("g-pager-q1").closest('[data-testid="g-foot-q1"]')).not.toBeNull();
   expect(q("g-truncated-q1").closest('[data-testid="g-foot-q1"]')).not.toBeNull();
   expect(q("g-foot-q1").className).toContain("h-9");
-  expect(q("g-truncated-q1").className).toContain("truncate");
+  expect(q("g-truncated-q1").className).toContain("max-sm:whitespace-normal"); expect(q("g-truncated-q1").className).toContain("sm:truncate");
   for (const p of ["a", "b", "c", "d", "e", "g"]) expect(q(`${p}-foot-q1`)).not.toBeNull();
   // bilah saring tidak membungkus di kartu (≥ 640 px)
   expect(q("g-q-q1-filter").className).toContain("sm:flex-nowrap");

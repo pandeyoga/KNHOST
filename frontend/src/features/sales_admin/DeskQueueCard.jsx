@@ -260,7 +260,7 @@ export default function DeskQueueCard({
         {pg.pager}
         {/* Cek UI UAT v3 — antrean sangat panjang: server mengirim baris tertua dulu (maks. 200). */}
         {truncated && (
-          <span data-testid={`${p}-truncated-${id}`} className="min-w-0 flex-1 truncate text-fs-12 text-kn-warning-text"
+          <span data-testid={`${p}-truncated-${id}`} className="min-w-0 flex-1 text-fs-12 text-kn-warning-text max-sm:whitespace-normal sm:truncate"
             title={`Kartu ini memuat ${rows.length} baris tertua dari ${count}. Selesaikan yang tertua dulu, atau buka layar daftarnya untuk mencari dokumen tertentu.`}>
             {`${rows.length} tertua dari ${count} ditampilkan`}
           </span>

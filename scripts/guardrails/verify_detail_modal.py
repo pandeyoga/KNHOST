@@ -87,6 +87,9 @@ DIBOLEHKAN: Dict[str, str] = {
     "features/sales_admin/SoTrackerCard.jsx":
         "baris Pelacak SO membuka `DeskRowDetail` = `DetailModal` (pop-up rincian meja, rancangan meja §5.1) — "
         "overlay-nya ada di berkas anak features/desks/DeskRowDetail.jsx.",
+    "features/sales/mobile/MobileSalesAdminDesk.jsx":
+        "baris meja HP membuka `DeskRowDetail` = `DetailModal` (layar penuh ≤ 640 px; rancangan meja §5.8) — "
+        "overlay-nya ada di berkas anak features/desks/DeskRowDetail.jsx.",
 }
 
 

@@ -54,10 +54,10 @@ export function MobileMdDesk({ selectedEntity, onOpenRow }) {
       </div>
       {err && <div className="notice-bar danger text-xs" data-testid="m-md-desk-error">{err}</div>}
       <div className="grid grid-cols-2 gap-2">
-        <div className="m-card p-3" data-testid="m-md-metric-open"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">Perlu ditindak</p><p className="text-[20px] font-bold tabular-nums">{total}</p></div>
-        <div className="m-card p-3" data-testid="m-md-metric-oldest"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">Umur tertua</p><p className="text-[20px] font-bold">{oldest ? `${oldest} hari` : "< 1 hari"}</p></div>
+        <div className="m-card p-3" data-testid="m-md-metric-open"><p className="text-fs-12 font-bold uppercase text-[#8E8E93]">Perlu ditindak</p><p className="text-fs-20 font-bold tabular-nums">{total}</p></div>
+        <div className="m-card p-3" data-testid="m-md-metric-oldest"><p className="text-fs-12 font-bold uppercase text-[#8E8E93]">Umur tertua</p><p className="text-fs-20 font-bold">{oldest ? `${oldest} hari` : "< 1 hari"}</p></div>
       </div>
-      <p className="px-0.5 text-[11px] m-muted">Desain → sample/labdip → spesifikasi & produk → PR bahan. Baris dibuka langsung di layar HP-nya.</p>
+      <p className="px-0.5 text-fs-12 m-muted">Desain → sample/labdip → spesifikasi & produk → PR bahan. Baris dibuka langsung di layar HP-nya.</p>
       {loading && !desk && <div className="h-16 animate-pulse rounded-xl bg-[#ECEDF0]" />}
       {queues.map((q) => {
         const Icon = DESK_ICON[q.id] || ClipboardList;
@@ -66,21 +66,21 @@ export function MobileMdDesk({ selectedEntity, onOpenRow }) {
           <div key={q.id} className="m-card overflow-hidden" data-testid={`m-md-queue-${q.id}`}>
             <button className="m-press flex w-full items-center gap-2.5 p-3 text-left" onClick={() => setOpen({ ...open, [q.id]: !isOpen })} data-testid={`m-md-queue-toggle-${q.id}`}>
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#EAF2FF]"><Icon size={16} className="text-[#0058CC]" /></span>
-              <span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">{q.label}</span>{q.value_kind === "money" && <span className="text-[10.5px] m-muted tabular-nums">{formatCurrency(q.total_value || 0)}</span>}</span>
-              <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-bold text-[#0058CC]" data-testid={`m-md-count-${q.id}`}>{q.count || 0}</span>
+              <span className="min-w-0 flex-1"><span className="block text-fs-13 font-bold">{q.label}</span>{q.value_kind === "money" && <span className="text-fs-12 m-muted tabular-nums">{formatCurrency(q.total_value || 0)}</span>}</span>
+              <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-fs-12 font-bold text-[#0058CC]" data-testid={`m-md-count-${q.id}`}>{q.count || 0}</span>
               <ChevronDown size={16} className={`text-[#8E8E93] transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
             {isOpen && (
               <div className="border-t border-[#F2F3F5] px-3">
-                {(q.rows || []).length === 0 && <p className="py-4 text-center text-[11.5px] m-muted">Antrean bersih.</p>}
+                {(q.rows || []).length === 0 && <p className="py-4 text-center text-fs-12 m-muted">Antrean bersih.</p>}
                 {(q.rows || []).map((r) => {
                   const age = ageTone(r.age_days);
                   return (
                     <button key={`${r.ref_type}-${r.ref_id}`} className="m-list-row m-press w-full text-left" onClick={() => onOpenRow(r, q)} data-testid={`m-md-row-${q.id}-${r.ref_id}`}>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5"><span className="text-[12px] font-bold text-[#0058CC]">{r.number}</span>{r.badge && <Pill label={badgeLabel(r.badge)} tone={r.badge} />}<span className={`rounded-full border px-1.5 py-0.5 text-[9.5px] font-bold ${age.cls}`}>{age.label}</span></div>
-                        <p className="truncate text-[12.5px] font-semibold">{r.title}</p>
-                        {r.subtitle && <p className="truncate text-[10.5px] m-muted">{r.subtitle}</p>}
+                        <div className="flex flex-wrap items-center gap-1.5"><span className="text-fs-12 font-bold text-[#0058CC]">{r.number}</span>{r.badge && <Pill label={badgeLabel(r.badge)} tone={r.badge} />}<span className={`rounded-full border px-1.5 py-0.5 text-fs-12 font-bold ${age.cls}`}>{age.label}</span></div>
+                        <p className="truncate text-fs-13 font-semibold">{r.title}</p>
+                        {r.subtitle && <p className="truncate text-fs-12 m-muted">{r.subtitle}</p>}
                       </div>
                       <ChevronRight size={16} className="text-[#C7C7CC]" />
                     </button>
