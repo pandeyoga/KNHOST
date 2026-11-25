@@ -58,7 +58,9 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        # CR-T3 — putusan izin kredit dikirim ulang = satu putusan.
                        "/api/credit-overrides",
                        # KM-T3 (N4) — Meja Insentif: buat lembar, ubah baris, ajukan, sahkan dikirim ulang = satu tulisan.
-                       "/api/incentive/")
+                       "/api/incentive/",
+                       # LB-T3 — lapor bayar CBD & DP: unggah bukti / keputusan terima-tolak dikirim ulang = satu tulisan.
+                       "/api/payment-reports")
 #: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
 #: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
 IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),
@@ -101,6 +103,13 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         entity = (request.headers.get("X-Entity-Id") or "").strip()
         body_bytes = await request.body()
+        ctype = request.headers.get("content-type", "")
+        if ctype.lower().startswith("multipart/form-data") and "boundary=" in ctype:
+            # LB-T3 — klien (axios/httpx) membuat batas multipart BARU tiap kirim, jadi kirim ulang unggahan yang sama
+            # berisi beda byte. Batas dibuang dari sidik supaya kirim ulang = isi sama = jawaban diputar, bukan 409.
+            batas = ctype.split("boundary=", 1)[1].split(";", 1)[0].strip().strip('"')
+            if batas:
+                body_bytes = body_bytes.replace(batas.encode(), b"")
         payload_hash = hashlib.sha256(
             request.url.query.encode() + b"\n" + body_bytes).hexdigest()
         doc_id = f"{key}|{request.method}|{request.url.path}|{user_id}|{entity}"
