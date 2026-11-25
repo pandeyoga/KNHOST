@@ -51,7 +51,11 @@ async def siap(klien, db, kepala_admin, akun, sesi):
             "mgr": manager, "hm": await sesi(manager)}
 
 
-async def _pesanan(klien, db, siap, total: float = 1_000_000, bayar: float = 0.0, **lain) -> dict:
+async def _pesanan(klien, db, siap, total: float = 1_000_000, bayar: float = 0.0, roll: str = "committed",
+                   **lain) -> dict:
+    """Pesanan `confirmed` (sudah disetujui) + satu roll pesanannya berstatus `roll` — bawaan `committed`: semua jalur
+    persetujuan pesanan meng-commit roll (`advance_so_if_all_approved`, `so_approvals`, `so_lifecycle_service`, dst.),
+    jadi itulah keadaan pesanan disetujui biasa yang BELUM disiapkan gudang (C1 tinjauan akhir, R27)."""
     so = {"id": _id("so"), "number": f"SO-BTP2-{uuid.uuid4().hex[:5]}", "entity_id": KSC, "customer_id": siap["P"],
           "customer_name": "Uji BTP2 · Toko Kain", "status": "confirmed", "grand_total": float(total),
           "ppn_amount": 0.0, "payments": [], "paid_total": 0, "payment_status": "unpaid", "payment_term_code": "CBD",
@@ -59,6 +63,12 @@ async def _pesanan(klien, db, siap, total: float = 1_000_000, bayar: float = 0.0
           "created_at": now_iso()}
     so.update(lain)
     await db.sales_orders.insert_one(dict(so))
+    if roll:
+        await db.inventory_rolls.insert_one({
+            "id": _id("roll"), "roll_no": f"R-{uuid.uuid4().hex[:5]}", "product_id": "prd_btp2_uji",
+            "warehouse_id": "wh_btp2_uji", "owner_entity_id": KSC, "status": roll, "length": 10.0,
+            "length_remaining": 10.0, "unit": "meter", "lot": "L1", "bin_id": "bin_a",
+            "reserved_ref": {"type": "sales_order", "id": so["id"]}, "created_at": now_iso()})
     if bayar:
         r = await klien.post("/api/ar-receipts", headers=siap["h"], json={
             "customer_id": siap["P"], "amount": bayar, "method": "transfer", "entity_id": KSC,
@@ -97,13 +107,36 @@ def _teks(r) -> str:
 
 # ── Alur dasar ───────────────────────────────────────────────────────────────────────────────────────────────────────
 async def test_BTP2_belum_bayar_belum_siap_langsung_batal(klien, db, siap):
+    """Pesanan disetujui biasa (roll `committed`), belum dibayar, belum diambil gudang → batal langsung (A2-1)."""
     so = await _pesanan(klien, db, siap)
+    r = await klien.get(f"/api/sales-orders/{so['id']}/cancel-check", headers=siap["hs"], params={"action": "cancel"})
+    assert r.status_code == 200, r.text
+    assert (r.json()["needs_approval"], r.json()["basis"]) == (False, []), r.json()
     r = await _batal(klien, siap["hs"], so)
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "cancelled"
     o = await _so(db, so)
     assert o["status"] == "cancelled"
     assert not o.get("cancel_request") and not o.get("cancel_requests"), "perilaku lama: tanpa permintaan"
+    roll = await db.inventory_rolls.find_one({"reserved_ref.id": so["id"]}, {"_id": 0})
+    assert roll is None, "roll committed dilepas ke stok"
+
+
+async def test_BTP2_pesanan_disetujui_lewat_alur_nyata_langsung_batal(klien, db, siap):
+    """C1 (tinjauan akhir, R27) — alur nyata persetujuan pesanan (`advance_so_if_all_approved`) meng-commit roll.
+    Roll `committed` BUKAN "barang sudah disiapkan": belum dibayar & belum ada aktivitas gudang → batal langsung 200."""
+    from routers.sales_orders_extra import advance_so_if_all_approved
+    so = await _pesanan(klien, db, siap, status="reserved", roll="reserved", pending_approvals=[],
+                        payment_term_code="NET30")
+    await advance_so_if_all_approved(so["id"], "Manajer Uji")
+    roll = await db.inventory_rolls.find_one({"reserved_ref.id": so["id"]}, {"_id": 0, "status": 1})
+    assert roll["status"] == "committed", "persetujuan pesanan meng-commit roll"
+    r = await klien.get(f"/api/sales-orders/{so['id']}/cancel-check", headers=siap["hs"], params={"action": "cancel"})
+    assert r.status_code == 200, r.text
+    assert (r.json()["needs_approval"], r.json()["basis"]) == (False, []), r.json()
+    r = await _batal(klien, siap["hs"], so)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "cancelled" and not (await _so(db, so)).get("cancel_requests")
 
 
 async def test_BTP2_dibayar_jadi_permintaan(klien, db, siap):
@@ -457,6 +490,22 @@ async def test_BTP2_barang_disiapkan_jadi_permintaan(klien, db, siap):
     assert await scs.prepared_basis(lain) is True
     await db.wms_tasks.update_one({"id": tugas["id"]}, {"$set": {"status": "dispatched"}})
     assert await scs.prepared_basis(lain) is False
+    # R27 — roll yang hanya dialokasikan/dipesan (`committed`, `reserved`, `available`) BUKAN "disiapkan"; `picked` /
+    # `packed` disiapkan (batal penuh & tutup sisa).
+    for st in ("committed", "reserved", "available"):
+        o = {"id": _id("so"), "entity_id": KSC}
+        await db.inventory_rolls.insert_one({"id": _id("roll"), "reserved_ref": {"id": o["id"]}, "status": st,
+                                             "product_id": _id("prd"), "warehouse_id": "wh_uji",
+                                             "owner_entity_id": KSC, "quantity": 5.0})
+        assert await scs.prepared_basis(o) is False, st
+        assert await scs.prepared_basis(o, remaining_only=True) is False, st
+    for st in ("picked", "packed"):
+        o = {"id": _id("so"), "entity_id": KSC}
+        await db.inventory_rolls.insert_one({"id": _id("roll"), "reserved_ref": {"id": o["id"]}, "status": st,
+                                             "product_id": _id("prd"), "warehouse_id": "wh_uji",
+                                             "owner_entity_id": KSC, "quantity": 5.0})
+        assert await scs.prepared_basis(o) is True, st
+        assert await scs.prepared_basis(o, remaining_only=True) is True, st
     # Roll yang sudah berangkat bukan "disiapkan" untuk bagian sisa (tutup sisa), tetapi tetap untuk batal penuh.
     await db.inventory_rolls.insert_one({"id": _id("roll"), "reserved_ref": {"id": lain["id"]},
                                          "status": "in_transit_sales", "product_id": _id("prd"),

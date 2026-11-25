@@ -106,9 +106,18 @@ Kunci Pusat Pengaturan baru **`order.cancel_approval_when`** (per PT, enum), baw
 | `selalu` | semua permintaan wajib disetujui |
 | `tidak_pernah` | perilaku lama (langsung) |
 
-"Barang sudah disiapkan" = ada roll pesanan berstatus di luar `reserved`/`available` (pola `so_line_cancel_service.check`)
-**atau** tugas outbound aktif yang sudah mencatat ambil (`scan_log` jenis `pick`, `picked_qty > 0`) atau berstatus
-`packing`/`staging`.
+"Barang sudah disiapkan" = ada roll pesanan berstatus `picked`/`packed` **atau** tugas outbound aktif yang sudah mencatat
+ambil (`scan_log` jenis `pick`, `picked_qty > 0`) atau berstatus `packing`/`staging`.
+
+> **Ralat 25 Nov (tinjauan akhir C1).** Rumusan awal ("roll di luar `reserved`/`available`") menghitung roll
+> `committed` sebagai "disiapkan". Padahal SEMUA jalur persetujuan pesanan meng-commit roll (`advance_so_if_all_approved`,
+> `so_approvals`, `so_lifecycle_service`, `so_release_service`, `backorder_service`), sehingga setiap pesanan yang sudah
+> disetujui — belum dibayar, belum disentuh gudang — selalu wajib persetujuan, berlawanan dengan A2-1. Ditetapkan
+> (ruling R27): roll "disiapkan" = `picked`/`packed` (status gudang sesudahnya yang belum berangkat: tidak ada —
+> `roll_state.ROLL_TRANSITIONS` hanya membawa `picked`/`packed` ke `available`, `in_transit_sales`, `consumed`);
+> `committed`, `reserved`, `available` **tidak** dihitung. Batal penuh juga menghitung `in_transit_sales` (sudah
+> berangkat, belum diterima); tutup sisa tidak (roll berangkat = bagian terkirim, bukan sisa). Berlaku untuk batal dan
+> tutup sisa (`so_cancel_service.ROLL_PREPARED`).
 
 Untuk `close_remaining` kedua syarat dinilai atas **bagian sisa**: wajib-setuju bila **ada kelebihan uang yang akan pindah
 ke titipan** (§5.6 langkah 6, > 0) **atau** barang sisa sudah disiapkan. Pelanggan tempo yang sudah membayar bagian

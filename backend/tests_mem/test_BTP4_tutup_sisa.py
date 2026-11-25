@@ -103,7 +103,9 @@ async def _kirim_sebagian(klien, db, siap, monkeypatch, *, qty: float = 100.0, k
                 "reserved_ref": {"type": "sales_order", "id": so["id"]}, "unit_cost": 60_000,
                 "created_at": now_iso()}
     r1 = _roll(kirim, "picked")
-    r2 = _roll(sisa, "picked" if ambil_sisa else "reserved")
+    # C1 (tinjauan akhir, R27) — roll sisa pesanan yang sudah disetujui berstatus `committed` (semua jalur persetujuan
+    # pesanan meng-commit roll); `committed` BUKAN "disiapkan". Diambil dari rak (`ambil_sisa`) → `picked`.
+    r2 = _roll(sisa, "picked" if ambil_sisa else "committed")
     await db.inventory_rolls.insert_many([dict(r1), dict(r2)])
 
     def _tugas(jumlah: float, ambil: float, status: str, alc: str, rolls: List[str]) -> dict:
@@ -190,6 +192,11 @@ async def _ditolak(klien, db, siap, so: dict, kata: str) -> None:
 async def test_BTP4_tempo_jumlah_turun_ke_terkirim(klien, db, siap, monkeypatch):
     k = await _kirim_sebagian(klien, db, siap, monkeypatch)
     so = k["so"]
+    assert (await db.inventory_rolls.find_one({"id": k["r2"]["id"]}, {"_id": 0}))["status"] == "committed"
+    r = await klien.get(f"/api/sales-orders/{so['id']}/cancel-check", headers=siap["hs"],
+                        params={"action": "close_remaining"})
+    assert r.status_code == 200, r.text
+    assert (r.json()["needs_approval"], r.json()["basis"]) == (False, []), "C1 — sisa `committed` bukan disiapkan"
     assert round(so["grand_total"], 2) == 11_100_000, "hitung tangan: 100 m × 100.000 + PPN 11 %"
     buku = await _dibukukan(so)
     assert (buku["revenue"], buku["ppn"]) == (4_000_000, 440_000), buku
@@ -490,7 +497,7 @@ async def test_BTP4_tugas_sedang_dikirim_ditolak_tanpa_perubahan(klien, db, siap
     assert await _so(db, k["so"]) == sebelum, "pesanan tidak berubah dan kuncinya dilepas"
     t2 = await db.wms_tasks.find_one({"id": k["t2"]["id"]}, {"_id": 0})
     assert t2["status"] == "created" and t2["saga_lock"]["token"] == "lk_lain"
-    assert (await db.inventory_rolls.find_one({"id": k["r2"]["id"]}, {"_id": 0}))["status"] == "reserved"
+    assert (await db.inventory_rolls.find_one({"id": k["r2"]["id"]}, {"_id": 0}))["status"] == "committed"
 
 
 async def test_BTP4_galat_sesudah_ditutup_putusan_tetap_tercatat(klien, db, siap, monkeypatch):

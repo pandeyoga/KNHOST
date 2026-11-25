@@ -59,7 +59,14 @@ BASIS_LABEL = {"paid": "sudah ada pembayaran", "prepared": "barang sudah disiapk
 CANCEL_BLOCKED = ("done", "cancelled", "expired", "partially_shipped", "shipped")
 TASK_INACTIVE = ("dispatched", "completed", "cancelled")
 TASK_PREPARED = ("packing", "staging")
-ROLL_HELD_MOVING = ("committed", "picked", "packed")   # roll sisa yang sudah bergerak tetapi belum berangkat
+#: R27 (tinjauan akhir C1) — roll "disiapkan gudang": sudah diambil / dikemas, belum berangkat. Menurut
+#: `roll_state.ROLL_TRANSITIONS`, `picked`/`packed` hanya keluar ke `available` (dilepas), `in_transit_sales`
+#: (berangkat) atau `consumed` — tidak ada status gudang lain sesudahnya yang belum berangkat. `committed` (pesanan
+#: disetujui — SEMUA jalur persetujuan pesanan meng-commit roll), `reserved`, `available` TIDAK dihitung.
+ROLL_PREPARED = ("picked", "packed")
+#: Batal penuh juga menghitung roll yang sudah berangkat tetapi belum diterima (`in_transit_sales`); tutup sisa tidak
+#: (roll berangkat = bagian yang terkirim, bukan sisa).
+ROLL_PREPARED_FULL = ROLL_PREPARED + ("in_transit_sales",)
 # Batas TEKNIS (bukan aturan bisnis): penanda `deciding` yang lebih tua dari ini dianggap milik proses yang mati,
 # sehingga permintaan tidak tertahan selamanya (setara kunci saga yang dilepas admin).
 DECIDING_STALE_MINUTES = 10
@@ -268,16 +275,16 @@ def _check_action(action: str) -> str:
 
 # ── Kapan wajib persetujuan (§5.2) ──────────────────────────────────────────────────────────────────────────────────
 async def prepared_basis(order: Dict[str, Any], remaining_only: bool = False) -> bool:
-    """"Barang sudah disiapkan" (§5.2): roll pesanan berstatus di luar `reserved`/`available` (pola
-    `so_line_cancel_service.check`) ATAU tugas ambil aktif yang sudah mencatat ambil (`scan_log` pick, `picked_qty > 0`)
-    atau sudah `packing`/`staging`.
+    """"Barang sudah disiapkan" (§5.2, ralat R27): roll pesanan berstatus `picked`/`packed` (`ROLL_PREPARED`; batal
+    penuh juga `in_transit_sales`) ATAU tugas ambil aktif yang sudah mencatat ambil (`scan_log` pick, `picked_qty > 0`)
+    atau sudah `packing`/`staging`. Roll `committed` (pesanan disetujui), `reserved`, `available` bukan "disiapkan".
 
     `remaining_only=True` (tutup sisa) menilai bagian SISA saja: roll yang sudah berangkat (`in_transit_sales`,
     `delivered`) tidak dihitung, dan tugas aktif dihitung bila mengambil lebih dari yang sudah dikirimnya."""
     oid = (order or {}).get("id")
     if not oid:
         return False
-    roll_status = {"$in": list(ROLL_HELD_MOVING)} if remaining_only else {"$nin": ["reserved", "available"]}
+    roll_status = {"$in": list(ROLL_PREPARED if remaining_only else ROLL_PREPARED_FULL)}
     if await db.inventory_rolls.find_one({"reserved_ref.id": oid, "status": roll_status}, {"_id": 0, "id": 1}):
         return True
     tasks = await db.wms_tasks.find(
