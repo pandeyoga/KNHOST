@@ -16,10 +16,9 @@ import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — nomor kwitansi membuka rincian
-import PaymentVarianceDialog from "./PaymentVarianceDialog";
+import PaymentVarianceDecideDialog from "./PaymentVarianceDecideDialog";
 import {
-  decideVariance, directionMeta, errText, listVariances, money, reverseVariance,
-  varianceByReceipt, varianceKindMeta, varianceMeta,
+  directionMeta, errText, listVariances, money, reverseVariance, varianceKindMeta,
 } from "./paymentApi";
 import { askReason } from "@/services/confirmService";
 import useIntentKey from "../../../hooks/useIntentKey";
@@ -41,15 +40,11 @@ import PagedRows from "@/components/PagedRows";
 
 export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOpenDocument }) {
   const [data, setData] = useState({ items: [], pending: [], stats: {} });
-  const [reasons, setReasons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [dialog, setDialog] = useState(null);      // {receipt_id, assessment}
-  const [busy, setBusy] = useState(false);
-  const [dialogErr, setDialogErr] = useState("");
+  const [decideRow, setDecideRow] = useState(null);   // baris yang sedang diputus (pop-up bersama)
   const [reversing, setReversing] = useState("");
-  // PK-12 — putuskan / anulir selisih: satu niat = satu Idempotency-Key, satu instans per aksi.
-  const decideIntent = useIntentKey("pv-putus");
+  // PK-12 — anulir selisih: satu niat = satu Idempotency-Key. (Putuskan: kunci ada di PaymentVarianceDecideDialog.)
   const reverseIntent = useIntentKey("pv-anulir");
 
   // FE-04 — keputusan & anulir sama-sama payment_variance.decide di server (batas nominal tetap dijaga kebijakan).
@@ -61,12 +56,7 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
-      const [res, meta] = await Promise.all([
-        listVariances(params),
-        varianceMeta(selectedEntity || "").catch(() => ({})),
-      ]);
-      setData(res);
-      setReasons(meta.reasons || []);
+      setData(await listVariances(params));
       setError("");
     } catch (e) { setError(errText(e, "Gagal memuat selisih pembayaran.")); }
     finally { setLoading(false); }
@@ -77,38 +67,6 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
   const stats = data.stats || {};
   const pending = useMemo(() => data.pending || [], [data.pending]);
   const decisions = useMemo(() => data.items || [], [data.items]);
-
-  const openDecide = async (row) => {
-    setDialogErr("");
-    try {
-      const res = await varianceByReceipt(row.receipt_id);
-      if (!res.assessment) {
-        setError("Selisih kwitansi ini sudah diputus atau tidak lagi memerlukan keputusan.");
-        await load();
-        return;
-      }
-      // UAT 24 Okt (audit UI tahap 2) — G1-12: satu sumber angka. Takar ulang server terjadi SESUDAH uang kwitansi
-      // dialokasikan, jadi batas/rincian/arahnya bisa berbeda dari tabel antrean. Angka kalimat, rincian & arah
-      // diambil dari blok selisih yang tersimpan di kwitansi (sama dengan kolom "Seharusnya"/"Selisih" tabel).
-      const v = res.variance || {};
-      const stored = {};
-      ["expected", "funds", "capacity", "boundary", "boundary_label", "delta", "direction", "explain"].forEach((k) => {
-        if (v[k] !== undefined && v[k] !== null && v[k] !== "" && !(Array.isArray(v[k]) && v[k].length === 0)) stored[k] = v[k];
-      });
-      setDialog({ receipt_id: row.receipt_id, number: row.number, assessment: { ...res.assessment, ...stored } });
-    } catch (e) { setError(errText(e, "Gagal memuat rincian selisih.")); }
-  };
-
-  const confirm = async (payload) => {
-    setBusy(true); setDialogErr("");
-    try {
-      const receiptId = dialog.receipt_id;
-      await decideIntent.send({ id: receiptId, ...payload }, (k) => decideVariance(receiptId, payload, k));
-      setDialog(null);
-      await load();
-    } catch (e) { setDialogErr(errText(e, "Keputusan gagal disimpan.")); }
-    finally { setBusy(false); }
-  };
 
   const reverse = async (row) => {
     // FASE P5 — dulu `window.prompt`: bila alasan < 3 huruf, fungsi ini DIAM-DIAM berhenti
@@ -233,7 +191,7 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
                         <td className="px-2 py-2 text-right">
                           {canDecide && (
                             <button type="button" className="primary-button !py-1 !px-2 !text-[11px]"
-                              data-testid={`pv-decide-${p.receipt_id}`} onClick={() => openDecide(p)}>
+                              data-testid={`pv-decide-${p.receipt_id}`} onClick={() => setDecideRow(p)}>
                               Putuskan
                             </button>
                           )}
@@ -344,10 +302,10 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
         </div>
       </section>
 
-      {dialog && (
-        <PaymentVarianceDialog assessment={dialog.assessment} reasons={reasons}
-          busy={busy} error={dialogErr} submitLabel="Simpan keputusan"
-          onCancel={() => { setDialog(null); setDialogErr(""); }} onConfirm={confirm} />
+      {decideRow && (
+        <PaymentVarianceDecideDialog receiptId={decideRow.receipt_id} receiptNumber={decideRow.number}
+          entityId={selectedEntity} onClose={() => setDecideRow(null)} onStale={load}
+          onDone={() => { setDecideRow(null); load(); }} />
       )}
     </div>
   );

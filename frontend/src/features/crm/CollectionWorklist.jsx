@@ -14,6 +14,7 @@ import DocLink from "../documents/preview/DocLink";   // Meja gelombang 2 — no
 import ARReceiptsHistory from "./ARReceiptsHistory";
 import FocusNotice from "../../components/FocusNotice";
 import useFocusDoc from "../../hooks/useFocusDoc";
+import { markReminded } from "./collectionMark";   // satu jalur tandai-diingatkan (juga Meja Keuangan & HP)
 import { PromiseFields, promiseError } from "./promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 
 /** Collection worklist + reminder (KN_17 §7 / owner 4b). */
@@ -57,12 +58,10 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
     } finally { setLoading(false); }
   }
 
-  async function markReminded(row) {
+  async function mark(row) {
     setMarking(row.order_id);
     try {
-      await axios.post(`${API}/collection-reminders/mark`, {
-        customer_id: row.customer_id, order_id: row.order_id,
-        note: `Pengingat penagihan ${row.order_number}` });
+      await markReminded(row);
       setNotice(`${row.customer_name} ditandai sudah diingatkan.`);
       load();
     } catch (e) {
@@ -129,7 +128,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                         <span className="icon-button text-[#1E8E5A]" title="Sudah diingatkan" data-testid={`collection-reminded-${r.order_id}`}><CheckCircle2 size={15} /></span>
                       ) : canFollowUp && (
                         <button data-testid={`collection-mark-${r.order_id}`} disabled={marking === r.order_id}
-                          onClick={() => markReminded(r)} className="icon-button text-[#B45309]" title="Tandai sudah diingatkan">
+                          onClick={() => mark(r)} className="icon-button text-[#B45309]" title="Tandai sudah diingatkan">
                           {marking === r.order_id ? <BellOff size={15} /> : <BellRing size={15} />}
                         </button>
                       )}

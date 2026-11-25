@@ -708,7 +708,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                       "sample_payment_status": {"$in": ["awaiting_approval", "reapproval_required"]},
                                       "status": {"$nin": ["cancelled", "expired"]}},
                                      {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "grand_total": 1,
-                                      "created_at": 1, "sample_payment_status": 1, "entity_id": 1}).sort("created_at", 1).to_list(200)
+                                      "created_at": 1, "sample_payment_status": 1, "entity_id": 1,
+                                      "sample_billing": 1, "paid_total": 1}).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "sample_acc_bayar", "Sample berbayar — menunggu ACC bayar",
         "Pastikan pembayaran / kesepakatan bayar ada, lalu setujui. Persetujuan ulang muncul bila nilai aktual potong berubah > ±5%.",
@@ -716,8 +717,12 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle="persetujuan ulang (nilai aktual berubah)" if o.get("sample_payment_status") == "reapproval_required" else "sample berbayar baru",
               value=_doc_total(o), age_days=_age_days(o.get("created_at")), at=o.get("created_at"),
               badge="ACC ulang" if o.get("sample_payment_status") == "reapproval_required" else "ACC bayar",
-              action="Tinjau", action_kind="open", entity_id=o.get("entity_id", "")) for o in sos],
-        action_label="Tinjau", owner="finance", value_label=TOTAL_LABEL))
+              action="Setujui bayar", action_kind="approve_payment", entity_id=o.get("entity_id", ""),
+              # Meja gelombang 2 (Task 7) — dialog setujui bayar di meja memeriksa uang masuk tanpa muat ulang pesanan.
+              extra={"sample_billing": o.get("sample_billing") or "", "grand_total": _doc_total(o),
+                     "paid_total": float(o.get("paid_total") or 0),
+                     "sample_payment_status": o.get("sample_payment_status") or ""}) for o in sos],
+        action_label="Setujui bayar", owner="finance", value_label=TOTAL_LABEL))
 
     # Cek UI UAT v3 (S14) — retur selesai QC menunggu keputusan nilai/penyelesaian Finance; dulu hanya lewat lonceng.
     sr = await db.sales_returns.find({**_ent_q(scope), "status": "inspected", "compensation.status": {"$ne": "decided"},

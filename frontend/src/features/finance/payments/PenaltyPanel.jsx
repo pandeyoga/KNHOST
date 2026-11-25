@@ -8,7 +8,7 @@
  *
  * Fase 4 · R2 (L-03) — dialog keputusan `.modal-card` buatan sendiri → `FormModal` baku (Esc, klik latar gestur
  * utuh, layar penuh di HP); galat tetap di DALAM pop-up (`penalty-dialog-error`). "Terbitkan" (menjurnal piutang
- * denda) kini dikonfirmasi dulu lewat `askConfirm`. Testid tetap (`penalty-dialog`, `penalty-dialog-*`).
+ * denda) kini dikonfirmasi dulu lewat `useIssuePenalty` (`penaltyIssue.js`). Testid tetap (`penalty-dialog`, `penalty-dialog-*`).
  *
  * CR-T4 — tiap nota menulis "Aturan dari: PT · pelanggan · rencana" (asal unsur aturan, `policy_snapshot.sources`);
  * nota beberapa pelanggan dikelompokkan per pelanggan (judul kelompok: nama, jumlah nota, Σ nominal). Bentuk nota tetap
@@ -19,11 +19,11 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, BadgeDollarSign, Ban, Loader2, PencilLine, Receipt, Send } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import FormModal from "../../../components/FormModal";
-import { askConfirm } from "../../../services/confirmService";
+import useIssuePenalty from "./penaltyIssue";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 import DocLink from "../../documents/preview/DocLink";   // Meja gelombang 2 — dasar denda (pesanan) membuka rincian
 import {
-  adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyAccounts, penaltyMeta, waivePenalty,
+  adjustPenalty, errText, fetchMeta, money, payPenalty, penaltyAccounts, penaltyMeta, waivePenalty,
 } from "./paymentApi";
 import { can } from "../../../config/roles";
 import useIntentKey from "../../../hooks/useIntentKey";
@@ -53,7 +53,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   const [accountId, setAccountId] = useState("");
   const payIntent = useIntentKey("pnl");
   // PK-12 — keputusan denda lain juga berkunci Idempotency-Key, satu instans per aksi.
-  const issueIntent = useIntentKey("pnl-terbit");
+  const { issue: issuePenaltyShared } = useIssuePenalty();   // satu jalur terbit denda (konfirmasi + kunci intent)
   const waiveIntent = useIntentKey("pnl-bebas");
   const adjustIntent = useIntentKey("pnl-ubah");
   const openPay = async (p) => {
@@ -81,15 +81,11 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   }, [entityId]);
 
   const act = useCallback(async (kind, row) => {
-    if (kind === "issue" && !(await askConfirm({
-      title: `Terbitkan denda ${row.number}?`,
-      message: `Denda ${money(row.amount)} diterbitkan dan dijurnal ke piutang denda pelanggan.`,
-      confirmLabel: "Terbitkan",
-    }))) return;
     setBusy(row.id); setErr("");
     try {
       if (kind === "issue") {
-        await issueIntent.send({ id: row.id, aksi: "issue" }, (key) => issuePenalty(row.id, key));
+        if (!(await issuePenaltyShared({ id: row.id, number: row.number, amount: row.amount,
+          customer_name: row.customer_name, entity_id: row.entity_id }))) return;   // batal di konfirmasi
       }
       if (kind === "waive") {
         const body = { reason_code: reasonCode, note };
@@ -107,7 +103,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
       if (onChanged) onChanged();
     } catch (e) { setErr(errText(e, "Aksi denda gagal.")); }
     finally { setBusy(""); }
-  }, [reasonCode, note, amount, accountId, payIntent, issueIntent, waiveIntent, adjustIntent, onChanged]);
+  }, [reasonCode, note, amount, accountId, payIntent, issuePenaltyShared, waiveIntent, adjustIntent, onChanged]);
 
   if (!rows.length) {
     return (

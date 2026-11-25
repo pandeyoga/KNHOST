@@ -41,6 +41,10 @@ import { dedupeFinanceGroups } from "../desks/deskDedupe";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";
 import TaxIssueDialog from "./TaxIssueDialog";
+import PaymentVarianceDecideDialog from "./payments/PaymentVarianceDecideDialog";
+import useIssuePenalty from "./payments/penaltyIssue";
+import SamplePaymentApproveDialog from "../samples/SamplePaymentApproveDialog";
+import { markReminded } from "../crm/collectionMark";
 import { CustomerCardLink } from "./cards/partyCards";
 
 export const TEKS_KOSONG = "Tidak ada yang perlu ditindak hari ini.";
@@ -130,7 +134,8 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
 
 const DESK_KEY = "finance";
 const P = "fin-desk";
-const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "supplier_card"]);
+const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "supplier_card", "decide_variance", "issue_penalty", "approve_payment",
+  "mark_reminded"]);
 const HELP = (
   <>
     Pekerjaan uang yang menunggu Anda, dikelompokkan per jenis. Kelompok hanya tampil bila Anda berhak atas modulnya
@@ -151,7 +156,10 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const [loading, setLoading] = useState(true);
   const [refreshingId, setRefreshingId] = useState("");
   const [tick, setTick] = useState(0);
-  const busyRef = "";   // aksi terbit faktur kini di pop-up (TaxIssueDialog); tak ada baris yang "sibuk" di antrean
+  const [busyRef, setBusyRef] = useState("");   // baris yang aksinya langsung jalan (terbit denda, catat ditagih)
+  const { issue: terbitkanDenda } = useIssuePenalty();
+  const [variRow, setVariRow] = useState(null);     // { row, qid } — putuskan selisih bayar di pop-up bersama
+  const [sampleRow, setSampleRow] = useState(null); // pesanan sample untuk dialog setujui bayar
   const [payRow, setPayRow] = useState(null);
   const [issueRow, setIssueRow] = useState(null);   // { row, qid } — pop-up pratinjau terbit faktur pajak
 
@@ -183,6 +191,10 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     if (r.action_kind === "receipt") {
       return { ...r, action: "Terima pembayaran", _titleNode: <CustomerCardLink id={r.ref_id} name={r.title} perms={perms}
         testId={`fin-desk-customer-${r.row_key || r.ref_id}`} /> };
+    }
+    // "Catat sudah ditagih" memakai izin yang sama dengan server (`order.update`); tanpa izin baris tetap pindah ke Aging.
+    if (r._queue === "jatuh_tempo" && r.customer_id && can(perms, "order", "update")) {
+      return { ...r, action: "Catat sudah ditagih", action_kind: "mark_reminded" };
     }
     if (r._queue === "hutang_jatuh_tempo" && r.supplier_id && cardsEnabled && can(perms, "supplier", "view")) {
       return { ...r, action: "Bayar", action_kind: "supplier_card" };
@@ -217,6 +229,16 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     open(rowLink(row, row._queue, DESK_KEY));
   }
 
+  /** Aksi satu langkah (konfirmasi di dalam `fn`): sukses → toast + muat ulang kartu; galat → kotak galat meja. */
+  async function aksiLangsung(row, qid, fn, pesan) {
+    setBusyRef(row.ref_id); setErrors((x) => { const n = { ...x }; delete n.aksi; return n; });
+    try {
+      if (await fn()) done(pesan, qid);
+    } catch (e) {
+      setErrors((x) => ({ ...x, aksi: apiErrorText(e, "Aksi gagal.") }));
+    } finally { setBusyRef(""); }
+  }
+
   function handleAction(row, queue) {
     const qid = queue?.id || "";
     if (row.action_kind === "issue_tax") { setIssueRow({ row, qid }); return; }
@@ -225,6 +247,19 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       return;
     }
     if (row.action_kind === "supplier_card") { openSupplierCard(row.supplier_id); return; }
+    if (row.action_kind === "decide_variance") { setVariRow({ row, qid }); return; }
+    if (row.action_kind === "approve_payment") {
+      setSampleRow({ id: row.ref_id, number: row.number, title: row.title, sample_billing: row.sample_billing,
+        grand_total: row.grand_total ?? row.value, paid_total: row.paid_total,
+        sample_payment_status: row.sample_payment_status || (row.badge === "ACC ulang" ? "reapproval_required" : ""), qid });
+      return;
+    }
+    if (row.action_kind === "issue_penalty") { aksiLangsung(row, qid, () => terbitkanDenda({ id: row.ref_id, number: row.number,
+      amount: row.value, customer_name: row.title, entity_id: row.entity_id }), `Denda ${row.number} diterbitkan.`); return; }
+    if (row.action_kind === "mark_reminded") { aksiLangsung(row, qid, async () => {
+      await markReminded({ customer_id: row.customer_id, order_id: row.order_id || row.ref_id, order_number: row.number });
+      return true;
+    }, `${row.title} ditandai sudah diingatkan.`); return; }
     navigate(row);
   }
 
@@ -296,6 +331,22 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
             const { row, qid } = issueRow;
             setIssueRow(null);
             done(`Faktur Pajak ${f?.number || ""} diterbitkan untuk ${row.number}.`, qid);
+          }} />
+      )}
+
+      {variRow && (
+        <PaymentVarianceDecideDialog receiptId={variRow.row.ref_id} receiptNumber={variRow.row.number}
+          entityId={variRow.row.entity_id || ""} onClose={() => setVariRow(null)} onStale={() => reloadQueue(variRow.qid)}
+          onDone={(msg) => { const qid = variRow.qid; setVariRow(null); done(msg, qid); }} />
+      )}
+
+      {sampleRow && (
+        <SamplePaymentApproveDialog order={sampleRow} onClose={() => setSampleRow(null)}
+          onDone={() => {
+            const p = sampleRow; setSampleRow(null);
+            done(p.sample_payment_status === "reapproval_required"
+              ? `${p.number}: tagihan baru disetujui — kiriman sample dilepas.`
+              : `${p.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`, p.qid);
           }} />
       )}
 

@@ -3,6 +3,7 @@ import { AlertTriangle, BellRing, CheckCircle2, PhoneCall, Trophy, X } from "luc
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, todayWib } from "../../../utils/formatters";
+import { markReminded } from "../../crm/collectionMark";   // satu jalur tandai-diingatkan
 import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 import MyIncentiveCard, { bulanIni } from "../../incentive/MyIncentiveCard";   // KM-T5
 import { MODE_TANPA_MESIN } from "../../incentive/incentiveModes";   // KA-9 — satu tempat konstanta mode
@@ -62,7 +63,7 @@ function Collection({ selectedEntity }) {
   const mark = async (r) => {
     setBusy(r.order_id); setMsg(null);
     try {
-      await axios.post(`${API}/collection-reminders/mark`, { customer_id: r.customer_id, order_id: r.order_id, note: `Pengingat penagihan ${r.order_number}` });
+      await markReminded(r);
       setMsg({ ok: true, text: `${r.customer_name} ditandai sudah diingatkan.` }); load();
     } catch (e) { setMsg({ ok: false, text: errOf(e, "Gagal menandai.") }); } finally { setBusy(""); }
   };

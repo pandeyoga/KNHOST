@@ -27,7 +27,6 @@ import ConfirmModal from "../../components/ConfirmModal";
 import { SearchBox } from "../../components/ListPageParts";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import useIntentKey from "../../hooks/useIntentKey";
-import { askConfirm } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { entityShort } from "../../utils/entityLabel";
 import { formatCurrency } from "../../utils/formatters";
@@ -36,7 +35,8 @@ import Customer360Panel from "../crm/Customer360Panel";
 import CreditOverridesPanel from "../crm/CreditOverridesPanel";
 import CreditProfileRequestsPanel from "../crm/CreditProfileRequestsPanel";
 import { PromiseModal } from "../crm/promiseUi";
-import { fetchMeta, issuePenalty, waivePenalty } from "./payments/paymentApi";
+import { fetchMeta, waivePenalty } from "./payments/paymentApi";
+import useIssuePenalty from "./payments/penaltyIssue";
 import { CSV_COLUMNS, QUEUES, QueueTable, copyText } from "./creditDeskParts";
 
 const PAGE_SIZE = 25;
@@ -69,7 +69,7 @@ export default function CreditDeskView({ currentUser, selectedEntity }) {
   const [promise, setPromise] = useState(null);       // baris jatuh tempo
   const [waive, setWaive] = useState(null);           // baris denda
   const [showHistory, setShowHistory] = useState(false);
-  const issueIntent = useIntentKey("pnl-terbit");
+  const { issue: issuePenaltyShared } = useIssuePenalty();   // satu jalur terbit denda (meja Keuangan, Kredit, PenaltyPanel)
 
   useEffect(() => { const t = setTimeout(() => { setQ(search.trim()); setPage(1); }, 300); return () => clearTimeout(t); },
     [search]);
@@ -145,15 +145,10 @@ export default function CreditDeskView({ currentUser, selectedEntity }) {
       } catch (e) { setActionError(apiErrorText(e, "Naskah pengingat belum bisa disusun.")); } finally { setBusy(""); }
     },
     onIssue: async (row) => {
-      if (!(await askConfirm({
-        title: `Terbitkan denda ${row.number}?`,
-        message: `Denda ${formatCurrency(row.amount)} untuk ${row.customer_name} di ${ptName(row.entity_id)} diterbitkan dan dijurnal ke piutang denda.`,
-        confirmLabel: "Terbitkan",
-      }))) return;
       setBusy(row.id);
       try {
-        await issueIntent.send({ id: row.id, aksi: "issue" }, (key) => issuePenalty(row.id, key));
-        done(`Denda ${row.number} diterbitkan.`);
+        if (await issuePenaltyShared({ id: row.id, number: row.number, amount: row.amount,
+          customer_name: row.customer_name, entity_id: row.entity_id })) done(`Denda ${row.number} diterbitkan.`);
       } catch (e) { setActionError(apiErrorText(e, "Denda belum bisa diterbitkan.")); } finally { setBusy(""); }
     },
   };
