@@ -18,7 +18,7 @@ DEFAULT_PERMISSIONS = {
         "uom": ["view", "create", "update", "delete", "import", "export"],
         "template": ["view", "create", "update", "delete", "print", "import", "export"],
         "order": ["view", "create", "update", "delete", "approve", "confirm", "print",
-                  "deliver", "verify", "exact_cut", "override", "cancel", "approve_price_edit"],
+                  "deliver", "verify", "exact_cut", "override", "cancel", "approve_price_edit", "approve_cancel"],
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel", "cutting_config", "cutting_receive"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
@@ -178,7 +178,7 @@ DEFAULT_PERMISSIONS = {
         "uom": ["view"],
         "template": ["view"],
         "order": ["view", "create", "update", "approve", "confirm", "print", "deliver", "verify", "exact_cut",
-                  "override", "cancel", "approve_price_edit"],
+                  "override", "cancel", "approve_price_edit", "approve_cancel"],
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel", "cutting_config", "cutting_receive"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
@@ -379,7 +379,7 @@ DEFAULT_PERMISSIONS = {
         # `IncentiveRatesEditor` yang memanggil katalog itu lewat `useUomConversions`.
         # HANYA `view`: menambah/mengubah baris satuan tetap milik admin.
         "uom": ["view"],
-        "order": ["view", "print", "approve_price_edit"],   # 2026-10 — setujui harga/diskon override
+        "order": ["view", "print", "approve_price_edit", "approve_cancel"],   # 2026-10 — setujui harga/diskon override; BTP-1 — setujui batal & tutup sisa
         "document": ["view", "print"],
         "sales_return": ["view"],
         # LN-140 — finance PT pemasok wajib melihat retur antar-PT & nilainya (Meja retur internal).

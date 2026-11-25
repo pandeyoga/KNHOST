@@ -571,6 +571,10 @@
    "penjualan",
    "alur-pesanan"
   ],
+  "sales.cancel_approval_when": [
+   "penjualan",
+   "alur-pesanan"
+  ],
   "sales.quotation_enabled": [
    "penjualan",
    "alur-pesanan"

@@ -44,6 +44,8 @@ QUEUES: List[tuple] = [
      # dokumen tahap sebelumnya tidak hilang dari antrean. SO mati tidak menunggu siapa pun (R5).
      {"status": {"$nin": list(SO_DEAD_STATUSES)},
       "$or": [{"status": "waiting_approval"}, {"pending_approvals.status": "pending"}]}),
+    ("so_cancel", "Pembatalan/tutup sisa pesanan menunggu ACC", "approval-inbox", "sales_orders",
+     {"cancel_request.status": "pending"}),
     ("purchase_order", "Pesanan pembelian menunggu ACC", "purchase-approval",
      "purchase_orders", {"status": "waiting_approval"}),
     ("price", "Permintaan harga khusus", "price-approvals", "price_approvals",

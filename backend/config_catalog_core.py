@@ -322,6 +322,19 @@ E("sales.allow_partial_shipment", group="penjualan", section="alur-pesanan", typ
   example="Aktif → pesanan 1.000 yard boleh dikirim 600 dulu, sisanya menyusul",
   consumers=("routers/sales_orders.py:create_order",), risk="medium")
 
+E("sales.cancel_approval_when", group="penjualan", section="alur-pesanan", type="enum", default="dibayar_atau_disiapkan",
+  options=({"value": "dibayar_atau_disiapkan", "label": "Bila sudah dibayar atau sudah disiapkan gudang"},
+           {"value": "selalu", "label": "Selalu minta persetujuan"},
+           {"value": "tidak_pernah", "label": "Tidak pernah (langsung batal)"}),
+  scopes=("global", "entity"),
+  label="Kapan pembatalan pesanan perlu persetujuan",
+  help="Menentukan kapan pembatalan atau penutupan sisa pesanan tidak bisa langsung dijalankan sales, tetapi "
+       "diajukan dulu ke penyetuju. Bawaan: hanya bila pesanan sudah ada uang masuk atau sudah disiapkan gudang.",
+  impact="Pembatalan yang perlu persetujuan masuk ke antrean Pusat Persetujuan dan baru berlaku setelah disetujui "
+         "pemegang izin setujui pembatalan.",
+  example="Pesanan CBD sudah dibayar Rp 2.000.000 → pembatalan diajukan ke penyetuju, bukan langsung batal",
+  consumers=("services/so_cancel_service.py:needs_approval",), risk="medium")
+
 E("sales.quotation_enabled", group="penjualan", section="alur-pesanan", type="bool", default=False,
   scopes=("global", "entity"), status="not_used",
   not_used_reason=("Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun "

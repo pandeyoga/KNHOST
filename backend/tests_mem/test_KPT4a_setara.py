@@ -273,8 +273,8 @@ async def test_KPT4_U1_baris_bawaan_semua_antrean(db):
     print(f"\nU1: {len(rows)} baris bawaan; antrean tercakup {len(antrean & tercakup)} dari {len(antrean)}")
     # 38 antrean saat KP-T4 dirancang + `journal_proposal` (perbaikan susulan KF-T6 `8b5fdea`) = 39; AG-T5 menambah
     # `ai_card_second` (kartu asisten uang keluar menunggu orang kedua) = 40; KM-T3 menambah `incentive_sheet` (lembar
-    # insentif menunggu pengesahan) = 41.
-    assert len(antrean) == 41
+    # insentif menunggu pengesahan) = 41; BTP-1 menambah `so_cancel` (pembatalan/tutup sisa pesanan menunggu ACC) = 42.
+    assert len(antrean) == 42
     assert antrean <= tercakup, sorted(antrean - tercakup)
     po = sorted([r for r in rows if r["doc_kind"] == "purchase_order"], key=lambda r: (r["level"], r["min_amount"]))
     j1 = [r for r in po if r["level"] == 1 and r["roles"]]

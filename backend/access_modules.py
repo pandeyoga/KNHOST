@@ -551,7 +551,7 @@ _SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
     ("membatalkan kwitansi, faktur pajak, atau rencana bayar",
      (("ar_receipt", "void"), ("tax_invoice", "cancel"), ("payment_plan", "void"))),
     ("mengirim barang sebelum lunas dan mengubah pesanan terkunci",
-     (("order", "release_unpaid"), ("order", "override"), ("order", "approve_price_edit"))),
+     (("order", "release_unpaid"), ("order", "override"), ("order", "approve_price_edit"), ("order", "approve_cancel"))),
     ("mengelola gaji dan melihat data pribadi karyawan", (("hr", "manage_payroll"), ("hr", "view_pii"))),
     # PK-22 — mengesahkan, menjurnal, membalik, dan membayar gaji (menyiapkan draf `payroll.create` tidak termasuk).
     ("mengesahkan, menjurnal, membalik, dan membayar gaji",
@@ -635,6 +635,7 @@ ACTION_LABEL = {
     "issue": "Terbitkan", "manage": "Kelola", "manage_attendance": "Kelola absensi", "manage_bom": "Kelola BOM",
     "manage_org": "Kelola struktur", "manage_payroll": "Kelola payroll", "manage_settings": "Kelola pengaturan", "pay": "Bayar",
     "pegging": "Pegging", "policy": "Atur kebijakan retur", "override": "Override / edit SO", "approve_price_edit": "Setujui ubah harga/diskon",
+    "approve_cancel": "Setujui pembatalan & tutup sisa pesanan",
     "propose": "Usulkan", "random_check": "Random check", "receive": "Terima", "release": "Rilis", "reopen": "Buka kembali", "release_hold": "Lepas HOLD desain (PIC Designer)", "paper_check": "Centang print paper per ronde (Designer)", "choose_route": "Pilih jalur pemenuhan (supplier/makloon)", "override_default": "Menyimpang dari sumber default master", "realize": "Realisasi PR → PO/MKO", "pic_decide": "Keputusan PIC atas uji ulang gagal", "override_fail": "Override hasil uji gagal (tetap tercatat gagal)", "assess_labdip": "Catat hasil labdip", "assess_handfeel": "Catat hasil handfeel", "assess_proofing": "Catat hasil proofing", "decide_labdip": "Setujui hasil labdip", "decide_handfeel": "Setujui hasil handfeel", "decide_proofing": "Setujui hasil proofing",
     "replace": "Ganti", "report": "Laporan", "resolve": "Selesaikan kasus", "return": "Retur", "run": "Jalankan", "scan": "Scan",
     "send": "Kirim", "settle": "Lunasi", "ship": "Kirim barang", "sign": "Tandatangani", "submit": "Ajukan", "tax": "Pajak",
