@@ -19,9 +19,11 @@ import { apiText, createInspection, INS_KIND_LABEL, INS_STATUS_LABEL, refDocOpti
 /** Status SPK yang masih BERJALAN — cermin `inspection_service.OPEN_STATUSES`. */
 const SPK_BERJALAN = ["draft", "assigned", "in_progress"];
 
-export default function InspectionFormModal({ open, onClose, onCreated, meta, orphanTasks = [] }) {
-  const [kind, setKind] = useState("return_customer");
-  const [refId, setRefId] = useState("");
+export default function InspectionFormModal({
+  open, onClose, onCreated, meta, orphanTasks = [], initialKind = "return_customer", initialRefId = "",
+}) {
+  const [kind, setKind] = useState(initialKind);
+  const [refId, setRefId] = useState(initialRefId);
   const [taskId, setTaskId] = useState("");
   const [assignee, setAssignee] = useState("");
   const [remark, setRemark] = useState("");
@@ -45,7 +47,15 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
     return () => { hidup = false; };
   }, [open, kind, perluTugas]);
 
-  useEffect(() => { setRefId(""); setTaskId(""); }, [kind]);
+  // Dibuka dari tempat lain (mis. baris meja) → jenis & dokumen sumber terisi; tidak dikosongkan oleh efek jenis.
+  useEffect(() => {
+    if (!open) return;
+    setKind(initialKind); setRefId(initialRefId); setTaskId("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  /** Mengganti jenis oleh pengguna mengosongkan pilihan dokumen/tugas (daftarnya berbeda per jenis). */
+  function pilihJenis(v) { setKind(v); setRefId(""); setTaskId(""); }
 
   /**
    * Dokumen terpilih + SPK yang mungkin SUDAH memeriksanya.
@@ -104,7 +114,7 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
       <div className="grid min-w-0 gap-3">
         <label className="block min-w-0">
           <span className="field-label">Jenis inspeksi</span>
-          <KNSelect data-testid="ins-kind-select" value={kind} onValueChange={setKind}
+          <KNSelect data-testid="ins-kind-select" value={kind} onValueChange={pilihJenis}
             options={kindOptions} className="field" placeholder="Pilih jenis" />
         </label>
 

@@ -15,7 +15,10 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { can } from "../../config/roles";
 import { useAppNav } from "../../context/AppNavContext";
 import { apiErrorText } from "../../utils/apiError";
-import DeskQueueCard, { DeskQueueCardSkeleton } from "../sales_admin/DeskQueueCard";
+import { toast } from "@/hooks/use-toast";
+import InspectionFormModal from "../inspections/InspectionFormModal";
+import { inspectionsMeta } from "../inspections/inspectionsApi";
+import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import ReturnDeskSummaryCard, { returnSummaryHasContent, useReturnDeskSummary } from "../home/ReturnDeskSummaryCard";
 import { orderDeskQueues, splitPantau } from "../sales_admin/deskQueueOrder";
@@ -43,7 +46,7 @@ const DESKS = {
   },
 };
 
-const NO_IN_PLACE = () => false;   // MD · Gudang · Meja Saya: semua aksi pindah layar (pop-up rincian dulu)
+// MD · Gudang · Meja Saya: aksi pindah layar (pop-up rincian dulu), kecuali "Buat SPK QC" di Meja Gudang (di tempat).
 
 /** Izin pengguna: `currentUser` dari App; cadangan lama `localStorage kn_user` (pemanggil tanpa prop). */
 function permsOf(currentUser) {
@@ -61,20 +64,35 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tick, setTick] = useState(0);
+  const [spk, setSpk] = useState(null);   // { row, meta } — pembuatan SPK QC dari baris "Pesanan minta QC"
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ quiet = false } = {}) => {
+    if (!quiet) setLoading(true);
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       setData(await cfg.load(params)); setError("");
     } catch (e) { setError(apiErrorText(e, `Gagal memuat ${cfg.title}.`)); }
-    finally { setLoading(false); }
+    finally { if (!quiet) setLoading(false); }
   }, [selectedEntity, cfg]);
 
   useEffect(() => { load(); }, [load]);
 
   const open = (link) => { markDeskReturn(deskKey); onOpenDocument?.(link); };
+
+  // Meja Gudang: "Buat SPK QC" dikerjakan di tempat bila pengguna berizin `inspection.create`; selain itu pindah layar.
+  const spkInPlace = desk === "warehouse_admin" && can(perms, "inspection", "create");
+  const inPlace = inPlaceOf(spkInPlace ? ["create_qc_spk"] : []);
+
+  async function startSpk(shown) {
+    const row = shown?._raw || shown;
+    try {
+      const meta = await inspectionsMeta(selectedEntity);
+      setSpk({ row, meta });
+    } catch (e) {
+      setError(apiErrorText(e, "Gagal membuka pembuatan SPK QC."));
+    }
+  }
 
   /** Layar penanganan baris. `full` = "Buka layar penuh" (dokumennya), bukan jalan pintas aksinya. */
   function navigate(shown, queue, { full = false } = {}) {
@@ -122,7 +140,8 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
     <div className={DESK_GRID_CLASS}>
       {orderDeskQueues(split.antrean).map((q) => (
         <DeskQueueCard key={q.id} queue={q} loading={loading} testPrefix={p} stateKey={`${deskKey}:${q.id}`}
-          inPlace={NO_IN_PLACE} onAction={(row, queue) => navigate(row, queue)}
+          inPlace={inPlace}
+          onAction={(row, queue) => ((row?._raw || row)?.action_kind === "create_qc_spk" && spkInPlace ? startSpk(row) : navigate(row, queue))}
           onOpenFull={(row, queue) => navigate(row, queue, { full: true })} />
       ))}
     </div>
@@ -154,6 +173,16 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
       <DeskFrame deskKey={deskKey} testPrefix={p} help={cfg.intro} notMine={data?.not_my_desk || []}
         antrean={antrean} pantau={pantau} pantauLoading={retSummary === undefined} ready={!loading}
         onReload={() => { load(); setTick((t) => t + 1); }} />
+      {spk && (
+        <InspectionFormModal open meta={spk.meta} initialKind="sales_order" initialRefId={spk.row.ref_id}
+          onClose={() => setSpk(null)}
+          onCreated={(doc) => {
+            const r = spk.row;
+            setSpk(null);
+            toast({ title: `SPK QC ${doc?.number || ""} untuk ${r.number} diterbitkan.` });
+            load({ quiet: true });
+          }} />
+      )}
     </div>
   );
 }

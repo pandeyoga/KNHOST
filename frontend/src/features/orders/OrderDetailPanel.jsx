@@ -12,6 +12,7 @@ import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../services/apiClient";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import RelatedDocsPanel from "../documents/RelatedDocsPanel";
+import { ORDER_PRINT_DOCS } from "../documents/orderPrintDocs";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import { STATUS_LABEL as LG_LABEL, STATUS_PILL as LG_PILL } from "../logistics/logisticsApi";
@@ -209,12 +210,7 @@ export function OrderDetailPanel({
         {["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"].includes(sel.status) && (
           <RelatedDocsPanel
             title="Cetak Dokumen · Gudang & Penagihan"
-            docs={[
-              { docType: "picking_list", label: "Surat Pengambilan Barang" },
-              { docType: "packing_list", label: "Daftar Kemasan" },
-              { docType: "delivery_note", label: "Surat Jalan Pengiriman" },
-              { docType: "invoice", label: "Faktur Komersial" },
-            ]}
+            docs={ORDER_PRINT_DOCS}
             sourceId={sel.id}
             entityId={sel.entity_id}
             number={sel.number}

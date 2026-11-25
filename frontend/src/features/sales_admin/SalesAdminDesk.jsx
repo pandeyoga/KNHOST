@@ -20,6 +20,7 @@ import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "./DeskQueueCard
 import SoTrackerCard from "./SoTrackerCard";
 import VerifyOrderDialog from "./VerifyOrderDialog";
 import ReleaseToWarehouseDialog from "./ReleaseToWarehouseDialog";
+import OrderPrintModal from "../documents/OrderPrintModal";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
@@ -31,7 +32,7 @@ import { apiErrorText } from "../../utils/apiError";
 
 const DESK_KEY = "sales_admin";
 const P = "desk";
-const IN_PLACE = inPlaceOf(["verify", "fulfill", "release"]);
+const IN_PLACE = inPlaceOf(["verify", "fulfill", "release", "print"]);
 
 const HELP = (
   <>
@@ -51,6 +52,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
   const [releaseRow, setReleaseRow] = useState(null);
+  const [printRow, setPrintRow] = useState(null);
   // Uji alur A1 (pelatihan 18 Nov) — Pelacak SO & Keep/Pending dimuat sendiri; sesudah aksi meja (periksa & lepas,
   // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang (`trackerTick`), supaya status SO yang baru dilepas tidak basi.
   const [trackerTick, setTrackerTick] = useState(0);
@@ -107,6 +109,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     if (row.action_kind === "verify") { setVerifyRow({ ...row, _qid: qid }); return; }
     if (row.action_kind === "fulfill") { setFulfillRow({ ...row, _qid: qid }); return; }
     if (row.action_kind === "release") { startRelease(row, qid); return; }
+    if (row.action_kind === "print") { setPrintRow(row); return; }
     open(rowLink(row, qid, DESK_KEY));
   }
 
@@ -165,6 +168,14 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           onClose={() => setVerifyRow(null)}
           onVerified={(msg) => { const qid = verifyRow._qid; setVerifyRow(null); done(msg, qid); }}
           onOpenFull={() => openFull(verifyRow)}
+        />
+      )}
+
+      {printRow && (
+        <OrderPrintModal
+          order={{ id: printRow.ref_id, number: printRow.number, title: printRow.title, entity_id: printRow.entity_id }}
+          currentUser={currentUser}
+          onClose={() => setPrintRow(null)}
         />
       )}
 
