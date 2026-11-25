@@ -106,13 +106,16 @@ async def return_claim_values(returns: List[Dict[str, Any]]) -> Dict[str, float]
 def _row(*, ref_type: str, ref_id: str, number: str, title: str, subtitle: str = "",
          value: float = 0.0, age_days: int = 0, badge: str = "",
          action: str = "", action_kind: str = "open", extra: Optional[Dict[str, Any]] = None,
-         at: Any = "") -> Dict[str, Any]:
+         at: Any = "", entity_id: str = "", age_kind: str = "wait") -> Dict[str, Any]:
     """`at` (M31, pemilik 16 Nov) — waktu masuk antrean (tanggal yang sama dengan dasar `age_days`); baris kartu meja
-    menulis "menunggu n hari · masuk {tanggal}" alih-alih perkiraan."""
+    menulis "menunggu n hari · masuk {tanggal}" alih-alih perkiraan.
+    MEJA-1 — `entity_id` = PT dokumen (lencana PT di layar); `age_kind` = "wait" (menunggu sejak `at`) atau
+    "overdue" (lewat jatuh tempo: `at` = tanggal jatuh tempo, `age_days` = hari telat)."""
     return {"ref_type": ref_type, "ref_id": ref_id, "number": number, "title": title,
             "subtitle": subtitle, "value": round(float(value or 0), 2),
             "age_days": int(age_days), "badge": badge,
             "action": action, "action_kind": action_kind,
+            "entity_id": entity_id or "", "age_kind": age_kind,
             **({"at": at.isoformat() if hasattr(at, "isoformat") else str(at)} if at else {}), **(extra or {})}
 
 
@@ -196,7 +199,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("stage") or o.get("status"),
               action="Periksa & lepas", action_kind="verify",
-              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in belum],
+              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in belum],
         action_label="Periksa & lepas", value_label=TOTAL_LABEL))
 
     # 2 — ditahan Admin Sales ("Tahan dulu") → tombol Lepas ke gudang
@@ -208,7 +211,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=o.get("customer_name", "—"), subtitle=f"Ditahan {(o.get('release') or {}).get('by') or ''} · {_ket(o)}",
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="ditahan",
-              action="Lepas ke gudang", action_kind="release") for o in tahan],
+              action="Lepas ke gudang", action_kind="release", entity_id=o.get("entity_id", "")) for o in tahan],
         action_label="Lepas ke gudang", value_label=TOTAL_LABEL))
 
     # 3 — sudah diperiksa, menunggu keputusan manajer → dilepas otomatis sesudah ACC (memantau)
@@ -223,7 +226,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="menunggu ACC",
               action="Lihat", action_kind="open",
-              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in tunggu],
+              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in tunggu],
         action_label="Lihat", value_label=TOTAL_LABEL))
 
     # 4 — siap cetak Surat Jalan / Invoice
@@ -238,7 +241,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=" · ".join(x for x in (o.get("customer_city"), o.get("sales_name")) if x),
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status"),
-              action="Cetak", action_kind="open") for o in dok],
+              action="Cetak", action_kind="open", entity_id=o.get("entity_id", "")) for o in dok],
         action_label="Cetak", value_label=TOTAL_LABEL))
 
     # 5 — perlu dipenuhi (kurang stok) → TIGA tombol keputusan pemenuhan (US16)
@@ -261,12 +264,12 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=v["customer_name"],
               subtitle=" · ".join(f"{ln['product_name']} kurang "
                                   f"{ln['backorder_qty']:g} {ln['unit']}"
-                                  for ln in v["lines"][:2]),
+                                  for ln in v["lines"]),
               value=sum(float(ln.get("backorder_qty") or 0) for ln in v["lines"]),
               age_days=_age_days(v.get("created_at")), at=v.get("created_at"),
               badge=v["coverage"], action="Putuskan pemenuhan", action_kind="fulfill",
               extra={"lines": v["lines"],
-                     "unit": (v["lines"][0].get("unit") if v["lines"] else "")})
+                     "unit": (v["lines"][0].get("unit") if v["lines"] else "")}, entity_id=v.get("entity_id", ""))
          for oid, v in per_order.items()],
         action_label="Putuskan pemenuhan",
         # Yang dijumlahkan di sini JUMLAH BARANG yang kurang, bukan rupiah.
@@ -285,8 +288,10 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                         else f"jatuh tempo {abs(r['days_late'])} hari lagi"),
               value=r.get("outstanding") or 0,
               age_days=max(0, int(r.get("days_late") or 0)),
+              at=(r.get("due_date") or "") if r.get("overdue") else "",
+              age_kind="overdue" if r.get("overdue") else "wait",
               badge="lewat" if r.get("overdue") else "segera",
-              action="Follow-up", action_kind="open") for r in tagih],
+              action="Follow-up", action_kind="open", entity_id=r.get("entity_id", "")) for r in tagih],
         action_label="Follow-up"))
 
     # UAT 24 Okt (P14) — pelanggan tanpa sales penanggung jawab. Sejak sales hanya melihat pelanggannya sendiri,
@@ -296,20 +301,20 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                   {"assigned_sales_id": {"$in": [None, ""]}}, {"shared_walk_in": {"$ne": True}},
                   {"$or": [{"sales_team": {"$exists": False}}, {"sales_team": {"$size": 0}}]},
                   {"status": {"$nin": ["inactive", "nonaktif"]}}]},
-        {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "created_at": 1}).sort("created_at", 1).to_list(200)
+        {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "created_at": 1, "entity_id": 1}).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "pelanggan_tanpa_sales", "Pelanggan tanpa sales",
         "Sales hanya melihat pelanggannya sendiri. Tetapkan sales penanggung jawab di data pelanggan supaya bisa dipesan.",
         [_row(ref_type="customer", ref_id=c["id"], number=c.get("code") or "—", title=c.get("name", "—"),
               subtitle=c.get("city") or "—", value=1, age_days=_age_days(c.get("created_at")), at=c.get("created_at"),
-              badge="tanpa sales", action="Tetapkan sales", action_kind="open") for c in tanpa],
+              badge="tanpa sales", action="Tetapkan sales", action_kind="open", entity_id=c.get("entity_id", "")) for c in tanpa],
         action_label="Tetapkan sales", value_kind="qty", value_label="Pelanggan"))
 
     # 7 — retur menunggu proses dokumen (diajukan sales, diproses Admin Sales)
     ret = await db.sales_returns.find(
         _q(scope, {"status": {"$in": list(RETUR_ANTREAN)}}),
         {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "order_number": 1,
-         "status": 1, "created_at": 1, "total_refund": 1, "items": 1, "return_type": 1, "order_id": 1}
+         "status": 1, "created_at": 1, "total_refund": 1, "items": 1, "return_type": 1, "order_id": 1, "entity_id": 1}
     ).sort("created_at", 1).to_list(200)
     ret_value = await return_claim_values(ret)   # F-17 — dulu Rp0
     queues.append(_queue(
@@ -319,7 +324,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=r.get("customer_name", "—"),
               subtitle=f"atas {r.get('order_number') or '—'} · {len(r.get('items') or [])} baris",
               value=ret_value.get(r["id"], 0.0), age_days=_age_days(r.get("created_at")), at=r.get("created_at"),
-              badge=r.get("status", ""), action="Proses", action_kind="open")
+              badge=r.get("status", ""), action="Proses", action_kind="open", entity_id=r.get("entity_id", ""))
          for r in map(safe_doc, ret)],
         action_label="Proses"))
 
@@ -336,24 +341,24 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number", "—"), title=r.get("customer_name", "—"),
               subtitle=f"atas {r.get('order_number') or '—'}", value=tukar_val.get(r["id"], 0.0),
               age_days=_age_days(r.get("updated_at") or r.get("created_at")), at=r.get("updated_at") or r.get("created_at"), badge="tukar barang",
-              action="Buat pengganti", action_kind="open") for r in tukar],
+              action="Buat pengganti", action_kind="open", entity_id=r.get("entity_id", "")) for r in tukar],
         action_label="Buat pengganti"))
 
     # 8 — permintaan internal dari sales (E8.8) → jadikan transaksi antar-PT
     pin = await db.internal_requests.find(
         _q(scope, {"status": {"$in": list(PIN_ANTREAN)}}),
         {"_id": 0, "id": 1, "number": 1, "reason": 1, "status": 1, "created_at": 1,
-         "est_value": 1, "items": 1, "requested_by_name": 1, "source_order_number": 1}
+         "est_value": 1, "items": 1, "requested_by_name": 1, "source_order_number": 1, "entity_id": 1}
     ).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "permintaan_internal", "Permintaan internal dari sales",
         "Sales meminta barang dari PT lain — Anda yang memilih sumbernya & mengesahkan.",
         [_row(ref_type="internal_request", ref_id=r["id"], number=r.get("number", "—"),
-              title=r.get("reason", "—")[:70] or "—",
+              title=r.get("reason") or "—",
               subtitle=(f"untuk {r.get('source_order_number')}" if r.get("source_order_number")
                         else f"{len(r.get('items') or [])} barang"),
               value=r.get("est_value") or 0, age_days=_age_days(r.get("created_at")), at=r.get("created_at"),
-              badge=r.get("status", ""), action="Tindak", action_kind="open")
+              badge=r.get("status", ""), action="Tindak", action_kind="open", entity_id=r.get("entity_id", ""))
          for r in map(safe_doc, pin)],
         action_label="Tindak"))
 
@@ -369,7 +374,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="special_order", ref_id=o["id"], number=o.get("number", "—"), title=o.get("customer_name", "—"),
               subtitle=f"{', '.join(REQUEST_TYPE_LABEL.get(t, t) for t in (o.get('request_types') or []))} · sample {((o.get('basis') or {}).get('sample') or {}).get('number') or ((o.get('basis') or {}).get('design') or {}).get('code') or '—'}",
               value=o.get("total_amount") or 0, age_days=_age_days(o.get("updated_at")), at=o.get("updated_at"), badge="ACC pelanggan",
-              action="Catat ACC", action_kind="open") for o in od_rows["acc_pelanggan"]],
+              action="Catat ACC", action_kind="open", entity_id=o.get("entity_id", "")) for o in od_rows["acc_pelanggan"]],
         action_label="Catat ACC"))
     queues.append(_queue(
         "od_kunci_harga", "Pesanan khusus — perlu kunci harga",
@@ -380,7 +385,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                         if float((o.get("pricing_preview") or {}).get("cost_price") or 0) > 0
                         else f"{len([i for i in o.get('items') or [] if i.get('status') != 'cancelled']) or 1} item · harga per item di rincian OD"),
               value=(o.get("pricing_preview") or {}).get("total") or 0, age_days=_age_days(o.get("customer_decision_at") or o.get("updated_at")), at=o.get("customer_decision_at") or o.get("updated_at"),
-              badge="Kunci harga", action="Kunci harga", action_kind="open") for o in od_rows["kunci_harga"]],
+              badge="Kunci harga", action="Kunci harga", action_kind="open", entity_id=o.get("entity_id", "")) for o in od_rows["kunci_harga"]],
         action_label="Kunci harga"))
     if od_rows["siap_kirim"]:
         queues.append(_queue(
@@ -388,7 +393,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             "PO sudah diterima gudang tetapi Surat Jalan belum lahir. Buka OD → 'Siapkan pengiriman'.",
             [_row(ref_type="special_order", ref_id=o["id"], number=o.get("number", "—"), title=o.get("customer_name", "—"),
                   subtitle=o.get("shipping_error") or "SO belum dikonversi", value=o.get("total_amount") or 0,
-                  age_days=_age_days(o.get("updated_at")), at=o.get("updated_at"), badge="Siap kirim", action="Siapkan", action_kind="open") for o in od_rows["siap_kirim"]],
+                  age_days=_age_days(o.get("updated_at")), at=o.get("updated_at"), badge="Siap kirim", action="Siapkan", action_kind="open", entity_id=o.get("entity_id", "")) for o in od_rows["siap_kirim"]],
             action_label="Siapkan"))
 
     # Trial 22 Okt (E10) — harga khusus DITOLAK pada pesanan yang sudah diperiksa: keputusan di tangan sales (ajukan
@@ -400,7 +405,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"], title=o.get("customer_name", "—"),
               subtitle=f"Sales {o.get('sales_name') or '—'}", value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="ditolak", action="Lihat", action_kind="open",
-              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in tolak],
+              extra={"booking_until": o.get("reservation_expires_at", "")}, entity_id=o.get("entity_id", "")) for o in tolak],
         action_label="Lihat", value_label=TOTAL_LABEL))
 
     return {"desk": "sales_admin", "desk_label": "Meja Admin Sales",
@@ -444,7 +449,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=f"PPN {float(o.get('ppn_amount') or 0):,.0f}".replace(",", "."),
               value=_doc_total(o),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status", ""),
-              action="Terbitkan", action_kind="issue_tax") for o in kandidat],
+              action="Terbitkan", action_kind="issue_tax", entity_id=o.get("entity_id", "")) for o in kandidat],
         action_label="Terbitkan", owner="finance", value_label=TOTAL_LABEL))
 
     # 2 & 5 — uang masuk perlu dicatat + jatuh tempo (dari pengingat penagihan)
@@ -460,14 +465,14 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
              "payment_status": {"$ne": "paid"}, "order_type": {"$ne": "sample"}},
             {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "grand_total": 1, "total_amount": 1,
              "extra_billing_lines": 1,   # PK-32 — nilai tagihan
-             "payments": 1, "paid_total": 1, "payment_term_code": 1, "payment_profile_method": 1, "created_at": 1}):
+             "payments": 1, "paid_total": 1, "payment_term_code": 1, "payment_profile_method": 1, "created_at": 1, "entity_id": 1}):
         if o["id"] in _seen or order_payment_method(o) not in NON_AR_METHODS:
             continue
         sisa = round(max(_order_grand_total(o) - _order_paid(o), 0.0), 2)
         if sisa > 0.01:
             tagih.append({"order_id": o["id"], "order_number": o.get("number", ""), "customer_id": o.get("customer_id", ""),
                           "customer_name": o.get("customer_name", ""), "outstanding": sisa, "days_late": 0,
-                          "overdue": False, "cash_unrecorded": True})
+                          "overdue": False, "cash_unrecorded": True, "entity_id": o.get("entity_id", "")})
     queues.append(_queue(
         "uang_masuk", "Uang masuk perlu dicatat & dialokasikan",
         "Catat kwitansi AR lalu alokasikan ke invoice — inilah wewenang inti Anda.",
@@ -478,9 +483,11 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                         else "belum jatuh tempo"),
               value=r.get("outstanding") or 0,
               age_days=max(0, int(r.get("days_late") or 0)),
+              at=(r.get("due_date") or "") if r.get("overdue") else "",
+              age_kind="overdue" if r.get("overdue") else "wait",
               badge="lewat" if r.get("overdue") else "segera",
               action="Catat kwitansi", action_kind="receipt",
-              extra={"order_id": r["order_id"], "row_key": r["order_id"]}) for r in tagih],
+              extra={"order_id": r["order_id"], "row_key": r["order_id"]}, entity_id=r.get("entity_id", "")) for r in tagih],
         action_label="Catat kwitansi", owner="finance"))
 
     # 2b — cek UI UAT v3 (S2): SO bertermin CBD/DP yang TERTAHAN menunggu bayar (F-10). Sejak F-16 SO yang belum
@@ -492,7 +499,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         {**_ent_q(scope), "status": {"$in": ["reserved", "waiting_approval", "approved", "confirmed", "partially_picked",
                                              "picked", "packing", "packed", "partially_shipped"]},
          "order_type": {"$ne": "sample"}},
-        {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "created_at": 1}).to_list(1000)
+        {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "created_at": 1, "entity_id": 1}).to_list(1000)
     holds = await _gate.holds_for_orders(o["id"] for o in cand)
     tahan = [(o, holds[o["id"]]) for o in cand if (holds.get(o["id"]) or {}).get("blocked")]
     queues.append(_queue(
@@ -503,7 +510,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=f"{h['term_code']} · wajib {rupiah(h['required'])} sebelum kirim · kurang {rupiah(h['shortfall'])}",
               value=h["shortfall"], age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="tertahan bayar",
               action="Catat kwitansi", action_kind="receipt",
-              extra={"order_id": o["id"], "row_key": o["id"]}) for o, h in tahan],
+              extra={"order_id": o["id"], "row_key": o["id"]}, entity_id=o.get("entity_id", "")) for o, h in tahan],
         action_label="Catat kwitansi", owner="finance"))
 
     # 3 — selisih bayar (lebih/kurang bayar) dalam batas kewenangan Finance
@@ -521,7 +528,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle={"under": "kurang bayar", "over": "lebih bayar"}.get(str(r.get("direction") or ""), "selisih"),
               value=abs(float(r.get("delta") or 0)),
               age_days=int(r.get("age_days") or 0), at=r.get("receipt_date") or "", badge="perlu keputusan",
-              action="Putuskan", action_kind="decide_variance")
+              action="Putuskan", action_kind="decide_variance", entity_id=r.get("entity_id", ""))
          for r in map(safe_doc, selisih)],
         action_label="Putuskan", owner="finance"))
 
@@ -529,7 +536,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     denda = await db.penalties.find(
         _q(scope, {"status": "draft"}),
         {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "amount": 1, "created_at": 1,
-         "doc_number": 1, "days_late": 1}
+         "doc_number": 1, "days_late": 1, "entity_id": 1}
     ).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "denda_draft", "Denda perlu diterbitkan",
@@ -538,7 +545,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=d.get("customer_name", "—"),
               subtitle=f"atas {d.get('doc_number') or '—'}",
               value=d.get("amount") or 0, age_days=_age_days(d.get("created_at")), at=d.get("created_at"),
-              badge="draf", action="Terbitkan", action_kind="issue_penalty")
+              badge="draf", action="Terbitkan", action_kind="issue_penalty", entity_id=d.get("entity_id", ""))
          for d in map(safe_doc, denda)],
         action_label="Terbitkan", owner="finance"))
 
@@ -550,8 +557,9 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=r.get("customer_name", "—"),
               subtitle=f"lewat {r['days_late']} hari · sales {r.get('sales_name') or '—'}",
               value=r.get("outstanding") or 0, age_days=int(r.get("days_late") or 0),
+              at=r.get("due_date") or "", age_kind="overdue",
               badge="lewat", action="Tagih", action_kind="open",
-              extra={"customer_id": r.get("customer_id", ""), "order_id": r.get("order_id")}) for r in lewat],
+              extra={"customer_id": r.get("customer_id", ""), "order_id": r.get("order_id")}, entity_id=r.get("entity_id", "")) for r in lewat],
         action_label="Tagih", owner="finance"))
 
     # 6 — HUTANG jatuh tempo (PB-01 lanjutan): PO ber-`payment_due_date` (turun dari termin
@@ -583,6 +591,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                       else f"{-late} hari lagi")) + f" · {p.get('payment_term_code') or 'tanpa termin'}"
                      + (f" · kontrak {p['parent_po_number']}" if p.get("parent_po_number") else ""),
             value=sisa, age_days=max(0, late),
+            at=p["payment_due_date"] if late > 0 else "", age_kind="overdue" if late > 0 else "wait",
+            entity_id=p.get("entity_id", ""),
             badge="lewat" if late > 0 else "segera",
             action="Bayar", action_kind="open",
             # MN-T3 — `supplier_id`: tombol "Bayar" membuka kartu pemasok (tagihan PO itu dibayar dari sana).
@@ -601,7 +611,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         _q(scope, {"status": {"$nin": list(_gl.FULLY_SHIPPED_STATUSES | set(_gl.DEAD_STATUSES))},
                    "paid_total": {"$gt": 0}}),
         {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "paid_total": 1, "payments": 1,
-         "grand_total": 1, "total_amount": 1, "status": 1, "created_at": 1}
+         "grand_total": 1, "total_amount": 1, "status": 1, "created_at": 1, "entity_id": 1}
     ).sort("created_at", 1).to_list(300)
     diakui_ids = {j["source_id"] async for j in db.journal_entries.find(
         {"source_type": "sales_order", "status": {"$ne": "void"},
@@ -623,7 +633,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             badge="diakui (historis)" if diakui else "kewajiban",
             action="Buka", action_kind="open",
             extra={"revenue_recognized": diakui,
-                   "advance_total": _gl.order_advance_total(o), "advance_unrecognized": tertahan}))
+                   "advance_total": _gl.order_advance_total(o), "advance_unrecognized": tertahan},
+            entity_id=o.get("entity_id", "")))
     queues.append(_queue(
         "uang_muka_belum_kirim", "Uang muka pesanan belum dikirim",
         "Kas sudah masuk, barang belum keluar: kewajiban sampai dikirim. Lencana merah = "
@@ -643,7 +654,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=float(n.get("gross_amount") or 0), age_days=_age_days(n.get("created_at")), at=n.get("created_at"),
               badge="menunggu Finance", action="Tinjau", action_kind="open",
               extra={"order_id": n["order_id"], "order_number": n.get("order_number", ""),
-                     "credit_note_id": n["id"]}) for n in pend],
+                     "credit_note_id": n["id"]}, entity_id=n.get("entity_id", "")) for n in pend],
         action_label="Tinjau", owner="finance"))
 
     # Cek UI UAT v3 (S12) — sample berbayar menunggu ACC bayar: dulu hanya terlihat di Pesanan Sample (filter), bukan di meja.
@@ -651,7 +662,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                       "sample_payment_status": {"$in": ["awaiting_approval", "reapproval_required"]},
                                       "status": {"$nin": ["cancelled", "expired"]}},
                                      {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "grand_total": 1,
-                                      "created_at": 1, "sample_payment_status": 1}).sort("created_at", 1).to_list(200)
+                                      "created_at": 1, "sample_payment_status": 1, "entity_id": 1}).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "sample_acc_bayar", "Sample berbayar — menunggu ACC bayar",
         "Pastikan pembayaran / kesepakatan bayar ada, lalu setujui. Persetujuan ulang muncul bila nilai aktual potong berubah > ±5%.",
@@ -659,7 +670,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle="persetujuan ulang (nilai aktual berubah)" if o.get("sample_payment_status") == "reapproval_required" else "sample berbayar baru",
               value=_doc_total(o), age_days=_age_days(o.get("created_at")), at=o.get("created_at"),
               badge="ACC ulang" if o.get("sample_payment_status") == "reapproval_required" else "ACC bayar",
-              action="Tinjau", action_kind="open") for o in sos],
+              action="Tinjau", action_kind="open", entity_id=o.get("entity_id", "")) for o in sos],
         action_label="Tinjau", owner="finance", value_label=TOTAL_LABEL))
 
     # Cek UI UAT v3 (S14) — retur selesai QC menunggu keputusan nilai/penyelesaian Finance; dulu hanya lewat lonceng.
@@ -673,7 +684,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number", ""), title=r.get("customer_name", "—"),
               subtitle=" · ".join(x for x in [r.get("order_number", ""), ((r.get("items") or [{}])[0].get("product_name") or "")] if x),
               value=sr_val.get(r["id"], 0.0), age_days=_age_days(r.get("updated_at") or r.get("created_at")), at=r.get("updated_at") or r.get("created_at"),
-              badge="selesai QC", action="Putuskan", action_kind="open") for r in sr],
+              badge="selesai QC", action="Putuskan", action_kind="open", entity_id=r.get("entity_id", "")) for r in sr],
         action_label="Putuskan", owner="finance"))
 
     return {"desk": "finance", "desk_label": "Meja Finance",
@@ -744,11 +755,11 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="design_request", ref_id=r["id"], number=r.get("number", ""),
               title=r.get("customer_name") or r.get("so_number")
                     or f"Internal · {_TARGET_LABEL.get(r.get('target_type') or r.get('design_type') or '', 'desain')}",
-              subtitle=(r.get("brief") or "")[:80], value=0,
+              subtitle=r.get("brief") or "", value=0,
               age_days=_age_days(r.get("requested_at") or r.get("created_at")), at=r.get("requested_at") or r.get("created_at"),
               badge=label_st.get(r.get("status"), r.get("status", "")),
               action="Buka", action_kind="open",
-              extra={"revision_count": int(r.get("revision_count") or 0)}) for r in reqs],
+              extra={"revision_count": int(r.get("revision_count") or 0)}, entity_id=r.get("entity_id", "")) for r in reqs],
         action_label="Buka", owner="md", value_kind="count", value_label="Permintaan"))
 
     # 2 — sample / labdip menunggu penilaian atau keputusan
@@ -776,7 +787,7 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=float(s.get("cost_total") or 0),
               age_days=_age_days(s.get("created_at")), at=s.get("created_at"), badge=lbl.get(s.get("status"), s.get("status", "")),
               action="Buka", action_kind="open",
-              extra={"revision_count": _sample_revision_count(s)}) for s in samples],
+              extra={"revision_count": _sample_revision_count(s)}, entity_id=s.get("entity_id", "")) for s in samples],
         # Masukan 16 Nov — dulu nilai "Rp 0" per baris (biaya sample jarang diisi) tidak bermakna → antrean jumlah.
         action_label="Buka", owner="md", value_kind="count", value_label="Sample"))
 
@@ -796,9 +807,10 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                 title=od.get("customer_name", "—"),
                                 subtitle=" · ".join(f"{n.get('description') or n['key']}: "
                                                     + ("pilih jalur" if not n.get("effective_route") else "realisasi")
-                                                    for n in todo)[:110],
+                                                    for n in todo),
                                 value=0, age_days=_age_days((od.get("pricing") or {}).get("locked_at") or od.get("updated_at")), at=(od.get("pricing") or {}).get("locked_at") or od.get("updated_at"),
-                                badge=f"{len(todo)} item belum diadakan", action="Buka", action_kind="open"))
+                                badge=f"{len(todo)} item belum diadakan", action="Buka", action_kind="open",
+                                entity_id=od.get("entity_id", "")))
     queues.append(_queue(
         "od_pemenuhan", "Pesanan khusus — pilih jalur & realisasi pengadaan",
         "Harga final sudah dikunci. Pilih jalur tiap item (Supplier PR → PO / Makloon PR → MKO), lalu Realisasi pengadaan "
@@ -822,7 +834,7 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=float(p.get("total_est_amount") or p.get("total") or p.get("estimated_total") or _pr_total(p)),
               age_days=_age_days(p.get("created_at")), at=p.get("created_at"),
               badge=pr_badge.get(p.get("status"), p.get("status", "")),
-              action="Buka", action_kind="open") for p in prs],
+              action="Buka", action_kind="open", entity_id=p.get("entity_id", "")) for p in prs],
         action_label="Buka", owner="md"))
 
     # 3b — M5: SPK makloon berjalan (dikirim ke mitra, belum selesai diterima)
@@ -843,7 +855,7 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               value=float(m.get("planned_service_cost") or 0),
               age_days=_age_days(m.get("issued_at") or m.get("created_at")), at=m.get("issued_at") or m.get("created_at"),
               badge="partially_received" if m.get("status") == "partially_received" else "in_process",
-              action="Buka", action_kind="open") for m in mkos],
+              action="Buka", action_kind="open", entity_id=m.get("entity_id", "")) for m in mkos],
         action_label="Buka", owner="md", value_label="Biaya jasa rencana"))
 
     # 3c — M5: jasa makloon sudah diterima, menunggu faktur mitra (GR/IR, K-63/K-82)
@@ -860,10 +872,10 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=b.get("supplier_name") or "Mitra makloon",
               subtitle=" · ".join(x for x in (b.get("bill_number") or "",
                                               f"langkah {b['step_seq']}" if b.get("step_seq") else "",
-                                              b.get("stage_code") or "") if x)[:110],
+                                              b.get("stage_code") or "") if x),
               value=float(b.get("net_amount") or b.get("total_amount") or 0),
               age_days=_age_days(b.get("created_at")), at=b.get("created_at"),
-              badge="menunggu faktur", action="Buka", action_kind="open") for b in bills],
+              badge="menunggu faktur", action="Buka", action_kind="open", entity_id=b.get("entity_id", "")) for b in bills],
         action_label="Buka", owner="md", value_label="Nilai jasa"))
 
     # 3d — M5: PO bahan dari PR yang belum selesai diterima
@@ -882,7 +894,7 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                               if o.get("expected_delivery_date") else "") if x),
               value=float(o.get("grand_total") or o.get("total_amount") or 0),
               age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge=o.get("status", ""),
-              action="Buka", action_kind="open") for o in pos],
+              action="Buka", action_kind="open", entity_id=o.get("entity_id", "")) for o in pos],
         action_label="Buka", owner="md", value_label=TOTAL_LABEL))
 
     # 4 — SPK inspeksi dengan tahanan warna/handfeel (butuh acuan MD)
@@ -898,7 +910,7 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="inspection", ref_id=i["id"], number=i.get("number", ""),
               title=i.get("supplier_name") or i.get("customer_name") or i.get("ref_doc_number") or "—",
               subtitle=_ins_kind_label(i), value=0, age_days=_age_days(i.get("spk_date") or i.get("created_at")), at=i.get("spk_date") or i.get("created_at"),
-              badge=i.get("status", ""), action="Buka", action_kind="open") for i in ins],
+              badge=i.get("status", ""), action="Buka", action_kind="open", entity_id=i.get("entity_id", "")) for i in ins],
         action_label="Buka", owner="md", value_kind="count", value_label="SPK"))
 
     return {"desk": "md", "queues": queues,
@@ -955,7 +967,7 @@ def _delivery_subtitle(d: Dict[str, Any]) -> str:
     parts = [", ".join(d.get("shipment_nos") or []), mode, who, d.get("vehicle_plate") or "",
              f"ETA {str(d.get('eta'))[:10]}" if d.get("eta") else "",
              f"gagal: {d.get('fail_reason')}" if d.get("fail_reason") else ""]
-    return " · ".join(x for x in parts if x)[:110]
+    return " · ".join(x for x in parts if x)
 
 
 def _po_receive_subtitle(p: Dict[str, Any]) -> str:
@@ -1001,11 +1013,11 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         "Barang sudah keluar gudang tetapi belum ada pengiriman — buat pengiriman (armada/ekspedisi).",
         [_row(ref_type="shipment", ref_id=s["id"], number=s.get("shipment_no", ""),
               title=s.get("customer_name") or sj_cust.get(s.get("order_id"), "") or s.get("order_number") or "—",
-              subtitle=f"{s.get('order_number', '')} · {s.get('product_name', '')}"[:80],
+              subtitle=f"{s.get('order_number', '')} · {s.get('product_name', '')}",
               value=float(s.get("qty") or s.get("quantity") or 0),
               age_days=_age_days(s.get("created_at") or s.get("dispatched_at")), at=s.get("created_at") or s.get("dispatched_at"),
               badge="dispatched", action="Buat pengiriman", action_kind="create_delivery",
-              extra={"unit": s.get("unit") or ""}) for s in sj],
+              extra={"unit": s.get("unit") or ""}, entity_id=s.get("entity_id", "")) for s in sj],
         action_label="Buat pengiriman", owner="warehouse_admin", value_kind="qty", value_label="Qty"))
 
     # 2 — tugas outbound belum tuntas
@@ -1028,7 +1040,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               badge="tertahan bayar" if _gate.desk_note(holds.get(t.get("order_id"))) else t.get("status", ""),
               action="Buka WMS", action_kind="open",
               extra={"order_id": t.get("order_id"), "unit": t.get("unit") or "yard",
-                     "payment_blocked": bool(_gate.desk_note(holds.get(t.get("order_id"))))}) for t in tasks],
+                     "payment_blocked": bool(_gate.desk_note(holds.get(t.get("order_id"))))}, entity_id=t.get("entity_id", "")) for t in tasks],
         action_label="Buka WMS", owner="warehouse_admin", value_kind="qty", value_label="Qty"))
 
     # 2b — keputusan owner 2026-10-21: retur pelanggan menunggu terima / QC (tanpa nilai uang)
@@ -1047,7 +1059,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               age_days=_age_days(p.get("created_at")), at=p.get("created_at"),
               badge="Menunggu barang" if p.get("status") == "pending" else "Penerimaan sebagian",
               action="Terima barang", action_kind="open",
-              extra={"expected_delivery_date": p.get("expected_delivery_date", "")}) for p in pos],
+              extra={"expected_delivery_date": p.get("expected_delivery_date", "")}, entity_id=p.get("entity_id", "")) for p in pos],
         action_label="Terima barang", owner="warehouse_admin", value_label=TOTAL_LABEL))
 
     # 3b — Cek UI UAT v3 (S6): pesanan yang minta QC sebelum kirim tetapi belum punya SPK QC pesanan. Dulu Admin Gudang
@@ -1055,7 +1067,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     qso = await db.sales_orders.find(
         {**_ent_q(scope), "qc_request.mode": {"$in": ["full", "sampling"]}, "qc_request.status": {"$ne": "passed"},
          "status": {"$in": ["confirmed", "partially_picked", "picked", "packing", "packed", "partially_shipped"]}},
-        {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "qc_request": 1, "created_at": 1, "grand_total": 1}).to_list(200)
+        {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "qc_request": 1, "created_at": 1, "grand_total": 1, "entity_id": 1}).to_list(200)
     open_spk = set(await db.inspections.distinct(
         "ref_doc_id", {"kind": "sales_order", "ref_doc_id": {"$in": [o["id"] for o in qso]},
                        "status": {"$nin": ["done", "closed", "cancelled"]}})) if qso else set()
@@ -1067,7 +1079,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=("QC seluruh roll" if (o.get("qc_request") or {}).get("mode") == "full"
                         else f"QC sampling {float((o.get('qc_request') or {}).get('sample_pct') or 10):g}%"),
               value=0, age_days=_age_days(o.get("created_at")), at=o.get("created_at"), badge="perlu SPK QC", action="Buat SPK QC", action_kind="open",
-              extra={"link_view": "inspections"}) for o in qso if o["id"] not in open_spk],
+              extra={"link_view": "inspections"}, entity_id=o.get("entity_id", "")) for o in qso if o["id"] not in open_spk],
         action_label="Buat SPK QC", owner="warehouse_admin", value_kind="count", value_label="Pesanan"))
 
     # 4 — SPK inspeksi belum ditugaskan
@@ -1079,7 +1091,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         [_row(ref_type="inspection", ref_id=i["id"], number=i.get("number", ""),
               title=i.get("supplier_name") or i.get("customer_name") or i.get("ref_doc_number") or "—",
               subtitle=_ins_kind_label(i), value=0, age_days=_age_days(i.get("spk_date") or i.get("created_at")), at=i.get("spk_date") or i.get("created_at"),
-              badge="draf", action="Tugaskan", action_kind="open") for i in ins],
+              badge="draf", action="Tugaskan", action_kind="open", entity_id=i.get("entity_id", "")) for i in ins],
         action_label="Tugaskan", owner="warehouse_admin", value_kind="count", value_label="SPK"))
 
     # 5 — opname & transfer menunggu persetujuan
@@ -1088,11 +1100,11 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     rows = [_row(ref_type="cycle_count", ref_id=c["id"], number=c.get("number", ""), title=c.get("name") or c.get("warehouse_name", "—"),
                  subtitle=f"{len(c.get('items') or [])} item dihitung · {len(c.get('discrepancies') or [])} selisih · menunggu ACC",
                  value=0, age_days=_age_days(c.get("created_at")), at=c.get("created_at"),
-                 badge="opname", action="Setujui", action_kind="open") for c in cc]
+                 badge="opname", action="Setujui", action_kind="open", entity_id=c.get("entity_id", "")) for c in cc]
     rows += [_row(ref_type="warehouse_transfer", ref_id=t["id"], number=t.get("code", ""),
                   title=f"{t.get('source_warehouse_name', '')} → {t.get('dest_warehouse_name', '')}",
                   subtitle=f"{len(t.get('items') or [])} baris", value=0, age_days=_age_days(t.get("created_at")), at=t.get("created_at"),
-                  badge="transfer", action="Setujui", action_kind="open") for t in tr]
+                  badge="transfer", action="Setujui", action_kind="open", entity_id=t.get("entity_id", "")) for t in tr]
     queues.append(_queue(
         "persetujuan_gudang", "Opname & transfer menunggu persetujuan",
         "Selisih opname dan transfer antar gudang yang menunggu keputusan Anda.",
@@ -1108,7 +1120,7 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=d.get("customer_name") or d.get("order_number") or "—",
               subtitle=_delivery_subtitle(d), value=0,
               age_days=_age_days(d.get("created_at")), at=d.get("created_at"), badge="gagal" if d.get("status") == "failed" else "terkirim",
-              action="Buka", action_kind="open") for d in lg],
+              action="Buka", action_kind="open", entity_id=d.get("entity_id", "")) for d in lg],
         action_label="Buka", owner="warehouse_admin", value_kind="count", value_label="Pengiriman"))
 
     return {"desk": "warehouse_admin", "queues": queues,

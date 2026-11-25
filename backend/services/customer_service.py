@@ -448,6 +448,7 @@ async def collection_worklist(
             "days_late": sm["max_days"],
             "overdue": sm["max_days"] > 0,
             "sales_name": o.get("sales_name", ""),
+            "entity_id": o.get("entity_id", ""),
             "via_own_order": bool(own_sales and c.get("assigned_sales_id") != own_sales),
         })
     rows.sort(key=lambda r: r["days_late"], reverse=True)
