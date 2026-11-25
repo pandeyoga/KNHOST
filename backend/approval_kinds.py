@@ -12,6 +12,8 @@ Aturan:
   `queue_key` kosong = keputusan langsung tanpa dokumen menunggu (bukan antrean), wajib ber-`note`.
 - `permissions`: izin setujui; lebih dari satu = salah satu cukup. `reject_permissions`: izin pintu tolak bila berbeda.
 - Sub-jenis (`induk.anak`) dipakai bila satu antrean memuat beberapa keputusan dengan aturan berbeda.
+- `max_levels` (0 = bebas): jumlah jenjang terbanyak yang boleh disimpan di Aturan Persetujuan untuk jenis itu — untuk
+  keputusan yang pintunya diputus SATU orang (bentuk keputusan, bukan nilai bisnis); `max_levels_message` = pesan tolak.
 """
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -21,10 +23,12 @@ GROUPS: Tuple[str, ...] = ("Penjualan", "Pembelian", "Keuangan", "Gudang", "R&D"
 
 def _k(label: str, group: str, queue_key: str, permissions: Tuple[str, ...], amount_field: str = "",
        reject_permissions: Tuple[str, ...] = (), level_status: Optional[Dict[int, str]] = None,
-       level_labels: Optional[Dict[int, str]] = None, note: str = "") -> Dict[str, Any]:
+       level_labels: Optional[Dict[int, str]] = None, note: str = "", max_levels: int = 0,
+       max_levels_message: str = "") -> Dict[str, Any]:
     return {"label": label, "group": group, "queue_key": queue_key, "permissions": tuple(permissions),
             "reject_permissions": tuple(reject_permissions or ()), "amount_field": amount_field,
-            "level_status": dict(level_status or {}), "level_labels": dict(level_labels or {}), "note": note}
+            "level_status": dict(level_status or {}), "level_labels": dict(level_labels or {}), "note": note,
+            "max_levels": int(max_levels or 0), "max_levels_message": max_levels_message}
 
 
 APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
@@ -38,9 +42,11 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
                              ("order.approve",), amount_field="grand_total"),
     "sales_order.harga_khusus": _k("Pesanan Penjualan — harga khusus", "Penjualan", "sales_order",
                                    ("order.approve",)),
+    # R26 (tinjauan akhir I2) — satu keputusan = final (A2-2, penyetuju tunggal): satu jenjang saja.
     "sales_order.batal": _k("Pesanan Penjualan — pembatalan & tutup sisa", "Penjualan", "so_cancel",
                            ("order.approve_cancel",), amount_field="grand_total",
-                           note="Pengajuan batal pesanan atau tutup sisa pesanan yang sudah dibayar/disiapkan."),
+                           note="Pengajuan batal pesanan atau tutup sisa pesanan yang sudah dibayar/disiapkan.",
+                           max_levels=1, max_levels_message="Pembatalan pesanan hanya satu jenjang persetujuan."),
     "sales_order.bayar_sampel": _k("Pesanan Sample — pembayaran (di Pusat Persetujuan)", "Penjualan", "sales_order",
                                    ("order.approve",), amount_field="grand_total",
                                    note="Pintu Setujui Bayar di layar Pesanan Sample cukup izin setujui bayar sample."),

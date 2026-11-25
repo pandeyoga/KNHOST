@@ -335,11 +335,17 @@ async def _decide_check(order: Dict[str, Any], amount: float, actor: Dict[str, A
     from entity_scope import allowed_entities_for
     from services import approval_policy_service as aps
     ent = order.get("entity_id") or ""
-    levels = await aps.required_levels(KIND, ent, amount) or [{"level": 1}]
-    for lv in levels:   # satu keputusan = final: aktor wajib lolos SETIAP jenjang yang berlaku untuk nominal itu
-        res = await aps.can_decide(KIND, ent, amount, actor, int(lv.get("level") or 1))
-        if not res["allowed"]:
-            return {"allowed": False, "message": res["message"]}
+    # R26 (tinjauan akhir I2) — pembatalan SATU jenjang (A2-2: satu keputusan = final). Penyimpanan Aturan Persetujuan
+    # menolak jenjang > 1 (`approval_kinds.max_levels`); baris jenjang > 1 yang terlanjur ada diabaikan (dulu aktor
+    # wajib lolos SETIAP jenjang → Manajer di jenjang 1 + Direktur di jenjang 2 membuat permintaan tak bisa diputus).
+    lebih = [int(lv.get("level") or 1) for lv in await aps.required_levels(KIND, ent, amount)
+             if int(lv.get("level") or 1) > 1]
+    if lebih:
+        logger.warning("Aturan Persetujuan %s PT %s memuat jenjang %s — diabaikan: pembatalan pesanan satu jenjang "
+                       "(R26). Rapikan di Pengaturan › Persetujuan › Aturan Persetujuan.", KIND, ent or "-", lebih)
+    res = await aps.can_decide(KIND, ent, amount, actor, 1)
+    if not res["allowed"]:
+        return {"allowed": False, "message": res["message"]}
     if ent and ent not in await allowed_entities_for(actor):
         return {"allowed": False, "message": f"Pesanan {order.get('number') or ''} milik PT yang tidak Anda tangani."}
     if is_order_sales(order, actor):

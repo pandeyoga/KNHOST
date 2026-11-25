@@ -611,6 +611,8 @@ def _parse_levels(doc_kind: str, levels: Any) -> List[Dict[str, Any]]:
     """Isi `PUT` → baris tervalidasi (tanpa id). Melempar 400 berpesan manusia."""
     reg = _registry()
     amount_kind = has_amount(doc_kind)
+    k = kind(doc_kind)
+    maks = int(k.get("max_levels") or 0)   # R26 — jenis berpenyetuju tunggal (mis. pembatalan pesanan)
     if not isinstance(levels, list):
         raise _bad("Isi jenjang tidak sah.")
     out: List[Dict[str, Any]] = []
@@ -620,6 +622,8 @@ def _parse_levels(doc_kind: str, levels: Any) -> List[Dict[str, Any]]:
         level = int(lv.get("level") or n)
         if level < 1:
             raise _bad("Nomor jenjang harus 1 atau lebih.")
+        if maks and level > maks:
+            raise _bad(k.get("max_levels_message") or f"{k['label']} paling banyak {maks} jenjang persetujuan.")
         label = str(lv.get("label") or "").strip()[:60]
         tiers = lv.get("tiers") or []
         if not isinstance(tiers, list) or not tiers:

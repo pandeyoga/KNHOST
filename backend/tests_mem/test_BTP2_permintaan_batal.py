@@ -308,6 +308,48 @@ async def test_BTP2_rentang_mulai_x_membebaskan(klien, db, siap):
         await db.approval_policies.delete_many({"id": "btp2_rentang_ksc"})
 
 
+async def test_BTP2_pembatalan_satu_jenjang_simpan_ditolak(klien, db, siap):
+    """I2 tinjauan akhir (R26) — jenis `sales_order.batal` satu jenjang: Aturan Persetujuan dengan jenjang 2 ditolak saat
+    disimpan (pesan manusia), tanpa satu baris pun tersimpan; satu jenjang tetap bisa disimpan."""
+    url = "/api/approval-policies/sales_order.batal"
+    jenjang1 = {"level": 1, "label": "Manajer", "tiers": [{"min_amount": 0, "max_amount": None, "roles": ["manager"]}]}
+    jenjang2 = {"level": 2, "label": "Direktur", "tiers": [{"min_amount": 0, "max_amount": None, "roles": ["admin"]}]}
+    sebelum = await db.approval_policies.count_documents({"doc_kind": "sales_order.batal"})
+    try:
+        r = await klien.put(url, headers=siap["h"], json={"entity_id": KSC, "reason": "uji BTP2 dua jenjang",
+                                                          "levels": [jenjang1, jenjang2]})
+        assert r.status_code == 400, r.text
+        assert _teks(r) == "Pembatalan pesanan hanya satu jenjang persetujuan."
+        assert await db.approval_policies.count_documents({"doc_kind": "sales_order.batal"}) == sebelum
+        r = await klien.put(url, headers=siap["h"], json={"entity_id": KSC, "reason": "uji BTP2 satu jenjang",
+                                                          "levels": [jenjang1]})
+        assert r.status_code == 200, r.text
+        assert [lv["level"] for lv in r.json()["levels"]] == [1]
+    finally:
+        await db.approval_policies.delete_many({"doc_kind": "sales_order.batal", "entity_id": KSC})
+
+
+async def test_BTP2_jenjang_dua_terlanjur_ada_diabaikan(klien, db, siap, caplog):
+    """R26 — baris jenjang 2 yang terlanjur ada (disisipkan langsung, data lama) diabaikan: penyetuju jenjang 1 tetap
+    bisa memutus (dulu tak seorang pun lolos SETIAP jenjang → permintaan menggantung, gudang ditahan); dicatat di log."""
+    import logging
+    from services import approval_policy_service as aps
+    baris = [{**aps._row("sales_order.batal", KSC, 1, ["finance", "manager"]), "id": "btp2_j1_ksc", "version": 1},
+             {**aps._row("sales_order.batal", KSC, 2, ["admin"]), "id": "btp2_j2_ksc", "version": 1}]
+    await db.approval_policies.insert_many([dict(b) for b in baris])
+    try:
+        so = await _pesanan(klien, db, siap, bayar=1_000_000)
+        r = await _batal(klien, siap["hs"], so)
+        assert r.status_code == 202, r.text
+        with caplog.at_level(logging.WARNING, logger="services.so_cancel_service"):
+            r = await _putus(klien, siap["hf"], so, "approve")
+        assert r.status_code == 200, r.text
+        assert (await _so(db, so))["status"] == "cancelled"
+        assert any("jenjang" in m.lower() and "diabaikan" in m.lower() for m in caplog.messages), caplog.messages
+    finally:
+        await db.approval_policies.delete_many({"id": {"$in": ["btp2_j1_ksc", "btp2_j2_ksc"]}})
+
+
 # ── Fokus review ────────────────────────────────────────────────────────────────────────────────────────────────────
 async def test_BTP2_ajukan_dua_kali_409(klien, db, siap):
     so = await _pesanan(klien, db, siap, bayar=1_000_000)
