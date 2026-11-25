@@ -99,20 +99,24 @@ async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) ->
     now = datetime.now(timezone.utc)
     sample_desk = desk == "sample_admin"
     # Meja Admin Sample melacak SO SAMPEL (dulu: SO roll biasa yang tak satu pun tahapnya milik Admin Sample).
-    q = {**scope, "status": {"$nin": CLOSED}, "is_sample": True if sample_desk else {"$ne": True}}
+    # Meja lain memuat SO biasa dan SOS (§5.6); tahap tiap baris mengikuti jenis pesanannya.
+    q = {**scope, "status": {"$nin": CLOSED}}
+    if sample_desk:
+        q["order_type"] = "sample"
     proj = {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1, "sales_name": 1,
             "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "extra_billing_lines": 1,
             "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1,
-            "sample_payment_status": 1}
+            "sample_payment_status": 1, "order_type": 1}
     rows: List[Dict[str, Any]] = []
     orders = await db.sales_orders.find(q, proj).to_list(5000)
     from services import dispatch_payment_gate as _gate
     holds = await _gate.holds_for_orders(o["id"] for o in orders if o.get("status") in SHIP_STAGES)
     for o in orders:
-        ns = sample_next_step(o) if sample_desk else next_step(o, holds.get(o["id"]))
+        ns = sample_next_step(o) if o.get("order_type") == "sample" else next_step(o, holds.get(o["id"]))
         upd = o.get("updated_at") or o.get("created_at") or ""
         rows.append({
-            "id": o["id"], "number": o.get("order_number") or o.get("number") or o["id"],
+            "id": o["id"], "order_type": o.get("order_type") or "regular", "entity_id": o.get("entity_id", ""),
+            "number": o.get("order_number") or o.get("number") or o["id"],
             "customer_name": o.get("customer_name") or "", "sales_name": o.get("sales_name") or "",
             "status": o.get("status"), "status_label": STATUS_LABEL.get(o.get("status") or "", o.get("status") or "-"),
             "next_step": ns["step"], "owner_roles": ns["roles"],

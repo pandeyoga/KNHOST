@@ -41,7 +41,7 @@ def _scope_q(scope: Dict[str, Any], ids: List[str]) -> Dict[str, Any]:
     return dict(scope or {})
 
 
-async def _turn_queue(actor: Dict[str, Any]) -> Dict[str, Any]:
+async def _turn_queue(actor: Dict[str, Any], *, skip_sample_orders: bool = False) -> Dict[str, Any]:
     notes = await db.notifications.find(
         {"recipient_user": actor["id"], "type": "turn", "read": {"$ne": True}}, {"_id": 0}
     ).sort("created_at", -1).limit(100).to_list(100)
@@ -54,10 +54,17 @@ async def _turn_queue(actor: Dict[str, Any]) -> Dict[str, Any]:
         if len(parts) == 4 and parts[0] == "turn":
             want.setdefault(parts[1], {})[parts[2]] = parts[3]
     now_status: Dict[str, Dict[str, str]] = {}
+    sample_ids: set = set()   # id pesanan sample (SOS) — bukan giliran meja manajer (§5.6)
     for coll_name, ids in want.items():
         try:
-            now_status[coll_name] = {d["id"]: str(d.get("status") or "") async for d in db[coll_name].find(
-                {"id": {"$in": list(ids)}}, {"_id": 0, "id": 1, "status": 1})}
+            proj = {"_id": 0, "id": 1, "status": 1}
+            if coll_name == "sales_orders":
+                proj["order_type"] = 1
+            now_status[coll_name] = {}
+            async for d in db[coll_name].find({"id": {"$in": list(ids)}}, proj):
+                now_status[coll_name][d["id"]] = str(d.get("status") or "")
+                if coll_name == "sales_orders" and d.get("order_type") == "sample":
+                    sample_ids.add(d["id"])
         except Exception:  # noqa: BLE001 — koleksi tak dikenal: biarkan baris tampil apa adanya
             continue
     rows, seen = [], set()
@@ -69,8 +76,10 @@ async def _turn_queue(actor: Dict[str, Any]) -> Dict[str, Any]:
         st = parts[3] if len(parts) == 4 and parts[0] == "turn" else ""
         if st and parts[1] in now_status and now_status[parts[1]].get(parts[2], st) != st:
             continue
-        seen.add(key)
         coll, doc_id = (str(n.get("action_id") or ":").split(":", 1) + [""])[:2]
+        if skip_sample_orders and coll == "sales_orders" and doc_id in sample_ids:
+            continue
+        seen.add(key)
         rows.append(_row(ref_type=coll.rstrip("s") if coll.endswith("s") else coll, ref_id=doc_id,
                          number=str(n.get("title", "")).split(":")[-1].strip(), title=n.get("title", ""),
                          subtitle=n.get("body", ""), age_days=_age_days(n.get("created_at")), at=n.get("created_at"),
@@ -94,7 +103,7 @@ async def _find(coll: str, q: Dict[str, Any], limit: int = 100) -> List[Dict[str
 
 async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
     sq = _scope_q(scope, ids)
-    so = await _find("sales_orders", {**sq, "status": "waiting_approval"})
+    so = await _find("sales_orders", {**sq, "status": "waiting_approval", "order_type": {"$ne": "sample"}})
     po = await _find("purchase_orders", {**sq, "status": "waiting_approval"})
     sr = await _find("sales_returns", {**sq, "status": "pending_approval"})
     pr = await _find("purchase_returns", {**sq, "status": "pending_approval"})
@@ -309,8 +318,10 @@ async def escalation_queue(scope, ids) -> Dict[str, Any]:
 async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids: List[str],
                     perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
     """`role` = jenis meja (`desk_of`). `perms` (izin pelaku) — PR-T4: antrean yang izinnya tidak dipegang dilewati."""
-    queues = [await _turn_queue(actor)]
+    queues: List[Dict[str, Any]] = [{}]   # [0] = "Giliran saya", diisi sesudah jenis meja diketahui
+    skip_sample = False   # pesanan sample (SOS) bukan giliran meja manajer/admin (§5.6)
     if role == "manager":
+        skip_sample = True
         queues += await manager_queues(scope, ids)
     elif role == "sales":
         queues += await sales_queues(actor, scope, ids)
@@ -321,8 +332,10 @@ async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids
     elif role == "driver":
         queues += await driver_queues(actor, scope, ids)
     elif role == "admin":
+        skip_sample = True
         queues += await manager_queues(scope, ids)
         queues += await warehouse_queues(scope, ids)
+    queues[0] = await _turn_queue(actor, skip_sample_orders=skip_sample)
     if role in ("manager", "warehouse", "admin"):
         queues.insert(1, await escalation_queue(scope, ids))   # M30 — tepat sesudah "Giliran saya"
     if perms is not None:
