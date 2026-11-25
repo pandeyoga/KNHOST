@@ -316,6 +316,9 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     # pemeriksaan muat/RFID (logika gerbang RFID tidak diubah): "Tahan kredit" → 409 walau titiknya mati.
     from services import credit_gate
     await credit_gate.gate_checkpoint(order_id, credit_gate.SURAT_JALAN)
+    # BTP-3 (A2-4) — pesanan yang sedang diajukan batal/tutup sisa tidak boleh berangkat sebelum diputus.
+    from services import so_cancel_service
+    await so_cancel_service.assert_not_pending(order_id)
     await qc_request_guard(order_id)
     from services.cutting_service import pending_handoffs   # L06 LN-061 — potong → Admin Cutting → kirim
     waiting = await pending_handoffs(order_id)

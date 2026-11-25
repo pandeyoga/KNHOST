@@ -76,6 +76,8 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
     # F-10 — status termin CBD/DP per SO: alasan tahan tampil di daftar & panel kirim (bukan baru ketahuan saat klik).
     from services import dispatch_payment_gate as _gate
     holds = await _gate.holds_for_orders(so_ids)
+    from services import so_cancel_service   # BTP-3 — tanda tahan; SATU kueri untuk seluruh halaman
+    held = await so_cancel_service.held_orders(so_ids)
     for task in tasks:
         if task.get("order_id"):
             order = orders.get(task["order_id"], {})
@@ -85,6 +87,7 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
             task["so_backorder_qty"] = open_backorder_qty(order, task.get("product_id", ""))
             hold = holds.get(task["order_id"])
             task["payment_hold"] = hold if hold and hold["applies"] else None
+            task["held_reason"] = so_cancel_service.HELD_LABEL if task["order_id"] in held else None
     from services.work_labels import label_rows
     await label_rows(tasks)
     from fastapi.encoders import jsonable_encoder
@@ -213,6 +216,8 @@ async def scan_pick_item(
     if task.get("task_subtype") == "sample_cut":
         raise HTTPException(status_code=400, detail="Tugas potong sample diselesaikan lewat Potong Sample, bukan Ambil.")
     _ots.assert_can(task, "scan_pick")   # FIX-3b (STM-OUT-2) — `escalated`/`scheduled`/terminal ditolak
+    from services import so_cancel_service   # BTP-3 (A2-4) — tahan selama permintaan batal/tutup sisa menunggu
+    await so_cancel_service.assert_not_pending(task.get("order_id"))
 
     if actual_qty is not None:
         actual_qty = require_qty(actual_qty, label="Qty pick")
@@ -391,6 +396,8 @@ async def resolve_outbound_escalation(
             status_code=409,
             detail="Eskalasi sudah/sedang diselesaikan pihak lain (atau ditutup karena pesanan batal). Muat ulang layar.")
     _ots.assert_can(task, "resolve_escalation", status_code=409)
+    from services import so_cancel_service   # BTP-3 (A2-4) — tahan selama permintaan batal/tutup sisa menunggu
+    await so_cancel_service.assert_not_pending(task.get("order_id"))
     resolution_notes = optional_reason(resolution_notes, label="Catatan penyelesaian")
 
     original_qty = round(float(task.get("quantity", 0) or 0), 2)
@@ -455,7 +462,7 @@ async def resolve_outbound_escalation(
             if order.get("payments"):
                 raise HTTPException(
                     status_code=400,
-                    detail="Order sudah memiliki pembayaran — penyesuaian qty harus lewat retur/credit note.")
+                    detail="Pesanan sudah dibayar — tutup sisanya lewat tombol Tutup sisa di rincian pesanan.")
             await _claim()
             # 1) Lepas selisih reservasi roll (parsial, per produk+gudang task ini). FIX-3b (STM-OUT-1) — roll yang
             #    sudah dipindai/terkirim di tugas ini dikecualikan; status `in_transit_sales` tidak pernah dilepas.

@@ -102,6 +102,27 @@ async def pending_of(order_id: str) -> Optional[Dict[str, Any]]:
     return _public(o["cancel_request"]) if o else None
 
 
+MESSAGE_HELD = "Pesanan sedang diajukan batal/tutup sisa — tunggu keputusan."
+HELD_LABEL = "Ditahan: menunggu keputusan batal"
+
+
+async def assert_not_pending(order_id: str) -> None:
+    """Pintu tahan (A2-4, §5.5/§5.6a): kirim, ambil, maju tahap, eskalasi tutup-sisa, dan batal item Pesanan Khusus
+    ditolak 409 selama ada permintaan batal/tutup sisa menunggu. Satu teks untuk semua pintu; tidak mengubah apa pun."""
+    if order_id and await pending_of(order_id):
+        raise HTTPException(status_code=409, detail=MESSAGE_HELD)
+
+
+async def held_orders(order_ids: List[str]) -> set:
+    """Id pesanan (dari `order_ids`) yang punya permintaan menunggu — SATU kueri untuk seluruh halaman daftar."""
+    ids = [i for i in dict.fromkeys(order_ids) if i]
+    if not ids:
+        return set()
+    rows = await db.sales_orders.find({"id": {"$in": ids}, "cancel_request.status": "pending"},
+                                      {"_id": 0, "id": 1}).to_list(len(ids))
+    return {r["id"] for r in rows}
+
+
 # ── Eksekusi batal (isi lama `POST /sales-orders/{id}/cancel`) ──────────────────────────────────────────────────────
 async def _assert_cancellable(order: Dict[str, Any]) -> None:
     if order["status"] in CANCEL_BLOCKED:

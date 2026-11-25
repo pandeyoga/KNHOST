@@ -35,6 +35,8 @@ def line_of(order: Dict[str, Any], od_item_id: str) -> Dict[str, Any]:
 async def check(order: Dict[str, Any], od_item_id: str) -> Dict[str, Any]:
     """Semua syarat — tanpa mengubah apa pun. Mengembalikan baris SO yang akan dibatalkan."""
     number = order.get("number") or order.get("id")
+    from services import so_cancel_service   # BTP-3 (A2-4) — tahan selama permintaan batal/tutup sisa menunggu
+    await so_cancel_service.assert_not_pending(order.get("id"))
     line = line_of(order, od_item_id)
     if not line:
         raise SoLineError(f"Baris SO {number} untuk item ini tidak ditemukan.")

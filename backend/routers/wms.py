@@ -281,6 +281,9 @@ async def advance_task(task_id: str, request: Request, expected_status: Optional
     if current_idx >= len(stages) - 1:
         raise HTTPException(status_code=409, detail="Task sudah di stage akhir")
     next_stage = stages[current_idx + 1]
+    if task["flow_type"] == "outbound":   # BTP-3 (A2-4) — tahan selama permintaan batal/tutup sisa menunggu
+        from services import so_cancel_service
+        await so_cancel_service.assert_not_pending(task.get("order_id"))
     update_data = {"status": next_stage, "updated_at": now_iso()}
     # Sub-fase 1.8 — outbound mencapai 'dispatched': delegasi ke shipment_service
     # (SSOT-safe: roll committed→in_transit_sales + catat shipment, BUKAN $inc balance).
