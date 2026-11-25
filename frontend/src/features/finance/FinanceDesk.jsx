@@ -37,6 +37,7 @@ import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import ReturnDeskSummaryCard, { returnSummaryHasContent, useReturnDeskSummary } from "../home/ReturnDeskSummaryCard";
 import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { markDeskReturn } from "../desks/deskSession";
+import { dedupeFinanceGroups } from "../desks/deskDedupe";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";
 import TaxIssueDialog from "./TaxIssueDialog";
@@ -178,7 +179,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting]);
   useEffect(() => { load(); }, [load]);
 
-  const groups = useMemo(() => susunKelompok(perms, src, canOpen).map((g) => ({ ...g, rows: g.rows.map((r) => {
+  const groups = useMemo(() => dedupeFinanceGroups(susunKelompok(perms, src, canOpen).map((g) => ({ ...g, rows: g.rows.map((r) => {
     if (r.action_kind === "receipt") {
       return { ...r, action: "Terima pembayaran", _titleNode: <CustomerCardLink id={r.ref_id} name={r.title} perms={perms}
         testId={`fin-desk-customer-${r.row_key || r.ref_id}`} /> };
@@ -187,7 +188,8 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       return { ...r, action: "Bayar", action_kind: "supplier_card" };
     }
     return r;
-  }) }))
+  }) })))
+    // Hapus ganda (§5.6) — sesudah penyaringan izin kelompok (`susunKelompok`): hanya antar kartu yang terlihat.
     // Perapian Meja Finance (14 Nov, cabang gifted-cori `01ce23b`): kelompok berisi diurutkan umur tertua → nilai →
     // jumlah; seri mengikuti urutan `PERLU_TINDAKAN`. Kelompok kosong memang tidak tampil (MN-T2), jadi lipatan
     // "antrean kosong" dari perapian itu tidak dipakai.

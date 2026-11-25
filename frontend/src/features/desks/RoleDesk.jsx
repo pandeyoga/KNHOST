@@ -22,6 +22,7 @@ import { orderDeskQueues, splitPantau } from "../sales_admin/deskQueueOrder";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import { resolveView } from "../../utils/viewAlias";
 import { humanizeQueueRows } from "./deskText";
+import { dedupeTurnQueue } from "./deskDedupe";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import DeskFrame, { DESK_GRID_CLASS } from "./DeskFrame";
 import { markDeskReturn } from "./deskSession";
@@ -105,7 +106,7 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
   // Audit UI tahap 2 (G5-10) — notifikasi LAMA di "Giliran saya" masih berteks "tahap: cancelled" (notifikasi baru
   // sudah berlabel dari server). Fase 4 · R6: berlaku untuk SEMUA antrean (subjudul "waiting_approval · Budi",
   // "outbound", nomor id teknis) lewat `deskText.js`; baris asli disimpan di `_raw` untuk aksi.
-  const queues = humanizeQueueRows(Array.isArray(data?.queues) ? data.queues : []);
+  const queues = humanizeQueueRows(dedupeTurnQueue(Array.isArray(data?.queues) ? data.queues : []));
   const split = splitPantau(queues, deskKey);
 
   const antrean = loading && !data ? (
