@@ -1,6 +1,6 @@
 # Rancangan — Meja kerja di tempat (rincian pop-up, kartu tetap, satu nama, satu skala huruf)
 
-Tanggal: 25 Nov 2026 · Status: **menunggu persetujuan pemilik** · Dasar: audit `docs/audit/meja-2026-11-25/`
+Tanggal: 25 Nov 2026 · Status: **menunggu persetujuan pemilik** (pemeriksaan builder selesai 25 Nov; jawabannya sudah dimasukkan) · Dasar: audit `docs/audit/meja-2026-11-25/`
 (laporan + Lampiran A audit kode per meja dengan `berkas:baris` + Lampiran B uji klik/huruf) di `HEAD fe43d79`.
 
 ## 1. Maksud dan alasannya
@@ -90,6 +90,8 @@ Meja adalah tempat orang **mengerjakan** antreannya, bukan papan penunjuk ke men
   - antrean yang sifatnya pantauan, bukan tindakan: `menunggu_manajer` (Admin Sales), `di_gudang`, `kirim_ambil`, dan `selesai` (Sample).
 
   Pelacak SO hanya tampil di tab Pantau. **Keputusan builder:** Pelacak SO tetap ada di Pantau semua meja yang punya izin `order.view`, karena tabelnya sudah tersaring wewenang.
+
+  Kartu di tab Pantau memakai `DeskQueueCard` yang sama: ukuran tetap, baris membuka pop-up rincian, dan tombol aksi tetap ada bila pengguna berizin. "Pantau" artinya bukan pekerjaan utama meja itu, bukan hanya-baca. Baris Pelacak SO juga bisa diklik dan membuka rincian SO, termasuk baris yang bukan wewenang meja; aksinya mengikuti izin.
 - **Pesan hasil aksi** tampil di dalam pop-up tempat aksi dijalankan. Bila pop-up tertutup sesudah sukses, pesannya tampil sebagai toast. Pesan tidak boleh muncul di puncak halaman.
 
 ### 5.2 Kartu antrean (`DeskQueueCard`) — ukuran tetap, baris ringkas
@@ -139,6 +141,10 @@ Setiap aksi di bawah ini membuka pratinjau + konfirmasi (`FormModal`) dan memaka
 
 Aksi `decide_variance` dan `issue_penalty` yang dikirim server ditangani di tempat (gelombang 2), tidak diteruskan ke navigasi lagi.
 
+**Letak konfirmasi** (keputusan builder): di **komponen bersama**, bukan pembungkus khusus meja. Dengan begitu tombol yang sama di layar asal juga terkonfirmasi. Contohnya "Terbitkan Faktur Pajak" di `OrderDetailPanel` (`handleIssueTax`) ikut lewat pop-up yang sama.
+- **Faktur pajak:** memakai pop-up "Terbitkan" yang sudah ada di Faktur Keluaran (`TaxInvoices.jsx`, isian tanggal faktur, kode transaksi, NSFP opsional), diekstrak menjadi komponen bersama. Angka yang ditampilkan hanya yang sudah ada di data pesanan (total, PPN). Tidak ada hitungan pajak di layar dan tidak ada endpoint pratinjau baru.
+- **Setujui bayar sample:** memakai pemeriksaan uang masuk `SampleOrdersView.jsx:141-153` yang diekstrak menjadi satu fungsi dan dipakai daftar maupun meja.
+
 ### 5.5 Huruf (P7)
 
 - Hanya token `text-fs-*` (12/13/14/16/20). Px mentah, ukuran pecahan (9–11,5 / 12,5), dan warna hex mentah di berkas meja yang disentuh diganti token.
@@ -152,6 +158,7 @@ Aksi `decide_variance` dan `issue_penalty` yang dikirim server ditangani di temp
   - teks lain 12–13/400.
 - Maksimal dua unsur semi-tebal dalam satu baris.
 - Standar `04_POLA_UI.md` §3 disesuaikan: minimal 12 px untuk semua teks, termasuk label kolom.
+- **Panel yang dipakai ulang di pop-up meja** (gelombang 2–3: `OrderDetailPanel`, `PODetailPanel`, `SampleDetailPanel`, `DeliveryDetailModal`, `ApprovalDecisionModal`, dan lainnya) ikut dikonversi ke token saat dipasang ke meja. Akibatnya tampilan layar asalnya (Pesanan, Pembelian, R&D, dan lain-lain) juga ikut seragam. Perubahan ini disengaja; standar mengikat semua layar yang disentuh. **Keputusan builder** — menambah pekerjaan gelombang 2–3, dicatat untuk diperiksa pemilik.
 
 ### 5.6 Isi yang dilengkapi / dibetulkan
 
@@ -160,13 +167,16 @@ Server:
 - **Server berhenti memotong teks** untuk alasan, brief, item, dan keterangan (`work_desk_service.py:352,747,799,863,958,1004`; `role_desk_service.py:235,264,299`; `sample_orders.py:140`). Kirim teks utuh; baris yang memotong, pop-up menampilkan utuh. **Barang kurang dikirim semua baris**, bukan 2.
 - **`at` (waktu masuk) diisi nyata.** Pop-up menulis "masuk tgl" hanya bila `at` ada, tanpa tebakan "±". Untuk antrean jatuh tempo, umur dibaca sebagai "lewat n hari", bukan "menunggu".
 - **`booking_until`** (batas cadangan) tampil di pop-up SO.
-- **Pesanan sample hanya punya satu pemilik giliran:**
+- **Pesanan sample tidak lagi tampil sebagai giliran manajer:**
   - Pelacak SO memakai `sample_next_step` untuk SOS (bukan "Diputuskan Manajer");
-  - antrean `so_acc`/Giliran saya manajer tidak memuat pesanan sample yang persetujuannya milik Admin Sample/Finance;
-  - antrean `sample_acc_bayar` di Meja Keuangan pindah ke tab Pantau (Meja Sample pemiliknya).
+  - antrean `so_acc`/Giliran saya manajer tidak memuat pesanan sample. Persetujuan bayar sample milik Finance (`required_approval_role: "finance"`, `sample_sale_service.py:415`) dan Admin Sample (`sample_order.approve_payment`).
+  - `sample_acc_bayar` tetap di antrean Meja Keuangan **dan** Meja Sample, karena keduanya berwenang dan sistem menunjuk Finance. Siapa pun yang memutus lebih dulu menutup baris di kedua meja.
 
   **Keputusan builder**, dicatat untuk diperiksa pemilik.
-- **Satu baris hanya di satu kartu antrean per meja.** Di Meja Keuangan, pesanan yang sudah ada di "Uang masuk perlu dicatat" tidak diulang di "Piutang lewat jatuh tempo"; prioritas mengikuti urutan kelompok. "Giliran saya" tidak mengulang baris yang sudah ada di antrean khusus peran yang sama.
+- **Satu baris hanya di satu kartu antrean per meja**, dihitung di layar (bukan server) dan hanya di antara kartu yang **terlihat** oleh pengguna itu (kartu Keuangan berpagar izin berbeda, `FinanceDesk.jsx:42-68`).
+  - Meja Keuangan: "Piutang lewat jatuh tempo" adalah bagian dari daftar tagihan yang sama dengan "Uang masuk perlu dicatat" (`work_desk_service.py:~470-555`). Bila kedua kartu terlihat, baris lewat tempo **hanya** tampil di kartu Piutang, dan pop-up barisnya menyediakan "Terima pembayaran" dan "Tagih". Kartu Uang masuk berisi tagihan yang belum lewat tempo dan pesanan bayar-sebelum-kirim. Bila kartu Piutang tidak terlihat (tanpa izinnya), baris lewat tempo tetap di Uang masuk.
+  - "Giliran saya" tidak mengulang baris (jenis + id dokumen) yang sudah ada di antrean khusus peran yang sama.
+  - **Keputusan builder.**
 - **Tombol "Cetak"** (siap cetak SJ/Invoice) membuka pop-up dokumen pesanan (cetak SJ/Invoice) di tempat, bukan daftar Pesanan.
 - **"Buat SPK QC"** membuka pembuatan SPK dengan pesanan terpilih, bukan daftar Inspeksi kosong.
 - **Meja Cutting** menampilkan pelanggan dan SKU (sudah dikirim server), dan memakai `DeskQueueCard`.
@@ -220,7 +230,7 @@ Ubah:
 - §1.6: rincian dari daftar meja = pop-up `DetailModal`, dan pesan hasil tampil di pop-up/toast.
 - §2.B pola Meja: kartu ukuran tetap 5 baris termasuk kosong; baris bisa diklik; tab Antrean/Pantau; tanpa kartu angka.
 - §3: minimal 12 px.
-- §4: hapus larangan pop-up untuk rincian meja; larangan pop-up buatan sendiri tetap berlaku.
+- §4: hapus larangan pop-up untuk rincian meja; larangan pop-up buatan sendiri tetap berlaku. Kartu yang bisa dibuka-tutup diperbolehkan **di HP** (§5.8); di desktop tetap terbuka dengan ukuran tetap.
 
 Catat asal perubahan: keputusan pemilik 25 Nov.
 
@@ -228,9 +238,11 @@ Catat asal perubahan: keputusan pemilik 25 Nov.
 
 | Gelombang | Isi | Selesai bila |
 |---|---|---|
-| 1 — Kerangka (semua meja) | §5.1, §5.2, §5.3 panel umum + registri kosong, §5.4, §5.5, §5.6 (server & dedupe), §5.8 baris HP bisa disentuh, §5.9 | semua meja desktop: baris bisa diklik, kartu sama tinggi, satu kepala, tab Pantau, tidak ada aksi besar tanpa konfirmasi; tangkapan sebelum/sesudah untuk pemilik |
+| 1 — Kerangka (semua meja) | §5.1, §5.2, §5.3 panel umum + registri kosong, §5.4, §5.5 (kerangka meja), §5.6 (server & dedupe), §5.8 baris HP bisa disentuh, §5.9 | semua meja desktop: baris bisa diklik, kartu sama tinggi, satu kepala, tab Pantau, tidak ada aksi besar tanpa konfirmasi; tangkapan sebelum/sesudah. **Berhenti untuk validasi pemilik** sebelum gelombang 2, karena kerangka ini dasar semua gelombang berikutnya. |
 | 2 — Admin Sales + Keuangan | §5.7 baris Admin Sales & Keuangan; kemudian rancangan Lapor Bayar CBD memakai pola ini | semua aksi kedua meja di tempat, kecuali yang ditandai "buka layar" dengan alasan |
 | 3 — Meja Saya, Gudang, MD, Sample, Cutting | §5.7 sisanya | sama |
+
+Gelombang 2 dan 3 berjalan berurutan tanpa menunggu. Tangkapan sebelum/sesudah dikirim ke pemilik di akhir masing-masing.
 
 ## 7. Uji
 
@@ -256,7 +268,18 @@ Catat asal perubahan: keputusan pemilik 25 Nov.
 - Pop-up hanya `DetailModal` / `FormModal` / `DetailPopup`. Tidak ada pop-up buatan sendiri.
 - Aksi di pop-up memakai endpoint dan pemeriksaan yang sama dengan layar asalnya. Tidak ada endpoint baru untuk aksi yang sudah ada.
 
-## 9. Dibiarkan ke builder
+## 9. Keputusan builder yang perlu diperiksa pemilik
+
+1. Pelacak SO tetap di tab Pantau semua meja ber-izin `order.view`, dan barisnya bisa dibuka (§5.1).
+2. Tab Pantau bisa ditindak (bukan hanya-baca) (§5.1).
+3. Persetujuan bayar sample tampil di Meja Keuangan dan Meja Sample, tidak lagi di meja manajer (§5.6).
+4. Hapus ganda Keuangan: baris lewat tempo hanya di kartu Piutang bila kartu itu terlihat (§5.6).
+5. Konfirmasi aksi besar dipasang di komponen bersama, sehingga layar asal ikut terkonfirmasi (§5.4).
+6. Panel rincian yang dipakai ulang ikut dikonversi ke skala huruf baru, sehingga layar asalnya ikut berubah (§5.5).
+7. Kartu HP tetap bisa dibuka-tutup (§5.8).
+8. Berhenti untuk validasi pemilik sesudah gelombang 1 saja (§6).
+
+## 10. Dibiarkan ke builder
 
 - Bentuk visual ikon ? dan penempatannya di kepala kartu.
 - Nama dan letak berkas registri pratinjau.
