@@ -55,12 +55,14 @@ async def test_alasan_permintaan_internal_utuh(klien, db, kepala_admin):
 async def test_barang_kurang_semua_baris(klien, kepala_admin, monkeypatch):
     async def papan(scope):
         return [{"order_id": "so_kurang", "order_number": "SO-KURANG", "customer_name": "Toko K", "created_at": now_iso(),
-                 "coverage": "uncovered", "product_name": f"Kain {i}", "backorder_qty": 5, "unit": "yard"} for i in (1, 2, 3)]
+                 "coverage": "uncovered", "product_name": f"Kain {i}", "backorder_qty": 5, "unit": "yard",
+                 "owner_entity_id": "ent_ksc"} for i in (1, 2, 3)]
     monkeypatch.setattr("services.stock_bucket_service.pending_so_board", papan)
     r = await klien.get("/api/sales-admin/desk", headers=kepala_admin)
     row = next(x for q in r.json()["queues"] if q["id"] == "perlu_dipenuhi" for x in q["rows"] if x["ref_id"] == "so_kurang")
     for i in (1, 2, 3):
         assert f"Kain {i} kurang 5 yard" in row["subtitle"]
+    assert row["entity_id"] == "ent_ksc"
 
 
 async def test_jatuh_tempo_at_nyata_dan_lewat(klien, kepala_admin, monkeypatch):
@@ -94,3 +96,13 @@ async def test_baris_sample_semua_barang_dan_at(klien, db, kepala_admin):
     row = next(x for q in r.json()["queues"] if q["id"] == "siap_gudang" for x in q["rows"] if x["ref_id"] == "sos_meja1")
     assert all(f"Sample {i}" in row["subtitle"] for i in range(1, 5))
     assert row["at"] == t and row["entity_id"] == "ent_ksc"
+
+
+async def test_hutang_jatuh_tempo_membawa_pt_dan_tanggal(klien, db, kepala_admin):
+    await db.purchase_orders.insert_one({
+        "id": "po_meja1", "po_number": "PO-MEJA1", "supplier_name": "Pemasok M", "supplier_id": "sup_m", "status": "receiving",
+        "payment_due_date": "2026-11-10", "grand_total": 900000, "amount_paid": 0, "payment_status": "unpaid",
+        "entity_id": "ent_ksc", "created_at": now_iso()})
+    fin = (await klien.get("/api/finance/desk", headers=kepala_admin)).json()["queues"]
+    row = next(x for q in fin if q["id"] == "hutang_jatuh_tempo" for x in q["rows"] if x["ref_id"] == "po_meja1")
+    assert row["entity_id"] == "ent_ksc" and row["at"].startswith("2026-11-10") and row["age_kind"] == "overdue"

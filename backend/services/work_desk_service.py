@@ -251,7 +251,8 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     for b in pend:
         cur = per_order.setdefault(b["order_id"], {
             "order_number": b["order_number"], "customer_name": b.get("customer_name", "—"),
-            "lines": [], "created_at": b.get("created_at"), "coverage": "covered"})
+            "lines": [], "created_at": b.get("created_at"), "coverage": "covered",
+            "entity_id": b.get("owner_entity_id") or b.get("entity_id", "")})
         cur["lines"].append(b)
         if b.get("coverage") != "covered":
             cur["coverage"] = b.get("coverage") or "partial"
@@ -573,7 +574,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                    "payment_status": {"$ne": "paid"}}),
         {"_id": 0, "id": 1, "po_number": 1, "supplier_name": 1, "supplier_id": 1, "payment_due_date": 1,
          "grand_total": 1, "total_amount": 1, "amount_paid": 1, "outstanding": 1,
-         "payment_term_code": 1, "parent_po_number": 1, "status": 1}
+         "payment_term_code": 1, "parent_po_number": 1, "status": 1, "entity_id": 1}
     ).sort("payment_due_date", 1).to_list(200)
     hutang_rows = []
     for p in pos:
