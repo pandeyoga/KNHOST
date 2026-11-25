@@ -113,11 +113,18 @@ async def _pesan(klien, db, siap, ent=KSC, *, h=None, stok=True, **lain):
 
 
 async def _konfirmasi(klien, h, oid: str) -> dict:
-    """Alur: verifikasi Admin Sales → setujui → konfirmasi (lepas ke gudang)."""
+    """Alur: verifikasi Admin Sales → setujui → [bayar-dulu: kirim tanpa lunas] → konfirmasi (lepas ke gudang)."""
     r = await klien.post(f"/api/sales-orders/{oid}/verify", headers=h, json={"note": "uji PM-T2"})
     assert r.status_code == 200, r.text
     r = await klien.post(f"/api/sales-orders/{oid}/approve", headers=h)
     assert r.status_code == 200, r.text
+    gate = (await klien.get(f"/api/sales-orders/{oid}/dispatch-payment-gate", headers=h)).json()
+    if gate["blocked"]:
+        # LB-T2 — pesanan bayar-dulu yang belum dibayar kini ditahan SEBELUM gudang; uji kode bayar ini melepasnya lewat
+        # pengecualian berizin "kirim tanpa lunas" (B6, jalur yang sudah ada) supaya tetap dikonfirmasi tanpa uang.
+        r = await klien.post(f"/api/sales-orders/{oid}/dispatch-payment-release", headers=h,
+                             json={"reason": "uji PM-T2 konfirmasi tanpa bayar"})
+        assert r.status_code == 200, r.text
     r = await klien.post(f"/api/sales-orders/{oid}/confirm", headers=h)
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "confirmed", r.json()["status"]
@@ -220,7 +227,7 @@ async def test_PMT2_U6_konfirmasi_cbd_melahirkan_satu_kode(klien, db, siap):
     assert r.status_code == 200, r.text
     oid = r.json()["id"]
     assert r.json()["grand_total"] == 2_000_000
-    assert await db.payment_codes.count_documents({"order_id": oid}) == 0   # belum dikonfirmasi = belum ada kode
+    assert await db.payment_codes.count_documents({"order_id": oid}) == 0   # belum disetujui = belum ada kode (LB-T2)
     await _konfirmasi(klien, siap["h"], oid)
     kode = await db.payment_codes.find({"order_id": oid}, {"_id": 0}).to_list(10)
     assert len(kode) == 1, kode

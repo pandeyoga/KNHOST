@@ -60,11 +60,18 @@ def _approval_subs(order: Dict[str, Any]) -> List[str]:
 TANPA_TAHAN = {"cancelled", "expired", "done", "delivered", "shipped", "dispatched"}
 
 
+#: LB-T2 — pesanan disetujui yang wajib bayar dulu dan belum dibayar (`pay_hold`, `services/pay_hold_service.py`).
+SUB_MENUNGGU_BAYAR = "menunggu_bayar"
+
+
 def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
     """Petakan `status` (+ konteks) → (stage, [sub_status]). Pure function. CR-T3 — `credit_hold: true` mendahulukan
-    sub-status `tahan_kredit` ("Tahan kredit") selama pesanan belum selesai/terkirim penuh."""
+    sub-status `tahan_kredit` ("Tahan kredit") selama pesanan belum selesai/terkirim penuh. LB-T2 — `pay_hold` pada
+    pesanan `approved` → `menunggu_bayar` ("Menunggu bayar") menggantikan "Stok siap — bisa di-confirm"."""
     stage, subs = _derive_dasar(order)
     o = order or {}
+    if o.get("pay_hold") and o.get("status") == "approved":
+        subs = [SUB_MENUNGGU_BAYAR, *[s for s in subs if s not in (SUB_MENUNGGU_BAYAR, "siap_confirm")]]
     if o.get("credit_hold") and (o.get("status") or "reserved") not in TANPA_TAHAN:
         return stage, ["tahan_kredit", *[s for s in subs if s != "tahan_kredit"]]
     return stage, subs
@@ -172,6 +179,7 @@ SUBSTATUS_LABELS: Dict[str, str] = {
     "dibatalkan": "Dibatalkan",
     "kedaluwarsa": "Kedaluwarsa",
     "tahan_kredit": "Tahan kredit",   # CR-T3 — gerbang kredit menahan pesanan (`credit_hold`)
+    "menunggu_bayar": "Menunggu bayar",   # LB-T2 — wajib bayar dulu, menunggu pembayaran dicek Finance (`pay_hold`)
 }
 
 
@@ -179,7 +187,7 @@ async def backfill_so_status(database) -> Dict[str, int]:
     """Backfill `stage`+`sub_status` ke SEMUA sales_orders (idempotent, additive).
     Tidak menyentuh `status`. Return statistik {updated, total, invalid}."""
     orders = await database.sales_orders.find(
-        {}, {"_id": 0, "id": 1, "status": 1, "has_backorder": 1, "backorders": 1, "credit_hold": 1,
+        {}, {"_id": 0, "id": 1, "status": 1, "has_backorder": 1, "backorders": 1, "credit_hold": 1, "pay_hold": 1,
              "approval_required": 1, "required_approval_role": 1, "pending_approvals": 1}
     ).to_list(100000)
     updated = 0

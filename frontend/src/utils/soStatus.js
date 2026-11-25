@@ -28,6 +28,7 @@ export const SUBSTATUS_LABELS = {
   dibatalkan: "Dibatalkan",
   kedaluwarsa: "Kedaluwarsa",
   tahan_kredit: "Tahan kredit",                        // CR-T3 — `credit_hold` (gerbang kredit menahan pesanan)
+  menunggu_bayar: "Menunggu bayar",                    // LB-T2 — `pay_hold` (wajib bayar dulu, dicek Finance)
 };
 
 export function subStatusLabel(key) {
@@ -81,10 +82,13 @@ function approvalSubs(order) {
 }
 
 // CR-T3 — "Tahan kredit" mendahului alasan lain selama pesanan belum selesai dikirim (mirror backend).
+// LB-T2 — `pay_hold` pada pesanan Disetujui → "Menunggu bayar" menggantikan "Stok siap — bisa dikonfirmasi".
 const HOLD_SKIP = ["cancelled", "expired", "done", "delivered", "shipped", "dispatched"];
 export function deriveStageSub(order) {
-  const [stage, subs] = deriveStageSubBase(order);
+  const [stage, base] = deriveStageSubBase(order);
   const o = order || {};
+  const subs = o.pay_hold && o.status === "approved"
+    ? ["menunggu_bayar", ...base.filter((k) => k !== "menunggu_bayar" && k !== "siap_confirm")] : base;
   return o.credit_hold && !HOLD_SKIP.includes(o.status || "") ? [stage, ["tahan_kredit", ...subs]] : [stage, subs];
 }
 

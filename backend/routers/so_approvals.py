@@ -390,6 +390,9 @@ async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, p
             result = await _transition(order_id, ["reserved", "waiting_approval", "waiting_stock"],
                                        "approved", actor["name"], "order_approved", {"approved_by": actor["name"]})
             await set_order_rolls_status(order_id, "committed")
+            # LB-T2 — wajib bayar dulu (CBD/DP): tahan sebelum gudang + kode bayar sejak disetujui (B1).
+            from services import pay_hold_service as _phs
+            await _phs.start(result, actor)
     await audit(actor["name"], f"so_approval_{new_status}", "sales_order", order_id,
                 {"type": atype, "approval_id": approval_id, "notes": (payload.notes or "").strip()})
     if new_status == "approved" and not order.get("source_special_order_id"):

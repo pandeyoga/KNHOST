@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from core_utils import now_iso, rupiah, safe_doc, strip_cost_fields
 from db import db
 from dependencies import audit
+from services import pay_hold_service as _phs
 from services import so_approvals
 from services.config_service import evaluate_approval, get_effective_settings
 from services.fulfillment_status import create_outbound_tasks_for_order, recompute_so_status
@@ -56,6 +57,9 @@ async def submit_core(order: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str,
                                "order_auto_approved",
                                {"approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)"})
     await set_order_rolls_status(order_id, "committed")
+    # LB-T2 — wajib bayar dulu (CBD/DP): tahan sebelum gudang + kode bayar sejak disetujui (B1).
+    if await _phs.start(result, actor):
+        result = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})) or result
     return strip_cost_fields(result, actor.get("role"))
 
 
@@ -85,8 +89,16 @@ async def confirm_core(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         # pesanan yang sudah "Tahan kredit" ditolak walau titiknya mati; gagal diperiksa → `hold(...)` lalu 409.
         from services import credit_gate as _cg
         await _cg.gate_checkpoint(order_id, _cg.LEPAS_GUDANG, actor)
+        # LB-T2 — tahan SEBELUM gudang: wajib bayar dulu (hitungan `dispatch_payment_gate.evaluate`), belum terbayar,
+        # dan tanpa pengecualian "kirim tanpa lunas" → tidak dikonfirmasi. Penanda + kode bayar dipastikan (pesanan yang
+        # disetujui sebelum fitur ini) lalu 409 pemandu; "Periksa & lepas" menangkapnya (`try_release`, bukan galat).
+        if await _phs.blocked(_pre):
+            await _phs.start(_pre, actor)
+            raise _phs.MenungguBayar()
     result = await _transition(order_id, ["approved", "waiting_approval", "reserved"], "confirmed",
                                actor["name"], "order_confirmed")
+    # LB-T2 — sudah dilepas ke gudang: penanda tahan bayar (bila masih ada, mis. dibayar lewat Uang Masuk) dicabut.
+    await _phs.drop(order_id)
     # Sub-fase 1.8 — otomatis buat task outbound saat confirmed (idempotent)
     tasks = await create_outbound_tasks_for_order(order_id, actor["name"])
     if tasks:

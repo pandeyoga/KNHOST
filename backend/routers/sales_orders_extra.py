@@ -447,6 +447,10 @@ async def advance_so_if_all_approved(order_id: str, actor_name: str) -> Optional
     result = await _transition(order_id, ["reserved", "waiting_approval", "waiting_stock"], "approved",
                                actor_name, "order_approved", {"approved_by": actor_name})
     await set_order_rolls_status(order_id, "committed")
+    # LB-T2 — wajib bayar dulu (CBD/DP): tahan sebelum gudang + kode bayar sejak disetujui (B1).
+    from services import pay_hold_service as _phs
+    if await _phs.start(result, {"name": actor_name}):
+        result = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})) or result
     return result
 
 
@@ -514,6 +518,9 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
         result = await _transition(order_id, ["reserved", "waiting_approval"], "approved",
                                    actor["name"], "order_approved", {"approved_by": actor["name"]})
         await set_order_rolls_status(order_id, "committed")
+        from services import pay_hold_service as _phs
+        if await _phs.start(result, actor):   # LB-T2 — tahan sebelum gudang + kode bayar sejak disetujui (B1)
+            result = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})) or result
     # Fase 5 — auto-kirim WhatsApp bila ada aturan aktif (best-effort, non-blocking).
     try:
         from services import delivery_service as _ds

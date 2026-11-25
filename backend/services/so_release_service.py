@@ -17,7 +17,11 @@ ATURAN BARU
   (`continue_normal_price` — entri penolakan ditutup, pesanan lanjut & dilepas otomatis bila sudah diperiksa),
   atau batalkan pesanan.
 
-Penanda di dokumen SO: `release = {requested, hold, by, at, note, released_at}` (tanpa koleksi baru).
+Penanda di dokumen SO: `release = {requested, hold, by, at, note, released_at, waiting}` (tanpa koleksi baru).
+
+Lapor Bayar CBD & DP (LB-T2) — pesanan wajib bayar dulu yang belum dibayar TIDAK dilepas: `try_release` menulis
+`release.waiting = "bayar"` dan mengembalikan `{released: False, waiting: "bayar"}` (bukan 409). Begitu tahan dibuka
+(`pay_hold_service.clear_if_paid`), `auto_release` melepas sendiri karena `release.requested` tetap berlaku.
 """
 from typing import Any, Dict, Optional
 
@@ -49,13 +53,22 @@ def release_state(order: Dict[str, Any]) -> Dict[str, Any]:
     rel = order.get("release") or {}
     s = so_approvals.summarize(order)
     waiting = ("ditolak" if s["has_rejected"] else "acc" if s["has_pending"]
-               else "stok" if order.get("status") == "waiting_stock" else "")
+               else "stok" if order.get("status") == "waiting_stock"
+               # LB-T2 — disetujui tetapi wajib bayar dulu: menunggu pembayaran dicek Finance (`pay_hold_service`)
+               else "bayar" if order.get("pay_hold") and order.get("status") == "approved" else "")
     return {"requested": bool(rel.get("requested")), "hold": bool(rel.get("hold")), "waiting": waiting,
             "by": rel.get("by", ""), "at": rel.get("at", ""), "released_at": rel.get("released_at", "")}
 
 
+def dilepas(res: Optional[Dict[str, Any]]) -> bool:
+    """Apakah hasil `try_release`/`auto_release` berarti pesanan benar-benar dilepas ke gudang. `None` = belum;
+    `{released: False, waiting: "bayar"}` = menunggu bayar (LB-T2); dokumen pesanan = dilepas."""
+    return bool(res) and res.get("released", True) is not False
+
+
 async def try_release(order_id: str, actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Lepas ke gudang bila semua syarat terpenuhi; None bila belum (bukan error). Idempoten."""
+    """Lepas ke gudang bila semua syarat terpenuhi; None bila belum (bukan error). Idempoten.
+    LB-T2 — wajib bayar dulu & belum dibayar → `{released: False, waiting: "bayar"}` (bukan 409); pakai `dilepas()`."""
     order = await _load(order_id)
     rel = order.get("release") or {}
     if not rel.get("requested") or rel.get("hold") or order.get("status") not in ("reserved", "approved"):
@@ -69,9 +82,18 @@ async def try_release(order_id: str, actor: Dict[str, Any]) -> Optional[Dict[str
         order = await submit_core(order, actor)
         if (order or {}).get("status") != "approved":
             return None
-    out = await confirm_core(order_id, actor)
+    from services.pay_hold_service import MenungguBayar
+    try:
+        out = await confirm_core(order_id, actor)
+    except MenungguBayar:
+        # Jalur anggun "Periksa & lepas": pesanan pindah ke tahap "Bayar dicek Finance" dan dilepas otomatis sesudah
+        # tahan dibuka (`pay_hold_service.clear_if_paid` → `auto_release`). Rute lama `/confirm` tetap menerima 409.
+        await db.sales_orders.update_one({"id": order_id}, {"$set": {"release.waiting": "bayar",
+                                                                    "updated_at": now_iso()}})
+        return {"released": False, "waiting": "bayar"}
     await db.sales_orders.update_one({"id": order_id}, {"$set": {"release.released_at": now_iso(),
-                                                                "release.released_by": actor.get("name", "")}})
+                                                                "release.released_by": actor.get("name", "")},
+                                                       "$unset": {"release.waiting": ""}})
     return out
 
 
@@ -102,7 +124,7 @@ async def review_and_release(order_id: str, actor: Dict[str, Any], note: str = "
         await submit_core(order, actor)
     released = None if hold else await try_release(order_id, actor)
     final = await _load(order_id)
-    return {"order": final, "released": bool(released), "release_state": release_state(final)}
+    return {"order": final, "released": dilepas(released), "release_state": release_state(final)}
 
 
 async def release_hold(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -116,7 +138,7 @@ async def release_hold(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         await submit_core(await _load(order_id), actor)
     released = await try_release(order_id, actor)
     final = await _load(order_id)
-    return {"order": final, "released": bool(released), "release_state": release_state(final)}
+    return {"order": final, "released": dilepas(released), "release_state": release_state(final)}
 
 
 async def continue_normal_price(order_id: str, approval_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -134,9 +156,12 @@ async def continue_normal_price(order_id: str, approval_id: str, actor: Dict[str
                   "cancelled_by": actor.get("name", ""), "cancelled_at": now_iso()})
     order = await _persist_pending(order_id, pa)
     if so_approvals.all_approved(order) and order.get("status") == "waiting_approval":
-        await so_transition(order_id, ["waiting_approval"], "approved", actor.get("name", ""), "order_approved",
-                            {"approved_by": actor.get("name", ""), "approval_note": "Lanjut harga normal"})
+        approved = await so_transition(order_id, ["waiting_approval"], "approved", actor.get("name", ""),
+                                       "order_approved",
+                                       {"approved_by": actor.get("name", ""), "approval_note": "Lanjut harga normal"})
         await set_order_rolls_status(order_id, "committed")
+        from services import pay_hold_service as _phs
+        await _phs.start(approved, actor)   # LB-T2 — wajib bayar dulu: tahan + kode bayar sejak disetujui
     await try_release(order_id, actor)
     from dependencies import audit
     await audit(actor.get("name", ""), "so_special_price_continue_normal", "sales_order", order_id,
@@ -146,8 +171,10 @@ async def continue_normal_price(order_id: str, approval_id: str, actor: Dict[str
 
 
 async def auto_release(order_id: str, trigger: Dict[str, Any], why: str = "ACC") -> Optional[Dict[str, Any]]:
-    """Kait sesudah gerbang terakhir beres (ACC Manajer / stok backorder tiba): lepas bila Admin Sales SUDAH meminta.
-    Efek samping — kegagalan tidak boleh membatalkan keputusan yang memicunya."""
+    """Kait sesudah gerbang terakhir beres (ACC Manajer / stok backorder tiba / tahan bayar dibuka): lepas bila Admin
+    Sales SUDAH meminta (`release.requested`). Belum diminta → tidak dilepas; pesanan menunggu Admin Sales seperti biasa
+    (R4 LB-T2: uang yang masuk tidak melompati verifikasi Admin Sales). Kembalian = dokumen pesanan bila dilepas, selain
+    itu `None` (termasuk menunggu bayar). Efek samping — kegagalan tidak boleh membatalkan keputusan yang memicunya."""
     import logging
     try:
         order = await _load(order_id)
@@ -156,7 +183,8 @@ async def auto_release(order_id: str, trigger: Dict[str, Any], why: str = "ACC")
             return None
         actor = {"id": trigger.get("id", ""), "role": trigger.get("role", ""),
                  "name": f"{rel.get('by') or 'Admin Sales'} (otomatis sesudah {why} {trigger.get('name', '')})".strip()}
-        return await try_release(order_id, actor)
+        res = await try_release(order_id, actor)
+        return res if dilepas(res) else None
     except Exception as exc:  # noqa: BLE001
         logging.getLogger(__name__).warning("[so_release] lepas otomatis %s gagal: %s", order_id, exc)
         return None

@@ -40,7 +40,8 @@ export const confirmOrder = (orderId) =>
   axios.post(`${API}/sales-orders/${orderId}/confirm`).then((r) => r.data);
 
 /** Trial 22 Okt (E8) — SATU langkah Admin Sales: periksa → ajukan → lepas ke gudang (menunggu ACC → otomatis
- *  dilepas sesudah ACC; `hold` = tahan dulu). Respons: { order, released, release_state }. */
+ *  dilepas sesudah ACC; `hold` = tahan dulu). Respons: { order, released, release_state }; pesanan wajib bayar dulu yang
+ *  belum dibayar → `released: false`, `release_state.waiting: "bayar"` (bukan galat). */
 export const reviewRelease = (orderId, note = "", hold = false) =>
   axios.post(`${API}/sales-orders/${orderId}/review-release`, { note, hold }).then((r) => r.data);
 
@@ -62,6 +63,8 @@ export function releaseMessage(res, fallbackNumber = "") {
   if (st.waiting === "acc") return `${n} diperiksa — menunggu ACC Manajer; dilepas ke gudang otomatis sesudah ACC.`;
   if (st.waiting === "ditolak") return `${n} diperiksa — harga khusus DITOLAK, menunggu sales (ajukan harga lain · lanjut harga normal · batalkan).`;
   if (st.waiting === "stok") return `${n} diperiksa — kurang stok: lanjut [Putuskan pemenuhan]; dilepas otomatis saat stok tersedia.`;
+  // Lapor Bayar (LB-T2) — wajib bayar dulu: berhenti di "Bayar dicek Finance", dilepas otomatis sesudah bayar diterima.
+  if (st.waiting === "bayar") return `${n} diperiksa — menunggu pembayaran dicek Finance; dilepas ke gudang otomatis sesudah bayar diterima.`;
   return `${n} diperiksa.`;
 }
 

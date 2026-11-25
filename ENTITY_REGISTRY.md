@@ -1809,6 +1809,10 @@ Key Fields:
   credit_hold_history  [{…info, released_at, released_by, release_reason, release_result, override_id}] satu baris/tahanan
   pay_before_ship bool CR-T3 (K-27) — lahir untuk pelanggan yang sedang ditahan dengan termin bayar penuh dulu →
                        gerbang bayar kirim memakai 100 %
+  pay_hold     {since, due_at, required, basis} | absen — Lapor Bayar LB-T2: pesanan `approved` wajib bayar dulu
+                       (hitungan `dispatch_payment_gate.evaluate`) ditahan SEBELUM gudang (sub-status `menunggu_bayar`);
+                       ditulis `pay_hold_service.start` (idempoten), dicabut `clear_if_paid` / `confirm_core`;
+                       `release.waiting = "bayar"` = "Periksa & lepas" sudah ditekan, dilepas otomatis sesudah dibuka
   credit_gate_at_order potret hasil gerbang kredit saat pesanan dibuat (D3) · credit_override_id · credit_override_used
                        {id, amount, reason_label, decided_by}
   total_amount float    = Σ items.subtotal (GROSS — invarian verify_data_integrity L4)

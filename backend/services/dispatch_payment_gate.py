@@ -11,13 +11,18 @@ Aturan (blok keras, bawaan):
 * Dapat dikonfigurasi: persen per termin di Pengaturan → Syarat Bayar; gerbang dapat dimatikan per PT lewat
   Pusat Pengaturan `finance.dispatch_payment_gate` (block | off).
 Pesanan sample punya gerbang bayarnya sendiri (Admin Sample/Finance) — tidak dinilai di sini.
+Lapor Bayar CBD & DP (LB-T2) — hitungan `evaluate` yang SAMA juga menahan pesanan sebelum gudang (`pay_hold_service`,
+titik periksa `confirm_core`); pagar surat jalan di sini tetap sebagai pagar kedua.
 """
+import logging
 from typing import Any, Dict, Iterable, Optional
 
 from fastapi import HTTPException
 
 from core_utils import now_iso, rupiah
 from db import db
+
+logger = logging.getLogger(__name__)
 
 EPS = 1.0   # toleransi pembulatan Rupiah
 BASIS_KEY = "finance.tahan_kirim_dasar_bayar"   # PM-T3 — dasar "terbayar": tercatat | terverifikasi
@@ -208,6 +213,13 @@ async def release(order: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> 
     await audit(actor.get("name", ""), "dispatch_payment_released", "sales_order", order["id"],
                 {"reason": reason, "term": st["term_code"], "paid": st["paid"], "required": st["required"],
                  "shortfall": st["shortfall"], "order_number": order.get("order_number") or order.get("number", "")})
+    # LB-T2 (B6) — pengecualian yang sama juga membuka tahan sebelum gudang dan memicu lepas otomatis (bila Admin Sales
+    # sudah "Periksa & lepas"). Efek samping: kegagalannya tidak membatalkan pengecualian yang sudah tercatat.
+    try:
+        from services import pay_hold_service as _phs
+        await _phs.clear_if_paid(order["id"], actor, why="kirim tanpa lunas")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[dispatch_payment_gate] buka tahan gudang %s gagal: %s", order["id"], exc)
     return await evaluate({**order, "dispatch_payment_release": rel})
 
 
@@ -228,4 +240,10 @@ async def revoke(order: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> D
     await audit(actor.get("name", ""), "dispatch_payment_release_revoked", "sales_order", order["id"],
                 {"reason": reason, "released_by": prev.get("by", ""),
                  "order_number": order.get("order_number") or order.get("number", "")})
+    # LB-T2 — pesanan yang belum dilepas ke gudang kembali ditahan (penanda baru; hanya status `approved`).
+    try:
+        from services import pay_hold_service as _phs
+        await _phs.start(order, actor)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[dispatch_payment_gate] tahan gudang ulang %s gagal: %s", order["id"], exc)
     return await evaluate({**order, "dispatch_payment_release": None})
