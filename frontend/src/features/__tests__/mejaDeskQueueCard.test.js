@@ -84,21 +84,36 @@ test("RF#2 — tinggi tetap di semua keadaan; catatan & muat ulang di kaki", asy
   expect(q("g-q-q1-filter").className).toContain("sm:flex-nowrap");
 });
 
-test("klik baris membuka rincian; Enter pada baris membuka; kursor tangan hanya di baris", async () => {
+test("R18 — klik tetikus pada baris membuka rincian; baris bukan kontrol; Enter pada tombol nomor membuka sekali", async () => {
   await mount(<DeskQueueCard testPrefix="t" queue={Q(2)} />);
-  expect(q("t-row-so1").getAttribute("tabindex")).toBe("0");
-  expect(q("t-row-so1").getAttribute("role")).toBe("button");
-  expect(q("t-row-so1").className).toContain("cursor-pointer");
-  expect(q("t-row-so1").className).toContain(DESK_ROW_CLASS);
-  await klik("t-row-so1");
+  const r1 = q("t-row-so1");
+  expect(r1.getAttribute("role")).toBeNull();            // tanpa kontrol bersarang di dalam role=button (ARIA 4.1.2)
+  expect(r1.getAttribute("tabindex")).toBeNull();
+  expect(r1.getAttribute("aria-label")).toBeNull();
+  expect(r1.className).toContain("cursor-pointer");
+  expect(r1.className).toContain(DESK_ROW_CLASS);
+  // tetikus: klik di area baris (nama pihak) membuka rincian
+  await act(async () => { q("t-title-so1").dispatchEvent(new MouseEvent("click", { bubbles: true })); });
   expect(teks(q("t-detail-title"))).toContain("SO-0001 · Toko 1");
   await act(async () => { q("t-detail-close-x").click(); });
   expect(q("t-detail")).toBeNull();
-  await act(async () => { q("t-row-so2").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  // papan ketik: nomor dokumen = tombol yang bisa difokus; Enter (keydown lalu click di peramban) membuka SEKALI
+  const num = q("t-number-so2");
+  expect(num.tagName).toBe("BUTTON");
+  expect(num.getAttribute("type")).toBe("button");
+  expect(num.className).toContain("link-button");
+  num.focus();
+  expect(document.activeElement).toBe(num);
+  await act(async () => {
+    num.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    num.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  expect(document.body.querySelectorAll('[data-testid="t-detail"]')).toHaveLength(1);
   expect(teks(q("t-detail-title"))).toContain("SO-0002");
   await act(async () => { q("t-detail-close-x").click(); });
-  await act(async () => { q("t-row-so1").dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true })); });
-  expect(teks(q("t-detail-title"))).toContain("SO-0001");
+  // keydown pada baris (tanpa fokus) tidak membuka apa pun — baris bukan kontrol
+  await act(async () => { q("t-row-so1").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  expect(q("t-detail")).toBeNull();
 });
 
 test("RF#1 — tombol aksi, Enter pada tombol, dan tautan judul tidak membuka rincian baris", async () => {
@@ -205,7 +220,7 @@ test("huruf: judul 14/600, maks. dua semi-tebal per baris, tanpa font-bold; kont
   const r = q("t-row-so1");
   expect(r.querySelectorAll(".font-semibold").length).toBeLessThanOrEqual(2);
   expect(r.querySelectorAll(".font-bold").length).toBe(0);
-  expect(q("t-number-so1").className).toMatch(/text-fs-13/); expect(q("t-number-so1").className).toMatch(/text-kn-action/);
+  expect(q("t-number-so1").querySelector(".text-fs-13.font-semibold.text-kn-action")).not.toBeNull();   // 13/600 aksi
   expect(q("t-title-so1").className).not.toMatch(/font-semibold/);
   expect(q("t-badge-so1").className).toMatch(/text-fs-12/); expect(q("t-badge-so1").className).toMatch(/font-medium/);
   expect(q("t-age-so1").className).toMatch(/text-fs-12/); expect(q("t-age-so1").className).toMatch(/font-medium/);

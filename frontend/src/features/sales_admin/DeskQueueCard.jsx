@@ -282,28 +282,33 @@ export default function DeskQueueCard({
   );
 }
 
-/** Satu baris ringkas: nomor · pihak | status · PT · umur | nilai · aksi (kolom di ≥ 640 px; bertumpuk di HP). */
+/**
+ * Satu baris ringkas: nomor · pihak | status · PT · umur | nilai · aksi (kolom di ≥ 640 px; bertumpuk di HP).
+ * Klik TETIKUS di mana saja pada baris membuka rincian (klik pada tombol/tautan/isian di dalamnya diabaikan). Baris
+ * sendiri BUKAN kontrol (tanpa role/tabIndex — kontrol bersarang di dalam role=button melanggar ARIA, R18): jalur papan
+ * ketik = tombol nomor dokumen (fokus → Enter) yang membuka rincian yang sama.
+ */
 function QueueRow({ row, kind, busy, label, pt, testPrefix, onOpen, onAction }) {
   const rk = row.row_key || row.ref_id;   // satu pelanggan bisa punya beberapa baris (per SO) — testid tetap unik
   const tp = testPrefix;
   const onClick = (e) => {
-    // Tombol aksi, tautan judul (`_titleNode`), dan isian lain di dalam baris menangani kliknya sendiri.
+    // Tombol nomor & aksi, tautan judul (`_titleNode`), dan isian lain di dalam baris menangani kliknya sendiri.
     const hit = e.target.closest?.("button, a, input, select, textarea");
     if (hit && hit !== e.currentTarget && e.currentTarget.contains(hit)) return;
     onOpen();
   };
-  const onKeyDown = (e) => {
-    if (e.target !== e.currentTarget) return;            // Enter pada tombol aksi bukan "buka baris"
-    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); onOpen(); }
-  };
   return (
-    <div data-testid={`${tp}-row-${rk}`} role="button" tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
-      aria-label={`Rincian ${[row.number, typeof row.title === "string" ? row.title : ""].filter(Boolean).join(" · ")}`}
-      className={`${DESK_ROW_CLASS} grid cursor-pointer grid-cols-1 items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-kn-neutral-soft focus-visible:bg-kn-neutral-soft focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-kn-action sm:col-span-3 sm:grid-cols-subgrid`}>
+    <div data-testid={`${tp}-row-${rk}`} onClick={onClick}
+      className={`${DESK_ROW_CLASS} grid cursor-pointer grid-cols-1 items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-kn-neutral-soft sm:col-span-3 sm:grid-cols-subgrid`}>
       <div className="min-w-0">
-        <span data-testid={`${tp}-number-${rk}`} className="block truncate text-fs-13 font-semibold text-kn-action" title={row.number}>
-          {row.number}
-        </span>
+        {/* `.link-button` (padding 2/4 px, 12/700) dimuat SESUDAH utilitas: huruf 13/600 warna aksi dipasang di isi
+            tombol, padding diimbangi margin negatif supaya nomor sejajar dengan nama pihak dan tinggi baris tetap. */}
+        <div className="flex min-w-0">
+          <button type="button" data-testid={`${tp}-number-${rk}`} className="link-button -mx-1 -my-0.5 min-w-0 max-w-full"
+            title={row.number} aria-haspopup="dialog" onClick={onOpen}>
+            <span className="min-w-0 truncate text-left text-fs-13 font-semibold text-kn-action">{row.number}</span>
+          </button>
+        </div>
         {/* MN-T3 — `_titleNode` (opsional): judul sebagai tautan (mis. nama pelanggan → kartu pelanggan). */}
         <span data-testid={`${tp}-title-${rk}`} className="block truncate text-fs-13 text-kn-text"
           title={typeof row.title === "string" ? row.title : undefined}>
