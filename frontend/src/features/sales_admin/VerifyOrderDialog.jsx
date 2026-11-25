@@ -27,6 +27,7 @@ export default function VerifyOrderDialog({
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [hold, setHold] = useState(false);
@@ -41,12 +42,12 @@ export default function VerifyOrderDialog({
   useEffect(() => { load(); }, [load]);
 
   async function submit() {
-    setBusy(true); setError("");
+    setBusy(true); setActionError("");
     try {
       const res = await reviewRelease(orderId, note, hold);
       onVerified?.(releaseMessage(res, orderNumber), res);
     } catch (e) {
-      setError(apiErrorText(e, "Gagal memeriksa & melepas pesanan."));
+      setActionError(apiErrorText(e, "Gagal memeriksa & melepas pesanan."));
       load();
     } finally { setBusy(false); }
   }
@@ -86,7 +87,7 @@ export default function VerifyOrderDialog({
         {customerName} · cocokkan data pesanan (kiri) dengan daftar periksa (kanan). Harga khusus & nilai
         tetap diputus manajer — bila masih menunggu, pesanan dilepas <b>otomatis</b> sesudah ACC.
       </>}
-      busy={busy} error={error} footer={footer}>
+      busy={busy} error={actionError || error} footer={footer}>
       {onOpenFull && (
         <div className="flex justify-end">
           <button type="button" data-testid="verify-open-full" onClick={onOpenFull}

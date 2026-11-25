@@ -100,7 +100,7 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
   }
 
   // Galat eksekusi menempel di kaki (di atas tombol) supaya tetap terlihat saat badan di-scroll.
-  const footer = lines.length > 0 ? (
+  const footer = (lines.length > 0 || execError) ? (
     <>
     {execError && (
       <div data-testid="fulfill-exec-error" className="mb-2 rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11.5px] text-[#9B1C1C]">
@@ -109,12 +109,14 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
         <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-[11px] font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
       </div>
     )}
+    {lines.length > 0 && (
     <div className="flex items-center justify-end gap-2">
       <button type="button" className="secondary-button" data-testid="fulfill-cancel" onClick={onClose} disabled={busy}>Batal</button>
       <button type="button" className="primary-button" data-testid="fulfill-submit" disabled={busy || loading || !anyQty || !!over} onClick={submit}>
         {busy ? "Menjalankan…" : "Jalankan rencana"}
       </button>
     </div>
+    )}
     </>
   ) : null;
 

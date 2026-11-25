@@ -16,6 +16,9 @@ jest.mock("../../services/apiClient", () => ({
   setActiveEntity: () => {}, setAuthToken: () => {},
 }));
 
+jest.mock("../sales_admin/FulfillmentLineCard", () => ({ value, onChange }) => (
+  <button type="button" data-testid="isi-rencana" onClick={() => onChange({ ...value, stock: 1 })}>isi</button>));
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const q = (id) => document.body.querySelector(`[data-testid="${id}"]`);
 const teks = (el) => (el ? el.textContent.replace(/\s+/g, " ").trim() : "");
@@ -64,4 +67,28 @@ test("tanpa modal-card/modal-overlay buatan sendiri", () => {
     const src = fs.readFileSync(path.join(__dirname, rel), "utf8");
     expect(src).not.toMatch(/modal-card|modal-overlay/);
   }
+});
+
+test("VerifyOrderDialog: galat kirim tetap tampil setelah muat ulang berhasil", async () => {
+  routeGet({ "/sales-orders/so1/verification": { verifiable: true, ready: true, checks: [], order_preview: null } });
+  mockPost.mockRejectedValue({ response: { data: { detail: "Gagal karena X" } } });
+  await mount(<VerifyOrderDialog orderId="so1" orderNumber="SO-1" customerName="Toko A" onClose={() => {}} onVerified={() => {}} />);
+  await klik("verify-submit");
+  await act(async () => {});
+  expect(teks(q("verify-dialog-error"))).toContain("Gagal karena X");
+});
+
+test("FulfillmentDecisionDialog: galat eksekusi tetap tampil walau muat ulang tanpa baris", async () => {
+  const baris = { product_id: "p1", sku: "S", product_name: "Kain", unit: "yard", backorder_qty: 5, other_entities: [], proposal: [], stock_options: [] };
+  let n = 0;
+  mockGet.mockImplementation(() => Promise.resolve({ data: { lines: n++ === 0 ? [baris] : [], decisions: [] } }));
+  mockPost.mockRejectedValue({ response: { data: { detail: "Sebagian gagal" } } });
+  await mount(<FulfillmentDecisionDialog orderId="so1" orderNumber="SO-1" customerName="Toko A" onClose={() => {}} onDecided={() => {}} />);
+  expect(q("fulfill-submit")).not.toBeNull();
+  await klik("isi-rencana");
+  await klik("fulfill-submit");
+  await act(async () => {});
+  expect(q("fulfill-exec-error")).not.toBeNull();
+  expect(teks(q("fulfill-exec-error"))).toContain("Sebagian gagal");
+  expect(q("fulfill-submit")).toBeNull();
 });
