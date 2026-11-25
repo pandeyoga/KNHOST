@@ -1,4 +1,7 @@
-# Daftar keputusan terbuka — 25 Nov 2026
+# Daftar keputusan — 25 Nov 2026
+
+**Status: DISETUJUI pemilik 25 Nov 2026 — semua butir A0–H5 sesuai rekomendasi.** Masih ditunggu: daftar PT yang
+menerima tunai di lapangan (C4) dan peran kustom yang boleh menyetujui pembatalan (H5).
 
 Semua pertanyaan yang menunggu pemilik, masing-masing dengan rekomendasi dan alasannya. Jawab per nomor:
 "setuju", "tidak", atau nilai lain. Contoh: "semua setuju kecuali C6 = 2 juta".
@@ -97,3 +100,19 @@ Sumber:
 | H3 | Run gaji **draf** yang dibuat sebelum update dihitung ulang sesudah update? | **Ya** | Saldo potongan baru tercatat saat dihitung. |
 | H4 | Perbandingan komisi sebelum/sesudah pada data acuan sebelum update? | **Ya** | Memastikan angka komisi lama tidak berubah tanpa sengaja. |
 | H5 | Peran kustom yang harus bisa menyetujui pembatalan diberi izin "setujui pembatalan"? Admin/manager/finance otomatis. | **Ya** — sebutkan perannya | Peran kustom tidak otomatis mendapat izin baru. |
+
+## I. Tambahan pemilik 25 Nov (sesudah persetujuan) — kartu pelanggan/pemasok sebagai buku pembantu
+
+Pemilik: *"pastikan setiap customer memiliki akunnya sendiri untuk akuntansi dan dibuat otomatis ketika membuat customer;
+customer bisa deposit tanpa membuat SO; supplier juga sama; butuh kartu customer/supplier yang menggabungkan piutang dan
+deposit serta ringkasan saldonya."*
+
+Tafsiran (menunggu konfirmasi pemilik):
+- **"Akun per pelanggan/pemasok" = buku pembantu per pihak, bukan akun baru di bagan akun.** Akun kontrol tetap satu: Piutang, Titipan/Uang Muka Pelanggan, Hutang, Uang Muka Pemasok. Setiap baris jurnal di akun-akun itu wajib membawa ID pelanggan/pemasok. Bukunya ada otomatis begitu pelanggan/pemasok dibuat, tidak perlu dibuat manual.
+- **Deposit pelanggan tanpa SO** sudah bisa: kwitansi tanpa memilih pesanan menjadi titipan pelanggan. Yang kurang: tombol "Terima deposit" yang jelas di kartu pelanggan.
+- **Uang muka ke pemasok tanpa PO/tagihan** belum ada (hanya lahir dari kelebihan bayar tagihan). Perlu fitur baru dengan persetujuan; dipotong otomatis saat membayar tagihan berikutnya.
+- **Kartu pelanggan/pemasok** sudah ada (MN-T3). Yang ditambah:
+  - ringkasan Piutang/Hutang · Titipan/Uang muka · **Posisi bersih**;
+  - rekening koran gabungan dari buku besar per pihak per PT.
+- **Baris jurnal lama** diberi ID pihak dari dokumen sumbernya. Nominal tidak berubah, tetapi tetap menyentuh data nyata, jadi perlu persetujuan sebelum dijalankan.
+- **Cek harian:** Σ buku pembantu = saldo akun kontrol (F-list #11).
