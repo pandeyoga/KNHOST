@@ -267,3 +267,67 @@ def test_awalan_idempoten_terdaftar():
     from idempotency import is_idempotent_path
     assert is_idempotent_path("/api/payment-reports/x/attachments")
     assert is_idempotent_path("/api/sales-orders/x/payment-reports")
+
+
+# ── Putaran perbaikan 1 ──────────────────────────────────────────────────────────────────────────────────────────
+@pytest.mark.parametrize("mentah", ["Infinity", "-Infinity", "NaN", "0", "-5", "1e999"])
+async def test_nominal_tak_hingga_nan_nol_negatif_ditolak(klien, db, siap, mentah):
+    so = await _pesanan(db, siap)
+    badan = ('{"amount": %s, "transfer_date": "%s", "account_id": "%s", "method": "transfer"}'
+             % (mentah, TGL, siap["A"]))
+    r = await klien.post(f"/api/sales-orders/{so['id']}/payment-reports", content=badan,
+                         headers={**siap["h_sales"], "Content-Type": "application/json"})
+    assert 400 <= r.status_code < 500, (mentah, r.status_code, r.text)
+    assert await db.payment_reports.count_documents({"order_id": so["id"]}) == 0
+    assert await db.notifications.count_documents({"type": "lapor_bayar_masuk", "body": {"$regex": so["number"]}}) == 0
+
+
+async def test_layanan_menolak_nominal_tak_hingga(db, siap):
+    from fastapi import HTTPException
+    from services import payment_report_service as prs
+    so = await _pesanan(db, siap)
+    for nilai in (float("inf"), float("-inf"), float("nan")):
+        with pytest.raises(HTTPException) as e:
+            await prs.create_report(so, _isi(siap, amount=nilai), siap["sales"])
+        assert e.value.status_code == 400
+    assert await db.payment_reports.count_documents({"order_id": so["id"]}) == 0
+
+
+async def test_baca_dan_unduh_pt_penugasan_lain_dari_tampilan_satu_pt(klien, db, siap, akun, sesi):
+    from core_utils import now_iso
+    from services import storage_service as storage
+    multi = await akun("finance", entitas=(KSC, KANDA))
+    h = await sesi(multi, entitas=KSC)                       # tampilan satu PT (KSC), tetapi KANDA ditugaskan
+    so = await _pesanan(db, siap)
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"entity_id": KANDA}})
+    path = storage.build_path("payment_reports", "pdf")
+    res = await storage.put_object(path, PDF, "application/pdf")
+    lid = _id("lb")
+    await db.payment_reports.insert_one({
+        "id": lid, "order_id": so["id"], "entity_id": KANDA, "number": "LB-X", "status": "menunggu",
+        "created_at": now_iso(), "attachments": [{"id": "att_x", "storage_path": res.get("path", path),
+                                                   "original_filename": "b.pdf", "content_type": "application/pdf",
+                                                   "size": len(PDF), "is_deleted": False}]})
+    assert (await klien.get(f"/api/sales-orders/{so['id']}/payment-reports", headers=h)).status_code == 200
+    assert (await klien.get(f"/api/payment-reports/{lid}/attachments/att_x", headers=h)).status_code == 200
+    # PT di luar penugasan → 403
+    so2 = await _pesanan(db, siap)                           # pesanan KSC; Admin Sales khusus KANDA tidak ditugaskan di KSC
+    lid2 = _id("lb")
+    await db.payment_reports.insert_one({"id": lid2, "order_id": so2["id"], "entity_id": KSC, "number": "LB-Y",
+                                         "status": "menunggu", "created_at": now_iso(), "attachments": []})
+    luar = await sesi(await akun("sales_admin", entitas=(KANDA,)), entitas=KANDA)
+    assert (await klien.get(f"/api/sales-orders/{so2['id']}/payment-reports", headers=luar)).status_code == 403
+    assert (await klien.get(f"/api/payment-reports/{lid2}/attachments/att_x", headers=luar)).status_code == 403
+
+
+async def test_nama_berkas_non_latin_dan_kutip_di_content_disposition(klien, db, siap):
+    from urllib.parse import quote
+    _, lid = await _siap_laporan(klien, db, siap)
+    nama = 'bukti – "transfer" 😀.pdf'
+    att = (await _unggah(klien, siap["h_sales"], lid, nama=nama)).json()
+    r = await klien.get(f"/api/payment-reports/{lid}/attachments/{att['id']}", headers=siap["h_sales"])
+    assert r.status_code == 200 and r.content == PDF
+    cd = r.headers["content-disposition"]
+    assert cd.startswith("inline; filename=\"") and f"filename*=UTF-8''{quote(att['original_filename'], safe='')}" in cd
+    asli = cd.split('filename="', 1)[1].split('"', 1)[0]
+    assert asli.isascii() and '"' not in asli and asli.endswith(".pdf")

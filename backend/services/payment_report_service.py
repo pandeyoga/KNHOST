@@ -7,6 +7,7 @@ status, penomoran, dan bentuk tampil. Pembuatan laporan (Tugas 3) dan keputusan 
 from __future__ import annotations
 
 from datetime import date
+import math
 from typing import Any, Dict, List
 
 from fastapi import HTTPException
@@ -67,7 +68,7 @@ async def create_report(order: Dict[str, Any], payload: Dict[str, Any], actor: D
         amount = float(payload.get("amount") or 0)
     except (TypeError, ValueError):
         amount = 0.0
-    if amount <= 0:
+    if not math.isfinite(amount) or amount <= 0:
         raise HTTPException(status_code=400, detail="Nominal harus lebih dari nol")
     try:
         tgl = date.fromisoformat(str(payload.get("transfer_date") or "")[:10]).isoformat()

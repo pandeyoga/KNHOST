@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -15,7 +17,7 @@ from pydantic import BaseModel
 from core_utils import new_id, now_iso, safe_doc
 from db import db
 from dependencies import audit, has_permission, require_permission
-from entity_scope import guard_doc
+from entity_scope import assert_entity_access, entity_ctx, guard_doc
 from services import payment_report_service as prs
 from services import sales_ownership, storage_service as storage
 
@@ -23,7 +25,7 @@ router = APIRouter(prefix="/api")
 
 
 class LaporBayarIn(BaseModel):
-    amount: float
+    amount: float   # tak hingga/NaN ditolak layanan (400); PosQty membuat 422 yang gagal diserialkan (500)
     transfer_date: str
     account_id: str
     method: str
@@ -31,32 +33,45 @@ class LaporBayarIn(BaseModel):
     note: Optional[str] = ""
 
 
-async def _pesanan_berpagar(request: Request, actor: Dict[str, Any], order_id: str) -> Dict[str, Any]:
-    """Pesanan yang boleh disentuh pemanggil: ada, PT-nya PT aktif pengguna (PT lain → 403, bukan 404), dan — untuk
-    peran bercakupan "milik sendiri" — pesanan miliknya."""
+async def _pesanan_berpagar(request: Request, actor: Dict[str, Any], order_id: str,
+                            *, tulis: bool = True) -> Dict[str, Any]:
+    """Pesanan yang boleh disentuh pemanggil: ada, PT sah, dan — untuk peran bercakupan "milik sendiri" — miliknya.
+    Rute tulis memakai pagar PT AKTIF (`guard_doc`); rute baca memakai pagar yang sama dengan rincian pesanan
+    (`assert_entity_access`, penugasan PT). PT di luar penugasan → 403; 404 lokasi tugas tetap 404."""
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
+    ctx = await entity_ctx(request)
     try:
-        await guard_doc(request, "sales_orders", order)
+        if tulis:
+            await guard_doc(request, "sales_orders", order)
+        else:
+            assert_entity_access(order, "sales_orders", ctx)
     except HTTPException as exc:
-        raise HTTPException(status_code=403, detail="Pesanan ini milik badan usaha lain") from exc
+        ent = order.get("entity_id")
+        if tulis:
+            di_luar = exc.status_code == 404
+        else:
+            di_luar = bool(ent) and ent not in ctx.allowed_entity_ids
+        if di_luar:
+            raise HTTPException(status_code=403, detail="Pesanan ini milik badan usaha lain") from exc
+        raise
     sales_ownership.assert_may_open(order, actor)
     return order
 
 
-async def _laporan_berpagar(request: Request, actor: Dict[str, Any], report_id: str):
+async def _laporan_berpagar(request: Request, actor: Dict[str, Any], report_id: str, *, tulis: bool = True):
     rep = await db.payment_reports.find_one({"id": report_id}, {"_id": 0})
     if not rep:
         raise HTTPException(status_code=404, detail="Laporan bayar tidak ditemukan")
-    order = await _pesanan_berpagar(request, actor, rep.get("order_id", ""))
+    order = await _pesanan_berpagar(request, actor, rep.get("order_id", ""), tulis=tulis)
     return rep, order
 
 
 @router.get("/sales-orders/{order_id}/payment-reports")
 async def list_payment_reports(order_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "order", "view")
-    await _pesanan_berpagar(request, actor, order_id)
+    await _pesanan_berpagar(request, actor, order_id, tulis=False)
     return {
         "items": await prs.list_for_order(order_id),
         "bisa_lapor": await has_permission(actor, "payment_report", "create"),
@@ -104,7 +119,7 @@ async def upload_attachment(report_id: str, request: Request, file: UploadFile =
 @router.get("/payment-reports/{report_id}/attachments/{att_id}")
 async def download_attachment(report_id: str, att_id: str, request: Request):
     actor = await require_permission(request, "order", "view")
-    rep, _order = await _laporan_berpagar(request, actor, report_id)
+    rep, _order = await _laporan_berpagar(request, actor, report_id, tulis=False)
     att = next((a for a in (rep.get("attachments") or []) if a.get("id") == att_id and not a.get("is_deleted")), None)
     if not att:
         raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan.")
@@ -114,5 +129,11 @@ async def download_attachment(report_id: str, att_id: str, request: Request):
         raise HTTPException(status_code=502, detail=f"Gagal mengambil file: {e}")
     return Response(
         content=content, media_type=att.get("content_type", ctype),
-        headers={"Content-Disposition": f'inline; filename="{att.get("original_filename", "file")}"'},
+        headers={"Content-Disposition": _disposisi(att.get("original_filename") or "file")},
     )
+
+
+def _disposisi(nama: str) -> str:
+    """`Content-Disposition` inline aman: `filename` ASCII (tanpa kutip/kendali) + `filename*` UTF-8 berkode persen."""
+    ascii_ = "".join(c if 32 <= ord(c) < 127 and c not in '"\\;' else "_" for c in nama) or "file"
+    return f"inline; filename=\"{ascii_}\"; filename*=UTF-8''{quote(nama, safe='')}"
