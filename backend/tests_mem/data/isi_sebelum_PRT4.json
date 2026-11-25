@@ -17,7 +17,7 @@
    {
     "antrean": 10,
     "item": 4,
-    "judul": "Meja Admin"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -62,7 +62,7 @@
    {
     "antrean": 3,
     "item": 2,
-    "judul": "Meja Desainer"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -104,7 +104,7 @@
    {
     "antrean": 2,
     "item": 0,
-    "judul": "Meja Pengemudi"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -187,7 +187,7 @@
    {
     "antrean": 6,
     "item": 4,
-    "judul": "Meja Manajer"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -349,7 +349,7 @@
    {
     "antrean": 5,
     "item": 0,
-    "judul": "Meja Sales"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -394,7 +394,7 @@
    {
     "antrean": 5,
     "item": 1,
-    "judul": "Meja Sales"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
@@ -521,7 +521,7 @@
    {
     "antrean": 5,
     "item": 0,
-    "judul": "Meja Operator Gudang"
+    "judul": "Meja Saya"
    }
   ],
   "/api/notifications": [
