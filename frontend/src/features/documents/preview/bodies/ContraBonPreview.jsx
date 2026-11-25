@@ -1,8 +1,7 @@
 /**
  * Isi pratinjau kontrabon: fakta, total, lalu gabungan baris barang semua faktur di dalamnya (dikelompokkan per faktur).
- * Kontrabon sendiri tidak membawa baris barang, jadi tiap faktur dimuat lewat pemuat `vendor_bill` milik registri
+ * Kontrabon sendiri tidak membawa baris barang, jadi tiap faktur dimuat lewat `loadVendorBill` (docLoaders)
  * (PT dokumen ikut diingat), paralel, paling banyak 20 faktur. Satu faktur gagal → galat hanya di kelompoknya.
- * Impor registri dipakai saat render (bukan saat modul dimuat), jadi siklus impor registri ↔ isi ini aman.
  */
 import { useEffect, useMemo, useState } from "react";
 import ErrorNotice from "../../../../components/ErrorNotice";
@@ -10,7 +9,7 @@ import { useEntityScope } from "../../../../context/EntityScopeContext";
 import { entityShortById } from "../../../../utils/entityLabel";
 import { formatCurrency, formatDate } from "../../../../utils/formatters";
 import { DocPill, SupplierCardLink } from "../../../finance/cards/partyCards";
-import { previewFor } from "../docPreviewRegistry";
+import { loadVendorBill } from "../docLoaders";
 import { PreviewFacts, PreviewLines, PreviewTotals } from "../previewParts";
 import { kolomBarangTagihan } from "./VendorBillPreview";
 
@@ -22,9 +21,8 @@ function useFakturKontrabon(bills, entityId) {
   const kunci = bills.map((b) => b.bill_id).join("|");
   useEffect(() => {
     let batal = false;
-    const entry = previewFor("vendor_bill");
     setHasil({});
-    Promise.allSettled(bills.map((b) => entry.load(b.bill_id, { entityId }))).then((rs) => {
+    Promise.allSettled(bills.map((b) => loadVendorBill(b.bill_id, { entityId }))).then((rs) => {
       if (batal) return;
       const next = {};
       rs.forEach((r, i) => { next[bills[i].bill_id] = r.status === "fulfilled" ? { doc: r.value } : { error: r.reason }; });

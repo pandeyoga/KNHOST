@@ -21,7 +21,7 @@ const Badge = ({ tone, children, testId }) => {
 
 // UAT 24 Okt (audit UI tahap 2) — G2-15: kondisi di panel ini = LAPORAN AWAL saat retur dibuat; hasil QC per roll
 // (mis. "Cacat ringan") ada di panel SPK. Dulu "minor" ikut tampil "Rusak"/"Baik" tanpa keterangan sumber.
-const COND_LABEL = { ok: ["ok", "Baik"], minor: ["warn", "Cacat ringan"], damaged: ["warn", "Rusak"], major: ["bad", "Cacat berat"] };
+export const COND_LABEL = { ok: ["ok", "Baik"], minor: ["warn", "Cacat ringan"], damaged: ["warn", "Rusak"], major: ["bad", "Cacat berat"] };
 const condBadge = (cond) => COND_LABEL[cond] || ["ok", "Baik"];
 
 /** Kondisi (laporan awal) + checklist satu roll dalam SATU sel — sama untuk roll aktif maupun yang ditolak.

@@ -12,37 +12,29 @@
  *     (mis. di pop-up meja — `push` boleh no-op);
  *   · `full(doc)` — tautan navigasi untuk "Buka layar penuh" (`null` = tombol tidak ditampilkan).
  */
-import axios, { API } from "../../../services/apiClient";
-import { rememberDocEntities } from "../../../services/docEntityRegistry";
 import { can } from "../../../config/roles";
 import { ROW_TARGET } from "../../sales_admin/workDeskApi";
+import {
+  loadDoc, loadSalesOrder, loadVendorBill, loadPurchaseOrder, loadArReceipt, loadContraBon,
+  loadSalesReturn, loadSpecialOrder, loadInternalRequest,
+} from "./docLoaders";
 import SalesOrderPreview from "./bodies/SalesOrderPreview";
 import VendorBillPreview from "./bodies/VendorBillPreview";
 import PurchaseOrderPreview from "./bodies/PurchaseOrderPreview";
 import ArReceiptPreview from "./bodies/ArReceiptPreview";
 import ContraBonPreview from "./bodies/ContraBonPreview";
+import SalesReturnPreview from "./bodies/SalesReturnPreview";
+import SpecialOrderPreview from "./bodies/SpecialOrderPreview";
+import InternalRequestPreview from "./bodies/InternalRequestPreview";
 
-/** Pemuat standar: GET `${API}${path}/{id}` dengan PT dokumen diingat lebih dulu. */
-export const loadDoc = (path) => async (id, { entityId } = {}) => {
-  if (entityId) rememberDocEntities([{ id, entity_id: entityId }]);
-  const res = await axios.get(`${API}${path}/${id}`);
-  return res.data;
-};
-
-/** Dokumen pembelian/kas memakai nama kolom nomor sendiri (`bill_number`, `po_number`); judul pop-up membaca `number`. */
-const loadBernomor = (path, field) => {
-  const muat = loadDoc(path);
-  return async (id, opts) => {
-    const d = await muat(id, opts);
-    return d && !d.number && d[field] ? { ...d, number: d[field] } : d;
-  };
-};
+// Pemuat tinggal di `docLoaders.js` (bebas siklus); `loadDoc` tetap diekspor dari sini untuk pemakai lama.
+export { loadDoc };
 
 export const DOC_PREVIEWS = {
   sales_order: {
     label: "Pesanan penjualan",
     perm: ["order", "view"],
-    load: loadDoc("/sales-orders"),
+    load: loadSalesOrder,
     Body: SalesOrderPreview,
     full: (doc) => ({ ...ROW_TARGET.sales_order, focus_id: doc.id, number: doc.number }),
   },
@@ -50,30 +42,53 @@ export const DOC_PREVIEWS = {
   vendor_bill: {
     label: "Tagihan pemasok",
     perm: ["vendor_bill", "view"],
-    load: loadBernomor("/vendor-bills", "bill_number"),
+    load: loadVendorBill,
     Body: VendorBillPreview,
     full: () => null,
   },
   purchase_order: {
     label: "Purchase order",
     perm: ["purchase_order", "view"],
-    load: loadBernomor("/purchase-orders", "po_number"),
+    load: loadPurchaseOrder,
     Body: PurchaseOrderPreview,
     full: (doc) => ({ ...ROW_TARGET.purchase_order, focus_id: doc.id, number: doc.number }),
   },
   ar_receipt: {
     label: "Kwitansi",
     perm: ["ar_receipt", "view"],
-    load: loadDoc("/ar-receipts"),
+    load: loadArReceipt,
     Body: ArReceiptPreview,
     full: () => null,
   },
   contra_bon: {
     label: "Kontrabon",
     perm: ["contra_bon", "view"],
-    load: loadDoc("/contra-bons"),
+    load: loadContraBon,
     Body: ContraBonPreview,
     full: () => null,
+  },
+  // Retur, pesanan khusus, permintaan internal: `full` memakai `ROW_TARGET` (sama dengan baris meja).
+  sales_return: {
+    label: "Retur penjualan",
+    perm: ["sales_return", "view"],
+    load: loadSalesReturn,
+    Body: SalesReturnPreview,
+    full: (doc) => ({ ...ROW_TARGET.sales_return, focus_id: doc.id, number: doc.number }),
+  },
+  // Rute `GET /special-orders/{id}` memeriksa izin `order.view` (tidak ada sumber daya `special_order`).
+  special_order: {
+    label: "Pesanan khusus",
+    perm: ["order", "view"],
+    load: loadSpecialOrder,
+    Body: SpecialOrderPreview,
+    full: (doc) => ({ ...ROW_TARGET.special_order, focus_id: doc.id, number: doc.number }),
+  },
+  internal_request: {
+    label: "Permintaan internal",
+    perm: ["internal_request", "view"],
+    load: loadInternalRequest,
+    Body: InternalRequestPreview,
+    full: (doc) => ({ ...ROW_TARGET.internal_request, focus_id: doc.id, number: doc.number }),
   },
 };
 

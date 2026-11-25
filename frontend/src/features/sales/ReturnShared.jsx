@@ -1,13 +1,13 @@
 /** Shared components for the Returns feature. */
 import { docStatusLabel } from "../../utils/docStatus";
-const RETURN_TYPE_LABEL = {
+export const RETURN_TYPE_LABEL = {
   retur:       "Retur",
   bs:          "Barang Sisa (BS)",
   penggantian: "Penggantian",
   komplain:    "Komplain",
   garansi:     "Garansi",
 };
-const STATUS_STYLE = {
+export const STATUS_STYLE = {
   draft:            { cls: "pill-muted",   label: "Draf" },
   pending_approval: { cls: "pill-warning", label: "Menunggu Persetujuan" },
   // Audit UI 24 Okt (034) — "Disetujui" hijau seperti di Retur ke Supplier; tahap inspeksi biru/ungu
