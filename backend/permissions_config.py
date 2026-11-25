@@ -1137,3 +1137,22 @@ KFIN01_DEFAULT_PAIRS = {KFIN01_SETARA[0]: {_res: tuple(a for a in _acts if a not
                                            if any(a not in (_fin.get(_res) or []) for a in _acts)}}
 for _res, _acts in KFIN01_DEFAULT_PAIRS[KFIN01_SETARA[0]].items():
     _fin[_res] = list(_fin.get(_res) or []) + list(_acts)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LB-T1 — Lapor Bayar CBD & DP (`docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md`). Sumber daya baru
+# `payment_report` (modul akses "Uang Masuk, Piutang & Faktur Pajak"): `create` melaporkan sudah bayar (sales, admin
+# sales, finance, admin, manajer); `decide` menerima atau menolak laporan lalu mencatat uang masuk (finance, admin,
+# manajer). Sales tidak memutus laporannya sendiri. Instalasi lama menerima pasangan baru sekali lewat
+# `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+LBT1_DEFAULT_PAIRS = {
+    "admin": {"payment_report": ("create", "decide")},
+    "manager": {"payment_report": ("create", "decide")},
+    "finance": {"payment_report": ("create", "decide")},
+    "sales": {"payment_report": ("create",)},
+    "sales_admin": {"payment_report": ("create",)},
+}
+for _role, _mods in LBT1_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

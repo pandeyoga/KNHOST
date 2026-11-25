@@ -140,7 +140,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Kwitansi AR, piutang, rencana bayar, denda, selisih bayar, faktur pajak keluaran, profil kredit "
                     "pelanggan (plafon, blokir, pengajuan perubahan kredit).",
      # CR-T1 — `credit_profile` (profil kredit per pelanggan per PT); layarnya tab Kredit di kartu pelanggan.
-     "resources": ["ar_receipt", "tax_invoice", "payment_plan", "penalty", "payment_variance", "credit_profile"],
+     "resources": ["ar_receipt", "tax_invoice", "payment_plan", "penalty", "payment_variance", "credit_profile",
+                   "payment_report"],   # LB-T1 — lapor bayar CBD & DP
      "nav": ["keuangan", "ar-aging", "advance-report", "payment-plans", "store-credit", "customers-crm",
              "akuntansi", "tax-hub", "tax-invoices", "cs-pajak",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
              "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan piutang & pajak
@@ -694,6 +695,10 @@ RESOURCE_LABEL["cash_holding"] = "Titipan Tunai Sales"
 ACTION_LABEL.update({"cash_holding.view": "Lihat titipan tunai (milik sendiri; semua bila boleh menerima setoran)",
                      "cash_holding.create": "Ajukan setoran titipan sendiri",
                      "cash_holding.approve": "Terima atau tolak setoran titipan"})
+# LB-T1 — Lapor Bayar CBD & DP (modul Uang Masuk, Piutang & Faktur Pajak): melapor, memutus.
+RESOURCE_LABEL["payment_report"] = "Lapor Bayar Pelanggan"
+ACTION_LABEL.update({"payment_report.create": "Laporkan pelanggan sudah bayar (CBD & DP) dan unggah bukti",
+                     "payment_report.decide": "Terima atau tolak laporan bayar lalu catat uang masuk"})
 # CR-T3 — izin kredit (modul Pengawasan Tim Sales & Kredit): melihat, mengajukan, memutus.
 ACTION_LABEL.update({"credit_override.view": "Lihat izin kredit & pesanan yang ditolak gerbang kredit",
                      "credit_override.create": "Ajukan izin kredit",

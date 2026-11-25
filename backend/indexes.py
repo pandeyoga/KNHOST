@@ -301,6 +301,11 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("bill_number", A)],
         [("bill_date", D)],
     ],
+    "payment_reports": [   # LB-T1 — laporan bayar CBD & DP
+        [("order_id", A), ("status", A)],
+        [("entity_id", A), ("status", A), ("created_at", D)],
+        [("number", A)],
+    ],
     "ar_receipts": [
         [("entity_id", A), ("status", A), ("created_at", D)],
         [("customer_id", A)],

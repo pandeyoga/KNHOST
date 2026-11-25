@@ -2367,6 +2367,10 @@
    "penjualan",
    "alur-pesanan"
   ],
+  "sales.batas_bayar_hari": [
+   "penjualan",
+   "alur-pesanan"
+  ],
   "sales.group_sales_max_members": [
    "penjualan",
    "alur-pesanan"

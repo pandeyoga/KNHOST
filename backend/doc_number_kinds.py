@@ -79,6 +79,7 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("fkt", "Faktur pajak keluaran", "Keuangan", "tax_invoices", "number", "FKT-"),
     _k("fpm", "Faktur pajak masukan", "Keuangan", "tax_invoices_in", "number", "FPM-", scope=_B),
     _k("ar", "Penerimaan piutang", "Keuangan", "ar_receipts", "number", "AR-"),
+    _k("lb", "Laporan bayar pelanggan", "Keuangan", "payment_reports", "number", "LB-"),   # LB-T1
     _k("cash", "Transaksi kas dan bank", "Keuangan", "cash_transactions", "number", "CASH-"),
     _k("je", "Jurnal", "Keuangan", "journal_entries", "number", "JE-"),
     _k("cb", "Kontrabon", "Keuangan", "contra_bons", "number", "CB-"),

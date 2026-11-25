@@ -118,6 +118,7 @@ DEFAULT_FIELD = "entity_id"
 SCOPED_COLLECTIONS = {
     "sales_orders", "sales_returns", "special_orders", "price_approvals", "sample_requests",
     "ar_receipts", "cash_transactions", "bank_accounts", "journal_entries",
+    "payment_reports",   # LB-T1 — laporan bayar CBD & DP milik satu PT
     # FASE G-8 — mutasi bank & perkakasnya WAJIB ter-scope. Sebelum fase ini
     # `bank_statement_lines` tidak terdaftar sehingga user PT-A cukup mengirim
     # `bank_account_id` PT-B untuk membaca mutasinya (ditutup + POC bukti-merah).

@@ -216,6 +216,8 @@ from routers import rfid_v2, rfid_v2_ops, rfid_v2_review  # noqa: E402 — gate 
 app.include_router(rfid_v2.router)
 app.include_router(rfid_v2_ops.router)
 app.include_router(rfid_v2_review.router)
+from routers import payment_reports as _payment_reports  # noqa: E402 — LB-T1 lapor bayar CBD & DP
+app.include_router(_payment_reports.router)
 from routers import access_roles as _access_roles  # noqa: E402
 app.include_router(_access_roles.router)
 from routers import so_override as _so_override  # noqa: E402 — 2026-10 override SO Admin

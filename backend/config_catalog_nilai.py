@@ -61,6 +61,16 @@ E("sales.reservation_days", group="harga-diskon", section="alur-pesanan", type="
   example="3 → pesanan dibuat Senin pukul 10.00 dan belum disetujui melepas stoknya Kamis pukul 10.00",
   consumers=("services/inventory_service.py:reservation_expires_at",), **_P)
 
+# LB-T1 — Lapor Bayar CBD & DP: lama pesanan yang wajib bayar dulu menunggu bukti bayar sebelum tahannya jatuh tempo.
+# Pembaca: `services/pay_hold_service.py` (Tugas 2 — hitung `pay_hold.due_at`).
+E("sales.batas_bayar_hari", group="harga-diskon", section="alur-pesanan", type="duration", default=3, min=1, max=30,
+  step=1, unit="hari", scopes=_GE,
+  label="Batas hari bayar pesanan wajib bayar dulu",
+  help="Pesanan yang wajib bayar dulu (CBD atau uang muka) menunggu pembayaran sekian hari sejak disetujui.",
+  impact="Berlaku untuk tahan bayar yang dibuat sesudah perubahan; tahan yang sudah berjalan tetap memakai batas lamanya.",
+  example="3 → pesanan disetujui Senin pukul 10.00 dan belum dibayar jatuh tempo Kamis pukul 10.00",
+  consumers=("services/pay_hold_service.py:due_at",), **_P)
+
 E("sales.group_sales_max_members", group="harga-diskon", section="alur-pesanan", type="int", default=2, min=1, max=20,
   step=1, unit="orang", scopes=_GE,
   label="Maksimum anggota tim sales per pelanggan",

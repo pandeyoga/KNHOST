@@ -169,6 +169,11 @@ for _r, _tambah in _pc.KFIN01_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
+# LB-T1 — Lapor Bayar CBD & DP: `payment_report.create/decide` (`permissions_config.LBT1_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.LBT1_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+
 async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     r = await klien.get("/api/access/roles", headers=kepala_admin)
     roles = {x["id"]: x for x in r.json()["roles"]}
