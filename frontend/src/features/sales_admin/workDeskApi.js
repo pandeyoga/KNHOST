@@ -193,6 +193,12 @@ export function badgeLabel(badge) {
   return BADGE_LABEL[key] || docStatusLabel(badge);
 }
 
+/** Kelompok nada lencana: danger | warn | ok | info | mute. */
+export function badgeGroup(badge) {
+  const key = String(badge || "").toLowerCase();
+  return Object.keys(BADGE_GROUP).find((g) => BADGE_GROUP[g].includes(key)) || "mute";
+}
+
 export function badgeClass(badge) {
   const key = String(badge || "").toLowerCase();
   const group = Object.keys(BADGE_GROUP).find((g) => BADGE_GROUP[g].includes(key));
@@ -209,6 +215,13 @@ export function ageTone(days) {
   if (d >= 1) return { cls: BADGE_TONE.info, label: `${d} hari` };
   // 23 Okt — umur = selisih 24 jam, bukan tanggal kalender: dokumen kemarin 13.45 berumur 0 → "hari ini" menyesatkan.
   return { cls: BADGE_TONE.mute, label: "< 1 hari" };
+}
+
+/** Teks umur baris: lewat tempo → "lewat n hari" / "jatuh tempo hari ini"; selain itu label umur biasa. */
+export function ageText(row) {
+  const d = Number((row && row.age_days) || 0);
+  if (row && row.age_kind === "overdue") return d <= 0 ? "jatuh tempo hari ini" : `lewat ${d} hari`;
+  return ageTone(d).label;
 }
 
 /** Tanggal + jam WIB ringkas, mis. "06 Okt 14.05". */
