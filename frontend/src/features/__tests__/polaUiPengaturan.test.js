@@ -268,7 +268,7 @@ describe("Editor hak akses — matriks tanpa gulir mendatar", () => {
   test("editor: kepala kolom + baris 'Semua modul'; ringkasan satu baris, rincian & peringatan terpisah; tanpa kotak info", async () => {
     jest.useFakeTimers();
     api.previewAccessRole.mockResolvedValue({ nav_added: [], turn_alerts: [], summary: {
-      home: { label: "Meja Sales" }, data_scope: { label: "Milik sendiri" }, kategori: { label: "Sales" },
+      home: { label: "Meja Saya · Sales" }, data_scope: { label: "Milik sendiri" }, kategori: { label: "Sales" },
       cross_entity: false, approvals: [], risky: ["membatalkan kwitansi"], follows_base: [],
       modules: [{ id: "penjualan", label: "Pesanan Penjualan", pages: [{ label: "SO", can: ["Lihat"], cannot: ["Buat"] }] }],
     } });

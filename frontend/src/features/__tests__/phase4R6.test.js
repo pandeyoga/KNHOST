@@ -78,7 +78,7 @@ test("deskText: tahap/status/flow/target mentah → label; id teknis tidak tampi
 });
 
 test("Meja Saya: subjudul berlabel; tombol aksi tetap mengirim nomor asli server", async () => {
-  mockMyDesk.mockResolvedValue({ title: "Meja Manajer", queues: [
+  mockMyDesk.mockResolvedValue({ title: "Meja Saya", queues: [
     { id: "so_setuju", label: "SO menunggu persetujuan", count: 1, value_kind: "count", rows: [
       { ref_type: "sales_order", ref_id: "so_1", number: "KSC/SO-00001", title: "Toko A",
         subtitle: "waiting_approval · Budi", badge: "waiting_approval", action: "Putuskan", age_days: 1 }] },

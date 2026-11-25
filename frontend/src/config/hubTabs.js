@@ -256,10 +256,10 @@ export const HUB_TABS = {
     // 2026-10 — "Pusat Cetak" (menu terpisah) digabung ke sini: satu pintu dokumen.
     { view: "documents",       label: "Cetak PDF & Label", roles: ["admin", "sales", "manager", "warehouse"] },
   ],
-  // IA 2026-10 (B11) — dua dasbor keuangan dalam satu pintu. MN-T1 — "Beranda Keuangan": + Meja Finance sebagai tab
-  // pertama "Perlu Tindakan" (dulu menu lepas & butir Meja Peran). Finance lewat ROLE_NAV.
+  // IA 2026-10 (B11) — dua dasbor keuangan dalam satu pintu. MN-T1 — "Beranda Keuangan": + Meja Keuangan sebagai tab
+  // pertama "Meja Keuangan" (dulu menu lepas & butir Meja Peran). Finance lewat ROLE_NAV.
   "finance-tower": [
-    { view: "finance-desk",      label: "Perlu Tindakan",        roles: ["admin", "manager"] },
+    { view: "finance-desk",      label: "Meja Keuangan",         roles: ["admin", "manager"] },
     // Meja gelombang 1 (R4) — tab Pantau Meja Keuangan (Pelacak SO, retur internal) sebagai tab hub saudara: meja yang
     // sudah menjadi tab hub tidak boleh punya tab Antrean/Pantau sendiri (tingkat ketiga, INV-UI-14).
     { view: "finance-desk-pantau", label: "Pantau",              roles: ["admin", "manager"] },

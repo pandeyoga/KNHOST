@@ -8,7 +8,7 @@ const { Run, akunPeserta, peserta } = require("./lib.js");
 
 // [peran, nav_id, tab view id (atau ""), jalur menu]
 const NAV = [
-  ["finance", "finance-tower", "finance-desk", "Keuangan › Beranda Keuangan › Perlu Tindakan"],
+  ["finance", "finance-tower", "finance-desk", "Keuangan › Beranda Keuangan › Meja Keuangan"],
   ["finance", "finance-tower", "finance-tower", "Keuangan › Beranda Keuangan › Posisi"],
   ["finance", "ar-aging", "ar-aging", "Keuangan › Piutang › Saldo & Umur"],
   ["finance", "ar-aging", "collection-worklist", "Keuangan › Piutang › Penagihan & Penerimaan"],

@@ -52,7 +52,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       setData(await sampleDesk(params)); setError("");
-    } catch (e) { setError(apiErrorText(e, "Gagal memuat Meja Admin Sample.")); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat Meja Sample.")); }
     finally { if (!quiet) setLoading(false); }
   }, [selectedEntity]);
   useEffect(() => { load(); }, [load]);

@@ -46,7 +46,7 @@ EXPECTED_QUEUES = {
     "warehouse": {"giliran_saya", "tugas_wms", "po_terima", "sampel_potong"},
     "admin": {"giliran_saya", "so_acc", "po_acc", "retur_acc", "harga_khusus", "tugas_wms", "po_terima", "sampel_potong"},
 }
-EXPECTED_TITLE = {"manager": "Meja Manajer", "sales": "Meja Sales", "warehouse": "Meja Operator Gudang", "admin": "Meja Admin"}
+EXPECTED_TITLE = {"manager": "Meja Saya", "sales": "Meja Saya", "warehouse": "Meja Saya", "admin": "Meja Saya"}
 
 
 @pytest.mark.parametrize("role", ["manager", "sales", "warehouse", "admin"])

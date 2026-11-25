@@ -32,8 +32,9 @@ QUEUE_PERMISSIONS = {
 # Keputusan pemilik K-03 (26 Okt) — kolom nilai SO/PO di Meja Saya = grand total → diberi label tegas (sama dengan
 # Pusat Dokumen, Persetujuan Pembelian & PDF: "Total" = termasuk PPN, DPP = rincian).
 TOTAL_LABEL = "Total (termasuk PPN)"
-LABEL = {"admin": "Meja Admin", "manager": "Meja Manajer", "sales": "Meja Sales", "warehouse": "Meja Operator Gudang",
-         "designer": "Meja Desainer", "driver": "Meja Pengemudi"}
+# R9 (MEJA-8) — satu nama di layar: "Meja Saya" untuk semua jenis meja. Jenis meja disebut di pengaturan peran
+# ("Meja Saya · Manajer"), bukan di judul layar.
+LABEL = {k: "Meja Saya" for k in ("admin", "manager", "sales", "warehouse", "designer", "driver")}
 
 
 def _scope_q(scope: Dict[str, Any], ids: List[str]) -> Dict[str, Any]:

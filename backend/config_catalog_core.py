@@ -310,7 +310,7 @@ E("sales.sample_payment_tolerance_pct", group="penjualan", section="harga", type
   help="Bila sample berbayar dipotong dengan panjang berbeda dari yang disetujui, selisih tagihan sampai persen ini "
        "disesuaikan otomatis; di atasnya perlu persetujuan ulang dan kiriman sample ditahan. Isi 0 = setiap selisih "
        "perlu persetujuan ulang.",
-  impact="Menentukan kapan potong sample memicu persetujuan ulang pembayaran (Meja Admin Sample).",
+  impact="Menentukan kapan potong sample memicu persetujuan ulang pembayaran (Meja Sample).",
   example="Disetujui Rp 83.250, dipotong 3,1 yd → Rp 86.025 (+3,3%) ≤ 5% → disesuaikan otomatis",
   consumers=("services/sample_sale_service.py:payment_after_reprice",), risk="medium")
 E("sales.allow_partial_shipment", group="penjualan", section="alur-pesanan", type="bool", default=True,

@@ -97,7 +97,7 @@ async def test_PRT4_U1_sifat_bawaan_13_peran(klien, kepala_admin):
         assert roles[rid].get("home_view_fallback") is False, rid
     # Pilihan halaman awal: Meja Finance terbuka untuk Finance, mati untuk Sopir (izin bawaan).
     pilih = {c["view"]: c for c in roles["finance"]["home_choices"]}
-    assert pilih["finance-desk"]["allowed"] is True and pilih["finance-desk"]["label"] == "Meja Finance"
+    assert pilih["finance-desk"]["allowed"] is True and pilih["finance-desk"]["label"] == "Meja Keuangan"
     assert {c["view"]: c for c in roles["driver"]["home_choices"]}["finance-desk"]["allowed"] is False
     # GET /api/roles memuat sifat efektif.
     pub = {x["id"]: x for x in (await klien.get("/api/roles", headers=kepala_admin)).json()["roles"]}
@@ -109,7 +109,7 @@ async def test_PRT4_U8_halaman_awal_butuh_izin(klien, kepala_admin, peran_tanpa_
     rid = await peran_tanpa_acuan({"customer": ["view"]}, label="Tanpa Acuan U8")
     r = await _sifat(klien, kepala_admin, rid, {"home_view": "finance-desk"})
     assert r.status_code == 400, r.text
-    assert _detail(r) == "Halaman awal “Meja Finance” butuh akses yang belum dimiliki peran ini."
+    assert _detail(r) == "Halaman awal “Meja Keuangan” butuh akses yang belum dimiliki peran ini."
     r = await _sifat(klien, kepala_admin, rid, {"home_view": "hr-my-profile"})
     assert r.status_code == 200, r.text
     assert r.json()["traits"]["home_view"] == "hr-my-profile"
@@ -325,7 +325,7 @@ async def test_PRT4_U11_meja_saya_dari_kategori(klien, kepala_admin, peran_tanpa
     assert r.status_code == 200, r.text
     r = await klien.get("/api/desks/me", headers=h)
     assert r.status_code == 200, r.text
-    assert r.json()["title"] == "Meja Operator Gudang"
+    assert r.json()["title"] == "Meja Saya"
 
 
 async def test_PRT4_U12_kpi_sales_lain_butuh_izin(klien, peran_tanpa_acuan, peran_manajer_kosong, peran_sopir, akun,

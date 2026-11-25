@@ -75,7 +75,7 @@ BB = "belum dibuktikan"
 # (kode, bagian, klaim, hasil, [bukti], catatan)
 K = [
  # ── F01 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
- ("F01", "konsep.0", "Beranda Keuangan punya tiga tab: Perlu Tindakan, Posisi, Analisis", T, [u("F01", "1")], ""),
+ ("F01", "konsep.0", "Beranda Keuangan punya tiga tab: Meja Keuangan, Posisi, Analisis", T, [u("F01", "1")], ""),
  ("F01", "konsep.2", "Posisi Kas = saldo akun kas dan bank di buku besar", T, [u("F01", "8, 9")], ""),
  ("F01", "cek_buku.0", "POSISI KAS = 1-1100 + 1-1110 di Neraca Saldo, sama sampai rupiah", T, [u("F01", "9")], ""),
  ("F01", "cek_buku.1", "Piutang 'tercatat' = saldo 1-1200; 'belum dikirim' di luar buku", T, [u("F01", "8")], ""),

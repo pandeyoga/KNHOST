@@ -85,7 +85,7 @@ async function click(el) { await act(async () => { el.dispatchEvent(new MouseEve
 async function waitPreview() { await act(async () => { jest.advanceTimersByTime(600); }); await flush(); }
 
 const SUMMARY_FIN = {
-  home: { view: "finance-desk", label: "Meja Finance" }, data_scope: { value: "semua", label: "Semua di PT yang boleh dibuka" },
+  home: { view: "finance-desk", label: "Meja Keuangan" }, data_scope: { value: "semua", label: "Semua di PT yang boleh dibuka" },
   kategori: { value: "", label: "Tidak ada" }, cross_entity: false, approvals: { follows_rank_of: "Finance" },
   modules: [{ id: "ar", label: "Uang Masuk", level: "manage", partial: true, held: 1, total: 2,
     pages: [{ label: "Kwitansi", can: ["Lihat"], cannot: ["Batalkan (void)"] }] }],

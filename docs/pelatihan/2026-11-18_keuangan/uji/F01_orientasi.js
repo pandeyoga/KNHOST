@@ -1,4 +1,4 @@
-// F01 — Orientasi Finance: masuk, Beranda Keuangan (Perlu Tindakan · Posisi · Analisis), bilah atas, Profil Saya, Tanya KN.
+// F01 — Orientasi Finance: masuk, Beranda Keuangan (Meja Keuangan · Posisi · Analisis), bilah atas, Profil Saya, Tanya KN.
 //   node docs/pelatihan/2026-11-18_keuangan/uji/F01_orientasi.js           (peserta bawaan 05)
 //   KN_PESERTA=07 node docs/pelatihan/2026-11-18_keuangan/uji/F01_orientasi.js
 // Tidak mencatat apa pun: semua langkah hanya membaca. Angka Posisi/Analisis dicocokkan dengan jurnal di Mongo.
@@ -18,14 +18,14 @@ const TAHUN = new Date().getFullYear();
     const fin = await api(akunPeserta(NO));
 
     await r.step(1, "Finance", "Masuk dengan akun peserta (email + sandi di Kartu Peserta) → [Masuk]",
-      "Langsung mendarat di Keuangan › Beranda Keuangan, tab 'Perlu Tindakan'; tiga tab: Perlu Tindakan · Posisi · Analisis",
+      "Langsung mendarat di Keuangan › Beranda Keuangan, tab 'Meja Keuangan'; tiga tab: Meja Keuangan · Posisi · Analisis",
       async () => {
         await r.login(akunPeserta(NO));
         await r.tid("finance-desk").waitFor();
         assert(/view=finance-desk/.test(r.page.url()), `mendarat di ${r.page.url()}`);
         for (const t of ["finance-desk", "finance-tower", "bi-finance"]) await r.tid(`hub-tab-${t}`).waitFor();
         const tabs = await r.text("hub-tabs-finance-tower");
-        assert(/Perlu Tindakan/.test(tabs) && /Posisi/.test(tabs) && /Analisis/.test(tabs), `tab: ${tabs}`);
+        assert(/Meja Keuangan/.test(tabs) && /Posisi/.test(tabs) && /Analisis/.test(tabs), `tab: ${tabs}`);
         await r.page.waitForFunction(() => !document.querySelector('[data-testid="fin-desk-loading"]'), null, { timeout: 20000 });
         await potret(r, "beranda-perlu-tindakan", [r.tid("hub-tab-finance-desk")]);
         return `${r.who} → ${r.page.url().replace(/^.*\?/, "?")}`;
@@ -49,11 +49,11 @@ const TAHUN = new Date().getFullYear();
         return `PT: ${pt} · ${lok}${unset ? " · peringatan 'Lokasi kerja belum diatur'" : ""}`;
       });
 
-    // ── Perlu Tindakan ────────────────────────────────────────────────────────────────────────────────────────
+    // ── Meja Keuangan ────────────────────────────────────────────────────────────────────────────────────────
     const desk = await fin.get(`/finance/desk?entity_id=${KSC}`);
     const q = Object.fromEntries((desk.queues || []).map((x) => [x.id, x]));
 
-    await r.step(3, "Finance", "Perlu Tindakan: baca kepala tiap kartu (judul · jumlah · 'tertua …' · NILAI)",
+    await r.step(3, "Finance", "Meja Keuangan: baca kepala tiap kartu (judul · jumlah · 'tertua …' · NILAI)",
       "Kartu 'Faktur pajak perlu terbit', 'Uang masuk perlu dicatat' (dan 'Selisih bayar perlu diputus' bila ada) — angka jumlah sama dengan isi antrean",
       async () => {
         const cek = [["faktur_pajak", ["siap_faktur_pajak"]], ["uang_masuk", ["uang_masuk", "bayar_sebelum_kirim"]],

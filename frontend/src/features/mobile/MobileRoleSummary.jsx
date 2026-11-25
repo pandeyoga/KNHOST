@@ -6,7 +6,7 @@
  *  · Desainer     → DSR berjalan, tenggat dekat / lewat tenggat, revisi menunggu
  *                   (sumber: ringkasan server `GET /design-requests` — hanya permintaan yang ditugaskan ke dia).
  *  · Admin Sample → antrean pesanan sample (SOS) per tahap + menunggu persetujuan bayar
- *                   (sumber: `GET /sample-orders/desk` — antrean yang sama dengan Meja Admin Sample).
+ *                   (sumber: `GET /sample-orders/desk` — antrean yang sama dengan Meja Sample).
  * Peran lain tetap memakai panel lama (`KpiPanel` di MobileOpsApp).
  */
 import { useEffect, useState } from "react";
@@ -37,7 +37,7 @@ export function designerTiles(s = {}) {
   ].filter((t) => t.value !== undefined && t.value !== null);
 }
 
-// Label pendek antrean Meja Admin Sample (server mengirim kalimat panjang; id antrean = sumber yang sama).
+// Label pendek antrean Meja Sample (server mengirim kalimat panjang; id antrean = sumber yang sama).
 const SAMPLE_QUEUE_LABEL = {
   bayar_sampel: "Menunggu persetujuan bayar",
   siap_gudang: "Siap diteruskan ke gudang",
@@ -46,7 +46,7 @@ const SAMPLE_QUEUE_LABEL = {
   selesai: "Selesai (7 hari)",
 };
 
-/** Kartu angka Admin Sample dari `queues` Meja Admin Sample (server). */
+/** Kartu angka Admin Sample dari `queues` Meja Sample (server). */
 export function sampleAdminTiles(desk = {}) {
   return (desk.queues || []).map((q) => ({
     key: q.id,
@@ -70,8 +70,8 @@ const SOURCE = {
   sample_admin: {
     url: "/sample-orders/desk", params: {}, pick: (d) => d || {},
     tiles: sampleAdminTiles, title: "Antrean pesanan sample (SOS)",
-    caption: "Sumber: Meja Admin Sample — antrean per tahap yang sama dengan layar desktop.",
-    open: ["sample-admin-desk", "sample-admin-desk"], openLabel: "Buka Meja Admin Sample",
+    caption: "Sumber: Meja Sample — antrean per tahap yang sama dengan layar desktop.",
+    open: ["sample-admin-desk", "sample-admin-desk"], openLabel: "Buka Meja Sample",
   },
 };
 

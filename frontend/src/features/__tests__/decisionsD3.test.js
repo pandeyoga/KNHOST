@@ -138,7 +138,7 @@ test("K-12: tab Ringkas HP admin sample = antrean SOS per tahap dari Meja Admin 
   expect(q(host, "mo-role-kpi-sample_admin")).not.toBeNull();
   expect(q(host, "mo-role-kpi-bayar_sampel").textContent).toContain("Menunggu persetujuan bayar");
   expect(q(host, "mo-role-kpi-kirim_ambil").textContent).toContain("4");
-  expect(q(host, "mo-role-kpi-source").textContent).toContain("Meja Admin Sample");
+  expect(q(host, "mo-role-kpi-source").textContent).toContain("Meja Sample");
 });
 
 // ── K-14 ──────────────────────────────────────────────────────────────────────

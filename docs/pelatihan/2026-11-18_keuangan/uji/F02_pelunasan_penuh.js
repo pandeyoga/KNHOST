@@ -20,8 +20,8 @@ const NO = peserta("02");
     r.note(`Peserta ${NO} · ${so.so} · total ${so.total} · sisa ${sisaAwal}`);
     if (sisaAwal <= 0.01) throw new Error(`${so.so} sudah lunas — pakai peserta segar (KN_PESERTA=2x)`);
 
-    await r.step(1, "Finance", "Masuk dengan akun peserta → Perlu Tindakan · kartu 'Uang masuk perlu dicatat'",
-      "Kartu 'Uang masuk perlu dicatat' tampil di Perlu Tindakan", async () => {
+    await r.step(1, "Finance", "Masuk dengan akun peserta → Meja Keuangan · kartu 'Uang masuk perlu dicatat'",
+      "Kartu 'Uang masuk perlu dicatat' tampil di Meja Keuangan", async () => {
         await r.login(akunPeserta(NO));
         const kartuUang = r.page.getByText("Uang masuk perlu dicatat").first();
         await kartuUang.waitFor();

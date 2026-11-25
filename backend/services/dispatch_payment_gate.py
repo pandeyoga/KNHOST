@@ -171,7 +171,7 @@ async def guard(order_id: Optional[str]) -> None:
         # F-15 — sample berbayar: tagihan berubah melewati toleransi sesudah potong → tunggu persetujuan ulang.
         raise HTTPException(status_code=409, detail=(
             "Sample tertahan: tagihan berubah melewati toleransi sesudah dipotong — menunggu persetujuan ulang "
-            "pembayaran oleh Finance/Admin Sample (Meja Admin Sample)."))
+            "pembayaran oleh Finance/Admin Sample (Meja Sample)."))
     st = await evaluate(order)
     if st["blocked"]:
         raise HTTPException(status_code=409, detail=st["message"])

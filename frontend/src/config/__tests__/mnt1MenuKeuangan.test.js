@@ -60,7 +60,7 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
   });
   test("label tab persis tabel lama → baru", () => {
-    expect(labels("finance-tower")).toEqual(["Perlu Tindakan", "Pantau", "Posisi", "Analisis"]);
+    expect(labels("finance-tower")).toEqual(["Meja Keuangan", "Pantau", "Posisi", "Analisis"]);
     expect(labels("ar-aging")).toEqual(["Saldo & Umur", "Penagihan & Penerimaan", "Rencana & Denda",
       "Titipan & Saldo Kredit", "Kredit & Plafon", "Kasus"]);
     expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)",   // PK-28

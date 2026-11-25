@@ -356,12 +356,12 @@ HOME_CHOICES: List[Dict[str, Any]] = [
     {"view": "admin-home", "nav_id": "home", "label": "Beranda Admin", "requires": ("manager_home", "view")},
     {"view": "sales-admin-desk", "nav_id": "sales-admin-desk", "label": "Meja Admin Sales",
      "requires": ("order", "confirm")},
-    {"view": "finance-desk", "nav_id": "finance-tower", "label": "Meja Finance",   # MN-T1 — tab Beranda Keuangan
+    {"view": "finance-desk", "nav_id": "finance-tower", "label": "Meja Keuangan",   # MN-T1 — tab Beranda Keuangan
      "requires": ("payment_variance", "decide")},
     {"view": "md-desk", "nav_id": "md-desk", "label": "Meja MD", "requires": ("design_request", "view")},
-    {"view": "warehouse-admin-desk", "nav_id": "warehouse-admin-desk", "label": "Meja Admin Gudang",
+    {"view": "warehouse-admin-desk", "nav_id": "warehouse-admin-desk", "label": "Meja Gudang",
      "requires": ("wms", "view")},
-    {"view": "sample-admin-desk", "nav_id": "sample-admin-desk", "label": "Meja Admin Sample",
+    {"view": "sample-admin-desk", "nav_id": "sample-admin-desk", "label": "Meja Sample",
      "requires": ("sample_order", "view")},
     {"view": "operations", "nav_id": "wms-operations", "label": "Operasi Gudang", "requires": ("wms", "view")},
     {"view": "design-requests", "nav_id": "design-requests", "label": "Permintaan Desain",

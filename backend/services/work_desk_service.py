@@ -314,7 +314,7 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                        entity_id=entity_ids[0] if len(entity_ids) == 1 else None)
     queues.append(_queue(
         "jatuh_tempo", "Jatuh tempo & pengingat",
-        "Tagihan lewat/nyaris jatuh tempo. Pencatatan uangnya di Meja Finance.",
+        "Tagihan lewat/nyaris jatuh tempo. Pencatatan uangnya di Meja Keuangan.",
         [_row(ref_type="sales_order", ref_id=r["order_id"], number=r["order_number"],
               title=r.get("customer_name", "—"),
               subtitle=(f"lewat {r['days_late']} hari" if r.get("overdue")
@@ -729,7 +729,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               badge="selesai QC", action="Putuskan", action_kind="open", entity_id=r.get("entity_id", "")) for r in sr],
         action_label="Putuskan", owner="finance"))
 
-    return {"desk": "finance", "desk_label": "Meja Finance",
+    return {"desk": "finance", "desk_label": "Meja Keuangan",
             "generated_at": now_iso(), "entity_ids": entity_ids,
             "queues": queues,
             "totals": {"open_items": sum(q["count"] for q in queues),

@@ -41,7 +41,7 @@ const CHOICES = [
   { view: "hr-my-profile", label: "Profil Saya", requires: null, needs_category: false },
   { view: "my-desk", label: "Meja Saya", requires: null, needs_category: true },
   { view: "sales-home", label: "Performa Saya", requires: ["order", "view"], needs_category: false },
-  { view: "finance-desk", label: "Meja Finance", requires: ["payment_variance", "decide"], needs_category: false },
+  { view: "finance-desk", label: "Meja Keuangan", requires: ["payment_variance", "decide"], needs_category: false },
 ];
 const SALES_TRAITS = { data_scope: "milik_sendiri", home_view: "sales-home", kategori_kerja: "sales", notify_like: [] };
 const SALES = {
@@ -115,11 +115,11 @@ test("halaman awal: pilihan tanpa izin tampil mati dengan petunjuk; kategori men
   const home = q("role-traits-home-select");
   const finance = [...home.options].find((o) => o.value === "finance-desk");
   expect(finance.disabled).toBe(true);
-  expect(finance.textContent).toBe("Meja Finance · Butuh akses yang belum dimiliki peran ini");
+  expect(finance.textContent).toBe("Meja Keuangan · Butuh akses yang belum dimiliki peran ini");
   expect([...home.options].find((o) => o.value === "sales-home").disabled).toBe(false);
   expect(q("role-traits-category-effect").textContent).toMatch(/daftar pilih sales/);
   await pick(q("role-traits-category-select"), "sopir");
-  expect(q("role-traits-category-effect").textContent).toBe("Akun bisa ditugaskan sebagai pengemudi; Meja Pengemudi.");
+  expect(q("role-traits-category-effect").textContent).toBe("Akun bisa ditugaskan sebagai pengemudi; Meja Saya · Pengemudi.");
 });
 
 test("peran terkunci (Admin) hanya-baca", async () => {

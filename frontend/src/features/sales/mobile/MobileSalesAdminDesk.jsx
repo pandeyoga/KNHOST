@@ -180,7 +180,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
       <KeepPendingPanel selectedEntity={selectedEntity} testPrefix="m-kp" onOpenDocument={(l) => onOpenOrder?.(l.focus_id)} />
       {(desk?.not_my_desk || []).length > 0 && (
         <div className="rounded-xl border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2" data-testid="m-desk-not-mine">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">Bukan wewenang meja ini — ada di Meja Finance</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">Bukan wewenang meja ini — ada di Meja Keuangan</p>
           <p className="text-[11px] text-[#31465F]">{desk.not_my_desk.join(" · ")}</p>
         </div>
       )}

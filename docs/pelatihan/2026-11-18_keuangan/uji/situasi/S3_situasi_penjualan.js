@@ -480,7 +480,7 @@ async function soTerkirimApi(cust, prod) {
           return `${sj.shipment_no} · ${teksJe(rev2)} · ${teksJe(cogs2)}`;
         });
 
-      await step(8, "Finance", "Beranda Keuangan › Perlu Tindakan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
+      await step(8, "Finance", "Beranda Keuangan › Meja Keuangan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
         "Satu faktur untuk seluruh pesanan (aturan PT: per pesanan); PPN faktur = PPN keluaran SJ1 + SJ2; faktur tanpa jurnal", async () => {
           await masuk(r, finAkun);
           await bukaMenu(r, "finance-tower", "finance-desk");

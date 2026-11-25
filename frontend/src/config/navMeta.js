@@ -20,16 +20,16 @@ export const PAGE_META = {
   // FASE E-8 (E8.7/E8.20) — dua MEJA KERJA peran baru. Tanpa baris ini kepala halaman
   // jatuh ke cadangan "BERANDA · Kain Nusantara" di layar yang justru jadi tempat kerja
   // harian dua peran (kelas bug yang ditangkap `check_nav_map.py` CHECK 5).
-  "sales-admin-desk":     { kicker: "Admin Sales",    title: "Meja Admin Sales \u00b7 Antrean Alur Pesanan" },
-  // MN-T2 — Meja Finance apa adanya → Beranda Keuangan › Perlu Tindakan (satu daftar berkelompok berizin).
-  "finance-desk":         { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Perlu Tindakan \u00b7 Pekerjaan Uang yang Menunggu" },
+  "sales-admin-desk":     { kicker: "Admin Sales",    title: "Meja Admin Sales" },
+  // MN-T2 — Meja Keuangan apa adanya → Beranda Keuangan › Meja Keuangan (satu daftar berkelompok berizin).
+  "finance-desk":         { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Meja Keuangan" },
   // Meja gelombang 1 (R4) — tab hub Pantau Meja Keuangan.
   "finance-desk-pantau":  { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Pantau \u00b7 Pelacak SO & Retur Internal" },
-  "md-desk":              { kicker: "MD",             title: "Meja MD \u00b7 Desain, Sample & Bahan" },
-  "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya \u00b7 Giliran & Antrean Peran" },
+  "md-desk":              { kicker: "MD",             title: "Meja MD" },
+  "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya" },
   "tanya-kn":             { kicker: "Asisten analitik", title: "Tanya KN \u00b7 Laporan & Pertanyaan Data" },
-  "warehouse-admin-desk": { kicker: "Admin Gudang",   title: "Meja Admin Gudang \u00b7 Operasi Gudang & Logistik" },
-  "sample-admin-desk":    { kicker: "Admin Sample",   title: "Meja Admin Sample \u00b7 Antrean Pesanan Sample" },
+  "warehouse-admin-desk": { kicker: "Admin Gudang",   title: "Meja Gudang" },
+  "sample-admin-desk":    { kicker: "Admin Sample",   title: "Meja Sample" },
   "sample-orders":        { kicker: "Penjualan",      title: "Pesanan Sample (SOS) \u00b7 Terpisah dari SO Biasa" },
   amendments:             { kicker: "Keuangan \u00b7 Kendali", title: "Pusat Amandemen \u00b7 Koreksi Ber-alasan & Ber-jejak" },
   "tax-invoices":         { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Keluaran" },

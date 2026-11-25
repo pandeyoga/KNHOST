@@ -171,7 +171,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
     selesai = await find({"status": "done", "updated_at": {"$gte": _days_ago(7)}})
     can_pay = await has_permission(actor, "sample_order", "approve_payment")   # PR-T2 — sama dengan gerbang setujui bayar
     return {
-        "title": "Meja Admin Sample", "role": actor.get("role"),
+        "title": "Meja Sample", "role": actor.get("role"),
         "queues": [
             _queue("bayar_sampel", "Sample berbayar — menunggu persetujuan pembayaran",
                    "Pastikan pembayaran/kesepakatan bayar sample sudah ada, lalu setujui. Baru setelah itu masuk ke tim sample.",
@@ -186,7 +186,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
             _queue("selesai", "Selesai (7 hari)", "Sample yang sudah diterima pelanggan.",
                    _rows(selesai, "Lihat", "open"), action_label="Lihat", owner="sample_admin", value_kind="count", value_label="Pesanan"),
         ],
-        "not_my_desk": ["Pesanan roll/yard biasa (SO-) → Meja Admin Sales", "Uang masuk & faktur pajak → Meja Finance"],
+        "not_my_desk": ["Pesanan roll/yard biasa (SO-) → Meja Admin Sales", "Uang masuk & faktur pajak → Meja Keuangan"],
     }
 
 

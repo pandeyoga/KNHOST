@@ -32,7 +32,7 @@ const DESKS = {
     intro: <>Pengembangan produk dari satu meja: <b>permintaan desain</b> (setujui · tugaskan · putuskan), <b>sample &amp; labdip</b> per putaran, <b>PR &amp; PO bahan</b>, <b>SPK makloon</b> (berjalan &amp; menunggu faktur mitra), dan SPK inspeksi yang belum punya acuan sample.</>,
   },
   warehouse_admin: {
-    title: "Meja Admin Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk", returns: true,
+    title: "Meja Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk", returns: true,
     intro: <>Memimpin operasi gudang: <b>SJ yang sudah diberangkatkan tetapi belum diangkut logistik</b>, tugas outbound, PO menunggu penerimaan, SPK belum ditugaskan, persetujuan opname/transfer, dan pengiriman gagal/belum ditutup.</>,
   },
   // U-2 (2026-09) — satu meja untuk 6 peran tersisa.

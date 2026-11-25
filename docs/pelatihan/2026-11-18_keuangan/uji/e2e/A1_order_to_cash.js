@@ -533,7 +533,7 @@ async function checkoutSampaiReview(r, nama = "") {
         return t;
       });
 
-    await step(19, "Finance", "Keuangan › Beranda Keuangan › Perlu Tindakan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
+    await step(19, "Finance", "Keuangan › Beranda Keuangan › Meja Keuangan → kartu [Faktur pajak perlu terbit]: ketik nomor SO → [Terbitkan]",
       "Bilah hijau 'Faktur Pajak KSC/FKT-… diterbitkan untuk KSC/SO-…'. Buku: faktur TIDAK membuat jurnal; PPN faktur = PPN Keluaran di jurnal pengiriman", async () => {
         await bukaMenu(r, "finance-tower", "finance-desk");
         await r.tid("finance-desk").waitFor();

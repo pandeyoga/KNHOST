@@ -25,12 +25,12 @@ export const CATEGORY_EFFECT = {
   "": "Tidak ikut daftar pilih sales, sopir, maupun desainer, dan tidak punya Meja Saya.",
   sales: "Akun muncul di daftar pilih sales dan boleh menjadi penanggung jawab pelanggan; pesanan buatannya tercatat "
     + "atas namanya; ikut papan peringkat, komisi, dan akrual insentif; dibatasi produk eksklusif dan tahap "
-    + "tersembunyi; Meja Sales.",
-  sopir: "Akun bisa ditugaskan sebagai pengemudi; Meja Pengemudi.",
-  desainer: "Akun bisa ditugaskan permintaan desain; Meja Desainer.",
+    + "tersembunyi; Meja Saya · Sales.",
+  sopir: "Akun bisa ditugaskan sebagai pengemudi; Meja Saya · Pengemudi.",
+  desainer: "Akun bisa ditugaskan permintaan desain; Meja Saya · Desainer.",
   gudang: "Dibatasi lokasi kerja akun bila pengaturan lokasi kerja aktif; boleh meminta daftar seluruh gudang; "
-    + "dataset ekspor gudang; Meja Operator Gudang.",
-  pengawas: "Tidak menerima notifikasi giliran pelaksana; boleh meminta daftar seluruh gudang; Meja Manajer.",
+    + "dataset ekspor gudang; Meja Saya · Operator Gudang.",
+  pengawas: "Tidak menerima notifikasi giliran pelaksana; boleh meminta daftar seluruh gudang; Meja Saya · Manajer.",
 };
 export const TRAIT_LABEL = {
   data_scope: "Data yang terlihat", home_view: "Halaman awal", kategori_kerja: "Kategori kerja",
