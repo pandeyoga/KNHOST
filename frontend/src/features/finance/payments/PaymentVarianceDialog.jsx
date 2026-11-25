@@ -54,11 +54,11 @@ function Sentence({ a }) {
   // "seharusnya Rp 0"; pakai `expected` yang sama dengan tabel antrean.
   const should = Number(a?.boundary) > 0 ? a.boundary : a?.expected;
   return (
-    <p className="text-[13px] leading-relaxed text-[#1C1C1E]" data-testid="pv-sentence">
+    <p className="text-fs-13 leading-relaxed text-kn-text" data-testid="pv-sentence">
       Dibayar <b className="tabular-nums">{money(a?.funds)}</b>, seharusnya{" "}
       <b className="tabular-nums">{money(should)}</b>{" "}
-      <span className="text-[#6B6B73]">({a?.boundary_label || "tagihan yang jatuh tempo"})</span>.{" "}
-      <b className={under ? "text-[#9B1C1C]" : "text-[#8A6D00]"}>
+      <span className="text-kn-text-2">({a?.boundary_label || "tagihan yang jatuh tempo"})</span>.{" "}
+      <b className={under ? "text-kn-danger-text" : "text-kn-warning-text"}>
         {under ? "Kurang" : "Lebih"} {money(gap)}
       </b>{" "}
       — mau bagaimana?
@@ -168,7 +168,7 @@ export default function PaymentVarianceDialog({
         + "Setiap selisih di luar toleransi wajib punya keputusan berlabel."}
       footer={(
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[10.5px] text-[#9A9BA3]">
+          <span className="text-fs-12 text-kn-text-2">
             Keputusan tercatat sebagai dokumen bernomor beserta nama pemutus.
           </span>
           <div className="ml-auto flex items-center gap-2">
@@ -187,12 +187,12 @@ export default function PaymentVarianceDialog({
         </div>
       )}>
       <div className="space-y-3">
-        <div className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] p-3">
+        <div className="rounded-lg border border-kn-divider bg-kn-neutral-soft p-3">
           <Sentence a={a} />
           {(a.explain || []).length > 0 && (
             <ul className="mt-1.5 space-y-0.5" data-testid="pv-explain">
               {(a.explain || []).map((e, i) => (
-                <li key={i} className="text-[10.5px] text-[#6B6B73]">• {e}</li>
+                <li key={i} className="text-fs-12 text-kn-text-2">• {e}</li>
               ))}
             </ul>
           )}
@@ -208,36 +208,36 @@ export default function PaymentVarianceDialog({
                 data-testid={`pv-option-${o.value}`} data-selected={active ? "1" : "0"}
                 onClick={() => bisa && setKind(o.value)}
                 className={`flex w-full items-start gap-2.5 rounded-lg border p-2.5 text-left transition-colors ${
-                  active ? "border-[#0058CC] bg-[#F5F9FF]"
-                    : bisa ? "border-[#EDEEF1] bg-white hover:border-[#C9DBF7]"
-                      : "border-[#F0F0F2] bg-[#FAFAFB] opacity-60"}`}>
+                  active ? "border-kn-action bg-kn-action-soft"
+                    : bisa ? "border-kn-divider bg-white hover:border-kn-action"
+                      : "border-kn-divider bg-kn-neutral-soft opacity-60"}`}>
                 <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-                  active ? "bg-[#0058CC] text-white" : "bg-[#F1F2F4] text-[#4A4B52]"}`}>
+                  active ? "bg-kn-action text-white" : "bg-kn-neutral-soft text-kn-neutral"}`}>
                   <Icon size={14} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-1.5">
-                    <b className="text-[12.5px] text-[#1C1C1E]">{o.label}</b>
+                    <b className="text-fs-13 text-kn-text">{o.label}</b>
                     {o.default && (
-                      <span className="rounded bg-[#E5F6EC] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#1B7A43]">
+                      <span className="rounded bg-kn-success-soft px-1.5 py-0.5 text-fs-12 font-medium text-kn-success-text">
                         disarankan
                       </span>
                     )}
                     {o.requires_role && (
-                      <span className="rounded bg-[#FFF3CD] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#8A6D00]">
+                      <span className="rounded bg-kn-warning-soft px-1.5 py-0.5 text-fs-12 font-medium text-kn-warning-text">
                         perlu wewenang
                       </span>
                     )}
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-[#4A4B52]">{o.help}</span>
-                  <span className="mt-0.5 block text-[10.5px] text-[#6B6B73]">Dampak: {o.impact}</span>
+                  <span className="mt-0.5 block text-fs-12 text-kn-neutral">{o.help}</span>
+                  <span className="mt-0.5 block text-fs-12 text-kn-text-2">Dampak: {o.impact}</span>
                   {!o.available && o.unavailable_reason && (
-                    <span className="mt-0.5 block text-[10.5px] font-semibold text-[#9B1C1C]">
+                    <span className="mt-0.5 block text-fs-12 font-semibold text-kn-danger-text">
                       {o.unavailable_reason}
                     </span>
                   )}
                   {o.available && ditolakWewenang(o) && wewenang.message && (
-                    <span className="mt-0.5 block text-[10.5px] font-semibold text-[#9B1C1C]" data-testid={`pv-option-wewenang-${o.value}`}>
+                    <span className="mt-0.5 block text-fs-12 font-semibold text-kn-danger-text" data-testid={`pv-option-wewenang-${o.value}`}>
                       {wewenang.message}
                     </span>
                   )}
@@ -248,10 +248,10 @@ export default function PaymentVarianceDialog({
         </div>
 
         {kind === "reschedule" && (
-          <div className="grid gap-1 rounded-lg border border-[#EDEEF1] bg-white p-2.5">
+          <div className="grid gap-1 rounded-lg border border-kn-divider bg-white p-2.5">
             <label className="kicker">Jatuh tempo baru untuk sisa {money(gap)}</label>
             <KNDatePicker value={dueDate} data-testid="pv-due-date" onChange={setDueDate} />
-            <p className="text-[10.5px] text-[#6B6B73]">
+            <p className="text-fs-12 text-kn-text-2">
               Baris jadwal akan dipecah: bagian yang sudah dibayar tetap, sisanya pindah ke
               tanggal ini. Jumlah seluruh rencana tidak berubah.
             </p>
@@ -259,40 +259,40 @@ export default function PaymentVarianceDialog({
         )}
 
         {kind === "refund" && (
-          <div className="grid gap-1 rounded-lg border border-[#EDEEF1] bg-white p-2.5">
+          <div className="grid gap-1 rounded-lg border border-kn-divider bg-white p-2.5">
             <label className="kicker">Cara pengembalian {money(gap)}</label>
             <KNSelect className="field" value={method} onValueChange={setMethod}
               data-testid="pv-refund-method" options={methodOptions} />
             <CashAccountField entityId={a.entity_id || selectedEntity}
               cashType={payMethods.isCash?.(method) ? "kas_kecil" : "kas_besar"} value={accountId}
               onChange={setAccountId} onState={setAccState} label="Rekening sumber" testId="pv-refund-account" />
-            <p className="text-[10.5px] text-[#6B6B73]">
+            <p className="text-fs-12 text-kn-text-2">
               Kas keluar dicatat di buku kas & berjurnal (Uang Muka Pelanggan turun).
             </p>
           </div>
         )}
 
         {kind === "allocate" && (
-          <div className="rounded-lg border border-[#EDEEF1] bg-white p-2.5">
+          <div className="rounded-lg border border-kn-divider bg-white p-2.5">
             <div className="mb-1.5 flex items-center justify-between">
               <label className="kicker">Pesanan terbuka lain</label>
-              <span className={`text-[11px] font-bold tabular-nums ${
-                allocInvalid ? "text-[#9B1C1C]" : "text-[#1B7A43]"}`} data-testid="pv-alloc-total">
+              <span className={`text-fs-12 font-semibold tabular-nums ${
+                allocInvalid ? "text-kn-danger-text" : "text-kn-success-text"}`} data-testid="pv-alloc-total">
                 {money(allocTotal)} / {money(gap)}
               </span>
             </div>
             <div className="max-h-[180px] space-y-1 overflow-y-auto">
               {(a.others || []).length === 0 && (
-                <p className="py-2 text-center text-[11px] text-[#6B6B73]">
+                <p className="py-2 text-center text-fs-12 text-kn-text-2">
                   Tidak ada pesanan terbuka lain.
                 </p>
               )}
               {(a.others || []).map((o) => (
-                <div key={o.order_id} className="flex items-start gap-2 text-[11.5px]"
+                <div key={o.order_id} className="flex items-start gap-2 text-fs-12"
                   data-testid={`pv-alloc-row-${o.order_id}`}>
                   <span className="min-w-0 flex-1">
-                    <b className="text-[#0058CC]">{o.number}</b>
-                    <span className="ml-1 text-[10.5px] text-[#6B6B73]">
+                    <b className="text-kn-action">{o.number}</b>
+                    <span className="ml-1 text-fs-12 text-kn-text-2">
                       sisa {money(o.outstanding)}
                     </span>
                   </span>
@@ -311,7 +311,7 @@ export default function PaymentVarianceDialog({
               ))}
             </div>
             {allocInvalid && (
-              <p className="mt-1 flex items-center gap-1 text-[10.5px] font-semibold text-[#9B1C1C]">
+              <p className="mt-1 flex items-center gap-1 text-fs-12 font-semibold text-kn-danger-text">
                 <AlertTriangle size={11} /> Total alokasi harus lebih dari 0 dan tidak melebihi
                 kelebihan bayar {money(gap)}.
               </p>
@@ -335,12 +335,12 @@ export default function PaymentVarianceDialog({
         </div>
 
         {!reasonCode && (
-          <p className="flex items-center gap-1 text-[10.5px] text-[#8C4A00]" data-testid="pv-reason-hint">
+          <p className="flex items-center gap-1 text-fs-12 text-kn-warning-text" data-testid="pv-reason-hint">
             <AlertTriangle size={11} /> Pilih label alasan dulu — server menolak keputusan tanpa alasan.
           </p>
         )}
         {picked?.requires_role && (
-          <p className="text-[10.5px] text-[#6B6B73]">
+          <p className="text-fs-12 text-kn-text-2">
             Keputusan ini hanya bisa disimpan pemegang wewenang menurut Aturan Persetujuan (Pengaturan › Persetujuan).
           </p>
         )}
@@ -352,7 +352,7 @@ export default function PaymentVarianceDialog({
         )}
         {error && (
           <div className="notice-bar danger !py-1.5" data-testid="pv-error">
-            <span className="text-[11.5px]">{error}</span>
+            <span className="text-fs-12">{error}</span>
           </div>
         )}
       </div>

@@ -9,16 +9,16 @@ function QtyRow({ label, hint, max, value, onChange, testId, unit = "" }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1">
       <div className="min-w-0">
-        <p className="text-[12px] font-semibold text-[#1C1C1E]">{label}</p>
-        {hint && <p className="text-[10.5px] text-[#6B6B73]">{hint}</p>}
+        <p className="text-fs-12 font-semibold text-kn-text">{label}</p>
+        {hint && <p className="text-fs-12 text-kn-text-2">{hint}</p>}
       </div>
       <div className="flex items-center gap-1.5">
-        <input data-testid={testId} type="number" min={0} step="0.01" className="field !h-8 w-[96px] text-right text-[12px]"
+        <input data-testid={testId} type="number" min={0} step="0.01" className="field !h-8 w-[96px] text-right text-fs-12"
           aria-label={`${label}${unit ? ` (${unit})` : ""}`}
           value={value || ""} placeholder="0" disabled={max <= 0} onChange={(e) => onChange(num(e.target.value))} />
-        {unit && <span className="w-9 text-[11px] text-[#6B6B73]" data-testid={`${testId}-unit`}>{unit}</span>}
+        {unit && <span className="w-9 text-fs-12 text-kn-text-2" data-testid={`${testId}-unit`}>{unit}</span>}
         <button type="button" data-testid={`${testId}-max`} disabled={max <= 0} onClick={() => onChange(max)}
-          className="rounded-full border border-[#E5E5EA] px-2 py-0.5 text-[10px] font-bold text-[#0058CC] disabled:opacity-40">maks</button>
+          className="rounded-full border border-kn-divider px-2 py-0.5 text-fs-12 font-medium text-kn-action disabled:opacity-40">maks</button>
       </div>
     </div>
   );
@@ -33,20 +33,20 @@ function RollPick({ rolls = [], picked = [], onChange, testId, unit }) {
   return (
     <div className="-mt-0.5 mb-1">
       <button type="button" data-testid={`${testId}-toggle`} onClick={() => setOpen((o) => !o)}
-        className="text-[10.5px] font-bold text-[#0058CC]">{open ? "Sembunyikan roll" : `Pilih roll (${rolls.length} tersedia)`}{picked.length ? ` · ${picked.length} dipilih` : ""}</button>
+        className="text-fs-12 font-semibold text-kn-action">{open ? "Sembunyikan roll" : `Pilih roll (${rolls.length} tersedia)`}{picked.length ? ` · ${picked.length} dipilih` : ""}</button>
       {open && (
-        <div data-testid={`${testId}-list`} className="mt-1 max-h-[180px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
+        <div data-testid={`${testId}-list`} className="mt-1 max-h-[180px] overflow-y-auto rounded-lg border border-kn-divider">
           {rolls.map((r) => {
             // UAT 24 Okt (P10.6) — roll di gudang khusus PT penjual tidak bisa langsung berganti pemilik.
             const blocked = r.usable === false;
             return (
-              <label key={r.id} className={`flex items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11px] last:border-0 ${blocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+              <label key={r.id} className={`flex items-center gap-2 border-b border-kn-divider px-2 py-1 text-fs-12 last:border-0 ${blocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
                 <input type="checkbox" data-testid={`${testId}-roll-${r.id}`} disabled={blocked && !picked.includes(r.id)}
                   checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
                 <span className="font-mono font-semibold">{r.roll_no}</span>
                 <span className="tabular-nums">{formatQty(r.length_remaining)} {r.unit || unit}</span>
-                <span className="text-[#8E8E93]">lot {r.lot || "—"}{r.grade ? ` · grade ${r.grade}` : ""} · {r.site_name && !String(r.warehouse_name || "").startsWith(r.site_name) ? `${r.site_name} · ` : ""}{r.warehouse_name}</span>
-                {blocked && <span data-testid={`${testId}-roll-${r.id}-blocked`} className="ml-auto rounded-full bg-[#FFF4E0] px-1.5 text-[10px] font-bold text-[#8A5300]">gudang khusus PT ini — pindahkan dulu</span>}
+                <span className="text-kn-text-2">lot {r.lot || "—"}{r.grade ? ` · grade ${r.grade}` : ""} · {r.site_name && !String(r.warehouse_name || "").startsWith(r.site_name) ? `${r.site_name} · ` : ""}{r.warehouse_name}</span>
+                {blocked && <span data-testid={`${testId}-roll-${r.id}-blocked`} className="ml-auto rounded-full bg-kn-warning-soft px-1.5 text-fs-12 font-medium text-kn-warning-text">gudang khusus PT ini — pindahkan dulu</span>}
               </label>
             );
           })}
@@ -59,17 +59,17 @@ function RollPick({ rolls = [], picked = [], onChange, testId, unit }) {
 function PriceState({ line, o, canSet, onPrice, requested }) {
   const key = `${line.product_id}-${o.entity_id}`;
   if (o.price_ready) {
-    return <p data-testid={`fulfill-ic-price-${key}`} className="-mt-0.5 mb-1 text-[10.5px] text-[#1B7F4B]">Harga internal {formatCurrency(o.unit_price)} / {line.unit}</p>;
+    return <p data-testid={`fulfill-ic-price-${key}`} className="-mt-0.5 mb-1 text-fs-12 text-kn-success-text">Harga internal {formatCurrency(o.unit_price)} / {line.unit}</p>;
   }
   return (
     <div className="-mt-0.5 mb-1 flex flex-wrap items-center gap-1.5">
-      <span data-testid={`fulfill-ic-price-missing-${key}`} className="rounded-full bg-[#FFF4E0] px-2 py-0.5 text-[10px] font-bold text-[#8A5300]">Belum ada harga internal</span>
+      <span data-testid={`fulfill-ic-price-missing-${key}`} className="rounded-full bg-kn-warning-soft px-2 py-0.5 text-fs-12 font-medium text-kn-warning-text">Belum ada harga internal</span>
       {canSet ? (
         <button type="button" data-testid={`fulfill-create-price-${key}`} onClick={() => onPrice("create", o)}
-          className="rounded-full border border-[#CBDFFF] bg-[#F2F7FF] px-2 py-0.5 text-[10px] font-bold text-[#0058CC]">Buat harga internal</button>
+          className="rounded-full border border-kn-action-soft bg-kn-action-soft px-2 py-0.5 text-fs-12 font-medium text-kn-action">Buat harga internal</button>
       ) : (
         <button type="button" data-testid={`fulfill-request-price-${key}`} disabled={requested} onClick={() => onPrice("request", o)}
-          className="rounded-full border border-[#E5E5EA] px-2 py-0.5 text-[10px] font-bold text-[#3C3C43] disabled:opacity-50">{requested ? "Permintaan terkirim" : "Minta harga internal"}</button>
+          className="rounded-full border border-kn-divider px-2 py-0.5 text-fs-12 font-medium text-kn-neutral disabled:opacity-50">{requested ? "Permintaan terkirim" : "Minta harga internal"}</button>
       )}
     </div>
   );
@@ -85,11 +85,11 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
   const pid = line.product_id;
   const proposed = new Set((line.proposal || []).map((p) => p.entity_id));
   return (
-    <div className="rounded-xl border border-[#EFF0F2] bg-white p-3" data-testid={`fulfill-line-${pid}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#F2F2F5] pb-2">
-        <p className="text-[13px] font-bold">{line.product_name} <span className="font-mono text-[10.5px] text-[#8E8E93]">{line.sku}</span></p>
-        <p className="text-[11.5px]">Kekurangan <b data-testid={`fulfill-short-${pid}`}>{formatQty(line.backorder_qty)} {line.unit}</b>
-          {line.planned_qty > 0 && <span className="ml-2 text-[#8A5300]">· sudah direncanakan sebelumnya {formatQty(line.planned_qty)}</span>}</p>
+    <div className="rounded-xl border border-kn-divider bg-white p-3" data-testid={`fulfill-line-${pid}`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-kn-divider pb-2">
+        <p className="text-fs-13 font-semibold">{line.product_name} <span className="font-mono text-fs-12 text-kn-text-2">{line.sku}</span></p>
+        <p className="text-fs-12">Kekurangan <b data-testid={`fulfill-short-${pid}`}>{formatQty(line.backorder_qty)} {line.unit}</b>
+          {line.planned_qty > 0 && <span className="ml-2 text-kn-warning-text">· sudah direncanakan sebelumnya {formatQty(line.planned_qty)}</span>}</p>
       </div>
       <QtyRow label="Ambil dari stok sendiri" testId={`fulfill-stock-${pid}`} value={v.stock} unit={line.unit}
         max={Math.min(line.own_available, room(v.stock))} onChange={(q) => onChange({ ...v, stock: q })}
@@ -116,7 +116,7 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
       <QtyRow label="Tunggu barang datang" testId={`fulfill-wait-${pid}`} value={v.wait} unit={line.unit}
         max={Math.min(line.incoming_total, room(v.wait))} onChange={(q) => onChange({ ...v, wait: q })}
         hint={line.incoming_total > 0 ? `Perkiraan sisa barang masuk untuk SO ini ${formatQty(line.incoming_total)}${line.incoming_claimed_by_older > 0 ? ` (${formatQty(line.incoming_claimed_by_older)} sudah untuk SO lebih lama)` : ""}${line.promise_date ? ` · perkiraan ${formatDate(line.promise_date)}` : ""} — tidak dijamin` : line.incoming_claimed_by_older > 0 ? "Barang masuk terjadwal sudah diperkirakan untuk SO yang lebih lama." : "Tidak ada barang masuk terjadwal."} />
-      <p data-testid={`fulfill-left-${pid}`} className={`mt-1 text-right text-[11px] font-semibold ${left < -0.005 ? "text-[#C0392B]" : left > 0.005 ? "text-[#8A5300]" : "text-[#1B7F4B]"}`}>
+      <p data-testid={`fulfill-left-${pid}`} className={`mt-1 text-right text-fs-12 font-semibold ${left < -0.005 ? "text-kn-danger-text" : left > 0.005 ? "text-kn-warning-text" : "text-kn-success-text"}`}>
         {left < -0.005 ? `Melebihi kekurangan ${formatQty(-left)} ${line.unit}` : left > 0.005 ? `Sisa tetap backorder: ${formatQty(left)} ${line.unit}` : "Terpenuhi penuh"}
       </p>
     </div>

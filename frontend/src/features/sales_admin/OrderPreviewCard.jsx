@@ -29,10 +29,10 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
   const tanggal = wibDate(preview.created_at) || (preview.created_at || "").slice(0, 10);
 
   return (
-    <div className="rounded-lg border border-[#EFF0F2]" data-testid={testPrefix}>
-      <div className="flex items-center gap-1.5 border-b border-[#F4F5F7] bg-[#FAFBFC] px-3 py-2">
-        <Package size={13} className="text-[#0058CC]" />
-        <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">
+    <div className="rounded-lg border border-kn-divider" data-testid={testPrefix}>
+      <div className="flex items-center gap-1.5 border-b border-kn-divider bg-kn-neutral-soft px-3 py-2">
+        <Package size={13} className="text-kn-action" />
+        <p className="text-fs-12 font-semibold text-kn-text-2">
           Data Pesanan
         </p>
       </div>
@@ -70,36 +70,36 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
                  testId={`${testPrefix}-sales`} />
       </div>
 
-      <div className="border-t border-[#F4F5F7]" data-testid={`${testPrefix}-items`}>
-        <div className="grid grid-cols-[1.7fr_86px_100px_106px_86px] bg-[#FAFBFC] px-3 py-1.5 text-[9.5px] font-bold uppercase text-[#6B6B73]">
+      <div className="border-t border-kn-divider" data-testid={`${testPrefix}-items`}>
+        <div className="grid grid-cols-[1.7fr_86px_100px_106px_86px] bg-kn-neutral-soft px-3 py-1.5 text-fs-12 font-semibold text-kn-text-2">
           <span>Barang</span><span className="text-right">Qty</span>
           <span className="text-right">Harga</span><span className="text-right">Subtotal</span>
           <span className="text-right">Stok</span>
         </div>
         {items.length === 0 && backs.length === 0 && (
-          <p className="px-3 py-5 text-center text-[11.5px] text-[#6B6B73]">
+          <p className="px-3 py-5 text-center text-fs-12 text-kn-text-2">
             Belum ada baris barang pada pesanan ini.
           </p>
         )}
         {items.map((it) => (
           <div key={it.product_id}
                data-testid={`${testPrefix}-item-${it.product_id}`}
-               className="grid grid-cols-[1.7fr_86px_100px_106px_86px] items-center border-t border-[#F4F5F7] px-3 py-1.5">
+               className="grid grid-cols-[1.7fr_86px_100px_106px_86px] items-center border-t border-kn-divider px-3 py-1.5">
             <div className="min-w-0">
-              <p className="truncate text-[11.5px] font-semibold">{it.product_name}</p>
-              <p className="truncate text-[10px] text-[#9A9BA3]">
+              <p className="truncate text-fs-13">{it.product_name}</p>
+              <p className="truncate text-fs-12 text-kn-text-2">
                 {it.sku}{it.discount_percent > 0 ? ` · disc ${formatQty(it.discount_percent)}%` : ""}
               </p>
             </div>
-            <span className="text-right text-[11px] tabular-nums">
+            <span className="text-right text-fs-12 tabular-nums">
               {formatQty(it.quantity)} {it.unit}
             </span>
-            <span className="text-right text-[11px] tabular-nums">{formatCurrency(it.price)}</span>
-            <span className="text-right text-[11.5px] font-semibold tabular-nums">
+            <span className="text-right text-fs-12 tabular-nums">{formatCurrency(it.price)}</span>
+            <span className="text-right text-fs-12 font-semibold tabular-nums">
               {formatCurrency(it.line_total)}
             </span>
-            <span className={`text-right text-[10.5px] font-bold ${
-              it.stock_ok ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>
+            <span className={`text-right text-fs-12 font-medium ${
+              it.stock_ok ? "text-kn-success-text" : "text-kn-danger-text"}`}>
               {it.stock_ok ? "cukup" : `sisa ${formatQty(it.available_qty)}`}
             </span>
           </div>
@@ -107,22 +107,22 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
         {backs.map((b, i) => (
           <div key={`${b.sku}-${i}`}
                data-testid={`${testPrefix}-backorder-${i}`}
-               className="grid grid-cols-[1.7fr_86px_100px_106px_86px] items-center border-t border-[#F4F5F7] bg-[#FFF9EF] px-3 py-1.5">
+               className="grid grid-cols-[1.7fr_86px_100px_106px_86px] items-center border-t border-kn-divider bg-kn-warning-soft px-3 py-1.5">
             <div className="min-w-0">
-              <p className="truncate text-[11.5px] font-semibold">{b.product_name}</p>
-              <p className="truncate text-[10px] text-[#9A9BA3]">{b.sku} · kurang stok</p>
+              <p className="truncate text-fs-13">{b.product_name}</p>
+              <p className="truncate text-fs-12 text-kn-text-2">{b.sku} · kurang stok</p>
             </div>
-            <span className="text-right text-[11px] tabular-nums">
+            <span className="text-right text-fs-12 tabular-nums">
               {formatQty(b.backorder_qty)} {b.unit}
             </span>
-            <span className="text-right text-[10.5px] text-[#9A9BA3]">—</span>
-            <span className="text-right text-[10.5px] text-[#9A9BA3]">—</span>
-            <span className="text-right text-[10.5px] font-bold text-[#8A5300]">backorder</span>
+            <span className="text-right text-fs-12 text-kn-text-2">—</span>
+            <span className="text-right text-fs-12 text-kn-text-2">—</span>
+            <span className="text-right text-fs-12 font-medium text-kn-warning-text">backorder</span>
           </div>
         ))}
       </div>
 
-      <div className="border-t border-[#F4F5F7] px-3 py-2" data-testid={`${testPrefix}-totals`}>
+      <div className="border-t border-kn-divider px-3 py-2" data-testid={`${testPrefix}-totals`}>
         <TotalRow label="Subtotal (bruto)" value={formatCurrency(gross)} testId={`${testPrefix}-gross`} />
         {disc > 0 && (
           <TotalRow label="Diskon" value={`− ${formatCurrency(disc)}`} testId={`${testPrefix}-discount`} />
@@ -139,21 +139,21 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
               value={formatCurrency(t.ppn_amount)} />
           </>
         )}
-        <div className="mt-1 flex items-center justify-between border-t border-[#EFF0F2] pt-1.5">
-          <span className="text-[11px] font-bold uppercase text-[#6B6B73]" data-testid={`${testPrefix}-total-label`}>
+        <div className="mt-1 flex items-center justify-between border-t border-kn-divider pt-1.5">
+          <span className="text-fs-12 font-semibold text-kn-text-2" data-testid={`${testPrefix}-total-label`}>
             {ppn > 0 ? taxRows[taxRows.length - 1].label : "Total Pesanan"}
           </span>
-          <span className="text-[13.5px] font-bold tabular-nums" data-testid={`${testPrefix}-grand-total`}>
+          <span className="text-fs-14 font-semibold tabular-nums" data-testid={`${testPrefix}-grand-total`}>
             {formatCurrency(t.grand_total)}
           </span>
         </div>
       </div>
 
       {preview.notes && (
-        <div className="flex items-start gap-1.5 border-t border-[#F4F5F7] px-3 py-2"
+        <div className="flex items-start gap-1.5 border-t border-kn-divider px-3 py-2"
              data-testid={`${testPrefix}-notes`}>
-          <StickyNote size={11} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
-          <p className="text-[10.5px] text-[#6B6B73]">{preview.notes}</p>
+          <StickyNote size={11} className="mt-0.5 shrink-0 text-kn-text-2" />
+          <p className="text-fs-12 text-kn-text-2">{preview.notes}</p>
         </div>
       )}
     </div>
@@ -163,10 +163,10 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
 function InfoRow({ icon: Icon, label, value, warn = false, testId }) {
   return (
     <div className="flex items-start gap-1.5" data-testid={testId}>
-      <Icon size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
+      <Icon size={12} className="mt-0.5 shrink-0 text-kn-text-2" />
       <div className="min-w-0">
-        <p className="text-[9.5px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
-        <p className={`text-[11.5px] ${warn ? "font-semibold text-[#C0392B]" : "text-[#1C1C1E]"}`}>
+        <p className="text-fs-12 font-semibold text-kn-text-2">{label}</p>
+        <p className={`text-fs-12 ${warn ? "font-semibold text-kn-danger-text" : "text-kn-text"}`}>
           {value}
         </p>
       </div>
@@ -177,8 +177,8 @@ function InfoRow({ icon: Icon, label, value, warn = false, testId }) {
 function TotalRow({ label, value, testId }) {
   return (
     <div className="flex items-center justify-between py-0.5" data-testid={testId}>
-      <span className="text-[10.5px] text-[#6B6B73]">{label}</span>
-      <span className="text-[11.5px] tabular-nums">{value}</span>
+      <span className="text-fs-12 text-kn-text-2">{label}</span>
+      <span className="text-fs-12 tabular-nums">{value}</span>
     </div>
   );
 }

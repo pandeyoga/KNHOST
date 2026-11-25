@@ -42,8 +42,6 @@
   "features/sales/customerPricelist/ImportCustomerPriceModal.jsx": 1,
   "features/sales/customerPricelist/SetCustomerPriceModal.jsx": 1,
   "features/sales/mobile/MobileCustomerBar.jsx": 1,
-  "features/sales_admin/FulfillmentDecisionDialog.jsx": 1,
-  "features/sales_admin/VerifyOrderDialog.jsx": 1,
   "features/settings/entities/AccountFormDrawer.jsx": 1,
   "features/settings/entities/ArchiveEntityDialog.jsx": 1,
   "features/settings/entities/EntityDetailDrawer.jsx": 1,

@@ -97,7 +97,7 @@ export default function VerifyOrderDialog({
         </div>
       )}
         {loading ? (
-          <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="verify-loading">
+          <div className="py-10 text-center text-fs-12 text-kn-text-2" data-testid="verify-loading">
             Memuat data pesanan & daftar periksa…
           </div>
         ) : (
@@ -109,12 +109,12 @@ export default function VerifyOrderDialog({
             <div className="grid gap-2">
               {sudah && (
                 <div data-testid="verify-already"
-                     className="rounded-lg border border-[#BFE6CE] bg-[#E6F6EC] px-3 py-2">
-                  <p className="text-[11.5px] font-bold text-[#1B7F4B]">
+                     className="rounded-lg border border-kn-success-soft bg-kn-success-soft px-3 py-2">
+                  <p className="text-fs-12 font-semibold text-kn-success-text">
                     Sudah diverifikasi oleh {data.verification.by}
                     {data.verification.by_role ? ` (${data.verification.by_role})` : ""}
                   </p>
-                  <p className="text-[10.5px] text-[#31624A]">
+                  <p className="text-fs-12 text-kn-success-text">
                     {(data.verification.at || "").slice(0, 16).replace("T", " ")}
                     {data.verification.note ? ` · ${data.verification.note}` : ""}
                   </p>
@@ -123,14 +123,14 @@ export default function VerifyOrderDialog({
 
               {gaps.length > 0 && (
                 <div data-testid="verify-gaps"
-                     className="rounded-lg border border-[#F5C9BC] bg-[#FDEDE7] px-3 py-2">
-                  <p className="text-[11.5px] font-bold text-[#C0392B]">
+                     className="rounded-lg border border-kn-danger-soft bg-kn-danger-soft px-3 py-2">
+                  <p className="text-fs-12 font-semibold text-kn-danger-text">
                     Belum bisa diverifikasi — lengkapi dulu:
                   </p>
-                  <ul className="mt-0.5 list-disc pl-4 text-[11px] text-[#8C2E1F]">
+                  <ul className="mt-0.5 list-disc pl-4 text-fs-12 text-kn-danger-text">
                     {gaps.map((g) => <li key={g}>{g}</li>)}
                   </ul>
-                  <p className="mt-1 text-[10.5px] text-[#8C2E1F]">
+                  <p className="mt-1 text-fs-12 text-kn-danger-text">
                     Perbaiki lewat “Buka Pesanan Lengkap”, lalu buka dialog ini lagi.
                   </p>
                 </div>
@@ -138,23 +138,23 @@ export default function VerifyOrderDialog({
 
               {gaps.length === 0 && warnings.length > 0 && (
                 <div data-testid="verify-warnings"
-                     className="rounded-lg border border-[#F5D9A8] bg-[#FFF4E5] px-3 py-2">
-                  <p className="text-[11.5px] font-bold text-[#8A5300]">
+                     className="rounded-lg border border-kn-warning-soft bg-kn-warning-soft px-3 py-2">
+                  <p className="text-fs-12 font-semibold text-kn-warning-text">
                     Boleh diverifikasi, tapi catat ini: {warnings.join(" · ")}
                   </p>
                 </div>
               )}
 
-              <div className="divide-y divide-[#F4F5F7] rounded-lg border border-[#EFF0F2]"
+              <div className="divide-y divide-kn-divider rounded-lg border border-kn-divider"
                    data-testid="verify-checklist">
-                <div className="bg-[#FAFBFC] px-3 py-1.5">
-                  <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">
+                <div className="bg-kn-neutral-soft px-3 py-1.5">
+                  <p className="text-fs-12 font-semibold text-kn-text-2">
                     Daftar Periksa
                   </p>
                 </div>
                 {checks.map((c) => <CheckRow key={c.id} check={c} />)}
                 {checks.length === 0 && (
-                  <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]">
+                  <p className="px-3 py-6 text-center text-fs-12 text-kn-text-2">
                     Tidak ada daftar periksa untuk pesanan ini.
                   </p>
                 )}
@@ -166,7 +166,7 @@ export default function VerifyOrderDialog({
                   placeholder="Catatan pemeriksaan (opsional) — mis. alamat dikonfirmasi lewat telepon" />
               )}
               {bisa && (
-                <label data-testid="verify-hold" className="flex items-start gap-2 rounded-lg border border-[#EFF0F2] px-3 py-2 text-[11.5px]">
+                <label data-testid="verify-hold" className="flex items-start gap-2 rounded-lg border border-kn-divider px-3 py-2 text-fs-12">
                   <input type="checkbox" className="mt-0.5" checked={hold} onChange={(e) => setHold(e.target.checked)} />
                   <span><b>Tahan dulu</b> — sudah diperiksa, tetapi jangan dilepas ke gudang sekarang (mis. pelanggan minta
                     kirim ditunda). Lepas nanti dari antrean "Ditahan".</span>
@@ -183,26 +183,26 @@ function CheckRow({ check }) {
   const ok = !!check.ok;
   const blocking = !!check.blocking;
   const Icon = ok ? CheckCircle2 : blocking ? XCircle : AlertTriangle;
-  const color = ok ? "#1B7F4B" : blocking ? "#C0392B" : "#8A5300";
+  const color = ok ? "var(--kn-success-text)" : blocking ? "var(--kn-danger-text)" : "var(--kn-warning-text)";
 
   return (
     <div className="flex items-start gap-2 px-3 py-2" data-testid={`verify-check-${check.id}`}>
       <Icon size={14} className="mt-0.5 shrink-0" style={{ color }} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <p className="text-[12px] font-semibold text-[#1C1C1E]">{check.label}</p>
+          <p className="text-fs-12 font-semibold text-kn-text">{check.label}</p>
           {!blocking && (
-            <span className="rounded-full border border-[#E2E2E7] bg-[#F2F2F5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#6E6E73]"
+            <span className="rounded-full border border-kn-divider bg-kn-neutral-soft px-1.5 py-0.5 text-fs-12 font-medium text-kn-text-2"
                   data-testid={`verify-nonblocking-${check.id}`}>
               tidak menghalangi
             </span>
           )}
         </div>
-        <p className="text-[11px]" style={{ color: ok ? "#4F5058" : color }}>
+        <p className="text-fs-12" style={{ color: ok ? "var(--kn-neutral)" : color }}>
           {check.detail}
         </p>
         {check.hint && (
-          <p className="mt-0.5 flex items-start gap-1 text-[10.5px] text-[#9A9BA3]">
+          <p className="mt-0.5 flex items-start gap-1 text-fs-12 text-kn-text-2">
             <Info size={10} className="mt-0.5 shrink-0" /> {check.hint}
           </p>
         )}

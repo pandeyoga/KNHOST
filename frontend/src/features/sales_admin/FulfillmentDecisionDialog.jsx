@@ -103,10 +103,10 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
   const footer = (lines.length > 0 || execError) ? (
     <>
     {execError && (
-      <div data-testid="fulfill-exec-error" className="mb-2 rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11.5px] text-[#9B1C1C]">
-        <p className="font-bold">Proses pemenuhan belum tuntas</p>
+      <div data-testid="fulfill-exec-error" className="mb-2 rounded-lg border border-kn-danger-soft bg-kn-danger-soft px-3 py-2 text-fs-12 text-kn-danger-text">
+        <p className="font-semibold">Proses pemenuhan belum tuntas</p>
         <p>{execError}</p>
-        <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-[11px] font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
+        <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-fs-12 font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
       </div>
     )}
     {lines.length > 0 && (
@@ -135,11 +135,11 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
           </div>
         )}
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fulfill-error" />
-        {notice && <p data-testid="fulfill-notice" className="mt-2 rounded-lg bg-[#EAF7EF] px-3 py-2 text-[11.5px] font-semibold text-[#1B7F4B]">{notice}</p>}
+        {notice && <p data-testid="fulfill-notice" className="mt-2 rounded-lg bg-kn-success-soft px-3 py-2 text-fs-12 font-semibold text-kn-success-text">{notice}</p>}
         {loading ? (
-          <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="fulfill-loading">Menghitung kekurangan & sumber…</div>
+          <div className="py-10 text-center text-fs-12 text-kn-text-2" data-testid="fulfill-loading">Menghitung kekurangan & sumber…</div>
         ) : !lines.length ? (
-          <p className="py-8 text-center text-[12px] text-[#6B6B73]" data-testid="fulfill-no-shortage">Tidak ada kekurangan aktif pada pesanan ini.</p>
+          <p className="py-8 text-center text-fs-12 text-kn-text-2" data-testid="fulfill-no-shortage">Tidak ada kekurangan aktif pada pesanan ini.</p>
         ) : (
           <div className="mt-3 space-y-3">
             {lines.map((ln) => (
@@ -147,16 +147,16 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
                 canSetPrice={!!data?.can_set_internal_price} onPrice={onPrice} requested={requested}
                 onChange={(v) => setPlan((cur) => ({ ...cur, [ln.product_id]: v }))} />
             ))}
-            <textarea data-testid="fulfill-note" className="field w-full text-[12px]" rows={2} placeholder="Catatan (opsional)"
+            <textarea data-testid="fulfill-note" className="field w-full text-fs-12" rows={2} placeholder="Catatan (opsional)"
               value={note} onChange={(e) => setNote(e.target.value)} />
-            {over && <p data-testid="fulfill-over" className="text-[11px] font-semibold text-[#C0392B]">{over.product_name}: total rencana melebihi kekurangan {formatQty(over.backorder_qty)}.</p>}
+            {over && <p data-testid="fulfill-over" className="text-fs-12 font-semibold text-kn-danger-text">{over.product_name}: total rencana melebihi kekurangan {formatQty(over.backorder_qty)}.</p>}
           </div>
         )}
         {history.length > 0 && (
-          <div className="mt-3 rounded-lg border border-[#EFF0F2] bg-[#FAFAFB] p-2.5" data-testid="fulfill-history">
-            <p className="text-[10px] font-bold uppercase text-[#9A9BA3]">Riwayat keputusan</p>
+          <div className="mt-3 rounded-lg border border-kn-divider bg-kn-neutral-soft p-2.5" data-testid="fulfill-history">
+            <p className="text-fs-12 font-semibold text-kn-text-2">Riwayat keputusan</p>
             {history.slice().reverse().map((d, i) => (
-              <p key={i} className="mt-1 text-[11px] text-[#3C3C43]">{(d.at || "").slice(0, 16).replace("T", " ")} · {d.by || "—"} · {d.summary}</p>
+              <p key={i} className="mt-1 text-fs-12 text-kn-neutral">{(d.at || "").slice(0, 16).replace("T", " ")} · {d.by || "—"} · {d.summary}</p>
             ))}
           </div>
         )}
