@@ -253,7 +253,7 @@ export default function AppViewRouter(props) {
       {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} onOpenDocument={openDocument} />}
       {/* Meja gelombang 1 (§5.1) — di Meja Keuangan & Meja Gudang kartu retur internal pindah ke tab Pantau mejanya. */}
       {["admin-home", "manager-home"].includes(activeView) && (
-        <ReturnDeskSummaryCard selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />
+        <ReturnDeskSummaryCard className="mb-4" selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />
       )}
       {activeView === "admin-home" && <AdminHome token={token} entities={entities} selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
       {activeView === "manager-home" && <ManagerHome selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}

@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { createRoot } from "react-dom/client";
 import SoTrackerCard, { trackerRowToDeskRow } from "../sales_admin/SoTrackerCard";
+import ReturnDeskSummaryCard from "../home/ReturnDeskSummaryCard";
 import { soTrackerLink } from "../sales_admin/workDeskApi";
 
 const mockGet = jest.fn();
@@ -72,7 +73,7 @@ test("aksi di tempat langsung dijalankan; aksi pindah layar membuka rincian dulu
   expect(onOpen).toHaveBeenLastCalledWith(expect.objectContaining({ id: "so3" }));
 });
 
-test("klik baris membuka rincian; baris tanpa role/tabIndex; Enter pada tombol nomor membuka sekali", async () => {
+test("klik baris membuka rincian; baris tanpa role/tabIndex; klik tombol nomor membuka sekali", async () => {
   mockGet.mockResolvedValue({ data: TRACK });
   await mount(<SoTrackerCard desk="sales_admin" testPrefix="desk" />);
   const tr = q("desk-so-tracker-row-so1");
@@ -80,7 +81,7 @@ test("klik baris membuka rincian; baris tanpa role/tabIndex; Enter pada tombol n
   const nomor = q("desk-so-tracker-number-so1");
   expect(nomor.className).toContain("link-button");
   expect(nomor.querySelector("span").className).toContain("text-fs-13");
-  // Enter pada <button> = klik bawaan peramban; klik tombol tidak boleh membuka dua kali (gelembung ke tr diabaikan)
+  // Enter pada <button> memicu klik bawaan peramban (jsdom tidak) — di sini klik tombol; tidak boleh membuka dua kali.
   await klik("desk-so-tracker-number-so1");
   expect(document.body.querySelectorAll('[data-testid="desk-so-tracker-detail"]').length).toBe(1);
 });
@@ -109,4 +110,14 @@ test("berkas Pantau tanpa px mentah & hex", () => {
     const src = fs.readFileSync(path.join(__dirname, rel), "utf8");
     expect(src).not.toMatch(/text-\[\d/); expect(src).not.toMatch(/#[0-9A-Fa-f]{6}\b/); expect(src).not.toMatch(/text-2xl/);
   }
+});
+
+test("kartu retur: tanpa mb-4 bawaan (meja memakai gap grid); Beranda meneruskan className mb-4", async () => {
+  const d = { incoming: 1, rolls: 0, due_soon: 0 };
+  await mount(<ReturnDeskSummaryCard summary={d} />);
+  expect(q("return-desk-summary").className).not.toContain("mb-4");
+  await mount(<ReturnDeskSummaryCard summary={d} className="mb-4" />);
+  expect(document.body.querySelectorAll('[data-testid="return-desk-summary"]')[1].className).toContain("mb-4");
+  const router = fs.readFileSync(path.join(__dirname, "../../AppViewRouter.jsx"), "utf8");
+  expect(router).toMatch(/<ReturnDeskSummaryCard className="mb-4"/);
 });

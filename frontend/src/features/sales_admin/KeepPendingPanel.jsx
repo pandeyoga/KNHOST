@@ -106,7 +106,7 @@ function KeepList({ rows, limit, overdue, onOpen, tp }) {
           : "Batas umur belum diatur (Pengaturan › Penjualan › Aturan Penjualan › Batas umur Keep)."}
       </p>
       {rows.length === 0 ? <Empty tp={tp} text="Semua SO sudah diverifikasi." /> : (
-        <ul className="divide-y divide-kn-neutral-soft rounded-lg border border-kn-divider">
+        <ul className="divide-y divide-kn-divider rounded-lg border border-kn-divider">
           {rows.map((r) => (
             <li key={r.order_id} data-testid={`${tp}-keep-row-${r.order_id}`}>
               {/* Audit UI 24 Okt (144/HP) — di layar sempit chip & nilai turun ke baris kedua; dulu kolom kiri

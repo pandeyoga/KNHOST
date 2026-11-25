@@ -29,7 +29,7 @@ export function useReturnDeskSummary(selectedEntity, { enabled = true, refreshKe
 // LN-093 — kartu Beranda tim PT pemasok (mis. CST): retur internal masuk, roll menunggu keputusan,
 // dan roll yang batas retur suppliernya tinggal ≤ N hari. Tersembunyi bila semuanya nol.
 // `summary` (opsional) = data yang sudah dimuat pemanggil (`useReturnDeskSummary`); tanpa itu kartu memuat sendiri.
-export default function ReturnDeskSummaryCard({ selectedEntity, onNavigate, summary }) {
+export default function ReturnDeskSummaryCard({ selectedEntity, onNavigate, summary, className = "" }) {
   const own = useReturnDeskSummary(selectedEntity, { enabled: summary === undefined });
   const d = summary === undefined ? own : summary;
   if (!returnSummaryHasContent(d)) return null;
@@ -41,7 +41,7 @@ export default function ReturnDeskSummaryCard({ selectedEntity, onNavigate, summ
     </div>
   );
   return (
-    <section className="section-card border-l-4 border-l-kn-warning-text" data-testid="return-desk-summary">
+    <section className={`section-card border-l-4 border-l-kn-warning-text ${className}`.trim()} data-testid="return-desk-summary">
       <div className="flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-2">
           <Inbox size={18} className="text-kn-warning-text" />
