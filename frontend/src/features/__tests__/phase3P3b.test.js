@@ -184,7 +184,7 @@ test("D-24a: Meja Cutting — 'menunggu dipotong gudang' = ringkasan nomor + tau
   expect(q(host, "cutting-to-cut-numbers").textContent).toContain("3 baris potong dari 2 pesanan: SOS-1, SOS-2");
   expect(q(host, "cutting-row-t1")).toBeNull();                            // rincian per baris ada di Cutting gudang
   expect(q(host, "cutting-to-cut-link-readonly")).not.toBeNull();         // peran tanpa akses → baca-saja
-  expect(q(host, "cutting-receive-t9")).not.toBeNull();                   // penerimaan Admin Cutting tetap
+  expect(q(host, "cutting-action-t9")).not.toBeNull();                   // penerimaan Admin Cutting tetap
 });
 
 // ── D-07 (Matriks divisi) ───────────────────────────────────────────────────
