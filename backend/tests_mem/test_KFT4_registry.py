@@ -141,8 +141,9 @@ def test_KFT4_U3b_aliases_dan_penempatan_kunci_baru():
               for t in ("persetujuan", "pengingat", "toleransi")}
     # KP-T7 (digabung sesudah unit ini dikerjakan) menambah 19 kunci pengingat: +1 bertema persetujuan
     # (`approval.reminder_max_listed`) dan +5 bertema pengingat. KF-T7 menambah +1 bertema toleransi
-    # (`finance.rounding_tolerance_rupiah`).
-    assert hitung == {"persetujuan": 35 + 1, "pengingat": 20 + 5, "toleransi": 15 + 1}
+    # (`finance.rounding_tolerance_rupiah`). BTP-1 menambah +1 bertema persetujuan (`sales.cancel_approval_when` — kapan
+    # pembatalan pesanan perlu persetujuan).
+    assert hitung == {"persetujuan": 35 + 1 + 1, "pengingat": 20 + 5, "toleransi": 15 + 1}
 
 
 # ── U4 — id kelompok lama di GET /effective ───────────────────────────────────────────────────────────────────────────
