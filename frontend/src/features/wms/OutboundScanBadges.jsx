@@ -17,3 +17,11 @@ export function MiniBar({ pct, status }) {
     </div>
   );
 }
+
+/** BTP-7 — tanda tugas ditahan selama pesanannya diajukan batal/tutup sisa (`held_reason` dari server). */
+export function HeldMark({ task }) {
+  if (!task?.held_reason) return null;
+  return (
+    <StatusBadge tone="warning" icon="lock" testId={`held-mark-${task.id}`}>{task.held_reason}</StatusBadge>
+  );
+}

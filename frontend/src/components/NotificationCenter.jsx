@@ -15,6 +15,11 @@ export const canActOn = (userRole, requiredRole, actionType = "") =>
 // R6.6 — label ramah-manusia per tipe notifikasi (untuk filter jenis).
 export const TYPE_LABEL = {
   campaign_bill_approval: "Tagihan kampanye",
+  // BTP-7 — audit notifikasi U-04: pembatalan pesanan lewat persetujuan.
+  permintaan_batal_pesanan: "Permintaan batal pesanan",
+  permintaan_batal_diputus: "Keputusan batal pesanan",
+  titipan_pesanan_batal: "Uang muka jadi titipan",
+  titipan_pesanan_batal_gagal: "Uang muka gagal jadi titipan",
   escalation: "Eskalasi",
   ar_overdue: "Piutang jatuh tempo",
   ap_due: "Hutang supplier",

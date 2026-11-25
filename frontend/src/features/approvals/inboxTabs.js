@@ -16,6 +16,7 @@ export const INBOX_TABS = [
   { key: "returns", label: "Retur" },
   { key: "cycle", label: "Stok Opname" },
   { key: "credit", label: "Kredit Pelanggan" },
+  { key: "so_cancel", label: "Pembatalan Pesanan" },
   { key: "matrix", label: "Matriks divisi" },
 ];
 
@@ -30,6 +31,8 @@ export const BACKLOG_INBOX_TAB = {
   amendment: "amendment",
   // Fase 4 · R5 — override kredit MANDIRI kini baris antrean server sendiri (dulu tak terhitung KPI).
   credit_override: "credit",
+  // BTP-7 — permintaan batal / tutup sisa pesanan menunggu persetujuan (keputusan di rincian pesanan).
+  so_cancel: "so_cancel",
 };
 
 /**
@@ -37,7 +40,7 @@ export const BACKLOG_INBOX_TAB = {
  * Amandemen; tab Amandemen = kartu tautan berhitungan) — jadi ia dihitung "ditangani di layar lain".
  */
 export const LISTED_IN_INBOX = ["sales_order", "purchase_order", "price", "sales_return", "purchase_return", "cycle_count",
-  "credit_override"];
+  "credit_override", "so_cancel"];
 
 /** Fase 4 · R5 — SO mati: entri `pending_approvals` basi tidak menunggu siapa pun (sama dengan server SO_DEAD_STATUSES). */
 export const SO_DEAD_STATUSES = ["cancelled", "expired", "rejected", "void", "done"];

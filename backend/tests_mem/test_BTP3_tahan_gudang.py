@@ -168,3 +168,15 @@ async def test_BTP3_daftar_tugas_membawa_held_reason(klien, db, siap):
     baris = {x["id"]: x for x in r.json()}
     assert baris[ta["id"]]["held_reason"] == "Ditahan: menunggu keputusan batal"
     assert baris[tb["id"]].get("held_reason") in (None, "")
+
+
+async def test_BTP3_wms_tasks_membawa_held_reason(klien, db, siap):
+    """Daftar `/api/wms/tasks` (layar HP & Operasi Gudang) membawa tanda tahan yang sama dengan daftar outbound."""
+    so_a = await _ajukan(klien, db, siap)
+    so_b = await _pesanan(klien, db, siap)
+    ta, tb = await _tugas(db, so_a, "created"), await _tugas(db, so_b, "created")
+    r = await klien.get("/api/wms/tasks", headers=siap["h"])
+    assert r.status_code == 200, r.text
+    baris = {x["id"]: x for x in r.json()}
+    assert baris[ta["id"]]["held_reason"] == "Ditahan: menunggu keputusan batal"
+    assert baris[tb["id"]].get("held_reason") in (None, "")

@@ -16,6 +16,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { formatDateTime, formatQty } from "../../utils/formatters";
 import { statusLabel } from "../../utils/statusVocab";
 import { entityShortFromCtx } from "../../utils/entityLabel";
+import { HeldMark } from "../wms/OutboundScanBadges";
 import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku (ikon + teks + warna)
 import EmptyState, { isForbidden } from "../../components/EmptyState";   // FIX-8 — memuat/galat/tanpa izin
 import { rollStatusLabel } from "../wms/inventory/inventoryConstants";
@@ -135,6 +136,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
             {t.task_kind_label && <span className="kn-hp-tag" data-testid={`mw-task-kind-${t.id}`}>{t.task_kind_label}</span>}
             {t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}
           </div>
+          {t.held_reason && <div className="mt-1"><HeldMark task={t} /></div>}
           <div className="kn-hp-info mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>

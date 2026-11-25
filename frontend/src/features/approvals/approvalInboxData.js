@@ -13,7 +13,7 @@
  * dengan gerbang endpoint-nya). Kategori di luar izin peran bukan "gagal dibaca" → tidak dihitung "belum lengkap"
  * (dulu enam kategori dijawab 403 untuk peran penagihan dan layar memperingatkan "Daftar ini belum lengkap").
  */
-import { Tag, ShoppingCart, RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit } from "lucide-react";
+import { Tag, ShoppingCart, RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit, Ban } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { formatCurrency } from "../../utils/formatters";
@@ -32,6 +32,8 @@ export const KIND_META = {
   cycle:           { label: "Stok Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
   // IA 2026-10 (B9) — override kredit pelanggan (dulu hanya di CRM › Persetujuan Kredit).
   credit:          { label: "Izin Kredit", icon: CreditCard, fg: "#0058CC", bg: "#E8F1FF", group: "credit" },
+  // BTP-7 — permintaan batal / tutup sisa pesanan; diputus di rincian pesanan (bilah persetujuan).
+  so_cancel:       { label: "Batal / Tutup Sisa", icon: Ban, fg: "#B91C1C", bg: "#FEE2E2", group: "so_cancel" },
   // FASE G-1 — koreksi angka dokumen keuangan; D-06: hanya untuk tampilan sisa (tidak dirender di daftar).
   amendment:       { label: "Amandemen Dokumen", icon: FileEdit,   fg: "#7A2CA0", bg: "#F3E9FA", group: "amendment" },
 };
@@ -51,6 +53,7 @@ export const CATEGORY_PERMS = {
   "Stock Opname": [["inventory", "cycle_count"]],
   "Amandemen": [["finance_amendment", "propose"]],
   "Ringkasan Antrean": QUEUE_PERMS,
+  "Pembatalan Pesanan": [["order", "approve_cancel"]],   // BTP-7 — GET /sales-orders/cancel-requests
   "Kredit Pelanggan": [["credit_override", "view"]],   // CR-T3 — GET /credit-overrides (dulu customer.view)
 };
 
@@ -62,7 +65,7 @@ export async function loadInbox(perms) {
     gagal.push(label);
     return { data: [], _failed: e };
   }));
-  const [queueRes, poRes, prRes, srRes, purRes, ccRes, amdRes, blRes, coRes] = await Promise.all([
+  const [queueRes, poRes, prRes, srRes, purRes, ccRes, amdRes, blRes, coRes, bcRes] = await Promise.all([
     grab("Pesanan Penjualan", () => axios.get(`${API}/approvals/queue`)),
     grab("Pembelian (PO)", () => axios.get(`${API}/purchase-orders`)),
     grab("Harga Khusus", () => axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
@@ -74,6 +77,7 @@ export async function loadInbox(perms) {
     // yang layar ini tidak muat: transfer gudang, kontrabon, permintaan internal, cuti, lembur, …).
     grab("Ringkasan Antrean", () => axios.get(`${API}/approvals/backlog`, { params: { oldest: 50 } })),
     grab("Kredit Pelanggan", () => axios.get(`${API}/credit-overrides`, { params: { status: "pending" } })),
+    grab("Pembatalan Pesanan", () => axios.get(`${API}/sales-orders/cancel-requests`, { params: { status: "pending" } })),
   ]);
 
   // FASE 5 — Sales Order approvals (SSOT pending_approvals): nilai / kredit / harga khusus.
@@ -144,7 +148,15 @@ export async function loadInbox(perms) {
     target: "ar-aging", targetView: "credit-overrides",
   }));
 
-  const items = [...soApprovals, ...pos, ...prices, ...salesReturns, ...purchaseReturns, ...cycleCounts, ...credits]
+  // BTP-7 — satu permintaan = satu butir; "Tinjau" membuka rincian pesanan (keputusan di bilah persetujuan pesanan).
+  const cancels = arr(bcRes.data).map((c) => ({
+    kind: "so_cancel", id: c.request_id, orderId: c.order_id, openOrder: true,
+    title: c.number || "Pesanan", subtitle: c.customer_name || "Pelanggan",
+    meta: `${c.action === "close_remaining" ? "Tutup sisa" : "Batal"}${c.reason ? ` · ${c.reason}` : ""}`,
+    amount: c.amount ?? null, requester: c.requested_by, role: "manager", at: c.requested_at,
+  }));
+
+  const items = [...soApprovals, ...pos, ...prices, ...salesReturns, ...purchaseReturns, ...cycleCounts, ...credits, ...cancels]
     .sort(byAt);
   return {
     items,

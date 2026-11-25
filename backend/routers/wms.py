@@ -56,7 +56,12 @@ async def list_tasks(request: Request, response: Response, line: str = "", entit
                 .to_list(len(pids) + 1)}
     warehouses = {w["id"]: w for w in await db.warehouses.find({"id": {"$in": wids}}, {"_id": 0, "id": 1, "name": 1, "city": 1})
                   .to_list(len(wids) + 1)}
+    # BTP-3 — tanda tahan batal/tutup sisa: SATU kueri untuk seluruh daftar (layar HP & Operasi Gudang menampilkannya
+    # sebelum pengguna menekan tombol dan kena 409).
+    from services import so_cancel_service
+    held = await so_cancel_service.held_orders(list({t["order_id"] for t in tasks if t.get("order_id")}))
     for task in tasks:
+        task["held_reason"] = so_cancel_service.HELD_LABEL if task.get("order_id") in held else None
         prod = products.get(task.get("product_id"), {})
         wh = warehouses.get(task.get("warehouse_id"), {})
         task["product_name"] = prod.get("name", "")

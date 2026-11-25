@@ -16,7 +16,7 @@ import { askConfirm } from "../../services/confirmService";
 import FormModal from "../../components/FormModal";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import { formatQty } from "../../utils/formatters";
-import { Badge, MiniBar } from "./OutboundScanBadges";
+import { Badge, MiniBar, HeldMark } from "./OutboundScanBadges";
 import LoadingCheckPanel from "./LoadingCheckPanel";
 import SampleCutPanel from "./SampleCutPanel";
 import { TaskTakeoverButton } from "./TaskTakeoverButton";
@@ -382,6 +382,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                   task.customer_name,
                   task.sku,
                   task.warehouse_name,
+                  task.held_reason && <HeldMark task={task} />,
                   (task.payment_hold?.blocked || Number(task.so_backorder_qty || 0) > 0) && (
                     <span className="inline-flex flex-wrap gap-1">
                       {task.payment_hold?.blocked && (

@@ -165,7 +165,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
   };
 
   const handleReview = (it) => {
-    if (it.isSO && onOpenDocument) {
+    if ((it.isSO || it.openOrder) && onOpenDocument) {
       onOpenDocument({ nav_id: "orders", view: "orders", focus_type: "sales_order", focus_id: it.orderId });
       return;
     }
@@ -352,9 +352,9 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                       <p className="text-[13px] font-bold tabular-nums text-[#1C1C1E]">{formatCurrency(it.amount)}</p>
                     )}
                     <button data-testid={`approval-inbox-review-${it.id}`}
-                      onClick={() => setReviewItem(it)}
+                      onClick={() => (it.openOrder ? handleReview(it) : setReviewItem(it))}
                       className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#0058CC] hover:underline">
-                      Tinjau & Putuskan <ArrowRight size={12} />
+                      {it.openOrder ? "Buka pesanan" : "Tinjau & Putuskan"} <ArrowRight size={12} />
                     </button>
                   </div>
                 </div>
