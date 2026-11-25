@@ -1,51 +1,65 @@
 /**
- * RoleDesk — Sesi #087 · MEJA MD & MEJA ADMIN GUDANG (pola Meja Finance/Admin Sales).
- * Satu komponen untuk dua meja: konfigurasi per `desk` (judul, ikon, pemuat, teks lingkup).
+ * RoleDesk — Sesi #087 · MEJA MD & MEJA ADMIN GUDANG (pola Meja Finance/Admin Sales) + Meja Saya (U-2).
+ * Satu komponen untuk tiga meja: konfigurasi per `desk` (judul, pemuat, penjelasan).
  * Baris antrean melompat ke layar penanganannya lewat `onOpenDocument` (navigasi + auto-buka);
  * aksi `create_delivery` (Admin Gudang) membuka Logistik dengan SJ terpilih — jembatan WMS→Logistik.
+ *
+ * Meja gelombang 1 (spek 2026-11-25 §5.1): kerangka bersama `DeskFrame` — satu kepala (judul halaman + ikon ? berisi
+ * penjelasan meja & "Bukan wewenang meja ini"), tab Antrean (kartu ukuran tetap, berisi paling mendesak dulu) | Pantau
+ * (Pelacak SO bila berizin `order.view`; Meja Gudang + kartu retur internal). Kartu angka & kotak "Paling lama
+ * menunggu" dihapus — urutan kartu sudah menaruh antrean tertua di depan.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers, BellRing } from "lucide-react";
+import { Inbox } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { can } from "../../config/roles";
+import { useAppNav } from "../../context/AppNavContext";
 import { apiErrorText } from "../../utils/apiError";
-import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import DeskQueueCard, { DeskQueueCardSkeleton } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
-import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta, soTrackerLink } from "../sales_admin/workDeskApi";
+import ReturnDeskSummaryCard from "../home/ReturnDeskSummaryCard";
+import { orderDeskQueues, splitPantau } from "../sales_admin/deskQueueOrder";
+import { mdDesk, warehouseAdminDesk, myDesk, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import { resolveView } from "../../utils/viewAlias";
 import { humanizeQueueRows } from "./deskText";
 import { openLogistics } from "../logistics/logisticsDeepLink";
+import DeskFrame, { DESK_GRID_CLASS } from "./DeskFrame";
+import { markDeskReturn } from "./deskSession";
 
 const DESKS = {
   md: {
-    icon: Palette, kicker: "MD / Merchandiser", title: "Meja MD", load: mdDesk, testPrefix: "md-desk",
+    title: "Meja MD", load: mdDesk, testPrefix: "md-desk",
     intro: <>Pengembangan produk dari satu meja: <b>permintaan desain</b> (setujui · tugaskan · putuskan), <b>sample &amp; labdip</b> per putaran, <b>PR &amp; PO bahan</b>, <b>SPK makloon</b> (berjalan &amp; menunggu faktur mitra), dan SPK inspeksi yang belum punya acuan sample.</>,
   },
   warehouse_admin: {
-    icon: Warehouse, kicker: "Admin Gudang", title: "Meja Admin Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk",
+    title: "Meja Admin Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk", returns: true,
     intro: <>Memimpin operasi gudang: <b>SJ yang sudah diberangkatkan tetapi belum diangkut logistik</b>, tugas outbound, PO menunggu penerimaan, SPK belum ditugaskan, persetujuan opname/transfer, dan pengiriman gagal/belum ditutup.</>,
   },
-  // U-2 (2026-09) — satu meja untuk 6 peran tersisa; judul diambil dari server sesuai peran.
+  // U-2 (2026-09) — satu meja untuk 6 peran tersisa.
   me: {
-    icon: BellRing, kicker: "Kerja saya", title: "Meja Saya", load: myDesk, testPrefix: "my-desk",
+    title: "Meja Saya", load: myDesk, testPrefix: "my-desk",
     intro: <>Semua yang menunggu tindakan Anda hari ini: <b>Giliran saya</b> (dokumen yang baru berpindah tahap ke Anda) dan antrean khas peran Anda. Buka baris untuk melompat ke layar penanganannya.</>,
   },
 };
 
-const canSeeOrders = () => {
-  try {
-    const u = JSON.parse(localStorage.getItem("kn_user") || "null");
-    return can(u?.permissions || {}, "order", "view");   // PR-T7 — Admin pun lewat izinnya (= GET /sales-orders)
-  } catch { return false; }
-};
+const NO_IN_PLACE = () => false;   // MD · Gudang · Meja Saya: semua aksi pindah layar (pop-up rincian dulu)
 
-export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDocument }) {
+/** Izin pengguna: `currentUser` dari App; cadangan lama `localStorage kn_user` (pemanggil tanpa prop). */
+function permsOf(currentUser) {
+  if (currentUser?.permissions) return currentUser.permissions;
+  try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions || {}; } catch { return {}; }
+}
+
+export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "all", onOpenDocument }) {
   const cfg = DESKS[desk] || DESKS.md;
-  const Icon = cfg.icon;
+  const deskKey = DESKS[desk] ? desk : "md";
+  const p = cfg.testPrefix;
+  const perms = permsOf(currentUser);
+  const { go } = useAppNav();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [focusId, setFocusId] = useState("");
+  const [tick, setTick] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,124 +73,78 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
 
   useEffect(() => { load(); }, [load]);
 
-  function handleAction(shown, queue) {
+  const open = (link) => { markDeskReturn(deskKey); onOpenDocument?.(link); };
+
+  /** Layar penanganan baris. `full` = "Buka layar penuh" (dokumennya), bukan jalan pintas aksinya. */
+  function navigate(shown, queue, { full = false } = {}) {
     const row = shown?._raw || shown;   // aksi memakai baris ASLI dari server (nomor/id apa adanya), bukan teks tampilan
-    if (row.action_kind === "create_delivery") {
+    if (!full && row.action_kind === "create_delivery") {
       // Jembatan Gudang → Logistik: buka Logistik dengan SJ ini terpilih untuk dibuat pengiriman.
       openLogistics({ createFromShipmentId: row.ref_id });
-      onOpenDocument?.({ view: "logistics", nav_id: "logistics" });
+      open({ view: "logistics", nav_id: "logistics" });
       return;
     }
     if (row.ref_type === "logistics_delivery") {
       openLogistics({ deliveryId: row.ref_id });
-      onOpenDocument?.({ view: "logistics", nav_id: "logistics" });
+      open({ view: "logistics", nav_id: "logistics" });
       return;
     }
     if (row.ref_type === "shipment") {
       openLogistics({ search: row.number || "" });
-      onOpenDocument?.({ view: "logistics", nav_id: "logistics" });
+      open({ view: "logistics", nav_id: "logistics" });
       return;
     }
     const turnLink = resolveView(row.link || row.extra?.link);
     if (queue?.id === "giliran_saya" && turnLink) {
-      onOpenDocument?.({ view: turnLink, nav_id: turnLink, focus_id: row.ref_id, focus_type: row.ref_type, number: row.number || "" });
+      open({ view: turnLink, nav_id: turnLink, focus_id: row.ref_id, focus_type: row.ref_type, number: row.number || "" });
       return;
     }
-    onOpenDocument?.(rowLink(row, queue?.id, desk));
+    open(rowLink(row, queue?.id, desk));
   }
 
   // Audit UI tahap 2 (G5-10) — notifikasi LAMA di "Giliran saya" masih berteks "tahap: cancelled" (notifikasi baru
   // sudah berlabel dari server). Fase 4 · R6: berlaku untuk SEMUA antrean (subjudul "waiting_approval · Budi",
   // "outbound", nomor id teknis) lewat `deskText.js`; baris asli disimpan di `_raw` untuk aksi.
   const queues = humanizeQueueRows(Array.isArray(data?.queues) ? data.queues : []);
-  const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
-  const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
-  const p = cfg.testPrefix;
-  const oldestQ = queues.filter((q) => (q.count || 0) > 0)
-    .reduce((best, q) => (!best || (q.oldest_age_days || 0) > (best.oldest_age_days || 0) ? q : best), null);
-  const oldestRow = (oldestQ?.rows || []).reduce((best, r) => (!best || (r.age_days || 0) > (best.age_days || 0) ? r : best), null);
-  const ordered = focusId ? [...queues].sort((a, b) => (b.id === focusId) - (a.id === focusId)) : queues;
+  const split = splitPantau(queues, deskKey);
 
-  function openOldestQueue() {
-    setFocusId(oldestQ.id);
-    setTimeout(() => document.querySelector(`[data-testid="${p}-queue-${oldestQ.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-  }
-
-  return (
-    <div data-testid={`${p}`} className="grid gap-4">
-      <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId={`${p}-error`} />
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex min-w-0 items-center gap-2">
-            <Icon size={15} className="text-[#0058CC]" />
-            <span className="kicker">{cfg.kicker}</span>
-            <h2 data-testid={`${p}-title`}>{data?.title || cfg.title}</h2>
-          </div>
-          <button data-testid={`${p}-refresh`} className="icon-button" onClick={load} aria-label="Muat ulang meja">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-        <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">{cfg.intro}</p>
-        <section data-testid={`${p}-metrics`} className="grid gap-3 p-3 sm:grid-cols-3">
-          <Metric icon={Inbox} label="Perlu Ditindak" value={openItems} tone="rgba(255,149,0,.16)" testId={`${p}-metric-open`} />
-          <Metric icon={Layers} label="Antrean" value={queues.filter((q) => q.count > 0).length} tone="rgba(0,88,204,.14)" testId={`${p}-metric-queues`} />
-          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "< 1 hari"} tone="rgba(255,59,48,.14)" testId={`${p}-metric-oldest`} />
-        </section>
-        {oldestQ && (
-          <div data-testid={`${p}-oldest-card`} className="mx-3 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#FFD9D6] bg-[#FFF6F5] px-3 py-2.5">
-            <ShieldAlert size={16} className="shrink-0 text-[#D93025]" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#D93025]">Paling lama menunggu</p>
-              <p className="text-[12.5px] font-semibold text-[#1C1C1E]" data-testid={`${p}-oldest-label`}>
-                {oldestQ.title || oldestQ.label || queueMeta(oldestQ.id).label} · {oldestQ.count} dokumen · {(oldestQ.oldest_age_days || 0) > 0 ? `${oldestQ.oldest_age_days} hari` : "< 1 hari"}
-              </p>
-              {oldestRow && <p className="truncate text-[11px] text-[#6B6B73]" data-testid={`${p}-oldest-doc`}>Tertua: {oldestRow.number || oldestRow.title} {oldestRow.title && oldestRow.number ? `— ${oldestRow.title}` : ""}</p>}
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <button type="button" className="secondary-button" data-testid={`${p}-oldest-open-queue`} onClick={openOldestQueue}>Buka antrean</button>
-              {oldestRow && <button type="button" className="primary-button" data-testid={`${p}-oldest-open-doc`} onClick={() => handleAction(oldestRow, oldestQ)}>Buka dokumen tertua</button>}
-            </div>
-          </div>
-        )}
-        {(data?.not_my_desk || []).length > 0 && (
-          <div data-testid={`${p}-not-mine`} className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
-            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Bukan wewenang meja ini</p>
-            <p className="text-[11.5px] text-[#31465F]">{data.not_my_desk.join(" · ")}</p>
-          </div>
-        )}
-      </section>
-
-      {/* FIX-1 (audit B1b UI-56) — pelacak SO (nilai Rupiah) hanya untuk pemegang izin pesanan; sopir/desainer tidak. */}
-      {canSeeOrders() && <SoTrackerCard desk={desk} selectedEntity={selectedEntity} testPrefix={p} onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />}
-
-      {loading && !data ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid={`${p}-loading`}>Menyusun antrean…</div>
-      ) : queues.length === 0 ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid={`${p}-empty`}>
-          <Inbox size={26} className="mx-auto mb-2 text-[#D6D6DB]" /> Belum ada antrean untuk badan usaha yang sedang Anda lihat.
-        </div>
-      ) : (
-        <>
-        <div className="grid gap-3 xl:grid-cols-2">
-          {ordered.map((q) => (
-            <DeskQueueCard key={q.id === focusId ? `${q.id}-focus` : q.id} queue={q} loading={loading} testPrefix={p} onAction={handleAction}
-              defaultOpen={q.id === focusId ? true : undefined} />
-          ))}
-        </div>
-        </>
-      )}
+  const antrean = loading && !data ? (
+    <div data-testid={`${p}-loading`} className={DESK_GRID_CLASS}>
+      {[0, 1, 2, 3].map((i) => <DeskQueueCardSkeleton key={i} testPrefix={p} index={i} />)}
+    </div>
+  ) : split.antrean.length === 0 ? (
+    <div className="section-card section-pad text-center text-fs-13 text-kn-text-2" data-testid={`${p}-empty`}>
+      <Inbox size={24} className="mx-auto mb-2 text-kn-neutral" aria-hidden="true" />
+      Belum ada antrean untuk PT yang sedang Anda lihat.
+    </div>
+  ) : (
+    <div className={DESK_GRID_CLASS}>
+      {orderDeskQueues(split.antrean).map((q) => (
+        <DeskQueueCard key={q.id} queue={q} loading={loading} testPrefix={p} stateKey={`${deskKey}:${q.id}`}
+          inPlace={NO_IN_PLACE} onAction={(row, queue) => navigate(row, queue)}
+          onOpenFull={(row, queue) => navigate(row, queue, { full: true })} />
+      ))}
     </div>
   );
-}
 
-function Metric({ icon: Icon, label, value, tone, testId }) {
+  // FIX-1 (audit B1b UI-56) — pelacak SO (nilai Rupiah) hanya untuk pemegang izin pesanan; sopir/desainer tidak.
+  const tracker = can(perms, "order", "view") && (
+    <SoTrackerCard key="tracker" desk={desk} selectedEntity={selectedEntity} testPrefix={p} refreshKey={tick}
+      onOpen={(r) => open(soTrackerLink(r))} />
+  );
+  const returns = cfg.returns && (
+    <ReturnDeskSummaryCard key={`ret-${tick}`} selectedEntity={selectedEntity}
+      onNavigate={(t) => { markDeskReturn(deskKey); go(t); }} />
+  );
+  const pantau = tracker || returns ? (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">{returns}{tracker}</div>
+  ) : null;
+
   return (
-    <div data-testid={testId} className="metric-card">
-      <div className="metric-icon" style={{ background: tone }}><Icon size={16} className="text-[#1C1C1E]" /></div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-        <p className="text-[15px] font-bold tabular-nums">{value}</p>
-      </div>
+    <div data-testid={`${p}`} className="grid grid-cols-[minmax(0,1fr)] gap-3">
+      <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId={`${p}-error`} />
+      <DeskFrame deskKey={deskKey} testPrefix={p} help={cfg.intro} notMine={data?.not_my_desk || []}
+        antrean={antrean} pantau={pantau} ready={!loading} onReload={() => { load(); setTick((t) => t + 1); }} />
     </div>
   );
 }

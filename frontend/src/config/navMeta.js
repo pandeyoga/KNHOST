@@ -23,6 +23,8 @@ export const PAGE_META = {
   "sales-admin-desk":     { kicker: "Admin Sales",    title: "Meja Admin Sales \u00b7 Antrean Alur Pesanan" },
   // MN-T2 — Meja Finance apa adanya → Beranda Keuangan › Perlu Tindakan (satu daftar berkelompok berizin).
   "finance-desk":         { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Perlu Tindakan \u00b7 Pekerjaan Uang yang Menunggu" },
+  // Meja gelombang 1 (R4) — tab hub Pantau Meja Keuangan.
+  "finance-desk-pantau":  { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Pantau \u00b7 Pelacak SO & Retur Internal" },
   "md-desk":              { kicker: "MD",             title: "Meja MD \u00b7 Desain, Sample & Bahan" },
   "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya \u00b7 Giliran & Antrean Peran" },
   "tanya-kn":             { kicker: "Asisten analitik", title: "Tanya KN \u00b7 Laporan & Pertanyaan Data" },

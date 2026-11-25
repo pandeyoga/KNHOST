@@ -317,7 +317,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
 
 // Fase 3 · P1 (L-05) — `crumbs` = jejak menu yang SAMA dengan sorotan sidebar (`breadcrumbFor()` di
 // navigationConfig: grup › menu › tab). `kicker` (PAGE_META) hanya cadangan untuk layar di luar menu.
-export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, helpMenu, scopeLabel, onAskKn }) {
+export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, helpMenu, scopeLabel, onAskKn, titleAddon }) {
   const trail = Array.isArray(crumbs) && crumbs.length ? crumbs : (kicker ? [kicker] : []);
   return (
     <header className="topbar no-print" role="banner">
@@ -352,7 +352,11 @@ export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, sy
             )}
           </nav>
         )}
-        <h1 data-testid="page-title" className="page-title">{title}</h1>
+        {/* Meja gelombang 1 (§5.1) — `titleAddon` = ikon ? halaman (`PageHelpButton`) sebaris dengan judul. */}
+        <div className="flex min-w-0 items-center gap-1.5">
+          <h1 data-testid="page-title" className="page-title">{title}</h1>
+          {titleAddon}
+        </div>
       </div>
       {entitySwitcher && <div className="topbar-entity">{entitySwitcher}</div>}
       {notice && (

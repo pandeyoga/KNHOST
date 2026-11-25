@@ -251,7 +251,8 @@ export default function AppViewRouter(props) {
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "consolidation" && <GroupConsolidationView entities={entities} />}
       {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} onOpenDocument={openDocument} />}
-      {["admin-home", "manager-home", "finance-desk", "warehouse-admin-desk"].includes(activeView) && (
+      {/* Meja gelombang 1 (§5.1) — di Meja Keuangan & Meja Gudang kartu retur internal pindah ke tab Pantau mejanya. */}
+      {["admin-home", "manager-home"].includes(activeView) && (
         <ReturnDeskSummaryCard selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />
       )}
       {activeView === "admin-home" && <AdminHome token={token} entities={entities} selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
@@ -279,11 +280,15 @@ export default function AppViewRouter(props) {
         <FinanceDesk currentUser={user} selectedEntity={selectedEntity}
           onOpenDocument={openDocument} />
       )}
+      {/* R4 (meja gelombang 1) — Pantau Meja Keuangan = tab hub saudara di Beranda Keuangan, bukan tab tingkat ketiga. */}
+      {activeView === "finance-desk-pantau" && (
+        <FinanceDesk currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} tab="pantau" />
+      )}
       {/* Sesi #087 — Meja MD & Meja Admin Gudang */}
-      {activeView === "md-desk" && <RoleDesk desk="md" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
-      {activeView === "my-desk" && <RoleDesk desk="me" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {activeView === "md-desk" && <RoleDesk desk="md" currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {activeView === "my-desk" && <RoleDesk desk="me" currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "tanya-kn" && <TanyaKnView selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "warehouse-admin-desk" && <RoleDesk desk="warehouse_admin" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {activeView === "warehouse-admin-desk" && <RoleDesk desk="warehouse_admin" currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {/* REVISI SAMPEL — Meja Admin Sample + daftar Pesanan Sample (SMP-) terpisah dari SO biasa */}
       {activeView === "sample-admin-desk" && <SampleAdminDesk currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "sample-orders" && <SampleOrdersView user={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}

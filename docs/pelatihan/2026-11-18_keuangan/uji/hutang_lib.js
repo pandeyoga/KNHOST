@@ -60,6 +60,21 @@ async function tungguTeks(r, testId, re, timeout = 15000) {
   throw new Error(`teks ${re} tidak muncul di ${testId} (terakhir: "${last.slice(0, 200)}")`);
 }
 
+/** Meja gelombang 1 (§5.1) — kabar hasil aksi meja = toast (Radix `li[role=status]`), bukan bilah `*-desk-toast`. */
+const toastLoc = (r, re) => (re ? r.page.locator('li[role="status"]', { hasText: re }) : r.page.locator('li[role="status"]')).first();
+
+/** Tunggu toast berteks `re` muncul; kembalikan teksnya. */
+async function tungguToast(r, re, timeout = 15000) {
+  const t0 = Date.now();
+  let last = "";
+  while (Date.now() - t0 < timeout) {
+    try { last = (await toastLoc(r, re).innerText({ timeout: 500 })).replace(/\s+/g, " ").trim(); } catch (_) { last = ""; }
+    if (re.test(last)) return last;
+    await sleep(300);
+  }
+  throw new Error(`toast ${re} tidak muncul (terakhir: "${last.slice(0, 200)}")`);
+}
+
 /** Klik menu samping: buka grup dulu bila itemnya tersembunyi (grup tertutup). */
 async function menu(r, groupId, itemId) {
   const item = r.tid(`nav-${itemId}`);
@@ -89,4 +104,5 @@ async function klikPotret(r, loc, name, opts = {}) {
   await loc.first().click();
 }
 
-module.exports = { KSC, REK_BCA, pilih, setuju, jurnalDari, cekJurnal, rekening, tungguTeks, menu, sorot, lepas, klikPotret };
+module.exports = { KSC, REK_BCA, pilih, setuju, jurnalDari, cekJurnal, rekening, tungguTeks, tungguToast, toastLoc, menu, sorot,
+  lepas, klikPotret };

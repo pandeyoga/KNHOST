@@ -260,6 +260,9 @@ export const HUB_TABS = {
   // pertama "Perlu Tindakan" (dulu menu lepas & butir Meja Peran). Finance lewat ROLE_NAV.
   "finance-tower": [
     { view: "finance-desk",      label: "Perlu Tindakan",        roles: ["admin", "manager"] },
+    // Meja gelombang 1 (R4) — tab Pantau Meja Keuangan (Pelacak SO, retur internal) sebagai tab hub saudara: meja yang
+    // sudah menjadi tab hub tidak boleh punya tab Antrean/Pantau sendiri (tingkat ketiga, INV-UI-14).
+    { view: "finance-desk-pantau", label: "Pantau",              roles: ["admin", "manager"] },
     { view: "finance-tower",     label: "Posisi",                roles: ["admin", "manager"] },
     { view: "bi-finance",        label: "Analisis",              roles: ["admin", "manager"] },
   ],

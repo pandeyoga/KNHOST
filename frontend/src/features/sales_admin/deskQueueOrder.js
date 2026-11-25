@@ -6,7 +6,10 @@
  * tenggelam (KN_08 — progressive disclosure). Modul ini memisahkan keduanya:
  *   · `filled` — antrean ber-isi, diurutkan **umur tertua dulu**, lalu **nilai rupiah terbesar**, lalu
  *     **jumlah dokumen terbanyak**; seri terakhir mengikuti urutan server (stabil).
- *   · `empty`  — antrean kosong, urutan server; dilipat menjadi satu baris ringkas (`DeskEmptyQueues`).
+ *   · `empty`  — antrean kosong, urutan server.
+ * Meja gelombang 1 (spek 2026-11-25 §5.1–§5.2): kartu ukuran tetap digambar berurutan `orderDeskQueues` (berisi
+ * terurut, lalu kosong); antrean PANTAU (bukan pekerjaan meja ini, hanya dipantau) dipisah ke tab Pantau
+ * (`splitPantau`). Meja Keuangan tetap tidak menggambar kelompok kosong (MN-T2) dan memakai pembandingnya sendiri.
  *
  * Yang TIDAK dilakukan di sini: menghitung ulang apa pun. `count`, `total_value`, `oldest_age_days`
  * dibaca apa adanya dari server (`work_desk_service._queue`) — modul ini hanya memilih URUTAN.
@@ -35,4 +38,26 @@ export function splitDeskQueues(queues) {
   list.forEach((q, i) => (num(q?.count) > 0 ? filled : empty).push({ q, i }));
   filled.sort((x, y) => compareFilledQueues(x.q, y.q) || x.i - y.i);
   return { filled: filled.map((x) => x.q), empty: empty.map((x) => x.q) };
+}
+
+/** Urutan tampil kartu meja: antrean berisi (terurut `compareFilledQueues`), lalu antrean kosong (urutan server). */
+export function orderDeskQueues(queues) {
+  const { filled, empty } = splitDeskQueues(queues);
+  return [...filled, ...empty];
+}
+
+/** Antrean yang hanya DIPANTAU meja itu (pekerjaannya milik orang lain) — tampil di tab Pantau, bukan Antrean. */
+export const PANTAU_QUEUE_IDS = {
+  sales_admin: ["menunggu_manajer"],
+  sample_admin: ["di_gudang", "kirim_ambil", "selesai"],
+};
+
+/** Pisahkan antrean meja `deskKey` menjadi { antrean, pantau }; keduanya urutan server, masukan tidak diubah. */
+export function splitPantau(queues, deskKey) {
+  const ids = PANTAU_QUEUE_IDS[deskKey] || [];
+  const list = Array.isArray(queues) ? queues : [];
+  return {
+    antrean: list.filter((q) => !ids.includes(q?.id)),
+    pantau: list.filter((q) => ids.includes(q?.id)),
+  };
 }

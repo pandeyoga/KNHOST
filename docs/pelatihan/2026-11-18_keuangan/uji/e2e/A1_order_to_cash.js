@@ -18,7 +18,7 @@ const { Run, api, assert, sleep, rp, num, peserta, akunPeserta, mongo } = requir
 const { bersihkanHasil, sorot, lepas, klikSorot, bukaMenu, bukaPenagihan, barisSo, sisaSo, kwitansiTerakhir,
   jurnalKwitansi, cekJurnalSeimbang } = require(path.join(U, "piutang_lib.js"));
 const kb = require(path.join(U, "kasbank_lib.js"));
-const { tungguTeks } = require(path.join(U, "hutang_lib.js"));
+const { tungguTeks, tungguToast, toastLoc } = require(path.join(U, "hutang_lib.js"));
 const bk = require(path.join(U, "buku_lib.js"));
 
 const NO = peserta("22");
@@ -365,6 +365,7 @@ async function checkoutSampaiReview(r, nama = "") {
       "Jendela 'Periksa & lepas ke gudang · KSC/SO-…': data pesanan (kiri) + daftar periksa (kanan); catatan kuning NPWP (tidak menghalangi)", async () => {
         await masuk(r, "salesadmin");
         await r.tid("sales-admin-desk").waitFor();
+        await r.tid("desk-tabs-pantau").click();   // meja gelombang 1 — Pelacak SO di tab Pantau
         await r.tid("desk-so-tracker-search").fill(ctx.so1.number);
         await r.idle(600);
         const row = r.tid(`desk-so-tracker-row-${ctx.so1.id}`);
@@ -385,7 +386,7 @@ async function checkoutSampaiReview(r, nama = "") {
       "Pesan 'KSC/SO-… diperiksa & dilepas ke gudang — tugas ambil sudah lahir.'; Pelacak SO kini 'Dikonfirmasi' dan menunggu Gudang", async () => {
         await r.tid("verify-note").fill("Alamat & termin dicek; pelanggan minta faktur pajak");
         await klikSorot(r, r.tid("verify-submit"), "admin-periksa-lepas");
-        const msg = await tungguTeks(r, "desk-toast", /dilepas ke gudang/, 20000);
+        const msg = await tungguToast(r, /dilepas ke gudang/, 20000);
         const so = soDoc(ctx.so1.id);
         assert(so.status === "confirmed", `status SO ${so.status}`);
         const task = mongo(`return db.wms_tasks.findOne({order_id:"${ctx.so1.id}",flow_type:"outbound"},{_id:0,id:1,status:1,quantity:1})`);
@@ -397,7 +398,7 @@ async function checkoutSampaiReview(r, nama = "") {
         assert(!/Periksa & lepas$/.test(row), `pelacak masih basi: ${row}`);
         // … dan Keep & Pending ikut dimuat ulang: SO yang sudah diperiksa keluar dari "Keep".
         await r.page.waitForFunction((id) => !document.querySelector(`[data-testid="kp-keep-row-${id}"]`), ctx.so1.id, { timeout: 20000 });
-        await bk.potret(r, "admin-dilepas", [r.tid("desk-toast"), r.tid(`desk-so-tracker-row-${ctx.so1.id}`)]);
+        await bk.potret(r, "admin-dilepas", [toastLoc(r, /dilepas ke gudang/), r.tid(`desk-so-tracker-row-${ctx.so1.id}`)]);
         return `${msg} · pelacak: ${row.slice(0, 160)}`;
       });
 
@@ -543,7 +544,7 @@ async function checkoutSampaiReview(r, nama = "") {
         await row.waitFor({ timeout: 20000 });
         await sorot(row);
         await klikSorot(r, r.tid(`fin-desk-faktur_pajak-action-${ctx.so1.id}`), "fin-faktur-terbitkan", { locator: kartuFp });
-        const msg = await tungguTeks(r, "fin-desk-toast", /diterbitkan/, 20000);
+        const msg = await tungguToast(r, /diterbitkan/, 20000);   // [Terbitkan] = aksi di tempat; hasil = toast
         const fkt = mongo(`return db.tax_invoices.findOne({order_id:"${ctx.so1.id}",status:"normal"},{_id:0})`);
         assert(fkt && msg.includes(fkt.number), `faktur: ${msg}`);
         assert(dekat(fkt.ppn_amount, ctx.so1.ppn_amount), `PPN faktur ${fkt.ppn_amount} ≠ SO ${ctx.so1.ppn_amount}`);
@@ -551,7 +552,7 @@ async function checkoutSampaiReview(r, nama = "") {
           "PPN faktur ≠ PPN Keluaran jurnal");
         assert(mongo(`return db.journal_entries.countDocuments({source_id:"${fkt.id}"})`) === 0, "faktur pajak membuat jurnal");
         ctx.fkt = fkt;
-        await bk.potret(r, "fin-faktur-terbit", [r.tid("fin-desk-toast")]);
+        await bk.potret(r, "fin-faktur-terbit", [toastLoc(r, /diterbitkan/)]);
         return `${msg} · DPP nilai lain ${rp(fkt.dpp)} · PPN ${rp(fkt.ppn_amount)} · jurnal faktur 0`;
       });
 

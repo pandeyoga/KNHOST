@@ -26,6 +26,8 @@ import PeriodUnlockBanner from "./components/PeriodUnlockBanner";
 import ScopeReadOnlyBanner from "./components/ScopeReadOnlyBanner";
 import ArchivedReadOnlyBanner from "./components/ArchivedReadOnlyBanner";
 import { EntityScopeProvider } from "./context/EntityScopeContext";
+import { PageHelpButton, PageHelpProvider } from "./context/PageHelpContext";   // meja gelombang 1 — ? di samping judul
+import { kirimMuatUlang } from "./utils/refreshSignal";
 import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
 import PublicVerify from "./features/documents/PublicVerify";
@@ -308,15 +310,17 @@ function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
+      <PageHelpProvider>
       <div className="app-main">
         <TopBar
           title={pageMeta.title}
+          titleAddon={<PageHelpButton />}
           kicker={pageMeta.kicker}
           crumbs={breadcrumbFor(activeView, effectiveNavId, user?.role)}
           scopeLabel={groupScope ? "Semua Badan Usaha" : entityShortById(archivedActive ? archivedEntities : entities, selectedEntity)}
           onToggleSidebar={handleToggleSidebar}
           onAskKn={can(user?.permissions, "ai", "view") ? () => handleNavSelect("tanya-kn", "tanya-kn") : null}
-          onSync={loadAll}
+          onSync={() => { loadAll(); kirimMuatUlang(); }}
           syncing={loading}
           notice={notice}
           // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
@@ -455,6 +459,7 @@ function App() {
           </ErrorBoundary>
         </main>
       </div>
+      </PageHelpProvider>
 
       {/* Command Palette (Ctrl+K) — lompat cepat ke menu mana pun */}
       <CommandPalette role={user?.role} onNavigate={handleNavSelect} />

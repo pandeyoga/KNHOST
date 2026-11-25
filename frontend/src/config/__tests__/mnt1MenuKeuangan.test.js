@@ -51,7 +51,8 @@ describe("U1 — Keuangan 5 entri + Akuntansi & Pajak 5 entri (admin); grup Kas 
 describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
     // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih). S5 (pelatihan 18 Nov) — + Hutang per Pemasok.
-    ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
+    // Meja gelombang 1 (R4) — + Pantau (tab hub saudara Meja Keuangan, bukan tab tingkat ketiga).
+    ["finance-tower", 4], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
     // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian; KM-T5 — − Kinerja Sales, − Komisi Otomatis.
     // KA-9 — + Skema & Tarif.
     ["hr-kpi-hub", 5], ["purchase-orders", 7],
@@ -59,7 +60,7 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
   });
   test("label tab persis tabel lama → baru", () => {
-    expect(labels("finance-tower")).toEqual(["Perlu Tindakan", "Posisi", "Analisis"]);
+    expect(labels("finance-tower")).toEqual(["Perlu Tindakan", "Pantau", "Posisi", "Analisis"]);
     expect(labels("ar-aging")).toEqual(["Saldo & Umur", "Penagihan & Penerimaan", "Rencana & Denda",
       "Titipan & Saldo Kredit", "Kredit & Plafon", "Kasus"]);
     expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)",   // PK-28
@@ -189,7 +190,7 @@ describe("U7–U10 — menu per peran", () => {
   });
   test("Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif", () => {
     const m = menu("manager");
-    expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-tower", "bi-finance"]);
+    expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-desk-pantau", "finance-tower", "bi-finance"]);
     // KM-T1, KM-T2; KM-T3 — + Lembar Insentif; KM-T5 — Kinerja Sales, Komisi Otomatis, Skema (Arsip) dicabut; KA-9 — +
     // Skema & Tarif.
     expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "incentive-scheme", "incentive-setup", "cs-kpi"]);

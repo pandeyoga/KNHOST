@@ -36,8 +36,10 @@ const { REK_BCA, jurnalDari, cekJurnal, tungguTeks, menu, sorot, lepas, klikPotr
     return t;
   });
 
-  await r.step(2, "Finance", "Klik [[Tinjau]]", "Penjualan › Pesanan Sample terbuka di SOS itu: BERBAYAR, Menunggu ACC bayar, rincian Subtotal · PPN · Total, catatan \"Pembayaran belum disetujui Finance/Admin Sample.\"", async () => {
+  await r.step(2, "Finance", "Klik [[Tinjau]] → di pop-up rincian baris klik [[Tinjau]]", "Penjualan › Pesanan Sample terbuka di SOS itu: BERBAYAR, Menunggu ACC bayar, rincian Subtotal · PPN · Total, catatan \"Pembayaran belum disetujui Finance/Admin Sample.\"", async () => {
+    // Meja gelombang 1 — aksi pindah layar membuka pop-up rincian dulu; tombol aksinya di sana yang membuka layar.
     await r.tid(`fin-desk-sample_bayar-action-${s.sos_id}`).click();
+    await r.tid("fin-desk-detail-action").click();
     await r.tid("sample-orders-view").waitFor();
     await tungguTeks(r, "sample-detail-number", new RegExp(sos0.number.replace(/[/]/g, "\\/")));
     const tot = await r.text("sample-detail-totals");

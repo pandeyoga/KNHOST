@@ -56,12 +56,13 @@ const KET = "Uji K-FIN-01 — Finance setara Manajer";
   let je = null;
 
   try {
-    await r.step(1, "Finance", `Login ${akun}@ → menu [[Meja Saya]]`, "Judul 'Meja Manajer' (antrean keputusan Manajer); menu samping memuat Tutup Buku, Pusat Persetujuan, SDM", async () => {
+    await r.step(1, "Finance", `Login ${akun}@ → menu [[Meja Saya]]`, "Judul halaman 'Meja Saya' (antrean keputusan Manajer); menu samping memuat Tutup Buku, Pusat Persetujuan, SDM", async () => {
       await r.login(akun);
       await r.go("my-desk");
-      await r.tid("my-desk-title").waitFor({ timeout: 20000 });
-      const judul = await r.text("my-desk-title");
-      assert(/Meja Manajer/.test(judul), `judul meja: ${judul}`);
+      // Meja gelombang 1 (§5.1) — satu kepala: judul meja = judul halaman di bilah atas (tanpa judul kedua di meja).
+      await r.tid("my-desk").waitFor({ timeout: 20000 });
+      const judul = await r.text("page-title");
+      assert(/Meja Saya/.test(judul), `judul meja: ${judul}`);
       await r.idle(800);
       await r.shot("meja-manajer");
       return judul;

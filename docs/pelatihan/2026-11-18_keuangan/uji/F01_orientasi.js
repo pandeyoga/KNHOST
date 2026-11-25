@@ -69,10 +69,10 @@ const TAHUN = new Date().getFullYear();
           assert(Math.abs(n - harap) <= 2, `kartu ${card}: layar ${n} ≠ API ${harap}`);
           out.push(`${card}=${n}`);
         }
-        const sum = await r.text("fin-desk-summary");
-        await potret(r, "kepala-kartu", [r.tid("fin-desk-summary"), r.tid("fin-desk-count-faktur_pajak"), r.tid("fin-desk-count-uang_masuk"),
+        // Meja gelombang 1 (§5.1) — ringkasan "n dokumen · n kelompok" di kepala meja dihapus (satu kepala = judul halaman).
+        await potret(r, "kepala-kartu", [r.tid("fin-desk-count-faktur_pajak"), r.tid("fin-desk-count-uang_masuk"),
           r.tid("fin-desk-total-uang_masuk")]);
-        return `${out.join(" · ")} · ringkasan '${sum}'`;
+        return out.join(" · ");
       });
 
     await r.step(4, "Finance", "Kartu 'Uang masuk perlu dicatat': ketik nama pelanggan Anda di kotak *Cari* (mis. 'Toko Kain Peserta " + NO + "')",
@@ -103,6 +103,7 @@ const TAHUN = new Date().getFullYear();
       "Form 'Terima pembayaran' terbuka dengan nama pelanggan Anda; tombol [Batal] menutup tanpa mencatat apa pun",
       async () => {
         const sebelum = mongo(`return db.ar_receipts.countDocuments({entity_id:"${KSC}"})`);
+        // Meja gelombang 1 — "Terima pembayaran" aksi DI TEMPAT (`receipt`): tombol baris langsung membuka formnya.
         await r.tid(`fin-desk-uang_masuk-action-${soL.so_id}`).click();
         await r.tid("ar-receipt-customer-name").waitFor();
         await r.idle(800);

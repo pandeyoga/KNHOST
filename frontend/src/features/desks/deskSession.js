@@ -3,6 +3,7 @@
 //   halaman meja   `kn.meja.<deskKey>`                  → { tab, scrollY, returnPending }
 // Setiap baca/tulis dibungkus try/catch: mode privat, kuota penuh, atau penyimpanan diblokir tidak boleh
 // mematahkan meja — paling buruk statusnya tidak diingat.
+import { useEffect, useRef } from "react";
 
 const KARTU = "kn.meja.kartu.";
 const MEJA = "kn.meja.";
@@ -29,4 +30,31 @@ export function writeDeskState(key, patch) {
   } catch {
     /* penyimpanan penuh/diblokir — status tidak diingat, meja tetap jalan */
   }
+}
+
+/**
+ * Tandai bahwa pengguna meninggalkan meja ke layar lain (aksi pindah layar, "Buka layar penuh", tautan Pelacak):
+ * posisi gulir disimpan dan meja akan menggulir kembali ke sana saat dibuka lagi (`useDeskScrollRestore`).
+ */
+export function markDeskReturn(deskKey) {
+  let scrollY = 0;
+  try { scrollY = window.scrollY || 0; } catch { scrollY = 0; }
+  writeDeskState(pageStateKey(deskKey), { scrollY, returnPending: true });
+}
+
+/**
+ * Saat `ready` pertama kali benar (antrean sudah tergambar) dan ada tanda kembali, gulir ke posisi tersimpan lalu hapus
+ * tandanya — membuka meja biasa (tanpa tanda) tidak menggulir apa pun.
+ */
+export function useDeskScrollRestore(deskKey, ready) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (!ready || done.current) return;
+    done.current = true;
+    const key = pageStateKey(deskKey);
+    const s = readDeskState(key);
+    if (!s.returnPending) return;
+    try { window.scrollTo(0, Number(s.scrollY) || 0); } catch { /* lingkungan tanpa gulir — abaikan */ }
+    writeDeskState(key, { returnPending: false });
+  }, [deskKey, ready]);
 }

@@ -3,7 +3,7 @@
 // keluaran sudah terbit saat barang dikirim), jadi aman dikerjakan sebelum/sesudah skenario pelunasan F02.
 //   node docs/pelatihan/2026-11-18_keuangan/uji/F13_faktur_pajak.js        (bawaan peserta 04; KN_PESERTA=43 …)
 const { Run, assert, rp, num, kartu, peserta, akunPeserta, mongo } = require("./lib");
-const { tungguTeks, menu, sorot, lepas } = require("./hutang_lib");
+const { tungguTeks, tungguToast, toastLoc, menu, sorot, lepas } = require("./hutang_lib");
 
 /** NSFP latihan unik per peserta (16 digit): 010 026 1118 0000 NN → mis. peserta 04 = 0100261118000004. */
 const nsfpLatihan = (no) => `01002611180000${no}`;
@@ -38,17 +38,18 @@ const nsfpLatihan = (no) => `01002611180000${no}`;
     return t;
   });
 
-  await r.step(2, "Finance", "Klik [[Terbitkan]] pada baris SO itu", "Bilah hijau \"Faktur Pajak FKT-… diterbitkan untuk KSC/SO-…\"; baris hilang dari kartu", async () => {
+  await r.step(2, "Finance", "Klik [[Terbitkan]] pada baris SO itu", "Toast hijau \"Faktur Pajak FKT-… diterbitkan untuk KSC/SO-…\"; baris hilang dari kartu", async () => {
+    // Meja gelombang 1 — [Terbitkan] aksi DI TEMPAT (`issue_tax`): langsung jalan; hasilnya toast (bukan bilah di puncak).
     await r.tid(`fin-desk-faktur_pajak-action-${so.so_id}`).click();
-    const msg = await tungguTeks(r, "fin-desk-toast", /diterbitkan/, 20000);
+    const msg = await tungguToast(r, /diterbitkan/, 20000);
     fkt = mongo(`return db.tax_invoices.findOne({order_id:"${so.so_id}",status:"normal"},{_id:0})`);
     assert(fkt, "faktur tidak tersimpan");
     assert(msg.includes(fkt.number) && msg.includes(order.number), `pesan: ${msg}`);
     await r.idle(800);
     assert(await r.tid(`fin-desk-faktur_pajak-row-${so.so_id}`).count() === 0, "baris SO masih ada di kartu");
-    await sorot(r.tid("fin-desk-toast"));
+    await sorot(toastLoc(r, /diterbitkan/));
     await r.shot("faktur-terbit");
-    await lepas(r.tid("fin-desk-toast"));
+    await lepas(toastLoc(r, /diterbitkan/));
     return `${msg} · kode ${fkt.kode_transaksi} · DPP nilai lain ${rp(fkt.dpp)} · PPN ${rp(fkt.ppn_amount)}`;
   });
 

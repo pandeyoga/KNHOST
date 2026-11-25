@@ -466,6 +466,7 @@ async function bukaTagihan(r, bill) {
       await lepas(r.tid("my-desk-queue-eskalasi_keputusan"));
       const aksi = r.tid(`my-desk-action-${K.task2}`);
       await ((await aksi.isVisible().catch(() => false)) ? aksi : baris).click();
+      await r.tid("my-desk-detail-action").click();   // meja gelombang 1 — aksi pindah layar dari pop-up rincian
       await r.tid("escalation-dashboard").waitFor({ timeout: 15000 });
       await r.idle(800);
       await klikPotret(r, r.tid(`resolve-task-${K.task2}`), "manajer-tinjau-eskalasi");

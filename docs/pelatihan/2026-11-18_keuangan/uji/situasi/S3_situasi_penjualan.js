@@ -24,7 +24,7 @@ const { Run, api, assert, sleep, rp, num, peserta, akunPeserta, mongo, kartu } =
 const { bersihkanHasil, sorot, lepas, klikSorot, bukaMenu, bukaPenagihan, barisSo, sisaSo, cekJurnalSeimbang,
   pilih } = require(path.join(U, "piutang_lib.js"));
 const kb = require(path.join(U, "kasbank_lib.js"));
-const { tungguTeks } = require(path.join(U, "hutang_lib.js"));
+const { tungguTeks, tungguToast, toastLoc } = require(path.join(U, "hutang_lib.js"));
 const bk = require(path.join(U, "buku_lib.js"));
 
 const NO = peserta("72");
@@ -183,6 +183,7 @@ async function buatSo(r, nama) {
 async function periksaLepas(r, so, nama) {
   await masuk(r, "salesadmin");
   await r.tid("sales-admin-desk").waitFor();
+  await r.tid("desk-tabs-pantau").click();   // meja gelombang 1 — Pelacak SO di tab Pantau
   await r.tid("desk-so-tracker-search").fill(so.number);
   await r.idle(600);
   const row = r.tid(`desk-so-tracker-row-${so.id}`);
@@ -194,7 +195,7 @@ async function periksaLepas(r, so, nama) {
   await r.tid("verify-checklist").waitFor({ timeout: 20000 });
   await r.tid("verify-note").fill("Alamat, termin & isi pesanan dicek");
   await r.tid("verify-submit").click();
-  const msg = await tungguTeks(r, "desk-toast", /dilepas ke gudang/, 20000);
+  const msg = await tungguToast(r, /dilepas ke gudang/, 20000);
   const s = soDoc(so.id);
   assert(s.status === "confirmed", `status SO ${s.status}`);
   const task = mongo(`return db.wms_tasks.findOne({order_id:"${so.id}",flow_type:"outbound"},{_id:0,id:1,status:1,quantity:1})`);
@@ -490,14 +491,14 @@ async function soTerkirimApi(cust, prod) {
           await row.waitFor({ timeout: 20000 });
           await sorot(row);
           await klikSorot(r, r.tid(`fin-desk-faktur_pajak-action-${ctx.A.so.id}`), "a-faktur");
-          const msg = await tungguTeks(r, "fin-desk-toast", /diterbitkan/, 20000);
+          const msg = await tungguToast(r, /diterbitkan/, 20000);   // [Terbitkan] = aksi di tempat; hasil = toast
           const fkt = mongo(`return db.tax_invoices.findOne({order_id:"${ctx.A.so.id}",status:"normal"},{_id:0})`);
           assert(fkt && msg.includes(fkt.number), `faktur: ${msg}`);
           const ppnBuku = r2(sisi(ctx.A.rev1, "2-1200", "K") + sisi(ctx.A.rev2, "2-1200", "K"));
           assert(dekat(fkt.ppn_amount, ppnBuku), `PPN faktur ${fkt.ppn_amount} ≠ PPN keluaran 2 SJ ${ppnBuku}`);
           assert(mongo(`return db.journal_entries.countDocuments({source_id:"${fkt.id}"})`) === 0, "faktur membuat jurnal");
           ctx.A.fkt = fkt;
-          await bk.potret(r, "a-faktur-terbit", [r.tid("fin-desk-toast")]);
+          await bk.potret(r, "a-faktur-terbit", [toastLoc(r, /diterbitkan/)]);
           return `${msg} · PPN ${rp(fkt.ppn_amount)} = ${rp(sisi(ctx.A.rev1, "2-1200", "K"))} + ${rp(sisi(ctx.A.rev2, "2-1200", "K"))}`;
         });
 

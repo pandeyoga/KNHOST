@@ -7,7 +7,7 @@
 // Data: tagihan F11 & tagihan kontrabon peserta (belum dibayar, belum dikontrabon), SO peserta tanpa faktur pajak, dan
 // PO 2 yard yang diterima gudang tetapi belum ditagih (`v9:po_terima`, blok tagihan). Hasil → uji/hasil/V9/hutang-<blok>/.
 const { Run, assert, kartu, akunPeserta, rp, num, sleep, mongo } = require("../lib");
-const { REK_BCA, pilih, setuju, jurnalDari, tungguTeks } = require("../hutang_lib");
+const { REK_BCA, pilih, setuju, jurnalDari, tungguTeks, tungguToast } = require("../hutang_lib");
 const k9 = require("./v9lib");
 
 const KSC = "&entity=ent_ksc";
@@ -389,7 +389,7 @@ async function blokFaktur(r, d, NO) {
     await r.tid("fin-desk-search-faktur_pajak").fill(soFaktur.so);
     await r.tid(`fin-desk-faktur_pajak-action-${soFaktur.so_id}`).waitFor({ timeout: 20000 });
     await r.tid(`fin-desk-faktur_pajak-action-${soFaktur.so_id}`).click();
-    await r.tid("fin-desk-toast").waitFor({ timeout: 20000 });
+    await tungguToast(r, /diterbitkan/, 20000);   // meja gelombang 1 — hasil aksi di tempat = toast
     fkt = mongo(`return db.tax_invoices.find({order_id:"${soFaktur.so_id}",status:{$ne:"batal"}},{_id:0,id:1,number:1,status:1}).sort({created_at:-1}).limit(1).toArray()[0]||null`);
     assert(fkt, "faktur tidak terbit");
     await r.go("tax-invoices", KSC);

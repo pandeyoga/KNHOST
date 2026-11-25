@@ -2,11 +2,10 @@
  * FinanceDesk — Keuangan › Beranda Keuangan › **Perlu Tindakan** (MN-T2; dulu "Meja Finance" FASE E-8 apa adanya).
  *
  * SATU daftar berkelompok. Tiap kelompok tampil hanya bila pengguna memegang izin modul sumbernya (`PERLU_TINDAKAN`)
- * DAN kelompok itu berisi; tiap baris punya satu tombol yang membuka layar penanganannya (dua dikerjakan langsung di
- * sini seperti dulu: terbitkan Faktur Pajak dan terima pembayaran lewat satu form `ReceivePaymentModal`, MN-T3).
- * MN-T3 — baris "Uang masuk perlu dicatat" bertombol **Terima pembayaran** (pelanggan + pesanan terisi); nama pelanggan
- * membuka kartu pelanggan; baris "Hutang jatuh tempo" (PO bersisa) bertombol **Bayar** yang membuka kartu pemasok PO itu
- * (tagihannya dibayar dari sana dengan satu form `PaySupplierModal`). Sumber angka tidak berubah:
+ * DAN kelompok itu berisi; tiap baris punya satu tombol. Aksi di tempat (`IN_PLACE`): terbitkan Faktur Pajak, terima
+ * pembayaran lewat satu form `ReceivePaymentModal` (MN-T3), dan "Bayar" hutang jatuh tempo yang membuka kartu pemasok
+ * (tagihannya dibayar dari sana dengan satu form `PaySupplierModal`). Aksi lain membuka pop-up rincian baris dulu.
+ * MN-T3 — nama pelanggan baris "Uang masuk perlu dicatat" membuka kartu pelanggan. Sumber angka:
  *  · antrean meja `GET /api/finance/desk` (`payment_variance.decide`) — uang masuk, selisih bayar, faktur pajak, nota
  *    kredit, hutang (PO) jatuh tempo ≤ 7 hari, denda, piutang lewat jatuh tempo, sample berbayar, retur;
  *  · papan hutang `GET /api/home/finance` (`contra_bon.view` / `vendor_bill.view`, PK-17) — kontrabon menunggu
@@ -15,19 +14,27 @@
  * Keadaan: memuat · galat per sumber (kotak merah + Coba lagi; TIDAK pernah berbunyi "tidak ada yang perlu ditindak")
  * · kosong "Tidak ada yang perlu ditindak hari ini." hanya bila semua sumber terbaca dan semua kelompok kosong.
  * Uang muka pesanan belum dikirim (dulu antrean pantau di meja ini) = kolom di Piutang › Titipan & Saldo Kredit.
+ *
+ * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
+ * gulir). Meja ini SUDAH tab hub Beranda Keuangan, jadi tidak menggambar tab Antrean/Pantau sendiri (R4: tanpa tab
+ * tingkat ketiga): Pantau (kartu retur internal + Pelacak SO) adalah tab hub saudara `finance-desk-pantau` yang
+ * merender komponen ini dengan `tab="pantau"`.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { compareFilledQueues } from "../sales_admin/deskQueueOrder";   // perapian Meja Finance 14 Nov: urutan kelompok
-import { ListChecks, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import { useAppNav } from "../../context/AppNavContext";
+import { toast } from "@/hooks/use-toast";
 import { boardRowLink } from "../../config/waitingBoards";
-import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
+import ReturnDeskSummaryCard from "../home/ReturnDeskSummaryCard";
+import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
+import { markDeskReturn } from "../desks/deskSession";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";
 import { CustomerCardLink } from "./cards/partyCards";
@@ -117,21 +124,36 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
   return out;
 }
 
-export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
+const DESK_KEY = "finance";
+const P = "fin-desk";
+const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "supplier_card"]);
+const HELP = (
+  <>
+    Pekerjaan uang yang menunggu Anda, dikelompokkan per jenis. Kelompok hanya tampil bila Anda berhak atas modulnya
+    dan ada isinya; tiap baris membuka layar penanganannya.
+  </>
+);
+
+export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpenDocument, tab = "antrean" }) {
   const perms = currentUser?.permissions || {};
   const { go, canOpen, openSupplierCard, cardsEnabled } = useAppNav();
-  const pakaiDesk = can(perms, "payment_variance", "decide");
-  const pakaiPapan = can(perms, "contra_bon", "view") || can(perms, "vendor_bill", "view");
-  const pakaiPosting = can(perms, "accounting", "view") && canOpen("posting-failures");
+  const pantauTab = tab === "pantau";
+  // Tab Pantau tidak memuat antrean (isinya kartu retur internal & Pelacak SO yang memuat datanya sendiri).
+  const pakaiDesk = !pantauTab && can(perms, "payment_variance", "decide");
+  const pakaiPapan = !pantauTab && (can(perms, "contra_bon", "view") || can(perms, "vendor_bill", "view"));
+  const pakaiPosting = !pantauTab && can(perms, "accounting", "view") && canOpen("posting-failures");
   const [src, setSrc] = useState({ desk: null, boards: null, posting: null });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(!pantauTab);
+  const [refreshingId, setRefreshingId] = useState("");
+  const [tick, setTick] = useState(0);
   const [busyRef, setBusyRef] = useState("");
   const [payRow, setPayRow] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
+  const load = useCallback(async ({ quiet = false } = {}) => {
+    if (pantauTab) return;
+    if (!quiet) setLoading(true);
     const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
     const tugas = {
       desk: pakaiDesk ? financeDesk(params) : null,
@@ -149,8 +171,8 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     }));
     setSrc(Object.fromEntries(hasil.map(([k, d]) => [k, d])));
     setErrors(Object.fromEntries(hasil.filter(([, , e]) => e).map(([k, , e]) => [k, e])));
-    setLoading(false);
-  }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting]);
+    if (!quiet) setLoading(false);
+  }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting, pantauTab]);
   useEffect(() => { load(); }, [load]);
 
   const groups = useMemo(() => susunKelompok(perms, src, canOpen).map((g) => ({ ...g, rows: g.rows.map((r) => {
@@ -169,90 +191,98 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     .map((g, i) => ({ g, i })).sort((x, y) => compareFilledQueues(x.g, y.g) || x.i - y.i).map((x) => x.g),
   [perms, src, canOpen, cardsEnabled]);
 
-  function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 5000); }
+  async function reloadQueue(queueId) {
+    setRefreshingId(queueId || "");
+    try { await load({ quiet: true }); } finally { setRefreshingId(""); }
+  }
+  function done(msg, queueId) {
+    toast({ title: msg });
+    reloadQueue(queueId);
+  }
 
-  async function doIssueTax(row) {
+  function open(link) {
+    markDeskReturn(DESK_KEY);
+    onOpenDocument?.(link);
+  }
+
+  /** Layar penanganan baris (aksi pindah layar & "Buka layar penuh"). */
+  function navigate(row) {
+    if (row._view) { markDeskReturn(DESK_KEY); go(row._view, { preset: { from: { view: "finance-desk" } } }); return; }
+    if (row._link) { open(row._link); return; }
+    open(rowLink(row, row._queue, DESK_KEY));
+  }
+
+  async function doIssueTax(row, queueId) {
     setBusyRef(row.ref_id);
     try {
       const res = await issueTaxInvoice(row.ref_id);
-      flash(`Faktur Pajak ${res?.number || ""} diterbitkan untuk ${row.number}.`);
-      await load();
+      done(`Faktur Pajak ${res?.number || ""} diterbitkan untuk ${row.number}.`, queueId);
     } catch (e) {
       setErrors((x) => ({ ...x, aksi: apiErrorText(e, "Gagal menerbitkan Faktur Pajak.") }));
     } finally { setBusyRef(""); }
   }
 
-  function handleAction(row) {
-    if (row.action_kind === "issue_tax") { doIssueTax(row); return; }
+  function handleAction(row, queue) {
+    const qid = queue?.id || "";
+    if (row.action_kind === "issue_tax") { doIssueTax(row, qid); return; }
     if (row.action_kind === "receipt") {
-      setPayRow({ customer_id: row.ref_id, customer_name: row.title, order_id: row.order_id });
+      setPayRow({ customer_id: row.ref_id, customer_name: row.title, order_id: row.order_id, qid });
       return;
     }
     if (row.action_kind === "supplier_card") { openSupplierCard(row.supplier_id); return; }
-    if (row._view) { go(row._view, { preset: { from: { view: "finance-desk" } } }); return; }
-    if (row._link) { onOpenDocument?.(row._link); return; }
-    onOpenDocument?.(rowLink(row, row._queue, "finance"));
+    navigate(row);
   }
 
+  const reloadAll = () => { load(); setTick((t) => t + 1); };
   const SUMBER = { desk: "antrean uang masuk & pajak", boards: "antrean hutang pemasok", posting: "posting gagal",
     aksi: "aksi" };
   const galat = Object.entries(errors);
-  const totalItems = groups.reduce((s, g) => s + g.count, 0);
   const adaSumber = pakaiDesk || pakaiPapan || pakaiPosting;
+
+  const antrean = pantauTab ? null : loading && groups.length === 0 ? (
+    <div data-testid={`${P}-loading`} className={DESK_GRID_CLASS}>
+      {[0, 1, 2, 3].map((i) => <DeskQueueCardSkeleton key={i} testPrefix={P} index={i} />)}
+    </div>
+  ) : groups.length === 0 ? (
+    !galat.length && (
+      <div className="section-card section-pad text-center text-fs-13 text-kn-text-2" data-testid={`${P}-empty`}>
+        {adaSumber ? TEKS_KOSONG : "Anda belum punya akses ke antrean keuangan. Minta Admin menambahkan akses yang sesuai."}
+      </div>
+    )
+  ) : (
+    <div className={DESK_GRID_CLASS} data-testid={`${P}-groups`}>
+      {groups.map((g) => (
+        <DeskQueueCard key={g.id} queue={g} busyRef={busyRef} loading={loading || refreshingId === g.id}
+          testPrefix={P} rowTestPrefix={`${P}-${g.id}`} stateKey={`${DESK_KEY}:${g.id}`} inPlace={IN_PLACE}
+          onAction={handleAction} onOpenFull={(row) => navigate(row)} />
+      ))}
+    </div>
+  );
+
+  // Meja gelombang 1 (§5.1) — kartu retur internal (dulu di atas meja, AppViewRouter) dan Pelacak SO (izin `order.view`).
+  const pantau = pantauTab ? (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+      <ReturnDeskSummaryCard key={`ret-${tick}`} selectedEntity={selectedEntity}
+        onNavigate={(t) => { markDeskReturn(DESK_KEY); go(t); }} />
+      {can(perms, "order", "view") && (
+        <SoTrackerCard desk="finance" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
+          onOpen={(r) => open(soTrackerLink(r))} />
+      )}
+    </div>
+  ) : null;
 
   return (
     <div data-testid="finance-desk" className="grid grid-cols-[minmax(0,1fr)] gap-3">
-      {toast && (
-        <div className="notice-bar success" data-testid="fin-desk-toast">
-          <span>{toast}</span><button type="button" onClick={() => setToast("")} aria-label="Tutup">×</button>
-        </div>
-      )}
       <EntityScopeBanner testId="fin-desk-scope" />
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex min-w-0 items-center gap-2">
-            <ListChecks size={15} aria-hidden="true" className="text-kn-action" />
-            <h2 data-testid="fin-desk-title">Perlu Tindakan</h2>
-            {!loading && totalItems > 0 && (
-              <span className="text-fs-12 text-kn-text-2" data-testid="fin-desk-summary">
-                {totalItems} dokumen · {groups.length} kelompok</span>
-            )}
-          </div>
-          <button type="button" data-testid="fin-desk-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
-        </div>
-        <p className="section-body text-fs-12 text-kn-text-2">
-          Pekerjaan uang yang menunggu Anda, dikelompokkan per jenis. Kelompok hanya tampil bila Anda berhak atas
-          modulnya dan ada isinya; tiap baris membuka layar penanganannya.</p>
-      </section>
-
-      {galat.map(([k, msg]) => (
-        <ErrorNotice key={k} testId={`fin-desk-error-${k}`} onRetry={load}
+      {!pantauTab && galat.map(([k, msg]) => (
+        <ErrorNotice key={k} testId={`fin-desk-error-${k}`} onRetry={() => load()}
           onDismiss={k === "aksi" ? () => setErrors((x) => { const n = { ...x }; delete n.aksi; return n; }) : undefined}
           message={k === "aksi" ? msg : `Daftar ${SUMBER[k]} tidak bisa dimuat. ${msg}`} />
       ))}
 
-      {loading && groups.length === 0 ? (
-        <div className="section-card section-pad text-center text-fs-13 text-kn-text-2" role="status" data-testid="fin-desk-loading">
-          Menyusun daftar pekerjaan…</div>
-      ) : groups.length === 0 ? (
-        !galat.length && (
-          <div className="section-card section-pad text-center text-fs-13 text-kn-text-2" data-testid="fin-desk-empty">
-            {adaSumber ? TEKS_KOSONG : "Anda belum punya akses ke antrean keuangan. Minta Admin menambahkan akses yang sesuai."}
-          </div>
-        )
-      ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2" data-testid="fin-desk-groups">
-          {groups.map((g) => (
-            <DeskQueueCard key={g.id} queue={g} busyRef={busyRef} loading={loading}
-              testPrefix="fin-desk" rowTestPrefix={`fin-desk-${g.id}`} onAction={handleAction} />
-          ))}
-        </div>
-      )}
-
-      {pakaiDesk && (
-        <SoTrackerCard desk="finance" selectedEntity={selectedEntity} testPrefix="fin-desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
-      )}
+      <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={src.desk?.not_my_desk || []}
+        tabsInHub tab={pantauTab ? "pantau" : "antrean"} antrean={antrean} pantau={pantau}
+        ready={!loading} onReload={reloadAll} />
 
       {payRow && (
         <ReceivePaymentModal
@@ -260,7 +290,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           customerName={payRow.customer_name}
           preselectOrderId={payRow.order_id}
           onClose={() => setPayRow(null)}
-          onDone={(msg) => { setPayRow(null); flash(msg || "Kwitansi tercatat."); load(); }}
+          onDone={(msg) => { const qid = payRow.qid; setPayRow(null); done(msg || "Kwitansi tercatat.", qid); }}
         />
       )}
     </div>

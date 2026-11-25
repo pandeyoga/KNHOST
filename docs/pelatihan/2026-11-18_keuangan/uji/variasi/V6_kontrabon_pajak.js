@@ -3,7 +3,7 @@
 // Peserta 1 (bawaan 73): kontrabon berpotongan dibayar sebagian lalu lunas; faktur pajak dengan berbagai NSFP; sample
 // berbayar dengan kwitansi kurang dari total. Peserta 2 (bawaan 75): NSFP kembar (beda format); kwitansi sample lebih.
 const { Run, assert, rp, num, kartu, akunPeserta, mongo } = require("../lib");
-const { REK_BCA, pilih, setuju, cekJurnal, tungguTeks, menu } = require("../hutang_lib");
+const { REK_BCA, pilih, setuju, cekJurnal, tungguTeks, tungguToast, menu } = require("../hutang_lib");
 const { ketik, pilihTanggal, intipKonfirmasi, rpLayar, Tabel, jurnalSumber } = require("./hpg_lib");
 
 const P1 = String(process.env.KN_PESERTA || "73").padStart(2, "0");
@@ -220,7 +220,7 @@ async function terbitkanFaktur(r, no) {
   await r.tid("finance-desk").waitFor();
   await r.tid("fin-desk-search-faktur_pajak").fill(order.number);
   await r.tid(`fin-desk-faktur_pajak-action-${so.so_id}`).click();
-  await tungguTeks(r, "fin-desk-toast", /diterbitkan/, 20000);
+  await tungguToast(r, /diterbitkan/, 20000);   // meja gelombang 1 — hasil aksi di tempat = toast
   f = mongo(`return db.tax_invoices.findOne({order_id:"${so.so_id}",status:"normal"},{_id:0})`);
   return { f, order, so };
 }

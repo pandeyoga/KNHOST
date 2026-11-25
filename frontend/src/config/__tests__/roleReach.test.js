@@ -70,13 +70,16 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
 // S5 (pelatihan keuangan 18 Nov, permintaan pemilik "hutang piutang per pihak") — layar BARU Keuangan › Hutang › Hutang
 // per Pemasok (`vendor_bill.view`; bayar = `vendor_bill.pay`/`contra_bon.pay`): admin, manajer, Finance.
 const S5_HUTANG_PEMASOK = ["ap-by-supplier"];
+// Meja gelombang 1 (R4, spek 2026-11-25 §5.1) — layar BARU Keuangan › Beranda Keuangan › Pantau: tab Pantau Meja Keuangan
+// (kartu retur internal + Pelacak SO, dulu di atas antreannya) sebagai tab hub saudara: admin, manajer (Finance mewarisi).
+const MEJA1_PANTAU_KEUANGAN = ["finance-desk-pantau"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
     ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
-    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK],
+    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK, ...MEJA1_PANTAU_KEUANGAN],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
     ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
-    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK,
+    ...KMT3_LEMBAR, ...S5_HUTANG_PEMASOK, ...MEJA1_PANTAU_KEUANGAN,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin

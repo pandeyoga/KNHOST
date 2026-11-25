@@ -1,179 +1,157 @@
 /**
  * SalesAdminDesk — FASE E-8 (E8.7 · US15/US16/US17/US18/US22) · **MEJA ADMIN SALES**.
  *
- * Bukan "menu tambahan", melainkan tempat kerja: 8 antrean, tiap antrean membawa
- * jumlah + nilai + umur tertua, tiap baris membawa SATU tindakan. Mesinnya sudah ada
- * (papan pending SO · backorder · retur · permintaan internal · pengingat penagihan) —
- * layar ini menyatukannya, tidak membangun ulang (E8.11).
+ * Bukan "menu tambahan", melainkan tempat kerja: antrean kerja, tiap antrean membawa jumlah + nilai + umur tertua,
+ * tiap baris membawa SATU tindakan. Mesinnya sudah ada (papan pending SO · backorder · retur · permintaan internal ·
+ * pengingat penagihan) — layar ini menyatukannya, tidak membangun ulang (E8.11).
  *
- * Batas wewenang ditulis di layar, bukan disembunyikan: apa yang BUKAN meja ini
- * (faktur pajak, uang masuk, keputusan selisih bayar) disebut terang-terangan supaya
- * Admin Sales tidak mencari-cari tombol yang memang bukan haknya (E8.10b#2).
+ * Meja gelombang 1 (spek 2026-11-25 §5.1): kerangka bersama `DeskFrame` — satu kepala (judul halaman + ikon ?),
+ * tab Antrean (kartu ukuran tetap, berisi paling mendesak dulu) | Pantau (Pelacak SO, Keep & Pending, aturan grade,
+ * antrean "Menunggu manajer"). Batas wewenang (faktur pajak, uang masuk, keputusan selisih bayar) disebut di ikon ?.
+ * Aksi di tempat (periksa, pemenuhan, lepas) → pop-up aksinya / langsung; hasil sukses = toast, lalu hanya kartu
+ * terkait yang dimuat ulang. Aksi pindah layar menyimpan posisi gulir (`markDeskReturn`) lebih dulu.
  */
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, RefreshCw, ShieldAlert, Inbox, Layers } from "lucide-react";
+import { Inbox } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
-import DeskQueueCard from "./DeskQueueCard";
+import { can } from "../../config/roles";
+import { toast } from "@/hooks/use-toast";
+import DeskQueueCard, { DeskQueueCardSkeleton, inPlaceOf } from "./DeskQueueCard";
 import SoTrackerCard from "./SoTrackerCard";
 import VerifyOrderDialog from "./VerifyOrderDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
+import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
+import { markDeskReturn } from "../desks/deskSession";
+import { orderDeskQueues, splitPantau } from "./deskQueueOrder";
 import { releaseMessage, releaseOrder, rowLink, salesAdminDesk, soTrackerLink } from "./workDeskApi";
 import { apiErrorText } from "../../utils/apiError";
 
+const DESK_KEY = "sales_admin";
+const P = "desk";
+const IN_PLACE = inPlaceOf(["verify", "fulfill", "release"]);
+
+const HELP = (
+  <>
+    Alur pesanan dari ujung ke ujung: <b>periksa kelengkapan</b> → <b>putuskan pemenuhan</b> (stok sendiri · ambil dari
+    PT lain · reorder ke supplier) → <b>konfirmasi</b> → dokumen → proses retur. Konfirmasi rutin adalah wewenang Anda;
+    nilai besar, kredit, dan harga khusus tetap keputusan manajer.
+  </>
+);
+
 export default function SalesAdminDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
+  const perms = currentUser?.permissions || {};
   const [desk, setDesk] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshingId, setRefreshingId] = useState("");
   const [error, setError] = useState("");
-  const [errorAction, setErrorAction] = useState(null);
-  const [toast, setToast] = useState("");
   const [busyRef, setBusyRef] = useState("");
   const [verifyRow, setVerifyRow] = useState(null);
   const [fulfillRow, setFulfillRow] = useState(null);
   // Uji alur A1 (pelatihan 18 Nov) — Pelacak SO & Keep/Pending dimuat sendiri; sesudah aksi meja (periksa & lepas,
-  // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang. Dulu baris SO yang baru dilepas tetap "Dicadangkan · Periksa &
-  // lepas" (dan tetap di "Keep") sampai halaman dimuat ulang, sehingga Admin Sales mengira pelepasan gagal.
+  // pemenuhan, lepas tahanan) keduanya ikut dimuat ulang (`trackerTick`), supaya status SO yang baru dilepas tidak basi.
   const [trackerTick, setTrackerTick] = useState(0);
-  const reloadAll = () => { load(); setTrackerTick((t) => t + 1); };
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, kartu terkait saja yang bertanda (`refreshingId`).
+  const load = useCallback(async ({ quiet = false } = {}) => {
+    if (!quiet) setLoading(true);
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       setDesk(await salesAdminDesk(params));
-      setError(""); setErrorAction(null);
+      setError("");
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat Meja Admin Sales."));
-    } finally { setLoading(false); }
+    } finally { if (!quiet) setLoading(false); }
   }, [selectedEntity]);
 
   useEffect(() => { load(); }, [load]);
 
-  function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 5000); }
+  const reloadAll = () => { load(); setTrackerTick((t) => t + 1); };
+  async function reloadQueue(queueId) {
+    setRefreshingId(queueId || "");
+    setTrackerTick((t) => t + 1);
+    try { await load({ quiet: true }); } finally { setRefreshingId(""); }
+  }
+  function done(msg, queueId) {
+    toast({ title: msg });
+    reloadQueue(queueId);
+  }
+
+  function open(link) {
+    markDeskReturn(DESK_KEY);
+    onOpenDocument?.(link);
+  }
 
   // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang pesanan yang sudah diperiksa tetapi ditahan.
-  async function doRelease(row) {
-    setBusyRef(row.ref_id); setError(""); setErrorAction(null);
+  async function doRelease(row, queueId) {
+    setBusyRef(row.ref_id); setError("");
     try {
-      flash(releaseMessage(await releaseOrder(row.ref_id), row.number));
-      reloadAll();
+      done(releaseMessage(await releaseOrder(row.ref_id), row.number), queueId);
     } catch (e) {
       setError(apiErrorText(e, "Gagal melepas pesanan ke gudang."));
     } finally { setBusyRef(""); }
   }
 
-  function openFull(row) {
+  function openFull(row, queue) {
     setVerifyRow(null); setFulfillRow(null);
-    onOpenDocument?.(rowLink(row, null, "sales_admin"));
+    open(rowLink(row, queue?.id || row?._qid, DESK_KEY));
   }
 
   function handleAction(row, queue) {
-    if (row.action_kind === "verify") { setVerifyRow(row); return; }
-    if (row.action_kind === "fulfill") { setFulfillRow(row); return; }
-    if (row.action_kind === "release") { doRelease(row); return; }
-    onOpenDocument?.(rowLink(row, queue?.id, "sales_admin"));
+    const qid = queue?.id || "";
+    if (row.action_kind === "verify") { setVerifyRow({ ...row, _qid: qid }); return; }
+    if (row.action_kind === "fulfill") { setFulfillRow({ ...row, _qid: qid }); return; }
+    if (row.action_kind === "release") { doRelease(row, qid); return; }
+    open(rowLink(row, qid, DESK_KEY));
   }
 
   const queues = Array.isArray(desk?.queues) ? desk.queues : [];
-  const openItems = desk?.totals?.open_items || 0;
-  const moneyQueues = queues.filter((q) => q.value_kind !== "qty");
-  const totalMoney = moneyQueues.reduce((s, q) => s + (q.total_value || 0), 0);
-  const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
+  const split = splitPantau(queues, DESK_KEY);
+  const card = (q) => (
+    <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading || refreshingId === q.id}
+      testPrefix={P} stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} onAction={handleAction} onOpenFull={openFull} />
+  );
+
+  const antrean = loading && !desk ? (
+    <div data-testid={`${P}-loading`} className={DESK_GRID_CLASS}>
+      {[0, 1, 2, 3].map((i) => <DeskQueueCardSkeleton key={i} testPrefix={P} index={i} />)}
+    </div>
+  ) : split.antrean.length === 0 ? (
+    <div className="section-card section-pad text-center text-fs-13 text-kn-text-2" data-testid={`${P}-empty`}>
+      <Inbox size={24} className="mx-auto mb-2 text-kn-neutral" aria-hidden="true" />
+      Belum ada antrean untuk PT yang sedang Anda lihat.
+    </div>
+  ) : (
+    <div className={DESK_GRID_CLASS}>{orderDeskQueues(split.antrean).map(card)}</div>
+  );
+
+  const pantau = (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+      {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
+      {can(perms, "order", "view") && (
+        <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} onOpen={(r) => {
+          const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
+          if (r.action === "Atur pemenuhan") return setFulfillRow(row);
+          if (r.action === "Periksa & lepas") return setVerifyRow(row);
+          if (r.action === "Lepas ke gudang") return doRelease(row, "");
+          return open(soTrackerLink(r));
+        }} />
+      )}
+      {/* Pola UI (M4, pemilik 16 Nov) — Keep & Pending butuh ruang: satu baris penuh, tidak berdampingan. */}
+      <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={open} refreshKey={trackerTick} />
+      <CustomerGradeRulesCard selectedEntity={selectedEntity} />
+      {split.pantau.length > 0 && <div className={DESK_GRID_CLASS}>{split.pantau.map(card)}</div>}
+    </div>
+  );
 
   return (
-    <div data-testid="sales-admin-desk" className="grid gap-4">
-      {toast && (
-        <div className="notice-bar success" data-testid="desk-toast">
-          <span>{toast}</span><button onClick={() => setToast("")}>×</button>
-        </div>
-      )}
-      <ErrorNotice message={error} onRetry={load} onDismiss={() => { setError(""); setErrorAction(null); }}
-                   onAction={errorAction ? errorAction.run : undefined}
-                   actionLabel={errorAction ? errorAction.label : undefined}
-                   testId="desk-error" />
+    <div data-testid="sales-admin-desk" className="grid grid-cols-[minmax(0,1fr)] gap-3">
+      <ErrorNotice message={error} onRetry={() => load()} onDismiss={() => setError("")} testId={`${P}-error`} />
 
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex min-w-0 items-center gap-2">
-            <ClipboardList size={15} className="text-[#0058CC]" />
-            <span className="kicker">Admin Sales</span>
-            <h2 data-testid="desk-title">Meja Admin Sales</h2>
-          </div>
-          <button data-testid="desk-refresh" className="icon-button" onClick={reloadAll}
-                  aria-label="Muat ulang meja">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-
-        <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">
-          Alur pesanan dari ujung ke ujung: <b>periksa kelengkapan</b> → <b>putuskan
-          pemenuhan</b> (stok sendiri · ambil dari PT lain · reorder ke supplier) →
-          <b> konfirmasi</b> → dokumen → proses retur. Konfirmasi rutin adalah wewenang
-          Anda; nilai besar, kredit, dan harga khusus tetap keputusan manajer.
-        </p>
-
-        <section data-testid="desk-metrics" className="grid gap-3 p-3 sm:grid-cols-3">
-          <Metric icon={Inbox} label="Perlu Ditindak" value={openItems}
-                  tone="rgba(255,149,0,.16)" testId="desk-metric-open" />
-          <Metric icon={Layers} label="Nilai Antrean" value={formatCurrency(totalMoney)}
-                  tone="rgba(0,122,255,.12)" testId="desk-metric-value" />
-          <Metric icon={ShieldAlert} label="Umur Tertua"
-                  value={oldest > 0 ? `${oldest} hari` : "< 1 hari"}
-                  tone="rgba(255,59,48,.14)" testId="desk-metric-oldest" />
-        </section>
-
-        {(desk?.not_my_desk || []).length > 0 && (
-          <div data-testid="desk-not-mine"
-               className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
-            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">
-              Bukan wewenang meja ini — ada di Meja Finance
-            </p>
-            <p className="text-[11.5px] text-[#31465F]">
-              {(desk.not_my_desk || []).join(" · ")}
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
-      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" refreshKey={trackerTick} onOpen={(r) => {
-        const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
-        if (r.action === "Atur pemenuhan") return setFulfillRow(row);
-        if (r.action === "Periksa & lepas") return setVerifyRow(row);
-        if (r.action === "Lepas ke gudang") return doRelease(row);
-        return onOpenDocument?.(soTrackerLink(r));
-      }} />
-
-      {/* Pola UI (M4, pemilik 16 Nov) — Keep & Pending butuh ruang: satu baris penuh, tidak berdampingan. */}
-      <div className="grid gap-3">
-        <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={onOpenDocument} refreshKey={trackerTick} />
-        <CustomerGradeRulesCard selectedEntity={selectedEntity} />
-      </div>
-
-      {loading && !desk ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"
-             data-testid="desk-loading">
-          Menyusun antrean kerja…
-        </div>
-      ) : queues.length === 0 ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"
-             data-testid="desk-empty">
-          <Inbox size={26} className="mx-auto mb-2 text-[#D6D6DB]" />
-          Belum ada antrean untuk badan usaha yang sedang Anda lihat.
-        </div>
-      ) : (
-        <>
-        <div className="grid gap-3 xl:grid-cols-2">
-          {queues.map((q) => (
-            <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading}
-                           testPrefix="desk" onAction={handleAction} />
-          ))}
-        </div>
-        </>
-      )}
+      <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={desk?.not_my_desk || []}
+        antrean={antrean} pantau={pantau} ready={!loading} onReload={reloadAll} />
 
       {verifyRow && (
         <VerifyOrderDialog
@@ -181,7 +159,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           orderNumber={verifyRow.number}
           customerName={verifyRow.title}
           onClose={() => setVerifyRow(null)}
-          onVerified={(msg) => { setVerifyRow(null); flash(msg); reloadAll(); }}
+          onVerified={(msg) => { const qid = verifyRow._qid; setVerifyRow(null); done(msg, qid); }}
           onOpenFull={() => openFull(verifyRow)}
         />
       )}
@@ -192,24 +170,10 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           orderNumber={fulfillRow.number}
           customerName={fulfillRow.title}
           onClose={() => setFulfillRow(null)}
-          onDecided={(msg) => { setFulfillRow(null); flash(msg); reloadAll(); }}
+          onDecided={(msg) => { const qid = fulfillRow._qid; setFulfillRow(null); done(msg, qid); }}
           onOpenFull={() => openFull(fulfillRow)}
         />
       )}
-    </div>
-  );
-}
-
-function Metric({ icon: Icon, label, value, tone, testId }) {
-  return (
-    <div data-testid={testId} className="metric-card">
-      <div className="metric-icon" style={{ background: tone }}>
-        <Icon size={16} className="text-[#1C1C1E]" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-        <p className="text-[15px] font-bold tabular-nums">{value}</p>
-      </div>
     </div>
   );
 }
