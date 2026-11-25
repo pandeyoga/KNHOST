@@ -37,7 +37,7 @@ export function buildFields(row, queue, pt) {
   return f;
 }
 
-const TH = "px-2 py-1 text-left text-fs-12 font-medium text-kn-text-2";
+const TH = "px-2 py-1 text-left text-fs-12 font-semibold text-kn-text-2";
 const TD = "px-2 py-1 text-fs-13 text-kn-text align-top";
 
 /** Daftar bidang (dl). `except` = kunci bidang yang disembunyikan. */

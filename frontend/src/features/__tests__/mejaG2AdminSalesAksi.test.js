@@ -97,7 +97,7 @@ const PERMS = { sales_force: ["assign"], order: ["update", "view"], internal_req
 const ADMIN = { permissions: PERMS };
 const TANPA_IZIN = { permissions: { order: ["view"], customer: ["view"] } };
 
-test("tetapkan sales: berizin → dialog; sales & alasan wajib; kirim body benar; toast; kartu dimuat ulang", async () => {
+test("tetapkan sales: berizin → dialog; sales wajib, alasan opsional; kirim body benar; toast; kartu dimuat ulang", async () => {
   routeGet(PETA);
   mockPost.mockResolvedValue({ data: {} });
   await mount(<SalesAdminDesk currentUser={ADMIN} selectedEntity="ent_ksc" onOpenDocument={() => {}} />);
@@ -109,9 +109,7 @@ test("tetapkan sales: berizin → dialog; sales & alasan wajib; kirim body benar
   expect(mockPost).not.toHaveBeenCalled();
   expect(teks(q("assign-sales-dialog-error"))).toContain("Pilih sales");
   await ubah("assign-sales-select", "s2");
-  await klik("assign-sales-dialog-submit");
-  expect(mockPost).not.toHaveBeenCalled();
-  expect(teks(q("assign-sales-dialog-error"))).toContain("Alasan");
+  // Alasan opsional (sama dengan server & kartu pelanggan): kosong boleh kirim.
   await ubah("assign-sales-reason", "wilayah Bandung");
   await klik("assign-sales-dialog-submit"); await tunggu();
   expect(mockPost).toHaveBeenCalledWith("/api/customers/c1/reassign", { assigned_sales_id: "s2", reason: "wilayah Bandung" });
@@ -287,4 +285,14 @@ test("berkas baru: tanpa text-[Npx], hex mentah, <button> bergaya sendiri, Detai
     expect(src).not.toMatch(/DetailPopup|window\.(alert|confirm|prompt)/);
     expect(src).not.toMatch(/<button[^>]*className="(?!(primary|secondary|link|icon)-button)/);
   }
+});
+
+test("tetapkan sales: alasan kosong tetap terkirim (opsional)", async () => {
+  routeGet(PETA);
+  mockPost.mockResolvedValue({ data: {} });
+  await mount(<SalesAdminDesk currentUser={ADMIN} selectedEntity="ent_ksc" onOpenDocument={() => {}} />);
+  await klik("desk-action-c1"); await tunggu();
+  await ubah("assign-sales-select", "s2");
+  await klik("assign-sales-dialog-submit"); await tunggu();
+  expect(mockPost).toHaveBeenCalledWith("/api/customers/c1/reassign", { assigned_sales_id: "s2", reason: "" });
 });

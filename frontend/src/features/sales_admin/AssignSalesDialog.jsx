@@ -34,7 +34,6 @@ export default function AssignSalesDialog({ customer, onClose, onDone, testId = 
   const kirim = async () => {
     if (busy) return;
     if (!sid) { setErr(TEKS_PILIH_SALES); return; }
-    if (!reason.trim()) { setErr("Alasan wajib diisi."); return; }
     setBusy(true); setErr("");
     try {
       await reassignCustomer(customer.id, { assigned_sales_id: sid, reason: reason.trim() });
@@ -54,7 +53,7 @@ export default function AssignSalesDialog({ customer, onClose, onDone, testId = 
             placeholder={loading ? "Memuat sales…" : "Pilih sales tujuan"} options={salesTujuanOptions(users, customer?.assigned_sales_id)} />
         </div>
         <div>
-          <label className="mb-1 block text-fs-12 font-medium text-kn-text-2" htmlFor={`${testId}-alasan`}>Alasan</label>
+          <label className="mb-1 block text-fs-12 font-medium text-kn-text-2" htmlFor={`${testId}-alasan`}>Alasan (opsional)</label>
           <input id={`${testId}-alasan`} data-testid="assign-sales-reason" value={reason} onChange={(e) => setReason(e.target.value)}
             className="field" placeholder={CONTOH_ALASAN} />
         </div>

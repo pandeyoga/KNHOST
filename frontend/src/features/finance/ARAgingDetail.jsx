@@ -163,7 +163,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                   {detail.items.map((it) => (
                     <OrderRows key={it.order_id} it={it} open={!!open[it.order_id]} cols={canPay || canPromise ? 10 : 9}>
                     <tr data-testid={`ar-detail-row-${it.order_id}`}>
-                      <td className="px-3 py-2 font-semibold text-[#0058CC] whitespace-nowrap">
+                      <td className="px-3 py-2 font-semibold whitespace-nowrap">
                         <button type="button" className="icon-button mr-1 align-middle" onClick={() => toggle(it.order_id)}
                           aria-expanded={!!open[it.order_id]} data-testid={`ar-detail-toggle-${it.order_id}`}
                           aria-label={`${open[it.order_id] ? "Tutup" : "Buka"} rincian surat jalan ${it.order_number}`}>

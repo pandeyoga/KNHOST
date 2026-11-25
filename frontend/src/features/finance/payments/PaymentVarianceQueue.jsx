@@ -162,7 +162,7 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
                     return (
                       <tr key={p.receipt_id} data-testid={`pv-pending-row-${p.receipt_id}`}
                         className="border-b border-[#F5F5F7] hover:bg-[#FAFBFC]">
-                        <td className="px-2 py-2 font-semibold text-[#0058CC]">
+                        <td className="px-2 py-2 font-semibold">
                           <DocLink docType="ar_receipt" docId={p.receipt_id} number={p.number} entityId={p.entity_id}
                             perms={currentUser?.permissions} testId={`pv-pending-doc-${p.receipt_id}`} />
                           <button type="button" className="icon-button ml-1 align-middle" title="Buka Jejak Dokumen"
@@ -242,8 +242,8 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
                   return (
                     <tr key={d.id} data-testid={`pv-decision-row-${d.id}`}
                       className={`border-b border-[#F5F5F7] hover:bg-[#FAFBFC] ${reversed ? "opacity-60" : ""}`}>
-                      <td className="px-2 py-2 font-semibold text-[#0058CC]">
-                        <button type="button" className="hover:underline"
+                      <td className="px-2 py-2 font-semibold">
+                        <button type="button" className="link-button"
                           data-testid={`pv-decision-trace-${d.id}`}
                           onClick={() => openTrace({ docType: "payment_variance", docId: d.id, number: d.number })}>
                           {d.number}

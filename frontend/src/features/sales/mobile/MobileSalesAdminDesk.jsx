@@ -223,7 +223,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
       ) : queues.map((q) => <DeskQueue key={q.id} queue={q} busyRef={busyRef} onAction={onRowAction} onOpen={(row, queue) => setDetail({ row, queue })} />)}
 
       {detail && (
-        <DeskRowDetail row={detail.row} queue={detail.queue} testPrefix="m-desk" inPlace={IN_PLACE} currentUser={currentUser} onAction={handleAction}
+        <DeskRowDetail row={detail.row} queue={detail.queue} testPrefix="m-desk" inPlace={IN_PLACE} currentUser={currentUser} traceEnabled={false} onAction={handleAction}
           onOpenFull={(row, queue) => openRow(row, queue)} onClose={() => setDetail(null)} />
       )}
       {verifyRow && (

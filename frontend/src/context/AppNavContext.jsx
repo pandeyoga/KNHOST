@@ -68,8 +68,10 @@ export function AppNavProvider({ role, onNavigateTo, onOpenDocument, origin = nu
     registerDetailBack,
     card,
     cardsEnabled: true,
-    openCustomerCard: (id) => { if (id) { seq.current += 1; setCard({ type: "customer", id, nonce: seq.current }); } },
-    openSupplierCard: (id) => { if (id) { seq.current += 1; setCard({ type: "supplier", id, nonce: seq.current }); } },
+    // Satu pembuka aktif (04_POLA_UI §4): membuka kartu menutup pratinjau dokumen. Sebaliknya pratinjau yang dibuka dari
+    // dalam kartu tampil di atas kartu (digambar sesudahnya) dan menutupnya kembali ke kartu — `openDocPreview` tak menyentuh `card`.
+    openCustomerCard: (id) => { if (id) { seq.current += 1; setDocPreview(null); setCard({ type: "customer", id, nonce: seq.current }); } },
+    openSupplierCard: (id) => { if (id) { seq.current += 1; setDocPreview(null); setCard({ type: "supplier", id, nonce: seq.current }); } },
     closeCard: () => setCard(null),
     // Meja gelombang 2 — pratinjau dokumen di pop-up: `openDocPreview({docType, docId, number?, entityId?})`;
     // `DocPreviewHost` (`features/documents/preview/DocPreviewModal.jsx`, dipasang di AppViewRouter) merendernya.
