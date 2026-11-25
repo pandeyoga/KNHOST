@@ -73,11 +73,21 @@ async def _segarkan_tahap(order_id: str) -> Dict[str, Any]:
 
 
 async def _status_gerbang(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Status `dispatch_payment_gate.evaluate` untuk pesanan yang bisa ditahan di gudang; `None` = di luar cakupan."""
-    if not order or order.get("order_type") == "sample":
+    """Status `dispatch_payment_gate.evaluate` untuk pesanan yang bisa ditahan di gudang; `None` = di luar cakupan:
+    pesanan sample (gerbang bayar Meja Sample) dan — ketetapan R6 — SO dari Pesanan Khusus (`source_special_order_id`):
+    SO itu menunggu produksi berminggu-minggu di `approved` (penyapu batas bayar tidak boleh mengedarluwarsakannya) dan
+    dilepas ke gudang oleh jalur OD sendiri; gerbang surat jalan tetap menjaganya seperti dulu."""
+    if not order or order.get("order_type") == "sample" or order.get("source_special_order_id"):
         return None
     from services import dispatch_payment_gate as gate
     return await gate.evaluate(order)
+
+
+async def persen_kode(order: Dict[str, Any]) -> Optional[float]:
+    """Persen kode bayar tingkat pesanan dari gerbang (`evaluate.dp_percent`, termasuk K-27 dan tunai ditahan) bila
+    gerbang berlaku untuk pesanan ini; `None` = biarkan `payment_code_service` memakai persen termin (PM-T2)."""
+    st = await _status_gerbang(order)
+    return float(st["dp_percent"]) if st and st["applies"] else None
 
 
 async def blocked(order: Dict[str, Any]) -> bool:
@@ -119,7 +129,7 @@ async def start(order: Dict[str, Any], actor: Optional[Dict[str, Any]] = None) -
     # tahan tetap berlaku (penanda sudah tertulis) dan `confirm_core` mencoba lagi.
     try:
         from services import payment_code_service as _pcs
-        await _pcs.ensure_for_order(so)
+        await _pcs.ensure_for_order(so, percent=st["dp_percent"])   # persen = gerbang (satu hitungan)
     except Exception as exc:  # noqa: BLE001
         logger.warning("[pay_hold] kode bayar %s gagal dibuat: %s", oid, exc)
     return so.get("pay_hold")
@@ -156,11 +166,14 @@ async def clear_if_paid(order_id: str, actor: Optional[Dict[str, Any]] = None, w
         return False   # tidak sedang ditahan (pesanan lama / non-CBD): tidak ada yang dibuka
     if await blocked(so):
         return False
+    # Klaim: penanda ikut di saringan, jadi dari dua pemanggil bersamaan hanya satu yang membuka tahan, menulis jejak,
+    # dan menjalankan lepas otomatis.
     res = await db.sales_orders.update_one(
-        {"id": order_id, "status": so.get("status")},
+        {"id": order_id, "status": so.get("status"),
+         "$or": [{"pay_hold": {"$exists": True}}, {"release.waiting": "bayar"}]},
         {"$unset": _cabut(so), "$set": {"updated_at": now_iso()}})
     if not res.modified_count:
-        return False   # status berubah oleh proses lain — biarkan pemiliknya yang melanjutkan
+        return False   # penanda sudah dibuka / status berubah oleh proses lain — biarkan pemiliknya yang melanjutkan
     await _segarkan_tahap(order_id)
     from dependencies import audit
     pelaku = actor or AKTOR_SISTEM

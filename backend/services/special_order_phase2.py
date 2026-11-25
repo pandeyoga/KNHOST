@@ -825,6 +825,9 @@ async def on_goods_received(od_id: str) -> Dict[str, Any]:
                                                                   "admin_verified": True, "updated_at": now_iso()},
                                                          "$push": {"timeline": {"id": new_id("tl"), "event": "confirmed", "label": "Dikonfirmasi otomatis — barang pesanan khusus diterima gudang",
                                                                                 "by": "Sistem (OD)", "at": now_iso()}}})
+        # LB-T2 (R6) — SO OD tidak ditahan bayar di gudang (gerbang surat jalan tetap); penanda yang tersisa dicabut.
+        from services import pay_hold_service as _phs
+        await _phs.drop(so_id)
     await recompute_so_status(so_id)
     # 23 Okt — tugas ambil bisa lahir lewat jalur lain (pemenuhan backorder SO); dulu OD hanya mencatat tugas dari
     # panggilan ini (tugas item ke-2 hilang dari OD) dan riwayat menulis "0 tugas Surat Jalan lahir" berulang.

@@ -350,3 +350,122 @@ async def test_lanjut_harga_normal_memulai_tahan(db, siap):
     assert out["release_state"]["waiting"] == "bayar"
     cur = await _so(db, so["id"])
     assert cur["pay_hold"]["required"] == 1_000_000 and cur["release"]["waiting"] == "bayar"
+
+
+# ── Putaran perbaikan 1 (ulasan Tugas 2) ────────────────────────────────────────────────────────────────────────────
+async def _kode_pesanan(db, oid: str) -> list:
+    return await db.payment_codes.find({"order_id": oid, "order_level": True}, {"_id": 0}).to_list(5)
+
+
+@pytest.mark.parametrize("term, bayar_dulu, wajib", [
+    ("NET30", True, 1_000_000),    # K-27 pada termin tempo → 100 %
+    ("DP50", True, 1_000_000),     # K-27 menang atas DP 50 %
+    ("DP50", False, 500_000),
+    ("CBD", False, 1_000_000),
+])
+async def test_kode_bayar_mengikuti_persen_gerbang(klien, db, siap, term, bayar_dulu, wajib):
+    """Persen kode bayar = persen `evaluate` (termasuk `pay_before_ship`, K-27) — nominal kode = `pay_hold.required`."""
+    from services import pay_hold_service as phs
+    so = await _pesan(klien, db, siap, term=term)
+    if bayar_dulu:   # fixture: penanda K-27 dari gerbang kredit saat pesanan dibuat
+        await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"pay_before_ship": True}})
+    await _ajukan(klien, siap, so["id"])
+    cur = await _so(db, so["id"])
+    assert cur["pay_hold"]["required"] == wajib
+    kode = await _kode_pesanan(db, so["id"])
+    assert [(k["amount"], k["percent"]) for k in kode] == [(wajib, wajib / 10_000)], kode
+    assert cur["payment_code"] == kode[0]["code"]
+    await phs.start(cur)                                         # mulai ulang: tidak menggandakan
+    assert await db.payment_codes.count_documents({"order_id": so["id"]}) == 1
+
+
+async def test_kode_lama_salah_persen_dibetulkan_saat_tahan(klien, db, siap):
+    """Kode tingkat pesanan yang lahir dengan persen termin (50 %) sebelum K-27 diperhitungkan dibetulkan oleh `start`
+    selama belum terikat baris jadwal tagihan — tetap satu kode, kodenya sama."""
+    from services import payment_code_service as pcs
+    so = await _pesan(klien, db, siap, term="DP50")
+    lama = await pcs.ensure_for_order(await _so(db, so["id"]))
+    assert lama["amount"] == 500_000
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"pay_before_ship": True}})
+    await _ajukan(klien, siap, so["id"])
+    kode = await _kode_pesanan(db, so["id"])
+    assert [(k["code"], k["amount"], k["percent"]) for k in kode] == [(lama["code"], 1_000_000, 100.0)], kode
+
+
+async def test_dp_k27_dilepas_tanpa_bayar_kode_ikut_baris_uang_muka(klien, db, siap):
+    """DP50 + K-27 dilepas lewat "kirim tanpa lunas": baris uang muka 50 % memakai ulang kode pesanan dan nominal kode
+    ikut baris itu (bukan 100 %), jadi kode uang muka + kode surat jalan tidak menagih lebih dari nilai pesanan."""
+    so = await _pesan(klien, db, siap, term="DP50")
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"pay_before_ship": True}})
+    await _periksa_lepas(klien, siap, so["id"])
+    assert (await _kode_pesanan(db, so["id"]))[0]["amount"] == 1_000_000
+    r = await klien.post(f"/api/sales-orders/{so['id']}/dispatch-payment-release", headers=siap["h"],
+                         json={"reason": "Pelanggan langganan, bayar di tempat"})
+    assert r.status_code == 200, r.text
+    assert (await _so(db, so["id"]))["status"] == "confirmed"
+    jadwal = await db.payment_plans.find_one({"doc_id": so["id"], "origin": "term", "status": {"$ne": "void"}},
+                                             {"_id": 0})
+    [dp] = [ln for ln in jadwal["lines"] if ln["kind"] == "dp"]
+    kode = await db.payment_codes.find({"order_id": so["id"]}, {"_id": 0}).to_list(5)
+    assert len(kode) == 1, kode
+    assert (dp["amount"], dp["pay_code"]) == (500_000, kode[0]["code"])
+    assert (kode[0]["amount"], kode[0]["line_id"]) == (500_000, dp["line_id"])
+
+
+async def test_buka_tahan_sekali_walau_dua_pemanggil(klien, db, siap, monkeypatch):
+    """Dua pemanggil `clear_if_paid` (berurutan, atau yang kedua membaca potret basi sebelum yang pertama menulis):
+    tepat satu jejak `pay_hold_cleared` dan satu percobaan lepas otomatis."""
+    from services import pay_hold_service as phs
+    from services import so_release_service as rel
+    so = await _pesan(klien, db, siap)
+    await _ajukan(klien, siap, so["id"])                       # tanpa "Periksa & lepas": status tetap approved
+    await _kwitansi_finance(siap, so["id"], 1_000_000)
+    basi = await _so(db, so["id"])                              # potret sesudah bayar, sebelum tahan dibuka
+    assert basi["pay_hold"]
+    coba = []
+    asli = rel.auto_release
+
+    async def _hitung(*a, **kw):
+        coba.append(a[0])
+        return await asli(*a, **kw)
+    monkeypatch.setattr(rel, "auto_release", _hitung)
+    assert await phs.clear_if_paid(so["id"]) is False          # pertama: tahan dibuka (belum diperiksa → tidak lepas)
+    assert await phs.clear_if_paid(so["id"]) is False          # kedua, berurutan
+    asli_muat = phs._muat
+
+    async def _muat_basi(oid):
+        return dict(basi) if oid == so["id"] else await asli_muat(oid)
+    monkeypatch.setattr(phs, "_muat", _muat_basi)
+    assert await phs.clear_if_paid(so["id"]) is False          # ketiga, membaca potret basi (balapan)
+    monkeypatch.setattr(phs, "_muat", asli_muat)
+    assert coba == [so["id"]]
+    jejak = await db.audit_logs.count_documents({"action": "pay_hold_cleared", "entity_id": so["id"]})
+    assert jejak == 1
+    assert "pay_hold" not in await _so(db, so["id"])
+
+
+async def test_pesanan_khusus_tidak_ditahan_dan_jalur_od_tanpa_penanda(klien, db, siap):
+    """R6 — SO dari Pesanan Khusus (OD) tidak diberi tahan gudang (menunggu produksi berminggu-minggu di `approved`;
+    penyapu batas bayar tidak boleh mengedarluwarsakannya). Jalur konfirmasi OD mencabut penanda yang tersisa. Gerbang
+    surat jalan tetap menjaga."""
+    from services import dispatch_payment_gate as gate
+    from services import pay_hold_service as phs
+    from services import special_order_phase2 as od2
+    od_id = _id("od")
+    so = await _pesan(klien, db, siap)
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"source_special_order_id": od_id}})
+    await _ajukan(klien, siap, so["id"])
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "approved" and "pay_hold" not in cur
+    assert await phs.blocked(cur) is False and await phs.start(cur) is None
+    # penanda basi (mis. lahir sebelum aturan R6) → jalur OD "barang diterima" mengonfirmasi tanpa menyisakannya
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"pay_hold": {"since": now_iso(), "required": 1.0}}})
+    await db.special_orders.insert_one({"id": od_id, "number": "OD-LB2", "entity_id": KSC, "status": "in_production",
+                                        "linked_sales_order_id": so["id"], "created_at": now_iso()})
+    out = await od2.on_goods_received(od_id)
+    assert out.get("tasks", 0) >= 1, out
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "confirmed" and "pay_hold" not in cur
+    with pytest.raises(HTTPException) as e:
+        await gate.guard(so["id"])
+    assert e.value.status_code == 409

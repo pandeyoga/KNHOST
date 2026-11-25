@@ -110,7 +110,7 @@ async def confirm_core(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     # Pesanan yang terkirim sudah memuat instruksi bayar. Gagal = dicatat; pesanan tetap terkonfirmasi.
     try:
         from services import payment_code_service as _pcs
-        if await _pcs.ensure_for_order(_final or {}):
+        if await _pcs.ensure_for_order(_final or {}, percent=await _phs.persen_kode(_final or {})):   # LB-T2
             _final = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     except Exception as exc:  # noqa: BLE001
         logger.warning("[confirm_order] kode bayar %s gagal dibuat: %s", order_id, exc)

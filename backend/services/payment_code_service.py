@@ -9,8 +9,9 @@ pencocokan mutasi bank di PM-T3 (`find_in_text`).
 Kode: `{awalan}-{5 karakter}` dari `ALFABET` (tanpa 0, 1, I, O), dibuat `secrets`, unik LINTAS PT (indeks wajib
 `payment_codes.uq_pay_code`); tabrakan → diulang paling banyak `MAKS_ULANG` kali. Satu kode per (pesanan, baris tagihan)
 (`uq_pay_code_line`). Kode tingkat pesanan lahir saat pesanan bayar-dulu dikonfirmasi (`ensure_for_order`, dari
-`so_lifecycle_service.confirm_core`); kode per baris tagihan lahir lewat `ensure_for_line` (dipanggil modul jadwal
-tagihan CR-T2 bila sudah ada — belum ada di HEAD).
+`so_lifecycle_service.confirm_core`) — LB-T2: sudah sejak tahan bayar dimulai (pesanan disetujui,
+`pay_hold_service.start`), dengan persen dari gerbang bayar `dispatch_payment_gate.evaluate`; kode per baris tagihan
+lahir lewat `ensure_for_line` (dipanggil modul jadwal tagihan CR-T2 bila sudah ada — belum ada di HEAD).
 
 VA/QRIS dinamis = PM-T5 (`tahan`, K-35): kode di sini hanya teks berita transfer, tanpa penyedia pembayaran.
 """
@@ -197,22 +198,40 @@ def _isi_kode(order: Dict[str, Any], *, amount: float, due_date: str, plan_id: s
             "created_at": now_iso(), "updated_at": now_iso()}
 
 
-async def ensure_for_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+async def ensure_for_order(order: Dict[str, Any], percent: Optional[float] = None) -> Optional[Dict[str, Any]]:
     """Kode tingkat pesanan untuk pesanan BAYAR-DULU (termin tunai atau ber-DP); idempoten per pesanan. Pesanan tempo
-    → `None`. `amount` = nilai pesanan × persen wajib (potret saat kode lahir). Dipanggil sesudah `confirm_core`."""
+    → `None`. `amount` = nilai pesanan × persen wajib (potret saat kode lahir). Dipanggil saat tahan bayar dimulai dan
+    sesudah `confirm_core`.
+
+    LB-T2 — `percent` = persen wajib dari gerbang bayar (`dispatch_payment_gate.evaluate`, lewat
+    `pay_hold_service.persen_kode`), termasuk `pay_before_ship` (K-27) dan `finance.tahan_kirim_tunai`; bila
+    diberikan menggantikan persen termin. Kode yang sudah ada dan BELUM terikat baris jadwal tagihan ikut dibetulkan
+    bila nominalnya tidak lagi sama dengan nilai pesanan × persen itu (kode lahir sebelum K-27 diperhitungkan, atau
+    nilai pesanan berubah lewat override sebelum dikonfirmasi); kode yang sudah terikat baris mengikuti baris itu
+    (`ensure_for_line`)."""
     from services.config_resolver import value_of
     if not order or not order.get("id"):
         return None
-    pct = persen_bayar_dulu(await _termin(order))
+    pct = min(float(percent), 100.0) if percent is not None else persen_bayar_dulu(await _termin(order))
     if pct <= 0:
         return None
-    ada = await db[COLL].find_one({"order_id": order["id"], "order_level": True}, {"_id": 0})
-    if ada:
-        return ada
-    awalan = _awalan_bersih(await value_of(AWALAN_KEY, {"entity_id": order.get("entity_id") or ""}))
     grand = float(order.get("grand_total") if order.get("grand_total") is not None else order.get("total_amount") or 0)
     grand += sum(float(x.get("gross") or 0) for x in order.get("extra_billing_lines") or [])   # PK-32 — nilai tagihan
-    isi = _isi_kode(order, amount=round(grand * pct / 100.0, 2), due_date="", plan_id="", line_id="",
+    amount = round(grand * pct / 100.0, 2)
+    ada = await db[COLL].find_one({"order_id": order["id"], "order_level": True}, {"_id": 0})
+    if ada:
+        if (percent is not None and not ada.get("line_id") and ada.get("status") == "aktif"
+                and abs(float(ada.get("amount") or 0) - amount) > 0.005):
+            res = await db[COLL].update_one(
+                {"id": ada["id"], "line_id": "", "status": "aktif", "amount": ada.get("amount")},
+                {"$set": {"amount": amount, "percent": pct, "updated_at": now_iso()}})
+            if res.modified_count:
+                logger.info("[kode_bayar] %s %s: nominal %s → %s (%s%% gerbang bayar)", order.get("number"),
+                            ada["code"], ada.get("amount"), amount, pct)
+            ada = await db[COLL].find_one({"id": ada["id"]}, {"_id": 0}) or ada
+        return ada
+    awalan = _awalan_bersih(await value_of(AWALAN_KEY, {"entity_id": order.get("entity_id") or ""}))
+    isi = _isi_kode(order, amount=amount, due_date="", plan_id="", line_id="",
                     order_level=True, percent=pct)
     kode = await _sisip(awalan, isi, {"order_id": order["id"], "order_level": True})
     await db.sales_orders.update_one(
@@ -227,7 +246,9 @@ async def _tandai_baris(plan_id: str, line_id: str, code: str) -> None:
 
 async def ensure_for_line(plan: Dict[str, Any], line: Dict[str, Any]) -> Dict[str, Any]:
     """Kode per baris tagihan (`payment_plans.lines[]`), idempoten per (pesanan, `line_id`). Baris `dp` memakai ulang
-    kode tingkat pesanan (diisi `plan_id`, `line_id`). Baris mendapat `pay_code`."""
+    kode tingkat pesanan (diisi `plan_id`, `line_id`; LB-T2 — nominal & persen kode ikut baris uang muka, supaya kode
+    yang lahir saat tahan bayar dengan persen gerbang, mis. 100 % K-27 pada termin DP 50 %, tidak menagih dua kali
+    bersama kode surat jalan). Baris mendapat `pay_code`."""
     from services.config_resolver import value_of
     order_id = str(plan.get("doc_id") or plan.get("order_id") or "")
     line_id = str(line.get("line_id") or "")
@@ -240,7 +261,10 @@ async def ensure_for_line(plan: Dict[str, Any], line: Dict[str, Any]) -> Dict[st
     order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0}) or {"id": order_id}
     if line.get("kind") == "dp":
         res = await db[COLL].update_one({"order_id": order_id, "order_level": True, "line_id": ""},
-                                        {"$set": {"plan_id": plan["id"], "line_id": line_id, "updated_at": now_iso()}})
+                                        {"$set": {"plan_id": plan["id"], "line_id": line_id,
+                                                  "amount": round(float(line.get("amount") or 0), 2),
+                                                  "percent": float(line.get("percent") or 0),
+                                                  "updated_at": now_iso()}})
         if res.modified_count:
             kode = await db[COLL].find_one({"order_id": order_id, "line_id": line_id}, {"_id": 0})
             await _tandai_baris(plan["id"], line_id, kode["code"])
