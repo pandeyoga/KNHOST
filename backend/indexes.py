@@ -1135,6 +1135,17 @@ REQUIRED_UNIQUE_INDEXES += [
                            '{e:"$entity_id",p:"$period"}', "$id")},
 ]
 
+# BTP-5 (A1-6, ruling R13) — satu catatan saldo potongan komisi per (PT, sales, bulan): finalisasi bulan (akrual manual,
+# akrual bertotal 0, posting gaji, akrual diulang) = upsert ke dokumen yang sama
+# (`commission_rules.catat_saldo_potongan`). Koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "commission_carry_balances", "name": "uq_commission_carry",
+     "label": "satu saldo potongan komisi per PT, sales, dan bulan",
+     "keys": [("entity_id", 1), ("sales_id", 1), ("period", 1)], "partial": {"period": dict(_NONEMPTY)},
+     "finder": _finder_dup("commission_carry_balances", '{period:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",s:"$sales_id",p:"$period"}', "$id")},
+]
+
 
 class RequiredIndexError(RuntimeError):
     """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""

@@ -596,31 +596,84 @@ def bulan_awal_periode(period: Any) -> Optional[str]:
     return daftar[0] if daftar else None
 
 
+#: BTP-5 (A1-6, ruling R13) — SATU tempat saldo potongan komisi: satu dokumen per (PT, sales, bulan), indeks wajib
+#: `uq_commission_carry`. Ditulis setiap kali komisi bulan itu difinalkan untuk PT itu (`catat_saldo_potongan`), dibaca
+#: mesin bulan berikutnya (`saldo_potongan_awal`).
+KOLEKSI_SALDO = "commission_carry_balances"
+
+
+async def _saldo_berlaku(doc: Dict[str, Any]) -> bool:
+    """Catatan saldo berlaku bila bulannya difinalkan tanpa jurnal akrual (total PT 0, `journal_id` kosong) atau jurnal
+    akrual yang dicatatnya masih hidup. Akrual dianulir → saldonya TIDAK dibaca sampai bulan itu difinalkan lagi."""
+    jid = (doc or {}).get("journal_id") or ""
+    if not jid:
+        return True
+    from db import db
+    return bool(await db.journal_entries.find_one({"id": jid, "source_type": "incentive_accrual",
+                                                   "status": {"$ne": "void"}}, {"_id": 0, "id": 1}))
+
+
 async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[str]) -> Dict[str, float]:
-    """BTP-5 (A1-6) — saldo potongan komisi yang terbawa ke periode ini, per PT: `carry_out` sales itu di potret beku
-    (`commission_period_rules.sales[]`) bulan SEBELUM bulan pertama periode, PT yang sama. Hanya potret yang berlaku
-    (jurnal akrualnya tidak dianulir, `_beku_berlaku`) dan hanya angka negatif; tidak ada → `{}` (saldo 0). PT tertentu →
-    satu PT; "Semua PT"/kosong → setiap PT yang menyimpan saldo sales itu (dijumlah pemanggil per PT)."""
+    """BTP-5 (A1-6) — saldo potongan komisi yang terbawa ke periode ini, per PT: `carry_out` sales itu di
+    `commission_carry_balances` bulan SEBELUM bulan pertama periode, PT yang sama, hanya catatan yang berlaku
+    (`_saldo_berlaku`) dan hanya angka negatif; tidak ada → `{}` (saldo 0). PT tertentu → satu PT; "Semua PT"/kosong →
+    setiap PT yang menyimpan saldo sales itu (dijumlah pemanggil per PT)."""
     awal = bulan_awal_periode(period)
     if not awal or not sales_id:
         return {}
     from db import db
     from services import incentive_periods as ip
-    q: Dict[str, Any] = {"period": ip.previous_period("month", awal), "sales.sales_id": sales_id}
+    q: Dict[str, Any] = {"period": ip.previous_period("month", awal), "sales_id": sales_id, "carry_out": {"$lt": 0}}
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     out: Dict[str, float] = {}
-    async for doc in db.commission_period_rules.find(q, {"_id": 0, "entity_id": 1, "sales": 1, "journal_id": 1}):
-        saldo = sum(float(r.get("carry_out") or 0) for r in doc.get("sales") or [] if r.get("sales_id") == sales_id)
-        if saldo < 0 and await _beku_berlaku(doc):
-            out[doc.get("entity_id") or ""] = round(out.get(doc.get("entity_id") or "", 0.0) + saldo, 2)
+    async for doc in db[KOLEKSI_SALDO].find(q, {"_id": 0}):
+        if await _saldo_berlaku(doc):
+            ent = doc.get("entity_id") or ""
+            out[ent] = round(out.get(ent, 0.0) + float(doc.get("carry_out") or 0), 2)
     return out
 
 
+async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[Iterable[Dict[str, Any]]], *,
+                               oleh: str, sumber: str, journal_id: str = "") -> int:
+    """BTP-5 (A1-6, R13) — catat saldo potongan komisi per sales untuk PT·bulan yang komisinya DIFINALKAN: akrual manual
+    (juga bila total PT 0 dan tanpa jurnal) dan posting gaji (dari hasil mesin di slip). `rincian` = baris per sales
+    yang membawa hasil mesin (`carry_out`, + `commission_raw`, `carry_in`, `total`); baris tanpa `carry_out` / bergalat
+    dilewati. Saldo negatif → upsert; saldo 0 → hanya memperbarui catatan yang sudah ada (koreksi akrual menghabiskan
+    saldo), tanpa membuat dokumen baru. Ulang finalisasi = upsert, jadi catatan tidak pernah basi. `journal_id` = jurnal
+    akrual hidup PT·bulan itu saat dicatat ("" bila tidak ada). → jumlah catatan yang ditulis."""
+    from pymongo.errors import DuplicateKeyError
+    from core_utils import new_id, now_iso
+    from db import db
+    bulan = bulan_komisi(period)
+    if not entity_id or entity_id == "all" or not bulan:
+        return 0
+    ditulis = 0
+    for r in rincian or ():
+        sid = r.get("sales_id") or ""
+        if not sid or r.get("galat") or r.get("carry_out") is None:
+            continue
+        carry = round(float(r.get("carry_out") or 0), 2) or 0.0
+        q = {"entity_id": entity_id, "sales_id": sid, "period": bulan}
+        isi = {"carry_out": carry, "carry_in": round(float(r.get("carry_in") or 0), 2) or 0.0,
+               "commission_raw": round(float(r.get("commission_raw") or 0), 2) or 0.0,
+               "total": round(float(r.get("total") or 0), 2), "source": sumber, "journal_id": journal_id or "",
+               "recorded_at": now_iso(), "recorded_by": oleh or ""}
+        if carry < 0:
+            try:
+                await db[KOLEKSI_SALDO].update_one(q, {"$set": isi, "$setOnInsert": {"id": new_id("cmsb")}},
+                                                   upsert=True)
+            except DuplicateKeyError:   # dua finalisasi bersamaan: dokumen pemenang diperbarui
+                await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})
+            ditulis += 1
+        elif (await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})).matched_count:
+            ditulis += 1
+    return ditulis
+
+
 def _rincian_bersih(rincian: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Baris catatan per sales dari pemanggil (`{sales_id, total, breakdown?, employee_id?, carry_out?}` atau
-    `{sales_id, galat}`); total dibulatkan 2 desimal. BTP-5 — `carry_out` (saldo potongan yang dibawa ke bulan
-    berikutnya, ≤ 0) ikut disimpan: dibaca `saldo_potongan_awal` bulan berikutnya."""
+    """Baris catatan per sales dari pemanggil (`{sales_id, total, breakdown?, employee_id?}` atau `{sales_id, galat}`);
+    total dibulatkan 2 desimal."""
     out = []
     for r in rincian:
         if r.get("galat"):
@@ -630,8 +683,6 @@ def _rincian_bersih(rincian: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for k in ("employee_id", "breakdown"):
             if r.get(k) is not None:
                 baris[k] = r[k]
-        if r.get("carry_out") is not None:
-            baris["carry_out"] = round(float(r["carry_out"] or 0), 2)
         out.append(baris)
     return out
 
@@ -650,7 +701,7 @@ async def _rincian_hitung_ulang(entity_id: str, bulan: str) -> Tuple[List[Dict[s
         try:
             c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
             sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
-                          "breakdown": c.get("breakdown") or [], "carry_out": round(float(c.get("carry_out") or 0), 2)})
+                          "breakdown": c.get("breakdown") or []})
         except Exception as exc:  # noqa: BLE001 — catatan saja (tinjauan akhir I2)
             sales.append({"sales_id": u["id"], "total": None, "galat": f"Komisi sales ini gagal dihitung saat dibekukan: {exc}"})
     return sales, ""
@@ -662,10 +713,10 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id:
 
     Dipanggil `gl_service.post_incentive_accrual` SESUDAH jurnal akrual pertama tersimpan, dan sebelum jurnal koreksi.
     `commission_period_rules` `{id "cmpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
-    pada akhir bulan — SATU-SATUNYA aturan yang dibekukan & dibaca mesin), sales [{sales_id, total, breakdown?,
-    employee_id?, carry_out?, galat?}] (CATATAN per sales; BTP-5 — `carry_out` = saldo potongan komisi yang dibawa ke
-    bulan berikutnya, dibaca mesin bulan itu lewat `saldo_potongan_awal`), sales_sumber, sales_galat?, journal_id
-    (jurnal akrual yang membekukan), recorded_at, recorded_by, replaces?}`.
+    pada akhir bulan — SATU-SATUNYA yang dibekukan & dibaca mesin), sales [{sales_id, total, breakdown?, employee_id?,
+    galat?}] (CATATAN per sales), sales_sumber, sales_galat?, journal_id (jurnal akrual yang membekukan), recorded_at,
+    recorded_by, replaces?}`. Saldo potongan komisi (BTP-5) TIDAK di sini, tetapi di `commission_carry_balances`
+    (`catat_saldo_potongan`).
 
     Tinjauan akhir I2 — `sales` hanya catatan dan tidak pernah menggagalkan akrual: `rincian_sales` dari pemanggil
     dipakai apa adanya (posting gaji: komisi slip yang diakru, `sales_sumber="slip_gaji"`; akrual manual: hasil mesin yang

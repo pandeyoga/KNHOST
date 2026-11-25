@@ -482,7 +482,8 @@ async def _compute_commission_per_sku(
         koreksi `commission_rules.hitung_koreksi` (potret aturan yang sama, tidak dipotong nol) per pesanan, berkode
         `koreksi_batal` / `koreksi_tutup_sisa` (+ `order_id`, `order_number`, label pesanan & alasannya);
       * per sales per PT: `total_incentive = max(0, commission_raw + carry_in)`, `carry_out = min(0, …)`; `carry_in` =
-        `carry_out` potret beku bulan sebelumnya (`commission_rules.saldo_potongan_awal`); "Semua PT" = jumlah per PT.
+        `carry_out` bulan sebelumnya di `commission_carry_balances` (`commission_rules.saldo_potongan_awal`; ditulis
+        saat bulan itu difinalkan — akrual/gaji, `catat_saldo_potongan`); "Semua PT" = jumlah per PT.
         Saldo tampil sebagai baris rincian `potongan_terbawa` / `potongan_dibawa` (Σ rincian = `total_incentive`).
     Pesanan tanpa `closed_short` dan tanpa `advance_to_deposit` dihitung persis seperti dulu.
     """
@@ -646,7 +647,7 @@ async def _compute_commission_per_sku(
         r["rate"] = round(r["rate"], 2)
 
     # BTP-5 (A1-6) — saldo potongan per sales per PT: total bulan = max(0, mentah + saldo masuk); sisa negatif dibawa ke
-    # bulan berikutnya (disimpan potret beku bulan ini, `carry_out`), tidak pernah menjadi komisi/gaji negatif.
+    # bulan berikutnya (`carry_out`, dicatat saat bulan ini difinalkan), tidak pernah menjadi komisi/gaji negatif.
     saldo_awal = await saldo_potongan_awal(sales_id, period, entity_id)
     bersih_pt = {pt: mentah_pt.get(pt, 0.0) + saldo_awal.get(pt, 0.0) for pt in set(mentah_pt) | set(saldo_awal)}
     if saldo_awal or any(v < 0 for v in bersih_pt.values()):

@@ -678,6 +678,37 @@ Key Fields:
 ⚠️ JANGAN BUAT: commission_freezes, commission_snapshots, period_commission (sebagai koleksi).
 ```
 
+### commission_carry_balances  [BTP-5 — saldo potongan komisi per PT per sales per bulan (keputusan pemilik A1-6)]
+```
+Collection:  commission_carry_balances   Prefix: cmsb_
+Penulis:     services/commission_rules.py (catat_saldo_potongan) — dipanggil setiap komisi PT·bulan DIFINALKAN:
+             gl_service.post_incentive_accrual (akrual manual, termasuk total PT 0 tanpa jurnal; akrual diulang/koreksi)
+             dan posting_registry.post_payroll (akrual dari slip; slip berkomisi 0 → dicatat langsung). Sumber angka =
+             hasil mesin (`compute_commission`): akrual manual langsung, posting gaji dari `hr_payslips.commission_engine`.
+Pembaca:     services/commission_rules.py (saldo_potongan_awal) → sales_force_service._compute_commission_per_sku
+             (`carry_in` bulan berikutnya = `carry_out` bulan ini, PT yang sama; "Semua PT" = jumlah per PT)
+Key Fields:
+  id              string  prefix "cmsb_"
+  entity_id       string  FK business_entities.id (PT spesifik)
+  sales_id        string  FK users.id
+  period          string  "YYYY-MM" bulan yang difinalkan
+  carry_out       number  ≤ 0 — sisa potongan yang dibawa ke bulan berikutnya (min(0, commission_raw + carry_in))
+  carry_in        number  ≤ 0 — saldo yang masuk ke bulan ini
+  commission_raw  number  komisi mentah bulan ini (bisa negatif karena koreksi batal / tutup sisa)
+  total           number  komisi yang dibayar/diakru bulan ini (≥ 0)
+  source          string  "akrual" | "slip_gaji" — jalur finalisasi
+  journal_id      string  jurnal `incentive_accrual` hidup saat dicatat; "" = bulan difinalkan tanpa jurnal (total 0)
+  recorded_at     string  ISO UTC
+  recorded_by     string  nama pemfinal
+
+ℹ️ UNIK per (entity_id, sales_id, period) — indeks wajib `uq_commission_carry` (PK-14 REQUIRED_UNIQUE_INDEXES).
+   Saldo negatif → upsert; saldo 0 → hanya memperbarui catatan yang sudah ada (tidak membuat dokumen baru).
+ℹ️ Catatan dibaca hanya bila `journal_id` kosong atau jurnalnya tidak dianulir; akrual dianulir → saldo bulan itu
+   tidak dibaca sampai bulan itu difinalkan lagi (catatan diperbarui dengan jurnal baru).
+⚠️ JANGAN BUAT: commission_carry, carry_balances, commission_deductions (sebagai koleksi); saldo TIDAK disimpan di
+   `commission_period_rules.sales[]`.
+```
+
 ### cash_holdings + cash_deposits  [PM-T4 — tunai yang diterima sales dicatat sebagai titipan sampai disetor]
 
 Bila PT memilih `pembayaran.sales_terima_tunai = titipan` (bawaan `kas_langsung` = perilaku lama), kwitansi tunai yang
@@ -3699,6 +3730,7 @@ bac_    → bank_account_changes      [PM-T1]
 ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
 cmpr_   → commission_period_rules   [KA-6]
+cmsb_   → commission_carry_balances [BTP-5]
 cgr_    → credit_gate_rejections    [CR-T3]
 aiact_  → ai_action_proposals       [AG-T1]
 pyc_    → payment_codes             [PM-T2]

@@ -50,6 +50,7 @@ from core_utils import now_iso
 pytestmark = pytest.mark.anyio
 
 KSC = "ent_ksc"
+KANDA = "ent_kanda"
 OKT, NOV, DES = "2026-10", "2026-11", "2026-12"
 TARIF = 3_500.0
 HARGA = 100_000.0
@@ -87,10 +88,10 @@ async def f(klien, db, kepala_admin):
     return {"h": kepala_admin, "pid": pid, "wid": wid, "pt": await aturan_pt(KSC), "admin": admin}
 
 
-async def _sales(db, akun, kode: str) -> Dict[str, Any]:
-    u = await akun("sales", entitas=(KSC,))
+async def _sales(db, akun, kode: str, ent: str = KSC) -> Dict[str, Any]:
+    u = await akun("sales", entitas=(ent,))
     cus = f"cus_btp5_{kode}_{uuid.uuid4().hex[:6]}"
-    await db.customers.insert_one({"id": cus, "name": f"Toko BTP5 {kode}", "entity_id": KSC, "status": "active",
+    await db.customers.insert_one({"id": cus, "name": f"Toko BTP5 {kode}", "entity_id": ent, "status": "active",
                                    "assigned_sales_id": u["id"],
                                    "payment_profile": {"default_method": "tempo", "term_days": 30}})
     return {**u, "cus": cus}
@@ -99,6 +100,11 @@ async def _sales(db, akun, kode: str) -> Dict[str, Any]:
 async def _komisi(sid: str, period: str, ent: str = KSC) -> Dict[str, Any]:
     from services import sales_force_service as sfs
     return await sfs.compute_commission(sid, period, ent)
+
+
+async def _saldo(db, ent: str, sid: str, bulan: str) -> Optional[Dict[str, Any]]:
+    """Catatan saldo potongan komisi (R13 — satu tempat): `commission_carry_balances` per (PT, sales, bulan)."""
+    return await db.commission_carry_balances.find_one({"entity_id": ent, "sales_id": sid, "period": bulan}, {"_id": 0})
 
 
 def _inti(h: Dict[str, Any]) -> Dict[str, Any]:
@@ -216,15 +222,15 @@ def _bayar(jumlah: float, tgl: str, **lain) -> Dict[str, Any]:
     return {"id": _id("pay"), "kind": "receipt", "amount": jumlah, "created_at": tgl, "date": tgl, **lain}
 
 
-def _pindah(so_id: str, jumlah: float, sumber: str) -> Dict[str, Any]:
+def _pindah(so_id: str, jumlah: float, sumber: str, tgl: str = TGL_TUTUP) -> Dict[str, Any]:
     return {"id": _id("pay"), "kind": "deposit", "amount": -jumlah, "receipt_id": f"{sumber}:{so_id}",
-            "gl_bucket": "advance", "moved_to_deposit": True, "withdrawal": True, "created_at": TGL_TUTUP,
-            "date": TGL_TUTUP}
+            "gl_bucket": "advance", "moved_to_deposit": True, "withdrawal": True, "created_at": tgl, "date": tgl}
 
 
 async def _sisip_tutup_sisa(db, sales: Dict[str, Any], f, *, qty: float = 100.0, kirim: float = 40.0,
                             bersih: float = 50_000.0, cap: float = 0.0, unit_cost: float = 0.0,
-                            tgl_bayar: str = TGL_BAYAR_OKT, dasar_lama: bool = False) -> Dict[str, Any]:
+                            tgl_bayar: str = TGL_BAYAR_OKT, dasar_lama: bool = False, tgl_tutup: str = TGL_TUTUP,
+                            ent: str = KSC) -> Dict[str, Any]:
     """Pesanan CBD (tanpa PPN) berbentuk keluaran Tugas 4: baris turun ke `kirim`, `closed_short.commission_basis`
     berisi dasar ASLI, kelebihan → titipan (baris −). `dasar_lama` = bentuk `commission_basis` sebelum rincian baris."""
     pid = _id("prd")
@@ -236,24 +242,25 @@ async def _sisip_tutup_sisa(db, sales: Dict[str, Any], f, *, qty: float = 100.0,
     dasar = {"product_id": pid, "base_quantity": qty}
     if not dasar_lama:
         dasar.update({"quantity": qty, "price": bersih, "discount_percent": 0, "line_total": qty * bersih})
-    doc = {"id": so_id, "number": f"SO-BTP5-{so_id[-4:].upper()}", "entity_id": KSC, "customer_id": sales["cus"],
+    doc = {"id": so_id, "number": f"SO-BTP5-{so_id[-4:].upper()}", "entity_id": ent, "customer_id": sales["cus"],
            "status": "shipped", "items": [kini], "grand_total": gt_baru, "subtotal": gt_baru,
-           "payments": [_bayar(gt_asli, tgl_bayar), _pindah(so_id, gt_asli - gt_baru, "tutup_sisa_titipan")],
+           "payments": [_bayar(gt_asli, tgl_bayar), _pindah(so_id, gt_asli - gt_baru, "tutup_sisa_titipan", tgl_tutup)],
            "advance_to_deposit": {"amount": gt_asli - gt_baru, "deposit_done": True, "source_id":
-                                  f"tutup_sisa_titipan:{so_id}", "kata": "sisa ditutup", "at": TGL_TUTUP},
-           "closed_short": {"at": TGL_TUTUP, "by": "Uji", "reason": "uji", "request_id": "",
+                                  f"tutup_sisa_titipan:{so_id}", "kata": "sisa ditutup", "at": tgl_tutup},
+           "closed_short": {"at": tgl_tutup, "by": "Uji", "reason": "uji", "request_id": "",
                             "grand_total_before": gt_asli, "grand_total_after": gt_baru,
                             "commission_basis": {"grand_total": gt_asli, "items": [dasar]}},
-           "created_at": "2026-10-05T03:00:00+00:00", "updated_at": now_iso()}
+           "created_at": tgl_bayar, "updated_at": now_iso()}
     await db.sales_orders.insert_one(dict(doc))
     return doc
 
 
 async def _sisip(db, sales: Dict[str, Any], f, *, qty: float = 100.0, bersih: float = 50_000.0,
                  status: str = "completed", payments: Optional[List[Dict[str, Any]]] = None,
-                 dibuat: str = "2026-10-05T03:00:00+00:00", so_id: str = "", **lain) -> Dict[str, Any]:
+                 dibuat: str = "2026-10-05T03:00:00+00:00", so_id: str = "", ent: str = KSC,
+                 **lain) -> Dict[str, Any]:
     so_id = so_id or _id("so")
-    doc = {"id": so_id, "number": f"SO-BTP5-{so_id[-4:].upper()}", "entity_id": KSC, "customer_id": sales["cus"],
+    doc = {"id": so_id, "number": f"SO-BTP5-{so_id[-4:].upper()}", "entity_id": ent, "customer_id": sales["cus"],
            "status": status, "items": [_baris(qty, bersih, pid=_id("prd"), pt=f["pt"])], "grand_total": qty * bersih,
            "subtotal": qty * bersih, "payments": payments or [], "created_at": dibuat, "updated_at": now_iso(), **lain}
     await db.sales_orders.insert_one(dict(doc))
@@ -332,8 +339,11 @@ async def test_BTP5_saldo_terbawa(db, akun, f):
     assert akr, "akrual November ada (sales Y berkomisi)"
     pot = await db.commission_period_rules.find_one({"entity_id": KSC, "period": NOV}, {"_id": 0})
     baris = {r["sales_id"]: r for r in pot["sales"]}
-    assert (baris[x["id"]]["total"], baris[x["id"]]["carry_out"]) == (0, -210_000)
-    assert baris[y["id"]]["total"] == 35_000 and baris[y["id"]].get("carry_out", 0) == 0
+    assert baris[x["id"]]["total"] == 0 and baris[y["id"]]["total"] == 35_000
+    sx = await _saldo(db, KSC, x["id"], NOV)
+    assert (sx["carry_out"], sx["commission_raw"], sx["total"], sx["source"], sx["journal_id"]) == (
+        -210_000, -210_000, 0, "akrual", akr["id"])
+    assert await _saldo(db, KSC, y["id"], NOV) is None, "saldo 0 tidak perlu dicatat"
 
     await _sisip(db, x, f, payments=[_bayar(5_000_000, "2026-12-05T03:00:00+00:00")],
                  dibuat="2026-12-01T03:00:00+00:00")
@@ -445,3 +455,137 @@ async def test_BTP5_semua_pt_sama_dengan_per_pt(db, akun, f):
         pt, semua = await _komisi(s["id"], bulan), await _komisi(s["id"], bulan, "all")
         assert (semua["total_incentive"], semua["commission_raw"], semua["carry_out"]) == (
             pt["total_incentive"], pt["commission_raw"], pt["carry_out"]), bulan
+
+
+# ═══ R13 — saldo potongan tersimpan di SATU tempat (`commission_carry_balances`) di semua jalur finalisasi bulan ═════
+def _tgl(bulan: str, hari: int = 15) -> str:
+    return f"{bulan}-{hari:02d}T03:00:00+00:00"
+
+
+@pytest.fixture(scope="module")
+async def gaji(db, sesi):
+    """PT Kanda khusus uji gaji modul ini: karyawan isi awal dinonaktifkan (pola KA12), sesi admin di PT itu."""
+    await db.hr_employees.update_many({"entity_id": KANDA}, {"$set": {"status": "inactive"}})
+    return {"h": await sesi("admin@kainnusantara.id", entitas=KANDA)}
+
+
+async def _karyawan(db, sales: Dict[str, Any]) -> None:
+    await db.hr_employees.insert_one({
+        "id": _id("emp"), "code": f"EMP-{_id('k')[-8:].upper()}", "name": sales["name"], "entity_id": KANDA,
+        "user_id": sales["id"], "status": "active", "base_salary": 5_000_000, "allowances": [], "ptkp_status": "TK0",
+        "bpjs_kes_enabled": False, "bpjs_tk_enabled": False, "join_date": "2025-01-01",
+        "created_at": "2025-01-01T00:00:00+00:00"})
+
+
+async def _gaji(klien, h: Dict[str, str], bulan: str) -> Dict[str, Any]:
+    """Proses gaji reguler PT Kanda `bulan`: buat → ajukan → setujui → posting (akrual komisi dari slip)."""
+    r = await klien.post("/api/hr/payroll/runs", headers=h, json={"entity_id": KANDA, "period": bulan,
+                                                                  "run_type": "regular"})
+    assert r.status_code == 200, r.text
+    run = r.json()
+    for aksi in ("submit", "approve"):
+        r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/{aksi}", headers=h, json={})
+        assert r.status_code == 200, r.text
+        run = r.json()
+    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/post-gl", headers=h, json={})
+    assert r.status_code == 200 and r.json()["status"] == "posted", r.text
+    return run
+
+
+async def _akrual_hidup(db, ent: str, bulan: str) -> Optional[Dict[str, Any]]:
+    return await db.journal_entries.find_one({"source_type": "incentive_accrual", "source_id": f"{ent}:{bulan}",
+                                              "status": {"$ne": "void"}}, {"_id": 0})
+
+
+async def test_BTP5_saldo_lewat_slip_gaji_total_nol(klien, db, akun, f, gaji):
+    """Gaji September PT Kanda: komisi slip semua 0 (P2 habis dipotong koreksi) → tidak ada akrual, saldo tetap dicatat
+    dari hasil mesin slip; Oktober membacanya."""
+    p2 = await _sales(db, akun, "a2", KANDA)
+    await _karyawan(db, p2)
+    await _sisip_tutup_sisa(db, p2, f, ent=KANDA, tgl_bayar=_tgl("2026-08"), tgl_tutup=_tgl("2026-09", 20))
+    run = await _gaji(klien, gaji["h"], "2026-09")
+    slip = next(s for s in run["payslips"] if s["user_id"] == p2["id"])
+    assert slip["commission"] == 0 and slip["commission_engine"]["carry_out"] == -210_000, slip.get("commission_engine")
+    assert await _akrual_hidup(db, KANDA, "2026-09") is None, "Σ komisi slip 0 → tanpa jurnal akrual"
+    sp = await _saldo(db, KANDA, p2["id"], "2026-09")
+    assert sp and (sp["carry_out"], sp["source"], sp["journal_id"]) == (-210_000, "slip_gaji", "")
+    okt = await _komisi(p2["id"], OKT, KANDA)
+    assert (okt["carry_in"], okt["total_incentive"], okt["carry_out"]) == (-210_000, 0, -210_000)
+
+
+async def test_BTP5_saldo_lewat_slip_gaji(klien, db, akun, f, gaji):
+    """Gaji November PT Kanda: P (koreksi −210.000, slip 0) + Q (35.000) → akrual dari slip 35.000; saldo P dicatat
+    dari slip; Desember P dibayar 100 m → 350.000 − 210.000 = 140.000."""
+    p, q = await _sales(db, akun, "a_p", KANDA), await _sales(db, akun, "a_q", KANDA)
+    for s in (p, q):
+        await _karyawan(db, s)
+    await _sisip_tutup_sisa(db, p, f, ent=KANDA)
+    await _sisip(db, q, f, qty=10, ent=KANDA, payments=[_bayar(500_000, TGL_BAYAR_NOV)], dibuat=TGL_BAYAR_NOV)
+    run = await _gaji(klien, gaji["h"], NOV)
+    slip = {s["user_id"]: s for s in run["payslips"]}
+    assert slip[p["id"]]["commission"] == 0 and slip[q["id"]]["commission"] == 35_000
+    assert (slip[p["id"]]["commission_engine"]["carry_out"], slip[p["id"]]["commission_engine"]["commission_raw"]) == (
+        -210_000, -210_000)
+    akr = await _akrual_hidup(db, KANDA, NOV)
+    assert akr and akr["total_debit"] == 35_000
+    sp = await _saldo(db, KANDA, p["id"], NOV)
+    assert sp and (sp["carry_out"], sp["source"], sp["journal_id"]) == (-210_000, "slip_gaji", akr["id"])
+    await _sisip(db, p, f, ent=KANDA, payments=[_bayar(5_000_000, _tgl(DES, 5))], dibuat=_tgl(DES, 1))
+    des = await _komisi(p["id"], DES, KANDA)
+    assert (des["carry_in"], des["total_incentive"], des["carry_out"]) == (-210_000, 140_000, 0)
+
+
+async def test_BTP5_saldo_bulan_total_nol_tanpa_jurnal(db, akun, f):
+    """Akrual manual Februari: total PT 0 (R hanya berkoreksi) → tanpa jurnal, saldo tetap dicatat; Maret membacanya."""
+    from services import gl_service as gl
+    r = await _sales(db, akun, "b_r")
+    await _sisip_tutup_sisa(db, r, f, tgl_bayar=_tgl("2026-01"), tgl_tutup=_tgl("2026-02", 20))
+    assert await gl.post_incentive_accrual(KSC, "2026-02", "Uji BTP5", date="2026-02-28") is None
+    assert await _akrual_hidup(db, KSC, "2026-02") is None
+    sr = await _saldo(db, KSC, r["id"], "2026-02")
+    assert sr and (sr["carry_out"], sr["total"], sr["journal_id"], sr["source"]) == (-210_000, 0, "", "akrual")
+    mar = await _komisi(r["id"], "2026-03")
+    assert (mar["carry_in"], mar["total_incentive"], mar["carry_out"]) == (-210_000, 0, -210_000), "dibawa terus"
+
+
+async def test_BTP5_koreksi_akrual_memperbarui_saldo(db, akun, f):
+    """Mei diakru (S koreksi −210.000, T 35.000). Bayar susulan bertanggal Mei untuk S → akrual Mei diulang → saldo
+    tersimpan ikut (−35.000, lalu habis), dan saldo masuk Juni mengikuti."""
+    from services import gl_service as gl
+    s, t = await _sales(db, akun, "c_s"), await _sales(db, akun, "c_t")
+    await _sisip_tutup_sisa(db, s, f, tgl_bayar=_tgl("2026-04"), tgl_tutup=_tgl("2026-05", 20))
+    await _sisip(db, t, f, qty=10, payments=[_bayar(500_000, _tgl("2026-05", 10))], dibuat=_tgl("2026-05", 1))
+    akr = await gl.post_incentive_accrual(KSC, "2026-05", "Uji BTP5", date="2026-05-31")
+    assert akr and akr["total_debit"] == 35_000
+    assert (await _saldo(db, KSC, s["id"], "2026-05"))["carry_out"] == -210_000
+    assert (await _komisi(s["id"], "2026-06"))["carry_in"] == -210_000
+
+    await _sisip(db, s, f, qty=50, payments=[_bayar(2_500_000, _tgl("2026-05", 25))], dibuat=_tgl("2026-05", 24))
+    assert await gl.post_incentive_accrual(KSC, "2026-05", "Uji BTP5", date="2026-05-31") is None, "total PT tetap"
+    ss = await _saldo(db, KSC, s["id"], "2026-05")
+    assert (ss["carry_out"], ss["commission_raw"], ss["journal_id"]) == (-35_000, -35_000, akr["id"])
+    assert (await _komisi(s["id"], "2026-06"))["carry_in"] == -35_000
+
+    await _sisip(db, s, f, qty=100, payments=[_bayar(5_000_000, _tgl("2026-05", 26))], dibuat=_tgl("2026-05", 24))
+    adj = await gl.post_incentive_accrual(KSC, "2026-05", "Uji BTP5", date="2026-05-31")
+    assert adj and adj["source_type"] == "incentive_accrual_adj" and adj["total_debit"] == 315_000
+    assert (await _saldo(db, KSC, s["id"], "2026-05"))["carry_out"] == 0, "saldo habis ikut tercatat"
+    jun = await _komisi(s["id"], "2026-06")
+    assert (jun["carry_in"], [r for r in jun["breakdown"] if r.get("price_reason") == "potongan_terbawa"]) == (0, [])
+
+
+async def test_BTP5_akrual_dianulir_saldo_tidak_dibaca(db, akun, f):
+    """Akrual Agustus dianulir → saldonya tidak dibaca lagi (September saldo masuk 0) sampai Agustus diakru ulang."""
+    from services import gl_service as gl
+    u, v = await _sales(db, akun, "d_u"), await _sales(db, akun, "d_v")
+    await _sisip_tutup_sisa(db, u, f, tgl_bayar=_tgl("2026-07"), tgl_tutup=_tgl("2026-08", 20))
+    await _sisip(db, v, f, qty=10, payments=[_bayar(500_000, _tgl("2026-08", 10))], dibuat=_tgl("2026-08", 1))
+    j1 = await gl.post_incentive_accrual(KSC, "2026-08", "Uji BTP5", date="2026-08-31")
+    assert j1 and (await _komisi(u["id"], "2026-09"))["carry_in"] == -210_000
+    await db.journal_entries.update_one({"id": j1["id"]}, {"$set": {"status": "void", "voided_by": "uji"}})
+    sep = await _komisi(u["id"], "2026-09")
+    assert (sep["carry_in"], sep["total_incentive"]) == (0, 0), "akrual dianulir: saldonya tidak dibaca"
+    j2 = await gl.post_incentive_accrual(KSC, "2026-08", "Uji BTP5", date="2026-08-31")
+    assert j2 and j2["id"] != j1["id"] and j2["source_type"] == "incentive_accrual"
+    assert (await _saldo(db, KSC, u["id"], "2026-08"))["journal_id"] == j2["id"]
+    assert (await _komisi(u["id"], "2026-09"))["carry_in"] == -210_000

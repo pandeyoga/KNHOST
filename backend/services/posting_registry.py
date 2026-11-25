@@ -272,17 +272,25 @@ async def _slip_proses_lain(run: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def _rincian_komisi_slip(slips: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Tinjauan akhir I2 — catatan per sales untuk potret bulan komisi = komisi mesin yang DIAKRU per slip (tanpa baris
-    Lembar Insentif), dijumlah per akun sales (`user_id`; tanpa akun → per karyawan). Murni, tanpa mesin komisi."""
+    Lembar Insentif), dijumlah per akun sales (`user_id`; tanpa akun → per karyawan). Murni, tanpa mesin komisi.
+
+    BTP-5 (R13) — slip yang membawa hasil mesin (`commission_engine`, slip reguler sales) ikut walau komisinya 0 (mis.
+    habis dipotong koreksi), dengan `commission_raw`/`carry_in`/`carry_out` untuk catatan saldo potongan
+    (`commission_rules.catat_saldo_potongan`). Satu sales = satu slip reguler hidup per PT·bulan; bila ada lebih, slip
+    pertama dalam daftar (proses yang sedang diposting lebih dulu) yang dipakai."""
     from services.hr_pay_components import commission_parts
     per: Dict[str, Dict[str, Any]] = {}
     for s in slips:
         nilai = commission_parts([s])[0]
-        if abs(nilai) <= 0.005:
+        mesin = s.get("commission_engine") or {}
+        if abs(nilai) <= 0.005 and not mesin:
             continue
         kunci = s.get("user_id") or f"karyawan:{s.get('employee_id') or ''}"
         r = per.setdefault(kunci, {"sales_id": s.get("user_id") or "", "employee_id": s.get("employee_id") or "",
                                    "total": 0.0})
         r["total"] = round(r["total"] + nilai, 2)
+        if mesin and "carry_out" not in r:
+            r.update({k: round(float(mesin.get(k) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")})
     return list(per.values())
 
 
@@ -319,6 +327,14 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
         if not incentive_je_id:
             st = await gl.incentive_accrual_status(run["entity_id"], run["period"])
             incentive_je_id = st.get("journal_id") or ""
+    elif akru(run.get("commission_mode", "accrue_then_settle")):
+        # BTP-5 (A1-6, R13) — komisi slip proses ini 0 (mis. habis dipotong koreksi komisi): tidak ada akrual, tetapi
+        # gaji bulan ini tetap memfinalkan komisinya → saldo potongan dari hasil mesin slip dicatat supaya terbawa ke
+        # bulan berikutnya. Galatnya menggagalkan posting (ulang dari panel aman: catatan = upsert).
+        from services.commission_rules import catat_saldo_potongan
+        st = await gl.incentive_accrual_status(run["entity_id"], run["period"])
+        await catat_saldo_potongan(run["entity_id"], run["period"], _rincian_komisi_slip(list(slips)),
+                                   oleh=created_by, sumber="slip_gaji", journal_id=st.get("journal_id") or "")
     je = await gl.post_payroll_run(run, slips, created_by, date=date)
     if je:
         je["incentive_journal_id"] = incentive_je_id
