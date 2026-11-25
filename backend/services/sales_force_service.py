@@ -10,8 +10,10 @@ from services.customer_service import (
     compute_customer_credit, _order_grand_total, _order_paid, DEAD_STATUSES,
 )
 from services import costing_service
-from services.commission_rules import (ALASAN_LABEL, aturan_baris, bulan_periode, capaian_aktif, faktor_diskon,
-                                      hitung_baris, label_alasan, pengali_capaian)
+from services.commission_rules import (ALASAN_LABEL, KOREKSI_BATAL, KOREKSI_TUTUP_SISA, LABEL_DIBAWA, LABEL_TERBAWA,
+                                      POTONGAN_DIBAWA, POTONGAN_TERBAWA, aturan_baris, bulan_awal_periode,
+                                      bulan_periode, capaian_aktif, faktor_diskon, hitung_baris, hitung_koreksi,
+                                      label_alasan, label_koreksi, pengali_capaian, saldo_potongan_awal)
 from services.config_service import get_effective_settings
 
 CATATAN_SIMULASI = ("Kedua kolom menghitung semua pesanan bulan ini dengan aturan hari ini (kiri) dan dengan perubahan "
@@ -298,6 +300,10 @@ async def _jumlah_bulanan(sales_id: str, period: str, entity_id: Optional[str], 
         **utuh,
         "commission": total,
         "total_incentive": total,
+        # BTP-5 — Σ mentah per bulan; saldo masuk = saldo bulan pertama, saldo keluar = saldo bulan terakhir
+        "commission_raw": round(sum(h["commission_raw"] for h in hasil), 2),
+        "carry_in": hasil[0]["carry_in"],
+        "carry_out": hasil[-1]["carry_out"],
         "breakdown": rows,
         "achievement_multiplier": {"factor": None, "info": {"aktif": True, "basis": None, "capaian_pct": None,
                                                             "sumber_jenjang": None, "alasan": "per_bulan"},
@@ -380,6 +386,77 @@ def _label_rincian(alasan: str, selisih: set) -> str:
     return label_alasan(alasan, next(iter(selisih), None))
 
 
+# ── BTP-5 (A1-6) — komisi pesanan batal sesudah bayar / tutup sisa ──────────────────────────────────────────────────
+def _bertitipan(o: Dict[str, Any]) -> bool:
+    """Uang muka pesanan sudah dipindah ke titipan pelanggan (`ar_receipt_service.pindah_uang_muka_ke_titipan`)."""
+    return bool((o.get("advance_to_deposit") or {}).get("deposit_done"))
+
+
+def _ikut_komisi(o: Dict[str, Any]) -> bool:
+    """Pesanan hidup, atau pesanan mati (batal/kedaluwarsa) yang uang mukanya sudah dipindah ke titipan: bulan bayarnya
+    tetap berkomisi (bulan yang sudah berakrual tidak berubah) dan bulan pemindahannya berkoreksi negatif. Pesanan mati
+    tanpa penanda itu (batal sebelum ada uang, atau batal lama sebelum S3) tetap dikecualikan seperti dulu."""
+    return o.get("status") not in DEAD_STATUSES or _bertitipan(o)
+
+
+def _qty_dasar(line: Dict[str, Any]) -> float:
+    return float(line.get("base_quantity", line.get("quantity", 0)) or 0)
+
+
+def _dasar_komisi(o: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], float, bool]:
+    """`(baris, nilai tagihan, ditutup_sisa)` dasar komisi pesanan.
+
+    Pesanan ber-`closed_short` (tutup sisa, BTP-4) memakai dasar ASLI sebelum ditutup (`closed_short.commission_basis`)
+    di SETIAP periode, supaya bulan yang sudah berakrual dihitung ulang persis sama: `grand_total` asli, dan per baris
+    (urutan baris asli) jumlah dasar, jumlah jual, harga, diskon, dan nilai baris asli — baris yang masih ada di `items`
+    dipulihkan dari `commission_basis.items[]` (bentuk lama tanpa rincian baris: diskalakan dari baris sekarang menurut
+    jumlah dasar), baris yang terkirim 0 diambil utuh dari `closed_lines[]`. Pesanan lain: `items` + nilai tagihan."""
+    dasar = (o.get("closed_short") or {}).get("commission_basis") or {}
+    if not dasar:
+        return o.get("items") or [], _order_grand_total(o), False
+    kini = {it.get("product_id"): it for it in o.get("items") or []}
+    keluar = {it.get("product_id"): it for it in o.get("closed_lines") or []}
+    baris: List[Dict[str, Any]] = []
+    for d in dasar.get("items") or []:
+        pid = d.get("product_id")
+        if pid in kini:
+            it = kini[pid]
+            asli = float(d.get("base_quantity") or 0)
+            skala = asli / _qty_dasar(it) if _qty_dasar(it) > 0 else 0.0
+            n = {**it, "base_quantity": asli,
+                 "quantity": d.get("quantity", it.get("quantity_ordered_original",
+                                                     float(it.get("quantity") or 0) * skala)),
+                 "line_total": d.get("line_total", float(it.get("line_total") or 0) * skala)}
+            for k in ("price", "discount_percent"):
+                if k in d:
+                    n[k] = d[k]
+            baris.append(n)
+        elif pid in keluar:
+            baris.append(keluar[pid])
+    return baris, float(dasar.get("grand_total") or 0) or _order_grand_total(o), True
+
+
+def _uang_periode(o: Dict[str, Any], period: str) -> Tuple[float, float]:
+    """`(Σ baris bayar biasa, Σ baris uang pindah ke titipan (≤ 0))` pesanan dalam periode."""
+    biasa = pindah = 0.0
+    for p in o.get("payments") or []:
+        if not _in_period(p.get("created_at") or p.get("date"), period):
+            continue
+        if p.get("moved_to_deposit"):
+            pindah += float(p.get("amount", 0) or 0)
+        else:
+            biasa += float(p.get("amount", 0) or 0)
+    return biasa, pindah
+
+
+def _baris_saldo(kode: str, label: str, komisi: float) -> Dict[str, Any]:
+    """Baris rincian saldo potongan (bukan artikel): kuncinya sama dengan baris artikel supaya layar & gabungan tetap
+    jalan; Σ `commission` rincian = `total_incentive`."""
+    return {"category": "", "sku": "", "name": label, "template_id": "", "qty_base": 0.0, "unit": "",
+            "commission": round(komisi, 2), "rate": 0.0, "rate_origin": "", "price_factor": None,
+            "price_reason": kode, "price_reason_label": label, "achievement_factor": None, "capped": False}
+
+
 async def _compute_commission_per_sku(
     sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any], *,
     sumber_aturan: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
@@ -396,6 +473,18 @@ async def _compute_commission_per_sku(
     KA-6 — pengali capaian = `commission_rules.pengali_capaian` (sekali per proses hitung, sama untuk semua baris),
     atau `capaian_tetap` `(faktor, info)` dari pemanggil (proyeksi triwulan/tahun, `_jumlah_bulanan`); hasil +
     `achievement_multiplier` `{factor, info}`.
+
+    BTP-5 (keputusan pemilik A1-6, rancangan batal & tutup sisa §5.9) — komisi barang yang tidak jadi dikirim dipotong
+    di BULAN PENUTUPAN, bulan yang sudah berakrual tidak berubah:
+      * pesanan mati ikut dihitung hanya bila uang mukanya sudah dipindah ke titipan (`_ikut_komisi`), dan hanya di
+        periode yang ada uangnya; pesanan tutup sisa memakai dasar ASLI di setiap periode (`_dasar_komisi`);
+      * baris bayar `moved_to_deposit` di periode dibersihkan dengan bayar biasa periode itu; sisa negatif → baris
+        koreksi `commission_rules.hitung_koreksi` (potret aturan yang sama, tidak dipotong nol) per pesanan, berkode
+        `koreksi_batal` / `koreksi_tutup_sisa` (+ `order_id`, `order_number`, label pesanan & alasannya);
+      * per sales per PT: `total_incentive = max(0, commission_raw + carry_in)`, `carry_out = min(0, …)`; `carry_in` =
+        `carry_out` potret beku bulan sebelumnya (`commission_rules.saldo_potongan_awal`); "Semua PT" = jumlah per PT.
+        Saldo tampil sebagai baris rincian `potongan_terbawa` / `potongan_dibawa` (Σ rincian = `total_incentive`).
+    Pesanan tanpa `closed_short` dan tanpa `advance_to_deposit` dihitung persis seperti dulu.
     """
     kpi = await sales_kpi(sales_id, period, entity_id)
     cache: Dict[Any, Any] = {}   # indeks tarif, aturan PT, produk, artikel — sekali per proses hitung
@@ -448,11 +537,12 @@ async def _compute_commission_per_sku(
     if entity_id and entity_id != "all":  # G3 D4-SALES-03 — basis komisi hanya SO entitas yang diminta
         order_filter["entity_id"] = entity_id
     orders = await db.sales_orders.find(order_filter, {"_id": 0}).to_list(8000)
-    live = [o for o in orders if o.get("status") not in DEAD_STATUSES]
+    live = [o for o in orders if _ikut_komisi(o)]   # BTP-5 — + pesanan mati yang uang mukanya sudah jadi titipan
 
     breakdown: Dict[tuple, Dict[str, Any]] = {}
     total = 0.0
     projection_full = 0.0
+    mentah_pt: Dict[str, float] = {}   # BTP-5 — komisi mentah per PT pesanan (saldo potongan per sales per PT)
 
     for o in live:
         # F-4c — bobot atribusi insentif untuk sales_id pada order ini.
@@ -469,18 +559,29 @@ async def _compute_commission_per_sku(
             weight = 1.0
         if weight <= 0:
             continue
-        gt = _order_grand_total(o)
+        lines, gt, ditutup = _dasar_komisi(o)   # BTP-5 — tutup sisa: dasar ASLI di setiap periode
         if gt <= 0:
             continue
-        paid_in_period = sum(
-            float(p.get("amount", 0) or 0) for p in (o.get("payments") or [])
-            if _in_period(p.get("created_at") or p.get("date"), period)
-        )
-        frac_paid = min(paid_in_period / gt, 1.0)
+        biasa, pindah = _uang_periode(o, period)
+        paid_in_period = biasa + pindah
+        if pindah:
+            # BTP-5 (A1-6) — uang yang pindah ke titipan di periode ini: dulu dihitung sebagai bayar negatif lalu
+            # dipotong nol (koreksinya hilang). Kini dibersihkan dengan bayar biasa periode yang sama; sisa negatif =
+            # koreksi.
+            bersih = max(biasa, 0.0) + pindah
+            frac_paid = min(bersih / gt, 1.0) if bersih > 0 else 0.0
+            frac_koreksi = min(-bersih / gt, 1.0) if bersih < 0 else 0.0
+        else:
+            frac_paid, frac_koreksi = min(biasa / gt, 1.0), 0.0
+        mati = o.get("status") in DEAD_STATUSES
+        if mati and not frac_paid and not frac_koreksi:
+            continue   # pesanan batal hanya muncul di bulan yang ada uangnya
         order_in_period = _in_period(o.get("created_at"), period)
-        contributes = order_in_period or paid_in_period > 0
-        for line in (o.get("items") or []):
-            base_qty = float(line.get("base_quantity", line.get("quantity", 0)) or 0)
+        contributes = not mati and (order_in_period or paid_in_period > 0)
+        kode_koreksi = KOREKSI_TUTUP_SISA if ditutup else KOREKSI_BATAL
+        ent_o = o.get("entity_id") or ""
+        for line in lines:
+            base_qty = _qty_dasar(line)
             if base_qty <= 0:
                 continue
             aturan = await ambil_aturan(line)
@@ -488,19 +589,23 @@ async def _compute_commission_per_sku(
             if not tarif or float(tarif.get("per_unit_amount", 0) or 0) <= 0:
                 continue   # tanpa tarif (dipotret kosong / ≤ 0) = tanpa komisi, seperti dulu
             cost, cost_known = await cost_for_line(line, line.get("product_id"))
-            h = hitung_baris(aturan, line, fraksi=frac_paid, bobot=weight, biaya=cost, biaya_diketahui=cost_known,
-                             pengali_capaian=faktor_capaian)
+            hitung = hitung_koreksi if frac_koreksi else hitung_baris
+            h = hitung(aturan, line, fraksi=frac_koreksi or frac_paid, bobot=weight, biaya=cost,
+                       biaya_diketahui=cost_known, pengali_capaian=faktor_capaian)
             total += h["komisi"]
-            if contributes:
-                projection_full += h["komisi_penuh"]
+            mentah_pt[ent_o] = mentah_pt.get(ent_o, 0.0) + h["komisi"]
+            if contributes and not ditutup:
+                projection_full += abs(h["komisi_penuh"])
 
             # Rincian per artikel (tanpa angka margin/HPP): gabung per artikel (atau SKU bila tanpa artikel) × tarif ×
-            # pengali harga & alasannya × dibatasi × asal tarif.
+            # pengali harga & alasannya × dibatasi × asal tarif. BTP-5 — baris koreksi terpisah per pesanan.
             artikel = aturan.get("artikel") or {}
             tpl = artikel.get("id") or ""
             asal = _asal_tarif(tarif)
             key = (("artikel", tpl) if tpl else ("sku", line.get("sku", "")), h["tarif"], h["pengali_harga"],
                    h["alasan_harga"], h["dibatasi"], asal)
+            if frac_koreksi:
+                key = ("koreksi", kode_koreksi, o.get("id")) + key
             b = breakdown.setdefault(key, {
                 "category": line.get("category", ""), "sku": artikel.get("kode") or line.get("sku", ""),
                 "name": artikel.get("nama") or line.get("product_name", ""), "template_id": tpl,
@@ -508,19 +613,55 @@ async def _compute_commission_per_sku(
                 "price_factor": h["pengali_harga"], "price_reason": h["alasan_harga"], "price_reason_label": "",
                 "achievement_factor": h["pengali_capaian"], "capped": h["dibatasi"], "_selisih": set(),
             })
+            if frac_koreksi and "_label" not in b:
+                kata = "kedaluwarsa" if o.get("status") == "expired" else "dibatalkan"
+                b.update({"price_reason": kode_koreksi, "order_id": o.get("id") or "",
+                          "order_number": o.get("number") or o.get("id") or "",
+                          "_label": label_koreksi(kode_koreksi, o.get("number") or o.get("id") or "", kata)})
             b["qty_base"] += h["qty_dasar_terbayar"] * weight
             b["commission"] += h["komisi"]
             if h["selisih_pct"] is not None:
                 b["_selisih"].add(h["selisih_pct"])
+        if contributes and ditutup:   # proyeksi pesanan tutup sisa = barang yang terkirim (baris sekarang)
+            for line in o.get("items") or []:
+                if _qty_dasar(line) <= 0:
+                    continue
+                aturan = await ambil_aturan(line)
+                tarif = (aturan or {}).get("tarif")
+                if not tarif or float(tarif.get("per_unit_amount", 0) or 0) <= 0:
+                    continue
+                cost, cost_known = await cost_for_line(line, line.get("product_id"))
+                penuh = hitung_baris(aturan, line, fraksi=1.0, bobot=weight, biaya=cost, biaya_diketahui=cost_known,
+                                     pengali_capaian=faktor_capaian)
+                projection_full += penuh["komisi_penuh"]
 
     target_collection = await _target_collection_for(sales_id, period, entity_id)
     achievement = (kpi["total_collected"] / target_collection * 100) if target_collection else 0
     rows = sorted(breakdown.values(), key=lambda x: x["commission"], reverse=True)
     for r in rows:
-        r["price_reason_label"] = _label_rincian(r["price_reason"], r.pop("_selisih"))
+        selisih = r.pop("_selisih")
+        r["price_reason_label"] = r.pop("_label") if "_label" in r else _label_rincian(r["price_reason"], selisih)
         r["qty_base"] = round(r["qty_base"], 2)
         r["commission"] = round(r["commission"], 2)
         r["rate"] = round(r["rate"], 2)
+
+    # BTP-5 (A1-6) — saldo potongan per sales per PT: total bulan = max(0, mentah + saldo masuk); sisa negatif dibawa ke
+    # bulan berikutnya (disimpan potret beku bulan ini, `carry_out`), tidak pernah menjadi komisi/gaji negatif.
+    saldo_awal = await saldo_potongan_awal(sales_id, period, entity_id)
+    bersih_pt = {pt: mentah_pt.get(pt, 0.0) + saldo_awal.get(pt, 0.0) for pt in set(mentah_pt) | set(saldo_awal)}
+    if saldo_awal or any(v < 0 for v in bersih_pt.values()):
+        dibayar = sum(max(v, 0.0) for v in bersih_pt.values())
+        carry_out = round(sum(min(v, 0.0) for v in bersih_pt.values()), 2) or 0.0
+    else:   # tanpa koreksi & saldo: angka persis seperti dulu
+        dibayar, carry_out = total, 0.0
+    carry_in = round(sum(saldo_awal.values()), 2) or 0.0
+    if carry_in < 0:
+        from services import incentive_periods as ip
+        lalu = ip.previous_period("month", bulan_awal_periode(period))
+        rows.append(_baris_saldo(POTONGAN_TERBAWA, LABEL_TERBAWA.format(bulan=ip.period_label("month", lalu)),
+                                 carry_in))
+    if carry_out < 0:
+        rows.append(_baris_saldo(POTONGAN_DIBAWA, LABEL_DIBAWA, -carry_out))
 
     return {
         "sales_id": sales_id,
@@ -531,9 +672,12 @@ async def _compute_commission_per_sku(
         "target_amount": round(target_collection, 2),
         "achievement_pct": round(achievement, 2),
         "applied_rate": None,
-        "commission": round(total, 2),
+        "commission": round(dibayar, 2),
         "bonus_new_customer": 0.0,
-        "total_incentive": round(total, 2),
+        "total_incentive": round(dibayar, 2),
+        "commission_raw": round(total, 2) or 0.0,
+        "carry_in": carry_in,
+        "carry_out": carry_out,
         "projection_full": round(projection_full, 2),
         "breakdown": rows,
         "achievement_multiplier": {"factor": faktor_capaian, "info": info_capaian},

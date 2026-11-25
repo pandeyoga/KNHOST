@@ -240,15 +240,20 @@ export default function MyIncentiveCard({ variant = "page", hideWhenEmpty = fals
                     return (
                       <li key={`${b.sku}-${i}`} className="py-1.5 text-fs-12" data-testid={`${testId}-auto-rincian-${i}`}>
                         <div className="flex items-baseline justify-between gap-3">
-                          <span className="font-semibold text-kn-text">{b.name}<span className="font-mono text-kn-text-2"> · {b.sku}</span></span>
+                          <span className="font-semibold text-kn-text">{b.name}{r.jenis !== "saldo" && <span className="font-mono text-kn-text-2"> · {b.sku}</span>}</span>
                           <span className="whitespace-nowrap font-bold text-kn-text"><Rupiah v={b.commission} /></span>
                         </div>
-                        <p className="text-kn-text-2">
-                          {formatDecimal(b.qty_base || 0)} {r.satuan} · tarif {r.tarif}
-                          {r.asal && <span data-testid={`${testId}-auto-rincian-${i}-asal`}> ({r.asal})</span>}
-                          {" "}· harga {r.pengaliHarga} · capaian {r.pengaliCapaian}
-                          {r.dibatasi && <span className="font-semibold" data-testid={`${testId}-auto-rincian-${i}-batas`}> · {r.catatanBatas}</span>}
-                        </p>
+                        {r.jenis !== "saldo" && (
+                          <p className="text-kn-text-2">
+                            {formatDecimal(b.qty_base || 0)} {r.satuan} · tarif {r.tarif}
+                            {r.asal && <span data-testid={`${testId}-auto-rincian-${i}-asal`}> ({r.asal})</span>}
+                            {" "}· harga {r.pengaliHarga} · capaian {r.pengaliCapaian}
+                            {r.dibatasi && <span className="font-semibold" data-testid={`${testId}-auto-rincian-${i}-batas`}> · {r.catatanBatas}</span>}
+                          </p>
+                        )}
+                        {r.keterangan && r.jenis !== "saldo" && (
+                          <p className="font-semibold text-kn-text-2" data-testid={`${testId}-auto-rincian-${i}-ket`}>{r.keterangan}</p>
+                        )}
                       </li>
                     );
                   })}

@@ -88,6 +88,16 @@ async def lembar_saya(entity_id: str, user_id: str, period: str) -> List[Dict[st
 # Daftar putih rincian komisi untuk sales: tanpa angka margin/HPP (jangan menyalin baris mesin apa adanya).
 KUNCI_RINCIAN = ("name", "sku", "qty_base", "unit", "rate", "rate_origin", "price_factor", "price_reason_label",
                  "achievement_factor", "capped", "commission")
+#: BTP-5 (A1-6) — kode baris koreksi (pesanan batal / sisa ditutup) & saldo potongan: ikut dikirim HANYA untuk baris
+#: itu (kode, bukan angka) supaya layar menuliskannya sebagai koreksi/potongan, bukan baris artikel biasa.
+KODE_BARIS_KHUSUS = ("koreksi_batal", "koreksi_tutup_sisa", "potongan_terbawa", "potongan_dibawa")
+
+
+def _baris_rincian(r: Dict[str, Any]) -> Dict[str, Any]:
+    b = {k: r.get(k) for k in KUNCI_RINCIAN}
+    if r.get("price_reason") in KODE_BARIS_KHUSUS:
+        b["price_reason"] = r["price_reason"]
+    return b
 
 
 async def komisi_otomatis(entity_id: str, user_id: str, period: str, mode: str) -> Optional[Dict[str, Any]]:
@@ -106,7 +116,7 @@ async def komisi_otomatis(entity_id: str, user_id: str, period: str, mode: str) 
     else:
         proyeksi = total
     return {"mtd": total, "projection_month_end": proyeksi,
-            "breakdown": [{k: r.get(k) for k in KUNCI_RINCIAN} for r in hasil.get("breakdown") or []]}
+            "breakdown": [_baris_rincian(r) for r in hasil.get("breakdown") or []]}
 
 
 async def kartu(entity_id: str, user_id: str, period: str = "") -> Dict[str, Any]:

@@ -171,10 +171,15 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {comm.breakdown.map((b, i) => { const r = ringkasRincian(b); return (
+                    {comm.breakdown.map((b, i) => { const r = ringkasRincian(b); return r.jenis === "saldo" ? (
+                      <tr key={`${b.price_reason}-${i}`} data-testid={`commission-breakdown-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
+                        <td className="px-3 py-2 text-[#3C3C43]" colSpan={6} data-testid={`commission-breakdown-ket-${i}`}>{r.keterangan}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtCur(b.commission)}</td>
+                      </tr>
+                    ) : (
                       <tr key={`${b.sku}-${i}`} data-testid={`commission-breakdown-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
                         <td className="px-3 py-2 font-semibold">{b.category || "—"}</td>
-                        <td className="px-3 py-2 text-[#3C3C43]">{b.name}<span className="text-[10px] text-[#9A9BA3] font-mono"> · {b.sku}</span></td>
+                        <td className="px-3 py-2 text-[#3C3C43]">{b.name}<span className="text-[10px] text-[#9A9BA3] font-mono"> · {b.sku}</span>{r.keterangan && <span className="block text-fs-12 font-semibold text-kn-text-2" data-testid={`commission-breakdown-ket-${i}`}>{r.keterangan}</span>}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{fmt.format(b.qty_base || 0)} {r.satuan}</td>
                         <td className="px-3 py-2 text-right tabular-nums"><span data-testid={`commission-breakdown-rate-${i}`}>{r.tarif}</span>{r.asal && <span className="block text-fs-12 text-kn-text-2" data-testid={`commission-breakdown-origin-${i}`}>{r.asal}</span>}</td>
                         <td className="px-3 py-2 text-right tabular-nums" data-testid={`commission-breakdown-price-${i}`}>{r.pengaliHarga}</td>

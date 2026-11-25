@@ -420,9 +420,16 @@ def _patch(order: Dict[str, Any], plan: Dict[str, Any], actor: Dict[str, Any], r
             "at": now, "by": name, "by_id": str(actor.get("id") or ""), "reason": reason, "request_id": request_id,
             "grand_total_before": plan["grand_total_before"], "grand_total_after": plan["grand_total_after"],
             "remaining_value": plan["remaining_value"], "excess_to_deposit": plan["excess_to_deposit"],
-            # Tugas 5 — komisi bulan penutupan dikoreksi dari dasar ASLI pesanan (bukan hitungan ulang).
+            # Tugas 5 — komisi bulan penutupan dikoreksi dari dasar ASLI pesanan (bukan hitungan ulang). Isian baris
+            # yang dibaca `commission_rules.hitung_baris` (jumlah dasar tanpa pembulatan, jumlah jual, harga, diskon, nilai
+            # baris) ikut disimpan supaya bulan yang sudah berakrual dihitung ulang PERSIS sama (batas margin & pita harga
+            # membaca nilai baris).
             "commission_basis": {"grand_total": plan["grand_total_before"],
-                                 "items": [{"product_id": it.get("product_id"), "base_quantity": _base(it)}
+                                 "items": [{"product_id": it.get("product_id"),
+                                            "base_quantity": float(it.get("base_quantity", it.get("quantity", 0)) or 0),
+                                            "quantity": it.get("quantity"), "price": it.get("price"),
+                                            "discount_percent": it.get("discount_percent", 0),
+                                            "line_total": it.get("line_total")}
                                            for it in order.get("items") or []]}},
         "updated_at": now}
     if request_id:

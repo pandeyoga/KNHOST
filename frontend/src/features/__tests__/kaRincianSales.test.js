@@ -149,3 +149,30 @@ test("KA10 beranda sales: kolom tarif dan pengali tampil", async () => {
   expect(txt(q(host, "commission-breakdown-capped-1"))).toBe("dibatasi batas margin");
   expect(txt(q(host, "commission-breakdown-ach-1"))).toBe("—");
 });
+
+// BTP-5 (A1-6) — komisi barang yang tidak jadi dikirim dipotong di bulan penutupan: baris koreksi menulis pesanan &
+// alasannya; saldo potongan (terbawa / dibawa) tampil sebagai baris keterangan tanpa tarif & pengali.
+test("BTP5 baris koreksi & saldo potongan berlabel pesanan dan alasannya", async () => {
+  const KOREKSI = { ...BARIS_A, qty_base: -60, commission: -210000, price_factor: 1, achievement_factor: 1,
+    price_reason: "koreksi_tutup_sisa", price_reason_label: "Koreksi komisi: sisa pesanan SO-BTP5-1 ditutup" };
+  const DIBAWA = { name: "Sisa potongan komisi dibawa ke bulan berikutnya", sku: "", qty_base: 0, unit: "", rate: 0,
+    rate_origin: "", price_factor: null, achievement_factor: null, capped: false, commission: 210000,
+    price_reason: "potongan_dibawa", price_reason_label: "Sisa potongan komisi dibawa ke bulan berikutnya" };
+  const k = ringkasRincian(KOREKSI);
+  expect(k.jenis).toBe("koreksi");
+  expect(k.pengaliHarga).toBe("×1");
+  expect(k.keterangan).toBe("Koreksi komisi: sisa pesanan SO-BTP5-1 ditutup");
+  const s = ringkasRincian(DIBAWA);
+  expect([s.jenis, s.tarif, s.pengaliHarga, s.keterangan]).toEqual(
+    ["saldo", "—", "—", "Sisa potongan komisi dibawa ke bulan berikutnya"]);
+  expect(ringkasRincian(BARIS_A).jenis).toBe("biasa");
+
+  rute({ "/incentive/me": KARTU([BARIS_A, KOREKSI, DIBAWA]) });
+  const host = await mount(<MyIncentiveCard period="2026-11" />);
+  expect(txt(q(host, "my-incentive-auto-rincian-1-ket"))).toBe("Koreksi komisi: sisa pesanan SO-BTP5-1 ditutup");
+  expect(txt(q(host, "my-incentive-auto-rincian-1"))).toContain("-60 yard");
+  const saldo = txt(q(host, "my-incentive-auto-rincian-2"));
+  expect(saldo).toContain("Sisa potongan komisi dibawa ke bulan berikutnya");
+  expect(saldo).not.toMatch(/tarif|capaian/);
+  expect(q(host, "my-incentive-auto-rincian-0-ket")).toBeNull();
+});

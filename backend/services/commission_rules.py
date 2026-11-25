@@ -28,6 +28,13 @@ ALASAN_LABEL: Dict[str, str] = {
     "diskon_lewat_ambang": "Diskon baris melewati ambang",
     **{f"sumber_tetap:{k}": f"{v}, memakai pengali tetap" for k, v in NAMA_SUMBER.items()},
 }
+#: BTP-5 (A1-6) — kode alasan baris rincian koreksi & saldo potongan (bukan alasan harga; `price_reason` baris rincian).
+KOREKSI_BATAL, KOREKSI_TUTUP_SISA = "koreksi_batal", "koreksi_tutup_sisa"
+POTONGAN_TERBAWA, POTONGAN_DIBAWA = "potongan_terbawa", "potongan_dibawa"
+LABEL_KOREKSI = {KOREKSI_BATAL: "Koreksi komisi: pesanan {nomor} {kata}",
+                 KOREKSI_TUTUP_SISA: "Koreksi komisi: sisa pesanan {nomor} ditutup"}
+LABEL_TERBAWA = "Potongan komisi terbawa dari {bulan}"
+LABEL_DIBAWA = "Sisa potongan komisi dibawa ke bulan berikutnya"
 
 
 def _angka(v: Any, nama: str) -> float:
@@ -346,6 +353,24 @@ def hitung_baris(aturan: Dict[str, Any], line: Dict[str, Any], *, fraksi: float,
             "pengali_capaian": pengali_capaian, "dibatasi": dibatasi}
 
 
+def hitung_koreksi(aturan: Dict[str, Any], line: Dict[str, Any], *, fraksi: float, bobot: float, biaya: float,
+                   biaya_diketahui: bool, pengali_capaian: float) -> Dict[str, Any]:
+    """BTP-5 (A1-6) — koreksi komisi satu baris untuk uang pesanan yang pindah ke titipan (batal sesudah bayar / tutup
+    sisa): NEGATIF dari komisi yang dulu dihitung untuk bagian itu — `hitung_baris` dengan |fraksi| (aturan potret yang
+    sama, batas margin yang sama), lalu dibalik tandanya. Tidak lewat pemotong nol/batas margin sebagai angka negatif:
+    kalau dipotong, koreksinya hilang (rancangan §5.9). Bentuk sama dengan `hitung_baris`; `komisi` ≤ 0,
+    `qty_dasar_terbayar` ≤ 0."""
+    h = hitung_baris(aturan, line, fraksi=abs(float(fraksi or 0)), bobot=bobot, biaya=biaya,
+                     biaya_diketahui=biaya_diketahui, pengali_capaian=pengali_capaian)
+    return {**h, "komisi": -h["komisi"], "komisi_penuh": -h["komisi_penuh"],
+            "qty_dasar_terbayar": -h["qty_dasar_terbayar"]}
+
+
+def label_koreksi(kode: str, nomor: str, kata: str = "dibatalkan") -> str:
+    """Teks rincian baris koreksi: pesanan (nomor) + alasan ("sisa ditutup" / "dibatalkan" / "kedaluwarsa")."""
+    return LABEL_KOREKSI[kode].format(nomor=nomor or "-", kata=kata or "dibatalkan")
+
+
 # ── Pemuat dari database (satu-satunya bagian yang menyentuh Mongo) ─────────
 async def muat_indeks_tarif(entity_id: Optional[str]) -> Dict[str, Dict[str, Any]]:
     """`rate_key` → tarif aktif (+ `_lingkup` "pt"/"semua_pt"). Baris PT menimpa baris `all`; tanpa PT hanya `all`."""
@@ -562,9 +587,40 @@ async def pengali_capaian(entity_id: Optional[str], sales_id: str, period: str) 
     return pilih_jenjang(aturan["jenjang"], float(pct)), {**info, "capaian_pct": pct, "alasan": "jenjang"}
 
 
+def bulan_awal_periode(period: Any) -> Optional[str]:
+    """Bulan pertama periode komisi: bulan itu sendiri (`YYYY-MM`), bulan pertama triwulan/tahun; selain itu `None`."""
+    bulan = bulan_komisi(period)
+    if bulan:
+        return bulan
+    daftar = bulan_periode(period)
+    return daftar[0] if daftar else None
+
+
+async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[str]) -> Dict[str, float]:
+    """BTP-5 (A1-6) — saldo potongan komisi yang terbawa ke periode ini, per PT: `carry_out` sales itu di potret beku
+    (`commission_period_rules.sales[]`) bulan SEBELUM bulan pertama periode, PT yang sama. Hanya potret yang berlaku
+    (jurnal akrualnya tidak dianulir, `_beku_berlaku`) dan hanya angka negatif; tidak ada → `{}` (saldo 0). PT tertentu →
+    satu PT; "Semua PT"/kosong → setiap PT yang menyimpan saldo sales itu (dijumlah pemanggil per PT)."""
+    awal = bulan_awal_periode(period)
+    if not awal or not sales_id:
+        return {}
+    from db import db
+    from services import incentive_periods as ip
+    q: Dict[str, Any] = {"period": ip.previous_period("month", awal), "sales.sales_id": sales_id}
+    if entity_id and entity_id != "all":
+        q["entity_id"] = entity_id
+    out: Dict[str, float] = {}
+    async for doc in db.commission_period_rules.find(q, {"_id": 0, "entity_id": 1, "sales": 1, "journal_id": 1}):
+        saldo = sum(float(r.get("carry_out") or 0) for r in doc.get("sales") or [] if r.get("sales_id") == sales_id)
+        if saldo < 0 and await _beku_berlaku(doc):
+            out[doc.get("entity_id") or ""] = round(out.get(doc.get("entity_id") or "", 0.0) + saldo, 2)
+    return out
+
+
 def _rincian_bersih(rincian: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Baris catatan per sales dari pemanggil (`{sales_id, total, breakdown?, employee_id?}` atau `{sales_id, galat}`);
-    total dibulatkan 2 desimal."""
+    """Baris catatan per sales dari pemanggil (`{sales_id, total, breakdown?, employee_id?, carry_out?}` atau
+    `{sales_id, galat}`); total dibulatkan 2 desimal. BTP-5 — `carry_out` (saldo potongan yang dibawa ke bulan
+    berikutnya, ≤ 0) ikut disimpan: dibaca `saldo_potongan_awal` bulan berikutnya."""
     out = []
     for r in rincian:
         if r.get("galat"):
@@ -574,6 +630,8 @@ def _rincian_bersih(rincian: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for k in ("employee_id", "breakdown"):
             if r.get(k) is not None:
                 baris[k] = r[k]
+        if r.get("carry_out") is not None:
+            baris["carry_out"] = round(float(r["carry_out"] or 0), 2)
         out.append(baris)
     return out
 
@@ -592,7 +650,7 @@ async def _rincian_hitung_ulang(entity_id: str, bulan: str) -> Tuple[List[Dict[s
         try:
             c = await sf.compute_commission(u["id"], bulan, entity_id=entity_id)
             sales.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive") or 0), 2),
-                          "breakdown": c.get("breakdown") or []})
+                          "breakdown": c.get("breakdown") or [], "carry_out": round(float(c.get("carry_out") or 0), 2)})
         except Exception as exc:  # noqa: BLE001 — catatan saja (tinjauan akhir I2)
             sales.append({"sales_id": u["id"], "total": None, "galat": f"Komisi sales ini gagal dihitung saat dibekukan: {exc}"})
     return sales, ""
@@ -604,9 +662,10 @@ async def bekukan_periode(entity_id: str, period: str, *, oleh: str, journal_id:
 
     Dipanggil `gl_service.post_incentive_accrual` SESUDAH jurnal akrual pertama tersimpan, dan sebelum jurnal koreksi.
     `commission_period_rules` `{id "cmpr_…", entity_id, period, achievement {aktif, basis, jenjang} (nilai yang berlaku
-    pada akhir bulan — SATU-SATUNYA yang dibekukan & dibaca mesin), sales [{sales_id, total, breakdown?, employee_id?,
-    galat?}] (CATATAN per sales), sales_sumber, sales_galat?, journal_id (jurnal akrual yang membekukan), recorded_at,
-    recorded_by, replaces?}`.
+    pada akhir bulan — SATU-SATUNYA aturan yang dibekukan & dibaca mesin), sales [{sales_id, total, breakdown?,
+    employee_id?, carry_out?, galat?}] (CATATAN per sales; BTP-5 — `carry_out` = saldo potongan komisi yang dibawa ke
+    bulan berikutnya, dibaca mesin bulan itu lewat `saldo_potongan_awal`), sales_sumber, sales_galat?, journal_id
+    (jurnal akrual yang membekukan), recorded_at, recorded_by, replaces?}`.
 
     Tinjauan akhir I2 — `sales` hanya catatan dan tidak pernah menggagalkan akrual: `rincian_sales` dari pemanggil
     dipakai apa adanya (posting gaji: komisi slip yang diakru, `sales_sumber="slip_gaji"`; akrual manual: hasil mesin yang

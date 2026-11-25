@@ -3666,15 +3666,19 @@ async def _incentive_accrued(src_id: str) -> float:
 
 
 async def incentive_accrual_rincian(entity_id: str, period: str) -> Tuple[float, List[Dict[str, Any]]]:
-    """`(Σ komisi, [{sales_id, total, breakdown}])` — mesin komisi SEKALI per sales daftar PT (`sales_roster`). Galat
-    mesin merambat: akrual manual tidak boleh membukukan total yang kurang satu sales."""
+    """`(Σ komisi, [{sales_id, total, breakdown, carry_out}])` — mesin komisi SEKALI per sales daftar PT
+    (`sales_roster`). Galat mesin merambat: akrual manual tidak boleh membukukan total yang kurang satu sales. BTP-5 —
+    `carry_out` (saldo potongan komisi yang dibawa ke bulan berikutnya, ≤ 0) disimpan potret beku bulan ini lewat
+    `bekukan_periode`, lalu dibaca mesin bulan berikutnya (`commission_rules.saldo_potongan_awal`)."""
     from services import sales_force_service as sf
     from services.incentive_targets import sales_roster
     rincian: List[Dict[str, Any]] = []
     for u in await sales_roster(entity_id, "month", period):
         c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
         rincian.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive", 0) or 0), 2),
-                        "breakdown": c.get("breakdown") or []})
+                        "breakdown": c.get("breakdown") or [],
+                        # BTP-5 — saldo potongan dibawa ke bulan berikutnya (≤ 0), disimpan potret beku bulan ini
+                        "carry_out": round(float(c.get("carry_out", 0) or 0), 2)})
     return round(sum(float(r["total"]) for r in rincian), 2), rincian
 
 

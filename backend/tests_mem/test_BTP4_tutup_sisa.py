@@ -211,7 +211,9 @@ async def test_BTP4_tempo_jumlah_turun_ke_terkirim(klien, db, siap, monkeypatch)
     cs = o["closed_short"]
     assert cs["reason"] == "Pelanggan hanya mau 40 m" and cs["by"] and cs["at"]
     assert cs["commission_basis"]["grand_total"] == 11_100_000
-    assert cs["commission_basis"]["items"] == [{"product_id": siap["pid"], "base_quantity": 100}]
+    # BTP-5 — dasar komisi = isian baris ASLI yang dibaca hitungan komisi (jumlah, harga, diskon, nilai baris)
+    assert cs["commission_basis"]["items"] == [{"product_id": siap["pid"], "base_quantity": 100, "quantity": 100,
+                                                "price": HARGA, "discount_percent": 0, "line_total": 10_000_000}]
     r2 = await db.inventory_rolls.find_one({"id": k["r2"]["id"]}, {"_id": 0})
     assert r2["status"] == "available" and not r2.get("reserved_ref"), "roll sisa dilepas"
     r1 = await db.inventory_rolls.find_one({"id": k["r1"]["id"]}, {"_id": 0})
