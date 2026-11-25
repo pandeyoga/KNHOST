@@ -338,7 +338,9 @@ async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> D
     tidak dipanggil (komisi 0). KM-T4 (PY-06) — PT bermode `off` (tidak ada komisi di gaji) atau `sheet` (insentif dari
     Lembar Insentif yang disahkan) → mesin komisi tidak dipanggil. `auto_and_sheet` → mesin tetap berjalan (lembar
     masuk slip lewat masukan gaji). BTP-5 (R13) — `commission_raw`/`carry_in`/`carry_out` disimpan di slip
-    (`commission_engine`) supaya posting gaji mencatat saldo potongan komisi bulan itu tanpa menjalankan mesin lagi."""
+    (`commission_engine`) supaya posting gaji mencatat saldo potongan komisi bulan itu tanpa menjalankan mesin lagi;
+    R19 — `computed_at` = saat angka komisi slip ini dihitung (buat / hitung ulang proses), dipakai sebagai waktu final
+    bulan itu (`commission_rules.catat_saldo_potongan`)."""
     from services.incentive_payroll import TANPA_MESIN
     if await commission_mode(entity_id) in TANPA_MESIN:
         return {}
@@ -350,9 +352,11 @@ async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> D
         return {}
     try:
         from services import sales_force_service as sf
+        dihitung = now_iso()
         res = await sf.compute_commission(uid, period, entity_id=entity_id)
         return {"total": round(float(res.get("total_incentive", 0) or 0), 2),
-                **{k: round(float(res.get(k, 0) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")}}
+                **{k: round(float(res.get(k, 0) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")},
+                "computed_at": dihitung}
     except Exception:
         return {}
 
@@ -596,6 +600,7 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     }
     if komisi_mesin:   # BTP-5 (R13) — dibaca posting gaji untuk catatan saldo potongan komisi PT·bulan
         slip["commission_engine"] = {k: komisi_mesin.get(k, 0.0) for k in ("commission_raw", "carry_in", "carry_out")}
+        slip["commission_engine"]["computed_at"] = komisi_mesin.get("computed_at") or ""
     return slip
 
 

@@ -3691,11 +3691,13 @@ async def incentive_accrual_rincian(entity_id: str, period: str) -> Tuple[float,
     from services.incentive_targets import sales_roster
     rincian: List[Dict[str, Any]] = []
     for u in await sales_roster(entity_id, "month", period):
+        dihitung = now_iso()   # BTP-5 R19 — waktu final = saat angka yang diakru dihitung
         c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
         rincian.append({"sales_id": u["id"], "total": round(float(c.get("total_incentive", 0) or 0), 2),
                         "breakdown": c.get("breakdown") or [],
                         # BTP-5 — hasil mesin untuk catatan saldo potongan (`commission_rules.catat_saldo_potongan`)
-                        **{k: round(float(c.get(k, 0) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")}})
+                        **{k: round(float(c.get(k, 0) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")},
+                        "computed_at": dihitung})
     return round(sum(float(r["total"]) for r in rincian), 2), rincian
 
 

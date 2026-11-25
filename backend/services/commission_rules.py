@@ -596,7 +596,7 @@ def bulan_awal_periode(period: Any) -> Optional[str]:
     return daftar[0] if daftar else None
 
 
-#: BTP-5 (A1-6, ruling R13/R16/R17) — SATU tempat finalisasi komisi per (PT, sales, bulan) + saldo potongannya:
+#: BTP-5 (A1-6, ruling R13/R16/R17/R19) — SATU tempat finalisasi komisi per (PT, sales, bulan) + saldo potongannya:
 #: indeks wajib `uq_commission_carry`. Ditulis setiap kali komisi bulan itu difinalkan untuk PT itu
 #: (`catat_saldo_potongan`); dibaca mesin untuk saldo masuk bulan berikutnya (`saldo_potongan_awal`) dan untuk menilai
 #: apakah bulan bayar sebuah pesanan sudah final sebelum pesanan itu batal / ditutup sisanya (`penilai_final`).
@@ -632,10 +632,11 @@ def _sebelum(a: Any, b: Any) -> bool:
 
 
 def penilai_final(sales_id: str, entity_id: Optional[str]):
-    """BTP-5 (R16) — `async (pt, bulan, waktu) -> bool`: komisi bulan `bulan` sales ini di PT `pt` sudah FINAL sebelum
-    `waktu` — ada catatan finalisasi (`commission_carry_balances`) yang `finalized_at`-nya (diisi sekali, saat pertama
-    dicatat) lebih awal dari `waktu` DAN finalisasinya masih berlaku (`catatan_berlaku`). Catatan dimuat sekali per
-    proses hitung (hanya bila dipanggil: sales tanpa pesanan batal/tutup sisa tidak membaca apa pun)."""
+    """BTP-5 (R16/R19) — `async (pt, bulan, waktu) -> bool`: komisi bulan `bulan` sales ini di PT `pt` sudah FINAL
+    sebelum `waktu` — ada catatan finalisasi (`commission_carry_balances`) yang `finalized_at`-nya (saat angka yang
+    difinalkan dihitung, `catat_saldo_potongan`) lebih awal dari `waktu` DAN finalisasinya masih berlaku
+    (`catatan_berlaku`). Catatan dimuat sekali per proses hitung (hanya bila dipanggil: sales tanpa pesanan batal/tutup
+    sisa tidak membaca apa pun)."""
     cache: Dict[str, Any] = {}
 
     async def _final(pt: str, bulan: str, waktu: str) -> bool:
@@ -680,13 +681,18 @@ async def saldo_potongan_awal(sales_id: str, period: Any, entity_id: Optional[st
 
 async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[Iterable[Dict[str, Any]]], *,
                                oleh: str, sumber: str, journal_id: str = "") -> int:
-    """BTP-5 (A1-6, R13/R16/R17) — catat finalisasi komisi per sales untuk PT·bulan yang komisinya DIFINALKAN: akrual
-    manual (juga bila total PT 0 dan tanpa jurnal), posting gaji (dari hasil mesin di slip, SEMUA mode gaji yang
+    """BTP-5 (A1-6, R13/R16/R17/R19) — catat finalisasi komisi per sales untuk PT·bulan yang komisinya DIFINALKAN:
+    akrual manual (juga bila total PT 0 dan tanpa jurnal), posting gaji (dari hasil mesin di slip, SEMUA mode gaji yang
     menjalankan mesin), dan setiap akrual diulang. `rincian` = baris per sales yang membawa hasil mesin (`carry_out`,
-    + `commission_raw`, `carry_in`, `total`); baris tanpa `carry_out` / bergalat dilewati. Upsert untuk setiap sales
-    (juga saldo 0 — catatan menandai bulan itu final); `finalized_at` diisi SEKALI saat catatan pertama dibuat dan tidak
-    pernah ditimpa. `journal_id` = jurnal finalisasi (akrual insentif, atau jurnal gaji pada mode tanpa akrual); ""
-    bila tidak ada. Pemanggil menulis SESUDAH jurnalnya berhasil. → jumlah catatan yang ditulis."""
+    + `commission_raw`, `carry_in`, `total`, `computed_at`); baris tanpa `carry_out` / bergalat dilewati. Upsert untuk
+    setiap sales (juga saldo 0 — catatan menandai bulan itu final).
+
+    R19 — `finalized_at` = saat ANGKA yang difinalkan dihitung (`computed_at`: hitung slip saat proses gaji dibuat /
+    dihitung ulang, atau hitung mesin saat akrual; tanpa itu = sekarang). Ditimpa HANYA bila finalisasi lama catatan itu
+    sudah tidak berlaku saat ditulis (`catatan_berlaku`: jurnalnya `void` / dibalik); selama finalisasi lama masih
+    berlaku, `finalized_at` tidak pernah ditimpa (finalisasi ulang = koreksi atas angka yang sama-sama sudah final).
+    `journal_id` = jurnal finalisasi (akrual insentif, atau jurnal gaji pada mode tanpa akrual); "" bila tidak ada.
+    Pemanggil menulis SESUDAH jurnalnya berhasil. → jumlah catatan yang ditulis."""
     from pymongo.errors import DuplicateKeyError
     from core_utils import new_id, now_iso
     from db import db
@@ -705,11 +711,17 @@ async def catat_saldo_potongan(entity_id: str, period: str, rincian: Optional[It
                "commission_raw": round(float(r.get("commission_raw") or 0), 2) or 0.0,
                "total": round(float(r.get("total") or 0), 2), "source": sumber, "journal_id": journal_id or "",
                "recorded_at": sekarang, "recorded_by": oleh or ""}
-        try:
-            await db[KOLEKSI_SALDO].update_one(
-                q, {"$set": isi, "$setOnInsert": {"id": new_id("cmsb"), "finalized_at": sekarang}}, upsert=True)
-        except DuplicateKeyError:   # dua finalisasi bersamaan: dokumen pemenang diperbarui (finalized_at tetap)
-            await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})
+        waktu_final = str(r.get("computed_at") or "") or sekarang
+        ada = await db[KOLEKSI_SALDO].find_one(q, {"_id": 0})
+        if ada is not None and await catatan_berlaku(ada):
+            await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})   # finalisasi lama masih berlaku: waktu final tetap
+        else:
+            try:
+                await db[KOLEKSI_SALDO].update_one(
+                    q, {"$set": {**isi, "finalized_at": waktu_final}, "$setOnInsert": {"id": new_id("cmsb")}},
+                    upsert=True)
+            except DuplicateKeyError:   # dua finalisasi bersamaan: dokumen pemenang diperbarui (waktu finalnya tetap)
+                await db[KOLEKSI_SALDO].update_one(q, {"$set": isi})
         ditulis += 1
     return ditulis
 

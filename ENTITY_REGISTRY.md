@@ -702,12 +702,15 @@ Key Fields:
   source          string  "akrual" | "slip_gaji" — jalur finalisasi
   journal_id      string  jurnal finalisasi: `incentive_accrual` hidup, atau jurnal gaji `payroll_run` (mode tanpa
                           akrual / komisi slip 0); "" = bulan difinalkan tanpa jurnal (akrual bertotal 0)
-  finalized_at    string  ISO UTC — kapan bulan itu PERTAMA difinalkan ($setOnInsert, tidak pernah ditimpa)
+  finalized_at    string  ISO UTC — saat ANGKA yang difinalkan dihitung (R19): `computed_at` slip (buat / hitung ulang
+                          proses gaji) atau hitung mesin saat akrual; ditimpa HANYA bila finalisasi lama sudah tidak
+                          berlaku (jurnalnya void / dibalik) saat catatan ditulis
   recorded_at     string  ISO UTC — finalisasi terakhir
   recorded_by     string  nama pemfinal
 
 ℹ️ UNIK per (entity_id, sales_id, period) — indeks wajib `uq_commission_carry` (PK-14 REQUIRED_UNIQUE_INDEXES).
-   Setiap finalisasi = upsert (tidak pernah basi).
+   Setiap finalisasi = upsert (tidak pernah basi). Bulan bayar "final sebelum batal/tutup sisa" (R16) =
+   `finalized_at` < waktu peristiwa dan catatan berlaku.
 ℹ️ Catatan berlaku (`catatan_berlaku`) bila `journal_id` kosong atau jurnalnya tidak `void` dan belum dibalik (anulir
    proses gaji membalik jurnal gaji); tidak berlaku → saldo & status final bulan itu tidak dibaca sampai difinalkan lagi.
 ⚠️ JANGAN BUAT: commission_carry, carry_balances, commission_deductions (sebagai koleksi); saldo TIDAK disimpan di

@@ -276,8 +276,9 @@ def _rincian_komisi_slip(slips: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     BTP-5 (R13) — slip yang membawa hasil mesin (`commission_engine`, slip reguler sales) ikut walau komisinya 0 (mis.
     habis dipotong koreksi), dengan `commission_raw`/`carry_in`/`carry_out` untuk catatan saldo potongan
-    (`commission_rules.catat_saldo_potongan`). Satu sales = satu slip reguler hidup per PT·bulan; bila ada lebih, slip
-    pertama dalam daftar (proses yang sedang diposting lebih dulu) yang dipakai."""
+    (`commission_rules.catat_saldo_potongan`) dan `computed_at` (R19 — saat angka slip itu dihitung = waktu final bulan
+    itu). Satu sales = satu slip reguler hidup per PT·bulan; bila ada lebih, slip pertama dalam daftar (proses yang
+    sedang diposting lebih dulu) yang dipakai."""
     from services.hr_pay_components import commission_parts
     per: Dict[str, Dict[str, Any]] = {}
     for s in slips:
@@ -291,6 +292,7 @@ def _rincian_komisi_slip(slips: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         r["total"] = round(r["total"] + nilai, 2)
         if mesin and "carry_out" not in r:
             r.update({k: round(float(mesin.get(k) or 0), 2) for k in ("commission_raw", "carry_in", "carry_out")})
+            r["computed_at"] = mesin.get("computed_at") or ""   # R19 — waktu final = saat angka slip dihitung
     return list(per.values())
 
 

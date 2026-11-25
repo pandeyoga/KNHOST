@@ -503,12 +503,21 @@ async def _karyawan(db, sales: Dict[str, Any]) -> None:
         "created_at": "2025-01-01T00:00:00+00:00"})
 
 
-async def _gaji(klien, h: Dict[str, str], bulan: str) -> Dict[str, Any]:
-    """Proses gaji reguler PT Kanda `bulan`: buat → ajukan → setujui → posting (akrual komisi dari slip)."""
+async def _buat_gaji(klien, h: Dict[str, str], bulan: str) -> Dict[str, Any]:
+    """Proses gaji reguler PT Kanda `bulan` dibuat (slip & komisinya dihitung sekarang, status draf)."""
     r = await klien.post("/api/hr/payroll/runs", headers=h, json={"entity_id": KANDA, "period": bulan,
                                                                   "run_type": "regular"})
     assert r.status_code == 200, r.text
-    run = r.json()
+    return r.json()
+
+
+async def _gaji(klien, h: Dict[str, str], bulan: str) -> Dict[str, Any]:
+    """Proses gaji reguler PT Kanda `bulan`: buat → ajukan → setujui → posting (akrual komisi dari slip)."""
+    return await _sahkan_gaji(klien, h, await _buat_gaji(klien, h, bulan))
+
+
+async def _sahkan_gaji(klien, h: Dict[str, str], run: Dict[str, Any]) -> Dict[str, Any]:
+    """Ajukan → setujui → posting proses gaji yang sudah dibuat."""
     for aksi in ("submit", "approve"):
         r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/{aksi}", headers=h, json={})
         assert r.status_code == 200, r.text
@@ -724,3 +733,110 @@ async def test_BTP5_R17_saldo_mode_pay_on_invoice(klien, db, akun, f, gaji):
     finally:
         await resolver.set_value(mode, "accrue_then_settle", scope_type="entity", scope_id=KANDA, actor="uji",
                                  reason="uji BTP5 R17 selesai")
+
+
+# ═══ R19 — waktu final = saat angka yang difinalkan dihitung; finalisasi ulang sesudah anulir ════════════════════
+async def _slip_dihitung_pada(db, run_id: str, sid: str, waktu: str) -> None:
+    """Jam dinding uji tidak bisa dipakai untuk urutan bertanggal tetap: `computed_at` slip sales itu diganti
+    `waktu`."""
+    res = await db.hr_payslips.update_one({"run_id": run_id, "user_id": sid, "commission_engine": {"$exists": True}},
+                                          {"$set": {"commission_engine.computed_at": waktu}})
+    assert res.matched_count == 1
+
+
+async def _batalkan_sintetis(db, so_id: str, waktu: str, jumlah: float) -> None:
+    """Bentuk keluaran batal sesudah bayar (Tugas 2 + S3): status batal, uang muka → titipan (baris −, penanda)."""
+    await db.sales_orders.update_one({"id": so_id}, {
+        "$set": {"status": "cancelled", "cancelled_at": waktu,
+                 "advance_to_deposit": {"amount": jumlah, "deposit_done": True, "kata": "dibatalkan", "at": waktu,
+                                        "done_at": waktu, "source_id": f"batal_titipan:{so_id}"}},
+        "$push": {"payments": _pindah(so_id, jumlah, "batal_titipan", waktu)}})
+
+
+async def test_BTP5_R19_N1_slip_dihitung_sebelum_peristiwa(klien, db, akun, f, gaji):
+    """N1 — slip Oktober dihitung 1 Nov (pesanan masih hidup: 100 m = 350.000), pesanan batal 3 Nov, gaji (mode akru)
+    diposting sesudahnya: Oktober final sejak 1 Nov → Oktober = yang dibayar slip (350.000), November berkoreksi
+    −350.000 (saldo dibawa −350.000). Σ Okt + Nov + saldo = 0."""
+    s = await _sales(db, akun, "n1", KANDA)
+    await _karyawan(db, s)
+    so = await _sisip(db, s, f, ent=KANDA, payments=[_bayar(5_000_000, TGL_BAYAR_OKT)])
+    run = await _buat_gaji(klien, gaji["h"], OKT)
+    assert next(x for x in run["payslips"] if x["user_id"] == s["id"])["commission"] == 350_000
+    dihitung, batal = "2026-11-01T03:00:00+00:00", "2026-11-03T03:00:00+00:00"
+    await _slip_dihitung_pada(db, run["id"], s["id"], dihitung)
+    await _batalkan_sintetis(db, so["id"], batal, 5_000_000)
+    await _sahkan_gaji(klien, gaji["h"], run)
+    rec = await _saldo(db, KANDA, s["id"], OKT)
+    assert (rec["finalized_at"], rec["source"], rec["total"]) == (dihitung, "slip_gaji", 350_000)
+    assert rec["journal_id"] == (await _akrual_hidup(db, KANDA, OKT))["id"], "mode akru: finalisasi = akrual dari slip"
+    okt = await _komisi(s["id"], OKT, KANDA)
+    assert okt["total_incentive"] == 350_000, "Oktober = yang dibayar slip"
+    nov = await _komisi(s["id"], NOV, KANDA)
+    k = _koreksi(nov)
+    assert len(k) == 1 and (k[0]["price_reason"], k[0]["commission"]) == ("koreksi_batal", -350_000), nov["breakdown"]
+    assert (nov["total_incentive"], nov["carry_out"]) == (0, -350_000)
+    assert okt["total_incentive"] + nov["total_incentive"] + nov["carry_out"] == 0
+
+
+async def test_BTP5_R19_N2_anulir_lalu_gaji_ulang(klien, db, akun, f, gaji):
+    """N2 (mode `pay_on_invoice`) — gaji Juli dihitung 3 Agu & diposting (pesanan X 350.000), X batal 10 Agu → Agustus
+    berkoreksi −350.000. Gaji Juli dianulir → koreksi hilang. Proses Juli baru dihitung sesudah batal (X = 0) dan
+    diposting → finalisasi lama tidak berlaku lagi, waktu final ditimpa (sesudah batal) → Agustus TANPA koreksi; Juli 0,
+    saldo 0."""
+    from services import config_resolver as resolver
+    mode = "hr.payroll_commission_mode"
+    s = await _sales(db, akun, "n2", KANDA)
+    await _karyawan(db, s)
+    so = await _sisip(db, s, f, ent=KANDA, payments=[_bayar(5_000_000, _tgl("2026-07"))],
+                      dibuat=_tgl("2026-07", 1))
+    await resolver.set_value(mode, "pay_on_invoice", scope_type="entity", scope_id=KANDA, actor="uji",
+                             reason="uji BTP5 R19")
+    try:
+        run1 = await _buat_gaji(klien, gaji["h"], "2026-07")
+        assert next(x for x in run1["payslips"] if x["user_id"] == s["id"])["commission"] == 350_000
+        await _slip_dihitung_pada(db, run1["id"], s["id"], _tgl("2026-08", 3))
+        run1 = await _sahkan_gaji(klien, gaji["h"], run1)
+        assert (await _saldo(db, KANDA, s["id"], "2026-07"))["finalized_at"] == _tgl("2026-08", 3)
+        await _batalkan_sintetis(db, so["id"], _tgl("2026-08", 10), 5_000_000)
+        agu = await _komisi(s["id"], "2026-08", KANDA)
+        assert [r["commission"] for r in _koreksi(agu)] == [-350_000], "Juli final sebelum batal → koreksi"
+
+        r = await klien.post(f"/api/hr/payroll/runs/{run1['id']}/void", headers=gaji["h"],
+                             json={"reason": "Uji anulir gaji BTP5 R19"})
+        assert r.status_code == 200 and r.json()["status"] == "void", r.text
+        assert _koreksi(await _komisi(s["id"], "2026-08", KANDA)) == [], "gaji dianulir: Juli belum final"
+
+        run2 = await _buat_gaji(klien, gaji["h"], "2026-07")
+        assert next(x for x in run2["payslips"] if x["user_id"] == s["id"])["commission"] == 0, "X sudah batal"
+        run2 = await _sahkan_gaji(klien, gaji["h"], run2)
+        rec = await _saldo(db, KANDA, s["id"], "2026-07")
+        assert rec["journal_id"] == (await _jurnal_gaji(db, run2))["id"]
+        assert rec["finalized_at"] > _tgl("2026-08", 10), "finalisasi lama tidak berlaku → waktu final ditimpa"
+        agu = await _komisi(s["id"], "2026-08", KANDA)
+        assert (_koreksi(agu), agu["total_incentive"], agu["carry_in"], agu["carry_out"]) == ([], 0, 0, 0)
+        assert (await _komisi(s["id"], "2026-07", KANDA))["total_incentive"] == 0
+    finally:
+        await resolver.set_value(mode, "accrue_then_settle", scope_type="entity", scope_id=KANDA, actor="uji",
+                                 reason="uji BTP5 R19 selesai")
+
+
+async def test_BTP5_R19_N2_anulir_lalu_akrual_ulang(db, akun, f):
+    """N2 jalur akrual manual — Maret diakru (X 350.000, angka dihitung 1 Apr), X batal 10 Apr → April berkoreksi.
+    Akrual Maret dianulir lalu diakru ulang sesudah batal (X = 0, total PT 0 → tanpa jurnal) → waktu final ditimpa →
+    April TANPA koreksi; Maret 0."""
+    from services import gl_service as gl
+    s = await _sales(db, akun, "n2b")
+    so = await _sisip(db, s, f, payments=[_bayar(5_000_000, _tgl("2026-03"))], dibuat=_tgl("2026-03", 1))
+    j1 = await gl.post_incentive_accrual(KSC, "2026-03", "Uji BTP5", date="2026-03-31")
+    assert j1 and j1["total_debit"] == 350_000
+    await _finalkan(db, KSC, s["id"], "2026-03", _tgl("2026-04", 1))   # angka akrual dihitung 1 Apr
+    await _batalkan_sintetis(db, so["id"], _tgl("2026-04", 10), 5_000_000)
+    assert [r["commission"] for r in _koreksi(await _komisi(s["id"], "2026-04"))] == [-350_000]
+
+    await db.journal_entries.update_one({"id": j1["id"]}, {"$set": {"status": "void", "voided_by": "uji"}})
+    assert await gl.post_incentive_accrual(KSC, "2026-03", "Uji BTP5", date="2026-03-31") is None, "total PT 0"
+    rec = await _saldo(db, KSC, s["id"], "2026-03")
+    assert rec["journal_id"] == "" and rec["finalized_at"] > _tgl("2026-04", 10), "waktu final ditimpa"
+    apr = await _komisi(s["id"], "2026-04")
+    assert (_koreksi(apr), apr["total_incentive"], apr["carry_out"]) == ([], 0, 0)
+    assert (await _komisi(s["id"], "2026-03"))["total_incentive"] == 0
