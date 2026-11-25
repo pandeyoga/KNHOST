@@ -86,8 +86,8 @@ export const fulfillmentPlanDecide = (orderId, payload) =>
 export const orderJourney = (orderId) =>
   axios.get(`${API}/sales-orders/${orderId}/journey`).then((r) => r.data);
 
-export const issueTaxInvoice = (orderId) =>
-  axios.post(`${API}/sales-orders/${orderId}/tax-invoice`, {}).then((r) => r.data);
+export const issueTaxInvoice = (orderId, body = {}) =>
+  axios.post(`${API}/sales-orders/${orderId}/tax-invoice`, body).then((r) => r.data);
 
 /** E8.3 — riwayat kunjungan MILIK SENDIRI + KPI ringkasnya (tanpa izin HR). */
 export const myVisitsHistory = (month = "") =>

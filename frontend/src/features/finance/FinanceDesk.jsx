@@ -39,6 +39,7 @@ import DeskFrame, { DESK_GRID_CLASS } from "../desks/DeskFrame";
 import { markDeskReturn } from "../desks/deskSession";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";
+import TaxIssueDialog from "./TaxIssueDialog";
 import { CustomerCardLink } from "./cards/partyCards";
 
 export const TEKS_KOSONG = "Tidak ada yang perlu ditindak hari ini.";
@@ -149,8 +150,9 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const [loading, setLoading] = useState(true);
   const [refreshingId, setRefreshingId] = useState("");
   const [tick, setTick] = useState(0);
-  const [busyRef, setBusyRef] = useState("");
+  const busyRef = "";   // aksi terbit faktur kini di pop-up (TaxIssueDialog); tak ada baris yang "sibuk" di antrean
   const [payRow, setPayRow] = useState(null);
+  const [issueRow, setIssueRow] = useState(null);   // { row, qid } — pop-up pratinjau terbit faktur pajak
 
   // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -213,19 +215,9 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     open(rowLink(row, row._queue, DESK_KEY));
   }
 
-  async function doIssueTax(row, queueId) {
-    setBusyRef(row.ref_id);
-    try {
-      const res = await issueTaxInvoice(row.ref_id);
-      done(`Faktur Pajak ${res?.number || ""} diterbitkan untuk ${row.number}.`, queueId);
-    } catch (e) {
-      setErrors((x) => ({ ...x, aksi: apiErrorText(e, "Gagal menerbitkan Faktur Pajak.") }));
-    } finally { setBusyRef(""); }
-  }
-
   function handleAction(row, queue) {
     const qid = queue?.id || "";
-    if (row.action_kind === "issue_tax") { doIssueTax(row, qid); return; }
+    if (row.action_kind === "issue_tax") { setIssueRow({ row, qid }); return; }
     if (row.action_kind === "receipt") {
       setPayRow({ customer_id: row.ref_id, customer_name: row.title, order_id: row.order_id, qid });
       return;
@@ -290,6 +282,20 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       <DeskFrame deskKey={DESK_KEY} testPrefix={P} help={HELP} notMine={src.desk?.not_my_desk || []}
         tabsInHub tab={pantauTab ? "pantau" : "antrean"} antrean={antrean} pantau={pantau}
         pantauLoading={retSummary === undefined} ready={!loading} onReload={reloadAll} />
+
+      {issueRow && (
+        <TaxIssueDialog
+          target={{ kind: "order", id: issueRow.row.ref_id, number: issueRow.row.number, orderNumber: issueRow.row.number,
+            customerName: issueRow.row.title, npwp: issueRow.row.customer_npwp || "", entityId: issueRow.row.entity_id,
+            dpp: issueRow.row.dpp ?? null, ppnAmount: issueRow.row.ppn_amount, total: issueRow.row.value ?? null }}
+          submit={(body) => issueTaxInvoice(issueRow.row.ref_id, body)}
+          onClose={() => setIssueRow(null)}
+          onDone={(f) => {
+            const { row, qid } = issueRow;
+            setIssueRow(null);
+            done(`Faktur Pajak ${f?.number || ""} diterbitkan untuk ${row.number}.`, qid);
+          }} />
+      )}
 
       {payRow && (
         <ReceivePaymentModal

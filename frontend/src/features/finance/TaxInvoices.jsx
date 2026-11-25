@@ -20,8 +20,8 @@ import FocusNotice from "../../components/FocusNotice";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { useAppNav } from "../../context/AppNavContext";
 import { ROW_TARGET } from "../sales_admin/workDeskApi";
-import { moneyMessage } from "../../utils/moneyConfirm";
 import TaxOutputRecon from "./TaxOutputRecon";
+import TaxIssueDialog from "./TaxIssueDialog";
 
 /**
  * Faktur Pajak Jual (Sub-fase 1.9 — tax_invoices / fkt_).
@@ -252,10 +252,6 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
         const body = { reason: reasonVal.trim() };
         await cancelIntent.send({ id: fkt.id, aksi: "cancel", ...body },
           (k) => moneyPost(`${API}/tax-invoices/${fkt.id}/cancel`, body, k));
-      } else if (type === "issue") {
-        const body = { faktur_date: dateVal || null, kode_transaksi: kodeVal || null, nsfp: nsfpVal.trim() || null };
-        await issueIntent.send({ id: fkt.id, aksi: "issue", ...body },
-          (k) => moneyPost(`${API}/tax-invoices/${fkt.id}/issue`, body, k));
       } else if (type === "discard") {
         if (!reasonVal.trim()) { setModalErr("Alasan membuang draf wajib diisi."); setBusyId(""); return; }
         const body = { reason: reasonVal.trim() };
@@ -432,11 +428,23 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
 
       {detail && <TaxInvoiceDetail fkt={detail} onClose={() => setDetail(null)} />}
 
-      {modal && (
+      {modal && modal.type === "issue" && (
+        <TaxIssueDialog
+          target={{ kind: "draft", id: modal.fkt.id, number: modal.fkt.number, orderNumber: modal.fkt.order_number || "",
+            customerName: modal.fkt.customer_name || "", npwp: modal.fkt.customer_npwp || "", entityId: modal.fkt.entity_id,
+            dpp: modal.fkt.dpp ?? null, ppnAmount: modal.fkt.ppn_amount, total: modal.fkt.total ?? null,
+            kodeTransaksi: modal.fkt.kode_transaksi || "", fakturDate: modal.fkt.faktur_date || "", nsfp: modal.fkt.nsfp || "",
+            isRetur: isRetur(modal.fkt) }}
+          submit={(body) => issueIntent.send({ id: modal.fkt.id, aksi: "issue", ...body },
+            (k) => moneyPost(`${API}/tax-invoices/${modal.fkt.id}/issue`, body, k))}
+          onClose={closeModal}
+          onDone={() => { closeModal(); load(); }} />
+      )}
+
+      {modal && modal.type !== "issue" && (
         <FormModal open onClose={closeModal} size="sm"
-          icon={{ cancel: Ban, replace: Copy, issue: Send, discard: Trash2 }[modal.type] || Hash}
+          icon={{ cancel: Ban, replace: Copy, discard: Trash2 }[modal.type] || Hash}
           title={{ nsfp: "Isi NSFP Resmi", replace: "Terbitkan Faktur Pengganti", cancel: "Batalkan Faktur Pajak",
-            issue: isRetur(modal.fkt) ? "Terbitkan Dokumen Pajak Retur" : "Terbitkan Draf Faktur",
             discard: "Buang Draf" }[modal.type]}
           subtitle={`${modal.fkt.number} · ${modal.fkt.order_number || "—"}`}
           testId="fkt-modal" busy={busyId === modal.fkt.id}
@@ -447,7 +455,7 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                 className={["cancel", "discard"].includes(modal.type) ? "danger-button whitespace-nowrap" : "primary-button whitespace-nowrap"}
                 disabled={busyId === modal.fkt.id} onClick={submitModal}>
                 {busyId === modal.fkt.id ? "Memproses…"
-                  : { issue: "Terbitkan", discard: "Buang Draf" }[modal.type] || "Konfirmasi"}
+                  : { discard: "Buang Draf" }[modal.type] || "Konfirmasi"}
               </button>
             </div>
           )}>
@@ -486,25 +494,6 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
               />
               <p className="text-fs-12 text-kn-text-2">Pilihan = kode transaksi yang dipakai PT ini (Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak).</p>
               <p className="text-fs-12 text-kn-warning-text">Faktur lama ditandai diganti; faktur baru berstatus PENGGANTI.</p>
-            </div>
-          )}
-
-          {modal.type === "issue" && (
-            <div className="space-y-2" data-testid="fkt-issue-form">
-              <label className="field-label">Tanggal faktur</label>
-              <KNDatePicker data-testid="fkt-issue-date" value={dateVal} onChange={(v) => setDateVal(v || "")}
-                placeholder="Tanggal faktur" />
-              <p className="text-fs-12 text-kn-text-2">Bawaan = tanggal surat jalan / nota kreditnya. Masa pajak yang sudah ditandai dilaporkan ditolak.</p>
-              <label className="field-label mt-2">Kode transaksi</label>
-              <KNSelect data-testid="fkt-kode-select" value={kodeVal} onValueChange={setKodeVal} className="field w-full"
-                options={kodeOptions(modal.fkt)} />
-              <label className="field-label mt-2" htmlFor="fkt-issue-nsfp">NSFP (boleh menyusul)</label>
-              <input id="fkt-issue-nsfp" data-testid="fkt-issue-nsfp" value={nsfpVal} onChange={(e) => setNsfpVal(e.target.value)}
-                placeholder="0100123456789012" className="field w-full tabular-nums" />
-              <p className="rounded-md bg-kn-neutral-soft px-3 py-2 text-fs-13" data-testid="fkt-issue-confirm">
-                {moneyMessage({ effect: `${isRetur(modal.fkt) ? "Dokumen pajak retur" : "Faktur"} ${modal.fkt.number} diterbitkan; PPN-nya ${isRetur(modal.fkt) ? "mengurangi" : "masuk"} rekap PPN keluaran masa tanggal faktur.`,
-                  amount: modal.fkt.ppn_amount, entityId: modal.fkt.entity_id, entities })}
-              </p>
             </div>
           )}
 

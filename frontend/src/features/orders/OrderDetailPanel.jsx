@@ -41,7 +41,8 @@ import CloseRemainingDialog from "./CloseRemainingDialog";
 import CancelRequestBar from "./CancelRequestBar";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
-import { releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
+import { issueTaxInvoice, releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
+import TaxIssueDialog from "../finance/TaxIssueDialog";
 import { CustomerCardLink } from "../finance/cards/partyCards";
 import { useAppNav } from "../../context/AppNavContext";
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
@@ -66,7 +67,6 @@ export function OrderDetailPanel({
   onReleaseReservation,
   onSubmitForApproval,
   onMarkDelivered,
-  onIssueTaxInvoice,
   onOpenDocument,
   onClose,
   // UAT 24 Okt (audit UI tahap 2) — G2-06: true bila dibungkus pop-up (DetailPopup) yang sudah punya ×,
@@ -79,7 +79,7 @@ export function OrderDetailPanel({
   const [taxInvoices, setTaxInvoices] = useState([]);
   // Pelatihan 18 Nov (S1): dulu "Belum ada Faktur Pajak" + [Terbitkan Faktur Pajak] tampil selama daftar faktur dimuat.
   const [taxLoading, setTaxLoading] = useState(false);
-  const [issuingTax, setIssuingTax] = useState(false);
+  const [issueOpen, setIssueOpen] = useState(false);
   // TX-T2 (K-32) — pemicu faktur PT pesanan (`tax.pemicu_faktur`): per surat jalan → tombol terbit manual diganti tautan draf.
   const [pemicuFaktur, setPemicuFaktur] = useState("pesanan");
   const nav = useAppNav();
@@ -160,16 +160,16 @@ export function OrderDetailPanel({
   const openFakturDocument = (fid) => {
     window.open(`${API}/tax-invoices/${fid}/document`, "_blank", "noopener,noreferrer");
   };
-  const handleIssueTax = async () => {
-    if (!onIssueTaxInvoice || issuingTax) return;
-    setIssuingTax(true);
+  // Terbit faktur dari rincian pesanan: pratinjau + konfirmasi (TaxIssueDialog); galat tampil di dalam pop-up.
+  const handleIssueTax = () => setIssueOpen(true);
+  const submitIssueTax = (body) => issueTaxInvoice(sel.id, body);
+  const afterIssueTax = async () => {
+    setIssueOpen(false);
     try {
-      await onIssueTaxInvoice(sel.id, { kode_transaksi: null });
       const r = await axios.get(`${API}/tax-invoices`, { params: { order_id: sel.id } });
       setTaxInvoices(Array.isArray(r.data) ? r.data : []);
-    } finally {
-      setIssuingTax(false);
-    }
+    } catch { /* daftar faktur dimuat ulang pada pembukaan berikutnya */ }
+    onRefresh?.();
   };
   const ff = sel.fulfillment || {};
   const closed = isClosedSo(sel);
@@ -611,12 +611,20 @@ export function OrderDetailPanel({
               {pemicuFaktur !== "surat_jalan" && !taxLoading && taxInvoices.filter((f) => f.status !== "batal").length === 0 && canIssueTax && (
                 <button
                   data-testid="issue-tax-invoice-btn"
-                  disabled={issuingTax}
                   onClick={handleIssueTax}
                   className="primary-button !py-1 !px-2 !text-[10.5px]"
                 >
-                  {issuingTax ? "Menerbitkan…" : "Terbitkan Faktur Pajak"}
+                  Terbitkan Faktur Pajak
                 </button>
+              )}
+              {issueOpen && (
+                <TaxIssueDialog
+                  target={{ kind: "order", id: sel.id, number: sel.number, orderNumber: sel.number,
+                    customerName: sel.customer_name || "", npwp: sel.customer_npwp || sel.customer?.npwp || "",
+                    entityId: sel.entity_id, dpp: sel.dpp ?? null, ppnAmount: sel.ppn_amount, total: sel.grand_total ?? null }}
+                  submit={submitIssueTax}
+                  onClose={() => setIssueOpen(false)}
+                  onDone={afterIssueTax} />
               )}
             </div>
             {taxInvoices.length > 0 ? (
