@@ -3,6 +3,8 @@
 Status: **USULAN — menunggu validasi pemilik** lewat tiga layar contoh (Meja, Retur Pelanggan, Pengaturan › Ketegasan,
 Pengingat & Dokumen). Sesudah disetujui, pola ini mengikat semua layar baru dan layar yang disentuh, dan menjadi ukuran
 audit seluruh layar (langkah 2). Hasil pilot + foto sebelum/sesudah: `masukan-pemilik/2026-11-16_PILOT_POLA.md`.
+Diubah 25 Nov (§1 butir 6, §2.B, §3, §4): keputusan pemilik 25 Nov, rancangan
+`docs/superpowers/specs/2026-11-25-meja-kerja-di-tempat-design.md`.
 
 Asal: masukan pemilik 16 Nov (M1–M43, `masukan-pemilik/`), analisis pola P1–P10, dan permintaan pemilik:
 > "yang saya butuhkan adalah konsistensi, tata letak yang benar … buat sesuatu data inputnya lebih baik dekat dengan list
@@ -23,8 +25,10 @@ Asal: masukan pemilik 16 Nov (M1–M43, `masukan-pemilik/`), analisis pola P1–
    menyisakan ruang kosong di tengah.
 5. **Kartu angka harus berguna.** Hanya angka yang relevan untuk peran itu, dan **selalu bisa diklik** (menyaring daftar di
    bawahnya atau membuka daftar tersaring). Angka yang tidak bisa ditindak tidak dipajang.
-6. **Tidak ada lapisan yang menimpa isi.** Rincian = halaman/panel tetap; pesan hasil tampil di lapisan yang sedang aktif;
-   tombol yang tidak bisa dipakai nonaktif dengan alasan tertulis.
+6. **Rincian dari daftar meja = pop-up `DetailModal`** (klik baris); pesan hasil aksi tampil di pop-up aksi atau toast,
+   tidak di puncak halaman; tombol yang tidak bisa dipakai nonaktif dengan alasan tertulis. Pop-up hanya lewat komponen
+   bersama (`DetailModal`, `FormModal`, `DetailPopup`, `askConfirm`) — tidak ada pop-up buatan sendiri. Rincian di luar
+   meja tetap halaman/panel tetap. (Asal: keputusan pemilik 25 Nov.)
 7. **PT dan lokasi dipilih sekali** di bilah atas; semua pilihan turunan (gudang, lingkup, stok) mengikuti.
 
 ## 2. Templat halaman
@@ -42,18 +46,39 @@ Judul halaman (?)                                                     ← satu b
 - Komponen: `PageHeader` (judul + ?), `MetricRow` (kartu bisa diklik), `ListToolbar` (cari + dropdown + jumlah + aksi),
   `LineFilter` (dropdown), `KNSelect`, `PaginationBar`.
 
-### B. Meja (contoh: Meja Admin Sales, Meja MD, Meja Gudang, Meja Saya, Meja Finance)
+### B. Meja (contoh: Meja Admin Sales, Meja Keuangan, Meja Gudang, Meja Sample, Meja MD, Meja Saya)
+Asal: keputusan pemilik 25 Nov, rancangan `docs/superpowers/specs/2026-11-25-meja-kerja-di-tempat-design.md`.
 ```
-[Kartu antrean]  [Kartu antrean]        ← dua kolom sama tinggi; kartu besar boleh satu baris penuh
-┌ Ikon Judul (jumlah) (tertua n hari)                        Nilai total ┐
+[Antrean | Pantau]                                   ← Meja Keuangan: tab hub "Meja Keuangan" | "Pantau" | …
+[Kartu antrean]  [Kartu antrean]        ← dua kolom, tinggi sama & tetap; kartu besar boleh satu baris penuh
+┌ Ikon Judul (?) (jumlah) (tertua n hari)                    Nilai total ┐
 │ [Cari……] [Status ▾] [Urut ▾]                                           │
-│ Dokumen · judul   | Keterangan · masuk/menunggu | Nilai | [Aksi]       │ ← baris berkolom
+│ Nomor · pihak        | lencana · umur | nilai · [satu aksi]            │ ← baris dua baris teks
 │ …5 baris                                                               │
 └──────────────────────────────────────────────────────────────── paging ┘
 ```
-- Kartu **selalu terbuka** (tidak ada buka/tutup); kartu kosong tetap tampil dengan teks "bersih".
-- Tiap kartu: cari + saring status (dropdown) + urut (dropdown) + paginasi 5 baris.
-- Komponen: `DeskQueueCard` + `TableFilterBar` (dipakai semua meja).
+- **Satu kepala:** `TopBar` (breadcrumb + judul, nama tunggal = menu); ikon **?** di samping judul memuat penjelasan alur
+  dan "Bukan wewenang meja ini". Tidak ada kepala kedua di dalam layar, tidak ada kartu angka.
+- **Tab Antrean | Pantau.** Antrean (bawaan) = pekerjaan utama meja. Pantau = Pelacak SO, Keep & Pending, Aturan Grade,
+  retur internal, antrean pantauan. Pantau bukan hanya-baca: baris membuka pop-up dan aksi tersedia bila pengguna berizin.
+  Meja Keuangan hidup di dalam hub Beranda Keuangan, jadi Pantau-nya adalah tab hub bersaudara ("Meja Keuangan" | "Pantau"
+  | …), bukan tab tingkat ketiga; meja lain memakai tab internal.
+- **Kartu ukuran tetap**, setinggi kartu berisi 5 baris: `sm:h-[412px]` di ≥ 640 px (border 2 + kepala 44 + bilah saring 49
+  + daftar 281 + kaki 36). Sama untuk kartu berisi, kurang dari 5 baris, kosong ("bersih" di tengah), dan memuat
+  (kerangka). Grid `items-start`: kartu tidak diregangkan tetangganya. Urutan kartu: berisi dari yang paling mendesak,
+  lalu kosong.
+- **Baris ringkas, dua baris teks:** nomor dokumen + nama pihak · satu lencana + umur · nilai + **satu** aksi. Keterangan
+  lain ada di pop-up. Klik pada baris membuka `DeskRowDetail` (pop-up rincian); untuk papan ketik, nomor dokumen adalah
+  `link-button` yang membukanya. Baris tidak diberi `role="button"`/`tabIndex` karena memuat tombol sungguhan.
+- **Aksi besar** (terbit faktur pajak, setujui bayar sample, lepas/teruskan ke gudang, terbitkan denda) selalu lewat
+  pratinjau + konfirmasi di komponen bersama, juga di layar asalnya.
+- Tiap kartu: cari + saring status (dropdown) + urut (dropdown) + paginasi 5 baris; status kartu tersimpan per sesi.
+- **HP:** kartu boleh tetap bisa dibuka-tutup (tanpa tinggi tetap); baris bisa disentuh dan membuka pop-up yang sama
+  layar penuh. Tombol aksi menuju layar dalam aplikasi di HP boleh langsung berpindah; tujuan khusus desktop membuka
+  pop-up dulu.
+- Komponen: `DeskFrame` + `DeskQueueCard` + `DeskRowDetail` + `TableFilterBar` (dipakai semua meja). Berkas meja yang
+  merender `DeskRowDetail` dikecualikan dari penjaga `verify_detail_modal.py` lewat entri `DIBOLEHKAN` beralasan —
+  bukan dengan melemahkan logika penjaga.
 
 ### C. Rincian
 - Satu tombol kembali: "← Kembali ke {layar asal}" bila datang dari layar lain, + tautan kecil "Daftar …"
@@ -79,7 +104,7 @@ Sub-judul bagian
 ## 3. Ukuran baku
 | Hal | Baku |
 |---|---|
-| Huruf isi | 12–13 px; label kolom 11 px huruf besar; minimum 12 px untuk teks yang dibaca |
+| Huruf | 12–13 px; label kolom 12 px semi-tebal tanpa huruf besar; minimum 12 px untuk semua teks; token `text-fs-12\|13\|14\|16\|20` saja |
 | Tinggi baris daftar | 40–48 px (satu baris teks + satu baris keterangan bila perlu) |
 | Jarak antar blok | 12 px; dalam kartu 8 px |
 | Bilah daftar | satu baris di ≥ 1024 px; di HP boleh turun baris, urutan tetap: cari → saringan → aksi |
@@ -88,8 +113,10 @@ Sub-judul bagian
 ## 4. Yang dilarang (diperiksa saat audit, langkah 2)
 - Deret chip/tombol/tab untuk menyaring (`FilterChips`, `StatusTabs` sebagai saringan, chip buatan).
 - Bilah penjelasan (`notice-bar` info) permanen di layar kerja; panduan awal.
-- Kartu antrean/pengaturan yang bisa dibuka-tutup sebagai cara utama melihat isi.
+- Kartu antrean/pengaturan yang bisa dibuka-tutup sebagai cara utama melihat isi di desktop. Kartu meja boleh
+  dibuka-tutup **hanya di HP**; di desktop tetap terbuka dengan ukuran tetap.
 - Kartu angka tanpa aksi klik.
-- Popup melayang yang menutupi daftar; pesan hasil di lapisan yang tertutup.
+- Pop-up buatan sendiri (di luar `DetailModal`/`FormModal`/`DetailPopup`/`askConfirm`); pesan hasil di lapisan yang
+  tertutup atau di puncak halaman meja. (Pop-up rincian meja lewat `DetailModal` diperbolehkan — §1 butir 6.)
 - Tombol buat/tambah di lebih dari satu tempat pada satu layar.
 - Alat admin/teknis (pratinjau data lama, susun ulang relasi, kandidat duplikat) di layar kerja — pindah ke Pengaturan.
