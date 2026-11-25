@@ -145,10 +145,9 @@ export default function CreditDeskView({ currentUser, selectedEntity }) {
       } catch (e) { setActionError(apiErrorText(e, "Naskah pengingat belum bisa disusun.")); } finally { setBusy(""); }
     },
     onIssue: async (row) => {
-      setBusy(row.id);
       try {
         if (await issuePenaltyShared({ id: row.id, number: row.number, amount: row.amount,
-          customer_name: row.customer_name, entity_id: row.entity_id })) done(`Denda ${row.number} diterbitkan.`);
+          customer_name: row.customer_name, entity_id: row.entity_id }, () => setBusy(row.id))) done(`Denda ${row.number} diterbitkan.`);
       } catch (e) { setActionError(apiErrorText(e, "Denda belum bisa diterbitkan.")); } finally { setBusy(""); }
     },
   };

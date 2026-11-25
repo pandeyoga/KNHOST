@@ -81,12 +81,13 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   }, [entityId]);
 
   const act = useCallback(async (kind, row) => {
-    setBusy(row.id); setErr("");
+    setErr("");
     try {
       if (kind === "issue") {
+        // sibuk dipasang sesudah konfirmasi (hook memanggil callback), bukan selama askConfirm terbuka
         if (!(await issuePenaltyShared({ id: row.id, number: row.number, amount: row.amount,
-          customer_name: row.customer_name, entity_id: row.entity_id }))) return;   // batal di konfirmasi
-      }
+          customer_name: row.customer_name, entity_id: row.entity_id }, () => setBusy(row.id)))) return;   // batal di konfirmasi
+      } else setBusy(row.id);
       if (kind === "waive") {
         const body = { reason_code: reasonCode, note };
         await waiveIntent.send({ id: row.id, aksi: "waive", ...body }, (key) => waivePenalty(row.id, body, key));

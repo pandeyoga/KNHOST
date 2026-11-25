@@ -185,6 +185,27 @@ test("piutang lewat tempo tanpa izin order.update: tombol tetap menavigasi seper
   expect(q("fin-desk-detail-action-nav")).not.toBeNull();
 });
 
+test("piutang yang sudah diingatkan (≤7 hari): tidak ada 'Catat sudah ditagih'; klik tidak mengirim POST", async () => {
+  const sudah = { ...TAGIH, reminded: true, badge: "sudah diingatkan" };
+  routeGet({ ...PETA, "/finance/desk": { queues: [{ id: "jatuh_tempo", label: "Jatuh tempo", count: 1, rows: [sudah] }], not_my_desk: [] } });
+  await mount(<FinanceDesk currentUser={FIN} selectedEntity="ent_ksc" />);
+  expect(teks(q("fin-desk-piutang_lewat_tempo-action-so1"))).not.toContain("Catat sudah ditagih");
+  await klik("fin-desk-piutang_lewat_tempo-action-so1"); await tunggu();
+  expect(mockPost).not.toHaveBeenCalled();
+  expect(q("fin-desk-detail-action-nav")).not.toBeNull();
+});
+
+test("denda: baris tidak 'sibuk' selama konfirmasi terbuka; batal = tidak sibuk", async () => {
+  routeGet(PETA);
+  let selesai; mockConfirm.mockReturnValueOnce(new Promise((r) => { selesai = r; }));
+  await mount(<FinanceDesk currentUser={FIN} selectedEntity="ent_ksc" />);
+  await klik("fin-desk-denda-action-pn1");
+  expect(q("fin-desk-denda-action-pn1").disabled).toBe(false);   // konfirmasi terbuka
+  await act(async () => { selesai(false); }); await tunggu();
+  expect(q("fin-desk-denda-action-pn1").disabled).toBe(false);   // batal
+  expect(mockPost).not.toHaveBeenCalled();
+});
+
 // ── Satu sumber: salinan lama dihapus, layar asal memakai komponen/hook bersama ──────────────────────────────────────
 const SRC = path.join(__dirname, "..");
 const baca = (rel) => fs.readFileSync(path.join(SRC, rel), "utf8");

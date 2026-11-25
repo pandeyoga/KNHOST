@@ -604,8 +604,10 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle=f"lewat {r['days_late']} hari · sales {r.get('sales_name') or '—'}",
               value=r.get("outstanding") or 0, age_days=int(r.get("days_late") or 0),
               at=r.get("due_date") or "", age_kind="overdue",
-              badge="lewat", action="Tagih", action_kind="open",
-              extra={"customer_id": r.get("customer_id", ""), "order_id": r.get("order_id")}, entity_id=r.get("entity_id", "")) for r in lewat],
+              badge="sudah diingatkan" if r.get("reminded") else "lewat", action="Tagih", action_kind="open",
+              # Meja gelombang 2 (Task 7) — `reminded` = ada tindak lanjut "diingatkan" ≤ 7 hari; meja tidak menawarkan catat ulang.
+              extra={"customer_id": r.get("customer_id", ""), "order_id": r.get("order_id"),
+                     "reminded": bool(r.get("reminded"))}, entity_id=r.get("entity_id", "")) for r in lewat],
         action_label="Tagih", owner="finance"))
 
     # 6 — HUTANG jatuh tempo (PB-01 lanjutan): PO ber-`payment_due_date` (turun dari termin
@@ -719,7 +721,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               badge="ACC ulang" if o.get("sample_payment_status") == "reapproval_required" else "ACC bayar",
               action="Setujui bayar", action_kind="approve_payment", entity_id=o.get("entity_id", ""),
               # Meja gelombang 2 (Task 7) — dialog setujui bayar di meja memeriksa uang masuk tanpa muat ulang pesanan.
-              extra={"sample_billing": o.get("sample_billing") or "", "grand_total": _doc_total(o),
+              extra={"sample_billing": o.get("sample_billing") or "", "grand_total": float(o.get("grand_total") or 0),   # sama dengan Meja Sample
                      "paid_total": float(o.get("paid_total") or 0),
                      "sample_payment_status": o.get("sample_payment_status") or ""}) for o in sos],
         action_label="Setujui bayar", owner="finance", value_label=TOTAL_LABEL))

@@ -21,14 +21,15 @@ export default function useIssuePenalty() {
 
   const ptName = (id) => entityShort((entities || []).find((e) => e && e.id === id), "PT");
 
-  const issue = async (row) => {
+  /** `onSend` (opsional) dipanggil sesudah konfirmasi, tepat sebelum panggilan server — pemanggil memasang "sibuk" di sini. */
+  const issue = async (row, onSend) => {
     const ok = await askConfirm({
       title: `Terbitkan denda ${row.number}?`,
       message: `Denda ${formatCurrency(row.amount)} untuk ${row.customer_name} di ${ptName(row.entity_id)} diterbitkan dan dijurnal ke piutang denda.`,
       confirmLabel: "Terbitkan",
     });
     if (!ok) return false;
-    setBusy(true);
+    setBusy(true); onSend?.();
     try {
       await intent.send({ id: row.id, aksi: "issue" }, (key) => issuePenalty(row.id, key));
       return true;

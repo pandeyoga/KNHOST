@@ -193,7 +193,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
         testId={`fin-desk-customer-${r.row_key || r.ref_id}`} /> };
     }
     // "Catat sudah ditagih" memakai izin yang sama dengan server (`order.update`); tanpa izin baris tetap pindah ke Aging.
-    if (r._queue === "jatuh_tempo" && r.customer_id && can(perms, "order", "update")) {
+    if (r._queue === "jatuh_tempo" && r.customer_id && !r.reminded && can(perms, "order", "update")) {
       return { ...r, action: "Catat sudah ditagih", action_kind: "mark_reminded" };
     }
     if (r._queue === "hutang_jatuh_tempo" && r.supplier_id && cardsEnabled && can(perms, "supplier", "view")) {
@@ -231,9 +231,9 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
 
   /** Aksi satu langkah (konfirmasi di dalam `fn`): sukses → toast + muat ulang kartu; galat → kotak galat meja. */
   async function aksiLangsung(row, qid, fn, pesan) {
-    setBusyRef(row.ref_id); setErrors((x) => { const n = { ...x }; delete n.aksi; return n; });
+    setErrors((x) => { const n = { ...x }; delete n.aksi; return n; });
     try {
-      if (await fn()) done(pesan, qid);
+      if (await fn(() => setBusyRef(row.ref_id))) done(pesan, qid);
     } catch (e) {
       setErrors((x) => ({ ...x, aksi: apiErrorText(e, "Aksi gagal.") }));
     } finally { setBusyRef(""); }
@@ -254,9 +254,10 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
         sample_payment_status: row.sample_payment_status || (row.badge === "ACC ulang" ? "reapproval_required" : ""), qid });
       return;
     }
-    if (row.action_kind === "issue_penalty") { aksiLangsung(row, qid, () => terbitkanDenda({ id: row.ref_id, number: row.number,
-      amount: row.value, customer_name: row.title, entity_id: row.entity_id }), `Denda ${row.number} diterbitkan.`); return; }
-    if (row.action_kind === "mark_reminded") { aksiLangsung(row, qid, async () => {
+    if (row.action_kind === "issue_penalty") { aksiLangsung(row, qid, (sibuk) => terbitkanDenda({ id: row.ref_id, number: row.number,
+      amount: row.value, customer_name: row.title, entity_id: row.entity_id }, sibuk), `Denda ${row.number} diterbitkan.`); return; }
+    if (row.action_kind === "mark_reminded") { aksiLangsung(row, qid, async (sibuk) => {
+      sibuk();
       await markReminded({ customer_id: row.customer_id, order_id: row.order_id || row.ref_id, order_number: row.number });
       return true;
     }, `${row.title} ditandai sudah diingatkan.`); return; }
