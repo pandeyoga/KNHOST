@@ -40,7 +40,7 @@ const TRACKER_QUEUE = { id: "pelacak_so", title: "Pelacak SO", value_label: "Nil
 
 export default function SoTrackerCard({
   desk = "me", selectedEntity = "all", onOpen, onOpenFull, testPrefix = "desk", refreshKey = 0, showRefresh = true,
-  inPlaceActions = [],
+  inPlaceActions = [], currentUser,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,7 @@ export default function SoTrackerCard({
       )}
       {rows.length > 5 && <div className="px-3 pb-2">{pg.pager}</div>}
       {detail && (
-        <DeskRowDetail row={detail} queue={TRACKER_QUEUE} testPrefix={p} inPlace={inPlace}
+        <DeskRowDetail row={detail} queue={TRACKER_QUEUE} testPrefix={p} inPlace={inPlace} currentUser={currentUser}
           onAction={(row) => onOpen?.(row._tracker)}
           onOpenFull={onOpenFull ? (row) => onOpenFull(row._tracker) : undefined}
           onClose={() => setDetail(null)} />

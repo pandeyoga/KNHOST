@@ -112,7 +112,7 @@ function DeskQueue({ queue, busyRef, onAction, onOpen }) {
   );
 }
 
-export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOpenSub, onOpenFull }) {
+export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOpenSub, onOpenFull, currentUser }) {
   const [desk, setDesk] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -202,7 +202,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
       ) : queues.map((q) => <DeskQueue key={q.id} queue={q} busyRef={busyRef} onAction={onRowAction} onOpen={(row, queue) => setDetail({ row, queue })} />)}
 
       {detail && (
-        <DeskRowDetail row={detail.row} queue={detail.queue} testPrefix="m-desk" inPlace={IN_PLACE} onAction={handleAction}
+        <DeskRowDetail row={detail.row} queue={detail.queue} testPrefix="m-desk" inPlace={IN_PLACE} currentUser={currentUser} onAction={handleAction}
           onOpenFull={(row, queue) => openRow(row, queue)} onClose={() => setDetail(null)} />
       )}
       {verifyRow && (

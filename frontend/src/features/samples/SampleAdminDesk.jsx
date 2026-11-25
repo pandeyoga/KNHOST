@@ -87,7 +87,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const split = splitPantau(queues, DESK_KEY);
   const card = (q) => (
     <DeskQueueCard key={q.id} queue={q} loading={loading || refreshingId === q.id} busyRef="" testPrefix={P}
-      stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} onAction={handleAction} onOpenFull={(row) => open(sampleLink(row))} />
+      stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} currentUser={currentUser} onAction={handleAction} onOpenFull={(row) => open(sampleLink(row))} />
   );
 
   const antrean = loading && !data ? (
@@ -104,7 +104,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   );
 
   const tracker = can(perms, "order", "view") && (
-    <SoTrackerCard desk="sample_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
+    <SoTrackerCard desk="sample_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick} currentUser={currentUser}
       showRefresh={false}
       onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );

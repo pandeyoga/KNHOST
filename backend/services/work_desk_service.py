@@ -572,7 +572,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               subtitle={"under": "kurang bayar", "over": "lebih bayar"}.get(str(r.get("direction") or ""), "selisih"),
               value=abs(float(r.get("delta") or 0)),
               age_days=int(r.get("age_days") or 0), at=r.get("receipt_date") or "", badge="perlu keputusan",
-              action="Putuskan", action_kind="decide_variance", entity_id=r.get("entity_id", ""))
+              action="Putuskan", action_kind="decide_variance", entity_id=r.get("entity_id", ""),
+              extra={"order_ids": list(r.get("target_order_ids") or [])})
          for r in map(safe_doc, selisih)],
         action_label="Putuskan", owner="finance"))
 
@@ -580,7 +581,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     denda = await db.penalties.find(
         _q(scope, {"status": "draft"}),
         {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "amount": 1, "created_at": 1,
-         "doc_number": 1, "days_late": 1, "entity_id": 1}
+         "doc_number": 1, "doc_type": 1, "doc_id": 1, "days_late": 1, "entity_id": 1}
     ).sort("created_at", 1).to_list(200)
     queues.append(_queue(
         "denda_draft", "Denda perlu diterbitkan",
@@ -589,7 +590,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               title=d.get("customer_name", "—"),
               subtitle=f"atas {d.get('doc_number') or '—'}",
               value=d.get("amount") or 0, age_days=_age_days(d.get("created_at")), at=d.get("created_at"),
-              badge="draf", action="Terbitkan", action_kind="issue_penalty", entity_id=d.get("entity_id", ""))
+              badge="draf", action="Terbitkan", action_kind="issue_penalty", entity_id=d.get("entity_id", ""),
+              extra={"doc_type": d.get("doc_type", ""), "doc_id": d.get("doc_id", "")})
          for d in map(safe_doc, denda)],
         action_label="Terbitkan", owner="finance"))
 

@@ -248,7 +248,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     <div className={DESK_GRID_CLASS} data-testid={`${P}-groups`}>
       {groups.map((g) => (
         <DeskQueueCard key={g.id} queue={g} busyRef={busyRef} loading={loading || refreshingId === g.id}
-          testPrefix={P} rowTestPrefix={`${P}-${g.id}`} stateKey={`${DESK_KEY}:${g.id}`} inPlace={IN_PLACE}
+          testPrefix={P} rowTestPrefix={`${P}-${g.id}`} stateKey={`${DESK_KEY}:${g.id}`} inPlace={IN_PLACE} currentUser={currentUser}
           onAction={handleAction} onOpenFull={(row) => navigate(row)} />
       ))}
     </div>
@@ -265,7 +265,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   );
   const tracker = pantauTab && can(perms, "order", "view") && (
     <SoTrackerCard key="tracker" desk="finance" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
-      showRefresh={false}
+      showRefresh={false} currentUser={currentUser}
       onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );
   const pantau = returns || tracker ? (

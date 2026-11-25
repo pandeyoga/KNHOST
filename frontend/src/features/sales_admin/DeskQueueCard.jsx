@@ -114,7 +114,7 @@ export function DeskQueueCardSkeleton({ testPrefix = "desk", index = 0 }) {
 
 export default function DeskQueueCard({
   queue, onAction, busyRef = "", testPrefix = "desk", rowTestPrefix, loading = false,
-  stateKey = "", inPlace = () => false, onOpenFull,
+  stateKey = "", inPlace = () => false, onOpenFull, currentUser,
 }) {
   const p = testPrefix;
   const rp = rowTestPrefix || testPrefix;
@@ -275,7 +275,7 @@ export default function DeskQueueCard({
       </footer>
 
       {detail && (
-        <DeskRowDetail row={detail} queue={queue} testPrefix={p} inPlace={inPlace} onAction={onAction}
+        <DeskRowDetail row={detail} queue={queue} testPrefix={p} inPlace={inPlace} currentUser={currentUser} onAction={onAction}
           onOpenFull={onOpenFull} onClose={() => setDetail(null)} />
       )}
     </section>

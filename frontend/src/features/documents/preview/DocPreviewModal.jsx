@@ -7,48 +7,17 @@
  *  · Kaki: "Jejak" (Jejak Dokumen) dan "Buka layar penuh" (pindah layar → ikon `ExternalLink`, pola `DeskRowDetail`).
  *  · `DocPreviewHost` dipasang SEKALI di `AppViewRouter`, membaca `useAppNav().docPreview`.
  */
-import { useCallback, useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import DetailModal from "../../../components/DetailModal";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { useAppNav } from "../../../context/AppNavContext";
 import { openTrace } from "../trace/traceDeepLink";
-import { canPreview, previewFor } from "./docPreviewRegistry";
-
-const GALAT_BAWAAN = "Dokumen tidak bisa dimuat.";
+import useDocStack from "./useDocStack";
 
 export default function DocPreviewModal({ target, onClose, currentUser }) {
   const nav = useAppNav();
-  const [stack, setStack] = useState([target]);
-  // `key` = docType+docId+PT yang dimuat state ini; Body hanya dirender bila cocok dengan target teratas, jadi sesudah
-  // push/back tidak pernah ada render dengan Body baru + dokumen jenis lain.
-  const [state, setState] = useState({ key: "", loading: true, doc: null, error: "" });
-  const [nonce, setNonce] = useState(0);
-  const top = stack[stack.length - 1];
-  const entry = previewFor(top?.docType);
-  const topKey = `${top?.docType}|${top?.docId}|${top?.entityId || ""}`;
-  const perms = currentUser?.permissions;
+  const { top, entry, doc, loading, error, push, back, canPush, depth, retry } = useDocStack(target, currentUser?.permissions);
 
-  useEffect(() => {
-    let batal = false;
-    if (!entry) { setState({ key: topKey, loading: false, doc: null, error: "Jenis dokumen ini belum punya pratinjau." }); return undefined; }
-    setState({ key: topKey, loading: true, doc: null, error: "" });
-    Promise.resolve()
-      .then(() => entry.load(top.docId, { entityId: top.entityId }))
-      .then((doc) => { if (!batal) setState({ key: topKey, loading: false, doc, error: "" }); })
-      .catch((err) => { if (!batal) setState({ key: topKey, loading: false, doc: null, error: err || GALAT_BAWAAN }); });
-    return () => { batal = true; };
-  }, [entry, topKey, nonce]);
-
-  // Tanpa izin baca jenis itu, push diabaikan (bukan 403 di dalam pop-up); Body memakai `canPush` untuk memilih tombol/teks.
-  const canPush = useCallback((docType) => canPreview(perms, docType), [perms]);
-  const push = useCallback((t) => {
-    if (t && t.docId && canPreview(perms, t.docType)) setStack((s) => [...s, t]);
-  }, [perms]);
-  const back = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-
-  const cocok = state.key === topKey;
-  const doc = cocok ? state.doc : null;
   const number = doc?.number || top?.number || "";
   const title = [entry?.label || "Dokumen", number].filter(Boolean).join(" · ");
   const Body = entry?.Body;
@@ -58,13 +27,13 @@ export default function DocPreviewModal({ target, onClose, currentUser }) {
     <DetailModal framed size="md" testId="doc-preview" label={`Pratinjau ${title}`} onClose={onClose}>
       <div className="grid gap-3">
         <div className="flex flex-wrap items-center gap-2 pr-6">
-          {stack.length > 1 && (
+          {depth > 1 && (
             <button type="button" className="link-button" data-testid="doc-preview-back" onClick={back}>‹ Kembali</button>
           )}
           <h2 className="min-w-0 break-words text-fs-16 font-semibold text-kn-text" data-testid="doc-preview-title">{title}</h2>
         </div>
-        {cocok && state.error && <ErrorNotice message={state.error} onRetry={() => setNonce((n) => n + 1)} testId="doc-preview-error" />}
-        {(!cocok || state.loading) && <p className="py-6 text-center text-fs-12 text-kn-text-2" role="status" data-testid="doc-preview-loading">Memuat…</p>}
+        {error && <ErrorNotice message={error} onRetry={retry} testId="doc-preview-error" />}
+        {loading && <p className="py-6 text-center text-fs-12 text-kn-text-2" role="status" data-testid="doc-preview-loading">Memuat…</p>}
         {doc && Body && <Body doc={doc} push={push} canPush={canPush} currentUser={currentUser} />}
         <div className="flex flex-wrap items-center gap-2 border-t border-kn-divider pt-3">
           {top?.docId && (

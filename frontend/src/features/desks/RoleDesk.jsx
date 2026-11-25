@@ -29,6 +29,7 @@ import { dedupeTurnQueue } from "./deskDedupe";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import DeskFrame, { DESK_GRID_CLASS } from "./DeskFrame";
 import { markDeskReturn } from "./deskSession";
+import { permsOf } from "./deskPerms";
 
 const DESKS = {
   md: {
@@ -47,12 +48,6 @@ const DESKS = {
 };
 
 // MD · Gudang · Meja Saya: aksi pindah layar (pop-up rincian dulu), kecuali "Buat SPK QC" di Meja Gudang (di tempat).
-
-/** Izin pengguna: `currentUser` dari App; cadangan lama `localStorage kn_user` (pemanggil tanpa prop). */
-function permsOf(currentUser) {
-  if (currentUser?.permissions) return currentUser.permissions;
-  try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions || {}; } catch { return {}; }
-}
 
 export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "all", onOpenDocument }) {
   const cfg = DESKS[desk] || DESKS.md;
@@ -140,7 +135,7 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
     <div className={DESK_GRID_CLASS}>
       {orderDeskQueues(split.antrean).map((q) => (
         <DeskQueueCard key={q.id} queue={q} loading={loading} testPrefix={p} stateKey={`${deskKey}:${q.id}`}
-          inPlace={inPlace}
+          inPlace={inPlace} currentUser={currentUser}
           onAction={(row, queue) => ((row?._raw || row)?.action_kind === "create_qc_spk" && spkInPlace ? startSpk(row) : navigate(row, queue))}
           onOpenFull={(row, queue) => navigate(row, queue, { full: true })} />
       ))}
@@ -150,7 +145,7 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
   // FIX-1 (audit B1b UI-56) — pelacak SO (nilai Rupiah) hanya untuk pemegang izin pesanan; sopir/desainer tidak.
   const tracker = can(perms, "order", "view") && (
     <SoTrackerCard key="tracker" desk={desk} selectedEntity={selectedEntity} testPrefix={p} refreshKey={tick}
-      showRefresh={false}
+      showRefresh={false} currentUser={currentUser}
       onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );
   // Kartu retur internal (Meja Gudang) hanya dimuat untuk pemegang izin endpoint-nya dan hanya digambar bila ada isinya —

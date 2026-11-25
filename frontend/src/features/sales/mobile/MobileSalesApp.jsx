@@ -70,7 +70,7 @@ export default function MobileSalesApp(props) {
 
   const home = isAdmin
     ? { id: "home", label: "Meja", icon: ClipboardCheck, render: () => (
-      <MobileSalesAdminDesk selectedEntity={selectedEntity} onOpenOrder={openOrder}
+      <MobileSalesAdminDesk selectedEntity={selectedEntity} currentUser={user} onOpenOrder={openOrder}
         onOpenSub={(s, id) => openSubWith(s, { id })} onOpenFull={onOpenFull} />) }
     : { id: "home", label: "Beranda", icon: Home, render: () => (
       <MobileSalesHome token={token} user={user} onNewOrder={goCatalog} onOpenTab={setTab} onAskKn={() => openSub("tanya")}

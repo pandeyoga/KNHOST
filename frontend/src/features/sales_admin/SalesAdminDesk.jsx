@@ -116,7 +116,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const split = splitPantau(queues, DESK_KEY);
   const card = (q) => (
     <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading || refreshingId === q.id}
-      testPrefix={P} stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} onAction={handleAction} onOpenFull={openFull} />
+      testPrefix={P} stateKey={`${DESK_KEY}:${q.id}`} inPlace={IN_PLACE} currentUser={currentUser} onAction={handleAction} onOpenFull={openFull} />
   );
 
   const antrean = loading && !desk ? (
@@ -136,7 +136,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
       {can(perms, "order", "view") && (
-        <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} showRefresh={false}
+        <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} showRefresh={false} currentUser={currentUser}
           inPlaceActions={["Atur pemenuhan", "Periksa & lepas", "Lepas ke gudang"]}
           onOpenFull={(r) => open(soTrackerLink(r))} onOpen={(r) => {
           const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order", entity_id: r.entity_id || "" };
