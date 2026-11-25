@@ -84,6 +84,9 @@ DIBOLEHKAN: Dict[str, str] = {
     "features/sales_admin/DeskQueueCard.jsx":
         "baris membuka `DeskRowDetail` = `DetailModal` (pop-up rincian meja, keputusan pemilik 25 Nov, "
         "rancangan meja §5.3) — overlay-nya ada di berkas anak features/desks/DeskRowDetail.jsx.",
+    "features/sales_admin/SoTrackerCard.jsx":
+        "baris Pelacak SO membuka `DeskRowDetail` = `DetailModal` (pop-up rincian meja, rancangan meja §5.1) — "
+        "overlay-nya ada di berkas anak features/desks/DeskRowDetail.jsx.",
 }
 
 

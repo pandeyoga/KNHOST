@@ -111,7 +111,8 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
 
   const tracker = can(perms, "order", "view") && (
     <SoTrackerCard desk="sample_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
-      onOpen={(r) => open(soTrackerLink(r))} />
+      showRefresh={false}
+      onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );
   const pantau = tracker || split.pantau.length > 0 ? (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">

@@ -54,19 +54,19 @@ export default function CustomerGradeRulesCard({ selectedEntity = "all" }) {
     const on = rule[field].includes(g);
     return (
       <button key={g} type="button" data-testid={`grade-rule-prefer-${g}`} onClick={() => toggle(field, g)}
-        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${on ? "bg-[#0058CC] text-white" : "bg-[#F2F3F5] text-[#3C3C43] hover:bg-[#E5E7EB]"}`}>{g}</button>
+        className={`rounded-full px-2.5 py-0.5 text-fs-12 font-semibold transition-colors ${on ? "bg-kn-action text-white" : "bg-kn-neutral-soft text-kn-text hover:bg-kn-divider"}`}>{g}</button>
     );
   };
 
   return (
     <section className="section-card" data-testid="grade-rules-card">
-      <div className="section-head"><div className="flex items-center gap-2"><Award size={15} className="text-[#0058CC]" /><h2>Aturan Grade Pelanggan</h2></div></div>
-      <div className="grid gap-2.5 p-3 text-[11.5px]">
+      <div className="section-head"><div className="flex items-center gap-2"><Award size={15} className="text-kn-action" /><h2>Aturan Grade Pelanggan</h2></div></div>
+      <div className="grid gap-2.5 p-3 text-fs-12">
         <KNSelect data-testid="grade-rule-customer" className="input" value={cid} onValueChange={setCid} placeholder="Pilih pelanggan…" aria-label="Pelanggan"
           options={customers.map((c) => ({ value: c.id, label: c.name }))} />
         {cid && (
           <>
-            <div><p className="mb-1 font-semibold">Minimum grade <span className="font-normal text-[#8E8E93]">(grade lebih tinggi boleh; lebih rendah ditolak · kosong = semua non-BS)</span></p>
+            <div><p className="mb-1 font-semibold">Minimum grade <span className="font-normal text-kn-text-2">(grade lebih tinggi boleh; lebih rendah ditolak · kosong = semua non-BS)</span></p>
               <KNSelect data-testid="grade-rule-min" className="input" value={rule.min_grade} aria-label="Grade minimum"
                 onValueChange={(v) => { setRule((r) => ({ ...r, min_grade: v, preferred_grades: r.preferred_grades.filter((g) => !v || (gradeRank(g) ?? 99) <= (gradeRank(v) ?? 99)) })); }}
                 options={[{ value: "", label: "— tanpa minimum —" }, ...GRADES.map((g) => ({ value: g, label: `${g} ke atas` }))]} /></div>
@@ -74,13 +74,13 @@ export default function CustomerGradeRulesCard({ selectedEntity = "all" }) {
               <div className="flex flex-wrap gap-1.5">{GRADES.filter(meetsMin).map((g) => chip("preferred_grades", g))}</div></div>
             <label className="flex items-center gap-2"><input type="checkbox" data-testid="grade-rule-accept-bs" checked={rule.accept_bs} onChange={(e) => setRule((r) => ({ ...r, accept_bs: e.target.checked }))} /> Pelanggan menerima BS</label>
             <input data-testid="grade-rule-note" className="input" placeholder="Catatan (opsional)" value={rule.note} onChange={(e) => setRule((r) => ({ ...r, note: e.target.value }))} />
-            <button type="button" data-testid="grade-rule-save" disabled={busy} onClick={save} className="primary-button justify-center py-1.5 text-[12px] disabled:opacity-50">
+            <button type="button" data-testid="grade-rule-save" disabled={busy} onClick={save} className="primary-button justify-center py-1.5 text-fs-12 disabled:opacity-50">
               {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Simpan Aturan
             </button>
           </>
         )}
-        {msg && <p className="text-[11px] text-[#126E2C]" data-testid="grade-rule-msg">{msg}</p>}
-        {err && <p className="text-[11px] text-[#C0392B]" data-testid="grade-rule-error">{err}</p>}
+        {msg && <p className="text-fs-12 text-kn-success-text" data-testid="grade-rule-msg">{msg}</p>}
+        {err && <p className="text-fs-12 text-kn-danger-text" data-testid="grade-rule-error">{err}</p>}
       </div>
     </section>
   );

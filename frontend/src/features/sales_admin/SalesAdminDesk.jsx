@@ -131,7 +131,9 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
       {can(perms, "order", "view") && (
-        <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} onOpen={(r) => {
+        <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix={P} refreshKey={trackerTick} showRefresh={false}
+          inPlaceActions={["Atur pemenuhan", "Periksa & lepas", "Lepas ke gudang"]}
+          onOpenFull={(r) => open(soTrackerLink(r))} onOpen={(r) => {
           const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
           if (r.action === "Atur pemenuhan") return setFulfillRow(row);
           if (r.action === "Periksa & lepas") return setVerifyRow(row);
@@ -140,7 +142,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
         }} />
       )}
       {/* Pola UI (M4, pemilik 16 Nov) — Keep & Pending butuh ruang: satu baris penuh, tidak berdampingan. */}
-      <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={open} refreshKey={trackerTick} />
+      <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={open} refreshKey={trackerTick} showRefresh={false} />
       <CustomerGradeRulesCard selectedEntity={selectedEntity} />
       {split.pantau.length > 0 && <div className={DESK_GRID_CLASS}>{split.pantau.map(card)}</div>}
     </div>

@@ -130,7 +130,8 @@ export default function RoleDesk({ desk = "md", currentUser, selectedEntity = "a
   // FIX-1 (audit B1b UI-56) — pelacak SO (nilai Rupiah) hanya untuk pemegang izin pesanan; sopir/desainer tidak.
   const tracker = can(perms, "order", "view") && (
     <SoTrackerCard key="tracker" desk={desk} selectedEntity={selectedEntity} testPrefix={p} refreshKey={tick}
-      onOpen={(r) => open(soTrackerLink(r))} />
+      showRefresh={false}
+      onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );
   // Kartu retur internal (Meja Gudang) hanya dimuat untuk pemegang izin endpoint-nya dan hanya digambar bila ada isinya —
   // Pantau "kosong" diputuskan dari yang benar-benar tampil, bukan dari daftar komponen.

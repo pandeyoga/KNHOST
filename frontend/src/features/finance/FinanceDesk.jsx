@@ -271,7 +271,8 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   );
   const tracker = pantauTab && can(perms, "order", "view") && (
     <SoTrackerCard key="tracker" desk="finance" selectedEntity={selectedEntity} testPrefix={P} refreshKey={tick}
-      onOpen={(r) => open(soTrackerLink(r))} />
+      showRefresh={false}
+      onOpen={(r) => open(soTrackerLink(r))} onOpenFull={(r) => open(soTrackerLink(r))} />
   );
   const pantau = returns || tracker ? (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">{returns}{tracker}</div>
