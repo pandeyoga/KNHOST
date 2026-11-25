@@ -68,6 +68,9 @@ EXPECT = {
     "sales_order": ("sales_orders", {"status": {"$nin": ["cancelled", "expired", "rejected", "void", "done"]},
                                      "$or": [{"status": "waiting_approval"},
                                              {"pending_approvals.status": "pending"}]}),
+    # 25 Nov (gate pohon akhir Meja gelombang 1) — antrean persetujuan batal/tutup sisa pesanan: permintaan yang
+    # diajukan (`so_cancel_service.submit`) dan belum diputus. Ditulis ulang, bukan dibaca dari QUEUES.
+    "so_cancel": ("sales_orders", {"cancel_request.status": "pending"}),
     "purchase_order": ("purchase_orders", {"status": "waiting_approval"}),
     "price": ("price_approvals", {"status": "pending",
                                   "$or": [{"so_id": ""}, {"so_id": None},
