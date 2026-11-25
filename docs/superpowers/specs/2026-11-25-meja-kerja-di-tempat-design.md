@@ -214,6 +214,33 @@ Pakai komponen yang sudah ada (Lampiran A §3.3):
 
 Jenis yang panelnya belum ada tetap memakai panel umum (§5.3) dengan "Buka layar penuh".
 
+### 5.7a Rincian dokumen di layar Keuangan (permintaan pemilik 25 Nov)
+
+Pemilik: *"di finance semua nota pembelian atau penjualan jika di-klik bisa melihat detail barangnya."*
+
+- **Registri pratinjau yang sama** dengan §5.3 (jenis dokumen → panel) dipakai juga oleh layar daftar Keuangan, bukan hanya meja.
+- Klik nomor dokumen membuka pop-up dengan **baris barang** (barang, qty, harga), lalu "Buka layar penuh" sebagai tautan sekunder.
+- Panel yang menampilkan baris barang sudah ada: `OrderDetailPanel`/`SOCompactPanel` (pesanan), `VendorBillDetailPanel` (tagihan pemasok), dan `RecordDetailModal` dengan `itemColumns`.
+- Kontrabon menampilkan gabungan baris faktur-fakturnya.
+- Faktur pajak keluaran menampilkan baris barang pesanannya.
+
+Layar yang disambungkan, dengan temuan di `docs/audit/kas-bank-otomasi-2026-11-25/` §4:
+
+| Layar | Sekarang | Jadi |
+|---|---|---|
+| Piutang › rincian umur | nomor pesanan teks biasa | klik → pop-up pesanan |
+| Penagihan & Penerimaan | nomor pesanan berwarna tautan tapi mati | klik → pop-up pesanan |
+| Kwitansi (riwayat) | Jejak Dokumen; nomor pesanan teks biasa | pop-up kwitansi + pesanan teralokasi |
+| Kartu pelanggan › Tagihan / Rekening koran | Jejak Dokumen | pop-up |
+| Hutang per Pemasok | Jejak Dokumen | `VendorBillDetailPanel` / kontrabon |
+| Kontrabon | daftar faktur berupa teks | baris faktur bisa dibuka |
+| Kartu pemasok | tagihan & retur tanpa kolom barang | `itemColumns` diisi |
+| Faktur Keluaran | hanya DPP/PPN | + baris barang pesanan |
+| Selisih bayar, Denda | Jejak Dokumen | pop-up pesanan/pelanggan |
+| Transaksi Kas | tanpa tautan | tautan ke dokumen sumber + jurnal |
+
+Jejak Dokumen tetap tersedia dari pop-up (tautan "Jejak").
+
 ### 5.8 HP
 
 - **HP Admin Sales:**
@@ -239,7 +266,7 @@ Catat asal perubahan: keputusan pemilik 25 Nov.
 | Gelombang | Isi | Selesai bila |
 |---|---|---|
 | 1 — Kerangka (semua meja) | §5.1, §5.2, §5.3 panel umum + registri kosong, §5.4, §5.5 (kerangka meja), §5.6 (server & dedupe), §5.8 baris HP bisa disentuh, §5.9 | semua meja desktop: baris bisa diklik, kartu sama tinggi, satu kepala, tab Pantau, tidak ada aksi besar tanpa konfirmasi; tangkapan sebelum/sesudah. **Berhenti untuk validasi pemilik** sebelum gelombang 2, karena kerangka ini dasar semua gelombang berikutnya. |
-| 2 — Admin Sales + Keuangan | §5.7 baris Admin Sales & Keuangan; kemudian rancangan Lapor Bayar CBD memakai pola ini | semua aksi kedua meja di tempat, kecuali yang ditandai "buka layar" dengan alasan |
+| 2 — Admin Sales + Keuangan | §5.7 baris Admin Sales & Keuangan, §5.7a rincian dokumen di layar Keuangan; kemudian rancangan Lapor Bayar CBD memakai pola ini | semua aksi kedua meja di tempat, kecuali yang ditandai "buka layar" dengan alasan |
 | 3 — Meja Saya, Gudang, MD, Sample, Cutting | §5.7 sisanya | sama |
 
 Gelombang 2 dan 3 berjalan berurutan tanpa menunggu. Tangkapan sebelum/sesudah dikirim ke pemilik di akhir masing-masing.
