@@ -169,6 +169,11 @@ koreksi negatif, dengan saldo potongan terbawa.
   - Review Focus 4: `test_BTP2_lintas_pt` — finance hanya bertugas `ent_kanda` → keputusan 403/404 dan daftar
     `cancel-requests` tidak memuat pesanan `ent_ksc`.
   - `test_BTP2_kedaluwarsa_mem_void` — `void_pending` dipanggil jalur kedaluwarsa → riwayat `void`.
+  - `test_BTP2_notifikasi_terlihat_dan_ditutup` (audit notifikasi N-02/N-08) — sesudah pengajuan, finance melihat
+    notifikasi `permintaan_batal_pesanan` lewat `GET /api/notifications` (penyaring relevansi tautan meloloskannya; bila
+    `approval-inbox` tidak boleh dibuka finance, pilih tautan yang boleh dibuka pemegang `order.approve_cancel`);
+    sesudah diputus/ditarik/void notifikasi itu `resolved_at` terisi (`notification_service.resolve_action`) dan tidak
+    lagi menawarkan aksi; tingkatnya `warning`.
   - `test_BTP2_izin_baku` — peran tanpa acuan `{"order": ["view","approve_cancel"]}` → `GET cancel-requests` 200; peran
     acuan Manajer dengan modul "Tidak ada" → 403.
 - [ ] **Step 2: Jalankan — gagal.**
@@ -177,7 +182,8 @@ koreksi negatif, dengan saldo potongan terbawa.
   selain `cancel_order` dan kedaluwarsa, tiap jalur dicatat di laporan beserta alasan dibiarkan/dialihkan. `cancel_order` lama memanggil `submit(..., "cancel", …)`
   dan mengembalikan `JSONResponse(status_code=202, …)` bila 202. Notifikasi: pending → `create_addressed(permission=("order",
   "approve_cancel"), entity_id=…, notif_type="permintaan_batal_pesanan", ref=f"permintaan_batal_pesanan:{req_id}",
-  link="approval-inbox")`; putusan → `create_addressed(also_users=(pengaju, sales_id…), notif_type="permintaan_batal_diputus")`.
+  link=<layar yang boleh dibuka pemegang izin>, action_type="so_cancel_request", action_id=req_id)`; keputusan,
+  penarikan, dan void memanggil `resolve_action("so_cancel_request", req_id, outcome=…)`; putusan → `create_addressed(also_users=(pengaju, sales_id…), notif_type="permintaan_batal_diputus")`.
 - [ ] **Step 4: Jalankan** `test_BTP2_*`, `test_latih_s3_batal_uang_muka.py`, `test_batal_titipan_beri_tahu_finance.py`
   → lulus (admin = setuju sendiri, jadi kedua uji lama tetap 200). Cari uji lain yang membatalkan pesanan dibayar sebagai
   sales (`grep -rln "/cancel\"" backend/tests_mem`), jalankan, dan sesuaikan harapan 200→202 hanya bila memang kasus
@@ -236,7 +242,8 @@ koreksi negatif, dengan saldo potongan terbawa.
     source_id: str, kata: str) -> float` (inti: penanda `advance_to_deposit`, `withdraw` ber-`moved_to_deposit`,
     `_adjust_deposit`, notifikasi Finance); `uang_muka_pesanan_batal_ke_titipan` memanggilnya dengan
     `amount = min(unrecognized, paid)`, `source_id=f"batal_titipan:{id}"`, `kata` dari status; tutup sisa memakai
-    `source_id=f"tutup_sisa_titipan:{id}"`, `kata="sisa ditutup"`. Syarat status `DEAD_STATUSES` dipindah ke pembungkus batal.
+    `source_id=f"tutup_sisa_titipan:{id}"`, `kata="sisa ditutup"`. Syarat status `DEAD_STATUSES` dipindah ke pembungkus batal. Sekalian perbaiki tingkat notifikasi gagal
+    `"danger"` → `"critical"` (audit notifikasi N-17; uji BTF-5 ikut disesuaikan).
   - Field pesanan: `items[].quantity_ordered_original`, `items[].base_quantity_ordered_original`, `closed_lines[]`,
     `closed_short = {at, by, reason, request_id, commission_basis: {grand_total, items: [{product_id, base_quantity}]}}`.
 
@@ -351,6 +358,9 @@ koreksi negatif, dengan saldo potongan terbawa.
   `BACKLOG_INBOX_TAB.so_cancel`, `LISTED_IN_INBOX`)
 - Modify: `frontend/src/features/approvals/approvalInboxData.js` (grab `GET /sales-orders/cancel-requests`, izin
   `[["order","approve_cancel"]]`, butir `kind: "so_cancel"` membuka rincian pesanan)
+- Modify: `frontend/src/components/NotificationCenter.jsx` (`TYPE_LABEL`: `permintaan_batal_pesanan` "Permintaan batal
+  pesanan", `permintaan_batal_diputus` "Keputusan batal pesanan", `titipan_pesanan_batal` "Uang muka jadi titipan",
+  `titipan_pesanan_batal_gagal` "Uang muka gagal jadi titipan") — audit notifikasi U-04
 - Modify: layar daftar tugas picking yang membaca `held_reason` (Tugas 3) — cari komponen yang memanggil endpoint
   daftar tugas outbound
 - Test: `frontend/src/features/__tests__/btpInboxBatal.test.js`
