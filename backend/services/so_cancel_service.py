@@ -4,7 +4,7 @@ Rancangan `docs/superpowers/specs/2026-11-25-batal-tutup-sisa-pesanan-design.md`
 A2-1…A2-5, 25 Nov 2026). Dulu pemegang `order.cancel` membatalkan pesanan langsung, termasuk pesanan yang sudah dibayar
 atau yang barangnya sudah disiapkan gudang. Sekarang satu pintu:
 
-* `submit` — jalur masuk tunggal (`POST /sales-orders/{id}/cancel`; Tugas 4 menambah tutup sisa). Menilai
+* `submit` — jalur masuk tunggal (`POST /sales-orders/{id}/cancel` dan `/close-remaining`). Menilai
   `needs_approval` (pengaturan `sales.cancel_approval_when` + Aturan Persetujuan jenis `sales_order.batal`):
     - tidak wajib → eksekusi langsung (perilaku lama, 200);
     - wajib dan pengaju lolos aturan memutus → disetujui sendiri (`self_approved=True`), eksekusi di permintaan yang
@@ -20,18 +20,20 @@ Data (§5.1): satu objek aktif `sales_orders.cancel_request`; putusan/penarikan/
 diberi penanda `deciding` (sewa singkat bertoken) supaya setujui/tolak/tarik yang datang bersamaan kalah 409 dan
 eksekusi berjalan sekali.
 
-Eksekutor per aksi: `EXECUTORS` (`execute_cancel` = isi lama endpoint batal, tanpa perubahan perilaku). Penilai per
-aksi: `ASSESSORS` (status boleh + nominal dasar kebijakan + kelebihan uang, opsional `preview`). Tugas 4 menambah
-`"close_remaining"` di keduanya.
+Eksekutor per aksi: `EXECUTORS` (`execute_cancel` = isi lama endpoint batal, tanpa perubahan perilaku;
+`close_remaining` = `so_close_remaining_service.execute_close_remaining`, BTP-4). Penilai per aksi: `ASSESSORS`
+(status boleh + nominal dasar kebijakan + kelebihan uang, opsional `preview`). Tanda tangan keduanya dijaga
+`Executor`/`Assessor`.
 """
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from fastapi import HTTPException
 
 from core_utils import new_id, now_iso, rupiah, safe_doc
 from db import db
+from services import so_close_remaining_service as _tutup_sisa   # BTP-4 — eksekutor & penilai tutup sisa
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,9 @@ ACTION_TYPE = "so_cancel_request"
 # `notification_scope`). `approval-inbox` tidak: ia milik modul Pusat Persetujuan/Harga/Pembelian.
 LINK = "orders"
 MESSAGE_PENDING = "Permintaan diajukan — menunggu persetujuan."
+# BTP-3 (A2-4) — satu teks untuk semua pintu yang ditahan selama permintaan menunggu, dan label tanda di layar gudang.
+MESSAGE_HELD = "Pesanan sedang diajukan batal/tutup sisa — tunggu keputusan."
+HELD_LABEL = "Ditahan: menunggu keputusan batal"
 STATUSES = ("pending", "approved", "rejected", "withdrawn", "void")
 ACTION_LABEL = {"cancel": "pembatalan", "close_remaining": "tutup sisa"}
 FAIL_MESSAGE = {"cancel": "Pembatalan belum bisa dijalankan — coba lagi atau hubungi Admin.",
@@ -102,10 +107,6 @@ async def pending_of(order_id: str) -> Optional[Dict[str, Any]]:
     o = await db.sales_orders.find_one({"id": order_id, "cancel_request.status": "pending"},
                                        {"_id": 0, "cancel_request": 1})
     return _public(o["cancel_request"]) if o else None
-
-
-MESSAGE_HELD = "Pesanan sedang diajukan batal/tutup sisa — tunggu keputusan."
-HELD_LABEL = "Ditahan: menunggu keputusan batal"
 
 
 async def assert_not_pending(order_id: str) -> None:
@@ -234,11 +235,28 @@ async def _assess_cancel(order: Dict[str, Any]) -> Dict[str, Any]:
     return {"amount": float(order.get("grand_total") or 0), "excess": 0.0}
 
 
-#: Eksekutor per aksi — `(order_id, actor, reason, request_id="") -> hasil`; `request_id` (bila eksekusi atas nama
-#: permintaan) ditulis ke pesanan sebagai penanda. Tugas 4 menambah `"close_remaining"`.
-EXECUTORS: Dict[str, Callable[..., Awaitable[Dict[str, Any]]]] = {"cancel": execute_cancel}
-#: Penilai per aksi — `(order) -> {"amount", "excess"[, "preview"]}`; 409 bila aksi tidak mungkin untuk pesanan itu.
-ASSESSORS: Dict[str, Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = {"cancel": _assess_cancel}
+class Executor(Protocol):
+    """Eksekutor aksi: `request_id` (bila eksekusi atas nama permintaan) WAJIB ditulis ke pesanan sebagai
+    `cancel_request_id` pada tulisan yang mengubah pesanan — `_execute_and_finalize` membacanya untuk membedakan
+    "terlanjur dieksekusi permintaan ini" dari perubahan lewat jalur lain. → hasil (dokumen pesanan sesudahnya +
+    ringkasan)."""
+
+    async def __call__(self, order_id: str, actor: Dict[str, Any], reason: str,
+                       request_id: str = "") -> Dict[str, Any]: ...
+
+
+class Assessor(Protocol):
+    """Penilai aksi: `{"amount": nominal dasar kebijakan, "excess": uang ke titipan[, "preview"]}`; 409 bila aksi tidak
+    mungkin untuk pesanan itu."""
+
+    async def __call__(self, order: Dict[str, Any]) -> Dict[str, Any]: ...
+
+
+#: Eksekutor per aksi (lihat `Executor`).
+EXECUTORS: Dict[str, Executor] = {"cancel": execute_cancel,
+                                  "close_remaining": _tutup_sisa.execute_close_remaining}
+#: Penilai per aksi (lihat `Assessor`).
+ASSESSORS: Dict[str, Assessor] = {"cancel": _assess_cancel, "close_remaining": _tutup_sisa.assess}
 
 
 def _check_action(action: str) -> str:
@@ -409,7 +427,7 @@ async def _close(order_id: str, req: Dict[str, Any], final: Dict[str, Any], *, t
 
 def _summary(result: Dict[str, Any]) -> Dict[str, Any]:
     keys = ("status", "advance_to_deposit", "advance_to_deposit_error", "open_fulfillment_refs",
-            "sample_payment_status")
+            "sample_payment_status", "closed_value", "released_qty", "tasks_cancelled", "tasks_closed")
     return {k: result.get(k) for k in keys if k in (result or {})}
 
 
@@ -441,14 +459,14 @@ async def _execute_and_finalize(order_id: str, req: Dict[str, Any], actor: Dict[
         result = await EXECUTORS[req["action"]](order_id, actor, req["reason"], request_id=req["id"])
     except Exception as exc:
         cur = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "status": 1, "cancel_request_id": 1}) or {}
-        if (req["action"] == "cancel" and cur.get("status") == "cancelled"
-                and cur.get("cancel_request_id") == req["id"]):
-            # Pesanan TERLANJUR batal oleh eksekusi permintaan ini (penanda `cancel_request_id`, bukan waktu): putusan
-            # tetap dicatat (riwayat jujur); notifikasi/audit dituntaskan pemanggil.
+        if cur.get("cancel_request_id") == req["id"]:
+            # Pesanan TERLANJUR berubah oleh eksekusi permintaan ini (penanda `cancel_request_id` yang ditulis
+            # eksekutor, bukan waktu): putusan tetap dicatat (riwayat jujur); notifikasi/audit dituntaskan pemanggil.
             final = _final(req, "approved", name, uid, note, self_approved=self_approved,
-                           result={"status": "cancelled", "error": str(exc)[:300]})
+                           result={"status": cur.get("status") or "", "error": str(exc)[:300]})
             await _close(order_id, req, final, token=token)
-            logger.error("Eksekusi permintaan %s pesanan %s gagal SESUDAH pesanan batal: %s", req["id"], order_id, exc)
+            logger.error("Eksekusi permintaan %s pesanan %s gagal SESUDAH pesanan berubah: %s",
+                         req["id"], order_id, exc)
             raise _SudahTereksekusi(final, exc) from exc
         await _release_marker(order_id, req["id"], token, drop=self_approved)
         if self_approved:

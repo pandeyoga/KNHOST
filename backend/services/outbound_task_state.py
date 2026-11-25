@@ -12,6 +12,7 @@ dengan `inbound_task_state` (FIX-3a).
                               ▼
                           escalated ─putusan supervisor─▶ status TURUNAN progres (tanpa qty: status sebelum eskalasi)
     non-terminal ─batal SO / batal baris─▶ cancelled        (dispatched & cancelled = terminal)
+    non-terminal ─tutup sisa pesanan (BTP-4)─▶ dispatched (qty = yang terkirim) / cancelled (belum terkirim apa pun)
 
 Status turunan sesudah eskalasi dihitung dari progres (`derived_status`): tugas yang sudah terkirim penuh tidak pernah
 kembali ke `packing`, tugas terkirim sebagian tetap `partially_shipped`.
@@ -42,6 +43,8 @@ TRANSITIONS: Dict[str, Dict[str, tuple]] = {
     "dispatch": {"from": ACTIVE_PICK, "to": ("partially_shipped", "dispatched")},
     "advance": {"from": ("created", "picking", "packing"), "to": ("picking", "packing", "staging")},
     "cancel": {"from": ("scheduled", "escalated") + ACTIVE_PICK, "to": ("cancelled",)},
+    # BTP-4 — tutup sisa pesanan terkirim sebagian: tugas yang sudah mengirim sesuatu ditutup ke qty terkirimnya.
+    "close_remaining": {"from": ("scheduled", "escalated") + ACTIVE_PICK, "to": ("dispatched", "cancelled")},
 }
 
 LABEL = {"scheduled": "terjadwal (hold)", "created": "baru", "picking": "sedang diambil", "packing": "siap kirim",
@@ -50,7 +53,7 @@ LABEL = {"scheduled": "terjadwal (hold)", "created": "baru", "picking": "sedang 
 
 ACTION_LABEL = {"release": "Rilis tugas", "scan_pick": "Ambil barang", "escalate": "Eskalasi",
                 "resolve_escalation": "Selesaikan eskalasi", "dispatch": "Kirim", "advance": "Lanjut tahap",
-                "cancel": "Batal"}
+                "cancel": "Batal", "close_remaining": "Tutup sisa"}
 
 
 def allowed_from(action: str) -> tuple:

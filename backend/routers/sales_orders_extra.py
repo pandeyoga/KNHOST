@@ -894,10 +894,24 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     disetujui sendiri → 200 hasil batal (bentuk lama); wajib disetujui orang lain → **202** + permintaan, supaya klien
     lama tidak membaca "sudah batal"."""
     actor = await require_permission(request, "order", "cancel")
-    await _cancel_target(order_id, request, actor)   # sales hanya membatalkan SO miliknya
+    return await _submit_cancel_action(order_id, "cancel", request, actor, payload, "Alasan pembatalan")
+
+
+@router.post("/sales-orders/{order_id}/close-remaining")
+async def close_remaining_order(order_id: str, request: Request, payload: Optional[SoCancelIn] = None) -> Any:
+    """BTP-4 — tutup sisa pesanan yang dikirim sebagian (rancangan 2026-11-25 §5.6): jumlah turun ke yang terkirim,
+    nilai = yang dibukukan per Surat Jalan, kelebihan uang → titipan. Pintu & aturan persetujuan sama dengan batal
+    (A1-1): langsung/disetujui sendiri → 200 hasil; wajib disetujui orang lain → **202** + permintaan."""
+    actor = await require_permission(request, "order", "cancel")
+    return await _submit_cancel_action(order_id, "close_remaining", request, actor, payload, "Alasan tutup sisa")
+
+
+async def _submit_cancel_action(order_id: str, action: str, request: Request, actor: Dict[str, Any],
+                                payload: Optional[SoCancelIn], label: str) -> Any:
+    await _cancel_target(order_id, request, actor)   # sales hanya membatalkan/menutup sisa SO miliknya
     from input_rules import require_reason   # FIX-3b — K-14 dihitung HURUF (validator bersama)
-    reason = require_reason((payload.reason if payload else "") or "", label="Alasan pembatalan")
-    code, body = await so_cancel_service.submit(order_id, "cancel", actor, reason)
+    reason = require_reason((payload.reason if payload else "") or "", label=label)
+    code, body = await so_cancel_service.submit(order_id, action, actor, reason)
     body = strip_cost_fields(body, actor.get("role"))
     if code == 202:
         return JSONResponse(status_code=202, content=jsonable_encoder(body))

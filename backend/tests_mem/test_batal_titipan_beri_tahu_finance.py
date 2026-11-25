@@ -10,7 +10,8 @@ mengecek daftar titipan sendiri. Kalau pemindahan gagal, layar hanya berkata "hu
   BTF-2  Penerima dibaca dari IZIN, bukan nama peran: peran kustom tanpa peran acuan yang diberi izin itu ikut menerima.
   BTF-3  Pesanan batal tanpa uang muka tidak memberi tahu Finance; pemindahan yang diulang tidak menggandakan notifikasi.
   BTF-4  Jalur kedaluwarsa (fungsi yang sama, pelaku "system") ikut memberi tahu Finance.
-  BTF-5  Pemindahan gagal → Finance diberi tahu bahwa uang muka belum terpindah (pembatalan tetap berhasil).
+  BTF-5  Pemindahan gagal → Finance diberi tahu bahwa uang muka belum terpindah (pembatalan tetap berhasil), tingkat
+         `critical` (audit notifikasi N-17: `"danger"` bukan tingkat yang dikenal).
 """
 from __future__ import annotations
 
@@ -140,4 +141,4 @@ async def test_BTF_5_pemindahan_gagal_memberi_tahu_finance(klien, db, siap, monk
     rows = await _notif(db, JENIS_GAGAL, so)
     assert siap["finance"]["id"] in {n["recipient_user"] for n in rows}, rows
     n = next(x for x in rows if x["recipient_user"] == siap["finance"]["id"])
-    assert so["number"] in n["title"] and n["severity"] == "danger"
+    assert so["number"] in n["title"] and n["severity"] == "critical"

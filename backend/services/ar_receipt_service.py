@@ -343,29 +343,30 @@ async def adjust_deposit(customer_id: str, delta: float) -> None:
     await _adjust_deposit(customer_id, delta)
 
 
-async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: str = "") -> float:
-    """S3 (pelatihan 18 Nov) — pesanan BATAL / kedaluwarsa yang sudah menerima uang muka: uang muka yang masih tertahan
-    untuk pesanan itu (pembayaran ber-`gl_bucket=advance` yang belum direklas ke Piutang) dipindah menjadi TITIPAN
-    pelanggan (`customers.deposit_balance`), supaya bisa dikembalikan (Kasus › Pengembalian dana ke pelanggan) atau dipakai
-    pesanan lain. Dulu uang itu tertinggal di pesanan mati: tidak tampil di titipan maupun Laporan Uang Muka, padahal akun
-    2-1400 masih memegangnya.
+async def pindah_uang_muka_ke_titipan(order: Dict[str, Any], actor: Any, reason: str, amount: float,
+                                      source_id: str, kata: str) -> float:
+    """INTI pemindahan uang muka pesanan → TITIPAN pelanggan (`customers.deposit_balance`), dipakai pesanan batal /
+    kedaluwarsa (`uang_muka_pesanan_batal_ke_titipan`) dan tutup sisa (BTP-4, kelebihan sesudah nilai pesanan turun ke
+    yang dikirim). `amount` = nominal yang dipindah (dihitung pemanggil; dipakai hanya bila penanda belum ada),
+    `source_id` = sumber baris penarikan di `payments[]` (id baris turunan → aman diulang), `kata` = keadaan pesanan
+    untuk teks ("dibatalkan", "kedaluwarsa", "sisa ditutup").
 
     Tanpa jurnal: uang muka pesanan dan titipan sama-sama 2-1400 Uang Muka Pelanggan. Di pesanan ditulis baris penarikan
-    (`ar_allocation_service.withdraw`, jenis `deposit`, `gl_bucket=advance`) → terbayar pesanan dan uang muka tertahan = 0,
-    dan kwitansi asalnya tidak bisa lagi dibatalkan tanpa menarik titipannya (`reverse_check` menolak, 409).
-    Aman diulang: penanda `advance_to_deposit` diklaim sebelum titipan ditambah. → nominal yang dipindah (0 = tidak ada
-    uang muka / sudah dipindah)."""
+    (`ar_allocation_service.withdraw`, jenis `deposit`, `gl_bucket=advance`, `moved_to_deposit`) → terbayar pesanan dan
+    uang muka tertahan turun sebesar `amount`, dan kwitansi asalnya tidak bisa lagi dibatalkan tanpa menarik titipannya
+    (`reverse_check` menolak, 409). Aman diulang: penanda `advance_to_deposit` (satu per pesanan) diklaim sebelum
+    titipan ditambah; ulangan mengikuti nominal & sumber penandanya. Finance (pemegang izin Meja Finance) diberi tahu —
+    berhasil atau gagal. → nominal yang dipindah (0 = tidak ada / sudah dipindah)."""
     from services import ar_allocation_service as _alloc
     from services import gl_service as _gl
-    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
-    if not order or order.get("status") not in DEAD_STATUSES:
-        return 0.0
+    order_id = order.get("id") or ""
     tanda = order.get("advance_to_deposit") or {}
     if not tanda:
-        held = round(min(await _gl.order_advance_unrecognized(order), order_paid(order)), 2)
+        held = round(float(amount or 0), 2)
         if held <= EPS:
             return 0.0
-        tanda = {"amount": held, "deposit_done": False, "at": now_iso(), "reason": reason,
+        tanda = {"amount": held, "deposit_done": False, "at": now_iso(), "reason": reason, "source_id": source_id,
+                 "kata": kata,
                  "by": (actor or {}).get("name", "system") if isinstance(actor, dict) else str(actor or "system")}
         res = await db.sales_orders.update_one({"id": order_id, "advance_to_deposit": {"$exists": False}},
                                                {"$set": {"advance_to_deposit": tanda}})
@@ -375,12 +376,13 @@ async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: 
     held = round(float(tanda.get("amount") or 0), 2)
     if held <= EPS or tanda.get("deposit_done"):
         return 0.0
+    kata = tanda.get("kata") or kata
     try:
         await _alloc.withdraw(
-            kind="deposit", order_id=order_id, amount=held, source_id=f"batal_titipan:{order_id}",
+            kind="deposit", order_id=order_id, amount=held, source_id=tanda.get("source_id") or source_id,
             source_number=order.get("number") or order_id, customer_id=order.get("customer_id") or "",
             entity_id=order.get("entity_id") or "", date=now_iso(), actor=actor, method="deposit",
-            note=f"Uang muka pesanan batal dipindah ke titipan pelanggan{(': ' + reason) if reason else ''}",
+            note=f"Uang muka dipindah ke titipan pelanggan (pesanan {kata}){(': ' + reason) if reason else ''}",
             extra={"gl_bucket": _gl.ADVANCE_BUCKET, "moved_to_deposit": True})
         klaim = await db.sales_orders.update_one(
             {"id": order_id, "advance_to_deposit.deposit_done": False},
@@ -393,10 +395,28 @@ async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: 
             await db.sales_orders.update_one({"id": order_id}, {"$set": {"advance_to_deposit.deposit_done": False}})
             raise
     except Exception as exc:
-        await _beri_tahu_finance_titipan(order, held, reason, galat=str(exc) or type(exc).__name__)
+        await _beri_tahu_finance_titipan(order, held, reason, galat=str(exc) or type(exc).__name__, kata=kata)
         raise
-    await _beri_tahu_finance_titipan(order, held, reason)
+    await _beri_tahu_finance_titipan(order, held, reason, kata=kata)
     return held
+
+
+async def uang_muka_pesanan_batal_ke_titipan(order_id: str, actor: Any, reason: str = "") -> float:
+    """S3 (pelatihan 18 Nov) — pesanan BATAL / kedaluwarsa yang sudah menerima uang muka: uang muka yang masih tertahan
+    untuk pesanan itu (pembayaran ber-`gl_bucket=advance` yang belum direklas ke Piutang, paling banyak yang terbayar)
+    dipindah menjadi TITIPAN pelanggan lewat `pindah_uang_muka_ke_titipan`, supaya bisa dikembalikan (Kasus ›
+    Pengembalian dana ke pelanggan) atau dipakai pesanan lain. Dulu uang itu tertinggal di pesanan mati: tidak tampil di
+    titipan maupun Laporan Uang Muka, padahal akun 2-1400 masih memegangnya. Hanya untuk pesanan mati (`DEAD_STATUSES`).
+    → nominal yang dipindah (0 = tidak ada uang muka / sudah dipindah)."""
+    from services import gl_service as _gl
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order.get("status") not in DEAD_STATUSES:
+        return 0.0
+    held = 0.0
+    if not order.get("advance_to_deposit"):
+        held = min(await _gl.order_advance_unrecognized(order), order_paid(order))
+    kata = "kedaluwarsa" if order.get("status") == "expired" else "dibatalkan"
+    return await pindah_uang_muka_ke_titipan(order, actor, reason, held, f"batal_titipan:{order_id}", kata)
 
 
 #: Temuan alur pembatalan 25 Nov — penerima = pemegang izin Meja Finance (`routers/work_desks.finance_desk`), per orang.
@@ -404,20 +424,22 @@ IZIN_MEJA_FINANCE = ("payment_variance", "decide")
 NOTIF_TITIPAN_BATAL = "titipan_pesanan_batal"
 
 
-async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: float, reason: str = "", galat: str = "") -> None:
-    """Uang muka pesanan batal/kedaluwarsa sudah (atau GAGAL) menjadi titipan → beri tahu pemegang izin Meja Finance di
-    PT pesanan. Dulu hanya sales pemilik yang diberi tahu; Finance yang harus mengembalikan uang atau memakainya untuk
-    pesanan lain harus mengecek daftar titipan sendiri. Best-effort: tidak pernah menggagalkan pemindahan."""
+async def _beri_tahu_finance_titipan(order: Dict[str, Any], amount: float, reason: str = "", galat: str = "",
+                                     kata: str = "") -> None:
+    """Uang muka pesanan batal/kedaluwarsa/sisa ditutup sudah (atau GAGAL) menjadi titipan → beri tahu pemegang izin
+    Meja Finance di PT pesanan. Dulu hanya sales pemilik yang diberi tahu; Finance yang harus mengembalikan uang atau
+    memakainya untuk pesanan lain harus mengecek daftar titipan sendiri. Best-effort: tidak pernah menggagalkan
+    pemindahan. Gagal = tingkat `critical` (audit notifikasi N-17: `"danger"` tidak dikenal)."""
     from services import notification_service as _ns
-    kata = "kedaluwarsa" if order.get("status") == "expired" else "dibatalkan"
+    kata = kata or ("kedaluwarsa" if order.get("status") == "expired" else "dibatalkan")
     nomor = order.get("number") or order.get("id")
     pelanggan = order.get("customer_name") or order.get("customer_id") or "-"
     alasan = f" Alasan: {reason}." if reason else ""
     if galat:
-        jenis, severity = f"{NOTIF_TITIPAN_BATAL}_gagal", "danger"
+        jenis, severity = f"{NOTIF_TITIPAN_BATAL}_gagal", "critical"
         title = f"{nomor} {kata}: uang muka BELUM jadi titipan pelanggan"
-        body = (f"{pelanggan} — {rupiah(amount)} masih tertahan di pesanan yang sudah {kata} dan belum masuk titipan. "
-                f"Periksa pesanan dan titipan pelanggan ini.{alasan} Galat: {galat}")
+        body = (f"{pelanggan} — {rupiah(amount)} masih tertahan di pesanan ini (pesanan {kata}) dan belum masuk "
+                f"titipan. Periksa pesanan dan titipan pelanggan ini.{alasan} Galat: {galat}")
     else:
         jenis, severity = NOTIF_TITIPAN_BATAL, "warning"
         title = f"{nomor} {kata}: uang muka jadi titipan pelanggan"
