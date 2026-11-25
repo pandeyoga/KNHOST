@@ -104,9 +104,19 @@ def component_spans(src: str) -> Dict[str, Tuple[int, int]]:
     return out
 
 
-def imports_map(src: str) -> Dict[str, str]:
+def imports_map(src: str, raw: str = None) -> Dict[str, str]:
+    """→ {NamaImpor: jalur}. Jalur impor hidup di dalam STRING, jadi dibaca dari sumber MENTAH (`raw`); sumber
+    terstrip (`src`, posisi sama) hanya dipakai memastikan kata `import`-nya KODE, bukan komentar/string.
+
+    Dulu dibaca dari sumber terstrip saja → jalurnya sudah jadi spasi, peta impor selalu KOSONG, dan penelusuran
+    "overlay di berkas ANAK" (lihat `is_popup`) tidak pernah jalan: komponen rincian yang pop-up-nya ada di berkasnya
+    sendiri (mis. `DeskRowDetail` → `<DetailModal>`) dituduh sebagai panel inline.
+    """
     out: Dict[str, str] = {}
-    for m in re.finditer(r"import\s+(?:\{([^}]*)\}|(\w+))\s+from\s+[\"']([^\"']+)[\"']", src):
+    text = raw if raw is not None else src
+    for m in re.finditer(r"import\s+(?:\{([^}]*)\}|(\w+))\s+from\s+[\"']([^\"']+)[\"']", text):
+        if raw is not None and src[m.start():m.start() + 6] != "import":
+            continue                     # contoh impor di dalam komentar/string — bukan impor sungguhan
         named, default, path = m.group(1), m.group(2), m.group(3)
         if default:
             out[default] = path
@@ -175,7 +185,7 @@ def analyze_text(raw: str, f=None, stats=None) -> List[Tuple[int, str, str, str]
               if SEL.match(m.group(1))}
     if not states:
         return []
-    bodies, imps = component_spans(src), imports_map(src)
+    bodies, imps = component_spans(src), imports_map(src, raw)
 
     out: List[Tuple[int, str, str, str]] = []
     for var in sorted(states):
@@ -311,6 +321,21 @@ def self_test() -> int:
         analyze_text(wrap("{/* {selected && <FooDetailPanel />} */}")) == [])
     cek("penyebutan di dalam STRING tidak dihitung",
         analyze_text(wrap("{'{selected && <FooDetailPanel />}'}")) == [])
+    # Kasus NYATA (meja gelombang 1): komponen rincian yang merender <DetailModal> di BERKAS ANAK-nya sendiri.
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "RowPopupDetail.jsx").write_text(
+            "import DetailModal from './DetailModal';\n"
+            "export default function RowPopupDetail(){ return <DetailModal testId=\"x\" />; }\n", encoding="utf-8")
+        (root / "RowInlineDetail.jsx").write_text(
+            "export default function RowInlineDetail(){ return <div className=\"p-2\" />; }\n", encoding="utf-8")
+        induk = ("import RowPopupDetail from './RowPopupDetail';\nimport RowInlineDetail from './RowInlineDetail';\n"
+                 "// import RowInlineDetail from './RowPopupDetail';  ← komentar, bukan impor\n"
+                 + wrap("{selected && <RowPopupDetail />}\n      {selected && <RowInlineDetail />}"))
+        hasil_anak = analyze_text(induk, root / "Induk.jsx")
+        cek("overlay di BERKAS ANAK (impor dibaca dari sumber mentah) → hijau; anak tanpa overlay tetap MERAH",
+            [c for _l, _v, c, _w in hasil_anak] == ["RowInlineDetail"])
 
     # ── Lapis 3 — ATURAN pembebasan ───────────────────────────────────────────
     g = Guard("INV-UI-08", "self-test")

@@ -88,11 +88,20 @@ test("Meja Saya: subjudul berlabel; tombol aksi tetap mengirim nomor asli server
   ] });
   const onOpenDocument = jest.fn();
   const { host, root } = await mount(<RoleDesk desk="me" onOpenDocument={onOpenDocument} />);
-  expect(host.textContent).toContain("Menunggu persetujuan · Budi");
-  expect(host.textContent).toContain("tahap: dibatalkan");
+  // Meja gelombang 1 (R8): baris ringkas tanpa keterangan — subjudul berlabel dibaca di pop-up rincian baris.
   expect(host.textContent).not.toContain("waiting_approval ·");
+  await act(async () => { q(host, "my-desk-row-so_2").click(); });
+  expect(q(host, "my-desk-detail-field-subtitle").textContent).toContain("tahap: dibatalkan");
+  await act(async () => { q(host, "my-desk-detail-close-x").click(); });
+  await act(async () => { q(host, "my-desk-row-so_1").click(); });
+  expect(q(host, "my-desk-detail-field-subtitle").textContent).toContain("Menunggu persetujuan · Budi");
+  expect(host.textContent).not.toContain("waiting_approval ·");
+  await act(async () => { q(host, "my-desk-detail-close-x").click(); });
+  // Aksi pindah layar membuka pop-up rincian dulu; tombol aksi di dalamnya yang menjalankan (nomor asli server).
   const btn = q(host, "my-desk-action-so_1");
   await act(async () => { btn.click(); });
+  expect(onOpenDocument).not.toHaveBeenCalled();
+  await act(async () => { q(host, "my-desk-detail-action").click(); });
   expect(onOpenDocument).toHaveBeenCalledWith(expect.objectContaining({ focus_id: "so_1", number: "KSC/SO-00001" }));
   await act(async () => { root.unmount(); });
 });

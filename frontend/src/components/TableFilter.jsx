@@ -9,12 +9,15 @@ import KNSelect from "./KNSelect";
  * `text(row)`   → teks yang dicari (nomor, pelanggan, keterangan …)
  * `status(row)` → kunci status untuk chip filter (opsional); `statusLabel(key)` → label chip
  * `sorts`       → { kunci: { label, cmp } } — urutan pertama = bawaan server (tanpa cmp)
+ * `initial`     → nilai awal { q, st, sort } (mis. dipulihkan dari sessionStorage); `sort` hanya dipakai bila kuncinya
+ *                 ada di `sorts`. Hanya dibaca pada render pertama.
  */
-export function useTableFilter(rows, { text, status, statusLabel = (s) => s, sorts = null } = {}) {
-  const [q, setQ] = useState("");
-  const [st, setSt] = useState("");
+export function useTableFilter(rows, { text, status, statusLabel = (s) => s, sorts = null, initial = {} } = {}) {
+  const init = initial || {};
+  const [q, setQ] = useState(() => (typeof init.q === "string" ? init.q : ""));
+  const [st, setSt] = useState(() => (typeof init.st === "string" ? init.st : ""));
   const sortKeys = sorts ? Object.keys(sorts) : [];
-  const [sort, setSort] = useState(sortKeys[0] || "");
+  const [sort, setSort] = useState(() => (sortKeys.includes(init.sort) ? init.sort : sortKeys[0] || ""));
   const list = Array.isArray(rows) ? rows : [];
   const statuses = useMemo(() => {
     if (!status) return [];
@@ -33,27 +36,34 @@ export function useTableFilter(rows, { text, status, statusLabel = (s) => s, sor
   return { q, setQ, st, setSt, sort, setSort, statuses, shown, active, sorts, reset: () => { setQ(""); setSt(""); } };
 }
 
-export default function TableFilterBar({ f, testId, placeholder = "Cari…", onChange, searchTestId = "" }) {
+/**
+ * Tinggi nyata bilah: `py-2` (16) + kontrol `h-8` (32) = 48 px — kartu antrean meja menghitung tinggi tetapnya dari sini.
+ * `compact` (kartu setengah lebar): di ≥ 640 px tidak membungkus — cari menyusut (`min-w-0 flex-1`), dropdown dibatasi
+ * lebarnya dan terpotong; di HP tetap boleh turun baris.
+ */
+export default function TableFilterBar({ f, testId, placeholder = "Cari…", onChange, searchTestId = "", compact = false }) {
   // Pola UI (04_POLA_UI §1.2, permintaan pemilik 16 Nov) — saringan status = DROPDOWN, sebaris dengan cari & urutan.
   // Dulu deret chip "Semua · Status A · n …" yang memakan baris sendiri dan berbeda dari layar lain.
   const set = (fn) => (v) => { fn(v); onChange?.(); };
   const total = f.statuses.reduce((n, s) => n + s.n, 0);
+  const selectCls = `!h-8 ${compact ? "!w-auto max-w-[9.5rem] shrink-0" : "!w-auto"} rounded-lg border border-kn-field-border bg-white !px-2 !py-1 text-fs-12`;
   return (
-    <div data-testid={`${testId}-filter`} className="flex flex-wrap items-center gap-2 px-3 py-2">
-      <label className="flex min-w-[160px] flex-1 items-center gap-1.5 rounded-lg border border-kn-field-border bg-white px-2 py-1">
+    <div data-testid={`${testId}-filter`}
+      className={`flex items-center gap-2 px-3 py-2 ${compact ? "flex-wrap sm:flex-nowrap" : "flex-wrap"}`}>
+      <label className={`flex h-8 flex-1 items-center gap-1.5 rounded-lg border border-kn-field-border bg-white px-2 ${compact ? "min-w-[10rem] sm:min-w-0" : "min-w-[160px]"}`}>
         <Search size={13} className="shrink-0 text-kn-neutral" />
         <input data-testid={searchTestId || `${testId}-search`} value={f.q} onChange={(e) => set(f.setQ)(e.target.value)}
-          placeholder={placeholder} aria-label={placeholder} className="w-full bg-transparent text-fs-12 outline-none" />
+          placeholder={placeholder} aria-label={placeholder} className="w-full min-w-0 bg-transparent text-fs-12 outline-none" />
       </label>
       {f.statuses.length > 1 && (
         <KNSelect data-testid={`${testId}-status`} value={f.st} onValueChange={(v) => set(f.setSt)(v || "")} aria-label="Saring status"
-          className="!h-auto !w-auto rounded-lg border border-kn-field-border bg-white !px-2 !py-1 text-fs-12"
+          className={selectCls}
           options={[{ value: "", label: `Semua status (${total})` },
             ...f.statuses.map((s) => ({ value: s.key, label: `${s.label} (${s.n})` }))]} />
       )}
       {f.sorts && Object.keys(f.sorts).length > 1 && (
         <KNSelect data-testid={`${testId}-sort`} value={f.sort} onValueChange={(v) => set(f.setSort)(v)} aria-label="Urutan"
-          className="!h-auto !w-auto rounded-lg border border-kn-field-border bg-white !px-2 !py-1 text-fs-12"
+          className={selectCls}
           options={Object.entries(f.sorts).map(([k, v]) => ({ value: k, label: v.label }))} />
       )}
     </div>

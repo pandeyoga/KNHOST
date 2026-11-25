@@ -94,21 +94,21 @@ export const myVisitsHistory = (month = "") =>
   axios.get(`${API}/hr/visits/mine`, { params: month ? { month } : {} }).then((r) => r.data);
 
 // ─── KAMUS TAMPILAN ANTREAN ─────────────────────────────────────────────────
-// `tone` dipakai untuk ikon & angka; `bg` untuk latar lencana ikon.
+// `tone` dipakai untuk ikon & angka; `bg` untuk latar lencana ikon — keduanya token `var(--kn-*)` (ungu lama → `special`).
 export const QUEUE_META = {
-  perlu_verifikasi:    { icon: ClipboardCheck, tone: "#8A5300", bg: "rgba(255,149,0,.16)" },
-  siap_dikonfirmasi:   { icon: CheckCircle2,   tone: "#1B7F4B", bg: "rgba(52,199,89,.16)" },
-  menunggu_manajer:    { icon: ShieldQuestion, tone: "#6B219A", bg: "rgba(107,33,154,.12)" },
-  harga_ditolak:       { icon: AlertTriangle,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
-  siap_cetak_dokumen:  { icon: Printer,        tone: "#0058CC", bg: "rgba(0,122,255,.12)" },
-  perlu_dipenuhi:      { icon: PackageSearch,  tone: "#B23B14", bg: "rgba(255,89,48,.14)" },
-  jatuh_tempo:         { icon: CalendarClock,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
-  retur:               { icon: RotateCcw,      tone: "#8A5300", bg: "rgba(255,149,0,.16)" },
-  permintaan_internal: { icon: ArrowLeftRight, tone: "#0058CC", bg: "rgba(0,122,255,.12)" },
-  siap_faktur_pajak:   { icon: FileSignature,  tone: "#6B219A", bg: "rgba(107,33,154,.12)" },
-  uang_masuk:          { icon: Wallet,         tone: "#1B7F4B", bg: "rgba(52,199,89,.16)" },
-  selisih_bayar:       { icon: Scale,          tone: "#8A5300", bg: "rgba(255,149,0,.16)" },
-  denda_draft:         { icon: AlertTriangle,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
+  perlu_verifikasi:    { icon: ClipboardCheck, tone: "var(--kn-warning-text)", bg: "var(--kn-warning-soft)" },
+  siap_dikonfirmasi:   { icon: CheckCircle2,   tone: "var(--kn-success-text)", bg: "var(--kn-success-soft)" },
+  menunggu_manajer:    { icon: ShieldQuestion, tone: "var(--kn-special-text)", bg: "var(--kn-special-soft)" },
+  harga_ditolak:       { icon: AlertTriangle,  tone: "var(--kn-danger-text)",  bg: "var(--kn-danger-soft)" },
+  siap_cetak_dokumen:  { icon: Printer,        tone: "var(--kn-action)",       bg: "var(--kn-action-soft)" },
+  perlu_dipenuhi:      { icon: PackageSearch,  tone: "var(--kn-danger-text)",  bg: "var(--kn-danger-soft)" },
+  jatuh_tempo:         { icon: CalendarClock,  tone: "var(--kn-danger-text)",  bg: "var(--kn-danger-soft)" },
+  retur:               { icon: RotateCcw,      tone: "var(--kn-warning-text)", bg: "var(--kn-warning-soft)" },
+  permintaan_internal: { icon: ArrowLeftRight, tone: "var(--kn-action)",       bg: "var(--kn-action-soft)" },
+  siap_faktur_pajak:   { icon: FileSignature,  tone: "var(--kn-special-text)", bg: "var(--kn-special-soft)" },
+  uang_masuk:          { icon: Wallet,         tone: "var(--kn-success-text)", bg: "var(--kn-success-soft)" },
+  selisih_bayar:       { icon: Scale,          tone: "var(--kn-warning-text)", bg: "var(--kn-warning-soft)" },
+  denda_draft:         { icon: AlertTriangle,  tone: "var(--kn-danger-text)",  bg: "var(--kn-danger-soft)" },
   // M5 / M30 (pemilik 16 Nov) — kartu baru Meja MD & keputusan eskalasi gudang.
   makloon_jalan:       { icon: ArrowLeftRight, tone: "var(--kn-action)",       bg: "var(--kn-action-soft)" },
   makloon_faktur:      { icon: FileSignature,  tone: "var(--kn-warning-text)", bg: "var(--kn-warning-soft)" },
@@ -117,7 +117,7 @@ export const QUEUE_META = {
 };
 
 export const DEFAULT_QUEUE_META = {
-  icon: BadgeCheck, tone: "#0058CC", bg: "rgba(0,122,255,.12)",
+  icon: BadgeCheck, tone: "var(--kn-action)", bg: "var(--kn-action-soft)",
 };
 
 export const queueMeta = (id) => QUEUE_META[id] || DEFAULT_QUEUE_META;
@@ -169,12 +169,13 @@ const BADGE_LABEL = {
   "disetujui · belum direalisasi": "Disetujui · belum direalisasi",
 };
 
+// Nada lencana = token warna `kn-*` (satu sumber dengan tokens.css) — dulu hex lepas per kelompok.
 const BADGE_TONE = {
-  danger: "border-[#F5C9BC] bg-[#FDEDE7] text-[#C0392B]",
-  warn: "border-[#F5D9A8] bg-[#FFF4E5] text-[#8A5300]",
-  ok: "border-[#BFE6CE] bg-[#E6F6EC] text-[#1B7F4B]",
-  info: "border-[#CBDFFF] bg-[#EAF2FF] text-[#0058CC]",
-  mute: "border-[#E2E2E7] bg-[#F2F2F5] text-[#6E6E73]",
+  danger: "border-kn-danger-soft bg-kn-danger-soft text-kn-danger-text",
+  warn: "border-kn-warning-soft bg-kn-warning-soft text-kn-warning-text",
+  ok: "border-kn-success-soft bg-kn-success-soft text-kn-success-text",
+  info: "border-kn-action-soft bg-kn-action-soft text-kn-action",
+  mute: "border-kn-neutral-soft bg-kn-neutral-soft text-kn-text-2",
 };
 
 const BADGE_GROUP = {
@@ -199,10 +200,9 @@ export function badgeGroup(badge) {
   return Object.keys(BADGE_GROUP).find((g) => BADGE_GROUP[g].includes(key)) || "mute";
 }
 
+/** Kelas nada lencana (garis + latar + teks, token `kn-*`) menurut kelompoknya. */
 export function badgeClass(badge) {
-  const key = String(badge || "").toLowerCase();
-  const group = Object.keys(BADGE_GROUP).find((g) => BADGE_GROUP[g].includes(key));
-  return BADGE_TONE[group || "mute"];
+  return BADGE_TONE[badgeGroup(badge)];
 }
 
 // ─── ISYARAT UMUR (SLA) ─────────────────────────────────────────────────────
@@ -230,12 +230,6 @@ export function fmtWhen(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
   return d.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
-}
-
-/** Perkiraan tanggal masuk antrean dari umur (hari) bila server tidak mengirim waktu persis. */
-export function sinceFromAge(days) {
-  const d = new Date(Date.now() - Number(days || 0) * 86400000);
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
 }
 
 /** Tujuan tombol aksi Pelacak SO: tahap gudang → Barang Keluar, selain itu → detail SO. */

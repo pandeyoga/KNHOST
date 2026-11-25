@@ -271,6 +271,8 @@ describe("U14 — Beranda Keuangan › Perlu Tindakan", () => {
     expect(host.textContent).toContain("Hutang jatuh tempo");
     expect(host.textContent).toContain("Kontrabon menunggu");
     await click(q(host, "fin-desk-kontrabon-action-contra_bon_approve-cb_1"));
+    expect(open).not.toHaveBeenCalled();                       // aksi pindah layar → pop-up rincian dulu
+    await click(q(host, "fin-desk-detail-action"));
     expect(open).toHaveBeenCalledWith(expect.objectContaining({ view: "contra-bons" }));
   });
   test("semua sumber kosong → satu pesan; galat sumber → tidak berbunyi kosong", async () => {

@@ -100,6 +100,8 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
   const Panel = panelFor(row.ref_type);
   const sub = [ptShown, badgeLabel(row.badge), isi(row.age_days) || row.age_kind === "overdue" ? ageText(row) : ""].filter(Boolean).join(" · ");
   const run = (r) => { onClose && onClose(); onAction && onAction(r, queue); };
+  // Sama dengan tombol baris di kartu: baris tanpa aksi sendiri memakai aksi antreannya.
+  const actionLabel = row.action || queue.action_label || "";
   const more = Array.isArray(row._moreActions) ? row._moreActions : [];
 
   return (
@@ -113,9 +115,9 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
           ? <Panel row={row} queue={queue} onAction={onAction} onClose={onClose} onOpenFull={onOpenFull} />
           : <GenericPanel row={row} queue={queue} p={p} pt={ptShown} />}
         <div className="flex flex-wrap items-center gap-2 border-t border-kn-divider pt-3">
-          {row.action && (
+          {actionLabel && (
             <button type="button" className="primary-button btn-sm" data-testid={`${p}-detail-action`} onClick={() => run(row)}>
-              {row.action}
+              {actionLabel}
               {!inPlace(row) && <ExternalLink size={14} className="ml-1" data-testid={`${p}-detail-action-nav`} title="Pindah ke layar lain" aria-hidden="true" />}
             </button>
           )}
