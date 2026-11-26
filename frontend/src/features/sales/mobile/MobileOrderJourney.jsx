@@ -12,6 +12,9 @@ import { orderJourney } from "../../sales_admin/workDeskApi";
 const fmt = (s) => (!s ? "" : String(s).length <= 10 ? formatDate(`${s}T00:00:00+07:00`) : formatDateTime(s));
 // Langkah TAGIHAN berjalan sejajar dengan langkah proses (bisa lunas sebelum dikirim) → tidak dipakai menilai "dilewati".
 const MONEY_STEPS = ["ditagih", "dibayar"];
+// Lapor Bayar (LB-T7) — langkah "Bayar dicek Finance" yang TIDAK BERLAKU bagi pesanan ini (bukan CBD/DP) ditandai
+// `state: "skipped"` oleh server: bukan "dilewati", cukup tidak ditampilkan.
+const TIDAK_BERLAKU = ["bayar_dicek"];
 
 export default function MobileOrderJourney({ orderId }) {
   const [j, setJ] = useState(null);
@@ -21,7 +24,8 @@ export default function MobileOrderJourney({ orderId }) {
   }, [orderId]);
   if (err) return <p className="py-2 text-[11px] text-[#C0392B]" data-testid={`m-journey-error-${orderId}`}>{String(err)}</p>;
   if (!j) return <p className="py-2 text-[11px] m-muted"><Loader2 size={12} className="mr-1 inline animate-spin" />Memuat perjalanan…</p>;
-  const steps = j.steps || [];
+  // Server menandai langkah `state: "skipped"` (tidak berlaku / terlewati) — dihormati: tidak pernah jadi langkah aktif.
+  const steps = (j.steps || []).filter((s) => !(s.state === "skipped" && TIDAK_BERLAKU.includes(s.key)));
   // UAT 24 Okt (audit UI tahap 2) — G2-20: SO batal tidak lagi menampilkan progres "11%"; langkah proses yang
   // belum selesai padahal langkah SESUDAHNYA sudah selesai (mis. verifikasi Admin Sales saat SO sudah disetujui)
   // ditandai "dilewati" dan bukan lagi langkah aktif. Urutan dari server, penilaian hanya tampilan.
@@ -29,8 +33,12 @@ export default function MobileOrderJourney({ orderId }) {
   const cancelled = steps.some((s) => s.state === "cancelled");
   const proc = steps.filter((s) => !MONEY_STEPS.includes(s.key));
   const lastDone = proc.reduce((m, s, i) => (isDone(s) ? i : m), -1);
-  const skipped = new Set(proc.filter((s, i) => i < lastDone && !isDone(s)).map((s) => s.key));
-  const currentKey = cancelled ? "" : ((proc.find((s, i) => i > lastDone && !isDone(s)) || steps.find((s) => !isDone(s)) || {}).key || "");
+  const skipped = new Set([
+    ...proc.filter((s, i) => i < lastDone && !isDone(s)).map((s) => s.key),
+    ...steps.filter((s) => s.state === "skipped" && !isDone(s)).map((s) => s.key),
+  ]);
+  const aktif = (s, i) => i > lastDone && !isDone(s) && !skipped.has(s.key);
+  const currentKey = cancelled ? "" : ((proc.find(aktif) || steps.find((s) => !isDone(s) && !skipped.has(s.key)) || {}).key || "");
   return (
     <div className="mt-2 rounded-xl border border-[#EFF0F2] bg-white p-2.5" data-testid={`m-journey-${orderId}`}>
       <div className="mb-1.5 flex items-center justify-between">
@@ -47,11 +55,11 @@ export default function MobileOrderJourney({ orderId }) {
         return (
           <div key={s.key} className="flex gap-2" data-testid={`m-journey-step-${orderId}-${s.key}`}>
             <div className="flex flex-col items-center">
-              {done ? <CheckCircle2 size={15} className="text-[#1B7F4B]" /> : <Circle size={15} className={current ? "text-[#0058CC]" : "text-[#C7C7CC]"} />}
+              {done ? <CheckCircle2 size={15} className="text-[#1B7F4B]" /> : <Circle size={15} className={current ? "text-kn-action" : "text-[#C7C7CC]"} />}
               {i < steps.length - 1 && <span className={`w-px flex-1 ${done ? "bg-[#BFE6CE]" : "bg-[#E5E5EA]"}`} />}
             </div>
             <div className="min-w-0 flex-1 pb-2">
-              <p className={`text-[12px] font-semibold ${done ? "text-[#1C1C1E]" : current ? "text-[#0058CC]" : "text-[#8E8E93]"}`}>{s.label}
+              <p className={`text-[12px] font-semibold ${done ? "text-[#1C1C1E]" : current ? "text-kn-action" : "text-[#8E8E93]"}`}>{s.label}
                 {skip && <span className="ml-1 rounded bg-[#F2F3F5] px-1 text-[10px] font-semibold text-[#6B6B73]" data-testid={`m-journey-skipped-${orderId}-${s.key}`}>dilewati</span>}</p>
               {skip ? <p className="text-[10.5px] m-muted">Tidak dilakukan sebelum langkah berikutnya selesai.</p>
                 : cancelled && !done ? null

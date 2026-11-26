@@ -12,7 +12,7 @@ import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../services/apiClient";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import RelatedDocsPanel from "../documents/RelatedDocsPanel";
-import { ORDER_PRINT_DOCS } from "../documents/orderPrintDocs";
+import { printDocsForOrder } from "../documents/orderPrintDocs";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import { STATUS_LABEL as LG_LABEL, STATUS_PILL as LG_PILL } from "../logistics/logisticsApi";
@@ -207,10 +207,11 @@ export function OrderDetailPanel({
           number={sel.number} label="Pesanan Penjualan" esignable currentUser={user} onChanged={onRefresh}
           className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
         {/* Dokumen gudang & penagihan (gap docs) — muncul saat order sudah diproses */}
-        {["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"].includes(sel.status) && (
+        {/* Lapor Bayar (LB-T7) — pesanan disetujui yang ditahan bayar: hanya Faktur Komersial (berinstruksi bayar). */}
+        {printDocsForOrder(sel).length > 0 && (
           <RelatedDocsPanel
             title="Cetak Dokumen · Gudang & Penagihan"
-            docs={ORDER_PRINT_DOCS}
+            docs={printDocsForOrder(sel)}
             sourceId={sel.id}
             entityId={sel.entity_id}
             number={sel.number}
@@ -312,7 +313,7 @@ export function OrderDetailPanel({
 
         {/* F-10 — termin CBD/DP: wajib bayar sebelum kirim + pengecualian berizin (alasan wajib) */}
         <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh}
-                                  customerId={sel.customer_id} customerName={sel.customer_name} />
+                                  order={sel} customerId={sel.customer_id} customerName={sel.customer_name} />
 
         {/* FASE G-2 — Jadwal pembayaran (DP/cicilan/milestone) + antrean denda */}
         <SoPaymentPanel order={sel} currentUser={user} onChanged={onRefresh} />

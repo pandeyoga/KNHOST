@@ -4,13 +4,21 @@
  * hanya untuk pemegang `order.release_unpaid` (bawaan Finance, Manager, Admin; diatur di Peran & Hak Akses) —
  * tombol beri / cabut pengecualian dengan alasan wajib. Server tetap penentu izin & aturannya.
  * Dipakai di detail SO dan di panel Ambil & Kirim (Barang Keluar).
+ *
+ * Lapor Bayar CBD & DP (LB-T7) — bila detail SO mengirim `order`: judul "Bayar sebelum gudang" untuk pesanan yang ditahan
+ * bayar sebelum gudang (`pay_hold` atau wajib bayar dulu & belum dilepas), batas bayar + sisa hari, tombol "Lapor bayar"
+ * (`payment_report.create`), daftar laporan (bukti, Terima/Tolak bagi `payment_report.decide`). Tombol kwitansi langsung
+ * disembunyikan bagi pencatat tanpa `payment_report.decide` pada pesanan tertahan — server menolaknya 409 ("pakai Lapor bayar").
  */
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
+import LaporBayarDialog from "./payReport/LaporBayarDialog";
+import PayReportList from "./payReport/PayReportList";
+import { listReports } from "./payReport/payReportApi";
 
 export const fetchGate = (orderId) => axios.get(`${API}/sales-orders/${orderId}/dispatch-payment-gate`).then((r) => r.data);
 export const releaseGate = (orderId, reason) =>
@@ -19,6 +27,18 @@ export const revokeGate = (orderId, reason) =>
   axios.post(`${API}/sales-orders/${orderId}/dispatch-payment-release/revoke`, { reason }).then((r) => r.data);
 
 const errText = (e, d) => e?.response?.data?.detail || d;
+
+// Sama dengan `pay_hold_service.STATUS_SEBELUM_GUDANG` / `customer_service.DEAD_STATUSES` (server tetap penentu).
+const STATUS_SEBELUM_GUDANG = ["reserved", "waiting_approval", "waiting_stock", "approved"];
+const STATUS_MATI = ["cancelled", "draft", "expired", "rejected"];
+
+/** Sisa hari sampai batas bayar (pembulatan ke atas; ≤ 0 = hari ini/lewat). */
+export const sisaHari = (dueAt, now = Date.now()) => Math.ceil((Date.parse(dueAt) - now) / 86400000);
+const teksBatas = (dueAt) => {
+  const n = sisaHari(dueAt);
+  const sisa = n > 0 ? `sisa ${n} hari` : n === 0 ? "berakhir hari ini" : `lewat ${-n} hari`;
+  return `Batas bayar ${formatDate(dueAt)} · ${sisa}`;
+};
 
 export function GateSummary({ gate, testPrefix = "gate" }) {
   if (!gate?.applies) return null;
@@ -49,8 +69,10 @@ export function GateSummary({ gate, testPrefix = "gate" }) {
 }
 
 export default function DispatchPaymentGatePanel({ orderId, currentUser, onChanged, testPrefix = "so-gate", initial,
-                                                  customerId = "", customerName = "" }) {
+                                                  customerId = "", customerName = "", order = null }) {
   const [gate, setGate] = useState(initial || null);
+  const [lapor, setLapor] = useState(false);       // LB-T7 — pop-up Lapor bayar
+  const [reports, setReports] = useState(null);    // LB-T7 — `{items, bisa_lapor, bisa_putuskan}` | null
   const [paying, setPaying] = useState(false);   // cek UI UAT v3 (S2) — catat pembayaran CBD/DP langsung dari sini
   const [mode, setMode] = useState("");          // "" | "release" | "revoke"
   const [reason, setReason] = useState("");
@@ -62,10 +84,23 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   }, [orderId]);
   useEffect(() => { if (!initial) load(); }, [load, initial]);
   useEffect(() => { if (initial) setGate(initial); }, [initial]);
+  const loadReports = useCallback(() => {
+    if (!orderId || !order) return;
+    listReports(orderId).then(setReports).catch(() => setReports(null));
+  }, [orderId, order]);
+  const gateApplies = Boolean(gate?.applies);
+  useEffect(() => { if (gateApplies) loadReports(); }, [gateApplies, loadReports]);
 
   if (!gate?.applies) return null;
-  const allowed = can(currentUser?.permissions, "order", "release_unpaid");
-  const canReceipt = gate.blocked && !!customerId && can(currentUser?.permissions, "ar_receipt", "create");
+  const perms = currentUser?.permissions;
+  const allowed = can(perms, "order", "release_unpaid");
+  const canDecide = can(perms, "payment_report", "decide");
+  const alive = !!order && !STATUS_MATI.includes(order.status);
+  // Tertahan bayar sebelum gudang: penanda `pay_hold`, atau wajib bayar dulu dan belum dilepas ke gudang (R12).
+  const held = !!order && (!!order.pay_hold || (STATUS_SEBELUM_GUDANG.includes(order.status) && !gate.released));
+  const canReport = alive && gate.shortfall > 0 && can(perms, "payment_report", "create") && reports?.bisa_lapor !== false;
+  // Pencatat tanpa `payment_report.decide` ditolak server (409) pada pesanan tertahan — tombolnya tidak ditampilkan.
+  const canReceipt = gate.blocked && !!customerId && can(perms, "ar_receipt", "create") && !(held && !canDecide);
   const send = async () => {
     setBusy(true); setErr("");
     try {
@@ -76,7 +111,28 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   };
   return (
     <div className="space-y-1.5" data-testid={testPrefix}>
+      {order && (
+        <p className="text-fs-13 font-bold text-kn-text" data-testid={`${testPrefix}-title`}>
+          {held ? "Bayar sebelum gudang" : "Bayar sebelum kirim"}
+        </p>
+      )}
       <GateSummary gate={gate} testPrefix={testPrefix} />
+      {order?.pay_hold?.due_at && (
+        <p className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`${testPrefix}-batas`}>{teksBatas(order.pay_hold.due_at)}</p>
+      )}
+      {canReport && (
+        <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid={`${testPrefix}-lapor-open`}
+                onClick={() => setLapor(true)}>Lapor bayar</button>
+      )}
+      {lapor && (
+        <LaporBayarDialog order={order} shortfall={gate.shortfall} onClose={() => setLapor(false)}
+                          onDone={() => { setLapor(false); loadReports(); load(); onChanged?.(); }} />
+      )}
+      {order && reports && (
+        <PayReportList reports={reports.items} canDecide={canDecide && reports.bisa_putuskan !== false}
+                       canCreate={can(perms, "payment_report", "create") && reports.bisa_lapor !== false}
+                       onChanged={() => { loadReports(); load(); onChanged?.(); }} />
+      )}
       {canReceipt && (
         <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid={`${testPrefix}-receipt-open`}
                 onClick={() => setPaying(true)}>Terima pembayaran ({formatCurrency(gate.shortfall)})</button>

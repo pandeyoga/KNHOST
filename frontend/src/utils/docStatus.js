@@ -49,6 +49,8 @@ export const DOC_STATUS_LABEL = {
   posted: "Terposting",
   staging: "Disiapkan",
   picked: "Diambil",
+  partially_picked: "Sebagian disiapkan",
+  partially_shipped: "Sebagian dikirim",
   packed: "Dikemas",
   committed: "Terikat",
   expired: "Kedaluwarsa",
