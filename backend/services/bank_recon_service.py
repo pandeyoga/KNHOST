@@ -1013,21 +1013,26 @@ async def sinkron_verifikasi_kwitansi(txn_ids: List[str], actor: str, now: str =
         return
     now = now or now_iso()
     kwitansi: List[str] = []
+    baru_cocok: List[str] = []
     async for t in db.cash_transactions.find({"id": {"$in": ids}, "ref_type": "ar_receipt"},
                                              {"_id": 0, "id": 1, "ref_id": 1, "amount": 1, "status": 1,
                                               "reconciled_amount": 1, "matched_line_ids": 1}):
         kwitansi.append(t.get("ref_id"))
         lines = list(t.get("matched_line_ids") or [])
         if t.get("status") != "void" and txn_reconciled(t):
-            await db.ar_receipts.update_one(
+            res = await db.ar_receipts.update_one(
                 {"id": t.get("ref_id"), "bank_verified": {"$ne": True}},
                 {"$set": {"bank_verified": True, "bank_verified_at": now, "bank_verified_by": actor or "system",
                           "bank_line_ids": lines, "updated_at": now}})
+            if res.modified_count:
+                baru_cocok.append(t.get("ref_id"))
         else:
             await db.ar_receipts.update_one(
                 {"id": t.get("ref_id"), "bank_verified": True},
                 {"$set": {"bank_verified": False, "bank_verified_at": "", "bank_verified_by": "",
                           "bank_line_ids": lines, "updated_at": now}})
+    if baru_cocok:
+        await _lepas_tahan_bayar(baru_cocok, actor)
     try:   # CR-T2 — saldo pelanggan (giro belum cair = kwitansi giro belum terverifikasi); belum ada di HEAD
         from services import customer_balance_service as _cbs   # type: ignore[attr-defined]
     except ImportError:
@@ -1040,6 +1045,22 @@ async def sinkron_verifikasi_kwitansi(txn_ids: List[str], actor: str, now: str =
                 await refresh(rc.get("customer_id"))
             except Exception as exc:  # noqa: BLE001 — saldo turunan; dibangun ulang pembangunnya
                 logger.warning("[PM-T3] refresh saldo pelanggan %s gagal: %s", rc.get("customer_id"), exc)
+
+
+async def _lepas_tahan_bayar(receipt_ids: List[str], actor: str) -> None:
+    """LB-T4 (R10-e) — PT berdasar `finance.tahan_kirim_dasar_bayar = terverifikasi`: kwitansi yang BARU cocok mutasi bank
+    bisa melunasi bagian wajib pesanan yang ditahan bayar → periksa ulang tahannya (`ar_receipt_service.buka_tahan_bayar`
+    → `pay_hold_service.clear_if_paid`, lepas otomatis bila Admin Sales sudah "Periksa & lepas"). Efek samping:
+    tidak pernah menggagalkan pencocokan."""
+    try:
+        ids = [o["order_id"] async for rc in db.ar_receipts.find({"id": {"$in": receipt_ids}, "status": {"$ne": "void"}},
+                                                                 {"_id": 0, "allocations": 1})
+               for o in (rc.get("allocations") or []) if o.get("order_id")]
+        if ids:
+            from services import ar_receipt_service as _ars
+            await _ars.buka_tahan_bayar(ids, {"id": "", "name": actor or "system", "role": ""}, "cocok mutasi bank")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[LB-T4] buka tahan bayar sesudah cocok mutasi %s gagal: %s", receipt_ids, exc)
 
 
 async def rebuild_reconciled(txn_id: str) -> Dict[str, Any]:

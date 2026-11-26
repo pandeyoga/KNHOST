@@ -111,9 +111,10 @@ E("payment.wajib_nomor_referensi", group="uang-masuk", section="kwitansi", type=
   sensitif_baca=False,   # dibaca form kwitansi semua pemegang akses mencatat pembayaran (tanda wajib di isian)
   label="Wajibkan nomor referensi di kwitansi",
   help="Berlaku untuk cara bayar yang butuh referensi (transfer, giro, QRIS).",
-  impact="Menyala = kwitansi transfer tanpa nomor referensi ditolak.",
+  impact="Menyala = kwitansi dan lapor bayar transfer tanpa nomor referensi ditolak.",
   example="Menyala · transfer tanpa referensi → ditolak",
-  consumers=("services/ar_receipt_service.py:periksa_uang_masuk",), risk="medium",
+  # LB-T4 (R10-a) — pembaca satu-satunya `syarat_uang_masuk`: kwitansi (`periksa_uang_masuk`) + Lapor bayar.
+  consumers=("services/ar_receipt_service.py:syarat_uang_masuk",), risk="medium",
   related=("payment.hari_wajar_verifikasi_bank",))
 
 E("payment.hari_wajar_verifikasi_bank", group="bank", section="kwitansi-bank", type="int", default=3,

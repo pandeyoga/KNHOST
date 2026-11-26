@@ -1043,6 +1043,14 @@ async def _jalankan_ar(d: Dict[str, Any], actor: Dict[str, Any], *, receipt: Dic
     saved = await get(d["id"]) or d
     if saved.get("status") == "done":
         await _notify(saved)
+        if saved.get("kind") == "allocate":
+            # LB-T4 (R10-d) — kelebihan bayar yang dialokasikan ke pesanan lain juga uang masuk ke pesanan itu: pesanan
+            # yang ditahan bayar diperiksa ulang (buka + lepas otomatis), sama dengan sesudah kwitansi (R5). Efek
+            # samping — tidak melempar. Tidak disimpan di keputusan.
+            from services import ar_receipt_service as _ars
+            saved["released_order_ids"] = await _ars.buka_tahan_bayar(
+                [r.get("order_id") for r in saved.get("orders") or []], actor,
+                f"keputusan selisih {saved.get('number', '')}")
     return saved
 
 

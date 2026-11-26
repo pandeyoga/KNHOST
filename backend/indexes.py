@@ -313,8 +313,7 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("receipt_date", D)],
         # PM-T3 — daftar "Belum terverifikasi lebih dari N hari" per PT.
         [("entity_id", A), ("bank_verified", A), ("receipt_date", A)],
-        # LB-T4 — kwitansi dari laporan bayar (rujukan balik; dicari setiap Terima supaya satu laporan = satu kwitansi).
-        [("payment_report_id", A)],
+        # LB-T4 — kwitansi dari laporan bayar (rujukan balik `payment_report_id`): unik parsial di REQUIRED_UNIQUE_INDEXES.
     ],
     "tax_invoices": [
         [("entity_id", A), ("status", A)],
@@ -1007,6 +1006,16 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("entity_id", 1), ("employee_id", 1), ("year", 1)], "partial": {"employee_id": dict(_NONEMPTY)},
      "finder": _finder_dup("hr_tax_opening_balances", '{employee_id:{$type:"string",$gt:""}}',
                            '{e:"$entity_id",k:"$employee_id",y:"$year"}', "$id")},
+]
+
+# LB-T4 (R10-c, D7) — satu kwitansi per laporan bayar: rujukan balik `payment_report_id` (hanya kwitansi dari Terima lapor
+# bayar yang memilikinya). Terima yang mengambil alih klaim basi dari proses yang MASIH hidup tidak bisa menerbitkan
+# kwitansi kedua: yang kalah kena `DuplicateKeyError` saat sisip → rollback `create_receipt` (alokasi dicabut, deposit
+# dikembalikan) → `payment_report_service.terima` memakai kwitansi pemenang. Field baru: data lama tidak bisa kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "ar_receipts", "name": "uq_payment_report", "label": "satu kwitansi per laporan bayar",
+     "keys": [("payment_report_id", 1)], "partial": {"payment_report_id": {"$exists": True}},
+     "finder": _finder_dup("ar_receipts", '{payment_report_id:{$exists:true}}', '"$payment_report_id"')},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

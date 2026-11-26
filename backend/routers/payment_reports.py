@@ -40,6 +40,8 @@ class LaporBayarIn(BaseModel):
     method: str
     reference_no: Optional[str] = ""
     note: Optional[str] = ""
+    # LB-T4 (R10-a) — alasan bila rekening tujuan ≠ rekening instruksi bayar pesanan (wajib ≥ 5 huruf dalam kasus itu)
+    mismatch_note: Optional[str] = ""
 
 
 async def _pesanan_berpagar(request: Request, actor: Dict[str, Any], order_id: str,

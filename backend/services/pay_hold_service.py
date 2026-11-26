@@ -135,6 +135,20 @@ async def start(order: Dict[str, Any], actor: Optional[Dict[str, Any]] = None) -
     return so.get("pay_hold")
 
 
+def ditahan(order: Optional[Dict[str, Any]]) -> bool:
+    """SATU predikat "pesanan sedang ditahan bayar sebelum gudang" (penanda, bukan hitungan uang): `pay_hold` terisi
+    atau `release.waiting == "bayar"`. Dipakai `clear_if_paid`, pagar B3 kwitansi, dan pembuka tahan sesudah kwitansi /
+    keputusan selisih / cocok mutasi bank (LB-T4) — pasangan Mongo-nya `saringan_ditahan()`."""
+    o = order or {}
+    return o.get("pay_hold") is not None or (o.get("release") or {}).get("waiting") == "bayar"
+
+
+def saringan_ditahan() -> Dict[str, Any]:
+    """Saringan Mongo yang sama persis dengan `ditahan` (dokumen baru tiap panggilan; aman digabung ke saringan lain
+    yang tidak memakai `$or`)."""
+    return {"$or": [{"pay_hold": {"$exists": True, "$ne": None}}, {"release.waiting": "bayar"}]}
+
+
 def _cabut(so: Dict[str, Any]) -> Dict[str, str]:
     """Isi `$unset` penanda: `pay_hold` + `release.waiting` (hanya bila `release` berupa dokumen)."""
     out = {"pay_hold": ""}
@@ -162,15 +176,14 @@ async def clear_if_paid(order_id: str, actor: Optional[Dict[str, Any]] = None, w
     so = await _muat(order_id)
     if not so:
         return False
-    if not so.get("pay_hold") and (so.get("release") or {}).get("waiting") != "bayar":
+    if not ditahan(so):
         return False   # tidak sedang ditahan (pesanan lama / non-CBD): tidak ada yang dibuka
     if await blocked(so):
         return False
     # Klaim: penanda ikut di saringan, jadi dari dua pemanggil bersamaan hanya satu yang membuka tahan, menulis jejak,
     # dan menjalankan lepas otomatis.
     res = await db.sales_orders.update_one(
-        {"id": order_id, "status": so.get("status"),
-         "$or": [{"pay_hold": {"$exists": True}}, {"release.waiting": "bayar"}]},
+        {"id": order_id, "status": so.get("status"), **saringan_ditahan()},
         {"$unset": _cabut(so), "$set": {"updated_at": now_iso()}})
     if not res.modified_count:
         return False   # penanda sudah dibuka / status berubah oleh proses lain — biarkan pemiliknya yang melanjutkan

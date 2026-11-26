@@ -113,7 +113,6 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
     from services import bank_account_change_service as bacs
     from services import cash_ledger
     from services.cash_entity_service import resolve_owner
-    from services.config_resolver import value_of
     from services.payment_code_service import teks_rekening
     nama = cara.get("name") or cara.get("code") or ""
     kode = cara.get("code") or ""
@@ -168,10 +167,32 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
         raise HTTPException(status_code=400, detail=PESAN_REK_TIDAK_MENERIMA.format(nama=nama))
     out.update(account_id=rek["account_id"], account_snapshot=potret_rekening(rek["account"]),
                cash_type=rek["cash_type"])
-    # Nomor referensi & jatuh tempo giro: wajib bila cara bayar memintanya DAN pengaturan PT menyala.
-    ref = str(payload.get("reference_no") or "").strip()[:80]
-    giro = str(payload.get("giro_due_date") or "").strip()
-    wajib_ref = bool(await value_of(KEY_WAJIB_REF, {"entity_id": owner}))
+    out.update(await syarat_uang_masuk(
+        entity_id=owner, cara=cara, account_id=rek["account_id"], orders=orders,
+        reference_no=payload.get("reference_no") or "", giro_due_date=payload.get("giro_due_date") or "",
+        mismatch_note=payload.get("mismatch_note") or ""))
+    return out
+
+
+async def syarat_uang_masuk(*, entity_id: str, cara: Dict[str, Any], account_id: str, orders: List[Dict[str, Any]],
+                            reference_no: str = "", giro_due_date: str = "",
+                            mismatch_note: str = "") -> Dict[str, Any]:
+    """LB-T4 (R10-a) — SATU aturan isian uang masuk non-tunai ber-rekening, dipakai kwitansi (`periksa_uang_masuk`, juga
+    pagar cadangan saat Terima lapor bayar) DAN pembuatan laporan bayar (`payment_report_service.create_report`, supaya
+    laporan yang tidak akan bisa diterima ditolak saat dibuat oleh orang yang memegang datanya). Tanpa tulisan.
+
+    * Nomor referensi wajib bila cara bayar memintanya (`needs_reference`) DAN `payment.wajib_nomor_referensi` PT menyala.
+    * Jatuh tempo giro (`needs_due_date`): tanggal sah; wajib bila pengaturan yang sama menyala.
+    * Rekening penerima ≠ rekening instruksi bayar salah satu pesanan (`receiving_account_id`) → catatan alasan
+      ≥ `CATATAN_MIN` huruf wajib; tanda "tidak sesuai instruksi" + daftar pesanannya ikut tersimpan.
+
+    → `{reference_no, giro_due_date, instruction_mismatch, mismatch_note, instruction_mismatch_orders}`."""
+    from services.config_resolver import value_of
+    from services.payment_code_service import teks_rekening
+    nama = cara.get("name") or cara.get("code") or ""
+    ref = str(reference_no or "").strip()[:80]
+    giro = str(giro_due_date or "").strip()
+    wajib_ref = bool(await value_of(KEY_WAJIB_REF, {"entity_id": entity_id}))
     if cara.get("needs_reference") and wajib_ref and not ref:
         raise HTTPException(status_code=400, detail=PESAN_REF_WAJIB.format(nama=nama))
     if cara.get("needs_due_date"):
@@ -183,14 +204,15 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
             raise HTTPException(status_code=400, detail=PESAN_GIRO_WAJIB.format(nama=nama))
     else:
         giro = ""
-    out.update(reference_no=ref, giro_due_date=giro)
+    out: Dict[str, Any] = {"reference_no": ref, "giro_due_date": giro, "instruction_mismatch": False,
+                           "mismatch_note": "", "instruction_mismatch_orders": []}
     # Tidak sesuai instruksi: rekening penerima ≠ rekening tujuan salah satu pesanan yang dialokasi.
     beda = [{"order_id": o["id"], "order_number": o.get("number") or o["id"],
              "account_id": o.get("receiving_account_id") or "",
              "account_text": teks_rekening(o.get("receiving_account") or {})}
-            for o in orders if o.get("receiving_account_id") and o["receiving_account_id"] != rek["account_id"]]
+            for o in orders if o.get("receiving_account_id") and o["receiving_account_id"] != account_id]
     if beda:
-        catatan = str(payload.get("mismatch_note") or "").strip()
+        catatan = str(mismatch_note or "").strip()
         if len(catatan) < CATATAN_MIN:
             raise HTTPException(status_code=400, detail=PESAN_TIDAK_SESUAI)
         out.update(instruction_mismatch=True, mismatch_note=catatan[:500], instruction_mismatch_orders=beda)
@@ -531,12 +553,26 @@ async def isi_tagih_sekarang(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 PESAN_PAKAI_LAPOR_BAYAR = "Pesanan ini menunggu lapor bayar — pakai Lapor bayar"
 
 
+def _tujuan_keputusan_alokasi(payload: Dict[str, Any]) -> List[str]:
+    """Pesanan yang akan dibayar keputusan selisih "alokasikan ke pesanan lain" yang dikirim bersama kwitansi
+    (`payload.variance = {kind: "allocate", allocations: [...]}` → `payment_variance_service.decide_receipt`)."""
+    v = payload.get("variance") or {}
+    if not isinstance(v, dict) or str(v.get("kind") or "") != "allocate":
+        return []
+    return [str(a.get("order_id")) for a in v.get("allocations") or []
+            if isinstance(a, dict) and a.get("order_id") and round(float(a.get("amount", 0) or 0), 2) > 0]
+
+
 async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, entity_id: str, method: str,
-                             customer_id: str, total_funds: float) -> None:
-    """LB-T4 (B3, rancangan §5.4) — 409 bila KETIGANYA: pencatat tidak memegang `payment_report.decide`; cara bayar bukan
-    tunai (pengertian tunai daftar induk, `payment_method_service.is_cash`); salah satu pesanan yang akan dialokasi
-    (eksplisit, atau rencana FIFO yang sama dengan efeknya) sedang ber-`pay_hold` aktif. Tunai tetap diatur
-    `pembayaran.sales_terima_tunai`; kwitansi Finance (pemegang `decide`, termasuk jalur Terima) tidak terpengaruh."""
+                             amount: float, customer_id: str, total_funds: float) -> None:
+    """LB-T4 (B3, rancangan §5.4) — 409 bila: ada UANG BARU (`amount > 0`; kwitansi deposit-saja tidak membawa transfer
+    yang belum dicek); pencatat tidak memegang `payment_report.decide`; cara bayar bukan tunai (pengertian tunai daftar
+    induk, `payment_method_service.is_cash`); dan salah satu pesanan yang akan menerima uang kwitansi ini — alokasi
+    eksplisit, rencana FIFO yang sama dengan efeknya, ATAU tujuan keputusan selisih "alokasikan" yang dikirim bersamanya —
+    sedang ditahan bayar (`pay_hold_service.ditahan`, satu predikat). Tunai tetap diatur `pembayaran.sales_terima_tunai`;
+    kwitansi Finance (pemegang `decide`, termasuk jalur Terima) tidak terpengaruh."""
+    if amount <= EPS:
+        return
     from services import payment_method_service as _pms
     if await _pms.is_cash(entity_id, method):
         return
@@ -544,33 +580,35 @@ async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, 
     if await has_permission(actor or {}, "payment_report", "decide"):
         return
     ids = await _rencana_pesanan(customer_id, entity_id, payload.get("allocations") or [], total_funds)
-    if ids and await db.sales_orders.find_one(
-            {"id": {"$in": ids}, "status": "approved", "pay_hold": {"$exists": True, "$ne": None}}, {"_id": 1}):
+    ids = list(dict.fromkeys(ids + _tujuan_keputusan_alokasi(payload)))
+    from services import pay_hold_service as _phs
+    if ids and await db.sales_orders.find_one({"id": {"$in": ids}, **_phs.saringan_ditahan()}, {"_id": 1}):
         raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
 
 
-async def _buka_tahan_bayar(allocations: List[Dict[str, Any]], actor: Dict[str, Any], number: str) -> List[str]:
-    """LB-T4 (R5) — sesudah SETIAP kwitansi tuntas: pesanan teralokasi yang sedang ditahan bayar diperiksa ulang
-    (`pay_hold_service.clear_if_paid`: buka tahan bila bagian wajib sudah terbayar, lalu lepas otomatis bila Admin Sales
-    sudah "Periksa & lepas"). Satu tempat untuk semua pemanggil (`POST /ar-receipts`, Terima lapor bayar) supaya tidak
-    ada yang lupa. Efek samping: galat dicatat, kwitansi tetap sah. → id pesanan yang dilepas ke gudang."""
+async def buka_tahan_bayar(order_ids: List[str], actor: Dict[str, Any], why: str) -> List[str]:
+    """LB-T4 (R5, R10-d, R10-e) — sesudah uang SAH masuk ke pesanan: pesanan yang sedang ditahan bayar
+    (`pay_hold_service.ditahan`) diperiksa ulang lewat `pay_hold_service.clear_if_paid` (buka tahan bila bagian wajib
+    sudah terbayar, lalu lepas otomatis bila Admin Sales sudah "Periksa & lepas"). Dipanggil di titik selesai setiap
+    jalan uang ke pesanan: kwitansi tuntas (`create_receipt`, termasuk Terima lapor bayar), keputusan selisih
+    "alokasikan" (`payment_variance_service`), dan kwitansi yang baru cocok mutasi bank (`bank_recon_service`, dasar
+    `terverifikasi`). Efek samping: galat dicatat, uang tetap sah. → id pesanan yang dilepas ke gudang."""
     out: List[str] = []
     try:
-        ids = list(dict.fromkeys(a.get("order_id") for a in allocations or [] if a.get("order_id")))
+        ids = list(dict.fromkeys(str(i) for i in order_ids or [] if i))
         if not ids:
             return out
-        tahan = [o["id"] async for o in db.sales_orders.find(
-            {"id": {"$in": ids}, "$or": [{"pay_hold": {"$exists": True}}, {"release.waiting": "bayar"}]},
-            {"_id": 0, "id": 1})]
         from services import pay_hold_service as _phs
+        tahan = [o["id"] async for o in db.sales_orders.find(
+            {"id": {"$in": ids}, **_phs.saringan_ditahan()}, {"_id": 0, "id": 1})]
         for oid in tahan:
             try:
-                if await _phs.clear_if_paid(oid, actor, why=f"kwitansi {number}"):
+                if await _phs.clear_if_paid(oid, actor, why=why):
                     out.append(oid)
             except Exception as exc:  # noqa: BLE001
-                logger.warning("[create_receipt] buka tahan bayar %s sesudah %s gagal: %s", oid, number, exc)
+                logger.warning("[pay_hold] buka tahan bayar %s sesudah %s gagal: %s", oid, why, exc)
     except Exception as exc:  # noqa: BLE001
-        logger.warning("[create_receipt] pemeriksaan tahan bayar sesudah %s gagal: %s", number, exc)
+        logger.warning("[pay_hold] pemeriksaan tahan bayar sesudah %s gagal: %s", why, exc)
     return out
 
 
@@ -608,8 +646,8 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
     method = cara["code"]
     # LB-T4 (B3) — kwitansi non-tunai dari pencatat tanpa `payment_report.decide` ke pesanan yang tertahan bayar ditolak
     # SEBELUM apa pun ditulis: uangnya dilaporkan lewat Lapor bayar dan diterima Finance (`payment_report_service.terima`).
-    await _pagar_lapor_bayar(payload, actor, entity_id=entity_id, method=method, customer_id=customer["id"],
-                             total_funds=total_funds)
+    await _pagar_lapor_bayar(payload, actor, entity_id=entity_id, method=method, amount=amount,
+                             customer_id=customer["id"], total_funds=total_funds)
     # FN-10 — periode tertutup ditolak SEBELUM kwitansi/alokasi/deposit dimutasi.
     from services import gl_service as _glp
     try:
@@ -859,7 +897,9 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
     from services import customer_balance_service as _cbs
     await _cbs.refresh_safe(out.get("customer_id") or "", out.get("entity_id") or None)
     # LB-T4 (R5) — tahan bayar pesanan yang dialokasi diperiksa ulang (buka + lepas otomatis); tidak disimpan di kwitansi.
-    out["released_order_ids"] = await _buka_tahan_bayar(allocations, actor, number)
+    # Pesanan yang dibayar keputusan selisih "alokasikan" sudah diperiksa keputusannya sendiri (R10-d).
+    dilepas = await buka_tahan_bayar([a.get("order_id") for a in allocations or []], actor, f"kwitansi {number}")
+    out["released_order_ids"] = list(dict.fromkeys(dilepas + list((decision or {}).get("released_order_ids") or [])))
     return out
 
 

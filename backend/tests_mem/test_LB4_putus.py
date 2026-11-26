@@ -61,6 +61,8 @@ async def siap(klien, db, kepala_admin, akun, sesi):
                         show_on_documents=True)
     K = await _rekening(klien, kepala_admin, name="Kas Kecil LB4", account_type="cash", bank_name="",
                         payment_method_codes=["cash"], default_receiving_methods=["cash"])
+    B = await _rekening(klien, kepala_admin, name="Mandiri Penerimaan LB4", bank_name="Mandiri",
+                        account_number="777-888-9999", default_receiving_methods=[])   # rekening penerimaan kedua PT
     cus, adr, prd = _id("cus"), _id("adr"), _id("prd")
     await db.customers.insert_one({"id": cus, "name": "Toko LB-4", "entity_id": KSC, "status": "active",
                                    "addresses": [{"id": adr, "label": "Utama", "city": "Bandung",
@@ -73,7 +75,7 @@ async def siap(klien, db, kepala_admin, akun, sesi):
     sa = await akun("sales_admin")
     fin = await akun("finance")
     fin_kanda = await akun("finance", entitas=(KANDA,))
-    return {"h": kepala_admin, "A": A, "K": K, "cus": cus, "adr": adr, "prd": prd,
+    return {"h": kepala_admin, "A": A, "B": B, "K": K, "cus": cus, "adr": adr, "prd": prd,
             "sales": sales, "sa": sa, "fin": fin,
             "h_sales": await sesi(sales), "h_sa": await sesi(sa), "h_fin": await sesi(fin),
             "h_fin_kanda": await sesi(fin_kanda, entitas=KANDA)}
@@ -106,11 +108,19 @@ async def _pesan(klien, db, siap, term: str = "CBD", *, periksa: bool = True) ->
     return cur
 
 
+def _isi_lapor(siap, amount: float = 1_000_000, *, tgl: str = TGL, **lain) -> dict:
+    return {"amount": amount, "transfer_date": tgl, "account_id": siap["A"], "method": "transfer",
+            "reference_no": f"TRF-LB4-{next(_n)}", "note": "uji LB-4", **lain}
+
+
+async def _lapor_mentah(klien, siap, oid: str, h=None, **isi):
+    return await klien.post(f"/api/sales-orders/{oid}/payment-reports", headers=h or siap["h_sa"],
+                            json=_isi_lapor(siap, **isi))
+
+
 async def _lapor(klien, siap, oid: str, amount: float = 1_000_000, *, tgl: str = TGL, bukti: bool = True,
-                 h=None) -> dict:
-    r = await klien.post(f"/api/sales-orders/{oid}/payment-reports", headers=h or siap["h_sa"], json={
-        "amount": amount, "transfer_date": tgl, "account_id": siap["A"], "method": "transfer",
-        "reference_no": f"TRF-LB4-{next(_n)}", "note": "uji LB-4"})
+                 h=None, **lain) -> dict:
+    r = await _lapor_mentah(klien, siap, oid, h=h, amount=amount, tgl=tgl, **lain)
     assert r.status_code == 200, r.text
     rep = r.json()
     if bukti:
@@ -460,6 +470,7 @@ async def test_klaim_basi_kwitansi_setengah_jadi_409(klien, db, siap):
         "status": "memproses", "claim": _klaim(prs.KLAIM_BASI_MENIT + 5)}})
     r = await _terima(klien, siap, rep["id"])
     assert r.status_code == 409 and "AR-SETENGAH" in str(r.json()["detail"]), r.text
+    assert r.headers.get("x-idempotency-retry") == "true"      # Minor-3 — keadaan sementara
     assert len(await _kwitansi(db, rep["id"])) == 1
     assert (await _laporan(db, rep["id"]))["status"] == "memproses"
 
@@ -609,3 +620,270 @@ def test_pintu_terdaftar_di_penjaga_antrean():
         assert pintu in vaq.doors_from_code()
         assert vaq.DOOR_DESK_QUEUE[pintu] == "lapor_bayar"
     assert "lapor_bayar" in vaq.desk_queue_keys()
+
+
+# ── Putaran perbaikan 1 (ketetapan R10) ──────────────────────────────────────────────────────────────────────────────
+PESAN_BEDA = "Rekening penerima berbeda dari instruksi bayar pesanan. Isi catatan alasannya."
+WAJIB_REF = "payment.wajib_nomor_referensi"
+
+
+def _aktor_fin(siap) -> dict:
+    return {"id": siap["fin"]["id"], "name": siap["fin"]["name"], "role": "finance"}
+
+
+async def test_R10a_rekening_beda_instruksi_wajib_alasan_lalu_terima(klien, db, siap):
+    """Pelanggan transfer ke rekening penerimaan PT yang lain (B) dari instruksi pesanan (A): pelapor wajib menulis
+    alasannya (B7 tetap boleh memilih rekening); alasan ikut ke kwitansi sehingga Terima tidak buntu."""
+    so = await _pesan(klien, db, siap)
+    assert so["receiving_account_id"] == siap["A"]
+    r = await _lapor_mentah(klien, siap, so["id"], account_id=siap["B"])
+    assert (r.status_code, r.json()["detail"]) == (400, PESAN_BEDA), r.text
+    r = await _lapor_mentah(klien, siap, so["id"], account_id=siap["B"], mismatch_note="ok")   # < 5 huruf
+    assert r.status_code == 400, r.text
+    alasan = "Pelanggan biasa transfer ke Mandiri"
+    rep = await _lapor(klien, siap, so["id"], account_id=siap["B"], mismatch_note=alasan)
+    assert rep["instruction_mismatch"] is True and rep["mismatch_note"] == alasan
+    r = await _terima(klien, siap, rep["id"])
+    assert r.status_code == 200, r.text
+    [kw] = await _kwitansi(db, rep["id"])
+    assert kw["account_id"] == siap["B"] and kw["instruction_mismatch"] is True and kw["mismatch_note"] == alasan
+    assert [m["order_id"] for m in kw["instruction_mismatch_orders"]] == [so["id"]]
+    # rekening sama dengan instruksi: tanpa alasan, tanpa tanda
+    so2 = await _pesan(klien, db, siap)
+    rep2 = await _lapor(klien, siap, so2["id"])
+    assert rep2["instruction_mismatch"] is False and rep2["mismatch_note"] == ""
+
+
+async def test_R10a_referensi_wajib_saat_lapor_dan_cadangan_saat_terima(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"], reference_no="")          # pengaturan PT mati: boleh tanpa referensi
+    await resolver.set_value(WAJIB_REF, True, scope_type="entity", scope_id=KSC, actor="uji", reason="uji LB-4")
+    try:
+        r = await _lapor_mentah(klien, siap, so["id"], reference_no="", amount=500_000)
+        assert (r.status_code, r.json()["detail"]) == (400, "Nomor referensi wajib diisi untuk Transfer bank."), r.text
+        # pengaturan menyala sesudah laporan dibuat: pemeriksa yang sama di `create_receipt` menjadi cadangan
+        r = await _terima(klien, siap, rep["id"])
+        assert (r.status_code, r.json()["detail"]) == (400, "Nomor referensi wajib diisi untuk Transfer bank."), r.text
+        assert (await _laporan(db, rep["id"]))["status"] == "menunggu" and await _kwitansi(db, rep["id"]) == []
+        assert (await _lapor_mentah(klien, siap, so["id"], amount=500_000)).status_code == 200   # berreferensi
+    finally:
+        await resolver.clear_layer(WAJIB_REF, scope_type="entity", scope_id=KSC, actor="uji", reason="pulihkan uji")
+
+
+async def test_R10a_cara_bayar_berjatuh_tempo_tidak_lewat_lapor_bayar(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    r = await _lapor_mentah(klien, siap, so["id"], method="giro")
+    assert r.status_code == 400 and "berjatuh tempo" in r.json()["detail"], r.text
+    assert await db.payment_reports.count_documents({"order_id": so["id"]}) == 0
+
+
+async def test_R10b_nominal_melebihi_sisa_ditolak_saat_lapor_dan_sebelum_klaim(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    r = await _lapor_mentah(klien, siap, so["id"], amount=1_200_000)
+    assert r.status_code == 409, r.text
+    assert r.json()["detail"] == ("Nominal melebihi sisa tagihan pesanan (Rp 1.000.000). Kelebihan bayar dicatat "
+                                  "Finance lewat kwitansi + keputusan selisih.")
+    rep = await _lapor(klien, siap, so["id"])                           # pas = boleh
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"], json=_kw(siap, so["id"], 300_000))
+    assert r.status_code == 200, r.text                                 # Finance mencatat sebagian lebih dulu
+    r = await _terima(klien, siap, rep["id"])
+    assert r.status_code == 409 and "(Rp 700.000)" in r.json()["detail"], r.text
+    lap = await _laporan(db, rep["id"])
+    assert lap["status"] == "menunggu" and "claim" not in lap and len(lap["status_history"]) == 1   # tanpa klaim
+    assert await _kwitansi(db, rep["id"]) == []
+
+
+async def test_R10c_klaim_disalip_pekerja_hidup_tetap_satu_kwitansi(klien, db, siap, monkeypatch):
+    """Pekerja pertama (W1) macet SEBELUM menyisip kwitansi, klaimnya basi dan diambil alih W2 yang menyelesaikan
+    laporan; W1 lalu bangun. Indeks unik `ar_receipts.uq_payment_report` (ditiru di sini — mongomock tidak menegakkan
+    indeks unik parsial) membuat sisipan W1 gagal → rollback `create_receipt` → tepat satu kwitansi, kas, dan jurnal."""
+    import indexes
+    import mongomock.collection as _mc
+    from pymongo.errors import DuplicateKeyError
+    from services import ar_receipt_service as ars
+    from services import payment_report_service as prs
+    it = next(i for i in indexes.REQUIRED_UNIQUE_INDEXES if i["name"] == "uq_payment_report")
+    assert (it["collection"], it["keys"], it["partial"]) == ("ar_receipts", [("payment_report_id", 1)],
+                                                             {"payment_report_id": {"$exists": True}})
+    asli_sisip = _mc.Collection.insert_one
+
+    def _sisip_unik(self, doc, *a, **kw):   # tiruan indeks unik parsial
+        if self.name == "ar_receipts" and doc.get("payment_report_id") and \
+                self.find_one({"payment_report_id": doc["payment_report_id"]}):
+            raise DuplicateKeyError("E11000 duplicate key uq_payment_report (uji)", 11000,
+                                    {"keyPattern": {"payment_report_id": 1}, "keyValue": {}})
+        return asli_sisip(self, doc, *a, **kw)
+    monkeypatch.setattr(_mc.Collection, "insert_one", _sisip_unik)
+    so = await _pesan(klien, db, siap, term="DP50")                     # sebagian: CAS alokasi tidak menolak W1
+    rep = await _lapor(klien, siap, so["id"], 300_000)
+    bangun, macet = asyncio.Event(), asyncio.Event()
+    asli_efek = ars._create_receipt_after_reserve
+    pertama = {"n": 0}
+
+    async def _efek(*a, **kw):
+        pertama["n"] += 1
+        if pertama["n"] == 1:
+            macet.set()
+            await bangun.wait()      # W1 macet sesudah nomor & reservasi, sebelum alokasi + sisip kwitansi
+        return await asli_efek(*a, **kw)
+    monkeypatch.setattr(ars, "_create_receipt_after_reserve", _efek)
+    w1 = asyncio.create_task(prs.terima(await _laporan(db, rep["id"]), await _so(db, so["id"]), _aktor_fin(siap)))
+    await asyncio.wait_for(macet.wait(), 10)
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"claim.at": _klaim(prs.KLAIM_BASI_MENIT + 1)["at"]}})
+    w2 = await prs.terima(await _laporan(db, rep["id"]), await _so(db, so["id"]), _aktor_fin(siap))   # ambil alih
+    assert w2["report"]["status"] == "diterima"
+    bangun.set()
+    with pytest.raises(Exception) as e:
+        await asyncio.wait_for(w1, 10)
+    assert getattr(e.value, "status_code", None) == 409, e.value      # W1 tidak melaporkan sukses
+    kws = await _kwitansi(db, rep["id"])
+    assert [k["number"] for k in kws] == [w2["receipt_number"]]
+    kas = await db.cash_transactions.find({"ref_type": "ar_receipt", "ref_id": {"$in": [k["id"] for k in kws]},
+                                           "status": {"$ne": "void"}}, {"_id": 0, "id": 1}).to_list(5)
+    assert len(kas) == 1
+    assert await db.journal_entries.count_documents({"source_type": "cash_transaction", "source_id": kas[0]["id"],
+                                                     "status": {"$ne": "void"}}) == 1
+    cur = await _so(db, so["id"])
+    assert round(sum(float(p.get("amount") or 0) for p in cur.get("payments") or []), 2) == 300_000
+    assert (await _laporan(db, rep["id"]))["receipt_id"] == kws[0]["id"]
+
+
+def _lebih(siap, x_id: str, y_id: str, *, x_nominal: float, y_nominal: float) -> dict:
+    """Kwitansi transfer ke pesanan X yang lebih bayar; kelebihannya diputus "alokasikan" ke pesanan Y."""
+    return {**_kw(siap, x_id, x_nominal + y_nominal), "allocations": [{"order_id": x_id, "amount": x_nominal}],
+            "variance": {"kind": "allocate", "reason_code": "customer_overtransfer", "note": "uji LB-4",
+                         "allocations": [{"order_id": y_id, "amount": y_nominal}]}}
+
+
+async def _pesanan_bebas(db, siap, nominal: float = 500_000) -> dict:
+    so = {"id": _id("so"), "number": f"SO-LB4-X{next(_n)}", "entity_id": KSC, "status": "confirmed",
+          "customer_id": siap["cus"], "customer_name": "Toko LB-4", "payment_term_code": "NET30",
+          "grand_total": nominal, "paid_total": 0, "payments": [], "items": [], "created_at": now_iso()}
+    await db.sales_orders.insert_one(dict(so))
+    return so
+
+
+async def test_R10d_b3_menilai_tujuan_keputusan_selisih_alokasi(klien, db, siap):
+    x = await _pesanan_bebas(db, siap)
+    y = await _pesan(klien, db, siap)
+    n = await db.ar_receipts.count_documents({})
+    r = await klien.post("/api/ar-receipts", headers=siap["h_sales"],
+                         json=_lebih(siap, x["id"], y["id"], x_nominal=500_000, y_nominal=1_000_000))
+    assert (r.status_code, r.json()["detail"]) == (409, B3), r.text
+    assert await db.ar_receipts.count_documents({}) == n
+
+
+async def test_R10d_keputusan_selisih_alokasi_membuka_tahan(klien, db, siap):
+    x = await _pesanan_bebas(db, siap)
+    y = await _pesan(klien, db, siap)                                   # sudah "Periksa & lepas"
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"],
+                         json=_lebih(siap, x["id"], y["id"], x_nominal=500_000, y_nominal=1_000_000))
+    assert r.status_code == 200, r.text
+    j = r.json()
+    assert j["variance_decision"]["kind"] == "allocate" and j["variance_decision"]["status"] == "done", j
+    assert j["released_order_ids"] == [y["id"]]
+    cur = await _so(db, y["id"])
+    assert cur["status"] == "confirmed" and "pay_hold" not in cur and await _tugas_keluar(db, y["id"]) >= 1
+
+
+async def test_R10d_kwitansi_deposit_saja_tidak_dihalangi_b3(klien, db, siap):
+    y = await _pesan(klien, db, siap)
+    await db.customers.update_one({"id": siap["cus"]}, {"$set": {"deposit_balance": 1_000_000.0}})   # FIXTURE titipan
+    r = await klien.post("/api/ar-receipts", headers=siap["h_sales"], json={
+        "customer_id": siap["cus"], "entity_id": KSC, "amount": 0, "use_deposit_amount": 1_000_000,
+        "method": "transfer", "allocations": [{"order_id": y["id"], "amount": 1_000_000}]})
+    assert r.status_code == 200, r.text
+    assert r.json()["released_order_ids"] == [y["id"]]                  # uang sah (titipan) → tahan dibuka (R5)
+    assert (await _so(db, y["id"]))["status"] == "confirmed"
+
+
+async def test_R10e_cocok_mutasi_bank_membuka_tahan(klien, db, siap):
+    await resolver.set_value(DASAR, "terverifikasi", scope_type="entity", scope_id=KSC, actor="uji", reason="uji LB-4")
+    try:
+        so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+        r = await _terima(klien, siap, rep["id"])
+        assert r.status_code == 200 and r.json()["waiting_bank"] is True, r.text
+        [kw] = await _kwitansi(db, rep["id"])
+        kas = await db.cash_transactions.find_one({"ref_type": "ar_receipt", "ref_id": kw["id"]}, {"_id": 0})
+        eid = _id("ext")
+        r = await klien.post("/api/bank-reconciliation/import", headers=siap["h"], json={
+            "bank_account_id": siap["A"], "lines": [{"stmt_date": TGL, "amount": 1_000_000, "direction": "in",
+                                                    "description": "TRSF TOKO LB-4", "ref": "", "external_id": eid}]})
+        assert r.status_code == 200 and r.json()["imported"] == 1, r.text
+        lid = (await db.bank_statement_lines.find_one({"external_id": eid}, {"_id": 0}))["id"]
+        r = await klien.post(f"/api/bank-reconciliation/lines/{lid}/match", headers=siap["h"],
+                             json={"txn_id": kas["id"]})
+        assert r.status_code == 200, r.text
+        assert (await db.ar_receipts.find_one({"id": kw["id"]}, {"_id": 0}))["bank_verified"] is True
+        cur = await _so(db, so["id"])
+        assert cur["status"] == "confirmed" and "pay_hold" not in cur and await _tugas_keluar(db, so["id"]) >= 1
+    finally:
+        await resolver.clear_layer(DASAR, scope_type="entity", scope_id=KSC, actor="uji", reason="pulihkan uji LB-4")
+
+
+class _Mati(BaseException):
+    """Penghentian paksa (bukan `Exception`), mis. pembatalan tugas saat server dimatikan."""
+
+
+async def test_minor1_laporan_berkwitansi_tidak_bisa_ditolak(klien, db, siap, monkeypatch):
+    from services import pay_hold_service as phs
+    from services import payment_report_service as prs
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+
+    async def _mati(*a, **kw):
+        raise _Mati()
+    monkeypatch.setattr(phs, "clear_if_paid", _mati)   # sesudah kwitansi tuntas (R5)
+    with pytest.raises(_Mati):
+        await prs.terima(await _laporan(db, rep["id"]), await _so(db, so["id"]), _aktor_fin(siap))
+    monkeypatch.undo()
+    [kw] = await _kwitansi(db, rep["id"])
+    assert kw["effects_done"] is True
+    assert (await _laporan(db, rep["id"]))["status"] == "memproses"   # tidak kembali `menunggu`
+    assert (await _tolak(klien, siap, rep["id"])).status_code == 409
+    # laporan `menunggu` yang (entah bagaimana) sudah berkwitansi pun tidak bisa ditolak
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "menunggu"}, "$unset": {"claim": ""}})
+    r = await _tolak(klien, siap, rep["id"])
+    assert r.status_code == 409 and kw["number"] in r.json()["detail"], r.text
+    r = await _terima(klien, siap, rep["id"])                           # dipulihkan dengan kwitansi yang sama
+    assert r.status_code == 200 and r.json()["receipt_number"] == kw["number"], r.text
+    assert len(await _kwitansi(db, rep["id"])) == 1
+
+
+@pytest.mark.parametrize("disalip", ["memproses", "diterima"])
+async def test_minor2_klaim_hilang_bukan_sukses(klien, db, siap, monkeypatch, disalip):
+    from services import ar_receipt_service as ars
+    from services import payment_report_service as prs
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+    asli = ars.create_receipt
+
+    async def _disalip(*a, **kw):
+        out = await asli(*a, **kw)
+        upd = {"claim.token": "klaim_lain"} if disalip == "memproses" else {"status": "diterima"}
+        await db.payment_reports.update_one({"id": rep["id"]}, {"$set": upd})
+        return out
+    monkeypatch.setattr(ars, "create_receipt", _disalip)
+    r = await _terima(klien, siap, rep["id"])
+    monkeypatch.undo()
+    assert r.status_code == 409, r.text
+    if disalip == "memproses":
+        assert r.json()["detail"] == prs.PESAN_DIPROSES and r.headers.get("x-idempotency-retry") == "true"
+    else:
+        assert r.json()["detail"] == "Laporan ini sudah diterima."
+    assert await _notif(db, "lapor_bayar_diterima", rep["id"]) == []   # pemenang yang memberi tahu
+    assert await db.audit_logs.count_documents({"action": "payment_report_accepted", "entity_id": rep["id"]}) == 0
+    assert len(await _kwitansi(db, rep["id"])) == 1
+
+
+async def test_minor3_tanpa_bukti_kirim_ulang_kunci_sama_sesudah_lampir(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"], bukti=False)
+    key = _id("idem")
+    r = await _terima(klien, siap, rep["id"], key=key)
+    assert (r.status_code, r.json()["detail"]) == (409, "Lampirkan bukti bayar dulu"), r.text
+    assert r.headers.get("x-idempotency-retry") == "true"
+    r = await klien.post(f"/api/payment-reports/{rep['id']}/attachments", headers=siap["h_sa"],
+                         files={"file": ("bukti.pdf", PDF, "application/pdf")})
+    assert r.status_code == 200, r.text
+    r = await _terima(klien, siap, rep["id"], key=key)                  # kunci sama: dijalankan, bukan diputar
+    assert r.status_code == 200 and r.headers.get("X-Idempotent-Replay") != "true", r.text
+    assert len(await _kwitansi(db, rep["id"])) == 1
