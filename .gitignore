@@ -29,6 +29,8 @@ frontend/node_modules/.cache/default-development/1.pack
 /yarn.lock
 .emergent/cron/
 backend/uploads/exports/
+# Lapor Bayar — bukti bayar unggahan pengguna/uji (berkas lokal, bukan isi repo; uji LB3–LB6 memakai folder sementara)
+backend/uploads/kn7/payment_reports/
 
 # Bukti paket review audit (docs/reviews/) wajib ikut ter-commit, termasuk log.
 !docs/reviews/**/*.log

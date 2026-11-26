@@ -3,8 +3,9 @@
 //
 //   A. Pengiriman sebagian — satu SO 2 roll keluar lewat 2 surat jalan → 2 jurnal pendapatan & 2 jurnal HPP sebesar yang
 //      dikirim; piutang bertahap; faktur pajak per pesanan = PPN kedua surat jalan; SATU kwitansi melunasi keduanya.
-//   B. Uang muka (DP 50%) — gudang tertahan sampai DP dibayar; DP = Kas D / Uang Muka Pelanggan K; saat kirim uang muka
-//      direklas ke piutang; sisa ditagih lalu lunas; uang muka pesanan kembali nol.
+//   B. Uang muka (DP 50%) — sesudah "Periksa & lepas" SO BERHENTI di "Bayar dicek Finance" (belum ke gudang, Lapor Bayar
+//      26 Nov); Finance mencatat DP dari Meja Keuangan → SO dilepas ke gudang otomatis; DP = Kas D / Uang Muka Pelanggan K;
+//      saat kirim uang muka direklas ke piutang; sisa ditagih lalu lunas; uang muka pesanan kembali nol.
 //   C. Batal SO ber-DP sebelum kirim — DP menjadi titipan pelanggan (tanpa jurnal baru), roll dilepas; titipan
 //      dikembalikan lewat Kasus (Finance melapor, Manajer menyelesaikan): Uang Muka Pelanggan D / Bank K.
 //   D. Satu transfer untuk beberapa SO — alokasi tertua dulu: SO pertama lunas, SO kedua sebagian, SO ketiga tetap.
@@ -179,8 +180,15 @@ async function buatSo(r, nama) {
   return { so, msg };
 }
 
+function tugasKeluar(id) {
+  return mongo(`return db.wms_tasks.findOne({order_id:"${id}",flow_type:"outbound"},{_id:0,id:1,status:1,quantity:1})`);
+}
+
 // ── ADMIN SALES: periksa & lepas ─────────────────────────────────────────────────────────────────────────────────────
-async function periksaLepas(r, so, nama) {
+/** [Periksa & lepas]. Pesanan biasa → `confirmed` + tugas ambil gudang. `menungguBayar` (termin CBD/DP, Lapor Bayar
+ *  26 Nov) → pesanan BERHENTI di "Bayar dicek Finance": tetap `approved` dengan penanda tahan bayar
+ *  (`pay_hold`, `release.waiting = "bayar"`), BELUM ada tugas gudang; dilepas otomatis sesudah Finance mencatat bayar. */
+async function periksaLepas(r, so, nama, { menungguBayar = false } = {}) {
   await masuk(r, "salesadmin");
   await r.tid("sales-admin-desk").waitFor();
   await r.tid("desk-tabs-pantau").click();   // meja gelombang 1 — Pelacak SO di tab Pantau
@@ -197,10 +205,75 @@ async function periksaLepas(r, so, nama) {
   await r.tid("verify-submit").click();
   const msg = await tungguToast(r, /dilepas ke gudang/, 20000);
   const s = soDoc(so.id);
+  if (menungguBayar) {
+    assert(/menunggu pembayaran dicek Finance/.test(msg), `pesan: ${msg}`);
+    assert(s.status === "approved" && s.pay_hold && (s.release || {}).waiting === "bayar",
+      `SO ${s.status} · tahan ${JSON.stringify(s.pay_hold)} · lepas ${JSON.stringify(s.release)}`);
+    assert(!tugasKeluar(so.id), "tugas gudang lahir padahal uang muka belum dibayar");
+    return { msg, task: null, batas: s.pay_hold.due_at };
+  }
   assert(s.status === "confirmed", `status SO ${s.status}`);
-  const task = mongo(`return db.wms_tasks.findOne({order_id:"${so.id}",flow_type:"outbound"},{_id:0,id:1,status:1,quantity:1})`);
+  const task = tugasKeluar(so.id);
   assert(task, "tugas ambil gudang tidak lahir");
   return { msg, task };
+}
+
+// ── FINANCE: catat bayar pesanan yang menunggu bayar sebelum gudang (Meja Keuangan) ──────────────────────────────────
+/** Lapor Bayar CBD & DP (26 Nov) — SO yang tertahan bayar belum punya tagihan uang muka (baris "sebelum kirim" lahir saat
+ *  SO dilepas), jadi tidak ada di Penagihan & Penerimaan; ia tampil di Meja Keuangan, kartu "Uang masuk perlu dicatat"
+ *  (antrean "Menunggu pembayaran sebelum kirim", nilai = kekurangan). [Catat kwitansi] → form Terima pembayaran →
+ *  alokasi = `nominal` → Simpan. Bila jendela "Selisih Pembayaran · Kurang bayar" muncul (harapan = sisa SO karena
+ *  tagihan uang muka belum lahir), diputus "Sisa tetap jadi piutang". Sesudah kwitansi tahan bayar dibuka dan SO dilepas
+ *  ke gudang otomatis (Admin Sales sudah "Periksa & lepas"). → { msg, hint, selisih, task }. */
+async function bayarDiMeja(r, so, nominal, nama, ref) {
+  await bukaMenu(r, "finance-tower", "finance-desk");
+  await r.tid("finance-desk").waitFor();
+  await r.page.waitForFunction(() => !document.querySelector('[data-testid="fin-desk-loading"]'), null, { timeout: 20000 });
+  await r.tid("fin-desk-queue-uang_masuk").waitFor({ timeout: 20000 });
+  await r.tid("fin-desk-search-uang_masuk").fill(so.number);
+  await r.idle(600);
+  const row = r.tid(`fin-desk-uang_masuk-row-${so.id}`);
+  await row.waitFor({ timeout: 20000 });
+  const v = num(await r.text(`fin-desk-uang_masuk-value-${so.id}`));
+  assert(dekat(v, nominal, 1), `nilai baris meja ${v} ≠ kekurangan ${nominal}`);
+  await sorot(row);
+  await klikSorot(r, r.tid(`fin-desk-uang_masuk-action-${so.id}`), `${nama}-catat`);
+  await lepas(row);
+  await r.tid("ar-receipt-modal").waitFor();
+  await r.tid(`ar-receipt-alloc-${so.id}`).waitFor();
+  await r.page.waitForFunction(() => !document.querySelector('[data-testid="ar-receipt-account-loading"]'), null, { timeout: 90000 });
+  await r.idle(800);
+  const awal = Number(await r.tid(`ar-receipt-alloc-${so.id}`).inputValue());
+  if (!dekat(awal, nominal)) {
+    r.note(`${nama} · form terima pembayaran mengisi alokasi ${rp(awal)}, bukan kekurangan ${rp(nominal)} — diketik ulang`);
+    await r.tid(`ar-receipt-alloc-${so.id}`).fill(String(nominal));
+  }
+  await r.tid("ar-receipt-reference").fill(ref);
+  await r.idle(1500);
+  const hint = await r.text("ar-receipt-variance-hint").catch(() => "");
+  await bk.potret(r, `${nama}-form`, [r.tid(`ar-receipt-alloc-${so.id}`), r.tid("ar-receipt-variance-hint")]);
+  await klikSorot(r, r.tid("ar-receipt-submit"), `${nama}-simpan`);
+  const muncul = await Promise.race([
+    r.tid("payment-variance-dialog").waitFor({ timeout: 30000 }).then(() => "selisih"),
+    r.tid("ar-receipt-confirm").waitFor({ timeout: 30000 }).then(() => "konfirmasi"),
+  ]).catch(() => "");
+  const selisih = muncul === "selisih";
+  if (selisih) {
+    r.note(`${nama} · jendela 'Kurang bayar' muncul untuk uang muka pesanan yang belum dilepas — diputus 'Sisa tetap jadi piutang'`);
+    await r.tid("pv-option-outstanding").click();
+    await pilih(r, "pv-reason", "Bayar sebagian (disepakati)");
+    await bk.potret(r, `${nama}-selisih`, [r.tid("pv-sentence"), r.tid("pv-option-outstanding"), r.tid("pv-reason")]);
+    await r.tid("pv-submit").click();
+  }
+  await r.tid("ar-receipt-confirm").waitFor();
+  await klikSorot(r, r.tid("ar-receipt-confirm-confirm"), `${nama}-konfirmasi`);
+  const msg = await tungguToast(r, /Kwitansi/, 60000);
+  await r.idle(1500);
+  const s = soDoc(so.id);
+  assert(s.status === "confirmed" && !s.pay_hold, `SO belum dilepas sesudah bayar: ${s.status} · tahan ${JSON.stringify(s.pay_hold)}`);
+  const task = tugasKeluar(so.id);
+  assert(task, "tugas ambil gudang tidak lahir sesudah uang muka dicatat");
+  return { msg, hint, selisih, task };
 }
 
 // ── GUDANG ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -559,44 +632,16 @@ async function soTerkirimApi(cust, prod) {
         });
 
       await step(12, "Admin Sales", "Meja Admin Sales → Pelacak SO → [Periksa & lepas] → [Periksa & lepas ke gudang]",
-        "SO dilepas ke gudang; tagihan uang muka lahir (jatuh tempo hari ini)", async () => {
-          const { msg, task } = await periksaLepas(r, ctx.B.so, "b");
-          ctx.B.task = task;
-          return msg;
+        "Pesan '… diperiksa — menunggu pembayaran dicek Finance; dilepas ke gudang otomatis sesudah bayar diterima.' SO berhenti di tahap 'Bayar dicek Finance' (batas bayar berjalan); belum ada tugas gudang", async () => {
+          const { msg, batas } = await periksaLepas(r, ctx.B.so, "b", { menungguBayar: true });
+          return `${msg} · batas bayar ${batas}`;
         });
 
-      await step(13, "Gudang", "Barang Keluar → tugas SO → pindai roll → [Kirim Pengambilan]",
-        "Panel merah 'Tertahan — belum dibayar sesuai termin: wajib dibayar Rp … (50%) sebelum kirim · sudah dibayar Rp 0'; tombol kirim mati", async () => {
-          await masuk(r, "warehouse");
-          await bukaTugas(r, ctx.B.so, ctx.B.task, "b-gudang");
-          await ambilRoll(r, ctx.B.task, ctx.B.roll.roll_no);
-          await r.tid("outbound-gate-summary").waitFor({ timeout: 20000 });
-          const g = await r.text("outbound-gate-summary");
-          assert(/Tertahan/.test(g) && g.includes(angka(ctx.B.dp)), `gerbang: ${g}`);
-          assert(await r.tid(`dispatch-all-${ctx.B.task.id}`).isDisabled(), "tombol kirim tidak mati");
-          await bk.potret(r, "b-tertahan", [r.tid("outbound-gate-summary"), r.tid(`dispatch-all-${ctx.B.task.id}`)]);
-          return g;
-        });
-
-      await step(14, "Finance", "Penagihan & Penerimaan → baris SO (Belum Lunas = uang muka) → ikon dompet → alokasi = nominal uang muka → No. referensi → [Simpan kwitansi] → [Ya, simpan]",
-        "Kwitansi uang muka. Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan 2-1400 (K) — belum ada piutang & pendapatan", async () => {
+      await step(13, "Finance", "Meja Keuangan → kartu 'Uang masuk perlu dicatat': ketik nomor SO → baris SO (nilai = uang muka) → [Catat kwitansi] → alokasi = uang muka → No. referensi → [Simpan kwitansi] (jendela 'Kurang bayar': 'Sisa tetap jadi piutang') → [Ya, simpan]",
+        "Kwitansi uang muka; SO dilepas ke gudang otomatis (tugas ambil lahir). Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan 2-1400 (K) — belum ada piutang & pendapatan", async () => {
           await masuk(r, finAkun);
-          await bukaPenagihan(r, "b-fin");
-          const row = await barisSo(r, ctx.B.so.id);
-          const t = await isiLayar(row);
-          assert(t.includes(angka(ctx.B.dp)), `baris uang muka: ${t}`);
-          await bk.potret(r, "b-penagihan-dp", [row]);
-          await bukaFormBayar(r, ctx.B.so.id, "b-dp");
-          const awal = Number(await r.tid(`ar-receipt-alloc-${ctx.B.so.id}`).inputValue());
-          if (!dekat(awal, ctx.B.dp)) {
-            r.note(`B · form terima pembayaran mengisi alokasi ${rp(awal)} (sisa SO), bukan uang muka ${rp(ctx.B.dp)} — diketik ulang`);
-            await r.tid(`ar-receipt-alloc-${ctx.B.so.id}`).fill(String(ctx.B.dp));
-          }
-          await r.tid("ar-receipt-reference").fill(`TRF-S3B-DP-LATIH${NO}`);
-          await r.idle(1500);
-          const hint = await r.text("ar-receipt-variance-hint").catch(() => "");
-          await bk.potret(r, "b-form-dp", [r.tid(`ar-receipt-alloc-${ctx.B.so.id}`), r.tid("ar-receipt-variance-hint")]);
-          const note = await simpanKwitansi(r, "b-dp");
+          const { msg: note, hint, task } = await bayarDiMeja(r, ctx.B.so, ctx.B.dp, "b-dp", `TRF-S3B-DP-LATIH${NO}`);
+          ctx.B.task = task;
           const rc = kwitansiSo(ctx.B.so.id);
           assert(rc.length === 1 && dekat(rc[0].amount, ctx.B.dp), "kwitansi DP");
           const je = jurnalKas(rc[0].cash_txn_id)[0];
@@ -604,12 +649,12 @@ async function soTerkirimApi(cust, prod) {
           assert(sisi(je, "1-1200", "K") === 0, "DP mengkredit piutang padahal barang belum dikirim");
           assert(dekat(umTertahan(ctx.B.so.id), ctx.B.dp), `uang muka tertahan ${umTertahan(ctx.B.so.id)}`);
           ctx.B.rcDp = rc[0]; ctx.B.jeDp = je;
-          return `${note} · ${teksJe(je)} · petunjuk: ${hint.slice(0, 120)}`;
+          return `${note} · ${teksJe(je)} · dilepas ke gudang (tugas ${task.quantity}) · petunjuk: ${hint.slice(0, 120)}`;
         });
 
-      await step(15, "Finance", "Keuangan › Piutang › Titipan & Saldo Kredit → cari pelanggan",
+      await step(14, "Finance", "Keuangan › Piutang › Titipan & Saldo Kredit → cari pelanggan",
         "Kolom 'Uang muka' = DP (kewajiban sampai barang dikirim)", async () => {
-          await klikSorot(r, r.tid("hub-tab-customer-credit"), "b-tab-titipan");
+          await bukaMenu(r, "ar-aging", "customer-credit");
           await r.tid("cc-search").fill(`Latihan ${NO} · Toko Kain Peserta`);
           const row = r.tid(`cc-row-${ctx.cust.id}`);
           await row.waitFor({ timeout: 15000 });
@@ -620,8 +665,18 @@ async function soTerkirimApi(cust, prod) {
           return await isiLayar(row);
         });
 
+      await step(15, "Gudang", "Barang Keluar → tugas SO → pindai roll → [Kirim Pengambilan]",
+        "Roll terambil; panel bayar tidak merah (uang muka sudah dibayar sebelum gudang)", async () => {
+          await masuk(r, "warehouse");
+          await bukaTugas(r, ctx.B.so, ctx.B.task, "b-gudang");
+          const tk = await ambilRoll(r, ctx.B.task, ctx.B.roll.roll_no, "b-roll");
+          const g = await r.text("outbound-gate-summary").catch(() => "");
+          assert(!/Tertahan/.test(g), `gerbang: ${g}`);
+          return `terambil ${tk.picked_qty}/${tk.quantity}${g ? ` · ${g}` : ""}`;
+        });
+
       await step(16, "Manajer", "Barang Keluar → tugas SO → Pemeriksaan Muat Akhir → [Override]",
-        "Kotak 'OVERRIDE …'; panel bayar kini 'Boleh kirim — termin terpenuhi'", async () => {
+        "Kotak 'OVERRIDE …'; panel bayar 'Boleh kirim — termin terpenuhi'", async () => {
           const t = await overrideMuat(r, ctx.B.so, ctx.B.task, "b");
           await r.tid("outbound-gate-summary").waitFor({ timeout: 20000 });
           const g = await r.text("outbound-gate-summary");
@@ -688,20 +743,16 @@ async function soTerkirimApi(cust, prod) {
         });
 
       await step(20, "Admin Sales", "Meja Admin Sales → [Periksa & lepas] → [Periksa & lepas ke gudang]",
-        "SO dilepas ke gudang", async () => {
-          const { msg, task } = await periksaLepas(r, ctx.C.so, "c");
-          ctx.C.task = task;
+        "SO menunggu pembayaran dicek Finance (belum ke gudang)", async () => {
+          const { msg } = await periksaLepas(r, ctx.C.so, "c", { menungguBayar: true });
           return msg;
         });
 
-      await step(21, "Finance", "Penagihan & Penerimaan → baris SO → ikon dompet → alokasi = uang muka → [Simpan kwitansi] → [Ya, simpan]",
-        "Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan (K) = DP", async () => {
+      await step(21, "Finance", "Meja Keuangan → kartu 'Uang masuk perlu dicatat' → baris SO → [Catat kwitansi] → alokasi = uang muka → [Simpan kwitansi] → [Ya, simpan]",
+        "SO dilepas ke gudang otomatis (tugas ambil lahir). Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan (K) = DP", async () => {
           await masuk(r, finAkun);
-          await bukaFormBayar(r, ctx.C.so.id, "c-dp");
-          await r.tid(`ar-receipt-alloc-${ctx.C.so.id}`).fill(String(ctx.C.dp));
-          await r.tid("ar-receipt-reference").fill(`TRF-S3C-DP-LATIH${NO}`);
-          await r.idle(1500);
-          const note = await simpanKwitansi(r, "c-dp");
+          const { msg: note, task } = await bayarDiMeja(r, ctx.C.so, ctx.C.dp, "c-dp", `TRF-S3C-DP-LATIH${NO}`);
+          ctx.C.task = task;
           const rc = kwitansiSo(ctx.C.so.id);
           assert(rc.length === 1 && dekat(rc[0].amount, ctx.C.dp), "kwitansi DP");
           const je = jurnalKas(rc[0].cash_txn_id)[0];

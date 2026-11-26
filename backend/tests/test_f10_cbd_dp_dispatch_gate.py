@@ -8,6 +8,12 @@ Pusat Pengaturan (`finance.dispatch_payment_gate`). Status tahan tampil di Baran
 Alur nyata lewat API akun peran (data acuan): Sales buat SO → Admin Sales verifikasi/konfirmasi → Gudang potong
 (bila ada reservasi potong) & pick → Admin Gudang override loading check (tanpa perangkat RFID) → kirim.
 Pembayaran dicatat Finance lewat Uang Masuk (`/ar-receipts`).
+
+Lapor Bayar CBD & DP (ketetapan R18-d, 26 Nov) — pesanan wajib bayar dulu kini BERHENTI SEBELUM GUDANG ("Bayar dicek
+Finance", `pay_hold`): konfirmasi tanpa bayar → 409 `MenungguBayar`. Supaya gerbang SURAT JALAN tetap teruji, `_ready_to_ship`
+memakai jalan berizin yang sah untuk barang ke gudang tanpa bayar — pengecualian "kirim tanpa lunas" beralasan
+(`dispatch-payment-release`, Finance) — lalu, sesudah barang ter-pick, pengecualian itu DICABUT Manajer
+(`…/revoke`, beralasan): surat jalan kembali mengikuti termin, persis keadaan yang diuji modul ini.
 Jalankan: cd /app/backend && python -m pytest tests/test_f10_cbd_dp_dispatch_gate.py -p no:randomly -n 0 -q
 """
 import os
@@ -73,7 +79,17 @@ def _ready_to_ship(u, term):
     if b.get("status") == "waiting_approval":
         c, b = u["mgr"].call("POST", f"/sales-orders/{so['id']}/approve")
         assert c == 200, b
+    c, g = u["sadm"].call("GET", f"/sales-orders/{so['id']}/dispatch-payment-gate")
+    assert c == 200, g
+    lepas_tanpa_bayar = bool(g["applies"] and g["blocked"])
     c, b = u["sadm"].call("POST", f"/sales-orders/{so['id']}/confirm")
+    if lepas_tanpa_bayar:
+        # Lapor Bayar CBD & DP — tanpa bayar pesanan tidak dilepas ke gudang; Finance memberi pengecualian beralasan.
+        assert c == 409 and "Menunggu pembayaran dicek Finance" in str(b.get("detail")), (c, b)
+        c, b = u["fin"].call("POST", f"/sales-orders/{so['id']}/dispatch-payment-release",
+                             {"reason": "uji F-10: barang ke gudang dulu, gerbang surat jalan diuji"})
+        assert c == 200 and b["released"], b
+        c, b = u["sadm"].call("POST", f"/sales-orders/{so['id']}/confirm")
     assert c == 200, b
     c, pc = u["wh"].call("GET", "/inventory/pending-cuts", params={"order_id": so["id"]})
     assert c == 200, pc
@@ -99,6 +115,11 @@ def _ready_to_ship(u, term):
     c, b = u["whadm"].call("POST", f"/outbound/so/{so['id']}/loading-check/override",
                            {"reason": "uji F-10 tanpa perangkat RFID - validasi manual"})
     assert c in (200, 400), b
+    if lepas_tanpa_bayar:
+        # pengecualian dicabut → surat jalan kembali tertahan termin (keadaan yang diuji modul ini)
+        c, b = u["mgr"].call("POST", f"/sales-orders/{so['id']}/dispatch-payment-release/revoke",
+                             {"reason": "uji F-10: cabut pengecualian, gerbang surat jalan diuji"})
+        assert c == 200 and b["blocked"] and not b["released"], b
     fresh = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0, "grand_total": 1, "number": 1, "order_number": 1})
     return {**so, **fresh}, tl
 
@@ -167,6 +188,9 @@ def test_dp50_49_persen_tertahan_50_persen_boleh(u):
 def test_pengecualian_berizin_alasan_wajib_teraudit_dan_bisa_dicabut(u):
     so, tasks = _ready_to_ship(u, "CBD")
     path = f"/sales-orders/{so['id']}/dispatch-payment-release"
+    # `_ready_to_ship` sudah memberi + mencabut satu pengecualian (barang ke gudang tanpa bayar, Lapor Bayar CBD & DP)
+    hist_awal = len((DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0, "dispatch_payment_release_history": 1})
+                     or {}).get("dispatch_payment_release_history") or [])
     c, b = u["wh"].call("POST", path, {"reason": "gudang ingin kirim"})
     assert c == 403, b                                                       # gudang tidak memegang izin
     c, b = u["sales"].call("POST", path, {"reason": "sales ingin kirim"})
@@ -191,7 +215,7 @@ def test_pengecualian_berizin_alasan_wajib_teraudit_dan_bisa_dicabut(u):
     for c, b in _dispatch(u, tasks):
         assert c == 200, b
     hist = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0, "dispatch_payment_release_history": 1})
-    assert len(hist["dispatch_payment_release_history"]) == 1, hist
+    assert len(hist["dispatch_payment_release_history"]) == hist_awal + 1, hist
 
 
 def test_gerbang_dapat_dimatikan_per_pt_di_pusat_pengaturan(u):
