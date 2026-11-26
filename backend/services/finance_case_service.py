@@ -564,11 +564,15 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
             await periksa_periode_dokumen_409(eid, None, jenis=f"penyelesaian kasus di {await acts._entity_name(eid)}")
     op = intent.get("op_id") if lanjutan else acts.op_id_of(case, action["code"])
     try:
-        await acts.precheck(action["code"], case, isi, lanjutan=lanjutan, op_id=op)
+        rencana = await acts.precheck(action["code"], case, isi, lanjutan=lanjutan, op_id=op)
     except acts.CaseConflict as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
     except acts.CaseActionError as e:
         raise CaseError(str(e)) from e
+    # LB-T4 (B3, R11) — pelunasan/titipan lewat kasus ke pesanan yang ditahan bayar hanya oleh pemegang
+    # `payment_report.decide` (409 sebelum kasus diklaim). Niat lanjutan tidak membawa rencana alokasi (sudah dinilai).
+    from services import ar_receipt_service as _ars_b3
+    await _ars_b3.pagar_lapor_bayar(actor, [a.get("order_id") for a in (rencana or {}).get("allocations") or []])
 
     # G3 D4-CASE-02 — KLAIM kasus sebelum efek samping: dua penyelesaian paralel → satu menang,
     # yang kalah tidak meninggalkan kas. Gagal di tengah → kunci dilepas; retry mengadopsi kas

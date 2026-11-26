@@ -569,9 +569,10 @@ async def _rencana_hapus_sisa(order_ids: List[str], amount: float, entity_id: st
 
 def _rencana_alokasi(allocations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Baris alih deposit (gabung per pesanan, urutan pertama muncul) — tiap baris punya penanda langkahnya."""
+    from services.ar_allocation_service import id_pesanan
     per: Dict[str, float] = {}
     for al in allocations or []:
-        oid = str(al.get("order_id") or "").strip()
+        oid = id_pesanan(al.get("order_id"))
         amt = round(float(al.get("amount") or 0), 2)
         if oid and amt > EPS:
             per[oid] = round(per.get(oid, 0.0) + amt, 2)
@@ -932,6 +933,10 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             total = round(sum(r["amount"] for r in plan), 2)
             if total <= EPS:
                 raise VarianceError("Pilih minimal satu pesanan dan nominal alokasinya.")
+            # LB-T4 (B3, R11) — titipan pelanggan ke pesanan yang ditahan bayar hanya oleh pemegang
+            # `payment_report.decide` (409 → `VarianceConflict` lewat `_dari_http`).
+            from services import ar_receipt_service as _ars_b3
+            await _ars_b3.pagar_lapor_bayar(actor, [r["order_id"] for r in plan])
             if total > gap + EPS:
                 raise VarianceError(f"Total alokasi {_rp(total)} melebihi kelebihan bayar {_rp(gap)}.")
             from services import ar_receipt_service as ars

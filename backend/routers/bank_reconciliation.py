@@ -426,6 +426,10 @@ async def to_holding(line_id: str, payload: HoldingInput, request: Request,
 async def allocate_holding(line_id: str, payload: HoldingAllocateInput, request: Request,
                            ctx: EntityContext = Depends(entity_ctx)) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "create")
+    # LB-T4 (B3, R11) — titipan dana bank ke pesanan yang ditahan bayar hanya oleh pemegang `payment_report.decide`
+    # (409 sebelum apa pun ditulis). Layanan menerima nama pelaku saja, jadi pagarnya di sini.
+    from services import ar_receipt_service as _ars_b3
+    await _ars_b3.pagar_lapor_bayar(actor, [a.get("order_id") for a in payload.allocations or [] if isinstance(a, dict)])
     try:
         res = await svc.allocate_holding(line_id, payload.allocations, payload.customer_id or "",
                                          payload.reason_code, payload.note or "",

@@ -122,6 +122,12 @@ async def _tunai_tanpa_piutang(order: Dict[str, Any]) -> bool:
     return not sj
 
 
+def id_pesanan(value: Any) -> str:
+    """Bentuk baku id pesanan tujuan dana (spasi tepi dibuang; tanpa pengubahan huruf — id pesanan peka huruf). SATU
+    penormal untuk pemeriksa alokasi, rencana alokasi keputusan selisih, dan pagar lapor bayar (LB-T4 R11)."""
+    return str(value or "").strip()
+
+
 # ── PERIKSA ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def validate_targets(kind: str, rows: List[Dict[str, Any]], *, customer_id: str,
                            entity_id: str) -> List[Dict[str, Any]]:
@@ -138,7 +144,7 @@ async def validate_targets(kind: str, rows: List[Dict[str, Any]], *, customer_id
             "Pelanggan dan PT pemilik dana wajib jelas sebelum dana dipakai untuk melunasi pesanan."))
     per: Dict[str, float] = {}
     for r in rows or []:
-        oid = str((r or {}).get("order_id") or "").strip()
+        oid = id_pesanan((r or {}).get("order_id"))
         amt = round(float((r or {}).get("amount") or 0), 2)
         if not oid:
             raise HTTPException(status_code=400, detail="Pesanan tujuan wajib dipilih.")

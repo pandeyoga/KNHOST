@@ -555,35 +555,51 @@ PESAN_PAKAI_LAPOR_BAYAR = "Pesanan ini menunggu lapor bayar — pakai Lapor baya
 
 def _tujuan_keputusan_alokasi(payload: Dict[str, Any]) -> List[str]:
     """Pesanan yang akan dibayar keputusan selisih "alokasikan ke pesanan lain" yang dikirim bersama kwitansi
-    (`payload.variance = {kind: "allocate", allocations: [...]}` → `payment_variance_service.decide_receipt`)."""
+    (`payload.variance = {kind: "allocate", allocations: [...]}` → `payment_variance_service.decide_receipt`). Dibangun
+    dengan rencana YANG SAMA dengan pembayarnya (`payment_variance_service._rencana_alokasi`, id dinormalkan
+    `ar_allocation_service.id_pesanan`) — R11: id berspasi tidak bisa lolos pagar lalu tetap dibayar."""
     v = payload.get("variance") or {}
-    if not isinstance(v, dict) or str(v.get("kind") or "") != "allocate":
+    if not isinstance(v, dict) or str(v.get("kind") or "").strip() != "allocate":
         return []
-    return [str(a.get("order_id")) for a in v.get("allocations") or []
-            if isinstance(a, dict) and a.get("order_id") and round(float(a.get("amount", 0) or 0), 2) > 0]
+    from services import payment_variance_service as _pvs
+    return [r["order_id"] for r in _pvs._rencana_alokasi([a for a in v.get("allocations") or [] if isinstance(a, dict)])]
+
+
+async def pagar_lapor_bayar(actor: Any, order_ids: List[Any]) -> None:
+    """LB-T4 (B3, ketetapan R11) — SATU pagar untuk setiap jalan uang/titipan ke pesanan: pelaku tanpa
+    `payment_report.decide` tidak boleh mengalokasikan APA PUN ke pesanan yang ditahan bayar (`pay_hold_service.ditahan`)
+    — uang baru non-tunai, deposit/titipan pelanggan, saldo kredit, titipan bank, maupun pelunasan kasus keuangan.
+    Satu-satunya pengecualian (uang TUNAI baru di kwitansi, diatur `pembayaran.sales_terima_tunai`) diputus pemanggilnya
+    (`_pagar_lapor_bayar`). Id dinormalkan `ar_allocation_service.id_pesanan`. Tanpa tulisan; 409 berkalimat.
+
+    Pemanggil: `create_receipt` (alokasi kwitansi + keputusan selisih yang dikirim bersamanya),
+    `payment_variance_service.decide_receipt` (keputusan "alokasikan" dari antrean), `store_credit_service._redeem_locked`
+    (penebusan saldo kredit), `routers/bank_reconciliation.allocate_holding` (titipan dana bank), dan
+    `finance_case_service.resolve` (pelunasan lewat kasus keuangan)."""
+    from services.ar_allocation_service import id_pesanan
+    ids = list(dict.fromkeys(i for i in (id_pesanan(x) for x in order_ids or []) if i))
+    if not ids:
+        return
+    from dependencies import has_permission
+    if await has_permission(actor if isinstance(actor, dict) else {}, "payment_report", "decide"):
+        return
+    from services import pay_hold_service as _phs
+    if await db.sales_orders.find_one({"id": {"$in": ids}, **_phs.saringan_ditahan()}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
 
 
 async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, entity_id: str, method: str,
-                             amount: float, customer_id: str, total_funds: float) -> None:
-    """LB-T4 (B3, rancangan §5.4) — 409 bila: ada UANG BARU (`amount > 0`; kwitansi deposit-saja tidak membawa transfer
-    yang belum dicek); pencatat tidak memegang `payment_report.decide`; cara bayar bukan tunai (pengertian tunai daftar
-    induk, `payment_method_service.is_cash`); dan salah satu pesanan yang akan menerima uang kwitansi ini — alokasi
-    eksplisit, rencana FIFO yang sama dengan efeknya, ATAU tujuan keputusan selisih "alokasikan" yang dikirim bersamanya —
-    sedang ditahan bayar (`pay_hold_service.ditahan`, satu predikat). Tunai tetap diatur `pembayaran.sales_terima_tunai`;
-    kwitansi Finance (pemegang `decide`, termasuk jalur Terima) tidak terpengaruh."""
-    if amount <= EPS:
-        return
+                             amount: float, use_deposit_amount: float, customer_id: str, total_funds: float) -> None:
+    """B3 untuk kwitansi: pesanan yang akan menerima dana kwitansi ini (alokasi eksplisit atau rencana FIFO yang sama
+    dengan efeknya) + tujuan keputusan selisih "alokasikan" yang dikirim bersamanya → `pagar_lapor_bayar`. Alokasi
+    kwitansi dikecualikan HANYA bila seluruh dananya uang TUNAI baru (cara bayar tunai daftar induk,
+    `payment_method_service.is_cash`, tanpa deposit dipakai) — tunai diatur `pembayaran.sales_terima_tunai`. Keputusan
+    selisih "alokasikan" memakai titipan pelanggan, jadi selalu dinilai."""
     from services import payment_method_service as _pms
-    if await _pms.is_cash(entity_id, method):
-        return
-    from dependencies import has_permission
-    if await has_permission(actor or {}, "payment_report", "decide"):
-        return
-    ids = await _rencana_pesanan(customer_id, entity_id, payload.get("allocations") or [], total_funds)
-    ids = list(dict.fromkeys(ids + _tujuan_keputusan_alokasi(payload)))
-    from services import pay_hold_service as _phs
-    if ids and await db.sales_orders.find_one({"id": {"$in": ids}, **_phs.saringan_ditahan()}, {"_id": 1}):
-        raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
+    tunai_baru = amount > EPS and use_deposit_amount <= EPS and await _pms.is_cash(entity_id, method)
+    ids: List[str] = [] if tunai_baru else await _rencana_pesanan(
+        customer_id, entity_id, payload.get("allocations") or [], total_funds)
+    await pagar_lapor_bayar(actor, ids + _tujuan_keputusan_alokasi(payload))
 
 
 async def buka_tahan_bayar(order_ids: List[str], actor: Dict[str, Any], why: str) -> List[str]:
@@ -644,10 +660,11 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
     except _pms.CaraBayarError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     method = cara["code"]
-    # LB-T4 (B3) — kwitansi non-tunai dari pencatat tanpa `payment_report.decide` ke pesanan yang tertahan bayar ditolak
-    # SEBELUM apa pun ditulis: uangnya dilaporkan lewat Lapor bayar dan diterima Finance (`payment_report_service.terima`).
+    # LB-T4 (B3, R11) — pencatat tanpa `payment_report.decide` tidak boleh mengalokasikan apa pun (kecuali uang tunai baru)
+    # ke pesanan yang tertahan bayar; ditolak SEBELUM apa pun ditulis — uangnya dilaporkan lewat Lapor bayar.
     await _pagar_lapor_bayar(payload, actor, entity_id=entity_id, method=method, amount=amount,
-                             customer_id=customer["id"], total_funds=total_funds)
+                             use_deposit_amount=use_deposit_amount, customer_id=customer["id"],
+                             total_funds=total_funds)
     # FN-10 — periode tertutup ditolak SEBELUM kwitansi/alokasi/deposit dimutasi.
     from services import gl_service as _glp
     try:

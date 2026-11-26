@@ -228,6 +228,10 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
                 continue
             planned.append((oo["order_id"], take))
             remaining = round(remaining - take, 2)
+    # LB-T4 (B3, R11) — saldo kredit ke pesanan yang ditahan bayar hanya oleh pemegang `payment_report.decide`
+    # (409 SEBELUM pesanan pertama dimutasi; kunci pelanggan dilepas `finally` pemanggil).
+    from services import ar_receipt_service as _ars_b3
+    await _ars_b3.pagar_lapor_bayar(actor, [oid for oid, _amt in planned])
     for i, (order_id, amt) in enumerate(planned):
         try:
             applied.append(await _aas.allocate(

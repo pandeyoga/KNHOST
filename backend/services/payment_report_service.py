@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from core_utils import new_id, next_doc_number, now_iso
 from db import db
@@ -58,6 +59,8 @@ PESAN_LEBIH_SISA = ("Nominal melebihi sisa tagihan pesanan ({sisa}). Kelebihan b
 PESAN_BERJATUH_TEMPO = ("Lapor bayar tidak untuk {nama} (cara bayar berjatuh tempo). Serahkan ke Finance untuk dicatat "
                         "sebagai kwitansi ber-jatuh tempo.")
 PESAN_SUDAH_BERKWITANSI = "Laporan ini sudah punya kwitansi {nomor} — tidak bisa ditolak."
+PESAN_KEMBAR = ("Kwitansi tidak jadi dibuat karena bentrok dengan data yang sudah ada. Muat ulang laporan ini lalu coba "
+                "lagi; bila berulang, minta admin memeriksanya.")
 PESAN_PESANAN_MATI = "Pesanan sudah batal/kedaluwarsa — tolak laporan ini"
 PESAN_ALASAN = f"Alasan tolak wajib diisi (min. {ALASAN_MIN} huruf)."
 PESAN_DIPROSES = "Laporan ini sedang diproses Finance lain. Tunggu sebentar lalu muat ulang."
@@ -232,8 +235,9 @@ def _pelaku(actor: Dict[str, Any]) -> Dict[str, str]:
 
 
 async def _kwitansi_laporan(report_id: str) -> Optional[Dict[str, Any]]:
-    """Kwitansi (belum batal) yang lahir dari laporan ini — rujukan balik `payment_report_id`."""
-    return await db.ar_receipts.find_one({"payment_report_id": report_id, "status": {"$ne": "void"}}, {"_id": 0})
+    """Kwitansi hidup (`posted`, belum batal) yang lahir dari laporan ini — rujukan balik `payment_report_id`. Saringan
+    sama dengan indeks unik parsial `ar_receipts.uq_payment_report`."""
+    return await db.ar_receipts.find_one({"payment_report_id": report_id, "status": "posted"}, {"_id": 0})
 
 
 def isi_kwitansi(report: Dict[str, Any], order: Dict[str, Any]) -> Dict[str, Any]:
@@ -360,6 +364,8 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
     from services.customer_service import DEAD_STATUSES
     if report.get("status") in (DITERIMA, DITOLAK):
         raise _galat_status(report.get("status"))
+    if report.get("status") == MEMPROSES and str((report.get("claim") or {}).get("at") or "") >= _basi_sebelum():
+        raise _galat_status(MEMPROSES)   # klik kedua selagi Terima pertama berjalan: "sedang diproses", bukan sisa Rp 0
     if not _lampiran(report):
         # keadaan sementara (pelapor bisa melampirkan bukti): kirim ulang kunci sama dijalankan lagi (Minor-3)
         raise HTTPException(status_code=409, detail=PESAN_TANPA_BUKTI, headers=dict(HEADER_ULANG))
@@ -391,6 +397,8 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
             if tuntas is None:
                 # Kwitansi tidak pernah lahir / sudah dicabut rollback `create_receipt`: laporan kembali `menunggu`.
                 await _kembali_menunggu(rep["id"], token, actor, exc)
+                if isinstance(exc, DuplicateKeyError):   # R11 — data kembar (indeks unik) → 409 pemandu, bukan 500
+                    raise HTTPException(status_code=409, detail=PESAN_KEMBAR, headers=dict(HEADER_ULANG)) from exc
                 if isinstance(exc, HTTPException):
                     exc.headers = {**(exc.headers or {}), **HEADER_ULANG}   # laporan bisa diterima lagi: bukan putusan
                 raise

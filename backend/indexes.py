@@ -1008,14 +1008,17 @@ REQUIRED_UNIQUE_INDEXES += [
                            '{e:"$entity_id",k:"$employee_id",y:"$year"}', "$id")},
 ]
 
-# LB-T4 (R10-c, D7) — satu kwitansi per laporan bayar: rujukan balik `payment_report_id` (hanya kwitansi dari Terima lapor
-# bayar yang memilikinya). Terima yang mengambil alih klaim basi dari proses yang MASIH hidup tidak bisa menerbitkan
-# kwitansi kedua: yang kalah kena `DuplicateKeyError` saat sisip → rollback `create_receipt` (alokasi dicabut, deposit
-# dikembalikan) → `payment_report_service.terima` memakai kwitansi pemenang. Field baru: data lama tidak bisa kembar.
+# LB-T4 (R10-c, R11, D7) — satu kwitansi HIDUP per laporan bayar: rujukan balik `payment_report_id` (hanya kwitansi dari
+# Terima lapor bayar yang memilikinya) pada kwitansi berstatus `posted`. Terima yang mengambil alih klaim basi dari proses
+# yang MASIH hidup tidak bisa menerbitkan kwitansi kedua: yang kalah kena `DuplicateKeyError` saat sisip → rollback
+# `create_receipt` (alokasi dicabut, deposit dikembalikan) → `payment_report_service.terima` memakai kwitansi pemenang.
+# Kwitansi yang dibatalkan (`status: void`) keluar dari indeks, jadi tidak mengunci laporannya (sama dengan pencari
+# `payment_report_service._kwitansi_laporan`). Field baru: data lama tidak bisa kembar.
 REQUIRED_UNIQUE_INDEXES += [
     {"collection": "ar_receipts", "name": "uq_payment_report", "label": "satu kwitansi per laporan bayar",
-     "keys": [("payment_report_id", 1)], "partial": {"payment_report_id": {"$exists": True}},
-     "finder": _finder_dup("ar_receipts", '{payment_report_id:{$exists:true}}', '"$payment_report_id"')},
+     "keys": [("payment_report_id", 1)], "partial": {"payment_report_id": {"$exists": True}, "status": "posted"},
+     "finder": _finder_dup("ar_receipts", '{payment_report_id:{$exists:true},status:"posted"}',
+                           '"$payment_report_id"')},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap
