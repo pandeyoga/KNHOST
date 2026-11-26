@@ -526,14 +526,21 @@ async def isi_tagih_sekarang(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     """S3 (pelatihan 18 Nov) — tagihan terbuka bertermin DP: `due_now` = yang ditagih SEKARANG menurut jadwal tagihan
     (uang muka "sebelum kirim"), angka yang sama dengan baris Penagihan & Penerimaan. Bahan isian bawaan alokasi form
     Terima pembayaran — dulu terisi seluruh sisa pesanan, padahal yang ditransfer pelanggan baru uang mukanya.
-    Pesanan bukan termin DP / tidak ada baris jatuh tempo: tanpa `due_now` (perilaku lama). Hanya untuk daftar layar."""
+    Pesanan bukan termin DP / tidak ada baris jatuh tempo: tanpa `due_now` (perilaku lama). Hanya untuk daftar layar.
+    R19 — pesanan yang masih wajib bayar sebelum gudang: `due_now` = sisa wajib itu (`pay_hold_service.
+    sisa_wajib_sebelum_gudang`, angka yang sama dengan harapan penilaian selisih), karena baris uang mukanya baru lahir
+    saat pesanan dilepas."""
     from services import entity_master_service as ems
+    from services import pay_hold_service as _phs
     from services.payment_variance_service import tagihan_uang_muka
     kode = {r["order_id"]: r for r in rows}
-    orders = [o async for o in db.sales_orders.find({"id": {"$in": list(kode)}},
-                                                    {"_id": 0, "id": 1, "payment_term_code": 1, "entity_id": 1})]
+    orders = [o async for o in db.sales_orders.find({"id": {"$in": list(kode)}}, {"_id": 0})]
     dp_cache: Dict[Any, float] = {}
     for o in orders:
+        sisa_gudang = await _phs.sisa_wajib_sebelum_gudang(o)
+        if sisa_gudang is not None:
+            kode[o["id"]]["due_now"] = round(min(sisa_gudang, kode[o["id"]]["outstanding"]), 2)
+            continue
         code = o.get("payment_term_code") or ""
         key = (code, o.get("entity_id") or "")
         if not code:

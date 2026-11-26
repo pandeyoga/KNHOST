@@ -97,7 +97,7 @@ async def _so(db, oid: str) -> dict:
     return await db.sales_orders.find_one({"id": oid}, {"_id": 0})
 
 
-async def _pesan(klien, db, siap, term: str = "CBD", *, periksa: bool = True) -> dict:
+async def _pesan(klien, db, siap, term: str = "CBD", *, periksa: bool = True, tahan: bool = True) -> dict:
     await db.inventory_rolls.insert_one({
         "id": _id("roll"), "roll_no": f"R-LB4-{next(_n)}", "product_id": siap["prd"], "owner_entity_id": KSC,
         "warehouse_id": "wh_lb4", "status": "available", "active_movement": None, "length_remaining": 100.0,
@@ -116,7 +116,8 @@ async def _pesan(klien, db, siap, term: str = "CBD", *, periksa: bool = True) ->
         r = await klien.post(f"/api/sales-orders/{so['id']}/submit-for-approval", headers=siap["h"])
     assert r.status_code == 200, r.text
     cur = await _so(db, so["id"])
-    assert cur["status"] == "approved" and cur["pay_hold"], cur.get("status")
+    if tahan:
+        assert cur["status"] == "approved" and cur["pay_hold"], cur.get("status")
     return cur
 
 
@@ -1252,3 +1253,80 @@ async def test_R18b_daftar_laporan_menandai_klaim_basi(klien, db, siap):
     q = next(q for q in r.json()["queues"] if q["id"] == "lapor_bayar")
     [row] = [x for x in q["rows"] if x["ref_id"] == rep["id"]]
     assert row["badge"] == "macet — ulangi", row
+
+
+# R19 — penilaian selisih bayar pesanan yang wajib bayar sebelum gudang: yang DIHARAPKAN = sisa wajib sebelum gudang
+# (`required − dibayar` dari gerbang), bukan seluruh sisa pesanan. Dulu DP dibayar sesudah konfirmasi terhadap baris
+# uang muka; kini pesanan ditahan SEBELUM konfirmasi (baris uang muka belum lahir) sehingga bayar tepat DP terbaca
+# "kurang bayar" dan setiap pesanan DP menghasilkan keputusan selisih di Meja Keuangan.
+#
+# Hitung tangan: DP50 Rp 1.000.000 → wajib sebelum gudang 500.000. Bayar 500.000 → tidak ada selisih; bayar 300.000 →
+# kurang 200.000 dari 500.000 (di atas toleransi Rp 5.000) → keputusan selisih seperti biasa.
+async def _selisih_meja(klien, siap, nomor: str) -> list:
+    r = await klien.get("/api/finance/desk", headers=siap["h_fin"])
+    assert r.status_code == 200, r.text
+    q = next(q for q in r.json()["queues"] if q["id"] == "selisih_bayar")
+    return [x for x in q["rows"] if x.get("number") == nomor]
+
+
+async def test_R19_terima_laporan_tepat_dp_tanpa_selisih_dan_lepas(klien, db, siap):
+    so = await _pesan(klien, db, siap, term="DP50")
+    assert so["pay_hold"]["required"] == 500_000 and so["release"]["requested"]
+    rep = await _lapor(klien, siap, so["id"], 500_000)
+    r = await _terima(klien, siap, rep["id"])
+    assert r.status_code == 200, r.text
+    assert r.json()["released"] is True                                      # R4: sudah "Periksa & lepas"
+    [kw] = await _kwitansi(db, rep["id"])
+    v = kw["variance"]
+    assert v["needs_decision"] is False and v["direction"] != "under", v
+    assert v["expected"] == 500_000, v
+    assert await _selisih_meja(klien, siap, kw["number"]) == []
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "confirmed" and "pay_hold" not in cur
+
+
+async def test_R19_kwitansi_finance_tepat_dp_pesanan_tertahan_tanpa_selisih(klien, db, siap):
+    so = await _pesan(klien, db, siap, term="DP50")
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"], json=_kw(siap, so["id"], 500_000))
+    assert r.status_code == 200, r.text
+    v = r.json()["variance"]
+    assert v["needs_decision"] is False and v["expected"] == 500_000, v
+    assert r.json()["released_order_ids"] == [so["id"]]
+    assert await _selisih_meja(klien, siap, r.json()["number"]) == []
+
+
+async def test_R19_bayar_kurang_dari_dp_tetap_kurang_bayar(klien, db, siap):
+    so = await _pesan(klien, db, siap, term="DP50")
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"], json=_kw(siap, so["id"], 300_000))
+    assert r.status_code == 200, r.text
+    v = r.json()["variance"]
+    assert v["needs_decision"] is True and v["direction"] == "under", v
+    assert (v["expected"], v["delta"]) == (500_000, -200_000), v          # kurang dari wajib sebelum gudang, bukan sisa SO
+    assert r.json()["released_order_ids"] == []
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "approved" and cur["pay_hold"]
+
+
+async def test_R19_cbd_tepat_100_persen_tanpa_selisih(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"], json=_kw(siap, so["id"], 1_000_000))
+    assert r.status_code == 200, r.text
+    v = r.json()["variance"]
+    assert v["needs_decision"] is False and v["expected"] == 1_000_000, v
+
+
+async def test_R19_net30_tidak_berubah(klien, db, siap):
+    """Pesanan NET30 (tidak wajib bayar dulu) dinilai seperti dulu: belum jatuh tempo → harapan = sisa tagihan."""
+    from services import payment_variance_service as pvs
+    so = await _pesan(klien, db, siap, term="NET30", periksa=False, tahan=False)
+    a = await pvs.pre_assess(siap["cus"], 300_000, [{"order_id": so["id"], "amount": 300_000}], entity_id=KSC)
+    [t] = [t for t in a["targets"] if t["order_id"] == so["id"]]
+    assert t["basis"] in ("term", "term_not_due") and t["expected"] == t["outstanding"] == 1_000_000, t
+
+
+async def test_R19_isian_bawaan_form_kwitansi_pesanan_tertahan_dp(klien, db, siap):
+    so = await _pesan(klien, db, siap, term="DP50")
+    r = await klien.get("/api/ar-receipts/open-orders", headers=siap["h_fin"], params={"customer_id": siap["cus"]})
+    assert r.status_code == 200, r.text
+    [row] = [x for x in r.json() if x["order_id"] == so["id"]]
+    assert row["outstanding"] == 1_000_000 and row.get("due_now") == 500_000, row

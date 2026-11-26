@@ -248,14 +248,29 @@ async def tagihan_uang_muka(order: Dict[str, Any], as_of: str = "",
             "next_due_date": nxt[0] if nxt else ""}
 
 
+#: R19 — `basis` target penilaian selisih untuk pesanan yang wajib bayar sebelum gudang (lihat `_order_due_now`).
+BASIS_SEBELUM_GUDANG = "bayar_sebelum_gudang"
+
+
 async def _order_due_now(order: Dict[str, Any], outstanding: float,
                          as_of: str) -> Dict[str, Any]:
     """Berapa yang jatuh tempo untuk satu pesanan + dari mana angkanya.
 
+    R19 (Lapor Bayar) — pesanan yang wajib bayar sebelum gudang dan belum dilepas → sisa wajib sebelum gudang
+    (`pay_hold_service.sisa_wajib_sebelum_gudang`): bayar tepat DP/CBD bukan "kurang bayar", bayar kurang dari itu tetap
+    kurang bayar. SATU tempat untuk kwitansi Finance langsung dan Terima lapor bayar (keduanya `create_receipt` →
+    `pre_assess` → `_targets` → di sini). Sesudah dilepas ke gudang: aturan di bawah (baris uang muka) tidak berubah.
     Ada rencana pembayaran (FASE G-2) → Σ baris yang sudah jatuh tempo.
     Tidak ada rencana → pakai jatuh tempo term pesanan; kalau belum jatuh tempo,
     harapannya adalah seluruh sisa tagihan pesanan itu (yang lazim ditagih).
     """
+    from services import pay_hold_service as phs
+    penuh = await db.sales_orders.find_one({"id": order.get("id", "")}, {"_id": 0}) if order.get("id") else None
+    sisa_gudang = await phs.sisa_wajib_sebelum_gudang(penuh)
+    if sisa_gudang is not None:
+        return {"plan_id": "", "plan_number": "", "due_now": min(sisa_gudang, outstanding),
+                "basis": BASIS_SEBELUM_GUDANG, "due_lines": [],
+                "next_due_date": str(((penuh or {}).get("pay_hold") or {}).get("due_at") or "")[:10]}
     plan = await plans.get_manual("sales_order", order.get("id", ""))   # CR-T2 — rencana orang, bukan jadwal mesin
     if plan:
         due_now = plans.due_now_amount(plan, as_of)
@@ -436,6 +451,8 @@ async def pre_assess(customer_id: str, funds: float,
     # seolah tagihannya sudah jatuh tempo. Angka & arah selisih tidak berubah, hanya kalimatnya.
     belum_tempo = bool(targets) and all(t.get("basis") in ("term_not_due", "plan_not_due") for t in targets)
     label_harap = "sisa tagihan pesanan tujuan, belum jatuh tempo" if belum_tempo else "tagihan yang jatuh tempo"
+    if targets and all(t.get("basis") == BASIS_SEBELUM_GUDANG for t in targets):   # R19
+        label_harap = "wajib dibayar sebelum gudang"
 
     if money > capacity + EPS:
         delta = round(money - capacity, 2)          # LEBIH bayar (tak bisa dialokasikan)

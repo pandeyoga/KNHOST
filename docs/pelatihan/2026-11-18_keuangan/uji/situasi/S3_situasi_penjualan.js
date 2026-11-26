@@ -222,9 +222,10 @@ async function periksaLepas(r, so, nama, { menungguBayar = false } = {}) {
 /** Lapor Bayar CBD & DP (26 Nov) — SO yang tertahan bayar belum punya tagihan uang muka (baris "sebelum kirim" lahir saat
  *  SO dilepas), jadi tidak ada di Penagihan & Penerimaan; ia tampil di Meja Keuangan, kartu "Uang masuk perlu dicatat"
  *  (antrean "Menunggu pembayaran sebelum kirim", nilai = kekurangan). [Catat kwitansi] → form Terima pembayaran →
- *  alokasi = `nominal` → Simpan. Bila jendela "Selisih Pembayaran · Kurang bayar" muncul (harapan = sisa SO karena
- *  tagihan uang muka belum lahir), diputus "Sisa tetap jadi piutang". Sesudah kwitansi tahan bayar dibuka dan SO dilepas
- *  ke gudang otomatis (Admin Sales sudah "Periksa & lepas"). → { msg, hint, selisih, task }. */
+ *  alokasi bawaan = yang wajib dibayar sebelum gudang ("Ditagih sekarang") → Simpan. Ketetapan R19: penilaian selisih
+ *  mengharapkan sisa wajib sebelum gudang, jadi bayar tepat DP/CBD TIDAK memunculkan jendela "Kurang bayar". Sesudah
+ *  kwitansi tahan bayar dibuka dan SO dilepas ke gudang otomatis (Admin Sales sudah "Periksa & lepas").
+ *  → { msg, hint, task }. */
 async function bayarDiMeja(r, so, nominal, nama, ref) {
   await bukaMenu(r, "finance-tower", "finance-desk");
   await r.tid("finance-desk").waitFor();
@@ -251,21 +252,11 @@ async function bayarDiMeja(r, so, nominal, nama, ref) {
   await r.tid("ar-receipt-reference").fill(ref);
   await r.idle(1500);
   const hint = await r.text("ar-receipt-variance-hint").catch(() => "");
+  assert(/tidak ada selisih/.test(hint), `petunjuk selisih: ${hint}`);
   await bk.potret(r, `${nama}-form`, [r.tid(`ar-receipt-alloc-${so.id}`), r.tid("ar-receipt-variance-hint")]);
   await klikSorot(r, r.tid("ar-receipt-submit"), `${nama}-simpan`);
-  const muncul = await Promise.race([
-    r.tid("payment-variance-dialog").waitFor({ timeout: 30000 }).then(() => "selisih"),
-    r.tid("ar-receipt-confirm").waitFor({ timeout: 30000 }).then(() => "konfirmasi"),
-  ]).catch(() => "");
-  const selisih = muncul === "selisih";
-  if (selisih) {
-    r.note(`${nama} · jendela 'Kurang bayar' muncul untuk uang muka pesanan yang belum dilepas — diputus 'Sisa tetap jadi piutang'`);
-    await r.tid("pv-option-outstanding").click();
-    await pilih(r, "pv-reason", "Bayar sebagian (disepakati)");
-    await bk.potret(r, `${nama}-selisih`, [r.tid("pv-sentence"), r.tid("pv-option-outstanding"), r.tid("pv-reason")]);
-    await r.tid("pv-submit").click();
-  }
-  await r.tid("ar-receipt-confirm").waitFor();
+  await r.tid("ar-receipt-confirm").waitFor({ timeout: 30000 });
+  assert(!(await r.tid("payment-variance-dialog").isVisible().catch(() => false)), "jendela selisih muncul untuk bayar tepat DP");
   await klikSorot(r, r.tid("ar-receipt-confirm-confirm"), `${nama}-konfirmasi`);
   const msg = await tungguToast(r, /Kwitansi/, 60000);
   await r.idle(1500);
@@ -273,7 +264,7 @@ async function bayarDiMeja(r, so, nominal, nama, ref) {
   assert(s.status === "confirmed" && !s.pay_hold, `SO belum dilepas sesudah bayar: ${s.status} · tahan ${JSON.stringify(s.pay_hold)}`);
   const task = tugasKeluar(so.id);
   assert(task, "tugas ambil gudang tidak lahir sesudah uang muka dicatat");
-  return { msg, hint, selisih, task };
+  return { msg, hint, task };
 }
 
 // ── GUDANG ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -637,8 +628,8 @@ async function soTerkirimApi(cust, prod) {
           return `${msg} · batas bayar ${batas}`;
         });
 
-      await step(13, "Finance", "Meja Keuangan → kartu 'Uang masuk perlu dicatat': ketik nomor SO → baris SO (nilai = uang muka) → [Catat kwitansi] → alokasi = uang muka → No. referensi → [Simpan kwitansi] (jendela 'Kurang bayar': 'Sisa tetap jadi piutang') → [Ya, simpan]",
-        "Kwitansi uang muka; SO dilepas ke gudang otomatis (tugas ambil lahir). Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan 2-1400 (K) — belum ada piutang & pendapatan", async () => {
+      await step(13, "Finance", "Meja Keuangan → kartu 'Uang masuk perlu dicatat': ketik nomor SO → baris SO (nilai = uang muka) → [Catat kwitansi] → alokasi = uang muka ('Ditagih sekarang') → No. referensi → [Simpan kwitansi] → [Ya, simpan]",
+        "Petunjuk 'Nominal sesuai tagihan — tidak ada selisih'; kwitansi uang muka; SO dilepas ke gudang otomatis (tugas ambil lahir). Buku: Kas Besar / Bank (D) = Uang Muka Pelanggan 2-1400 (K) — belum ada piutang & pendapatan", async () => {
           await masuk(r, finAkun);
           const { msg: note, hint, task } = await bayarDiMeja(r, ctx.B.so, ctx.B.dp, "b-dp", `TRF-S3B-DP-LATIH${NO}`);
           ctx.B.task = task;

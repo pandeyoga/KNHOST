@@ -178,6 +178,27 @@ async def wajib_bayar_sebelum_gudang(order: Optional[Dict[str, Any]]) -> bool:
     return bool(st and st["applies"])
 
 
+async def sisa_wajib_sebelum_gudang(order: Optional[Dict[str, Any]]) -> Optional[float]:
+    """Ketetapan R19 (pengendali, 26 Nov) — berapa yang MASIH wajib dibayar sebelum pesanan dilepas ke gudang: bila
+    predikat bersama `wajib_bayar_sebelum_gudang` benar, = `required − dibayar tercatat` dari gerbang yang sama
+    (`dispatch_payment_gate.evaluate`; satu hitungan, sama dengan `pay_hold.required` bila penanda sudah ada). Dibayar
+    TERCATAT, bukan terverifikasi: uang yang sudah dicatat tetapi belum cocok mutasi bank tidak boleh ditagih dua kali.
+    `None` bila pesanan tidak wajib bayar dulu / sudah dilepas / bagian wajibnya sudah terpenuhi (penilaian lama berlaku).
+
+    Pemakai: `payment_variance_service._order_due_now` (yang DIHARAPKAN penilaian selisih bayar — dipakai kwitansi Finance
+    langsung maupun Terima lapor bayar) dan `ar_receipt_service.isi_tagih_sekarang` (isian bawaan form kwitansi). Dulu DP
+    dibayar sesudah konfirmasi terhadap baris uang muka; kini pesanan ditahan SEBELUM konfirmasi sehingga baris itu belum
+    lahir dan harapan jatuh ke seluruh sisa pesanan — bayar tepat DP terbaca "kurang bayar"."""
+    if not await wajib_bayar_sebelum_gudang(order):
+        return None
+    st = await _status_gerbang(order or {})
+    if not (st and st["applies"]):
+        return None
+    from services.dispatch_payment_gate import EPS
+    sisa = round(max(float(st["required"]) - float(st["paid_recorded"]), 0.0), 2)
+    return sisa if sisa > EPS else None
+
+
 #: R18-c — batas mana yang digeser `perpanjang_sesudah_putusan`.
 BATAS_BAYAR, BATAS_BOOKING = "bayar", "booking"
 
