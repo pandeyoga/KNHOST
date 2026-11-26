@@ -13,6 +13,7 @@ import { ORDER_PRINT_DOCS, printDocsForOrder } from "../documents/orderPrintDocs
 import { docStatusLabel } from "../../utils/docStatus";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
+import { toast } from "../../hooks/use-toast";
 import { todayWib } from "../../utils/formatters";
 
 jest.mock("../../services/apiClient", () => ({
@@ -33,6 +34,7 @@ jest.mock("../../components/KNDatePicker", () => ({
 }));
 jest.mock("../../services/confirmService", () => ({ askConfirm: jest.fn(), askReason: jest.fn() }));
 jest.mock("../../utils/feedback", () => ({ notifySuccess: jest.fn() }));
+jest.mock("../../hooks/use-toast", () => ({ __esModule: true, toast: jest.fn() }));   // LB-T8 (R15 M4): unggah gagal = toast galat
 jest.mock("../../hooks/useBlobUrl", () => ({
   ...jest.requireActual("../../hooks/useBlobUrl"),
   useBlobUrl: () => ({ src: "blob:bukti", type: "image/png", status: "ok" }),   // fungsi biasa: `resetMocks` CRA mengosongkan jest.fn
@@ -96,6 +98,7 @@ function route({ reports = [], bisaLapor = true, bisaPutuskan = false, refRequir
     if (url === "/api/settings/effective") return { data: { payment: { wajib_nomor_referensi: refRequired } } };
     if (url === "/api/sales-orders/so1/payment-reports") return { data: { items: reports, bisa_lapor: bisaLapor, bisa_putuskan: bisaPutuskan } };
     if (url === "/api/sales-orders/so1/dispatch-payment-gate") return { data: GATE };
+    if (url === "/api/cash-holdings/me/summary") return { data: { mode: "dilarang" } };   // LB-T8 (R15 M3): tunai dilarang → tombol kwitansi sales tetap tersembunyi (kasus tunai diuji di lb8MejaHp)
     return { data: [] };
   });
 }
@@ -197,7 +200,9 @@ describe("Lapor bayar — dialog", () => {
     await act(async () => { q("lapor-bayar-submit").click(); });
     await tick();
     expect(onDone).toHaveBeenCalled();
-    expect(notifySuccess).toHaveBeenCalledWith("Laporan bayar dibuat", expect.stringMatching(/Bukti belum terunggah/));
+    // R15 M4 — kabar GAGAL: toast galat, bukan notifySuccess.
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: "destructive", description: expect.stringMatching(/Bukti belum terunggah/) }));
+    expect(notifySuccess).not.toHaveBeenCalledWith("Laporan bayar dibuat", expect.anything());
   });
 });
 

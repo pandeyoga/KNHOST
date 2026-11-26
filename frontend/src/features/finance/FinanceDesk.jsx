@@ -13,6 +13,8 @@
  *  · `GET /api/finance/posting-failures` (`accounting.view`) — posting gagal (lencana yang sama di menu Tutup Buku).
  * Keadaan: memuat · galat per sumber (kotak merah + Coba lagi; TIDAK pernah berbunyi "tidak ada yang perlu ditindak")
  * · kosong "Tidak ada yang perlu ditindak hari ini." hanya bila semua sumber terbaca dan semua kelompok kosong.
+ * LB-T8 — kelompok "Uang masuk" juga memuat antrean `lapor_bayar` (laporan bayar sales; hanya pemegang `payment_report.decide`):
+ * "Putuskan" membuka pop-up berisi bukti + pratinjau pesanan, Terima/Tolak di tempat (`PayReportQueuePanel`).
  * Uang muka pesanan belum dikirim (dulu antrean pantau di meja ini) = kolom di Piutang › Titipan & Saldo Kredit.
  *
  * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
@@ -55,9 +57,11 @@ const POSTING_ROWS = 20;
  * `queues` = id antrean `/finance/desk`; `boards` = kunci papan `/home/finance`; `posting` = daftar posting gagal.
  */
 export const PERLU_TINDAKAN = [
-  { key: "uang_masuk", label: "Uang masuk perlu dicatat", izin: [["ar_receipt", "create"]],
-    queues: ["uang_masuk", "bayar_sebelum_kirim"],
-    hint: "Catat kwitansi lalu alokasikan ke tagihan; termasuk pesanan CBD/DP yang tertahan menunggu bayar." },
+  { key: "uang_masuk", label: "Uang masuk perlu dicatat", izin: [["ar_receipt", "create"], ["payment_report", "decide"]],
+    queues: ["uang_masuk", "bayar_sebelum_kirim", "lapor_bayar"],
+    // LB-T8 — antrean yang butuh izin sendiri di dalam kelompok: laporan bayar hanya untuk pemutusnya (server pun hanya mengirimnya ke mereka).
+    queueIzin: { uang_masuk: ["ar_receipt", "create"], bayar_sebelum_kirim: ["ar_receipt", "create"], lapor_bayar: ["payment_report", "decide"] },
+    hint: "Catat kwitansi lalu alokasikan ke tagihan; termasuk pesanan CBD/DP yang tertahan menunggu bayar dan laporan bayar dari sales yang menunggu dicek." },
   { key: "selisih_bayar", label: "Selisih bayar perlu diputus", izin: [["payment_variance", "decide"]],
     queues: ["selisih_bayar"], hint: "Lebih/kurang bayar yang belum diputus. Di luar batas kewenangan → manajer." },
   { key: "faktur_pajak", label: "Faktur pajak perlu terbit", izin: [["tax_invoice", "create"]],
@@ -108,6 +112,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
     for (const id of g.queues || []) {
       const q = qmap[id];
       if (!q) continue;
+      if (g.queueIzin?.[id] && !can(perms, ...g.queueIzin[id])) continue;
       rows.push(...(q.rows || []).map((r) => ({ ...r, _queue: id })));
       count += Number(q.count) || 0;
       oldest = Math.max(oldest, Number(q.oldest_age_days) || 0);
@@ -285,7 +290,8 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       {groups.map((g) => (
         <DeskQueueCard key={g.id} queue={g} busyRef={busyRef} loading={loading || refreshingId === g.id}
           testPrefix={P} rowTestPrefix={`${P}-${g.id}`} stateKey={`${DESK_KEY}:${g.id}`} inPlace={IN_PLACE} currentUser={currentUser}
-          onAction={handleAction} onOpenFull={(row) => navigate(row)} />
+          onAction={handleAction} onOpenFull={(row) => navigate(row)}
+          onRowChanged={(row, queue) => reloadQueue(queue?.id)} />
       ))}
     </div>
   );

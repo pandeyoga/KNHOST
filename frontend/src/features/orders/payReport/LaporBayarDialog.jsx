@@ -2,7 +2,7 @@
  * LaporBayarDialog (LB-T7) — pop-up "Lapor bayar" di rincian pesanan: pelanggan sudah transfer, sales melaporkan dengan
  * bukti; Finance memeriksa lalu Terima (kwitansi terbit) atau Tolak. Satu pop-up (`FormModal`), tanpa layar baru.
  *
- * Props: `{ order, shortfall, onClose, onDone }` — `order` = pesanan (id, number, entity_id, receiving_account_id);
+ * Props: `{ order, shortfall, camera, onClose, onDone }` — `camera` (HP) = input berkas membuka kamera belakang; `order` = pesanan (id, number, entity_id, receiving_account_id);
  * `shortfall` = nominal bawaan (kurang bayar dari gerbang bayar — satu hitungan server); `onDone()` dipanggil sesudah
  * laporan terbentuk (muat ulang daftar).
  *
@@ -23,6 +23,7 @@ import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { heldMoney } from "../../../utils/parseMoney";
 import { apiErrorText } from "../../../utils/apiError";
 import { notifySuccess } from "../../../utils/feedback";
+import { toast } from "../../../hooks/use-toast";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { usePaymentMethods } from "../../../config/paymentMethods";
 import { accountText } from "../../pos/CheckoutPaymentDestination";
@@ -30,7 +31,7 @@ import { ALASAN_MIN, createReport, proofProblem, uploadProof } from "./payReport
 
 export const PESAN_BUKTI_BELUM = "Bukti belum terunggah — unggah ulang dari daftar laporan.";
 
-export default function LaporBayarDialog({ order, shortfall = 0, onClose, onDone }) {
+export default function LaporBayarDialog({ order, shortfall = 0, camera = false, onClose, onDone }) {
   const entityId = order?.entity_id || "";
   const pm = usePaymentMethods("masuk", entityId);
   // Server menolak tunai (tanpa bukti transfer) dan cara bayar berjatuh tempo (giro/cek): jangan ditawarkan.
@@ -140,7 +141,9 @@ export default function LaporBayarDialog({ order, shortfall = 0, onClose, onDone
       notifySuccess("Laporan bayar dikirim ke Finance", `${rep.number || ""} · ${formatCurrency(num)}`.trim());
     } catch (e) {
       // Laporan sudah ada tetapi tanpa bukti — Finance tidak bisa menerimanya; baris laporan menawarkan unggah ulang.
-      notifySuccess("Laporan bayar dibuat", `${PESAN_BUKTI_BELUM} ${apiErrorText(e, "")}`.trim());
+      // R15 M4 — ini kabar GAGAL (bukti belum ada → Finance belum bisa menerima), bukan sukses: toast galat.
+      toast({ title: "Laporan bayar dibuat, bukti belum terunggah", variant: "destructive",
+        description: `${PESAN_BUKTI_BELUM} ${apiErrorText(e, "")}`.trim() });
     }
     setBusy(false); inFlight.current = false;
     onDone?.(rep);
@@ -203,9 +206,11 @@ export default function LaporBayarDialog({ order, shortfall = 0, onClose, onDone
 
         <div>
           <label className="field-label" htmlFor="lapor-bayar-file">Bukti bayar * (foto atau PDF, maks. 10 MB)</label>
-          {/* `accept="image/*"` membuka kamera/galeri di HP — foto bukti langsung dari HP sales. */}
+          {/* HP: `capture="environment"` membuka kamera belakang — foto bukti langsung dari HP sales (galeri tetap bisa). */}
           <input id="lapor-bayar-file" data-testid="lapor-bayar-file" type="file" className="field"
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" onChange={pickFile} />
+            {...(camera ? { accept: "image/*,application/pdf", capture: "environment" }
+              : { accept: "image/jpeg,image/png,image/webp,image/gif,application/pdf" })}
+            onChange={pickFile} />
           {file && <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="lapor-bayar-file-name">{file.name}</p>}
           {fileError && <p className="mt-1 text-fs-12 text-kn-danger-text" data-testid="lapor-bayar-file-error">{fileError}</p>}
         </div>

@@ -40,3 +40,12 @@ export function proofProblem(file) {
   if (file.type && !BUKTI_TIPE.includes(file.type)) return "Bukti harus berupa foto (JPG, PNG, WEBP, GIF) atau PDF.";
   return "";
 }
+
+/** Status pesanan "sebelum gudang" — sama dengan `pay_hold_service.STATUS_SEBELUM_GUDANG` (server tetap penentu). */
+export const STATUS_SEBELUM_GUDANG = ["reserved", "waiting_approval", "waiting_stock", "approved"];
+
+/** Pesanan sedang ditahan bayar sebelum gudang: penanda `pay_hold` atau `release.waiting === "bayar"`
+ *  (sama dengan `pay_hold_service.ditahan`) dan masih sebelum gudang. */
+export const isPayHeld = (order) => Boolean(order)
+  && STATUS_SEBELUM_GUDANG.includes(order.status)
+  && (order.pay_hold != null || order.release?.waiting === "bayar");

@@ -9,7 +9,7 @@ import { panelFor } from "./deskPanels";
 const isi = (v) => v !== undefined && v !== null && v !== "";
 
 /** Pop-up rincian umum baris meja; jenis dokumen yang punya panel di registri memakai panelnya. */
-export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "desk", inPlace = () => false, currentUser, traceEnabled = true, onAction, onOpenFull, onClose }) {
+export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "desk", inPlace = () => false, currentUser, traceEnabled = true, onAction, onOpenFull, onClose, onRowChanged }) {
   const queue = queueProp || {};
   const p = testPrefix;
   const { entities } = useEntityScope();
@@ -20,7 +20,8 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
   const run = (r) => { onClose && onClose(); onAction && onAction(r, queue); };
   // Sama dengan tombol baris di kartu: baris tanpa aksi sendiri memakai aksi antreannya.
   // `action_kind: "view"` ("Lihat") = membuka pop-up ini saja; tak ada aksi utama lagi (ubah → "Buka layar penuh").
-  const actionLabel = row.action_kind === "view" ? "" : row.action || queue.action_label || "";
+  // `decide_payment_report` (LB-T8) = keputusan Terima/Tolak ada DI panel (`PayReportQueuePanel`), bukan tombol kaki.
+  const actionLabel = (row.action_kind === "view" || row.action_kind === "decide_payment_report") ? "" : row.action || queue.action_label || "";
   const more = Array.isArray(row._moreActions) ? row._moreActions : [];
 
   return (
@@ -31,7 +32,7 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
           {sub && <p data-testid={`${p}-detail-subtitle`} className="text-fs-12 text-kn-text-2">{sub}</p>}
         </div>
         {Panel
-          ? <Panel row={row} queue={queue} currentUser={currentUser} traceEnabled={traceEnabled} testPrefix={p} pt={ptShown} onAction={onAction} onClose={onClose} onOpenFull={onOpenFull} />
+          ? <Panel row={row} queue={queue} currentUser={currentUser} traceEnabled={traceEnabled} testPrefix={p} pt={ptShown} onAction={onAction} onClose={onClose} onOpenFull={onOpenFull} onRowChanged={onRowChanged} />
           : <GenericPanel row={row} queue={queue} p={p} pt={ptShown} />}
         <div className="flex flex-wrap items-center gap-2 border-t border-kn-divider pt-3">
           {actionLabel && (

@@ -11,6 +11,7 @@ import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 jest.mock("../../services/apiClient", () => ({ __esModule: true, default: { get: jest.fn(async () => ({ data: [] })), post: jest.fn(), defaults: { headers: { common: {} } } }, API: "/api" }));
 jest.mock("../sales/mobile/MobileOrderJourney", () => () => null);
 jest.mock("../sales/mobile/MobilePendingQueue", () => () => null);
+jest.mock("../orders/DispatchPaymentGatePanel", () => () => null);   // LB-T8: panel bayar HP punya ujinya sendiri (lb8MejaHp); di sini hanya persetujuan
 jest.mock("../tanya/TanyaKnView", () => () => null);
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const q = (host, id) => host.querySelector(`[data-testid="${id}"]`);

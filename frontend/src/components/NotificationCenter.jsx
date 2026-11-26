@@ -50,6 +50,12 @@ export const TYPE_LABEL = {
   // 2026-09 — giliran Anda: dokumen berpindah tahap → peran berikutnya diberi tahu
   turn: "Giliran Anda",
   so_qc_requested: "Permintaan QC pesanan",
+  // 2026-11 — Lapor Bayar CBD & DP (LB-T3..T5): laporan masuk → Finance; putusan → pelapor; batas bayar → sales & admin.
+  lapor_bayar_masuk: "Lapor bayar masuk",
+  lapor_bayar_diterima: "Lapor bayar diterima",
+  lapor_bayar_ditolak: "Lapor bayar ditolak",
+  lapor_bayar_lewat_batas: "Lapor bayar menunggu melewati batas",
+  pay_due_soon: "Batas bayar pesanan segera habis",
 };
 export const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 

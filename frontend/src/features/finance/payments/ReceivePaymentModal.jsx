@@ -99,7 +99,7 @@ function CustomerStep({ value, onPick }) {
 
 export default function ReceivePaymentModal({ customerId: customerIdProp = "", customerName: customerNameProp = "",
   preselectOrderId, bankLineId = "", amountHint, onClose, onDone, onError, offline = false,
-  testId = "ar-receipt-modal", preset = null }) {
+  testId = "ar-receipt-modal", preset = null, cashOnly = false }) {
   const [picked, setPicked] = useState({ id: customerIdProp || "", name: customerNameProp || "" });
   const customerId = customerIdProp || picked.id;
   const customerName = customerNameProp || picked.name;
@@ -129,7 +129,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   const [tunaiMode, setTunaiMode] = useState("");
   const methodOptions = useMemo(() => pm.methods.filter((m) => m.needs_account !== "tidak")
     .filter((m) => !(tunaiMode === "dilarang" && m.needs_account === "kas"))
-    .map((m) => ({ value: m.code, label: m.name })), [pm.methods, tunaiMode]);
+    .filter((m) => !cashOnly || m.needs_account === "kas")   // LB-T8 — pesanan tertahan bayar: non-pemutus hanya boleh uang tunai baru
+    .map((m) => ({ value: m.code, label: m.name })), [pm.methods, tunaiMode, cashOnly]);
   useEffect(() => {
     if (methodOptions.length && !methodOptions.some((o) => o.value === method)) setMethod(methodOptions[0].value);
   }, [methodOptions, method]);

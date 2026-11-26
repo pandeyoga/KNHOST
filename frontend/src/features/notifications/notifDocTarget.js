@@ -14,8 +14,16 @@ import { docLinkTarget } from "../sales_admin/workDeskApi";
 import { openRnd } from "../rnd/rndDeepLink";
 
 /** { link } untuk `openDocument`, { rnd } untuk `openRnd`, atau null bila notifikasi tak menunjuk dokumen. */
+// Notifikasi Lapor Bayar (LB-T3..T5) membawa `link = "/?view=orders&id=<id pesanan>"` — bukan id layar, jadi dibaca sebagai
+// dokumen pesanan (rincian pesanan tempat Lapor bayar / Terima / Tolak berada).
+const LINK_PESANAN = /^\/?\?(?:[^#]*&)?view=orders&(?:[^#]*&)?id=([^&#]+)/;
+
 export function notifDocTarget(n) {
-  const d = n?.doc;
+  let d = n?.doc;
+  if (!d && typeof n?.link === "string") {
+    const m = LINK_PESANAN.exec(n.link);
+    if (m) d = { ref_type: "sales_order", ref_id: decodeURIComponent(m[1]), number: "" };
+  }
   if (!d || !d.ref_id || !d.ref_type) return null;
   if (d.ref_type === "design") return { rnd: { view: "rnd-designs", designId: d.ref_id } };
   const link = docLinkTarget(d);

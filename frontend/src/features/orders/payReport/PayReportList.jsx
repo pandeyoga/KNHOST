@@ -4,7 +4,8 @@
  * di baris yang masih `menunggu`; pelapor (`payment_report.create`) mendapat "unggah ulang" bila bukti belum ada.
  *
  * Props: `{ reports, canDecide, canCreate, onChanged, testPrefix }` — `canDecide`/`canCreate` sudah memuat izin pengguna
- * DAN bendera server (`bisa_putuskan`/`bisa_lapor`); server tetap memeriksa ulang. `onChanged()` memuat ulang pesanan.
+ * DAN bendera server (`bisa_putuskan`/`bisa_lapor`); server tetap memeriksa ulang. `onChanged({ ok, kind, report })`
+ * memuat ulang pesanan (`ok=false` = aksi gagal, galatnya tampil di daftar; pemanggil yang menutup pop-up hanya pada `ok`).
  *
  * Terima: pratinjau "Kwitansi Rp … ke rekening … akan diterbitkan" → `askConfirm` → `POST terima` (kunci idempotensi
  * per laporan). Hasil `waiting_bank` → "Menunggu cocok mutasi bank". Galat 409 server (sedang diproses, melebihi sisa,
@@ -100,11 +101,18 @@ function Row({ r, canDecide, canCreate, onAct, busyId }) {
         <p className="text-fs-12 text-kn-success-text">Kwitansi {r.receipt_number}</p>
       )}
       {canDecide && r.status === "menunggu" && (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="primary-button btn-sm" disabled={busy} data-testid={`${tp}-terima`}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* R15 M2 — tanpa bukti server menolak Terima (409); tombolnya mati dengan alasan, Tolak tetap bisa. */}
+          <button type="button" className="primary-button btn-sm" disabled={busy || noProof} data-testid={`${tp}-terima`}
+            aria-describedby={noProof ? `${tp}-terima-reason` : undefined}
             onClick={() => onAct("terima", r)}><CheckCircle2 size={13} aria-hidden="true" /> Terima</button>
           <button type="button" className="secondary-button btn-sm" disabled={busy} data-testid={`${tp}-tolak`}
             onClick={() => onAct("tolak", r)}><XCircle size={13} aria-hidden="true" /> Tolak</button>
+          {noProof && (
+            <span id={`${tp}-terima-reason`} className="text-fs-12 text-kn-text-2" data-testid={`${tp}-terima-reason`}>
+              Terima menunggu bukti terunggah.
+            </span>
+          )}
         </div>
       )}
     </li>
@@ -147,10 +155,12 @@ export default function PayReportList({ reports = [], canDecide = false, canCrea
         await intent.send({ t: "unggah", id: r.id, n: file.name, s: file.size }, (k) => uploadProof(r.id, file, k));
         notifySuccess("Bukti terunggah", r.number);
       }
-      onChanged?.();
+      onChanged?.({ ok: true, kind, report: r });
     } catch (e) {
-      setError(apiErrorText(e, "Aksi belum bisa diproses."));
-      onChanged?.();   // 409 "sudah diputus / sedang diproses" — muat ulang supaya keadaan baris benar
+      // R15 M1 — galat 409 Terima menyebut laporannya (daftar ini bisa memuat beberapa laporan, dan meja tak menampilkan nomor di bilah galat).
+      const msg = apiErrorText(e, "Aksi belum bisa diproses.");
+      setError(kind === "terima" && e?.response?.status === 409 ? `${r.number}: ${msg}` : msg);
+      onChanged?.({ ok: false, kind, report: r });   // 409 "sudah diputus / sedang diproses" — muat ulang supaya keadaan baris benar
     } finally { inFlight.current = false; setBusyId(""); }
   };
 

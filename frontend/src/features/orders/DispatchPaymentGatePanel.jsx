@@ -7,8 +7,10 @@
  *
  * Lapor Bayar CBD & DP (LB-T7) — bila detail SO mengirim `order`: judul "Bayar sebelum gudang" untuk pesanan yang ditahan
  * bayar sebelum gudang (`pay_hold` atau wajib bayar dulu & belum dilepas), batas bayar + sisa hari, tombol "Lapor bayar"
- * (`payment_report.create`), daftar laporan (bukti, Terima/Tolak bagi `payment_report.decide`). Tombol kwitansi langsung
- * disembunyikan bagi pencatat tanpa `payment_report.decide` pada pesanan tertahan — server menolaknya 409 ("pakai Lapor bayar").
+ * (`payment_report.create`), daftar laporan (bukti, Terima/Tolak bagi `payment_report.decide`). Pencatat tanpa
+ * `payment_report.decide` pada pesanan tertahan: server menolak kwitansi non-tunai 409 ("pakai Lapor bayar") tetapi
+ * mengecualikan uang TUNAI baru — maka tombolnya jadi "Terima tunai" (formulir khusus tunai) bila
+ * `pembayaran.sales_terima_tunai` mengizinkan, selain itu disembunyikan (LB-T8, R15 M3). `camera` = mode HP.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -18,6 +20,7 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import LaporBayarDialog from "./payReport/LaporBayarDialog";
 import PayReportList from "./payReport/PayReportList";
+import useSalesCashMode from "./payReport/useSalesCashMode";
 import { listReports } from "./payReport/payReportApi";
 
 export const fetchGate = (orderId) => axios.get(`${API}/sales-orders/${orderId}/dispatch-payment-gate`).then((r) => r.data);
@@ -69,7 +72,7 @@ export function GateSummary({ gate, testPrefix = "gate" }) {
 }
 
 export default function DispatchPaymentGatePanel({ orderId, currentUser, onChanged, testPrefix = "so-gate", initial,
-                                                  customerId = "", customerName = "", order = null }) {
+                                                  customerId = "", customerName = "", order = null, camera = false }) {
   const [gate, setGate] = useState(initial || null);
   const [lapor, setLapor] = useState(false);       // LB-T7 — pop-up Lapor bayar
   const [reports, setReports] = useState(null);    // LB-T7 — `{items, bisa_lapor, bisa_putuskan}` | null
@@ -78,6 +81,9 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // R15 M3 — non-pemutus pada pesanan tertahan: kwitansi hanya untuk uang TUNAI baru, dan hanya bila PT mengizinkan sales
+  // menerima tunai (`pembayaran.sales_terima_tunai` ≠ dilarang). Dibaca sekali per panel; hanya dipakai pesanan ber-`order`.
+  const cash = useSalesCashMode(Boolean(order) && Boolean(gate?.applies) && !can(currentUser?.permissions, "payment_report", "decide"));
   const load = useCallback(() => {
     if (!orderId) return;
     fetchGate(orderId).then(setGate).catch(() => setGate(null));
@@ -99,8 +105,11 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   // Tertahan bayar sebelum gudang: penanda `pay_hold`, atau wajib bayar dulu dan belum dilepas ke gudang (R12).
   const held = !!order && (!!order.pay_hold || (STATUS_SEBELUM_GUDANG.includes(order.status) && !gate.released));
   const canReport = alive && gate.shortfall > 0 && can(perms, "payment_report", "create") && reports?.bisa_lapor !== false;
-  // Pencatat tanpa `payment_report.decide` ditolak server (409) pada pesanan tertahan — tombolnya tidak ditampilkan.
-  const canReceipt = gate.blocked && !!customerId && can(perms, "ar_receipt", "create") && !(held && !canDecide);
+  // Pencatat tanpa `payment_report.decide` ditolak server (409) pada pesanan tertahan, KECUALI uang tunai baru (server
+  // mengecualikannya) — maka tombolnya hanya muncul bila tunai diizinkan, dan formulirnya dibatasi cara bayar tunai.
+  const cashOnly = held && !canDecide;
+  const canReceipt = gate.blocked && !!customerId && can(perms, "ar_receipt", "create")
+    && (!cashOnly || (cash.ready && cash.cashAllowed));
   const send = async () => {
     setBusy(true); setErr("");
     try {
@@ -125,7 +134,7 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
                 onClick={() => setLapor(true)}>Lapor bayar</button>
       )}
       {lapor && (
-        <LaporBayarDialog order={order} shortfall={gate.shortfall} onClose={() => setLapor(false)}
+        <LaporBayarDialog order={order} shortfall={gate.shortfall} camera={camera} onClose={() => setLapor(false)}
                           onDone={() => { setLapor(false); loadReports(); load(); onChanged?.(); }} />
       )}
       {order && reports && (
@@ -135,10 +144,10 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
       )}
       {canReceipt && (
         <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid={`${testPrefix}-receipt-open`}
-                onClick={() => setPaying(true)}>Terima pembayaran ({formatCurrency(gate.shortfall)})</button>
+                onClick={() => setPaying(true)}>{cashOnly ? "Terima tunai" : "Terima pembayaran"} ({formatCurrency(gate.shortfall)})</button>
       )}
       {paying && (
-        <ReceivePaymentModal customerId={customerId} customerName={customerName} preselectOrderId={orderId}
+        <ReceivePaymentModal customerId={customerId} customerName={customerName} preselectOrderId={orderId} cashOnly={cashOnly}
                         onClose={() => setPaying(false)}
                         onDone={() => { setPaying(false); load(); onChanged?.(); }} />
       )}

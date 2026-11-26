@@ -269,6 +269,7 @@ export const ROW_TARGET = {
 /** Antrean Finance menunjuk layar yang berbeda walau jenis dokumennya sama. */
 export const FINANCE_QUEUE_TARGET = {
   siap_faktur_pajak: { view: "orders", nav_id: "sales-orders", focus_type: "sales_order" },
+  lapor_bayar:       { view: "orders", nav_id: "sales-orders", focus_type: "sales_order", number_key: "order_number" },   // LB-T8 — laporan bayar → pesanannya
   uang_masuk:        { view: "customers-crm", nav_id: "customers-crm", focus_type: "customer" },
   selisih_bayar:     { view: "payment-plans", nav_id: "payment-plans", focus_type: "ar_receipt", tab: "selisih" },
   denda_draft:       { view: "payment-plans", nav_id: "payment-plans", focus_type: "penalty", tab: "denda" },

@@ -3,6 +3,7 @@ import MobileAmendSheet from "./MobileAmendSheet";
 import MobileOrderJourney from "./MobileOrderJourney";
 import MobileArReceipt from "./MobileArReceipt";
 import SoApprovalsPanel from "../../orders/SoApprovalsPanel";
+import DispatchPaymentGatePanel from "../../orders/DispatchPaymentGatePanel";   // LB-T8 — Bayar sebelum gudang + Lapor bayar di HP
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import ReleaseToWarehouseDialog from "../../sales_admin/ReleaseToWarehouseDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
@@ -173,7 +174,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                         </button>
                       )}
                       {o.payment_status !== "paid" && !isFreeSample(o) && !["cancelled", "expired"].includes(o.status) && (
-                        <button className="secondary-button flex items-center justify-center gap-1.5 py-2.5 text-[12px]" onClick={() => setPay({ id: o.customer_id, name: o.customer_name, focus_order_id: o.id })} data-testid={`mobile-order-pay-${o.id}`}>
+                        <button className="secondary-button flex items-center justify-center gap-1.5 py-2.5 text-[12px]" onClick={() => setPay({ id: o.customer_id, name: o.customer_name, focus_order_id: o.id, order: o })} data-testid={`mobile-order-pay-${o.id}`}>
                           <Wallet size={14} /> Catat bayar
                         </button>
                       )}
@@ -189,6 +190,13 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                     {user && (
                       <div className="mt-2" data-testid={`mobile-order-approvals-${o.id}`}>
                         <SoApprovalsPanel order={o} user={user} onRefresh={onRefresh} />
+                      </div>
+                    )}
+                    {/* LB-T8 — sama dengan detail SO desktop: "Bayar sebelum gudang", Lapor bayar (kamera HP), daftar laporan. */}
+                    {!["cancelled", "expired"].includes(o.status) && (
+                      <div className="mt-2" data-testid={`mobile-order-gate-${o.id}`}>
+                        <DispatchPaymentGatePanel orderId={o.id} currentUser={user} order={o} customerId={o.customer_id}
+                          customerName={o.customer_name} testPrefix={`m-gate-${o.id}`} camera onChanged={onRefresh} />
                       </div>
                     )}
                     <MobileOrderJourney orderId={o.id} />
@@ -208,7 +216,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
         onDone={(res) => { const o = release; setRelease(null); flash(true, releaseMessage(res, o.number)); }} />}
       {fulfill && <FulfillmentDecisionDialog orderId={fulfill.id} orderNumber={fulfill.number} customerName={fulfill.customer_name}
         onClose={() => setFulfill(null)} onDecided={(m) => { setFulfill(null); flash(true, m); }} />}
-      {pay && <MobileArReceipt customer={pay} onClose={() => setPay(null)} onDone={(m) => { setPay(null); flash(true, m || "Kwitansi tersimpan."); }} />}
+      {pay && <MobileArReceipt customer={pay} order={pay.order} user={user} onClose={() => setPay(null)} onDone={(m) => { setPay(null); flash(true, m || "Kwitansi tersimpan."); }} />}
     </div>
   );
 }
