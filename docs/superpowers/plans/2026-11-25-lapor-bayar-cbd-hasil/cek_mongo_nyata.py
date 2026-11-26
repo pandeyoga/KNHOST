@@ -45,9 +45,10 @@ async def main():
     await db.sales_orders.update_one({"id": cbd["id"]}, {"$set": {"pay_hold.due_at": (now + timedelta(days=5)).isoformat()}})
     soon = (now + timedelta(hours=24)).isoformat()
     n = await notification_service._notify_pay_due_soon(now.isoformat(), soon)
-    refs = await db.notifications.distinct("ref", {"type": "pay_due_soon"})
-    hasil.append(f"(c) pengingat H-1: {n} notifikasi dibuat; ref DP50 {'ADA' if f'paydue:{dp['id']}' in refs else 'TIDAK'}"
-                 f", ref CBD {'ADA (salah)' if f'paydue:{cbd['id']}' in refs else 'tidak ada (benar)'}")
+    refs = await db.notifications.distinct("ref", {"type": "pay_due_soon"})   # per penerima: "paydue:<so>#<user>"
+    n_dp = sum(1 for r in refs if r.startswith("paydue:" + dp["id"] + "#"))
+    n_cbd = sum(1 for r in refs if r.startswith("paydue:" + cbd["id"] + "#"))
+    hasil.append(f"(c) pengingat H-1: {n} notifikasi dibuat; untuk DP50 {n_dp} penerima, untuk CBD {n_cbd} (harus 0)")
 
     # (b)+(c) penyapu — DP50 lewat batas 1 menit (harus gugur), CBD masih 5 hari (harus hidup)
     await db.sales_orders.update_one({"id": dp["id"]}, {"$set": {"pay_hold.due_at": (now - timedelta(minutes=1)).isoformat()}})

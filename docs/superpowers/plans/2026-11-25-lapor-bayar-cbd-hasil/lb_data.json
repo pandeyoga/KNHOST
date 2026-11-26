@@ -1,0 +1,26 @@
+{
+  "cbd": {
+    "id": "so_6ce62363ae93",
+    "number": "KSC/SO-00004",
+    "term": "CBD",
+    "customer": "Toko Kain Sejahtera",
+    "entity_id": "ent_ksc",
+    "product_id": "prod_lurik_classic",
+    "sales_email": "sales@kainnusantara.id",
+    "grand_total": 1318125.0,
+    "due_at": "2026-11-29T04:44:38.268087+00:00",
+    "shortfall": 1318125.0
+  },
+  "dp": {
+    "id": "so_546dc1a3a7c1",
+    "number": "KSC/SO-00005",
+    "term": "DP50",
+    "customer": "Toko Kain Sejahtera",
+    "entity_id": "ent_ksc",
+    "product_id": "prod_9e8268acbd96",
+    "sales_email": "sales@kainnusantara.id",
+    "grand_total": 346875.0,
+    "due_at": "2026-11-29T04:44:39.709438+00:00",
+    "shortfall": 173437.5
+  }
+}

@@ -81,6 +81,26 @@ async function bukaPesanan(page, so) {
   await row.first().click();
   await sleep(3500);
 }
+/** Tab "Perjalanan Pesanan" di panel samping → potret panel Perjalanan → kembali ke "Detail & Aksi". */
+async function perjalanan(page, name) {
+  await tid(page, "order-pane-journey").click();
+  const jr = tid(page, "order-journey-panel");
+  await jr.waitFor({ timeout: 15000 });
+  await sleep(2500);
+  await shotEl(jr, name);
+  log.push(`  Perjalanan, tahap kini: ${(await tid(page, "journey-current").innerText().catch(() => "?")).replace(/\s+/g, " ")}`);
+  await tid(page, "order-pane-detail").click();
+  await sleep(1200);
+}
+/** "Lihat detail & aksi" → pop-up rincian lengkap (panel tahap bayar ada di dalamnya). */
+async function rincianPenuh(page) {
+  await tid(page, "so-open-full-detail").click();
+  await tid(page, "so-detail-popup").waitFor({ timeout: 15000 });
+  await sleep(3500);
+  const g = tid(page, "so-gate");
+  if (await g.count()) await g.scrollIntoViewIfNeeded().catch(() => {});
+  await sleep(800);
+}
 async function isiLapor(page, bukti, ref) {
   const dlg = page.locator('[role="dialog"]').filter({ has: tid(page, "lapor-bayar-amount") }).first();
   await tid(page, "lapor-bayar-amount").waitFor({ timeout: 15000 });
@@ -116,16 +136,14 @@ async function bukaBarisMeja(page, repId) {
   const s = await c1.newPage();
   try {
     log.push("1. Sales desktop — rincian pesanan CBD");
-    await login(s, "sales@kainnusantara.id");
+    await login(s, cbd.sales_email);
     await bukaPesanan(s, cbd);
-    await shot(s, "01_sales_rincian_cbd_tertahan");
+    await shot(s, "01_sales_daftar_cbd_tertahan");
+    await perjalanan(s, "03_sales_perjalanan_bayar_dicek");
+    await rincianPenuh(s);
+    await shot(s, "02_sales_rincian_cbd_tertahan");
     const gate = tid(s, "so-gate");
-    if (await gate.count()) await shotEl(gate, "02_sales_panel_tahap_bayar");
-    const jr = tid(s, "order-journey-panel");
-    if (await jr.count()) {
-      await shotEl(jr, "03_sales_perjalanan_bayar_dicek");
-      log.push(`  Perjalanan, tahap kini: ${(await tid(s, "journey-current").innerText().catch(() => "?")).replace(/\s+/g, " ")}`);
-    }
+    if (await gate.count()) await shotEl(gate, "02b_sales_panel_tahap_bayar");
     await tid(s, "so-gate-lapor-open").click();
     const dlg = await isiLapor(s, bukti, "TRF-UJI-CBD-01");
     await shotEl(dlg, "04_sales_dialog_lapor_bayar_desktop");
@@ -141,8 +159,8 @@ async function bukaBarisMeja(page, repId) {
   const c2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const h = await c2.newPage();
   try {
-    log.push("2. Sales HP — pesanan DP50");
-    await login(h, "sales@kainnusantara.id");
+    log.push(`2. Sales HP (${dp.sales_email}) — pesanan DP50`);
+    await login(h, dp.sales_email);
     await h.goto(`${BASE}/?m=orders`, { waitUntil: "domcontentloaded" });
     await sleep(6000);
     const card = tid(h, `mobile-order-${dp.id}`);
@@ -205,8 +223,8 @@ async function bukaBarisMeja(page, repId) {
   const c4 = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
   const s2 = await c4.newPage();
   try {
-    log.push("4b. Sales — notifikasi & pesanan CBD sesudah diterima");
-    await login(s2, "sales@kainnusantara.id");
+    log.push(`4b. Sales DP50 (${dp.sales_email}) — notifikasi laporan ditolak; sales CBD — pesanan sesudah diterima`);
+    await login(s2, dp.sales_email);
     await tid(s2, "notif-bell").click();
     await tid(s2, "notif-panel").waitFor({ timeout: 10000 });
     await sleep(2000);
@@ -214,13 +232,12 @@ async function bukaBarisMeja(page, repId) {
     const teks = (await tid(s2, "notif-panel").innerText()).split("\n").filter((x) => /laporan|lapor|bayar/i.test(x)).slice(0, 6);
     log.push(`  baris notifikasi: ${teks.join(" | ").slice(0, 400)}`);
     await s2.keyboard.press("Escape").catch(() => {});
+    await c4.clearCookies();
+    await s2.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) { /* abaikan */ } });
+    await login(s2, cbd.sales_email);
     await bukaPesanan(s2, cbd);
-    await shot(s2, "15_sales_rincian_cbd_sesudah_terima");
-    const jr = tid(s2, "order-journey-panel");
-    if (await jr.count()) {
-      await shotEl(jr, "16_sales_perjalanan_sesudah_terima");
-      log.push(`  Perjalanan, tahap kini: ${(await tid(s2, "journey-current").innerText().catch(() => "?")).replace(/\s+/g, " ")}`);
-    }
+    await shot(s2, "15_sales_daftar_cbd_sesudah_terima");
+    await perjalanan(s2, "16_sales_perjalanan_sesudah_terima");
   } catch (e) { log.push(`  GALAT sales notif: ${e.message.slice(0, 200)}`); await shot(s2, "galat_sales_notif"); }
   await c4.close();
 
@@ -242,7 +259,7 @@ async function bukaBarisMeja(page, repId) {
   } catch (e) { log.push(`  GALAT admin sales: ${e.message.slice(0, 200)}`); await shot(a, "galat_admin_sales"); }
   await c5.close();
   try {
-    const pdf = await api("sales@kainnusantara.id", "GET", `/pdf/render/invoice/${dp.id}`);
+    const pdf = await api(dp.sales_email, "GET", `/pdf/render/invoice/${dp.id}`);
     log.push(`5b. Faktur Komersial DP50: HTTP ${pdf.status}`);
     if (pdf.status === 200) {
       fs.writeFileSync(`${DIR}/faktur_dp.pdf`, pdf.body);

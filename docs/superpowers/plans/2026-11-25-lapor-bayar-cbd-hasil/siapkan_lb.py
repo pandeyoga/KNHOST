@@ -20,10 +20,10 @@ ENT, CUST, PW = "ent_ksc", "cust_toko_kain", "demo12345"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lb_data.json")
 
 
-def masuk(email):
+def masuk(email, ent=ENT):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": PW}, timeout=30)
     r.raise_for_status()
-    h = {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}
+    h = {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ent}
 
     def call(method, path, js=None):
         r = requests.request(method, f"{BASE}{path}", json=js, headers=h, timeout=120)
@@ -34,9 +34,9 @@ def masuk(email):
     return call
 
 
-def produk(lewati=()):
-    """Produk jual KSC ber-roll cukup & bebas reservasi (sama dengan uji hidup F-10)."""
-    pipa = [{"$match": {"owner_entity_id": ENT, "status": "available", "length_remaining": {"$gt": 20},
+def produk(lewati=(), ent=ENT):
+    """Produk jual PT ber-roll cukup & bebas reservasi (sama dengan uji hidup F-10)."""
+    pipa = [{"$match": {"owner_entity_id": ent, "status": "available", "length_remaining": {"$gt": 20},
                         "length_reserved": {"$not": {"$gt": 0}}}},
             {"$group": {"_id": "$product_id", "n": {"$sum": 1}}}, {"$match": {"n": {"$gte": 3}}}, {"$limit": 200}]
     for g in DB.inventory_rolls.aggregate(pipa):
@@ -49,12 +49,39 @@ def produk(lewati=()):
     raise SystemExit("stok roll tidak cukup — pulihkan data acuan dulu")
 
 
-def pesanan_tertahan(sales, sadm, mgr, termin, pid):
-    c, so = sales("POST", "/sales-orders", {
-        "customer_id": CUST, "shipping_address_id": "", "entity_id": ENT, "payment_term_code": termin,
-        "items": [{"product_id": pid, "quantity": 12.5, "unit": "yard"}], "confirm_mixed_lot": True,
-        "fulfillment_method": "kirim", "qc_request": "none"})
-    assert c == 200, so
+SALES = ("sales@kainnusantara.id", "sales2@kainnusantara.id", "sales3@kainnusantara.id")
+
+
+def pelanggan(ent):
+    """(email sales, pelanggan) di PT `ent`: pelanggan milik akun sales seed itu atau tanpa sales; pelanggan acuan dulu.
+    Akun yang tidak ada di data acuan dilewati."""
+    out = []
+    for email in SALES:
+        u = DB.users.find_one({"email": email}, {"_id": 0, "id": 1})
+        if not u:
+            continue
+        q = {"entity_id": ent, "is_active": {"$ne": False},
+             "$or": [{"assigned_sales_id": u["id"]}, {"assigned_sales_id": {"$in": [None, ""]}}]}
+        out += [(email, c["id"]) for c in DB.customers.find(q, {"_id": 0, "id": 1})]
+    return sorted(out, key=lambda x: x[1] != CUST)
+
+
+def pesanan_tertahan(termin, ent, lewati=()):
+    """Pesanan `termin` di PT `ent` → Periksa & lepas → tertahan "Bayar dicek Finance". Pelanggan pertama yang lolos
+    gerbang kredit dipakai (data acuan: pelanggan acuan KSC punya tagihan telat, jadi hanya CBD yang lolos untuknya)."""
+    sadm, mgr = masuk("salesadmin@kainnusantara.id", ent), masuk("manager@kainnusantara.id", ent)
+    pid = produk(lewati, ent)["id"]
+    so, c, email = {}, 0, ""
+    for email, cust in pelanggan(ent):
+        c, so = masuk(email, ent)("POST", "/sales-orders", {
+            "customer_id": cust, "shipping_address_id": "", "entity_id": ent, "payment_term_code": termin,
+            "items": [{"product_id": pid, "quantity": 12.5, "unit": "yard"}], "confirm_mixed_lot": True,
+            "fulfillment_method": "kirim", "qc_request": "none"})
+        if c == 200:
+            break
+        print(f"  {termin} {email} {cust}: {str(so)[:160]}")
+    if c != 200:
+        return None
     c, b = sadm("POST", f"/sales-orders/{so['id']}/review-release", {"note": "Tangkapan Lapor Bayar", "hold": False})
     assert c == 200, b
     s = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
@@ -65,22 +92,20 @@ def pesanan_tertahan(sales, sadm, mgr, termin, pid):
     assert s["status"] == "approved" and s.get("pay_hold") and (s.get("release") or {}).get("waiting") == "bayar", (
         s["status"], s.get("pay_hold"), s.get("release"))
     assert not DB.wms_tasks.find_one({"order_id": so["id"], "flow_type": "outbound"}), "tugas gudang lahir sebelum bayar"
-    return {"id": so["id"], "number": s["number"], "term": termin, "grand_total": s.get("grand_total"),
+    return {"id": so["id"], "number": s["number"], "term": termin, "customer": s.get("customer_name"), "entity_id": ent,
+            "product_id": pid, "sales_email": email, "grand_total": s.get("grand_total"),
             "due_at": s["pay_hold"].get("due_at")}
 
 
 def main():
-    sales, sadm, mgr = (masuk("sales@kainnusantara.id"), masuk("salesadmin@kainnusantara.id"),
-                        masuk("manager@kainnusantara.id"))
-    p1 = produk()
-    cbd = pesanan_tertahan(sales, sadm, mgr, "CBD", p1["id"])
-    p2 = produk(lewati={p1["id"]})
-    dp = pesanan_tertahan(sales, sadm, mgr, "DP50", p2["id"])
-    c, g = sadm("GET", f"/sales-orders/{dp['id']}/dispatch-payment-gate")
-    assert c == 200, g
-    dp["shortfall"] = g.get("shortfall")
-    c, g = sadm("GET", f"/sales-orders/{cbd['id']}/dispatch-payment-gate")
-    cbd["shortfall"] = g.get("shortfall")
+    cbd = pesanan_tertahan("CBD", ENT)
+    assert cbd, "pesanan CBD gagal dibuat"
+    dp = pesanan_tertahan("DP50", ENT, {cbd["product_id"]})
+    assert dp, "pesanan DP50 gagal dibuat untuk semua pelanggan KSC milik sales acuan"
+    for so in (cbd, dp):
+        c, g = masuk("salesadmin@kainnusantara.id", so["entity_id"])("GET", f"/sales-orders/{so['id']}/dispatch-payment-gate")
+        assert c == 200, g
+        so["shortfall"] = g.get("shortfall")
     data = {"cbd": cbd, "dp": dp}
     with open(OUT, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

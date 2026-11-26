@@ -1,0 +1,36 @@
+Pesanan CBD KSC/SO-00004 (kurang 1318125), DP50 KSC/SO-00005 (kurang 173437.5)
+1. Sales desktop — rincian pesanan CBD
+  potret 01_sales_daftar_cbd_tertahan.jpg
+  potret 03_sales_perjalanan_bayar_dicek.jpg
+  Perjalanan, tahap kini: Bayar dicek Finance
+  potret 02_sales_rincian_cbd_tertahan.jpg
+  potret 02b_sales_panel_tahap_bayar.jpg
+  potret 04_sales_dialog_lapor_bayar_desktop.jpg
+  potret 05_sales_laporan_menunggu.jpg
+  laporan KSC/LB-00001 status menunggu, bukti 1
+2. Sales HP (sales@kainnusantara.id) — pesanan DP50
+  potret 06_hp_pesanan_dp_tertahan.jpg
+  potret 07_hp_dialog_lapor_bayar.jpg
+  laporan KSC/LB-00002 status menunggu, bukti 1
+3. Finance — Meja Keuangan, lapor bayar CBD → Terima
+  potret 08_meja_keuangan_antrean.jpg
+  potret 09_meja_keuangan_popup_lapor_bayar.jpg
+  potret 10_meja_keuangan_konfirmasi_terima.jpg
+  pesan konfirmasi: Kwitansi Rp 1.318.125 ke rekening BCA Operasional KSC akan diterbitkan untuk pesanan KSC/SO-00004. Lanjutkan?
+  potret 11_meja_keuangan_sesudah_terima.jpg
+  sesudah Terima: laporan diterima, kwitansi KSC/AR-00003; pesanan confirmed, pay_hold dibuka, bayar paid
+4. Finance — lapor bayar DP50 → Tolak
+  potret 12_meja_keuangan_popup_lapor_dp.jpg
+  potret 13_meja_keuangan_tolak_alasan.jpg
+  sesudah Tolak: laporan ditolak, alasan "Nominal di bukti tidak sama dengan mutasi rekening BCA hari ini"
+4b. Sales DP50 (sales@kainnusantara.id) — notifikasi laporan ditolak; sales CBD — pesanan sesudah diterima
+  potret 14_sales_notifikasi_ditolak_diterima.jpg
+  baris notifikasi: Lapor bayar ditolak — KSC/SO-00005 | KSC/LB-00002 Rp 173.438 ditolak Finance: Nominal di bukti tidak sama dengan mutasi rekening BCA hari ini. Periksa lalu lapor ulang bila perlu. | baru saja · Lapor bayar ditolak | Lapor bayar diterima — KSC/SO-00004 | baru saja · Lapor bayar diterima
+  potret 15_sales_daftar_cbd_sesudah_terima.jpg
+  potret 16_sales_perjalanan_sesudah_terima.jpg
+  Perjalanan, tahap kini: Disiapkan gudang
+5. Admin Sales — Pelacak SO
+  potret 17_admin_sales_pelacak_dp_bayar_dicek.jpg
+  baris pelacak: KSC/SO-00005 Toko Kain Sejahtera · Ayu Marketing Disetujui Menunggu bayar — Finance oleh Finance Dibuat 26 Nov, 11.44 Diperbarui 26 Nov, 11.44 < 1 hari Rp 346.875 Menunggu Finance
+5b. Faktur Komersial DP50: HTTP 200
+  cap/status di PDF: "Belum dibayar" ADA

@@ -1,0 +1,7 @@
+Pemeriksaan MongoDB sungguhan (mongo:7, salinan lb9_test dari data acuan + 2 pesanan tertahan siapkan_lb.py), 26 Nov 2026:
+(a) selisih indeks wajib: 0 total, 0 di payment_reports/ar_receipts/sales_orders; uq_payment_report unique=True partial={payment_report_id: {$exists: true}, status: 'posted'}
+(c) pengingat H-1: 6 notifikasi dibuat — semuanya untuk DP50 KSC/SO-00005 (batas 2 jam lagi; ref per penerima paydue:<so>#<user>, termasuk sales pemilik), 0 untuk CBD KSC/SO-00004 (batas 5 hari lagi, di luar jendela 24 jam)
+(b) penyapu: 1 pesanan dikedaluwarsakan; DP50 → expired (roll masih dicadangkan: 0); CBD → approved
+(b) klaim berprasyarat pay_hold.due_at basi pada CBD: ditolak 409 (benar)
+Uji tambahan sebelumnya (mongosh, DB idx_test): indeks unik parsial — posted ganda DITOLAK 11000; sesudah status void boleh posted lagi; dokumen tanpa payment_report_id tidak terkena.
+Catatan: baris (c) di keluaran asli skrip berbunyi "ref DP50 TIDAK" karena skrip mencocokkan ref tanpa akhiran "#<user>"; skrip sudah dibetulkan (hitung per awalan), bukti dari kueri notifications di lb9_test.
