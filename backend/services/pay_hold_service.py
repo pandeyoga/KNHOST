@@ -136,8 +136,9 @@ async def start(order: Dict[str, Any], actor: Optional[Dict[str, Any]] = None) -
 
 
 #: R12 — status "belum dilepas ke gudang": pesanan yang wajib bayar dulu di status ini belum boleh menerima uang dari
-#: pencatat tanpa `payment_report.decide` (pagar B3).
-STATUS_SEBELUM_GUDANG = ("reserved", "waiting_approval", "approved")
+#: pencatat tanpa `payment_report.decide` (pagar B3). R13 — termasuk `waiting_stock` (backorder murni: pesanan lahir di
+#: sana, menerima alokasi, lalu naik ke `approved` + `start()` lewat `advance_so_if_all_approved`).
+STATUS_SEBELUM_GUDANG = ("reserved", "waiting_approval", "waiting_stock", "approved")
 
 
 async def wajib_bayar_sebelum_gudang(order: Optional[Dict[str, Any]]) -> bool:
@@ -145,9 +146,9 @@ async def wajib_bayar_sebelum_gudang(order: Optional[Dict[str, Any]]) -> bool:
     bayar dulu (`dispatch_payment_gate.evaluate(...).applies`; sample dan SO pesanan khusus dikecualikan persis seperti
     `start`) DAN belum dilepas ke gudang (status `STATUS_SEBELUM_GUDANG`) DAN tanpa pengecualian berizin
     `dispatch_payment_release` — ada atau belum penanda `pay_hold`. Dulu pagar hanya menilai penanda, jadi transfer yang
-    dicatat sales SEBELUM disetujui (`reserved`/`waiting_approval`) lolos; pada dasar `tercatat` uang itu langsung
-    dihitung terbayar dan `start` tidak pernah menahan — pengecekan Finance terlompati. Bukan predikat buka tahan:
-    `clear_if_paid` / `buka_tahan_bayar` tetap memakai penanda (`ditahan`)."""
+    dicatat sales SEBELUM disetujui (`reserved`/`waiting_approval`/`waiting_stock`) lolos; pada dasar `tercatat` uang itu
+    langsung dihitung terbayar dan `start` tidak pernah menahan — pengecekan Finance terlompati. Bukan predikat buka
+    tahan: `clear_if_paid` / `buka_tahan_bayar` tetap memakai penanda (`ditahan`)."""
     o = order or {}
     if o.get("status") not in STATUS_SEBELUM_GUDANG or o.get("dispatch_payment_release"):
         return False

@@ -4,11 +4,14 @@ Alokasi/reservasi stok kini SEPENUHNYA berbasis roll (roll-as-SSOT, KN_15) —
 lihat services/roll_service.py. Fungsi lama berbasis $inc balance (allocate_stock/
 atomic_reserve/rollback_reservations) telah DIHAPUS (D4) karena melanggar SSOT.
 """
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, Optional
 from fastapi import HTTPException
 from db import db
 from core_utils import now_iso, rupiah
+
+logger = logging.getLogger(__name__)
 
 
 async def product_summary(product_id: str) -> Dict[str, float]:
@@ -45,34 +48,46 @@ async def _kedaluwarsakan(order: Dict[str, Any], *, precondition: Dict[str, Any]
     persis"): klaim saga berprasyarat → periksa ulang sesudah klaim (`masih_kedaluwarsa`, dokumen terklaim; salah → kunci
     dilepas, dilewati) → roll dilepas → `expired` + entri persetujuan ditutup + tahap → permintaan batal ditutup → audit
     → jurnal dibalik → uang muka ke titipan pelanggan (Finance diberi tahu `titipan_pesanan_batal`). → benar bila
-    pesanan dikedaluwarsakan panggilan ini."""
-    import logging
+    pesanan dikedaluwarsakan panggilan ini.
+
+    Galat (R13, Minor-3) diteruskan ke penyapu, yang mencatatnya dan lanjut ke pesanan berikutnya: galat saat periksa
+    ulang (belum ada tulisan) → kunci dilepas; galat saat roll dilepas / status ditulis → kunci DIBIARKAN bertanda gagal
+    (`atomic_claim.mark_failed`, pola saga: terlihat di Kunci Saga, tidak ditulis dua kali)."""
     from services.roll_service import release_order_rolls
     from services.so_status import stage_fields
     from services import so_approvals
     from services import atomic_claim as _saga
-    log = logging.getLogger(__name__)
     try:
         terklaim = await _saga.claim("sales_orders", order["id"], "reservation_expire",
                                      precondition=precondition, actor="system")
     except HTTPException:
         return False   # status berubah / sedang diproses aksi lain — dilewati, dicoba putaran berikutnya
-    if not await masih_kedaluwarsa(terklaim):
+    token = (terklaim.get(_saga.LOCK) or {}).get("token", "")
+    try:
+        masih = await masih_kedaluwarsa(terklaim)
+    except Exception:
+        await _saga.release("sales_orders", order["id"], token)   # belum ada tulisan selain kunci
+        raise
+    if not masih:
         # Laporan bayar / uang masuk tepat sebelum klaim: tidak ada yang ditulis selain kunci, yang dilepas lagi.
-        await _saga.release("sales_orders", order["id"], (terklaim.get(_saga.LOCK) or {}).get("token", ""))
+        await _saga.release("sales_orders", order["id"], token)
         return False
-    await release_order_rolls(order["id"])
-    _exp_set = {"status": "expired", "allocations": [], "backorders": [],
-                "has_backorder": False, "updated_at": now_iso()}
-    # Fase 4 · R8 — entri persetujuan yang masih menunggu ikut ditutup (dulu tetap `pending` di Pusat Persetujuan).
-    _dead, _closed = so_approvals.dead_order_patch(order, "expired", actor_name="system")
-    _exp_set.update(_dead)
-    # F4 — stage/sub_status: expired → Cancelled/kedaluwarsa.
-    _exp_set.update(stage_fields({**order, **_exp_set}))
-    await db.sales_orders.update_one(
-        {"id": order["id"], "status": order["status"]},
-        _saga.finish_set(_exp_set)
-    )
+    try:
+        await release_order_rolls(order["id"])
+        _exp_set = {"status": "expired", "allocations": [], "backorders": [],
+                    "has_backorder": False, "updated_at": now_iso()}
+        # Fase 4 · R8 — entri persetujuan yang masih menunggu ikut ditutup (dulu tetap `pending` di Pusat Persetujuan).
+        _dead, _closed = so_approvals.dead_order_patch(order, "expired", actor_name="system")
+        _exp_set.update(_dead)
+        # F4 — stage/sub_status: expired → Cancelled/kedaluwarsa.
+        _exp_set.update(stage_fields({**order, **_exp_set}))
+        await db.sales_orders.update_one(
+            {"id": order["id"], "status": order["status"]},
+            _saga.finish_set(_exp_set)
+        )
+    except Exception as exc:
+        await _saga.mark_failed("sales_orders", order["id"], f"Kedaluwarsa ({alasan}) gagal: {exc}")
+        raise
     if _closed:
         await so_approvals.close_detail_docs(db, _closed, _closed[0].get("cancel_reason", ""), "system")
     # BTP-2 — permintaan batal yang masih menunggu ditutup `void` (pesanannya sudah mati; tidak ada yang diputus).
@@ -80,7 +95,7 @@ async def _kedaluwarsakan(order: Dict[str, Any], *, precondition: Dict[str, Any]
         from services import so_cancel_service as _scs
         await _scs.void_pending(order["id"], catatan_batal)
     except Exception as exc:  # noqa: BLE001 — pesanan sudah kedaluwarsa; permintaan basi dicatat untuk ditindak
-        log.error("Permintaan batal order expired %s gagal ditutup: %s", order["id"], exc)
+        logger.error("Permintaan batal order expired %s gagal ditutup: %s", order["id"], exc)
     from dependencies import audit
     await audit("system", aksi_audit, "sales_order", order["id"], {"status": "expired"}, catatan_audit)
     # Gelombang 1 F-1 — jurnal balik bila order sempat berjurnal (best-effort).
@@ -88,14 +103,14 @@ async def _kedaluwarsakan(order: Dict[str, Any], *, precondition: Dict[str, Any]
         from services import gl_service
         await gl_service.reverse_order_journals(order["id"], reason=alasan)
     except Exception as exc:  # noqa: BLE001
-        log.error("Gagal reversal GL utk order expired %s: %s", order["id"], exc)
+        logger.error("Gagal reversal GL utk order expired %s: %s", order["id"], exc)
     # S3 (pelatihan 18 Nov) — uang muka yang sudah diterima pesanan kedaluwarsa menjadi titipan pelanggan (sama
     # dengan pembatalan; tanpa jurnal, aman diulang).
     try:
         from services import ar_receipt_service as _ar
         await _ar.uang_muka_pesanan_batal_ke_titipan(order["id"], {"name": "system"}, alasan)
     except Exception as exc:  # noqa: BLE001
-        log.error("Uang muka order expired %s gagal dipindah ke titipan: %s", order["id"], exc)
+        logger.error("Uang muka order expired %s gagal dipindah ke titipan: %s", order["id"], exc)
     return True
 
 
@@ -105,8 +120,21 @@ async def _beri_tahu_lewat_batas(order: Dict[str, Any], sebab: str, batas_iso: s
         from services import notification_service as _ns
         await _ns.notify_pay_overdue_pending(order, sebab=sebab, batas_iso=batas_iso, report_numbers=nomor)
     except Exception as exc:  # noqa: BLE001
-        import logging
-        logging.getLogger(__name__).warning("Notifikasi lewat batas pesanan %s gagal: %s", order.get("id"), exc)
+        logger.warning("Notifikasi lewat batas pesanan %s gagal: %s", order.get("id"), exc)
+
+
+async def _satu_per_satu(orders: list, proses: Callable[[Dict[str, Any]], Awaitable[bool]], putaran: str) -> int:
+    """R13 (Minor-3) — jalankan `proses` per pesanan; galat satu pesanan dicatat (id + nomor) dan tidak menghentikan
+    pesanan berikutnya. → jumlah pesanan yang `proses`-nya mengembalikan benar (dikedaluwarsakan)."""
+    n = 0
+    for order in orders:
+        try:
+            if await proses(order):
+                n += 1
+        except Exception as exc:  # noqa: BLE001 — dicoba lagi putaran penyapu berikutnya
+            logger.error("[penyapu %s] pesanan %s (%s) gagal diproses: %s", putaran, order.get("id"),
+                         order.get("number", ""), exc)
+    return n
 
 
 async def expire_old_reservations() -> int:
@@ -122,11 +150,14 @@ async def expire_old_reservations() -> int:
        `pay_hold_service.nasib_lewat_batas`: masih wajib bayar → rantai yang SAMA (`_kedaluwarsakan`); tidak lagi
        menahan → tahan basi dibuka (`clear_if_paid`); uang tercatat cukup menunggu cocok mutasi bank → tetap hidup,
        Finance diberi tahu.
-    3. **Laporan bayar di pesanan mati** — `payment_report_service.tolak_laporan_pesanan_mati`.
+    3. **Laporan bayar di pesanan mati** — `payment_report_service.tutup_laporan_pesanan_mati`.
 
     Review Focus 3 / §7-2 — pesanan dengan laporan bayar `menunggu`/`memproses` TIDAK dikedaluwarsakan di putaran 1
     maupun 2 (uang pelanggan mungkin sudah masuk; yang terlambat pengecekan Finance): pemegang `payment_report.decide`
-    diberi tahu `lapor_bayar_lewat_batas` (sekali per pesanan per hari). Diperiksa lagi sesudah klaim."""
+    diberi tahu `lapor_bayar_lewat_batas` (sekali per pesanan per hari). Diperiksa lagi sesudah klaim.
+
+    R13 (Minor-3) — tiap pesanan diproses terpisah: galat satu pesanan dicatat (id + nomor) lalu pesanan berikutnya
+    tetap diproses."""
     from services import pay_hold_service as _phs
     from services import payment_report_service as _prs
     cutoff = datetime.now(timezone.utc)
@@ -144,16 +175,18 @@ async def expire_old_reservations() -> int:
         {"_id": 0},
     ).to_list(200)
     dilapor = await _prs.laporan_tertunda([o["id"] for o in orders])
-    for order in orders:
+
+    async def _cadangan(order: Dict[str, Any]) -> bool:
         if order["id"] in dilapor:
             await _beri_tahu_lewat_batas(order, "laporan", order.get("reservation_expires_at") or "",
                                          dilapor[order["id"]])
-            continue
-        if await _kedaluwarsakan(order, precondition={"status": order["status"]}, masih_kedaluwarsa=_tanpa_laporan,
-                                 alasan="reservasi kedaluwarsa", aksi_audit="reservation_expired",
-                                 catatan_audit="Masa reservasi terlewati",
-                                 catatan_batal="Reservasi pesanan kedaluwarsa — permintaan ditutup otomatis."):
-            expired += 1
+            return False
+        return await _kedaluwarsakan(order, precondition={"status": order["status"]}, masih_kedaluwarsa=_tanpa_laporan,
+                                     alasan="reservasi kedaluwarsa", aksi_audit="reservation_expired",
+                                     catatan_audit="Masa reservasi terlewati",
+                                     catatan_batal="Reservasi pesanan kedaluwarsa — permintaan ditutup otomatis.")
+
+    expired += await _satu_per_satu(orders, _cadangan, "masa reservasi")
 
     # 2) LB-T5 — batas bayar lewat (sudah disetujui, wajib bayar dulu, tertahan)
     held = await db.sales_orders.find(
@@ -163,34 +196,31 @@ async def expire_old_reservations() -> int:
     async def _masih_lewat_bayar(so: Dict[str, Any]) -> bool:
         return await _tanpa_laporan(so) and await _phs.nasib_lewat_batas(so) == _phs.NASIB_KEDALUWARSA
 
-    for order in held:
+    async def _batas_bayar(order: Dict[str, Any]) -> bool:
         batas = (order.get("pay_hold") or {}).get("due_at") or ""
         if order["id"] in dilapor:
             await _beri_tahu_lewat_batas(order, "laporan", batas, dilapor[order["id"]])
-            continue
+            return False
         nasib = await _phs.nasib_lewat_batas(order)
         if nasib == _phs.NASIB_BUKA:
-            try:
-                await _phs.clear_if_paid(order["id"], why="batas bayar lewat: tidak lagi wajib bayar dulu")
-            except Exception as exc:  # noqa: BLE001
-                import logging
-                logging.getLogger(__name__).warning("Tahan basi %s gagal dibuka: %s", order["id"], exc)
-            continue
+            await _phs.clear_if_paid(order["id"], why="batas bayar lewat: tidak lagi wajib bayar dulu")
+            return False
         if nasib == _phs.NASIB_CEK_BANK:
             await _beri_tahu_lewat_batas(order, "cek_bank", batas)
-            continue
-        if await _kedaluwarsakan(order, precondition={"status": "approved", "pay_hold.due_at": batas},
-                                 masih_kedaluwarsa=_masih_lewat_bayar, alasan="batas bayar lewat",
-                                 aksi_audit="pay_hold_expired", catatan_audit="Batas bayar terlewati",
-                                 catatan_batal="Pesanan kedaluwarsa (batas bayar lewat) — permintaan ditutup otomatis."):
-            expired += 1
+            return False
+        return await _kedaluwarsakan(order, precondition={"status": "approved", "pay_hold.due_at": batas},
+                                     masih_kedaluwarsa=_masih_lewat_bayar, alasan="batas bayar lewat",
+                                     aksi_audit="pay_hold_expired", catatan_audit="Batas bayar terlewati",
+                                     catatan_batal="Pesanan kedaluwarsa (batas bayar lewat) — permintaan ditutup "
+                                                   "otomatis.")
+
+    expired += await _satu_per_satu(held, _batas_bayar, "batas bayar")
 
     # 3) LB-T5 — laporan bayar yang tertinggal di pesanan batal/kedaluwarsa
     try:
-        await _prs.tolak_laporan_pesanan_mati()
+        await _prs.tutup_laporan_pesanan_mati()
     except Exception as exc:  # noqa: BLE001 — putaran berikutnya mencoba lagi
-        import logging
-        logging.getLogger(__name__).error("Laporan bayar pesanan mati gagal ditutup: %s", exc)
+        logger.error("Laporan bayar pesanan mati gagal ditutup: %s", exc)
     return expired
 
 

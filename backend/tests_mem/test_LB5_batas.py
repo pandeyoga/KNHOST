@@ -94,15 +94,18 @@ async def _so(db, oid: str) -> dict:
     return await db.sales_orders.find_one({"id": oid}, {"_id": 0})
 
 
-async def _buat(klien, db, siap, term: str = "CBD") -> dict:
-    """Pesanan lewat API (status `reserved`), sales pemilik ditulis langsung (FIXTURE)."""
-    await db.inventory_rolls.insert_one({
-        "id": _id("roll"), "roll_no": f"R-LB5-{next(_n)}", "product_id": siap["prd"], "owner_entity_id": KSC,
-        "warehouse_id": "wh_lb5", "status": "available", "active_movement": None, "length_remaining": 100.0,
-        "lot": "L-LB5", "created_at": now_iso()})
+async def _buat(klien, db, siap, term: str = "CBD", *, prd: str = "") -> dict:
+    """Pesanan lewat API (status `reserved`), sales pemilik ditulis langsung (FIXTURE). `prd` = produk lain tanpa roll
+    → backorder murni → `waiting_stock`."""
+    if not prd:
+        await db.inventory_rolls.insert_one({
+            "id": _id("roll"), "roll_no": f"R-LB5-{next(_n)}", "product_id": siap["prd"], "owner_entity_id": KSC,
+            "warehouse_id": "wh_lb5", "status": "available", "active_movement": None, "length_remaining": 100.0,
+            "lot": "L-LB5", "created_at": now_iso()})
     body = {"customer_id": siap["cus"], "shipping_address_id": siap["adr"], "entity_id": KSC,
             "payment_term_code": term, "payment_method_code": "transfer", "receiving_account_id": siap["A"],
-            "items": [{"product_id": siap["prd"], "quantity": 100, "unit": "meter"}], **TANPA_PPN}
+            "items": [{"product_id": prd or siap["prd"], "quantity": 100, "unit": "meter"}], **TANPA_PPN,
+            **({"allow_backorder": True} if prd else {})}
     r = await klien.post("/api/sales-orders", headers=siap["h"], json=body)
     assert r.status_code == 200, r.text
     so = r.json()
@@ -221,6 +224,42 @@ async def test_lewat_batas_kedaluwarsa_stok_lepas_uang_ke_titipan(klien, db, sia
     assert await db.audit_logs.count_documents({"action": "pay_hold_expired", "entity_id": so["id"]}) == 1
 
 
+async def test_satu_pesanan_gagal_tidak_menghentikan_penyapu(klien, db, siap, monkeypatch):
+    """R13 (Minor-3) — galat pada satu pesanan dicatat dan dilewati; pesanan berikutnya tetap dikedaluwarsakan. Galat
+    sesudah klaim sebelum tulisan apa pun → kunci dilepas; galat sesudah tulisan dimulai → kunci tertinggal bertanda gagal
+    (pola saga, terlihat di Kunci Saga)."""
+    from services import pay_hold_service as phs
+    from services import roll_service
+    rusak_tulis = await _pesan(klien, db, siap)
+    rusak_periksa = await _pesan(klien, db, siap)
+    sehat = await _pesan(klien, db, siap)
+    for so in (rusak_tulis, rusak_periksa, sehat):
+        await _lewat_batas(db, so["id"])
+    asli_lepas, asli_nasib = roll_service.release_order_rolls, phs.nasib_lewat_batas
+
+    async def lepas(order_id, *a, **kw):
+        if order_id == rusak_tulis["id"]:
+            raise RuntimeError("uji: lepas roll gagal")
+        return await asli_lepas(order_id, *a, **kw)
+
+    async def nasib(so):
+        if so["id"] == rusak_periksa["id"] and so.get("saga_lock"):   # periksa ulang SESUDAH klaim
+            raise RuntimeError("uji: periksa ulang gagal")
+        return await asli_nasib(so)
+
+    monkeypatch.setattr(roll_service, "release_order_rolls", lepas)
+    monkeypatch.setattr(phs, "nasib_lewat_batas", nasib)
+    await _penyapu()
+    a = await _so(db, rusak_tulis["id"])
+    assert a["status"] == "approved" and a["saga_lock"].get("failed_at") and "lepas roll gagal" in a["saga_lock"]["error"]
+    b = await _so(db, rusak_periksa["id"])
+    assert b["status"] == "approved" and "saga_lock" not in b
+    assert (await _so(db, sehat["id"]))["status"] == "expired"
+    monkeypatch.setattr(phs, "nasib_lewat_batas", asli_nasib)
+    await _penyapu()
+    assert (await _so(db, rusak_periksa["id"]))["status"] == "expired"     # kunci dilepas → putaran berikutnya jalan
+
+
 async def test_belum_lewat_batas_tidak_disentuh(klien, db, siap):
     so = await _pesan(klien, db, siap)
     await _penyapu()
@@ -277,7 +316,7 @@ async def test_laporan_menunggu_menahan_kedaluwarsa_cadangan(klien, db, siap):
 async def test_laporan_pada_pesanan_mati_ditolak_penyapu(klien, db, siap):
     from services import payment_report_service as prs
     kasus = {}
-    for nama in ("menunggu", "basi", "baru", "basi_berkwitansi"):
+    for nama in ("menunggu", "basi", "baru", "basi_berkwitansi", "basi_setengah"):
         so = await _pesan(klien, db, siap)
         rep = await _lapor(klien, siap, so["id"])
         kasus[nama] = (so, rep)
@@ -288,8 +327,15 @@ async def test_laporan_pada_pesanan_mati_ditolak_penyapu(klien, db, siap):
                                                                                  "claim": klaim(1)}})
     await db.payment_reports.update_one({"id": kasus["basi_berkwitansi"][1]["id"]}, {"$set": {
         "status": "memproses", "claim": klaim(prs.KLAIM_BASI_MENIT + 5)}})
-    await db.ar_receipts.insert_one({"id": _id("arc"), "number": "AR-LB5-ADA", "status": "posted",
+    await db.payment_reports.update_one({"id": kasus["basi_setengah"][1]["id"]}, {"$set": {
+        "status": "memproses", "claim": klaim(prs.KLAIM_BASI_MENIT + 5)}})
+    kw_ada = _id("arc")
+    await db.ar_receipts.insert_one({"id": kw_ada, "number": "AR-LB5-ADA", "status": "posted",
                                      "effects_done": True, "payment_report_id": kasus["basi_berkwitansi"][1]["id"],
+                                     "customer_id": siap["cus"], "entity_id": KSC, "amount": 1_000_000,
+                                     "created_at": now_iso()})
+    await db.ar_receipts.insert_one({"id": _id("arc"), "number": "AR-LB5-SETENGAH", "status": "posted",
+                                     "effects_done": False, "payment_report_id": kasus["basi_setengah"][1]["id"],
                                      "customer_id": siap["cus"], "entity_id": KSC, "amount": 1_000_000,
                                      "created_at": now_iso()})
     for nama, (so, _rep) in kasus.items():
@@ -308,11 +354,24 @@ async def test_laporan_pada_pesanan_mati_ditolak_penyapu(klien, db, siap):
         assert siap["sa"]["id"] in {n["recipient_user"] for n in notif}, nama        # pelapor diberi tahu
         assert await db.audit_logs.count_documents({"action": "payment_report_rejected", "entity_id": rep["id"]}) == 1
     assert (await db.payment_reports.find_one({"id": kasus["baru"][1]["id"]}))["status"] == "memproses"
-    assert (await db.payment_reports.find_one({"id": kasus["basi_berkwitansi"][1]["id"]}))["status"] == "memproses"
+    # R13 (Minor-1) — kwitansi laporan ini sudah tuntas (uang benar): laporan diselesaikan `diterima` dengan kwitansi itu
+    rid = kasus["basi_berkwitansi"][1]["id"]
+    lap = await db.payment_reports.find_one({"id": rid}, {"_id": 0})
+    assert lap["status"] == "diterima" and "claim" not in lap, lap["status"]
+    assert (lap["receipt_id"], lap["receipt_number"]) == (kw_ada, "AR-LB5-ADA")
+    assert lap["status_history"][-1]["status"] == "diterima" and "AR-LB5-ADA" in lap["status_history"][-1]["note"]
+    assert lap["status_history"][-1].get("timestamp")
+    assert await db.audit_logs.count_documents({"action": "payment_report_accepted", "entity_id": rid}) == 1
+    assert siap["sa"]["id"] in {n["recipient_user"] for n in await _notif(db, "lapor_bayar_diterima", rid)}
+    assert await db.ar_receipts.count_documents({"payment_report_id": rid}) == 1          # tanpa kwitansi kedua
+    # kwitansi setengah jadi: tetap `memproses` (perilaku lama — dicatat di log)
+    assert (await db.payment_reports.find_one({"id": kasus["basi_setengah"][1]["id"]}))["status"] == "memproses"
     # aman diulang
-    n_notif = await db.notifications.count_documents({"type": "lapor_bayar_ditolak"})
+    n_notif = await db.notifications.count_documents({"type": {"$in": ["lapor_bayar_ditolak", "lapor_bayar_diterima"]}})
     await _penyapu()
-    assert await db.notifications.count_documents({"type": "lapor_bayar_ditolak"}) == n_notif
+    assert await db.notifications.count_documents(
+        {"type": {"$in": ["lapor_bayar_ditolak", "lapor_bayar_diterima"]}}) == n_notif
+    assert await db.audit_logs.count_documents({"action": "payment_report_accepted", "entity_id": rid}) == 1
 
 
 # ── Bukan lagi wajib bayar / uang sudah tercatat ─────────────────────────────────────────────────────────────────────
@@ -464,6 +523,35 @@ async def test_R12_finance_net30_dan_tunai_tetap_boleh(klien, db, siap):
                          json=_kw(siap, so2["id"], 400_000, method="cash", account=siap["K"],
                                   mismatch_note="Pelanggan bayar tunai ke sales"))
     assert r.status_code == 200, r.text
+
+
+async def test_R13_sales_transfer_ke_cbd_waiting_stock_409_finance_boleh(klien, db, siap):
+    """R13 — pesanan CBD backorder murni (`waiting_stock`, sebelum disetujui & gudang) juga dipagari B3; penyapu dan
+    pengingat tidak berubah untuk `waiting_stock` tanpa penanda (tidak kedaluwarsa, tanpa pengingat)."""
+    from services.notification_service import generate_system_notifications
+    kosong = _id("prd")
+    await db.products.insert_one({"id": kosong, "sku": f"LB5-KOSONG-{next(_n)}", "name": "Kain LB-5 kosong",
+                                  "price": 10000, "base_unit": "meter", "status": "active", "lifecycle": "produksi",
+                                  "category": "uji"})
+    so = await _buat(klien, db, siap, prd=kosong)
+    assert so["status"] == "waiting_stock" and not so.get("pay_hold"), so["status"]
+    r = await klien.post("/api/ar-receipts", headers=siap["h_sales"], json=_kw(siap, so["id"], 1_000_000))
+    assert (r.status_code, r.json().get("detail")) == (409, B3), r.text
+    assert not (await _so(db, so["id"])).get("payments")
+    r = await klien.post("/api/ar-receipts", headers=siap["h_fin"], json=_kw(siap, so["id"], 300_000))
+    assert r.status_code == 200, r.text
+    assert (await _so(db, so["id"]))["paid_total"] == 300_000
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"reservation_expires_at": _lalu(days=1)}})
+    await _penyapu()
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "waiting_stock" and not cur.get("pay_hold") and "saga_lock" not in cur
+    assert await db.audit_logs.count_documents({"entity_id": so["id"], "action": {"$in": [
+        "reservation_expired", "pay_hold_expired"]}}) == 0
+    assert await _notif(db, "lapor_bayar_lewat_batas", f"lapor_lewat:{so['id']}") == []
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"reservation_expires_at": _nanti(hours=5)}})
+    await generate_system_notifications()
+    assert await _notif(db, "reservation_expiring", f"resv:{so['id']}") == []
+    assert await _notif(db, "pay_due_soon", f"paydue:{so['id']}") == []
 
 
 async def test_R12_titipan_dan_pengecualian_berizin(klien, db, siap):
