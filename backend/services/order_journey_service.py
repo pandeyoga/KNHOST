@@ -171,7 +171,7 @@ def _mark_skipped(steps: List[Dict[str, Any]], tasks: List[Dict[str, Any]],
     proc = [s for s in steps if s["key"] not in MONEY_STEPS]
     last_done = max((i for i, s in enumerate(proc) if s["done"]), default=-1)
     for i, s in enumerate(proc):
-        if i >= last_done or s["done"]:
+        if i >= last_done or s["done"] or s["state"] == "skipped":
             continue
         if s["key"] == "disiapkan" and tasks and prepared:
             s["state"] = "partial"
@@ -185,6 +185,30 @@ async def _audit_stamp(order_id: str, actions: tuple) -> tuple:
     row = await db.audit_logs.find_one({"entity_id": order_id, "action": {"$in": list(actions)}},
                                        {"_id": 0, "timestamp": 1, "actor": 1}, sort=[("timestamp", 1)])
     return ((row or {}).get("timestamp", ""), (row or {}).get("actor", ""))
+
+
+_STATUS_PRA_SETUJU = ("draft", "pending", "reserved", "waiting_approval", "waiting_stock", "")
+
+
+async def _bayar_dicek(order: Dict[str, Any], status: str) -> Dict[str, Any]:
+    """LB-T6 — keadaan tahap "Bayar dicek Finance". "Wajib bayar dulu" HANYA dari `dispatch_payment_gate.evaluate` lewat
+    `pay_hold_service` (satu hitungan). `wajib` = pesanan sudah disetujui dan termasuk yang harus bayar dulu (faktur
+    berkode sejak tahan dimulai, B1); `done` = sudah tidak ditahan (uang cukup atau pengecualian berizin)."""
+    from services import pay_hold_service as phs
+    st = await phs.status_wajib_bayar(order)
+    if not (st and st["applies"]):
+        return {"skipped": True, "done": False, "wajib": False, "at": "",
+                "detail": "Dilewati — pesanan tidak wajib bayar dulu"}
+    disetujui = status not in _STATUS_PRA_SETUJU and bool(status)
+    tahan = phs.ditahan(order) or (disetujui and not order.get("dispatch_payment_release") and st["blocked"]
+                                   and status in phs.STATUS_SEBELUM_GUDANG)
+    if tahan:
+        h = order.get("pay_hold") or {}
+        return {"skipped": False, "done": False, "wajib": disetujui, "at": "",
+                "detail": ("Menunggu pembayaran dicek Finance" + (f" · batas {str(h['due_at'])[:10]}" if h.get("due_at") else ""))}
+    return {"skipped": False, "done": disetujui, "wajib": disetujui, "at": "",
+            "detail": ("Pengecualian berizin — kirim tanpa lunas" if order.get("dispatch_payment_release")
+                       else "Pembayaran dicek Finance" if disetujui else "")}
 
 
 async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
@@ -221,6 +245,7 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         _at, _by = await _audit_stamp(oid, ("order_confirmed", "sample_forwarded_to_warehouse"))
         conf_at, conf_by = _at, conf_by or _by
     terkirim = [s for s in kirim if s.get("status") in ("dispatched", "delivered", "shipped")]
+    bayar = await _bayar_dicek(order, status)
     faktur_aktif = [f for f in faktur if f.get("status") != "batal"]
 
     steps: List[Dict[str, Any]] = [
@@ -239,6 +264,10 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
               appr_at, appr_by,
               ("Menunggu keputusan " + str(order.get("required_approval_role") or "manajer")
                if status == "waiting_approval" else "")),
+        # LB-T6 — tahap "Bayar dicek Finance": pesanan CBD/DP berhenti di sini sampai tahan bayar dibuka (kwitansi dari
+        # Lapor Bayar diterima / pengecualian berizin). Pesanan yang tidak wajib bayar dulu melewatinya.
+        _step("bayar_dicek", "Bayar dicek Finance", bayar["done"], bayar["at"], "", bayar["detail"],
+              state="skipped" if bayar["skipped"] else ""),
         _step("dikonfirmasi", "Dikonfirmasi (tugas gudang lahir)",
               bool(order.get("confirmed_at")) or status in (
                   "confirmed", "partially_picked", "picked",
@@ -319,7 +348,7 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         "logistics": await _logistics(oid),   # FB-02 — pelacakan pengiriman
         "tax_invoices": faktur,
         # F-08 — Faktur Komersial (dokumen tagihan resmi, PDF jenis `invoice` dari SO ini)
-        "commercial_invoice": {"doc_type": "invoice", "available": bool(terkirim) and not dibatalkan,
+        "commercial_invoice": {"doc_type": "invoice", "available": (bool(terkirim) or bayar["wajib"]) and not dibatalkan,
                                "number": order.get("number") or order.get("order_number") or ""},
         "receipts": kwitansi,
     }

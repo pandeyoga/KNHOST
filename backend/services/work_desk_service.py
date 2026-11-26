@@ -183,7 +183,7 @@ async def _orders(scope: Dict[str, Any], statuses, *, verified: Optional[bool] =
         "grand_total": 1, "total_amount": 1, "created_at": 1, "status": 1, "stage": 1,
         "sales_name": 1, "verification": 1, "entity_id": 1, "is_pkp": 1, "ppn_amount": 1,
         "payment_status": 1, "pending_approvals": 1, "required_approval_role": 1,
-        "release": 1, "has_backorder": 1, "reservation_expires_at": 1, "dpp": 1, "customer_id": 1,
+        "release": 1, "has_backorder": 1, "reservation_expires_at": 1, "dpp": 1, "customer_id": 1, "pay_hold": 1,
     }).sort("created_at", 1).to_list(500)
     out = []
     for o in rows:
@@ -216,7 +216,8 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         if not w and o.get("has_backorder"):
             return "siap dilepas · sebagian backorder (sisa menyusul saat stok tiba)"
         return {"acc": "menunggu ACC Manajer", "ditolak": "harga khusus DITOLAK — menunggu sales",
-                "stok": "kurang stok — putuskan pemenuhan"}.get(w, "siap dilepas")
+                "stok": "kurang stok — putuskan pemenuhan",
+                "bayar": "menunggu bayar (dicek Finance)"}.get(w, "siap dilepas")
 
     # 1 — perlu diperiksa & dilepas
     queues.append(_queue(
@@ -233,7 +234,9 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         action_label="Periksa & lepas", value_label=TOTAL_LABEL))
 
     # 2 — ditahan Admin Sales ("Tahan dulu") → tombol Lepas ke gudang
-    tahan = [o for o in sudah if (o.get("release") or {}).get("hold")]
+    # LB-T6 — pesanan yang menunggu bayar (dicek Finance) belum "siap dilepas": bolanya di Finance, bukan di sini.
+    tahan = [o for o in sudah if (o.get("release") or {}).get("hold")
+             and _rel.release_state(o)["waiting"] != "bayar"]
     baris_tahan = await _order_lines_by_id([o["id"] for o in tahan])
     queues.append(_queue(
         "siap_dikonfirmasi", "Ditahan — siap dilepas",
@@ -549,7 +552,14 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
          "order_type": {"$ne": "sample"}},
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "created_at": 1, "entity_id": 1}).to_list(1000)
     holds = await _gate.holds_for_orders(o["id"] for o in cand)
-    tahan = [(o, holds[o["id"]]) for o in cand if (holds.get(o["id"]) or {}).get("blocked")]
+    # LB-T6 — pesanan yang sudah punya laporan bayar menunggu/memproses tampil di `lapor_bayar` (satu pintu keputusan),
+    # bukan di sini; laporan ditolak/diterima → kembali/lepas sesuai gerbang.
+    from services import payment_report_service as _prs0
+    sedang_dilaporkan = {r["order_id"] for r in await db.payment_reports.find(
+        {**_ent_q(scope), "order_id": {"$in": [o["id"] for o in cand]},
+         "status": {"$in": [_prs0.MENUNGGU, _prs0.MEMPROSES]}}, {"_id": 0, "order_id": 1}).to_list(1000)}
+    tahan = [(o, holds[o["id"]]) for o in cand if (holds.get(o["id"]) or {}).get("blocked")
+             and o["id"] not in sedang_dilaporkan]
     queues.append(_queue(
         "bayar_sebelum_kirim", "Menunggu pembayaran sebelum kirim (CBD/DP)",
         "Barang tertahan di gudang sampai pembayaran mencapai termin. Catat kwitansi — kiriman otomatis terbuka.",

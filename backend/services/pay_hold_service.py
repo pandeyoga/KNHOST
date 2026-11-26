@@ -83,6 +83,12 @@ async def _status_gerbang(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return await gate.evaluate(order)
 
 
+async def status_wajib_bayar(order: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Status gerbang untuk LAYAR (Perjalanan): sama dengan yang dipakai `start`/`blocked` — `None` = pesanan di luar
+    cakupan (sample, SO pesanan khusus). Layar tidak menghitung "wajib bayar" sendiri."""
+    return await _status_gerbang(order or {})
+
+
 async def persen_kode(order: Dict[str, Any]) -> Optional[float]:
     """Persen kode bayar tingkat pesanan dari gerbang (`evaluate.dp_percent`, termasuk K-27 dan tunai ditahan) bila
     gerbang berlaku untuk pesanan ini; `None` = biarkan `payment_code_service` memakai persen termin (PM-T2)."""

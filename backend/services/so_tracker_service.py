@@ -25,7 +25,11 @@ ROLE_LABEL = {"sales": "Sales", "sales_admin": "Admin Sales", "sample_admin": "A
 SHIP_STAGES = ("confirmed", "partially_picked", "picked", "packing", "packed", "partially_shipped")
 
 
-def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+#: Status sebelum gudang yang bisa tertahan bayar (LB-T6) — hold dihitung juga untuk status ini.
+PRE_GUDANG = ("reserved", "waiting_approval", "waiting_stock", "approved")
+
+
+def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None, lapor: bool = False) -> Dict[str, Any]:
     """Tahap berikutnya + peran pemiliknya, diturunkan dari status SO (+ gerbang termin CBD/DP, F-10)."""
     st = o.get("status") or ""
     verified = (o.get("verification") or {}).get("status") == "verified"
@@ -46,6 +50,12 @@ def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[
                 "roles": [r], "action": "Putuskan"}
     if st == "waiting_stock" or (o.get("has_backorder") and st in ("approved", "reserved")):
         return {"step": "Keputusan pemenuhan stok", "roles": ["sales_admin"], "action": "Atur pemenuhan"}
+    if st == "approved" and o.get("pay_hold"):
+        # LB-T6 — wajib bayar dulu (CBD/DP) & belum dibayar: bola di Finance, bukan Admin Sales / gudang. Memakai
+        # penanda `pay_hold` (bukan `hold` mentah) supaya pengecualian `pay_hold_service` (sample, SO pesanan khusus)
+        # dan pesanan lama tanpa penanda tetap seperti dulu.
+        return {"step": ("Lapor bayar menunggu dicek Finance" if lapor else "Menunggu bayar — Finance"),
+                "roles": ["finance"], "action": "Cek pembayaran"}
     if st in ("approved", "reserved"):
         if rel.get("requested") and rel.get("hold"):
             return {"step": "Ditahan Admin Sales — lepas ke gudang bila sudah boleh", "roles": ["sales_admin"],
@@ -106,13 +116,17 @@ async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) ->
     proj = {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1, "sales_name": 1,
             "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "extra_billing_lines": 1,
             "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1,
-            "sample_payment_status": 1, "order_type": 1}
+            "sample_payment_status": 1, "order_type": 1, "pay_hold": 1}
     rows: List[Dict[str, Any]] = []
     orders = await db.sales_orders.find(q, proj).to_list(5000)
     from services import dispatch_payment_gate as _gate
-    holds = await _gate.holds_for_orders(o["id"] for o in orders if o.get("status") in SHIP_STAGES)
+    holds = await _gate.holds_for_orders(o["id"] for o in orders if o.get("status") in SHIP_STAGES + PRE_GUDANG)
+    from services import payment_report_service as _prs
+    ada_lapor = {r["order_id"] for r in await db.payment_reports.find(
+        {"order_id": {"$in": [o["id"] for o in orders if o.get("pay_hold")]},
+         "status": {"$in": [_prs.MENUNGGU, _prs.MEMPROSES]}}, {"_id": 0, "order_id": 1}).to_list(5000)}
     for o in orders:
-        ns = sample_next_step(o) if o.get("order_type") == "sample" else next_step(o, holds.get(o["id"]))
+        ns = sample_next_step(o) if o.get("order_type") == "sample" else next_step(o, holds.get(o["id"]), o["id"] in ada_lapor)
         upd = o.get("updated_at") or o.get("created_at") or ""
         rows.append({
             "id": o["id"], "order_type": o.get("order_type") or "regular", "entity_id": o.get("entity_id", ""),
