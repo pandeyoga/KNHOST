@@ -30,6 +30,18 @@ from services import config_resolver as resolver
 
 pytestmark = pytest.mark.anyio
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _unggahan_sementara(tmp_path_factory):
+    """Bukti bayar yang diunggah uji modul ini ditulis ke folder sementara pytest, bukan ke `backend/uploads` repo
+    (ketetapan R18-e — kebersihan penyimpanan uji)."""
+    from services import storage_service
+    mp = pytest.MonkeyPatch()
+    mp.setattr(storage_service, "STORAGE_DIR", tmp_path_factory.mktemp("unggahan_lapor_bayar"))
+    yield
+    mp.undo()
+
+
 KSC, KANDA = "ent_ksc", "ent_kanda"
 TGL = "2026-11-24"
 PDF = b"%PDF-1.4\n" + b"0" * 2048
@@ -291,11 +303,15 @@ async def test_laporan_menunggu_menahan_kedaluwarsa_dan_memberi_tahu_finance(kli
             "token": "klaim_uji", "by": "usr_x", "by_name": "Finance X", "at": _lalu(minutes=menit)}}})
         await _penyapu()
         assert (await _so(db, so["id"]))["status"] == "approved", menit
-    # laporan ditolak → putaran berikutnya mengedaluwarsakan
+    # laporan ditolak → R18-c: batas digeser sebesar tenggang (putaran berikutnya TIDAK mengedaluwarsakan); lewat
+    # tenggang tanpa laporan baru → kedaluwarsa
     await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "menunggu"}, "$unset": {"claim": ""}})
     r = await klien.post(f"/api/payment-reports/{rep['id']}/tolak", headers=siap["h_fin"],
                          json={"reason": "Bukti transfer tidak terbaca"})
     assert r.status_code == 200, r.text
+    await _penyapu()
+    assert (await _so(db, so["id"]))["status"] == "approved"
+    await _lewat_batas(db, so["id"])
     await _penyapu()
     assert (await _so(db, so["id"]))["status"] == "expired"
 
@@ -581,3 +597,134 @@ async def test_R12_titipan_dan_pengecualian_berizin(klien, db, siap):
                                       "source_special_order_id": "od_lb5b", "grand_total": 1_000_000.0,
                                       "paid_total": 0, "payments": [], "items": [], "created_at": now_iso()})
     await ars.pagar_lapor_bayar(sales, [od])                             # SO pesanan khusus: dikecualikan seperti start()
+
+
+# ── R18-c — tenggang sesudah putusan pada pesanan lewat batas ────────────────────────────────────────────────────────
+# Laporan yang menunggu menahan kedaluwarsa; begitu Finance memutusnya (Tolak, atau Terima tetapi pesanan masih kurang)
+# dan batasnya sudah lewat, batas = waktu putusan + `sales.tenggang_sesudah_putusan_jam` (bawaan 24 jam, per PT) —
+# dicatat di riwayat status + jejak audit pesanan; sales diberi tahu batas barunya.
+TENGGANG = "sales.tenggang_sesudah_putusan_jam"
+
+
+def _dekat(iso: str, harap: datetime, detik: int = 120) -> bool:
+    return abs((datetime.fromisoformat(iso) - harap).total_seconds()) <= detik
+
+
+async def _tolak(klien, siap, lid: str, reason: str = "Bukti transfer tidak terbaca"):
+    return await klien.post(f"/api/payment-reports/{lid}/tolak", headers=siap["h_fin"], json={"reason": reason})
+
+
+def test_R18c_katalog_tenggang_menyebut_pembaca_nyata():
+    import config_registry as registry
+    from services import config_health
+    entry = next(e for e in registry.all_entries() if e["key"] == TENGGANG)
+    assert (entry["default"], entry["min"], entry["max"], entry["unit"]) == (24, 1, 168, "jam")
+    assert set(entry["scopes"]) == {"global", "entity"}
+    assert config_health.check_entry(entry)["wiring_status"] == "OK"
+    assert "services/pay_hold_service.py:tenggang_sesudah_putusan" in entry["consumers"]
+
+
+async def test_R18c_tolak_lewat_batas_diberi_tenggang_lalu_kedaluwarsa(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"])
+    await _lewat_batas(db, so["id"])
+    lama = (await _so(db, so["id"]))["pay_hold"]["due_at"]
+    await _penyapu()
+    assert (await _so(db, so["id"]))["status"] == "approved"            # laporan menunggu menahan
+    r = await _tolak(klien, siap, rep["id"])
+    assert r.status_code == 200, r.text
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "approved" and _dekat(cur["pay_hold"]["due_at"], datetime.now(timezone.utc) + timedelta(hours=24))
+    jejak = cur["status_history"][-1]
+    assert jejak.get("stage") == "batas_diperpanjang" and jejak["user"] == siap["fin"]["name"], jejak
+    assert rep["number"] in jejak["note"], jejak
+    log = await db.audit_logs.find_one({"action": "pay_hold_extended", "entity_id": so["id"]}, {"_id": 0})
+    assert log and log["after"]["dari"] == lama and log["after"]["sampai"] == cur["pay_hold"]["due_at"], log
+    notif = await _notif(db, "lapor_bayar_ditolak", rep["id"])
+    assert siap["sales"]["id"] in {n["recipient_user"] for n in notif}
+    assert all("diperpanjang sampai" in n["body"] for n in notif), [n["body"] for n in notif]
+    # sapuan berikutnya: tidak kedaluwarsa; lewat tenggang tanpa laporan baru → kedaluwarsa
+    await _penyapu()
+    assert (await _so(db, so["id"]))["status"] == "approved"
+    await _lewat_batas(db, so["id"])
+    await _penyapu()
+    assert (await _so(db, so["id"]))["status"] == "expired"
+
+
+async def test_R18c_terima_sebagian_lewat_batas_diberi_tenggang(klien, db, siap):
+    so = await _pesan(klien, db, siap, "DP50")
+    rep = await _lapor(klien, siap, so["id"], 300_000)                  # wajib 500.000 → masih kurang 200.000
+    await _lewat_batas(db, so["id"])
+    r = await klien.post(f"/api/payment-reports/{rep['id']}/terima", headers=siap["h_fin"])
+    assert r.status_code == 200, r.text
+    assert r.json()["released"] is False
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "approved" and cur["pay_hold"] and cur["paid_total"] == 300_000
+    assert _dekat(cur["pay_hold"]["due_at"], datetime.now(timezone.utc) + timedelta(hours=24))
+    notif = await _notif(db, "lapor_bayar_diterima", rep["id"])
+    assert notif and all("diperpanjang sampai" in n["body"] for n in notif)
+    await _penyapu()
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "approved" and cur["paid_total"] == 300_000   # uang yang baru diterima tidak jadi titipan
+
+
+async def test_R18c_tenggang_mengikuti_pengaturan_pt(klien, db, siap):
+    await resolver.set_value(TENGGANG, 6, scope_type="entity", scope_id=KSC, actor="uji", reason="uji R18-c")
+    try:
+        so = await _pesan(klien, db, siap)
+        rep = await _lapor(klien, siap, so["id"])
+        await _lewat_batas(db, so["id"])
+        assert (await _tolak(klien, siap, rep["id"])).status_code == 200
+        cur = await _so(db, so["id"])
+        assert _dekat(cur["pay_hold"]["due_at"], datetime.now(timezone.utc) + timedelta(hours=6))
+    finally:
+        await resolver.clear_layer(TENGGANG, scope_type="entity", scope_id=KSC, actor="uji", reason="pulihkan uji R18-c")
+
+
+async def test_R18c_putusan_sebelum_batas_tidak_menggeser(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"])
+    batas = so["pay_hold"]["due_at"]                                     # masih 3 hari lagi
+    assert (await _tolak(klien, siap, rep["id"])).status_code == 200
+    cur = await _so(db, so["id"])
+    assert cur["pay_hold"]["due_at"] == batas
+    assert await db.audit_logs.count_documents({"action": "pay_hold_extended", "entity_id": so["id"]}) == 0
+    notif = await _notif(db, "lapor_bayar_ditolak", rep["id"])
+    assert notif and not any("diperpanjang" in n["body"] for n in notif)
+
+
+async def test_R18c_terima_pesanan_reserved_lewat_masa_booking_diberi_tenggang(klien, db, siap):
+    """Pesanan CBD yang belum disetujui (`reserved`) dijaga laporan menunggu melewati masa booking stoknya; Terima tidak
+    lagi berarti "kedaluwarsa ≤ 30 menit lagi, uang jadi titipan": masa booking digeser sebesar tenggang."""
+    so = await _buat(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"])
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"reservation_expires_at": _lalu(hours=1)}})
+    await _penyapu()
+    assert (await _so(db, so["id"]))["status"] == "reserved"
+    r = await klien.post(f"/api/payment-reports/{rep['id']}/terima", headers=siap["h_fin"])
+    assert r.status_code == 200, r.text
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "reserved" and cur["paid_total"] == 1_000_000
+    assert _dekat(cur["reservation_expires_at"], datetime.now(timezone.utc) + timedelta(hours=24))
+    assert await db.audit_logs.count_documents({"action": "reservation_extended", "entity_id": so["id"]}) == 1
+    await _penyapu()
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "reserved" and not cur.get("advance_to_deposit")
+
+
+async def test_R18c_penyapu_tidak_menyalip_masa_reservasi_yang_baru_digeser(klien, db, siap, monkeypatch):
+    """Putusan jatuh di antara penyapu membaca pesanan dan mengklaimnya: klaim memakai masa reservasi yang dibaca sebagai
+    prasyarat, jadi pesanan yang batasnya baru digeser tidak dikedaluwarsakan."""
+    from services import payment_report_service as prs
+    so = await _buat(klien, db, siap)
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"reservation_expires_at": _lalu(hours=1)}})
+    asli = prs.laporan_tertunda
+
+    async def _putusan_menyela(order_ids):
+        if so["id"] in (order_ids or []):   # FIXTURE: Finance memutus + batas digeser sesudah penyapu membaca pesanan
+            await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"reservation_expires_at": _nanti(hours=24)}})
+        return await asli(order_ids)
+    monkeypatch.setattr(prs, "laporan_tertunda", _putusan_menyela)
+    await _penyapu()
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "reserved" and "saga_lock" not in cur, cur["status"]

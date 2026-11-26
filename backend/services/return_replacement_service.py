@@ -7,6 +7,7 @@
 - Saldo retur dipakai ke SO pengganti: pengganti LEBIH → selisih tetap ditagih; KURANG → sisa saldo
   tetap milik customer (boleh dipakai atau di-refund lewat alur saldo).
 """
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
@@ -16,6 +17,7 @@ from services import price_approval_service as pas
 from services.return_compensation_service import _net_unit_price
 
 QC_UNIT = "yard"
+logger = logging.getLogger(__name__)
 
 
 async def _yard_factor(prod: Dict[str, Any]) -> float:
@@ -176,6 +178,11 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
 
 
 async def _apply_credit(ret: Dict[str, Any], so: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Saldo retur → pesanan pengganti (otomatis, tanpa klik). R18-a (pengendali, 26 Nov): penebusan ini memakai sumber
+    `SUMBER_RETUR_PENGGANTI` — dikecualikan dari pagar lapor bayar B3 (saldo milik pelanggan dari retur yang sudah diputus,
+    bukan klaim bayar sales), dan `store_credit_service.redeem` memeriksa ulang tahan bayar pesanan sesudahnya
+    (`clear_if_paid`, R4). Gagal → SO tetap sah, saldo bisa dipakai manual; galatnya dicatat (log + jejak audit retur
+    `sales_return_replacement_credit_failed`) dan tampil di ringkasan pengganti."""
     from services import store_credit_service as sc
     if ret.get("roll_outcomes"):   # per roll: saldo yang terbit dari roll Tukar Barang (bukan saldo cutloss/diskon)
         open_credit = float(ret.get("exchange_credit_open") or 0)
@@ -193,12 +200,23 @@ async def _apply_credit(ret: Dict[str, Any], so: Dict[str, Any], actor: Dict[str
         r = await sc.redeem(customer_id=ret["customer_id"], entity_id=ret.get("entity_id"), amount=amount,
                             allocations=[{"order_id": so["id"], "amount": amount}], actor=actor,
                             note=f"Saldo retur {ret.get('number', '')} untuk pesanan pengganti",
-                            ref_type="sales_return_replacement", ref_id=ret["id"], ref_number=ret.get("number", ""))
+                            ref_type="sales_return_replacement", ref_id=ret["id"], ref_number=ret.get("number", ""),
+                            sumber=sc.SUMBER_RETUR_PENGGANTI)
         return {"applied": amount, "issued": float(info.get("issued") or 0), "redemption_number": r.get("number", ""),
-                "basis": info.get("basis", "")}
+                "basis": info.get("basis", ""), "released_order_ids": r.get("released_order_ids") or []}
     except Exception as e:  # noqa: BLE001 — SO tetap sah; saldo dapat dipakai manual
+        pesan = str(getattr(e, "detail", None) or e)
+        logger.warning("[pengganti retur] saldo retur %s ke pesanan pengganti %s gagal diterapkan: %s",
+                       ret.get("number") or ret.get("id"), so.get("number") or so.get("id"), pesan)
+        try:
+            from dependencies import audit
+            await audit((actor or {}).get("name", "") or "system", "sales_return_replacement_credit_failed",
+                        "sales_return", ret["id"], {"order_id": so.get("id", ""), "order_number": so.get("number", ""),
+                                                    "amount": amount, "error": pesan[:500]})
+        except Exception as err:  # noqa: BLE001 — jejak gagal tidak boleh menggagalkan pengganti
+            logger.error("[pengganti retur] jejak audit galat saldo retur %s gagal ditulis: %s", ret.get("id"), err)
         return {"applied": 0.0, "issued": float(info.get("issued") or 0), "basis": info.get("basis", ""),
-                "error": str(getattr(e, "detail", None) or e)}
+                "error": pesan}
 
 
 async def on_replacement_cancelled(so: Dict[str, Any], actor: Dict[str, Any]) -> None:

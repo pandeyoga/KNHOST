@@ -10,12 +10,16 @@
  * Terima: pratinjau "Kwitansi Rp … ke rekening … akan diterbitkan" → `askConfirm` → `POST terima` (kunci idempotensi
  * per laporan). Hasil `waiting_bank` → "Menunggu cocok mutasi bank". Galat 409 server (sedang diproses, melebihi sisa,
  * tanpa bukti) tampil di bilah galat daftar ini. Tolak: `askReason` (alasan ≥ 5 huruf); batal = tidak ada permintaan.
+ *
+ * R18-b — laporan `memproses` yang klaimnya basi (server: `claim_stale`, Terima sebelumnya macet di tengah) berstatus
+ * "Macet"; pemutus mendapat "Macet sejak … — ulangi Terima / Tolak" dengan tombol Ulangi Terima dan Tolak (server
+ * mengambil alih klaim basi; yang belum basi tetap "Sedang diproses Finance" tanpa tombol).
  */
 import { useRef, useState } from "react";
 import { CheckCircle2, Paperclip, XCircle } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
 import StatusBadge from "../../../components/StatusBadge";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { formatCurrency, formatDate, formatDateTime } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { notifySuccess } from "../../../utils/feedback";
 import { askConfirm, askReason } from "../../../services/confirmService";
@@ -29,6 +33,11 @@ export const STATUS_LAPORAN = {
   diterima: { label: "Diterima", tone: "success" },
   ditolak: { label: "Ditolak", tone: "danger" },
 };
+/** R18-b — `memproses` dengan klaim basi (server `claim_stale`): Terima sebelumnya berhenti di tengah. */
+const STATUS_MACET = { label: "Macet di tengah proses", tone: "warning" };
+/** Laporan yang bisa diputus pemegang `decide`: `menunggu`, atau `memproses` yang macet (klaim basi). */
+export const isStuckReport = (r) => r?.status === "memproses" && r?.claim_stale === true;
+const isDecidable = (r) => r?.status === "menunggu" || isStuckReport(r);
 
 /** Kalimat pratinjau konfirmasi Terima (satu bentuk, dipakai layar dan uji). */
 export const terimaPreviewText = (r) =>
@@ -58,7 +67,8 @@ function Bukti({ report, att, testId }) {
 
 function Row({ r, canDecide, canCreate, onAct, busyId }) {
   const retryRef = useRef(null);
-  const st = STATUS_LAPORAN[r.status] || { label: r.status, tone: "neutral" };
+  const stuck = isStuckReport(r);
+  const st = stuck ? STATUS_MACET : STATUS_LAPORAN[r.status] || { label: r.status, tone: "neutral" };
   const atts = r.attachments || [];
   const noProof = r.status === "menunggu" && atts.length === 0;
   const busy = busyId === r.id;
@@ -100,12 +110,17 @@ function Row({ r, canDecide, canCreate, onAct, busyId }) {
       {r.status === "diterima" && r.receipt_number && (
         <p className="text-fs-12 text-kn-success-text">Kwitansi {r.receipt_number}</p>
       )}
-      {canDecide && r.status === "menunggu" && (
+      {canDecide && stuck && (
+        <p className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`${tp}-stale`}>
+          Macet sejak {formatDateTime(r.claim_at)}{r.claim_by_name ? ` (${r.claim_by_name})` : ""} — ulangi Terima / Tolak
+        </p>
+      )}
+      {canDecide && isDecidable(r) && (
         <div className="flex flex-wrap items-center gap-2">
           {/* R15 M2 — tanpa bukti server menolak Terima (409); tombolnya mati dengan alasan, Tolak tetap bisa. */}
           <button type="button" className="primary-button btn-sm" disabled={busy || noProof} data-testid={`${tp}-terima`}
             aria-describedby={noProof ? `${tp}-terima-reason` : undefined}
-            onClick={() => onAct("terima", r)}><CheckCircle2 size={13} aria-hidden="true" /> Terima</button>
+            onClick={() => onAct("terima", r)}><CheckCircle2 size={13} aria-hidden="true" /> {stuck ? "Ulangi Terima" : "Terima"}</button>
           <button type="button" className="secondary-button btn-sm" disabled={busy} data-testid={`${tp}-tolak`}
             onClick={() => onAct("tolak", r)}><XCircle size={13} aria-hidden="true" /> Tolak</button>
           {noProof && (

@@ -76,6 +76,21 @@ E("sales.batas_bayar_hari", group="harga-diskon", section="alur-pesanan", type="
   example="3 → pesanan disetujui Senin pukul 10.00 dan belum dibayar jatuh tempo Kamis pukul 10.00",
   consumers=("services/pay_hold_service.py:due_at",), **_P)
 
+# R18-c (pengendali, 26 Nov) — tenggang sesudah Finance memutus laporan bayar pada pesanan yang batasnya SUDAH lewat:
+# laporan yang menunggu menahan kedaluwarsa, dan tanpa tenggang penyapu (tiap 30 menit) langsung mengedaluwarsakan
+# pesanan begitu laporannya diputus (sales < 30 menit untuk melapor ulang; uang yang baru diterima menjadi titipan).
+# Pembaca SATU-SATUNYA: `services/pay_hold_service.py:tenggang_sesudah_putusan` (dipanggil
+# `perpanjang_sesudah_putusan` dari Terima/Tolak laporan bayar → `pay_hold.due_at` / `reservation_expires_at` baru).
+E("sales.tenggang_sesudah_putusan_jam", group="harga-diskon", section="alur-pesanan", type="int", default=24, min=1,
+  max=168, step=1, unit="jam", scopes=_GE,
+  label="Tenggang sesudah laporan bayar diputus (jam)",
+  help="Bila Finance menerima atau menolak laporan bayar saat batas bayar pesanan sudah lewat, batasnya digeser ke "
+       "sekian jam sejak keputusan itu. Berlaku juga untuk masa reservasi pesanan yang belum disetujui.",
+  impact="Sales punya waktu melapor ulang sesudah laporan ditolak, dan pesanan yang bayarnya baru diterima sebagian "
+         "tidak langsung kedaluwarsa. Lewat tenggang tanpa laporan bayar baru, pesanan kedaluwarsa seperti biasa.",
+  example="24 → batas bayar lewat Senin pukul 10.00, laporan ditolak Selasa pukul 09.00 → batas baru Rabu pukul 09.00",
+  consumers=("services/pay_hold_service.py:tenggang_sesudah_putusan",), related=("sales.batas_bayar_hari",), **_P)
+
 E("sales.group_sales_max_members", group="harga-diskon", section="alur-pesanan", type="int", default=2, min=1, max=20,
   step=1, unit="orang", scopes=_GE,
   label="Maksimum anggota tim sales per pelanggan",

@@ -181,7 +181,11 @@ async def expire_old_reservations() -> int:
             await _beri_tahu_lewat_batas(order, "laporan", order.get("reservation_expires_at") or "",
                                          dilapor[order["id"]])
             return False
-        return await _kedaluwarsakan(order, precondition={"status": order["status"]}, masih_kedaluwarsa=_tanpa_laporan,
+        # R18-c — prasyarat juga memuat masa reservasi yang dibaca: bila Finance baru saja memutus laporan bayarnya dan
+        # masa itu digeser (`pay_hold_service.perpanjang_sesudah_putusan`), klaim gagal dan pesanan dilewati.
+        return await _kedaluwarsakan(order, precondition={"status": order["status"],
+                                                          "reservation_expires_at": order.get("reservation_expires_at")},
+                                     masih_kedaluwarsa=_tanpa_laporan,
                                      alasan="reservasi kedaluwarsa", aksi_audit="reservation_expired",
                                      catatan_audit="Masa reservasi terlewati",
                                      catatan_batal="Reservasi pesanan kedaluwarsa — permintaan ditutup otomatis.")

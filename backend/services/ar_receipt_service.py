@@ -570,13 +570,14 @@ async def pagar_lapor_bayar(actor: Any, order_ids: List[Any]) -> None:
     `payment_report.decide` tidak boleh mengalokasikan APA PUN ke pesanan yang wajib bayar dulu dan belum dilepas ke
     gudang (`pay_hold_service.wajib_bayar_sebelum_gudang`, R12 — termasuk sebelum disetujui, sebelum penanda `pay_hold`
     ada) — uang baru non-tunai, deposit/titipan pelanggan, saldo kredit, titipan bank, maupun pelunasan kasus keuangan.
-    Satu-satunya pengecualian (uang TUNAI baru di kwitansi, diatur `pembayaran.sales_terima_tunai`) diputus pemanggilnya
-    (`_pagar_lapor_bayar`). Id dinormalkan `ar_allocation_service.id_pesanan`. Tanpa tulisan; 409 berkalimat.
+    Pengecualian diputus pemanggilnya, tidak di sini: uang TUNAI baru di kwitansi (diatur `pembayaran.sales_terima_tunai`,
+    `_pagar_lapor_bayar`) dan saldo retur pesanan pengganti (R18-a, `store_credit_service`). Id dinormalkan `ar_allocation_service.id_pesanan`. Tanpa tulisan; 409 berkalimat.
 
     Pemanggil: `create_receipt` (alokasi kwitansi + keputusan selisih yang dikirim bersamanya),
     `payment_variance_service.decide_receipt` (keputusan "alokasikan" dari antrean), `store_credit_service._redeem_locked`
-    (penebusan saldo kredit), `routers/bank_reconciliation.allocate_holding` (titipan dana bank), dan
-    `finance_case_service.resolve` (pelunasan lewat kasus keuangan)."""
+    (penebusan saldo kredit — R18-a: kecuali saldo retur yang diterapkan otomatis ke pesanan pengganti,
+    `store_credit_service.SUMBER_RETUR_PENGGANTI`), `routers/bank_reconciliation.allocate_holding` (titipan dana bank),
+    dan `finance_case_service.resolve` (pelunasan lewat kasus keuangan)."""
     from services.ar_allocation_service import id_pesanan
     ids = list(dict.fromkeys(i for i in (id_pesanan(x) for x in order_ids or []) if i))
     if not ids:

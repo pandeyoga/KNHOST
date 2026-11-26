@@ -57,6 +57,22 @@ async def due_at(entity_id: Optional[str], start: Optional[datetime] = None) -> 
     return (start or datetime.now(timezone.utc)) + timedelta(days=hari)
 
 
+async def tenggang_sesudah_putusan(entity_id: Optional[str]) -> timedelta:
+    """R18-c — tenggang sesudah Finance memutus laporan bayar pada pesanan yang batasnya sudah lewat:
+    `sales.tenggang_sesudah_putusan_jam` (per PT, bawaan 24 jam). Satu-satunya pembaca pengaturan itu."""
+    from services.nilai_pengaturan import nilai
+    jam = int(await nilai("sales.tenggang_sesudah_putusan_jam", entity_id))
+    return timedelta(hours=jam)
+
+
+def _waktu(iso: Any) -> Optional[datetime]:
+    try:
+        t = datetime.fromisoformat(str(iso or "").replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
 async def _muat(order_id: str) -> Dict[str, Any]:
     return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})) or {}
 
@@ -160,6 +176,67 @@ async def wajib_bayar_sebelum_gudang(order: Optional[Dict[str, Any]]) -> bool:
         return False
     st = await _status_gerbang(o)
     return bool(st and st["applies"])
+
+
+#: R18-c — batas mana yang digeser `perpanjang_sesudah_putusan`.
+BATAS_BAYAR, BATAS_BOOKING = "bayar", "booking"
+
+
+async def perpanjang_sesudah_putusan(order_id: str, actor: Optional[Dict[str, Any]] = None, *,
+                                     laporan: str = "", putusan: str = "") -> Optional[Dict[str, str]]:
+    """R18-c (pengendali, 26 Nov) — Finance baru saja memutus laporan bayar (`putusan` = "diterima"/"ditolak", nomor
+    `laporan`) pada pesanan yang BATASNYA SUDAH LEWAT. Selama laporan menunggu, penyapu tidak mengedaluwarsakan pesanan
+    (§7-2); tanpa tenggang, putaran penyapu berikutnya (≤ 30 menit) langsung mengedaluwarsakannya — sales tidak sempat
+    melapor ulang sesudah ditolak, dan uang yang baru diterima menjadi titipan. Maka batasnya digeser ke sekarang +
+    `tenggang_sesudah_putusan` (pengaturan per PT):
+
+    * `approved` ber-`pay_hold` yang `due_at`-nya lewat dan MASIH kurang bayar (`blocked`) → `pay_hold.due_at` baru;
+      yang tidak lagi kurang dibiarkan (penyapu membuka tahan basinya, `nasib_lewat_batas`);
+    * `reserved` / `waiting_approval` wajib bayar dulu yang masa reservasinya lewat (dijaga laporan yang menunggu,
+      putaran 1 penyapu) → `reservation_expires_at` baru — Terima pun tidak boleh berujung kedaluwarsa.
+
+    Batas yang belum lewat tidak disentuh. Satu tulisan CAS pada batas lama (penyapu yang mengklaim memakai batas yang
+    sama sebagai prasyarat) + riwayat status pesanan (`stage: batas_diperpanjang`) + jejak audit (`pay_hold_extended` /
+    `reservation_extended`). → `{jenis, dari, sampai}` bila digeser, `None` bila tidak."""
+    so = await _muat(order_id)
+    status = so.get("status")
+    if status == "approved" and so.get("pay_hold"):
+        jenis, medan, lama = BATAS_BAYAR, "pay_hold.due_at", (so.get("pay_hold") or {}).get("due_at")
+    else:
+        from services.inventory_service import EXPIRABLE_SO_STATUSES
+        if status not in EXPIRABLE_SO_STATUSES:
+            return None
+        jenis, medan, lama = BATAS_BOOKING, "reservation_expires_at", so.get("reservation_expires_at")
+    sekarang = datetime.now(timezone.utc)
+    batas_lama = _waktu(lama)
+    if not batas_lama or batas_lama > sekarang:
+        return None
+    if jenis == BATAS_BAYAR:
+        if not await blocked(so):
+            return None
+    else:
+        st = await _status_gerbang(so)
+        if not (st and st["applies"]):
+            return None
+    sampai = (sekarang + await tenggang_sesudah_putusan(so.get("entity_id"))).isoformat()
+    pelaku = actor or AKTOR_SISTEM
+    nama = "Batas bayar" if jenis == BATAS_BAYAR else "Masa reservasi"
+    catatan = (f"{nama} diperpanjang sesudah laporan bayar {laporan or '-'} {putusan or 'diputus'} "
+               f"(batas lama sudah lewat)")
+    from services import status_history as sh
+    res = await db.sales_orders.update_one(
+        {"id": order_id, "status": status, medan: lama},
+        {"$set": {medan: sampai, "updated_at": now_iso()},
+         "$push": {"status_history": sh.entry(status, user=pelaku.get("name", ""), note=catatan,
+                                              stage="batas_diperpanjang")}})
+    if not res.modified_count:
+        return None   # batas / status berubah oleh proses lain (penyapu, laporan lain) — biarkan pemiliknya
+    await _segarkan_tahap(order_id)
+    from dependencies import audit
+    await audit(pelaku.get("name", ""), "pay_hold_extended" if jenis == BATAS_BAYAR else "reservation_extended",
+                "sales_order", order_id, {"dari": lama, "sampai": sampai, "laporan": laporan, "putusan": putusan,
+                                          "order_number": so.get("number", "")})
+    return {"jenis": jenis, "dari": str(lama), "sampai": sampai}
 
 
 #: LB-T5 — nasib pesanan tertahan yang batas bayarnya lewat (tanpa laporan bayar menunggu), lihat `nasib_lewat_batas`.

@@ -2371,6 +2371,10 @@
    "penjualan",
    "alur-pesanan"
   ],
+  "sales.tenggang_sesudah_putusan_jam": [
+   "penjualan",
+   "alur-pesanan"
+  ],
   "sales.group_sales_max_members": [
    "penjualan",
    "alur-pesanan"

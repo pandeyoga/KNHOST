@@ -32,6 +32,18 @@ from services import config_resolver as resolver
 
 pytestmark = pytest.mark.anyio
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _unggahan_sementara(tmp_path_factory):
+    """Bukti bayar yang diunggah uji modul ini ditulis ke folder sementara pytest, bukan ke `backend/uploads` repo
+    (ketetapan R18-e — kebersihan penyimpanan uji)."""
+    from services import storage_service
+    mp = pytest.MonkeyPatch()
+    mp.setattr(storage_service, "STORAGE_DIR", tmp_path_factory.mktemp("unggahan_lapor_bayar"))
+    yield
+    mp.undo()
+
+
 KSC, KANDA = "ent_ksc", "ent_kanda"
 TGL = "2026-11-24"
 PDF = b"%PDF-1.4\n" + b"0" * 2048
@@ -1071,3 +1083,172 @@ async def test_R11_klik_kedua_saat_memproses_sedang_diproses_bukan_sisa(klien, d
     r = await _terima(klien, siap, rep["id"])
     assert (r.status_code, r.json()["detail"]) == (409, prs.PESAN_DIPROSES), r.text
     assert r.headers.get("x-idempotency-retry") == "true"
+
+
+# ── Gelombang perbaikan akhir (ketetapan R18) ────────────────────────────────────────────────────────────────────────
+# R18-a — kredit retur yang diterapkan OTOMATIS ke pesanan pengganti dikecualikan dari pagar B3 lewat sumber eksplisit;
+# sesudahnya tahan bayar diperiksa ulang (`clear_if_paid`, R4); galatnya dicatat (log + audit), tidak hilang.
+#
+# Hitung tangan: SO asal TUNAI 100 yd × Rp 10.000 = Rp 1.000.000 (sudah dikirim) → retur tukar barang `credit_settled`,
+# saldo kredit terbit Rp 2.000.000 (FIXTURE, lebih dari nilai pengganti supaya pengganti lunas berapa pun PPN-nya).
+# Pengganti 100 yd di harga asal → termin CBD (SO asal tunai) → saldo retur dipakai = grand total pengganti → sisa
+# tagihan 0 → tidak ada tahan bayar.
+async def _retur_tunai(db, siap, kredit: float = 2_000_000) -> dict:
+    """FIXTURE: produk ber-satuan yard + roll, SO asal tunai yang sudah dikirim, retur tukar barang `credit_settled`, dan
+    saldo kredit yang terbit dari retur itu (`sc.issue`, ref `sales_return`)."""
+    from services import store_credit_service as sc
+    if not siap.get("prd_yd"):
+        siap["prd_yd"] = _id("prdyd")
+        await db.products.insert_one({"id": siap["prd_yd"], "sku": "LB4-YD", "name": "Kain LB-4 yard", "price": 10000,
+                                      "base_unit": "yard", "status": "active", "lifecycle": "produksi",
+                                      "category": "uji"})
+    await db.inventory_rolls.insert_one({
+        "id": _id("roll"), "roll_no": f"R-LB4Y-{next(_n)}", "product_id": siap["prd_yd"], "owner_entity_id": KSC,
+        "warehouse_id": "wh_lb4", "status": "available", "active_movement": None, "length_remaining": 100.0,
+        "lot": "L-LB4Y", "grade": "A", "created_at": now_iso()})
+    asal, rid = _id("so"), _id("sr")
+    await db.sales_orders.insert_one({
+        "id": asal, "number": f"KSC/SO-LB4R-{next(_n)}", "customer_id": siap["cus"], "customer_name": "Toko LB-4",
+        "shipping_address_id": siap["adr"], "entity_id": KSC, "status": "shipped", "payment_term_code": "cash",
+        "fulfillment_method": "kirim", "qc_request": {"mode": "none"}, "grand_total": 1_000_000,
+        "items": [{"product_id": siap["prd_yd"], "quantity": 100, "base_quantity": 100, "line_total": 1_000_000,
+                   "unit": "yard", "grade": "A"}], "created_at": now_iso()})
+    ret = {"id": rid, "number": f"RET-LB4-{next(_n)}", "order_id": asal, "entity_id": KSC, "customer_id": siap["cus"],
+           "return_type": "penggantian", "status": "credit_settled", "created_at": now_iso(),
+           "items": [{"product_id": siap["prd_yd"], "product_name": "Kain LB-4 yard", "unit": "yard",
+                      "quantity_returned": 100, "grade": "A", "inspection": {"accepted_qty": 100, "grade": "A"}}]}
+    await db.sales_returns.insert_one(dict(ret))
+    await sc.issue(customer_id=siap["cus"], entity_id=KSC, amount=kredit, ref_type="sales_return", ref_id=rid,
+                   ref_number=ret["number"], note="uji LB-4 R18 (FIXTURE)", actor="uji")
+    return ret
+
+
+async def test_R18a_pengganti_cbd_dari_retur_tunai_kredit_teraplikasi(klien, db, siap):
+    """Pengganti dibuat Admin Sales (tanpa `payment_report.decide`): saldo retur tetap teraplikasi ke pesanan pengganti
+    CBD — bukan ditolak diam-diam "pakai Lapor bayar". Lunas oleh saldo → tidak ada tahan bayar; Admin Sales tetap yang
+    melepas ke gudang (R4)."""
+    from services import store_credit_service as sc
+    ret = await _retur_tunai(db, siap)
+    saldo_awal = await sc.balance(siap["cus"], KSC)
+    r = await klien.post(f"/api/sales-returns/{ret['id']}/replacement-order", headers=siap["h_sa"],
+                         json={"items": [{"product_id": siap["prd_yd"], "qty_yard": 100}]})
+    assert r.status_code == 200, r.text
+    s = r.json()["summary"]
+    so = await _so(db, r.json()["order"]["id"])
+    assert so["payment_term_code"] == "CBD"
+    assert s["credit_error"] == "" and s["redemption_number"], s
+    assert s["credit_applied"] == so["grand_total"] and s["to_bill"] == 0, s
+    assert so["paid_total"] == so["grand_total"]
+    assert await sc.balance(siap["cus"], KSC) == round(saldo_awal - so["grand_total"], 2)
+    assert await db.audit_logs.count_documents({"action": "store_credit_b3_exempt", "entity_id": so["id"]}) == 1
+    # R4 — uang tidak melompati Admin Sales: pesanan menunggu "Periksa & lepas", lalu lepas tanpa tahan bayar
+    assert so["status"] in ("reserved", "waiting_approval") and not so.get("pay_hold"), so["status"]
+    r = await klien.post(f"/api/sales-orders/{so['id']}/review-release", headers=siap["h"], json={"note": "uji R18"})
+    assert r.status_code == 200, r.text
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "confirmed" and not cur.get("pay_hold"), cur.get("status")
+
+
+async def test_R18a_kredit_retur_ke_pesanan_tertahan_membuka_tahan(klien, db, siap):
+    """Pesanan pengganti yang sudah tertahan bayar (sudah "Periksa & lepas"): kredit retur otomatis melunasi → tahan
+    dibuka (`clear_if_paid`) → lepas otomatis (R4: `release.requested` ada)."""
+    from services import return_replacement_service as rr
+    ret = await _retur_tunai(db, siap)
+    so = await _pesan(klien, db, siap)                      # approved + pay_hold + release.waiting = bayar
+    out = await rr._apply_credit(ret, so, {"id": siap["sa"]["id"], "name": siap["sa"]["name"], "role": "sales_admin"})
+    assert out["applied"] == 1_000_000 and not out.get("error"), out
+    cur = await _so(db, so["id"])
+    assert cur["status"] == "confirmed" and "pay_hold" not in cur and cur["paid_total"] == 1_000_000
+    assert await _tugas_keluar(db, so["id"]) >= 1
+
+
+async def test_R18a_galat_kredit_retur_dicatat_audit(klien, db, siap, monkeypatch, caplog):
+    """Galat penerapan kredit retur tidak lagi hilang: ringkasan membawa pesannya, log + jejak audit pada retur."""
+    import logging
+    from fastapi import HTTPException
+    from services import return_replacement_service as rr
+    from services import store_credit_service as sc
+    ret = await _retur_tunai(db, siap)
+    so = await _pesan(klien, db, siap)
+
+    async def _gagal(**kw):
+        raise HTTPException(status_code=409, detail="uji: jurnal saldo kredit gagal")
+    monkeypatch.setattr(sc, "redeem", _gagal)
+    with caplog.at_level(logging.WARNING, logger="services.return_replacement_service"):
+        out = await rr._apply_credit(ret, so, {"id": siap["sa"]["id"], "name": siap["sa"]["name"], "role": "sales_admin"})
+    assert out["applied"] == 0 and "jurnal saldo kredit gagal" in out["error"], out
+    assert any("jurnal saldo kredit gagal" in m for m in caplog.messages), caplog.messages
+    jejak = await db.audit_logs.find_one({"action": "sales_return_replacement_credit_failed", "entity_id": ret["id"]},
+                                         {"_id": 0})
+    assert jejak and "jurnal saldo kredit gagal" in str(jejak.get("after")), jejak
+
+
+async def test_R18a_non_pemutus_tetap_tak_bisa_tebus_manual_ke_pesanan_tertahan(klien, db, siap):
+    """Pengecualian hanya untuk layanan pengganti retur: rute tebus saldo kredit tidak bisa memintanya (isian `sumber`
+    di badan permintaan diabaikan) — sales tetap 409."""
+    from services import store_credit_service as sc
+    y = await _pesan(klien, db, siap)
+    await sc.issue(customer_id=siap["cus"], entity_id=KSC, amount=1_000_000, ref_type="uji", ref_id=_id("sc"),
+                   note="uji LB-4 R18 (FIXTURE)", actor="uji")
+    saldo = await sc.balance(siap["cus"], KSC)
+    r = await klien.post("/api/store-credit/redeem", headers=siap["h_sales"], json={
+        "customer_id": siap["cus"], "entity_id": KSC, "amount": 1_000_000, "sumber": sc.SUMBER_RETUR_PENGGANTI,
+        "ref_type": "sales_return_replacement", "allocations": [{"order_id": y["id"], "amount": 1_000_000}]})
+    assert (r.status_code, r.json()["detail"]) == (409, B3), r.text
+    assert not (await _so(db, y["id"])).get("payments") and await sc.balance(siap["cus"], KSC) == saldo
+
+
+# R18-b — laporan `memproses` basi (pekerja mati di tengah Terima) bisa dipulihkan: Tolak mengambil alih klaim basi
+# tanpa kwitansi; layar diberi tahu klaimnya basi (`claim_stale`, `claim_at`; token klaim tetap tidak keluar).
+async def test_R18b_tolak_memproses_basi_tanpa_kwitansi(klien, db, siap):
+    from services import payment_report_service as prs
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "memproses",
+                                                                    "claim": _klaim(prs.KLAIM_BASI_MENIT + 1)}})
+    r = await _tolak(klien, siap, rep["id"], "Pekerja mati, bukti tidak cocok")
+    assert r.status_code == 200, r.text
+    j = r.json()
+    assert j["status"] == "ditolak" and "claim" not in j and not j.get("claim_stale")
+    lap = await _laporan(db, rep["id"])
+    assert lap["status"] == "ditolak" and "claim" not in lap
+    assert lap["status_history"][-1]["status"] == "ditolak"
+    assert "memproses" in lap["status_history"][-1]["note"]          # riwayat menyebut klaim basi yang diambil alih
+    assert await _kwitansi(db, rep["id"]) == []
+
+
+async def test_R18b_tolak_memproses_baru_atau_berkwitansi_tetap_409(klien, db, siap):
+    from services import payment_report_service as prs
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "memproses", "claim": _klaim(1)}})
+    r = await _tolak(klien, siap, rep["id"])
+    assert r.status_code == 409 and "sedang diproses" in str(r.json()["detail"]), r.text   # klaim baru: pekerja hidup
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"claim": _klaim(prs.KLAIM_BASI_MENIT + 1)}})
+    await db.ar_receipts.insert_one({"id": _id("arc"), "number": "AR-R18B", "payment_report_id": rep["id"],
+                                     "status": "posted", "effects_done": False, "customer_id": siap["cus"],
+                                     "entity_id": KSC, "amount": 1_000_000, "created_at": now_iso()})
+    r = await _tolak(klien, siap, rep["id"])
+    assert r.status_code == 409 and "AR-R18B" in str(r.json()["detail"]), r.text          # berkwitansi: tidak ditolak
+    assert (await _laporan(db, rep["id"]))["status"] == "memproses"
+
+
+async def test_R18b_daftar_laporan_menandai_klaim_basi(klien, db, siap):
+    from services import payment_report_service as prs
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+    klaim = _klaim(prs.KLAIM_BASI_MENIT + 1)
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "memproses", "claim": klaim}})
+    r = await klien.get(f"/api/sales-orders/{so['id']}/payment-reports", headers=siap["h_fin"])
+    assert r.status_code == 200, r.text
+    [it] = [x for x in r.json()["items"] if x["id"] == rep["id"]]
+    assert it["claim_stale"] is True and it["claim_at"] == klaim["at"] and "claim" not in it
+    assert "klaim_lama" not in str(it)                                   # token klaim tidak pernah keluar
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"claim": _klaim(1)}})
+    r = await klien.get(f"/api/sales-orders/{so['id']}/payment-reports", headers=siap["h_fin"])
+    [it] = [x for x in r.json()["items"] if x["id"] == rep["id"]]
+    assert it["claim_stale"] is False
+    # meja Keuangan: baris basi berlencana "macet — ulangi"
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"claim": klaim}})
+    r = await klien.get("/api/finance/desk", headers=siap["h_fin"])
+    assert r.status_code == 200, r.text
+    q = next(q for q in r.json()["queues"] if q["id"] == "lapor_bayar")
+    [row] = [x for x in q["rows"] if x["ref_id"] == rep["id"]]
+    assert row["badge"] == "macet — ulangi", row

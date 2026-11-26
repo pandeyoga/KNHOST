@@ -573,7 +573,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
 
     # 2c — LB-T4 (ketetapan R2): laporan bayar CBD/DP menunggu keputusan Finance (Terima → kwitansi otomatis; Tolak →
     # alasan). Antrean pintu `POST /payment-reports/{id}/terima|tolak` (terdaftar di `verify_approval_queues`).
-    # `memproses` ikut tampil: laporan yang tertinggal di tengah Terima bisa dicoba lagi (klaim basi diambil alih).
+    # `memproses` ikut tampil: laporan yang tertinggal di tengah Terima bisa dicoba lagi (klaim basi diambil alih) —
+    # R18-b: yang klaimnya basi berlencana "macet — ulangi" (Terima atau Tolak di panel mengambil alih klaimnya).
     from dependencies import has_permission
     if await has_permission(actor, "payment_report", "decide"):
         from services import payment_report_service as _prs
@@ -581,7 +582,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             {**_ent_q(scope), "status": {"$in": [_prs.MENUNGGU, _prs.MEMPROSES]}},
             {"_id": 0, "id": 1, "number": 1, "status": 1, "entity_id": 1, "order_id": 1, "order_number": 1,
              "customer_name": 1, "amount": 1, "transfer_date": 1, "account_name": 1, "attachments.is_deleted": 1,
-             "created_by_name": 1, "created_at": 1}
+             "created_by_name": 1, "created_at": 1, "claim.at": 1}
         ).sort("created_at", 1).to_list(500)
         queues.append(_queue(
             "lapor_bayar", "Lapor bayar menunggu dicek",
@@ -592,7 +593,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                   subtitle=f"{lp.get('order_number', '')} · transfer {lp.get('transfer_date', '')} · "
                            f"{lp.get('account_name', '')}",
                   value=float(lp.get("amount") or 0), age_days=_age_days(lp.get("created_at")), at=lp.get("created_at"),
-                  badge="sedang diproses" if lp.get("status") == _prs.MEMPROSES else "menunggu",
+                  badge=("macet — ulangi" if _prs.klaim_basi(lp) else
+                         "sedang diproses" if lp.get("status") == _prs.MEMPROSES else "menunggu"),
                   action="Putuskan", action_kind="decide_payment_report",
                   extra={"order_id": lp.get("order_id", ""), "order_number": lp.get("order_number", ""),
                          "amount": float(lp.get("amount") or 0), "transfer_date": lp.get("transfer_date", ""),

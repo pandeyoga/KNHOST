@@ -287,6 +287,48 @@ describe("Lapor bayar — daftar laporan", () => {
   });
 });
 
+describe("R18-b — laporan macet di 'memproses'", () => {
+  const MACET = { ...REPORT, status: "memproses", claim_stale: true, claim_at: "2026-11-25T03:05:00+00:00", claim_by_name: "Finance X" };
+  const mountList = (reports, props = {}) => mount(
+    <PayReportList reports={reports} canDecide={false} canCreate={false} onChanged={() => {}} {...props} />);
+
+  test("pemutus: 'Macet sejak … — ulangi Terima / Tolak' + tombol Ulangi Terima & Tolak; keduanya mengirim ke server", async () => {
+    askConfirm.mockResolvedValue(true);
+    axios.post.mockResolvedValue({ data: { report: { ...MACET, status: "diterima" }, receipt_number: "AR-9", released: true, waiting_bank: false } });
+    const onChanged = jest.fn();
+    const { host } = await mountList([MACET], { canDecide: true, onChanged });
+    const note = q("pay-report-lb1-stale", host);
+    expect(note.textContent).toMatch(/Macet sejak 25 Nov 2026,? 10[.:]05 WIB \(Finance X\) — ulangi Terima \/ Tolak/);
+    expect(q("pay-report-lb1-status", host).textContent).toMatch(/Macet/);
+    expect(q("pay-report-lb1-terima", host).textContent).toMatch(/Ulangi Terima/);
+    await act(async () => { q("pay-report-lb1-terima", host).click(); });
+    await tick();
+    expect(axios.post.mock.calls[0][0]).toBe("/api/payment-reports/lb1/terima");
+    expect(onChanged).toHaveBeenCalledWith(expect.objectContaining({ ok: true, kind: "terima" }));
+    askReason.mockResolvedValueOnce("Bukti tidak cocok");
+    axios.post.mockResolvedValue({ data: { ...MACET, status: "ditolak" } });
+    await act(async () => { q("pay-report-lb1-tolak", host).click(); });
+    await tick();
+    expect(axios.post.mock.calls[1][0]).toBe("/api/payment-reports/lb1/tolak");
+    expect(axios.post.mock.calls[1][1]).toEqual({ reason: "Bukti tidak cocok" });
+  });
+
+  test("memproses yang belum basi: 'Sedang diproses Finance', tanpa tombol", async () => {
+    const { host } = await mountList([{ ...MACET, claim_stale: false }], { canDecide: true });
+    expect(q("pay-report-lb1-status", host).textContent).toMatch(/Sedang diproses Finance/);
+    expect(q("pay-report-lb1-stale", host)).toBeNull();
+    expect(q("pay-report-lb1-terima", host)).toBeNull();
+    expect(q("pay-report-lb1-tolak", host)).toBeNull();
+  });
+
+  test("bukan pemutus: laporan macet tanpa tombol dan tanpa ajakan mengulang", async () => {
+    const { host } = await mountList([MACET], { canDecide: false });
+    expect(q("pay-report-lb1-stale", host)).toBeNull();
+    expect(q("pay-report-lb1-terima", host)).toBeNull();
+    expect(q("pay-report-lb1-tolak", host)).toBeNull();
+  });
+});
+
 describe("Panel Bayar sebelum gudang", () => {
   const SALES = { permissions: { order: ["view"], ar_receipt: ["create"], payment_report: ["create"] } };
   const FIN = { permissions: { order: ["view"], ar_receipt: ["create"], payment_report: ["create", "decide"] } };

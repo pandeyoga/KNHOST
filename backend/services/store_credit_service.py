@@ -156,10 +156,32 @@ async def issue(*, customer_id: str, entity_id: str, amount: float, ref_type: st
 
 
 # ─── Redeem (pakai saldo utk melunasi order AR) ──────────────────────────────
+#: R18-a (pengendali, 26 Nov) — SATU-SATUNYA sumber penebusan yang dikecualikan dari pagar lapor bayar B3
+#: (`ar_receipt_service.pagar_lapor_bayar`): saldo retur yang diterapkan OTOMATIS oleh layanan pengganti retur
+#: (`return_replacement_service._apply_credit`) ke pesanan penggantinya. Nilainya milik pelanggan dari retur yang sudah
+#: diputus lewat alurnya sendiri (QC + penyelesaian Store Credit), bukan klaim bayar sales yang perlu dicek Finance —
+#: dulu pagar menolaknya diam-diam untuk pengganti CBD (pembuatnya Admin Sales, tanpa `payment_report.decide`). Rute
+#: `POST /store-credit/redeem` tidak pernah meneruskan isian ini, jadi pemanggil lain tetap dipagari.
+SUMBER_RETUR_PENGGANTI = "retur_pengganti"
+
+
+def _aktor_dict(actor: Any) -> Dict[str, Any]:
+    if isinstance(actor, dict):
+        return actor
+    return {"id": "", "name": str(actor or "system"), "role": ""}
+
+
 async def redeem(*, customer_id: str, entity_id: Optional[str], amount: float,
                  allocations: Optional[List[Dict[str, Any]]] = None, note: str = "",
                  actor: Any = None, ref_type: str = "redemption", ref_id: str = "",
-                 ref_number: str = "") -> Dict[str, Any]:
+                 ref_number: str = "", sumber: str = "") -> Dict[str, Any]:
+    """Pakai saldo kredit pelanggan untuk melunasi pesanan ber-piutang terbuka. `sumber` = `SUMBER_RETUR_PENGGANTI`
+    hanya dari layanan pengganti retur (pengecualian pagar B3, R18-a); selain itu kosong.
+
+    Sesudah penebusan sah (kunci pelanggan sudah dilepas): pesanan yang ditahan bayar diperiksa ulang
+    (`ar_receipt_service.buka_tahan_bayar` → `pay_hold_service.clear_if_paid`, R5 / R18-a) — tahan dibuka bila bagian
+    wajibnya kini terbayar, lepas otomatis HANYA bila Admin Sales sudah "Periksa & lepas" (R4). Kembalian memuat
+    `released_order_ids`."""
     amount = round(float(amount or 0), 2)
     if amount <= EPS:
         raise HTTPException(status_code=400, detail="Jumlah pemakaian store credit harus > 0")
@@ -182,17 +204,22 @@ async def redeem(*, customer_id: str, entity_id: Optional[str], amount: float,
         if amount > avail + EPS:
             raise HTTPException(status_code=400,
                                 detail=f"Saldo store credit tidak cukup (tersedia {rupiah(avail)})")
-        return await _redeem_locked(customer_id=customer_id, entity_id=entity_id, amount=amount,
-                                    allocations=allocations, note=note, actor=actor, ref_type=ref_type,
-                                    ref_id=ref_id, ref_number=ref_number, customer=customer)
+        hasil = await _redeem_locked(customer_id=customer_id, entity_id=entity_id, amount=amount,
+                                     allocations=allocations, note=note, actor=actor, ref_type=ref_type,
+                                     ref_id=ref_id, ref_number=ref_number, customer=customer, sumber=sumber)
     finally:
         await _saga.release("customers", customer_id)
+    from services import ar_receipt_service as _ars
+    hasil["released_order_ids"] = await _ars.buka_tahan_bayar(
+        [a.get("order_id") for a in hasil.get("allocations") or []], _aktor_dict(actor),
+        f"saldo kredit {hasil.get('number', '')}".strip())
+    return hasil
 
 
 async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: float,
                          allocations: Optional[List[Dict[str, Any]]], note: str, actor: Any,
                          ref_type: str, ref_id: str, ref_number: str,
-                         customer: Dict[str, Any]) -> Dict[str, Any]:
+                         customer: Dict[str, Any], sumber: str = "") -> Dict[str, Any]:
     redemption_id = new_id("scr")
     number = await next_doc_number("store_credit_redemptions", "number", "SCR-", entity_id=entity_id)
     now = now_iso()
@@ -231,7 +258,17 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
     # LB-T4 (B3, R11) — saldo kredit ke pesanan yang ditahan bayar hanya oleh pemegang `payment_report.decide`
     # (409 SEBELUM pesanan pertama dimutasi; kunci pelanggan dilepas `finally` pemanggil).
     from services import ar_receipt_service as _ars_b3
-    await _ars_b3.pagar_lapor_bayar(actor, [oid for oid, _amt in planned])
+    try:
+        await _ars_b3.pagar_lapor_bayar(actor, [oid for oid, _amt in planned])
+    except HTTPException:
+        if sumber != SUMBER_RETUR_PENGGANTI:
+            raise
+        # R18-a — saldo retur yang diterapkan otomatis ke pesanan pengganti: pagar dilewati, tercatat di jejak audit.
+        from dependencies import audit
+        for oid, amt in planned:
+            await audit(_aktor_dict(actor).get("name", "") or "system", "store_credit_b3_exempt", "sales_order", oid,
+                        {"sumber": sumber, "amount": amt, "ref_type": ref_type, "ref_id": ref_id,
+                         "ref_number": ref_number, "customer_id": customer_id})
     for i, (order_id, amt) in enumerate(planned):
         try:
             applied.append(await _aas.allocate(

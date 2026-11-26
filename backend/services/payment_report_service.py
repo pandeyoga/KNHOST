@@ -11,6 +11,7 @@ MESIN STATUS LAPORAN (LB-T4)
        └────── kwitansi gagal ──────────┘   (galat asli diteruskan; riwayat mencatat "Terima gagal: …")
     menunggu ──tolak (CAS, alasan ≥ 5 huruf)──→ ditolak
     memproses (klaim lebih tua dari KLAIM_BASI_MENIT) ──terima──→ memproses (klaim diambil alih) → …
+    memproses basi, tanpa kwitansi ──tolak (CAS klaim basi yang sama, R18-b)──→ ditolak
 
 * `memproses` = status SEMENTARA milik satu pemanggil (`claim.token`). Dua Terima bersamaan: hanya satu yang lolos CAS,
   yang lain 409 → tepat satu kwitansi (Review Focus 1).
@@ -24,6 +25,11 @@ MESIN STATUS LAPORAN (LB-T4)
   kwitansi itu. Ada kwitansi (setengah jadi, atau tuntas tetapi penghentian paksa) → tetap `memproses`: laporan
   berkwitansi tidak pernah kembali bisa ditolak (tolak juga menolak laporan yang sudah berkwitansi).
 * Sebelum klaim (tanpa tulisan): lampiran ≥ 1, pesanan hidup, nominal ≤ sisa tagihan pesanan (R10-b).
+* R18-b — laporan `memproses` basi (pekerja mati di tengah Terima) tidak buntu: layar menerima `claim_stale`/`claim_at`
+  (`tampil`) dan menawarkan "ulangi Terima / Tolak"; Tolak mengambil alih klaim basi bila laporan belum berkwitansi.
+* R18-c — memutus laporan (Terima/Tolak) pada pesanan yang batasnya sudah lewat memberi tenggang
+  (`pay_hold_service.perpanjang_sesudah_putusan`, `sales.tenggang_sesudah_putusan_jam`): penyapu tidak
+  mengedaluwarsakannya ≤ 30 menit kemudian; sales diberi tahu batas barunya.
 * LB-T5 — laporan `menunggu`/`memproses` menahan kedaluwarsa pesanannya (`TERTUNDA`). Laporan `menunggu` (atau
   `memproses` basi) yang tertinggal di pesanan batal/kedaluwarsa ditutup penyapu (`tutup_laporan_pesanan_mati`) →
   `ditolak` ("Pesanan sudah batal/kedaluwarsa"), atau — R13 — `diterima` bila kwitansinya sudah tuntas.
@@ -82,14 +88,34 @@ async def next_number(entity_id: str) -> str:
     return await next_doc_number("payment_reports", "number", "LB-", entity_id=entity_id)
 
 
+def _basi_sebelum() -> str:
+    return (datetime.now(timezone.utc) - timedelta(minutes=KLAIM_BASI_MENIT)).isoformat()
+
+
+def klaim_basi(doc: Optional[Dict[str, Any]]) -> bool:
+    """R18-b — laporan `memproses` yang klaimnya lebih tua dari `KLAIM_BASI_MENIT` (pekerja mati di tengah Terima):
+    Terima berikutnya mengambil alih klaim itu, Tolak juga (tanpa kwitansi). Saringan yang sama dengan CAS `_klaim` /
+    `tolak` (`claim.at` < batas; klaim tanpa waktu tidak pernah basi)."""
+    d = doc or {}
+    at = str((d.get("claim") or {}).get("at") or "")
+    return d.get("status") == MEMPROSES and bool(at) and at < _basi_sebelum()
+
+
 def tampil(doc: Dict[str, Any]) -> Dict[str, Any]:
     """Salinan dokumen untuk layar: tanpa `_id`, isian internal, dan `storage_path` lampiran (jalur penyimpanan tidak
-    pernah keluar; berkas diambil lewat rute unduh yang berpagar)."""
+    pernah keluar; berkas diambil lewat rute unduh yang berpagar). R18-b — laporan `memproses` membawa `claim_at` /
+    `claim_by_name` (kapan & oleh siapa Terima dimulai, tanpa token klaim) dan `claim_stale` (benar = macet, boleh
+    diulang)."""
     out = {k: v for k, v in (doc or {}).items() if k not in _INTERNAL}
     lampiran = [{k: v for k, v in a.items() if k != "storage_path"}
                 for a in (out.get("attachments") or []) if not a.get("is_deleted")]
     out["attachments"] = lampiran
     out["attachment_count"] = len(lampiran)
+    out["claim_stale"] = klaim_basi(doc)
+    if (doc or {}).get("status") == MEMPROSES:
+        klaim = (doc or {}).get("claim") or {}
+        out["claim_at"] = klaim.get("at") or ""
+        out["claim_by_name"] = klaim.get("by_name") or ""
     return out
 
 
@@ -222,10 +248,6 @@ def _lampiran(report: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [a for a in (report.get("attachments") or []) if not a.get("is_deleted")]
 
 
-def _basi_sebelum() -> str:
-    return (datetime.now(timezone.utc) - timedelta(minutes=KLAIM_BASI_MENIT)).isoformat()
-
-
 def _galat_status(status: Optional[str]) -> HTTPException:
     """409 untuk laporan yang tidak (lagi) bisa diputus. `memproses` = keadaan sementara (header kirim ulang)."""
     if status == MEMPROSES:
@@ -350,6 +372,28 @@ async def _menunggu_bank(order_id: str) -> bool:
     return st.get("basis") == "terverifikasi" and await phs.blocked(so)
 
 
+async def _perpanjang_sesudah_putusan(order_id: str, actor: Dict[str, Any], report: Dict[str, Any],
+                                      putusan: str) -> str:
+    """R18-c — sesudah keputusan tertulis: geser batas pesanan yang sudah lewat (`pay_hold_service.
+    perpanjang_sesudah_putusan`). → kalimat tambahan notifikasi putusan ke sales ("" bila tidak digeser). Efek samping:
+    tidak melempar (keputusan sudah sah; kegagalan dicatat)."""
+    try:
+        from services import pay_hold_service as phs
+        hasil = await phs.perpanjang_sesudah_putusan(order_id, actor, laporan=report.get("number", ""), putusan=putusan)
+    except Exception as err:  # noqa: BLE001
+        logger.error("[payment_report] batas pesanan %s sesudah laporan %s %s gagal digeser: %s", order_id,
+                     report.get("number"), putusan, err)
+        return ""
+    if not hasil:
+        return ""
+    from services import pay_hold_service as phs
+    from services.notification_service import _jam_wib
+    if hasil["jenis"] == phs.BATAS_BAYAR:
+        return (f" Batas bayar diperpanjang sampai {_jam_wib(hasil['sampai'])} — lewat itu tanpa laporan bayar baru, "
+                "pesanan kedaluwarsa.")
+    return (f" Masa reservasi diperpanjang sampai {_jam_wib(hasil['sampai'])} — pesanan perlu disetujui sebelum itu.")
+
+
 async def _beritahu_putusan(report: Dict[str, Any], order: Dict[str, Any], jenis: str, title: str, body: str) -> None:
     """Notifikasi ke pelapor + sales pemilik pesanan (per orang, `create_addressed`). Efek samping: tidak melempar."""
     from services import notification_service as ns
@@ -430,10 +474,12 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
             released = await _lepas(order["id"], actor)
     doc = await _selesai_diterima(rep["id"], token, receipt, actor)
     from core_utils import rupiah
+    # R18-c — diterima tetapi pesanan masih kurang (atau belum disetujui) dan batasnya sudah lewat: diberi tenggang
+    batas = "" if released else await _perpanjang_sesudah_putusan(order["id"], actor, doc or rep, "diterima")
     await _beritahu_putusan(doc or rep, order, "lapor_bayar_diterima",
                             f"Lapor bayar diterima — {rep.get('order_number', '')}",
                             f"{rep.get('number', '')} {rupiah(rep.get('amount') or 0)} diterima Finance; kwitansi "
-                            f"{receipt.get('number', '')}.")
+                            f"{receipt.get('number', '')}." + batas)
     return {"report": tampil(doc), "receipt_number": receipt.get("number", ""), "released": bool(released),
             "waiting_bank": await _menunggu_bank(order["id"])}
 
@@ -548,7 +594,12 @@ async def tutup_laporan_pesanan_mati() -> int:
 
 async def tolak(report: Dict[str, Any], order: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     """Finance menolak laporan (alasan ≥ 5 huruf): CAS `menunggu` → `ditolak`, tanpa uang. Pesanan mati boleh ditolak.
-    Sales diberi tahu alasannya dan boleh melapor ulang."""
+    Sales diberi tahu alasannya (dan batas bayar barunya, R18-c) dan boleh melapor ulang.
+
+    R18-b — laporan `memproses` yang klaimnya BASI (`klaim_basi`, pekerja mati di tengah Terima) juga bisa ditolak bila
+    belum berkwitansi: CAS pada klaim basi yang SAMA (`claim.at` < batas — Terima yang baru saja mengambil alih memperbarui
+    `claim.at`, jadi tolak kalah dan menjawab "sedang diproses"); klaim dicabut, riwayat mencatat klaim yang diambil alih.
+    `memproses` baru (pekerja hidup) tetap 409 sementara."""
     alasan = str(reason or "").strip()
     if len(alasan) < ALASAN_MIN:
         raise HTTPException(status_code=400, detail=PESAN_ALASAN)
@@ -558,18 +609,27 @@ async def tolak(report: Dict[str, Any], order: Dict[str, Any], reason: str, acto
         raise HTTPException(status_code=409, detail=PESAN_SUDAH_BERKWITANSI.format(nomor=kw.get("number", "")))
     p = _pelaku(actor)
     now = now_iso()
+    catatan = alasan
+    if klaim_basi(report):
+        klaim = report.get("claim") or {}
+        from services.notification_service import _jam_wib
+        catatan = (f"{alasan} (Terima {klaim.get('by_name') or 'sebelumnya'} macet di status memproses sejak "
+                   f"{_jam_wib(klaim.get('at')) or klaim.get('at')}; klaimnya diambil alih)")
     doc = await db.payment_reports.find_one_and_update(
-        {"id": report["id"], "status": MENUNGGU},
+        {"id": report["id"], "$or": [{"status": MENUNGGU},
+                                     {"status": MEMPROSES, "claim.at": {"$lt": _basi_sebelum()}}]},
         {"$set": {"status": DITOLAK, "reason": alasan, "decided_by": p["id"], "decided_by_name": p["name"],
                   "decided_at": now, "updated_at": now},
-         "$push": {"status_history": status_history.entry(DITOLAK, user=p["name"], note=alasan)}},
+         "$unset": {"claim": ""},
+         "$push": {"status_history": status_history.entry(DITOLAK, user=p["name"], note=catatan)}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not doc:
         cur = await db.payment_reports.find_one({"id": report["id"]}, {"_id": 0, "status": 1}) or {}
         raise _galat_status(cur.get("status"))
     from core_utils import rupiah
+    batas = await _perpanjang_sesudah_putusan(order["id"], actor, doc, "ditolak")
     await _beritahu_putusan(doc, order, "lapor_bayar_ditolak",
                             f"Lapor bayar ditolak — {doc.get('order_number', '')}",
                             f"{doc.get('number', '')} {rupiah(doc.get('amount') or 0)} ditolak Finance: {alasan}. "
-                            "Periksa lalu lapor ulang bila perlu.")
+                            "Periksa lalu lapor ulang bila perlu." + batas)
     return tampil(doc)

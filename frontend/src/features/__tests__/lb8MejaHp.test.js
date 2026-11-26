@@ -179,6 +179,22 @@ describe("Meja Keuangan — lapor_bayar", () => {
     expect(teks(q("pay-report-error"))).toMatch(/Laporan sudah diputus orang lain/);
   });
 
+  test("R18-b: laporan macet di 'memproses' → pop-up menawarkan ulangi Terima / Tolak di tempat", async () => {
+    routeGet({ reports: [{ ...REPORT, status: "memproses", claim_stale: true, claim_at: "2026-11-25T03:05:00+00:00" }] });
+    await mount(<FinanceDesk currentUser={{ permissions: PERMS_FIN }} selectedEntity="ent_ksc" />);
+    await tunggu();
+    askReason.mockResolvedValue("Bukti tidak cocok");
+    mockPost.mockResolvedValue({ data: { ...REPORT, status: "ditolak" } });
+    await klik("fin-desk-uang_masuk-action-lb1"); await tunggu();
+    expect(teks(q("pay-report-lb1-stale"))).toMatch(/Macet sejak .* — ulangi Terima \/ Tolak/);
+    expect(q("pay-report-lb1-terima")).not.toBeNull();
+    await klik("pay-report-lb1-tolak"); await tunggu();
+    const [url, body] = mockPost.mock.calls[0];
+    expect(url).toBe("/api/payment-reports/lb1/tolak");
+    expect(body).toEqual({ reason: "Bukti tidak cocok" });
+    expect(q("fin-desk-detail")).toBeNull();
+  });
+
   test("Tolak di tempat: alasan → POST tolak {reason}; pop-up menutup", async () => {
     await buka();
     askReason.mockResolvedValue("Nominal tidak cocok");

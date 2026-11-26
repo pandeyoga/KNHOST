@@ -13,6 +13,18 @@ import pytest
 
 pytestmark = pytest.mark.anyio
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _unggahan_sementara(tmp_path_factory):
+    """Bukti bayar yang diunggah uji modul ini ditulis ke folder sementara pytest, bukan ke `backend/uploads` repo
+    (ketetapan R18-e — kebersihan penyimpanan uji)."""
+    from services import storage_service
+    mp = pytest.MonkeyPatch()
+    mp.setattr(storage_service, "STORAGE_DIR", tmp_path_factory.mktemp("unggahan_lapor_bayar"))
+    yield
+    mp.undo()
+
+
 KSC, KANDA = "ent_ksc", "ent_kanda"
 PDF = b"%PDF-1.4\n" + b"0" * (200 * 1024)
 TGL = "2026-11-24"
