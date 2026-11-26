@@ -1,5 +1,19 @@
 # SESSION HANDOFF — Kain Nusantara (WMS/ERP)
 
+> **26 Nov 2026 — Lapor Bayar CBD & DP (tahan sebelum gudang) selesai** di cabang `claude/nifty-carson-jjx3c8`
+> (belum digabung ke `main`; meja gelombang 1+2 sudah di `main` `4e98a42`). Pesanan wajib bayar dulu (CBD, DP, K-27)
+> berhenti di tahap **"Bayar dicek Finance"** antara Disetujui dan Dilepas ke gudang; sales **Lapor bayar** (bukti
+> wajib) di rincian pesanan/HP; Finance **Terima** (kwitansi + jurnal lewat jalur Uang Masuk, pesanan lepas otomatis) atau
+> **Tolak** (alasan → notifikasi sales) di Meja Keuangan; Faktur Komersial & kode bayar sejak disetujui; batas bayar
+> `sales.batas_bayar_hari` (bawaan 3) + pengingat H-1 + gugur otomatis; tenggang `sales.tenggang_sesudah_putusan_jam`
+> (24). Izin baru `payment_report.create/decide`. **Hasil & bukti:** `docs/superpowers/plans/2026-11-25-lapor-bayar-cbd-hasil.md`
+> (tests_mem 3012 lulus; jest 2108/2110 — lingkungan; gate --quick/--ci tanpa pelanggaran baru selain residu penjadwal
+> E-7 yang terbukti kebetulan; MongoDB sungguhan: indeks unik parsial, penyapu, pengingat; 19 tangkapan di data acuan).
+> Keputusan pelaksanaan R1–R21 di laporan §4. **Untuk pemilik:** jalankan `hitung_vps.js` di VPS (pesanan yang akan ikut
+> tertahan); tombol "kelebihan jadi titipan"? (R10-b); kasus NET30+K-27+B6 dua instruksi (R7); empat mata Finance;
+> kamera HP. **Berikutnya (G1):** F1 kwitansi otomatis dari mutasi → Paket Kas & Bank (butuh jawaban C4/H5) → Meja
+> gelombang 3 → F2/OCR/F3/F4 → G2 notifikasi.
+>
 > **23 Nov 2026 — komisi per artikel + tab "Skema & Tarif" (KA-1…KA-11) selesai dibangun** di cabang
 > `claude/nifty-carson-jjx3c8` (`main` tidak disentuh; belum dipasang ke produksi). **Yang dibangun:** tarif komisi Rp per
 > satuan dasar per **kategori → artikel → varian** (PT dulu, lalu Semua PT); pengali harga (pita selisih dari harga acuan,

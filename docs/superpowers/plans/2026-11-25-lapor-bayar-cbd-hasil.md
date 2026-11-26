@@ -97,7 +97,13 @@ Tangkapan layar (T9b) menemukan tiga galat tampilan kecil, diperbaiki dengan uji
   - klaim berprasyarat `pay_hold.due_at` (bertitik) dengan nilai basi ditolak 409;
   - pengingat H-1: 6 notifikasi untuk DP50 (batas 2 jam lagi), termasuk sales pemilik; 0 untuk CBD (batas 5 hari lagi).
 - **Sesudah R21** (perbaikan tampilan dari tangkapan, `56306b6`): uji terarah LB3–LB6 + semua uji Perjalanan
-  (136 lulus), jest 11 suite terkait (129 lulus). Suite penuh dan gate `--quick` diulang pada pohon akhir: ⟨ULANG⟩
+  (136 lulus), jest 11 suite terkait (129 lulus). Suite penuh dan gate `--quick` diulang pada pohon akhir
+  (`56306b6`):
+  - `tests_mem`: **3012 passed**, 2 skipped, 3 xfailed, **0 failed**;
+  - jest: 2108/2110, 267/270 suite. Gagal: `odItemCancel`, `phase4R2` (lingkungan, sama dengan garis dasar) dan
+    `tzTanggalBawaan` — uji ini mensyaratkan proses ber-zona UTC; dijalankan sendiri lulus 3/3 (juga dengan `TZ=UTC`),
+    dan lulus di jalankan penuh pertama. Kerapuhan urutan/lingkungan uji, tidak terkait berkas R21;
+  - gate `--quick`: 10 FAIL (garis dasar 16), 0 lebih merah, tidak ada pelanggaran baru.
 
 ### 3a. Gate
 
