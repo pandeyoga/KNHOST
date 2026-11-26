@@ -44,8 +44,17 @@ export function proofProblem(file) {
 /** Status pesanan "sebelum gudang" — sama dengan `pay_hold_service.STATUS_SEBELUM_GUDANG` (server tetap penentu). */
 export const STATUS_SEBELUM_GUDANG = ["reserved", "waiting_approval", "waiting_stock", "approved"];
 
-/** Pesanan sedang ditahan bayar sebelum gudang: penanda `pay_hold` atau `release.waiting === "bayar"`
- *  (sama dengan `pay_hold_service.ditahan`) dan masih sebelum gudang. */
-export const isPayHeld = (order) => Boolean(order)
-  && STATUS_SEBELUM_GUDANG.includes(order.status)
-  && (order.pay_hold != null || order.release?.waiting === "bayar");
+/**
+ * SATU predikat klien "pesanan wajib bayar dulu dan belum dilepas ke gudang" — cermin `pay_hold_service.wajib_bayar_sebelum_gudang`
+ * (pagar B3 server): status `STATUS_SEBELUM_GUDANG` + tanpa pengecualian berizin (`dispatch_payment_release`) + gerbang bayar
+ * (`dispatch_payment_gate.evaluate`) berlaku (`applies`; sample dan pesanan khusus dikecualikan server dari gerbang).
+ * `gate` = jawaban `GET /sales-orders/{id}/dispatch-payment-gate` (`applies`, `released`) — sumber hitungan tunggal.
+ * CELAH: tanpa `gate` (belum dimuat / gagal) klien hanya punya penanda `pay_hold` / `release.waiting === "bayar"` (yang
+ * dipakai `pay_hold_service.ditahan`) — pesanan sebelum penanda ada bisa luput; server tetap penentu (409).
+ */
+export function isHeldForPayment(order, gate = null) {
+  if (!order || !STATUS_SEBELUM_GUDANG.includes(order.status)) return false;
+  if (order.dispatch_payment_release || order.order_type === "sample") return false;
+  if (gate && typeof gate.applies === "boolean") return gate.applies && !gate.released;
+  return order.pay_hold != null || order.release?.waiting === "bayar";
+}

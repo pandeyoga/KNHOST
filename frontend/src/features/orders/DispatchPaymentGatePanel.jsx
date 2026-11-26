@@ -21,7 +21,7 @@ import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // 
 import LaporBayarDialog from "./payReport/LaporBayarDialog";
 import PayReportList from "./payReport/PayReportList";
 import useSalesCashMode from "./payReport/useSalesCashMode";
-import { listReports } from "./payReport/payReportApi";
+import { isHeldForPayment, listReports } from "./payReport/payReportApi";
 
 export const fetchGate = (orderId) => axios.get(`${API}/sales-orders/${orderId}/dispatch-payment-gate`).then((r) => r.data);
 export const releaseGate = (orderId, reason) =>
@@ -31,8 +31,7 @@ export const revokeGate = (orderId, reason) =>
 
 const errText = (e, d) => e?.response?.data?.detail || d;
 
-// Sama dengan `pay_hold_service.STATUS_SEBELUM_GUDANG` / `customer_service.DEAD_STATUSES` (server tetap penentu).
-const STATUS_SEBELUM_GUDANG = ["reserved", "waiting_approval", "waiting_stock", "approved"];
+// Sama dengan `customer_service.DEAD_STATUSES` (server tetap penentu).
 const STATUS_MATI = ["cancelled", "draft", "expired", "rejected"];
 
 /** Sisa hari sampai batas bayar (pembulatan ke atas; ≤ 0 = hari ini/lewat). */
@@ -102,8 +101,8 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   const allowed = can(perms, "order", "release_unpaid");
   const canDecide = can(perms, "payment_report", "decide");
   const alive = !!order && !STATUS_MATI.includes(order.status);
-  // Tertahan bayar sebelum gudang: penanda `pay_hold`, atau wajib bayar dulu dan belum dilepas ke gudang (R12).
-  const held = !!order && (!!order.pay_hold || (STATUS_SEBELUM_GUDANG.includes(order.status) && !gate.released));
+  // Tertahan bayar sebelum gudang: satu predikat bersama (`isHeldForPayment`, cermin pagar server) — R16.
+  const held = isHeldForPayment(order, gate);
   const canReport = alive && gate.shortfall > 0 && can(perms, "payment_report", "create") && reports?.bisa_lapor !== false;
   // Pencatat tanpa `payment_report.decide` ditolak server (409) pada pesanan tertahan, KECUALI uang tunai baru (server
   // mengecualikannya) — maka tombolnya hanya muncul bila tunai diizinkan, dan formulirnya dibatasi cara bayar tunai.

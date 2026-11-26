@@ -1,7 +1,9 @@
 import ReceivePaymentModal from "../../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import DetailModal from "../../../components/DetailModal";
 import { can } from "../../../config/roles";
-import { isPayHeld } from "../../orders/payReport/payReportApi";
+import { useEffect, useState } from "react";
+import { fetchGate } from "../../orders/DispatchPaymentGatePanel";
+import { isHeldForPayment } from "../../orders/payReport/payReportApi";
 import useSalesCashMode from "../../orders/payReport/useSalesCashMode";
 
 export const PESAN_PAKAI_LAPOR_BAYAR = "Pesanan ini menunggu lapor bayar — pakai Lapor bayar di rincian pesanan.";
@@ -22,9 +24,19 @@ export const PESAN_PAKAI_LAPOR_BAYAR = "Pesanan ini menunggu lapor bayar — pak
  *  (`pembayaran.sales_terima_tunai` ≠ dilarang) → form khusus TUNAI; selain itu pesan pemandu ke Lapor bayar. Pemutus
  *  (Finance) dan pesanan yang tidak tertahan → form biasa. Server tetap penentu. */
 export default function MobileArReceipt({ customer, focusOrderId = "", order = null, user = null, onClose, onDone }) {
-  const dibatasi = isPayHeld(order) && !can(user?.permissions, "payment_report", "decide");
+  const pemutus = can(user?.permissions, "payment_report", "decide");
+  const perluGerbang = Boolean(order?.id) && !pemutus;
+  const [gerbang, setGerbang] = useState({ ready: !perluGerbang, gate: null });
+  useEffect(() => {
+    if (!perluGerbang) return undefined;
+    let alive = true;
+    fetchGate(order.id).then((g) => { if (alive) setGerbang({ ready: true, gate: g }); })
+      .catch(() => { if (alive) setGerbang({ ready: true, gate: null }); });   // gagal → predikat jatuh ke penanda pesanan
+    return () => { alive = false; };
+  }, [perluGerbang, order?.id]);
+  const dibatasi = gerbang.ready && isHeldForPayment(order, gerbang.gate) && !pemutus;
   const cash = useSalesCashMode(dibatasi);
-  if (dibatasi && !cash.ready) return null;   // mode tunai belum terbaca — jangan berkedip memperlihatkan form penuh
+  if (!gerbang.ready || (dibatasi && !cash.ready)) return null;   // mode tunai belum terbaca — jangan berkedip memperlihatkan form penuh
   if (dibatasi && !cash.cashAllowed) {
     return (
       <DetailModal framed size="sm" testId="m-ar-receipt-held" label="Pesanan menunggu lapor bayar" onClose={onClose}>

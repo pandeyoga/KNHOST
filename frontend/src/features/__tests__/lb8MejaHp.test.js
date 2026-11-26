@@ -361,3 +361,36 @@ describe("Notifikasi lapor bayar", () => {
     expect(notifDocTarget({ type: "x", link: "/?view=orders" })).toBeNull();
   });
 });
+
+// ─── 8. R16 — satu predikat "tertahan bayar" ───────────────────────────────────────────────────────────────
+describe("isHeldForPayment", () => {
+  const { isHeldForPayment } = require("../orders/payReport/payReportApi");
+  const g = (o = {}) => ({ applies: true, released: null, ...o });
+  test("gerbang berlaku + status sebelum gudang + belum dilepas → tertahan (walau penanda belum ada)", () => {
+    expect(isHeldForPayment({ status: "approved" }, g())).toBe(true);
+    expect(isHeldForPayment({ status: "reserved" }, g())).toBe(true);
+    expect(isHeldForPayment({ status: "waiting_stock" }, g())).toBe(true);
+  });
+  test("pengecualian berizin, gerbang tidak berlaku, sample, atau status sesudah gudang → tidak", () => {
+    expect(isHeldForPayment({ status: "approved" }, g({ released: { by: "x" } }))).toBe(false);
+    expect(isHeldForPayment({ status: "approved", dispatch_payment_release: { by: "x" } }, g())).toBe(false);
+    expect(isHeldForPayment({ status: "approved" }, g({ applies: false }))).toBe(false);
+    expect(isHeldForPayment({ status: "approved", order_type: "sample" }, g())).toBe(false);
+    expect(isHeldForPayment({ status: "confirmed", pay_hold: {} }, g())).toBe(false);
+    expect(isHeldForPayment(null, g())).toBe(false);
+  });
+  test("tanpa jawaban gerbang: jatuh ke penanda pay_hold / release.waiting=bayar", () => {
+    expect(isHeldForPayment({ status: "approved", pay_hold: { since: "x" } })).toBe(true);
+    expect(isHeldForPayment({ status: "approved", release: { waiting: "bayar" } }, null)).toBe(true);
+    expect(isHeldForPayment({ status: "approved" })).toBe(false);
+  });
+});
+
+test("MobileArReceipt R16: pesanan approved TANPA penanda tetapi gerbang berlaku → dibatasi (pemandu bila tunai dilarang)", async () => {
+  routeGet({ mode: "dilarang" });
+  await mount(<MobileArReceipt customer={{ id: "c1", name: "Toko A", focus_order_id: "so1" }}
+    order={{ id: "so1", status: "approved", customer_id: "c1" }} user={{ permissions: { payment_report: ["create"] } }}
+    onClose={() => {}} onDone={() => {}} />);
+  await tunggu();
+  expect(q("m-ar-receipt-held")).not.toBeNull();
+});

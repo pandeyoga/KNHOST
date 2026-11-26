@@ -215,7 +215,7 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   // Uji variasi isian (pelatihan 18 Nov) — nominal dibaca `heldMoney` (teks kanonik MoneyInput / angka); dulu
   // `Number("3374122,5")` = NaN → Rp 0 padahal pratinjau kotak menampilkan Rp 3.374.123.
   const allocTotal = useMemo(() => Object.values(alloc).reduce((s, v) => s + (heldMoney(v) || 0), 0), [alloc]);
-  const depositWanted = useDeposit ? Math.min(heldMoney(depositAmt) || 0, deposit) : 0;
+  const depositWanted = useDeposit && !cashOnly ? Math.min(heldMoney(depositAmt) || 0, deposit) : 0;
   // Pelatihan 18 Nov (F04) — "Atur sendiri": angka per tagihan = yang DILUNASI (uang baru + titipan). Dulu titipan
   // ditambahkan DI LUAR alokasi (uang = Σ alokasi, titipan = dana lebih) → pesanan tidak bertambah lunas, titipan
   // kembali utuh, dan kwitansi terbaca "lebih bayar" sebesar titipan. Kini titipan dipakai lebih dulu dan uang baru =
@@ -403,7 +403,7 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                 <ReceiptPaymentFields entityId={selectedEntity} method={method} methodRow={methodRow} titipan={titipan}
                   orders={allocatedOrders} refRequired={refRequired} value={pay} onChange={setPay} onState={setPayState} />
               )}
-              {deposit > 0 && (
+              {deposit > 0 && !cashOnly && (   // LB-T8 R16: pesanan tertahan bayar + non-pemutus = HANYA tunai baru tanpa titipan (server 409 bila titipan dipakai)
                 <div className="rounded-md border border-kn-divider bg-kn-success-soft px-3 py-2" data-testid="ar-receipt-deposit-box">
                   <label className="flex cursor-pointer items-center gap-2 text-fs-12 font-semibold text-kn-success-text">
                     <input type="checkbox" data-testid="ar-receipt-use-deposit" checked={useDeposit}
