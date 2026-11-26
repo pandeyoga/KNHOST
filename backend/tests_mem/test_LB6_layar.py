@@ -135,6 +135,9 @@ async def test_perjalanan_cbd_tertahan_di_bayar_dicek(klien, db, siap):
     assert langkah["label"] == "Bayar dicek Finance" and langkah["done"] is False and langkah["state"] == "pending"
     assert j["current_step"] == "bayar_dicek" and j["current_label"] == "Bayar dicek Finance"
     assert j["commercial_invoice"]["available"] is True          # B1: faktur berkode sejak tahan dimulai
+    # R21 — teks langkah "Ditagih" sejalan dengan B1: faktur sudah bisa dicetak, bukan "terbit saat dikirim"
+    ditagih = next(s for s in j["steps"] if s["key"] == "ditagih")
+    assert "sudah bisa dicetak" in ditagih["detail"] and "saat barang dikirim" not in ditagih["detail"]
 
 
 async def test_perjalanan_laporan_menunggu_tetap_di_bayar_dicek(klien, db, siap):
@@ -150,6 +153,8 @@ async def test_perjalanan_net30_melewati_bayar_dicek(klien, db, siap):
     assert langkah["state"] == "skipped" and langkah["done"] is False
     assert j["current_step"] != "bayar_dicek"
     assert j["commercial_invoice"]["available"] is False          # tidak berubah: belum ada surat jalan
+    ditagih = next(s for s in j["steps"] if s["key"] == "ditagih")
+    assert "saat barang dikirim" in ditagih["detail"]                 # R21: pesanan non-CBD tidak berubah
 
 
 async def test_perjalanan_tahan_dibuka_langkah_selesai(klien, db, siap):

@@ -42,7 +42,7 @@ const teksBatas = (dueAt) => {
   return `Batas bayar ${formatDate(dueAt)} · ${sisa}`;
 };
 
-export function GateSummary({ gate, testPrefix = "gate" }) {
+export function GateSummary({ gate, testPrefix = "gate", held = false }) {
   if (!gate?.applies) return null;
   const rel = gate.released;
   const tone = gate.blocked ? "border-[#F5C2C0] bg-[#FFF4F3] text-[#8E1F17]"
@@ -64,7 +64,12 @@ export function GateSummary({ gate, testPrefix = "gate" }) {
         </p>
       )}
       {gate.blocked && (
-        <p className="mt-0.5 text-[10.5px]">Catat pembayaran di Uang Masuk, atau pemegang izin “Kirim tanpa lunas” memberi pengecualian dengan alasan.</p>
+        <p className="mt-0.5 text-[10.5px]" data-testid={`${testPrefix}-hint`}>
+          {/* R21 — tertahan sebelum gudang: sales melapor bayar, Finance memutus (bukan "Uang Masuk" yang ditolak server). */}
+          {held
+            ? "Sales: Lapor bayar dengan bukti transfer — Finance mengecek lalu menerima. Atau pemegang izin “Kirim tanpa lunas” memberi pengecualian dengan alasan."
+            : "Catat pembayaran di Uang Masuk, atau pemegang izin “Kirim tanpa lunas” memberi pengecualian dengan alasan."}
+        </p>
       )}
     </div>
   );
@@ -124,7 +129,7 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
           {held ? "Bayar sebelum gudang" : "Bayar sebelum kirim"}
         </p>
       )}
-      <GateSummary gate={gate} testPrefix={testPrefix} />
+      <GateSummary gate={gate} testPrefix={testPrefix} held={held} />
       {order?.pay_hold?.due_at && (
         <p className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`${testPrefix}-batas`}>{teksBatas(order.pay_hold.due_at)}</p>
       )}

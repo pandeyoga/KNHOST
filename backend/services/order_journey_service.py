@@ -306,7 +306,12 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         _step("ditagih", "Ditagih (Faktur Komersial)", bool(terkirim) and not dibatalkan,
               (min(s.get("created_at", "") for s in terkirim) if terkirim else ""), "",
               ((f"Faktur Komersial {order.get('number') or order.get('order_number') or ''} — PDF di detail pesanan"
-                if terkirim else "Faktur Komersial terbit saat barang dikirim (Surat Jalan pertama)")
+                if terkirim else
+                # R21 — pesanan bayar sebelum gudang: Faktur Komersial (berinstruksi bayar) sudah bisa dicetak sejak
+                # disetujui (`commercial_invoice.available`), jadi teks "terbit saat dikirim" menyesatkan.
+                (f"Faktur Komersial {order.get('number') or order.get('order_number') or ''} sudah bisa dicetak "
+                 "(bayar sebelum gudang) — PDF di detail pesanan" if bayar["wajib"] and not dibatalkan
+                 else "Faktur Komersial terbit saat barang dikirim (Surat Jalan pertama)"))
                + (" · Faktur Pajak " + " · ".join(f.get("number", "") for f in faktur_aktif[:3]) if faktur_aktif
                   else (" · Faktur Pajak: belum (wewenang Finance)" if order.get("tax_mode") == "ppn" else "")))),
         _step("dibayar", "Dibayar", not dibatalkan and sisa <= 0.009 and grand > 0,

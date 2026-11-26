@@ -343,6 +343,14 @@ describe("Panel Bayar sebelum gudang", () => {
     expect(q("so-gate-lapor-open", host)).not.toBeNull();
   });
 
+  test("R21 — petunjuk tertahan: sebelum gudang menunjuk Lapor bayar; sesudah dilepas tetap Uang Masuk", async () => {
+    const held = await panel(SALES);
+    expect(q("so-gate-hint", held.host).textContent).toMatch(/Lapor bayar/);
+    expect(q("so-gate-hint", held.host).textContent).not.toMatch(/Uang Masuk/);
+    const lepas = await panel(SALES, { ...ORDER, status: "confirmed", pay_hold: undefined });
+    expect(q("so-gate-hint", lepas.host).textContent).toMatch(/Uang Masuk/);
+  });
+
   test("pesanan tahan bayar: tombol kwitansi langsung tersembunyi untuk sales, tampil untuk Finance", async () => {
     const sales = await panel(SALES);
     expect(q("so-gate-receipt-open", sales.host)).toBeNull();

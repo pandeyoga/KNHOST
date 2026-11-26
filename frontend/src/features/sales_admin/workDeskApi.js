@@ -143,6 +143,8 @@ const BADGE_LABEL = {
   done: "Selesai",
   cancelled: "Dibatalkan",
   menunggu: "Menunggu manajer",
+  // Lapor Bayar (R21) — antrean `lapor_bayar` Meja Keuangan: laporan menunggu Finance, bukan manajer.
+  "menunggu dicek": "Menunggu dicek", "sedang diproses": "Sedang diproses", "macet — ulangi": "Macet — ulangi",
   "menunggu acc": "Menunggu ACC", ditahan: "Ditahan", ditolak: "Harga ditolak",
   covered: "Barang masuk menutup",
   partial: "Tertutup sebagian",
@@ -183,12 +185,14 @@ const BADGE_TONE = {
 };
 
 const BADGE_GROUP = {
-  danger: ["lewat", "terlambat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high"],
-  warn: ["segera", "partial", "menunggu", "menunggu acc", "ditahan", "waiting_approval", "waiting_stock",
+  danger: ["lewat", "terlambat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high",
+           "macet — ulangi"],
+  warn: ["segera", "partial", "menunggu", "menunggu acc", "menunggu dicek", "ditahan", "waiting_approval", "waiting_stock",
          "pending_approval", "pending_process", "pending", "draft", "warning", "medium"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],
   info: ["reserved", "submitted", "open", "partially_picked", "partially_shipped", "picking", "packing", "loading",
-         "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban", "info", "low"],
+         "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban", "info", "low",
+         "sedang diproses"],
 };
 
 /** Kata Indonesia untuk penanda baris; tak dikenal → label status bersama (docStatusLabel), tidak dibuang. */

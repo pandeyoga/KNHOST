@@ -1255,6 +1255,22 @@ async def test_R18b_daftar_laporan_menandai_klaim_basi(klien, db, siap):
     assert row["badge"] == "macet — ulangi", row
 
 
+async def test_R21_lencana_baris_lapor_bayar_menunggu_dicek(klien, db, siap):
+    """R21 — baris laporan menunggu di Meja Keuangan berlencana "menunggu dicek" (bukan "menunggu", yang di layar
+    berarti "Menunggu manajer" milik antrean ACC harga); laporan `memproses` segar "sedang diproses"."""
+    so, rep = await _pesanan_tertahan_dengan_laporan(klien, db, siap)
+
+    async def _lencana():
+        r = await klien.get("/api/finance/desk", headers=siap["h_fin"])
+        assert r.status_code == 200, r.text
+        q = next(q for q in r.json()["queues"] if q["id"] == "lapor_bayar")
+        [row] = [x for x in q["rows"] if x["ref_id"] == rep["id"]]
+        return row["badge"]
+    assert await _lencana() == "menunggu dicek"
+    await db.payment_reports.update_one({"id": rep["id"]}, {"$set": {"status": "memproses", "claim": _klaim(1)}})
+    assert await _lencana() == "sedang diproses"
+
+
 # R19 — penilaian selisih bayar pesanan yang wajib bayar sebelum gudang: yang DIHARAPKAN = sisa wajib sebelum gudang
 # (`required − dibayar` dari gerbang), bukan seluruh sisa pesanan. Dulu DP dibayar sesudah konfirmasi terhadap baris
 # uang muka; kini pesanan ditahan SEBELUM konfirmasi (baris uang muka belum lahir) sehingga bayar tepat DP terbaca

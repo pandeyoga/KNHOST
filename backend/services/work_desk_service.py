@@ -575,6 +575,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     # alasan). Antrean pintu `POST /payment-reports/{id}/terima|tolak` (terdaftar di `verify_approval_queues`).
     # `memproses` ikut tampil: laporan yang tertinggal di tengah Terima bisa dicoba lagi (klaim basi diambil alih) —
     # R18-b: yang klaimnya basi berlencana "macet — ulangi" (Terima atau Tolak di panel mengambil alih klaimnya).
+    # R21 — lencana laporan biasa "menunggu dicek" (bukan "menunggu", yang di layar berarti "Menunggu manajer").
     from dependencies import has_permission
     if await has_permission(actor, "payment_report", "decide"):
         from services import payment_report_service as _prs
@@ -594,7 +595,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                            f"{lp.get('account_name', '')}",
                   value=float(lp.get("amount") or 0), age_days=_age_days(lp.get("created_at")), at=lp.get("created_at"),
                   badge=("macet — ulangi" if _prs.klaim_basi(lp) else
-                         "sedang diproses" if lp.get("status") == _prs.MEMPROSES else "menunggu"),
+                         "sedang diproses" if lp.get("status") == _prs.MEMPROSES else "menunggu dicek"),
                   action="Putuskan", action_kind="decide_payment_report",
                   extra={"order_id": lp.get("order_id", ""), "order_number": lp.get("order_number", ""),
                          "amount": float(lp.get("amount") or 0), "transfer_date": lp.get("transfer_date", ""),

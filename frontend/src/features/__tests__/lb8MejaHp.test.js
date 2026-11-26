@@ -14,6 +14,7 @@ import MobileArReceipt from "../sales/mobile/MobileArReceipt";
 import { TYPE_LABEL, typeLabel } from "../../components/NotificationCenter";
 import { notifDocTarget } from "../notifications/notifDocTarget";
 import { askConfirm, askReason } from "../../services/confirmService";
+import { badgeLabel } from "../sales_admin/workDeskApi";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -86,7 +87,7 @@ const SO1 = { id: "so1", number: "KSC/SO-1", customer_id: "c1", customer_name: "
   created_at: "2026-11-20T03:00:00Z", items: [{ product_name: "Katun A", sku: "KA-01", quantity: 10, unit: "meter", price: 25000, subtotal: 250000 }],
   total_amount: 250000, grand_total: 277500, ppn_amount: 27500, paid_total: 0 };
 const ROW = { ref_type: "payment_report", ref_id: "lb1", number: "LB-1", title: "Toko A", subtitle: "KSC/SO-1 · transfer 2026-11-25 · BCA Utama",
-  value: 600000, age_days: 1, badge: "menunggu", action: "Putuskan", action_kind: "decide_payment_report", entity_id: "ent_ksc",
+  value: 600000, age_days: 1, badge: "menunggu dicek", action: "Putuskan", action_kind: "decide_payment_report", entity_id: "ent_ksc",
   order_id: "so1", order_number: "KSC/SO-1", amount: 600000, transfer_date: "2026-11-25", account_label: "BCA Utama", attachments_count: 1,
   reported_by_name: "Sari", row_key: "lb1" };
 const TERIMA_LAIN = { ref_type: "customer", ref_id: "c9", number: "KSC/SO-9", title: "Toko Z", value: 5000, entity_id: "ent_ksc",
@@ -114,6 +115,13 @@ const GATE = { applies: true, blocked: true, term_code: "CBD", term_name: "CBD",
 const jumlahMuatMeja = () => mockGet.mock.calls.filter(([u]) => String(u).includes("/finance/desk")).length;
 
 // ─── 1. Registri panel ────────────────────────────────────────────────────────────────────────────────────
+test("R21 — lencana baris lapor_bayar berbahasa Finance, bukan 'Menunggu manajer'", () => {
+  expect(badgeLabel("menunggu dicek")).toBe("Menunggu dicek");
+  expect(badgeLabel("sedang diproses")).toBe("Sedang diproses");
+  expect(badgeLabel("macet — ulangi")).toBe("Macet — ulangi");
+  expect(badgeLabel(ROW.badge)).not.toMatch(/manajer/i);
+});
+
 test("registri: baris lapor_bayar (kelompok uang_masuk) → PayReportQueuePanel; dokumen = pesanan dari order_id", () => {
   const row = { ...ROW, _queue: "lapor_bayar" };
   expect(DESK_DOC_OF["queue:lapor_bayar"]).toBeTruthy();
