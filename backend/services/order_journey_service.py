@@ -192,23 +192,37 @@ _STATUS_PRA_SETUJU = ("draft", "pending", "reserved", "waiting_approval", "waiti
 
 async def _bayar_dicek(order: Dict[str, Any], status: str) -> Dict[str, Any]:
     """LB-T6 — keadaan tahap "Bayar dicek Finance". "Wajib bayar dulu" HANYA dari `dispatch_payment_gate.evaluate` lewat
-    `pay_hold_service` (satu hitungan). `wajib` = pesanan sudah disetujui dan termasuk yang harus bayar dulu (faktur
-    berkode sejak tahan dimulai, B1); `done` = sudah tidak ditahan (uang cukup atau pengecualian berizin)."""
+    `pay_hold_service` (satu hitungan); "tahan dimulai" = penanda `pay_hold` (sama dengan pelacak SO).
+
+    * `skipped`/`na` — pesanan tidak wajib bayar dulu, atau pesanan lama yang sudah lewat gudang tanpa pernah punya
+      penanda tahan dan syaratnya belum terpenuhi (tidak pernah "dicek"); `na` = tidak ikut hitungan kemajuan.
+    * tertahan — penanda ada (status `approved`): belum selesai, faktur komersial tersedia sejak tahan dimulai (B1).
+    * `done` — syarat terpenuhi atau ada pengecualian berizin sesudah disetujui (tahan dibuka / lolos gudang)."""
     from services import pay_hold_service as phs
     st = await phs.status_wajib_bayar(order)
-    if not (st and st["applies"]):
-        return {"skipped": True, "done": False, "wajib": False, "at": "",
+    marker = bool(order.get("pay_hold"))
+    if status in STATUS_BATAL:
+        return {"skipped": not (st and st["applies"]) and not marker, "na": False, "done": False,
+                "wajib": False, "at": "", "detail": ""}
+    if not marker and not (st and st["applies"]):
+        return {"skipped": True, "na": True, "done": False, "wajib": False, "at": "",
                 "detail": "Dilewati — pesanan tidak wajib bayar dulu"}
-    disetujui = status not in _STATUS_PRA_SETUJU and bool(status)
-    tahan = phs.ditahan(order) or (disetujui and not order.get("dispatch_payment_release") and st["blocked"]
-                                   and status in phs.STATUS_SEBELUM_GUDANG)
-    if tahan:
+    if marker and status == "approved":
         h = order.get("pay_hold") or {}
-        return {"skipped": False, "done": False, "wajib": disetujui, "at": "",
-                "detail": ("Menunggu pembayaran dicek Finance" + (f" · batas {str(h['due_at'])[:10]}" if h.get("due_at") else ""))}
-    return {"skipped": False, "done": disetujui, "wajib": disetujui, "at": "",
-            "detail": ("Pengecualian berizin — kirim tanpa lunas" if order.get("dispatch_payment_release")
-                       else "Pembayaran dicek Finance" if disetujui else "")}
+        return {"skipped": False, "na": False, "done": False, "wajib": True, "at": "",
+                "detail": "Menunggu pembayaran dicek Finance" + (f" · batas {str(h['due_at'])[:10]}" if h.get("due_at") else "")}
+    disetujui = bool(status) and status not in _STATUS_PRA_SETUJU
+    if not disetujui:
+        return {"skipped": False, "na": False, "done": False, "wajib": False, "at": "", "detail": ""}
+    izin = bool(order.get("dispatch_payment_release"))
+    if izin or not (st and st["blocked"]):
+        return {"skipped": False, "na": False, "done": True, "wajib": True, "at": "",
+                "detail": "Pengecualian berizin — kirim tanpa lunas" if izin else "Pembayaran dicek Finance"}
+    if status == "approved":   # disetujui, belum ada penanda & belum cukup bayar: tahap belum dijalani
+        return {"skipped": False, "na": False, "done": False, "wajib": False, "at": "", "detail": ""}
+    # pesanan lama: sudah lewat gudang tanpa penanda dan belum memenuhi syarat → tahap ini tidak pernah terjadi
+    return {"skipped": True, "na": False, "done": False, "wajib": False, "at": "",
+            "detail": "Dilewati — pesanan dilepas sebelum tahap ini ada"}
 
 
 async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
@@ -309,8 +323,13 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
             if not s["done"] and s["state"] != "skipped":
                 s["state"] = "cancelled"
 
-    tercapai = [s for s in steps if s["done"]]
-    dilewati = [s for s in steps if s["state"] == "skipped"]
+    # LB-T6 — langkah "tidak berlaku" (mis. bayar dicek pada NET30) tidak ikut menggembungkan kemajuan.
+    if bayar["na"]:
+        steps_hitung = [s for s in steps if s["key"] != "bayar_dicek"]
+    else:
+        steps_hitung = steps
+    tercapai = [s for s in steps_hitung if s["done"]]
+    dilewati = [s for s in steps_hitung if s["state"] == "skipped"]
     # Tahap sekarang = langkah pertama yang belum selesai DAN tidak dilewati (dulu: verifikasi yang dilewati tetap
     # disebut "tahap sekarang" walau pesanan sudah dikirim).
     kini = next((s for s in steps if not s["done"] and s["state"] != "skipped"), None)
@@ -336,8 +355,8 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         # `done` = langkah yang benar-benar terjadi; `skipped` = dilewati (sudah di belakang pesanan). Persen = posisi
         # pesanan di jalurnya, jadi langkah yang dilewati ikut terhitung "terlewati" (pesanan lunas tanpa verifikasi
         # Admin Sales = 100%, bukan 89%).
-        "progress": {"done": len(tercapai), "skipped": len(dilewati), "total": len(steps),
-                     "percent": round(100.0 * (len(tercapai) + len(dilewati)) / len(steps), 1)},
+        "progress": {"done": len(tercapai), "skipped": len(dilewati), "total": len(steps_hitung),
+                     "percent": round(100.0 * (len(tercapai) + len(dilewati)) / len(steps_hitung), 1)},
         "current_step": (kini or {}).get("key", "") if not dibatalkan else "dibatalkan",
         "current_label": ((kini or {}).get("label", "Selesai") if not dibatalkan
                           else "Dibatalkan"),

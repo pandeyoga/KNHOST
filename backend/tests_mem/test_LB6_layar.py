@@ -223,3 +223,54 @@ async def test_admin_sales_keterangan_dan_bukan_siap_dikonfirmasi(klien, db, sia
     periksa = await _antrean(klien, siap["h_sa"], "/api/sales-admin/desk", "perlu_verifikasi")
     b = next((x for x in periksa if x["ref_id"] == so["id"]), None)
     assert b is not None and "menunggu bayar (dicek Finance)" in b["subtitle"] and "siap dilepas" not in b["subtitle"]
+
+
+# ── Putaran perbaikan R14 ────────────────────────────────────────────────────────────────────────────────────────────
+async def test_perjalanan_batal_atau_kedaluwarsa_bayar_dicek_tidak_selesai(klien, db, siap):
+    for st in ("cancelled", "expired"):
+        so = await _pesan(klien, db, siap)
+        await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"status": st}, "$unset": {"pay_hold": ""}})   # FIXTURE
+        j = await _journey(klien, siap, so["id"])
+        langkah = next(s for s in j["steps"] if s["key"] == "bayar_dicek")
+        assert langkah["done"] is False and langkah["state"] != "done", st
+        assert j["commercial_invoice"]["available"] is False
+
+
+async def test_perjalanan_pesanan_lama_tanpa_penanda_dilewati_bukan_selesai(klien, db, siap):
+    """CBD lama sudah `confirmed`, belum dibayar, tidak pernah punya penanda tahan → dilewati (bukan "dicek")."""
+    so = await _buat(klien, db, siap)
+    await db.sales_orders.update_one({"id": so["id"]}, {"$set": {"status": "confirmed", "confirmed_at": now_iso()}})
+    j = await _journey(klien, siap, so["id"])
+    langkah = next(s for s in j["steps"] if s["key"] == "bayar_dicek")
+    assert langkah["done"] is False and langkah["state"] == "skipped"
+    assert j["commercial_invoice"]["available"] is False
+
+
+async def test_perjalanan_approved_tanpa_penanda_tidak_dianggap_tahan(klien, db, siap):
+    so = await _pesan(klien, db, siap)
+    await db.sales_orders.update_one({"id": so["id"]}, {"$unset": {"pay_hold": ""}})   # FIXTURE: tahan belum dimulai
+    j = await _journey(klien, siap, so["id"])
+    assert j["commercial_invoice"]["available"] is False
+    assert next(s for s in j["steps"] if s["key"] == "bayar_dicek")["done"] is False
+
+
+async def test_laporan_diterima_tapi_masih_kurang_kembali_ke_bayar_sebelum_kirim(klien, db, siap):
+    """DP sebagian: laporan `diterima` (kwitansi 400.000 dari Rp 1.000.000 wajib) tidak lagi menyembunyikan pesanan."""
+    so = await _pesan(klien, db, siap)
+    r = await klien.post(f"/api/sales-orders/{so['id']}/payment-reports", headers=siap["h_sa"], json={
+        "amount": 400_000, "transfer_date": TGL, "account_id": siap["A"], "method": "transfer",
+        "reference_no": f"TRF-LB6-{next(_n)}", "note": "uji sebagian"})
+    assert r.status_code == 200, r.text
+    rep = r.json()
+    r = await klien.post(f"/api/payment-reports/{rep['id']}/attachments", headers=siap["h_sa"],
+                         files={"file": ("bukti.pdf", PDF, "application/pdf")})
+    assert r.status_code == 200, r.text
+    kirim = await _antrean(klien, siap["h_fin"], "/api/finance/desk", "bayar_sebelum_kirim")
+    assert so["id"] not in {x["order_id"] for x in kirim}
+    r = await klien.post(f"/api/payment-reports/{rep['id']}/terima", headers=siap["h_fin"], json={})
+    assert r.status_code == 200, r.text
+    assert (await _so(db, so["id"]))["pay_hold"]                  # masih kurang → tetap tertahan
+    kirim = await _antrean(klien, siap["h_fin"], "/api/finance/desk", "bayar_sebelum_kirim")
+    assert so["id"] in {x["order_id"] for x in kirim}
+    lapor = await _antrean(klien, siap["h_fin"], "/api/finance/desk", "lapor_bayar")
+    assert all(x["ref_id"] != rep["id"] for x in lapor)

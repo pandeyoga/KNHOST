@@ -136,7 +136,10 @@ def test_journey_marks_skipped_verification_on_server():
     assert st["diverifikasi"]["detail"].startswith("Dilewati")
     assert j["current_step"] == "dikonfirmasi", j["current_step"]       # dulu "diverifikasi"
     assert j["progress"]["skipped"] == 1 and j["progress"]["done"] == 2
-    assert j["progress"]["percent"] == round(100.0 * 3 / len(j["steps"]), 1)
+    # LB-T6 — "Bayar dicek Finance" tidak berlaku (tanpa termin wajib bayar) → tidak ikut hitungan kemajuan
+    assert next(x for x in j["steps"] if x["key"] == "bayar_dicek")["state"] == "skipped"
+    assert j["progress"]["total"] == len(j["steps"]) - 1
+    assert j["progress"]["percent"] == round(100.0 * 3 / j["progress"]["total"], 1)
     # pesanan batal: langkah yang dilewati tetap "dilewati", sisanya "dibatalkan"
     j2 = run(oj.journey(dict(o, status="cancelled")))
     st2 = {s["key"]: s for s in j2["steps"]}
