@@ -62,12 +62,17 @@ E("sales.reservation_days", group="harga-diskon", section="alur-pesanan", type="
   consumers=("services/inventory_service.py:reservation_expires_at",), **_P)
 
 # LB-T1 — Lapor Bayar CBD & DP: lama pesanan yang wajib bayar dulu menunggu bukti bayar sebelum tahannya jatuh tempo.
-# Pembaca: `services/pay_hold_service.py` (Tugas 2 — hitung `pay_hold.due_at`).
+# Pembaca SATU-SATUNYA: `services/pay_hold_service.py:due_at` (dipanggil `start` saat tahan dimulai → `pay_hold.due_at`,
+# tidak pernah dihitung ulang). Tanggal tersimpan itu dipakai (tanpa membaca pengaturan) oleh penyapu
+# `inventory_service.expire_old_reservations` (LB-T5 — lewat batas tanpa laporan bayar menunggu → kedaluwarsa) dan
+# pengingat `notification_service._notify_pay_due_soon` (H-1, jendela `notif.reservation_expiry_warn_hours`).
 E("sales.batas_bayar_hari", group="harga-diskon", section="alur-pesanan", type="duration", default=3, min=1, max=30,
   step=1, unit="hari", scopes=_GE,
   label="Batas hari bayar pesanan wajib bayar dulu",
   help="Pesanan yang wajib bayar dulu (CBD atau uang muka) menunggu pembayaran sekian hari sejak disetujui.",
-  impact="Berlaku untuk tahan bayar yang dibuat sesudah perubahan; tahan yang sudah berjalan tetap memakai batas lamanya.",
+  impact="Lewat batas tanpa laporan bayar yang menunggu dicek, pesanan kedaluwarsa: stok dilepas dan uang yang sudah "
+         "masuk menjadi titipan pelanggan. Berlaku untuk tahan bayar yang dibuat sesudah perubahan; tahan yang sudah "
+         "berjalan tetap memakai batas lamanya.",
   example="3 → pesanan disetujui Senin pukul 10.00 dan belum dibayar jatuh tempo Kamis pukul 10.00",
   consumers=("services/pay_hold_service.py:due_at",), **_P)
 

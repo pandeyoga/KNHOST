@@ -216,13 +216,20 @@ async def generate_system_notifications() -> int:
     #    ALAMAT: yang boleh MENGONFIRMASI pesanan (`order.confirm`) + sales pemegang
     #    akunnya. Dulu "all" — padahal gudang & finance tak bisa berbuat apa pun.
     jam_ingat = int(await nilai("notif.reservation_expiry_warn_hours"))
-    soon = (datetime.now(timezone.utc) + timedelta(hours=jam_ingat)).isoformat()
+    sekarang = datetime.now(timezone.utc)
+    soon = (sekarang + timedelta(hours=jam_ingat)).isoformat()
+    from services.inventory_service import EXPIRABLE_SO_STATUSES
     orders = await db.sales_orders.find(
-        # KN-D13 — selaras dengan penyapu kedaluwarsa (inventory_service): pesanan
-        # backorder `waiting_stock` juga diperingatkan sebelum mati (jendela yang sama).
-        {"status": {"$in": ["reserved", "waiting_approval", "approved", "waiting_stock"]},
+        # LB-T5 — hanya status yang memang dikedaluwarsakan penyapu cadangan (`inventory_service.EXPIRABLE_SO_STATUSES`).
+        # Dulu (KN-D13) `approved`/`waiting_stock` ikut diperingatkan "pesanan gugur" padahal tidak pernah gugur karena
+        # cadangan (FIX-3b / K-B2b-12); pesanan `approved` yang wajib bayar dulu kini diingatkan batas BAYAR-nya (2b).
+        {"status": {"$in": list(EXPIRABLE_SO_STATUSES)},
          "reservation_expires_at": {"$lte": soon}}, {"_id": 0}
     ).to_list(200)
+    # LB-T5 — pesanan yang laporan bayarnya masih menunggu Finance tidak gugur (penyapu menahannya): tanpa pengingat.
+    from services import payment_report_service as _prs
+    _dilapor = await _prs.laporan_tertunda([o["id"] for o in orders])
+    orders = [o for o in orders if o["id"] not in _dilapor]
     from services.analytics_time import WIB
 
     def _wib(iso: Any) -> str:
@@ -246,6 +253,12 @@ async def generate_system_notifications() -> int:
         if waiting_mgr:
             notes += await create_addressed(permission=("order", "approve"), **kw)
         created += len(notes)
+
+    # 2b) LB-T5 — batas BAYAR segera habis (pesanan wajib bayar dulu yang tertahan, `pay_hold.due_at` dalam jendela yang
+    #     sama, belum lewat). ALAMAT sama dengan (2): sales pemilik + pemegang `order.confirm`. Pesanan yang laporan
+    #     bayarnya masih menunggu Finance dilewati — ia tidak gugur (§7-2). Satu pengingat per pesanan per orang
+    #     (`ever`): job pindai berjalan tiap beberapa jam, dan batas bayar satu tahan tidak pernah berubah.
+    created += await _notify_pay_due_soon(sekarang.isoformat(), soon)
 
     # 3) Order menunggu persetujuan (actionable, dari sales_orders)
     #    ALAMAT: pemegang `order.approve` — orang yang tombolnya memang ada.
@@ -302,6 +315,79 @@ async def generate_system_notifications() -> int:
     created += await _notify_pending_special_orders()
 
     return created
+
+
+#: LB-T5 — jenis notifikasi batas bayar (rancangan Lapor Bayar §5.3).
+PAY_DUE_SOON_TYPE = "pay_due_soon"
+PAY_OVERDUE_PENDING_TYPE = "lapor_bayar_lewat_batas"
+
+
+def _jam_wib(iso: Any) -> str:
+    """'2026-11-27T03:00:00+00:00' → '27/11 10:00 WIB'; kosong bila tidak terbaca."""
+    from services.analytics_time import WIB
+    try:
+        return datetime.fromisoformat(str(iso).replace("Z", "+00:00")).astimezone(WIB).strftime("%d/%m %H:%M WIB")
+    except (TypeError, ValueError):
+        return ""
+
+
+async def _notify_pay_due_soon(now_iso_: str, soon_iso: str) -> int:
+    """LB-T5 — pengingat H-1 `pay_due_soon`: pesanan `approved` ber-`pay_hold` yang batas bayarnya jatuh dalam
+    (sekarang, sekarang + `notif.reservation_expiry_warn_hours`], tanpa laporan bayar menunggu. Ke sales pemilik +
+    pemegang `order.confirm` (per orang), sekali per pesanan (`dedupe_scope="ever"`). → jumlah notifikasi dibuat."""
+    from services import dispatch_payment_gate as gate
+    from services import pay_hold_service as phs
+    from services import payment_report_service as prs
+    orders = await db.sales_orders.find(
+        {"status": "approved", "pay_hold.due_at": {"$gt": now_iso_, "$lte": soon_iso}}, {"_id": 0}).to_list(200)
+    dilapor = await prs.laporan_tertunda([o["id"] for o in orders])
+    created = 0
+    for order in orders:
+        # hanya pesanan yang BENAR-BENAR gugur saat batas lewat (nasib penyapu yang sama): bukan yang laporannya menunggu,
+        # yang sudah terbayar / tidak lagi wajib bayar, atau yang uangnya tercatat menunggu cocok mutasi bank
+        if order["id"] in dilapor or await phs.nasib_lewat_batas(order) != phs.NASIB_KEDALUWARSA:
+            continue
+        st = await gate.evaluate(order)
+        nomor = order.get("number", "")
+        batas = _jam_wib((order.get("pay_hold") or {}).get("due_at"))
+        notes = await create_addressed(
+            permission=("order", "confirm"),
+            also_users=(order.get("sales_id") or order.get("assigned_sales_id") or "",),
+            notif_type=PAY_DUE_SOON_TYPE, ref=f"paydue:{order['id']}", dedupe_scope="ever",
+            title=f"Batas bayar segera habis: {nomor}",
+            body=(f"{nomor} ({order.get('customer_name', '')}) belum dibayar {_rupiah_aman(st.get('shortfall'))}. "
+                  f"Batas bayar {batas} — lewat batas tanpa laporan bayar, pesanan gugur dan stok dilepas. Lapor bayar "
+                  "di rincian pesanan."),
+            severity="warning", link=f"/?view=orders&id={order['id']}", entity_id=order.get("entity_id"))
+        created += len(notes)
+    return created
+
+
+async def notify_pay_overdue_pending(order: Dict[str, Any], *, sebab: str, batas_iso: str = "",
+                                     report_numbers: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """LB-T5 (§5.3, §7-2) — SATU penyusun `lapor_bayar_lewat_batas`: pesanan sudah lewat batas (bayar atau masa booking
+    stok) tetapi TIDAK dikedaluwarsakan penyapu karena pembayarannya menunggu dicek Finance — `sebab="laporan"` (laporan
+    bayar `menunggu`/`memproses`) atau `"cek_bank"` (dasar `terverifikasi`, uang tercatat cukup, belum cocok mutasi
+    bank). Ke pemegang `payment_report.decide` di PT pesanan (per orang), satu per pesanan per hari (`dedupe_scope="day"`;
+    penyapu berjalan tiap 30 menit)."""
+    nomor = order.get("number") or order.get("id") or ""
+    pelanggan = order.get("customer_name") or "-"
+    jam = _jam_wib(batas_iso)
+    jenis_batas = "Batas bayar" if order.get("status") == "approved" else "Masa booking stok"
+    lewat = f"{jenis_batas} {jam} sudah lewat" if jam else f"{jenis_batas} sudah lewat"
+    if sebab == "cek_bank":
+        title = f"Lewat batas bayar, menunggu cocok mutasi bank — {nomor}"
+        body = (f"{pelanggan} — {lewat}. Pembayaran sudah tercatat tetapi belum cocok dengan mutasi bank; pesanan tidak "
+                "dikedaluwarsakan. Cocokkan di Rekonsiliasi Bank.")
+    else:
+        daftar = ", ".join(n for n in (report_numbers or []) if n) or "laporan bayar"
+        title = f"Lapor bayar menunggu melewati batas — {nomor}"
+        body = (f"{pelanggan} — {lewat}, tetapi {daftar} masih menunggu dicek Finance. Pesanan tidak dikedaluwarsakan "
+                "sampai laporannya diputus.")
+    return await create_addressed(
+        permission=("payment_report", "decide"), notif_type=PAY_OVERDUE_PENDING_TYPE,
+        ref=f"lapor_lewat:{order.get('id', '')}", dedupe_scope="day", title=title, body=body[:400],
+        severity="warning", link=f"/?view=orders&id={order.get('id', '')}", entity_id=order.get("entity_id") or None)
 
 
 #: Jenis notifikasi "PO custom menunggu keputusan". Hanya SATU fungsi di seluruh

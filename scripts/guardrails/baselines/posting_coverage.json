@@ -167,11 +167,11 @@
    "alasan": "twin_je lama — tinggal pinjaman antar-PT (interco_loan_service: cair & angsuran); pindah aset dan pembayarannya lewat twin_journal sejak PK-23"
   },
   {
-   "lokasi": "services/inventory_service.py:expire_old_reservations",
+   "lokasi": "services/inventory_service.py:_kedaluwarsakan",
    "fungsi_gl": "reverse_order_journals",
    "jumlah": 1,
    "pemilik": "belum ada",
-   "alasan": "pembalik jurnal reservasi kedaluwarsa"
+   "alasan": "pembalik jurnal pesanan kedaluwarsa (reservasi lewat / batas bayar lewat LB-T5) — panggilan yang sama, dipindah dari expire_old_reservations ke rantai bersama"
   },
   {
    "lokasi": "services/makloon_claim_service.py:approve_claim",

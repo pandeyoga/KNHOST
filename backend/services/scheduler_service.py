@@ -125,8 +125,11 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Pesanan yang BELUM disetujui (Dicadangkan / Menunggu persetujuan) dan masa reservasinya "
                     "(menurut pengaturan masa reservasi) "
                     "lewat dibuat Kedaluwarsa; roll yang dicadangkan dilepas kembali ke stok. Pesanan yang sudah "
-                    "disetujui atau menunggu barang (backorder) TIDAK pernah kedaluwarsa otomatis. Dulu dijalankan "
-                    "diam-diam saat daftar pesanan/dasbor dibuka.",
+                    "disetujui atau menunggu barang (backorder) tidak kedaluwarsa karena masa reservasi; pesanan "
+                    "yang wajib bayar dulu kedaluwarsa bila batas bayarnya lewat (uang yang sudah masuk menjadi "
+                    "titipan pelanggan). Pesanan dengan laporan bayar yang masih menunggu dicek Finance tidak "
+                    "dikedaluwarsakan — Finance diberi tahu; laporan bayar yang tertinggal di pesanan batal/"
+                    "kedaluwarsa ditutup otomatis. Dulu dijalankan diam-diam saat daftar pesanan/dasbor dibuka.",
      "kind": "interval", "interval_minutes": 30, "fn": _reservation_expiry_job,
      "link": "orders"},
     {"id": "event_scan", "label": "Pindai Event Sistem",

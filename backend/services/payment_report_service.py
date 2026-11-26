@@ -24,6 +24,9 @@ MESIN STATUS LAPORAN (LB-T4)
   kwitansi itu. Ada kwitansi (setengah jadi, atau tuntas tetapi penghentian paksa) → tetap `memproses`: laporan
   berkwitansi tidak pernah kembali bisa ditolak (tolak juga menolak laporan yang sudah berkwitansi).
 * Sebelum klaim (tanpa tulisan): lampiran ≥ 1, pesanan hidup, nominal ≤ sisa tagihan pesanan (R10-b).
+* LB-T5 — laporan `menunggu`/`memproses` menahan kedaluwarsa pesanannya (`TERTUNDA`). Laporan `menunggu` (atau
+  `memproses` basi) yang tertinggal di pesanan batal/kedaluwarsa ditutup penyapu → `ditolak` ("Pesanan sudah
+  batal/kedaluwarsa", `tolak_laporan_pesanan_mati`).
 """
 from __future__ import annotations
 
@@ -426,6 +429,82 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
                             f"{receipt.get('number', '')}.")
     return {"report": tampil(doc), "receipt_number": receipt.get("number", ""), "released": bool(released),
             "waiting_bank": await _menunggu_bank(order["id"])}
+
+
+# ── LB-T5 — penyapu batas bayar ──────────────────────────────────────────────────────────────────────────────────────
+#: Laporan yang masih menunggu keputusan Finance: `menunggu` dan `memproses` (Terima sedang/pernah berjalan). Keduanya
+#: menahan kedaluwarsa pesanannya (Review Focus 3, §7-2).
+TERTUNDA = (MENUNGGU, MEMPROSES)
+#: Status pesanan mati yang membuat laporan tertunda ditutup penyapu (ketetapan pengendali Tugas 5). `draft` tidak: pesanan
+#: yang dikembalikan untuk direvisi bisa hidup lagi.
+STATUS_PESANAN_MATI = ("cancelled", "expired", "rejected")
+ALASAN_PESANAN_MATI = "Pesanan sudah batal/kedaluwarsa"
+SISTEM = {"id": "", "name": "Sistem"}
+
+
+async def laporan_tertunda(order_ids: List[str]) -> Dict[str, List[str]]:
+    """id pesanan → nomor laporan bayarnya yang `menunggu`/`memproses` (hanya pesanan yang punya). Satu kueri."""
+    ids = [i for i in dict.fromkeys(order_ids or []) if i]
+    out: Dict[str, List[str]] = {}
+    if not ids:
+        return out
+    async for r in db.payment_reports.find({"order_id": {"$in": ids}, "status": {"$in": list(TERTUNDA)}},
+                                           {"_id": 0, "order_id": 1, "number": 1}):
+        out.setdefault(r["order_id"], []).append(r.get("number") or "")
+    return out
+
+
+async def tolak_laporan_pesanan_mati() -> int:
+    """LB-T5 — laporan `menunggu` (atau `memproses` yang klaimnya basi, > KLAIM_BASI_MENIT) milik pesanan yang sudah
+    batal/kedaluwarsa/ditolak tidak boleh menunggu selamanya di antrean Finance (Terima menolaknya dengan 409 pemandu):
+    penyapu menutupnya `ditolak` beralasan `ALASAN_PESANAN_MATI` lewat CAS yang sama dengan Tolak + riwayat status, lalu
+    pelapor dan sales pemilik diberi tahu (`lapor_bayar_ditolak`). `memproses` yang masih baru dibiarkan (pemeriksaan
+    pesanan mati milik Terima sendiri); laporan yang sudah punya kwitansi tidak pernah ditolak (Minor-1 Tugas 4) — dicatat
+    di log untuk ditindak. Aman diulang. → jumlah laporan yang ditutup."""
+    basi = _basi_sebelum()
+    rows = await db.payment_reports.find(
+        {"$or": [{"status": MENUNGGU}, {"status": MEMPROSES, "claim.at": {"$lt": basi}}]}, {"_id": 0}).to_list(500)
+    if not rows:
+        return 0
+    mati = {o["id"]: o async for o in db.sales_orders.find(
+        {"id": {"$in": list({r.get("order_id") for r in rows if r.get("order_id")})},
+         "status": {"$in": list(STATUS_PESANAN_MATI)}}, {"_id": 0})}
+    ditutup = 0
+    for rep in rows:
+        order = mati.get(rep.get("order_id"))
+        if not order:
+            continue
+        kw = await _kwitansi_laporan(rep["id"])
+        if kw:
+            logger.warning("[payment_report] laporan %s (pesanan mati %s) punya kwitansi %s — tidak ditolak otomatis",
+                           rep.get("number"), order.get("number"), kw.get("number"))
+            continue
+        cas: Dict[str, Any] = {"id": rep["id"], "status": rep["status"]}
+        if rep["status"] == MEMPROSES:   # klaim yang SAMA dan masih basi (tidak menyalip Terima yang baru mengklaim)
+            cas.update({"claim.token": (rep.get("claim") or {}).get("token"), "claim.at": {"$lt": basi}})
+        now = now_iso()
+        doc = await db.payment_reports.find_one_and_update(
+            cas,
+            {"$set": {"status": DITOLAK, "reason": ALASAN_PESANAN_MATI, "decided_by": SISTEM["id"],
+                      "decided_by_name": SISTEM["name"], "decided_at": now, "updated_at": now},
+             "$unset": {"claim": ""},
+             "$push": {"status_history": status_history.entry(DITOLAK, user=SISTEM["name"],
+                                                              note=ALASAN_PESANAN_MATI)}},
+            projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        if not doc:
+            continue   # diputus/diklaim proses lain lebih dulu
+        ditutup += 1
+        from dependencies import audit
+        await audit("system", "payment_report_rejected", "payment_report", rep["id"],
+                    {"number": rep.get("number", ""), "order_id": order["id"], "reason": ALASAN_PESANAN_MATI,
+                     "order_status": order.get("status"), "from_status": rep["status"]})
+        from core_utils import rupiah
+        await _beritahu_putusan(doc, order, "lapor_bayar_ditolak",
+                                f"Lapor bayar ditutup — {doc.get('order_number', '')}",
+                                f"{doc.get('number', '')} {rupiah(doc.get('amount') or 0)} ditutup otomatis: "
+                                f"{ALASAN_PESANAN_MATI}. Bila pelanggan sudah mentransfer, serahkan ke Finance untuk "
+                                "dicatat sebagai titipan atau dikembalikan.")
+    return ditutup
 
 
 async def tolak(report: Dict[str, Any], order: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:

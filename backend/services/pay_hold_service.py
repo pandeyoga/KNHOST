@@ -135,10 +135,53 @@ async def start(order: Dict[str, Any], actor: Optional[Dict[str, Any]] = None) -
     return so.get("pay_hold")
 
 
+#: R12 — status "belum dilepas ke gudang": pesanan yang wajib bayar dulu di status ini belum boleh menerima uang dari
+#: pencatat tanpa `payment_report.decide` (pagar B3).
+STATUS_SEBELUM_GUDANG = ("reserved", "waiting_approval", "approved")
+
+
+async def wajib_bayar_sebelum_gudang(order: Optional[Dict[str, Any]]) -> bool:
+    """Ketetapan R12 (pengendali, 26 Nov) — predikat pagar B3 (`ar_receipt_service.pagar_lapor_bayar`): pesanan WAJIB
+    bayar dulu (`dispatch_payment_gate.evaluate(...).applies`; sample dan SO pesanan khusus dikecualikan persis seperti
+    `start`) DAN belum dilepas ke gudang (status `STATUS_SEBELUM_GUDANG`) DAN tanpa pengecualian berizin
+    `dispatch_payment_release` — ada atau belum penanda `pay_hold`. Dulu pagar hanya menilai penanda, jadi transfer yang
+    dicatat sales SEBELUM disetujui (`reserved`/`waiting_approval`) lolos; pada dasar `tercatat` uang itu langsung
+    dihitung terbayar dan `start` tidak pernah menahan — pengecekan Finance terlompati. Bukan predikat buka tahan:
+    `clear_if_paid` / `buka_tahan_bayar` tetap memakai penanda (`ditahan`)."""
+    o = order or {}
+    if o.get("status") not in STATUS_SEBELUM_GUDANG or o.get("dispatch_payment_release"):
+        return False
+    st = await _status_gerbang(o)
+    return bool(st and st["applies"])
+
+
+#: LB-T5 — nasib pesanan tertahan yang batas bayarnya lewat (tanpa laporan bayar menunggu), lihat `nasib_lewat_batas`.
+NASIB_KEDALUWARSA, NASIB_BUKA, NASIB_CEK_BANK = "kedaluwarsa", "buka", "cek_bank"
+
+
+async def nasib_lewat_batas(order: Dict[str, Any]) -> str:
+    """LB-T5 (§5.3) — apa yang dilakukan penyapu pada pesanan ber-`pay_hold` yang `due_at`-nya lewat dan TIDAK punya
+    laporan bayar menunggu/memproses. Satu hitungan (`evaluate`):
+
+    * `kedaluwarsa` — masih wajib bayar dan uang yang tercatat belum cukup → langkah kedaluwarsa cadangan;
+    * `buka` — gerbang tidak lagi menahan (uang cukup, pengecualian berizin, gerbang dimatikan untuk PT) → tahan basi
+      dibuka (`clear_if_paid`), pesanan TIDAK dikedaluwarsakan;
+    * `cek_bank` — dasar `terverifikasi` dan uang tercatat sudah cukup, hanya belum cocok mutasi bank: yang terlambat
+      pengecekan Finance, bukan pelanggan (§7-2) → tidak dikedaluwarsakan, Finance diberi tahu."""
+    st = await _status_gerbang(order)
+    if not (st and st["applies"] and st["blocked"]):
+        return NASIB_BUKA
+    from services.dispatch_payment_gate import EPS
+    if st["basis"] == "terverifikasi" and st["required"] - st["paid_recorded"] <= EPS:
+        return NASIB_CEK_BANK
+    return NASIB_KEDALUWARSA
+
+
 def ditahan(order: Optional[Dict[str, Any]]) -> bool:
     """SATU predikat "pesanan sedang ditahan bayar sebelum gudang" (penanda, bukan hitungan uang): `pay_hold` terisi
-    atau `release.waiting == "bayar"`. Dipakai `clear_if_paid`, pagar B3 kwitansi, dan pembuka tahan sesudah kwitansi /
-    keputusan selisih / cocok mutasi bank (LB-T4) — pasangan Mongo-nya `saringan_ditahan()`."""
+    atau `release.waiting == "bayar"`. Dipakai `clear_if_paid` dan pembuka tahan sesudah kwitansi / keputusan selisih /
+    cocok mutasi bank (LB-T4) — pasangan Mongo-nya `saringan_ditahan()`. Pagar B3 memakai `wajib_bayar_sebelum_gudang`
+    (R12: juga sebelum penanda ada)."""
     o = order or {}
     return o.get("pay_hold") is not None or (o.get("release") or {}).get("waiting") == "bayar"
 

@@ -567,8 +567,9 @@ def _tujuan_keputusan_alokasi(payload: Dict[str, Any]) -> List[str]:
 
 async def pagar_lapor_bayar(actor: Any, order_ids: List[Any]) -> None:
     """LB-T4 (B3, ketetapan R11) — SATU pagar untuk setiap jalan uang/titipan ke pesanan: pelaku tanpa
-    `payment_report.decide` tidak boleh mengalokasikan APA PUN ke pesanan yang ditahan bayar (`pay_hold_service.ditahan`)
-    — uang baru non-tunai, deposit/titipan pelanggan, saldo kredit, titipan bank, maupun pelunasan kasus keuangan.
+    `payment_report.decide` tidak boleh mengalokasikan APA PUN ke pesanan yang wajib bayar dulu dan belum dilepas ke
+    gudang (`pay_hold_service.wajib_bayar_sebelum_gudang`, R12 — termasuk sebelum disetujui, sebelum penanda `pay_hold`
+    ada) — uang baru non-tunai, deposit/titipan pelanggan, saldo kredit, titipan bank, maupun pelunasan kasus keuangan.
     Satu-satunya pengecualian (uang TUNAI baru di kwitansi, diatur `pembayaran.sales_terima_tunai`) diputus pemanggilnya
     (`_pagar_lapor_bayar`). Id dinormalkan `ar_allocation_service.id_pesanan`. Tanpa tulisan; 409 berkalimat.
 
@@ -584,8 +585,10 @@ async def pagar_lapor_bayar(actor: Any, order_ids: List[Any]) -> None:
     if await has_permission(actor if isinstance(actor, dict) else {}, "payment_report", "decide"):
         return
     from services import pay_hold_service as _phs
-    if await db.sales_orders.find_one({"id": {"$in": ids}, **_phs.saringan_ditahan()}, {"_id": 1}):
-        raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
+    async for o in db.sales_orders.find({"id": {"$in": ids}, "status": {"$in": list(_phs.STATUS_SEBELUM_GUDANG)}},
+                                        {"_id": 0}):
+        if await _phs.wajib_bayar_sebelum_gudang(o):
+            raise HTTPException(status_code=409, detail=PESAN_PAKAI_LAPOR_BAYAR)
 
 
 async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, entity_id: str, method: str,
