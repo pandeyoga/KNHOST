@@ -118,6 +118,19 @@ Sub-judul bagian
   lewat **?** — tidak dipajang terbuka.
 - Komponen: `SettingCard` (mode daftar), `SettingsBrowser`.
 
+### E. Tahap bayar di alur pesanan (contoh: Lapor Bayar CBD & DP)
+Asal: keputusan pemilik 25 Nov (Lapor Bayar), rancangan `docs/superpowers/specs/2026-11-25-lapor-bayar-cbd-design.md`.
+Pesanan yang wajib dibayar dulu (CBD, DP) menampilkan tahap bayar **di dalam layar pesanan yang sudah ada** — tidak ada
+layar baru: panel di rincian pesanan, langkah di Perjalanan, dan antrean di meja (Meja Keuangan).
+- **Lapor bayar** = `FormModal` dengan bukti wajib (tanpa lampiran, tombol kirim nonaktif). Satu pintu untuk sales; jalur
+  kwitansi langsung hanya untuk yang berizin/tunai sesuai aturan.
+- **Terima / Tolak** dikerjakan di tempat (panel atau pop-up meja), bukan di layar lain: Terima lewat konfirmasi
+  (`askConfirm`), Tolak lewat alasan wajib (`askReason`). Hasil terlihat di pesanan yang sama (tahan lepas / sales diberi tahu).
+- **Galat tampil di tempat aksi dilakukan** (di dalam dialog atau panel), bukan hanya toast; 409 menyebut nomor laporan
+  yang sudah ada.
+- **Aksi disembunyikan hanya oleh dua hal:** izin pengguna **dan** aturan server (pesanan tertahan, belum ke gudang).
+  Satu predikat "tertahan" dipakai bersama oleh panel, Perjalanan, dan tombol kwitansi — jangan menulis ulang di layar lain.
+
 ## 3. Ukuran baku
 | Hal | Baku |
 |---|---|
