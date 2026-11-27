@@ -131,6 +131,25 @@ layar baru: panel di rincian pesanan, langkah di Perjalanan, dan antrean di meja
 - **Aksi disembunyikan hanya oleh dua hal:** izin pengguna **dan** aturan server (pesanan tertahan, belum ke gudang).
   Satu predikat "tertahan" dipakai bersama oleh panel, Perjalanan, dan tombol kwitansi — jangan menulis ulang di layar lain.
 
+### F. Mutasi berkode → kwitansi otomatis / kartu beralasan (contoh: F1 kwitansi dari mutasi bank)
+Asal: keputusan pemilik F1 (27 Nov), rancangan `docs/superpowers/specs/2026-11-27-kwitansi-otomatis-mutasi-design.md`.
+Mesin yang memproses data masuk (impor mutasi) menindak sendiri hanya yang **cocok sempurna**; sisanya menjadi **kartu
+beralasan** di meja pemilik pekerjaannya — tidak ada layar baru.
+- **Hasil mesin terlihat di tempat asalnya:** pesan sukses impor / "Cocokkan otomatis" menyebut jumlah yang ditindak
+  otomatis dan yang perlu dicek; baris hasil mesin diberi lencana ("Kwitansi otomatis"), kwitansinya menulis asalnya
+  ("Lahir dari mutasi bank …").
+- **Kartu = satu kode alasan tetap + kalimat.** Kode (`KODE_KARTU`) menjadi lencana (`BADGE_LABEL`, kelompok warn);
+  kalimat menyebut angka & nomor dokumen yang bersangkutan ("Mutasi serupa … sudah dicatat sebagai kwitansi …").
+- **Pop-up kartu memuat semua yang perlu diputus di satu tempat:** alasan, dokumen terkait yang menunggu (mis. laporan
+  bayar menunggu pesanan itu, dimuat dari pesanan — bukan hanya yang disebut kartu), pratinjau pesanan, satu aksi utama
+  di kaki ("Catat kwitansi") dan **satu** tombol ke layar penuh yang bernama tujuannya ("Buka Rekonsiliasi").
+- **Jangan menawarkan aksi yang bisa mencatat uang yang sama dua kali.** Kartu yang menyebut kwitansi terbuka tidak
+  menawarkan "Catat kwitansi" (hanya Lihat → Buka Rekonsiliasi); Terima laporan hanya bila nominal & rekening sama
+  (server menegakkan hal yang sama).
+- **Satu permintaan atomik per aksi uang** (kwitansi + tautan, atau lepas + batal) dengan kunci idempotensi; batal
+  hasil mesin tersedia di tempat dokumen dibatalkan (baris Rekonsiliasi dan rincian kwitansi), alasan wajib (`askReason`),
+  peringatan server tampil di tempat.
+
 ## 3. Ukuran baku
 | Hal | Baku |
 |---|---|

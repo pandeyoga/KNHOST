@@ -112,6 +112,12 @@ Untuk satu baris mutasi:
     uang yang sama.
 11. Laporan menunggu yang cocok tetapi **tanpa lampiran bukti** tetap boleh diterima lewat jalur B: mutasi bank adalah
     buktinya (pengecualian R9 hanya untuk penerimaan yang membawa baris mutasi).
+12. **Tambahan 27 Nov (ketetapan R11, tinjauan akhir I5):** tidak ada **mutasi serupa yang uangnya sudah dicatat** —
+    baris lain di rekening sama, tanggal mutasi sama, nominal sama, kode bayar sama, berpenanda F1 otomatis/manual
+    dengan kwitansi hidup atau tertaut ke kwitansi pesanan kode itu. Bila ada → kartu `kemungkinan_ganda` "Mutasi serupa
+    {tanggal} Rp … sudah dicatat sebagai kwitansi {no} — periksa apakah impor ganda" (dicek sebelum jalur A/B/C). Dedupe
+    impor lama hanya membandingkan `external_id` / berita persis, jadi impor ganda dengan spasi berbeda dulu bisa
+    menjadi kwitansi terverifikasi kedua tanpa klik. Biaya: transfer kembar sungguhan menjadi kartu, dicatat manual.
 
 ### 5.3 Tindakan otomatis (satu operasi server per baris)
 
@@ -189,9 +195,17 @@ tautan (pemulihan seperti §5.3). Izin: `cash.create` + `ar_receipt.create`; pag
   alasan wajib; server melepas tautan mutasi (`_unlink`) lalu membatalkan kwitansi (`void_receipt`, aturan yang sama),
   dalam satu permintaan; baris kembali `unmatched` dengan penanda **"kwitansi otomatis dibatalkan"** sehingga mesin tidak
   memprosesnya lagi (tetap bisa dicatat manual lewat kartu/Rekonsiliasi).
-- Izin: **aturan batal kwitansi yang sudah ada** (`ar_receipt.void`, bawaan manajer & admin — Finance bawaan tidak
-  memegangnya) + `cash.create`. Tidak ada izin baru: membatalkan uang masuk tetap wewenang yang sama dengan kwitansi
-  manual. Finance yang melihat kwitansi otomatis keliru meminta manajer (dicatat untuk pemilik).
+- Izin: **aturan batal kwitansi yang sudah ada** (`ar_receipt.void`, bawaan manajer, admin, dan Finance — lihat koreksi
+  di bawah) + `cash.create`. Tidak ada izin baru: membatalkan uang masuk tetap wewenang yang sama dengan kwitansi
+  manual.
+  - **Koreksi 27 Nov (ketetapan R8):** kalimat semula "Finance bawaan tidak memegangnya … Finance yang melihat kwitansi
+    otomatis keliru meminta manajer" keliru. Sejak keputusan pemilik **K-FIN-01** (17 Nov 2026: Finance memegang akses
+    yang sama dengan Manajer) peran Finance bawaan **memegang** `ar_receipt.void`, jadi Finance bisa membatalkan
+    kwitansi dari mutasi sendiri. Wewenangnya tetap ditentukan izin, bukan nama peran: peran kustom tanpa
+    `ar_receipt.void` atau tanpa `cash.create` tidak melihat aksi ini dan ditolak server (403).
+- Aksi ini ada di dua tempat (ketetapan R12): baris Rekonsiliasi Bank dan rincian (pratinjau) kwitansi bersumber
+  `mutasi_bank` yang masih tertaut mutasinya. Kwitansi yang tautannya sudah dilepas dibatalkan dengan batal kwitansi
+  biasa.
 - **Pesanan sudah dilepas ke gudang** oleh kwitansi itu: pembatalan tetap boleh, dengan peringatan di konfirmasi
   "Pesanan {no} sudah dilepas ke gudang ({status}); membatalkan kwitansi tidak menahan barang — tahan pesanan atau hubungi
   Gudang bila perlu." Sama dengan pembatalan kwitansi manual hari ini (tahan bayar tidak dipasang ulang).
@@ -240,8 +254,8 @@ tautan (pemulihan seperti §5.3). Izin: `cash.create` + `ar_receipt.create`; pag
 12. **Operasi "kwitansi dari mutasi" menolak selama ada laporan bayar menunggu** pada pesanan tujuan, kecuali Finance
     memilih menerima laporan itu bersama mutasinya; kwitansi terbuka + laporan menunggu bernominal sama → kartu.
 13. **Laporan tanpa lampiran boleh diterima bila membawa baris mutasi** (mutasi = bukti bank).
-14. **Pembatalan memakai izin batal kwitansi yang ada** (manajer/admin); pesanan yang sudah dilepas tidak ditahan ulang,
-    hanya diperingatkan.
+14. **Pembatalan memakai izin batal kwitansi yang ada** (`ar_receipt.void` — manajer, admin, dan Finance sejak
+    K-FIN-01; koreksi 27 Nov di §5.6); pesanan yang sudah dilepas tidak ditahan ulang, hanya diperingatkan.
 
 ## 8. Di luar cakupan / catatan
 

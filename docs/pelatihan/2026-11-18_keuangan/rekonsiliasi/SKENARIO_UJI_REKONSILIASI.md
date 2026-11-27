@@ -101,6 +101,24 @@ Data: Kartu Peserta *Rekon R1* — kwitansi transfer pelunasan pesanan; berita t
 
 Cek buku: kas kwitansi R1 `reconciled_amount` = nominal; **tidak ada jurnal baru** (pencocokan hanya menautkan).
 
+> **Berubah sejak F1 (27 Nov — kwitansi otomatis dari mutasi bank).** Langkah di atas ditulis 18 Nov, sebelum F1.
+> Bila sakelar *Kwitansi otomatis dari mutasi bank* menyala untuk PT itu (bawaan: menyala) dan rekening koran diimpor
+> **sesudah** F1 aktif:
+> - Mutasi berkode bayar yang sama persis dengan kwitansi terbuka pesanan itu sudah **tertaut saat Impor** (langkah 3),
+>   bukan baru di langkah 4: pesan impor menambah "Mutasi berkode bayar: 1 kwitansi otomatis (Rp …)", baris langsung
+>   **Tercocok** · otomatis, dan "Cocokkan otomatis" di langkah 4 tidak menautkan apa-apa lagi untuk baris itu. Hasil
+>   buku sama (kas Terekonsiliasi, tanpa jurnal baru).
+> - Bila belum ada kwitansinya, mesin membuat kwitansi terverifikasi bank sendiri (lencana **Kwitansi otomatis**).
+> - Mutasi berkode yang tidak cocok sempurna (nominal/rekening beda, laporan bayar menunggu, mutasi serupa sudah
+>   dicatat, …) menjadi kartu beralasan di **Meja Keuangan › Uang masuk › Mutasi berkode perlu dicek**. "Catat kwitansi"
+>   (atau **Catat sebagai kwitansi** di Rekonsiliasi) kini **satu langkah**: kwitansi + tautan ke mutasi dalam satu
+>   simpan — tidak ada lagi langkah kedua "Cocokkan" sesudah kwitansi dibuat.
+> - Kwitansi dari mutasi dibatalkan dengan **Batalkan kwitansi** di baris Rekonsiliasi (atau di rincian kwitansinya):
+>   lepas tautan + batal kwitansi dalam satu langkah; mutasi itu tidak diproses otomatis lagi.
+>
+> Untuk mengulang R1 persis seperti di atas (pencocokan lewat "Cocokkan otomatis"), latihan dijalankan pada PT dengan
+> sakelar F1 mati.
+
 ### R2 · Transfer tanpa kode — usulan, tautkan manual
 
 Data: *Rekon R2* — kwitansi transfer 90 % pesanan; berita transfer hanya nama pelanggan.
