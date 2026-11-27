@@ -227,6 +227,32 @@ describe("Pindah Dana — daftar, izin, satu pop-up", () => {
     expect(posts("/fund-transfers/pdn_3/cancel")[0][1]).toEqual({ alasan: "salah rekening tujuan" });
   });
 
+  test("Teruskan pembatalan: konfirmasi menyebut alasan tercatat (tanpa alasan baru) → POST cancel {alasan lama}", async () => {
+    const tertunda = { ...DOK.selesai, status: "batal", batal_tertunda: true, alasan_batal: "salah rekening tujuan" };
+    pasangDaftar([tertunda]);
+    mockAskConfirm.mockResolvedValue(true);
+    mockPost.mockResolvedValue({ data: { ...tertunda, batal_tertunda: false } });
+    const host = await pindahDana(izinPenuh);
+    expect(q(host, "ft-cancel-pdn_3").textContent).toMatch(/Teruskan pembatalan/);
+    await click(q(host, "ft-cancel-pdn_3"));
+    expect(mockAskReason).not.toHaveBeenCalled();
+    expect(mockAskConfirm.mock.calls[0][0]).toMatchObject({ testId: "ft-cancel-resume", danger: true });
+    expect(mockAskConfirm.mock.calls[0][0].message).toMatch(/alasan yang sudah tercatat: "salah rekening tujuan"/);
+    expect(posts("/fund-transfers/pdn_3/cancel")[0][1]).toEqual({ alasan: "salah rekening tujuan" });
+  });
+
+  test("Batal dokumen menunggu: kas belum terbit → cukup ditandai batal; kas terbit sebagian (kas_ids) → kas dibalik", async () => {
+    pasangDaftar([DOK.menunggu, { ...DOK.menunggu, id: "pdn_4", number: "KSC/PDN-00004", terbit_error: "Rekening berubah.",
+      kas_ids: { kirim: "cash_k", biaya: "cash_b" } }]);
+    mockAskReason.mockResolvedValue(null);
+    const host = await pindahDana(izinPenuh);
+    await click(q(host, "ft-cancel-pdn_1"));
+    expect(mockAskReason.mock.calls[0][0].message).toMatch(/Kasnya belum terbit/);
+    await click(q(host, "ft-cancel-pdn_4"));
+    expect(mockAskReason.mock.calls[1][0].message).toMatch(/Semua kas dokumen ini dibalik/);
+    expect(posts("/cancel")).toHaveLength(0);
+  });
+
   test("Terima: satu pop-up bertanggal (bawaan rencana) → POST receive {tanggal}; galat server tampil di pop-up", async () => {
     pasangDaftar([DOK.perjalanan]);
     const host = await pindahDana(izinPenuh);
@@ -350,14 +376,124 @@ describe("Akun per rekening — pratinjau, siapkan, setujui dengan sidik", () =>
   });
 
   test("posting kas gagal/tertunda: Siapkan nonaktif dengan jumlahnya + tautan Posting Gagal", async () => {
-    pasangAlat({ pv: { ...PV, posting_gagal: 2, posting_gagal_rincian: [{ jenis: "cash_transaction", label: "Transaksi Kas", jumlah: 2 }] },
-      usulan: [] });
+    pasangAlat({ pv: { ...PV, posting_gagal: 2, posting_gagal_rincian: [{ jenis: "cash_transaction", label: "Transaksi Kas",
+      jumlah: 2, tempat: "posting_gagal", arahan: "ulangi di Keuangan › Posting Gagal", contoh: [] }] }, usulan: [] });
     const host = await alat(izinPenuh);
     expect(q(host, "ps-prepare").disabled).toBe(true);
-    expect(q(host, "ps-pending-postings").textContent).toMatch(/2 posting kas gagal atau tertunda.*Transaksi Kas: 2/);
-    await click(q(host, "ps-open-failures"));
+    expect(q(host, "ps-prepare-why").textContent).not.toMatch(/Posting Gagal/);   // arahan per jenis ada di rincian
+    expect(q(host, "ps-pending-postings").textContent).toMatch(/2 posting kas gagal atau tertunda/);
+    expect(q(host, "ps-pending-cash_transaction").textContent).toMatch(/Transaksi Kas: 2 — ulangi di Keuangan › Posting Gagal/);
+    await click(q(host, "ps-open-posting-failures"));
     expect(mockGo).toHaveBeenCalledWith("posting-failures");
     expect(alasanTidakBisaSiapkan({ ...PV, aktif: true }, { canManage: true })).toMatch(/sudah memakai akun per rekening/);
+  });
+
+  test("posting tertunda di luar Posting Gagal: nomor dokumen + arahan; tombol hanya ke layar yang mendaftarnya", async () => {
+    const rincian = [
+      { jenis: "gaji_jalur_lama", label: "Penggajian yang jurnal bayarnya sudah terbit tetapi kasnya belum tercatat", jumlah: 1,
+        tempat: "proses_gaji", arahan: "catat pembayarannya lewat Bayar di SDM › Penggajian › Proses Gaji", contoh: ["PAY/KSC/7"] },
+      { jenis: "kas_tertunda", label: "Transaksi kas yang jurnalnya belum selesai atau sedang dibatalkan", jumlah: 1,
+        tempat: "tunggu", arahan: "jurnal atau pembatalannya sedang berjalan — muat ulang sebentar lagi", contoh: ["KAS-0009"] },
+    ];
+    pasangAlat({ pv: { ...PV, posting_gagal: 2, posting_gagal_rincian: rincian }, usulan: [] });
+    const host = await alat(izinPenuh);
+    expect(q(host, "ps-pending-gaji_jalur_lama").textContent).toMatch(/: 1 \(PAY\/KSC\/7\) — catat pembayarannya lewat Bayar/);
+    expect(q(host, "ps-pending-kas_tertunda").textContent).toMatch(/\(KAS-0009\) — jurnal atau pembatalannya sedang berjalan/);
+    expect(q(host, "ps-open-posting-failures")).toBeNull();          // tidak ada yang tampil di Posting Gagal
+    await click(q(host, "ps-open-hr-payroll-runs"));
+    expect(mockGo).toHaveBeenCalledWith("hr-payroll-runs");
+  });
+
+  test("PT sudah aktif: saldo akun vs buku kas + dipindah saat disetujui, tanpa selisih palsu; selisih nyata diperingatkan", async () => {
+    const rekAktif = { ...PV.rekening[0], akun_tujuan_baru: false, akun_tujuan_buatan_sistem: true, saldo_akun_tujuan: 5000000,
+      saldo_buku: 5000000, saldo_sesudah: 5000000, selisih: 0 };
+    const pvAktif = { ...PV, aktif: true, aktif_sejak: "2026-11-27T02:00:00Z", sidik: "", baris_jurnal: [], rekening: [rekAktif],
+      akun_lama: [{ akun: "1-1100", nama: "Kas Besar / Bank", saldo: 40000, dipindah: 5000000, sisa: 40000 }],
+      pindah_saldo: { id: "psk_ent_ksc_001", journal_number: "JE-77", status: "disetujui" } };
+    pasangAlat({ pv: pvAktif, usulan: [{ ...USULAN, status: "disetujui", journal_number: "JE-77" }] });
+    let host = await alat(izinPenuh);
+    const kepala = q(host, "ps-accounts").querySelector("thead").textContent;
+    expect(kepala).toMatch(/Saldo akun/);
+    expect(kepala).toMatch(/Dipindah saat disetujui/);
+    expect(kepala).toMatch(/Selisih akun − buku kas/);
+    expect(kepala).not.toMatch(/Dipindah dari/);
+    expect(q(host, "ps-accounts-gl-bank_bca").textContent).toMatch(/5\.000\.000/);
+    expect(q(host, "ps-accounts-diff-bank_bca").textContent).toBe("—");
+    expect(q(host, "ps-target-bank_bca").textContent).not.toMatch(/sub-akun baru/);
+    expect(q(host, "ps-active-check").textContent).toMatch(/sama dengan saldo buku kasnya/);
+    expect(q(host, "ps-old-accounts").querySelector("thead").textContent).toMatch(/Dipindah saat disetujui.*Saldo sekarang/);
+    expect(q(host, "ps-old-accounts").querySelector("thead").textContent).not.toMatch(/Sisa/);
+    expect(q(host, "ps-sec-journal")).toBeNull();
+    expect(q(host, "ps-mode").textContent).toMatch(/memakai akun per rekening sejak .*jurnal JE-77/);
+    expect(q(host, "ps-prepare").disabled).toBe(true);
+    document.body.innerHTML = "";
+    pasangAlat({ pv: { ...pvAktif, rekening: [{ ...rekAktif, saldo_akun_tujuan: 5005000, selisih: 5000 }] }, usulan: [] });
+    host = await alat(izinPenuh);
+    expect(q(host, "ps-accounts-diff-bank_bca").textContent).toMatch(/5\.000/);
+    expect(q(host, "ps-active-check").textContent).toMatch(/1 rekening berselisih dengan buku kasnya: BCA Operasional Rp\s?5\.000/);
+  });
+
+  test("Siapkan: rekening berakun pilihan Finance bisa kembali ke sub-akun buatan sistem (dikirim \"\")", async () => {
+    const rekFinance = { ...PV.rekening[0], akun_tujuan: "1-1105", akun_tujuan_nama: "Bank BCA (Finance)", akun_tujuan_baru: false,
+      akun_tujuan_buatan_sistem: false };
+    pasangAlat({ pv: { ...PV, rekening: [rekFinance] }, usulan: [] });
+    mockPost.mockResolvedValue({ data: { ...USULAN } });
+    const host = await alat(izinPenuh);
+    await click(q(host, "ps-prepare"));
+    const pilih = q(host, "ps-prepare-account-bank_bca");
+    expect([...pilih.options].map((o) => o.textContent)).toContain("Sub-akun baru (dibuat sistem)");
+    await choose(pilih, "__subakun_baru__");
+    await submit(host, "ps-prepare-submit");
+    expect(posts("/kas-per-rekening/ent_ksc/siapkan")[0][1]).toEqual({ pilihan_akun: { bank_bca: "" } });
+    // Akun sekarang = sub-akun buatan sistem → tanpa pilihan kembali (sudah buatan sistem)
+    document.body.innerHTML = "";
+    pasangAlat({ pv: { ...PV, rekening: [{ ...rekFinance, akun_tujuan: "1-1100-01", akun_tujuan_buatan_sistem: true }] }, usulan: [] });
+    const host2 = await alat(izinPenuh);
+    await click(q(host2, "ps-prepare"));
+    expect([...q(host2, "ps-prepare-account-bank_bca").options].map((o) => o.textContent)).not.toContain("Sub-akun baru (dibuat sistem)");
+  });
+
+  test("ganti PT cepat: jawaban pratinjau PT lama yang terlambat tidak ditampilkan dengan label PT baru", async () => {
+    let lepasLama;
+    const pvKanda = { ...PV, entity_id: "ent_kanda", rekening: [{ ...PV.rekening[0], id: "bank_kanda", nama: "BRI Kanda" }] };
+    mockGet.mockImplementation((url) => {
+      if (url.endsWith("/kas-per-rekening/ent_ksc/pratinjau")) return new Promise((r) => { lepasLama = r; });
+      if (url.endsWith("/kas-per-rekening/ent_kanda/pratinjau")) return Promise.resolve({ data: pvKanda });
+      if (url.endsWith("/kas-per-rekening/usulan")) return Promise.resolve({ data: { items: [], total: 0 } });
+      return Promise.resolve({ data: [] });
+    });
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    const view = (e) => <AkunPerRekeningView currentUser={{ role: "finance", permissions: izinPenuh }} selectedEntity={e} />;
+    await act(async () => { root.render(view("ent_ksc")); });
+    await act(async () => { root.render(view("ent_kanda")); });
+    await flush();
+    expect(q(host, "ps-target-bank_kanda")).not.toBeNull();
+    await act(async () => { lepasLama({ data: PV }); });
+    await flush();
+    expect(q(host, "ps-target-bank_kanda")).not.toBeNull();
+    expect(q(host, "ps-target-bank_bca")).toBeNull();
+    await act(async () => { root.unmount(); });
+  });
+
+  test("409 'Angka berubah' lalu muat ulang gagal: kalimat 409 dan galat muat sama-sama tampil", async () => {
+    let n = 0;
+    mockGet.mockImplementation((url) => {
+      if (url.endsWith("/kas-per-rekening/ent_ksc/pratinjau")) {
+        n += 1;
+        return n <= 2 ? Promise.resolve({ data: PV })
+          : Promise.reject({ response: { status: 500, data: { detail: "Database sibuk." } } });
+      }
+      if (url.endsWith("/kas-per-rekening/usulan")) return Promise.resolve({ data: { items: [USULAN], total: 1 } });
+      return Promise.resolve({ data: [] });
+    });
+    mockPost.mockRejectedValueOnce({ response: { status: 409, data: { detail: "Angka berubah, muat ulang." } } });
+    const host = await alat(izinPenuh);
+    await click(q(host, "ps-approve-psk_ent_ksc_001"));
+    await submit(host, "ps-approve-submit");
+    expect(q(host, "ps-approve-form").textContent).toMatch(/Angka berubah, muat ulang\./);
+    expect(q(host, "ps-approve-form").textContent).toMatch(/Database sibuk\./);
   });
 
   test("Siapkan: satu pop-up dengan ringkasan total & PT → POST siapkan {pilihan_akun}", async () => {

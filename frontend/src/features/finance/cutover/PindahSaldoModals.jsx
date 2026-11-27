@@ -3,12 +3,14 @@
  *
  *  · `SiapkanModal` — "Siapkan pindah saldo": per rekening akun buku besar tujuan (sub-akun baru buatan sistem, atau akun
  *    bagan PT yang sudah ada dari `GET /api/gl/accounts?entity_id=`), ringkasan total & PT (N5) →
- *    `POST /api/kas-per-rekening/{entity_id}/siapkan {pilihan_akun}` (hanya rekening yang pilihannya diubah).
+ *    `POST /api/kas-per-rekening/{entity_id}/siapkan {pilihan_akun}` (hanya rekening yang pilihannya diubah). Rekening
+ *    yang akunnya sekarang akun pilihan Finance bisa dikembalikan ke "Sub-akun baru (dibuat sistem)" (dikirim "").
  *  · `SetujuiModal` — orang kedua: memuat ULANG pratinjau saat dibuka (angka terbaru), menampilkan total, akun per
  *    rekening, kas lama tanpa rekening, dan rekening berselisih + kotak centang "sudah diperiksa" (R10), lalu
  *    `POST /api/kas-per-rekening/usulan/{id}/setujui {sidik, selisih_diperiksa}` dengan sidik angka yang DILIHAT.
  *    409 "Angka berubah, muat ulang." → kalimatnya tampil di pop-up dan angka dimuat ulang (sidik baru, centang
- *    dikosongkan); 409 selisih belum dicentang → kalimatnya tampil dan kotak centang ditampilkan.
+ *    dikosongkan; bila muat ulang gagal, kedua kalimat tampil); 409 selisih belum dicentang → kalimatnya tampil dan
+ *    kotak centang ditampilkan.
  * Galat server tampil di dalam pop-up (bilah galat layar ada di belakang lapisan pop-up).
  */
 import { useEffect, useMemo, useState } from "react";
@@ -19,7 +21,7 @@ import KNSelect from "../../../components/KNSelect";
 import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency } from "../../../utils/formatters";
 import { KasTanpaRekening, TabelRekening } from "./PindahSaldoTables";
-import { akunPilihan, angkaBerubah, rekeningBerselisih, selisihBelumDicentang } from "./cutoverShared";
+import { PILIH_SUBAKUN_BARU, akunPilihan, angkaBerubah, rekeningBerselisih, selisihBelumDicentang } from "./cutoverShared";
 
 export function SiapkanModal({ open, pv, entityId, pt, onClose, onDone }) {
   const [akun, setAkun] = useState([]);
@@ -41,6 +43,9 @@ export function SiapkanModal({ open, pv, entityId, pt, onClose, onDone }) {
   const opsi = (r) => [
     { value: "", label: r.akun_tujuan_baru ? `Sub-akun baru ${r.akun_tujuan} (dibuat sistem)`
       : `${r.akun_tujuan}${r.akun_tujuan_nama ? ` · ${r.akun_tujuan_nama}` : ""} (akun sekarang)` },
+    // Akun sekarang = akun bagan PT pilihan Finance → bisa kembali ke sub-akun buatan sistem (server: kode "").
+    ...(!r.akun_tujuan_baru && r.akun_tujuan_buatan_sistem === false
+      ? [{ value: PILIH_SUBAKUN_BARU, label: "Sub-akun baru (dibuat sistem)" }] : []),
     ...akunPilihan(akun, r, entityId).filter((a) => a.code !== r.akun_tujuan)
       .map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` })),
   ];
@@ -49,7 +54,8 @@ export function SiapkanModal({ open, pv, entityId, pt, onClose, onDone }) {
     if (busy) return;
     setBusy(true);
     setErr("");
-    const pilihan_akun = Object.fromEntries(Object.entries(pilihan).filter(([, v]) => v));
+    const pilihan_akun = Object.fromEntries(Object.entries(pilihan).filter(([, v]) => v)
+      .map(([k, v]) => [k, v === PILIH_SUBAKUN_BARU ? "" : v]));
     try {
       const r = await axios.post(`${API}/kas-per-rekening/${entityId}/siapkan`, { pilihan_akun });
       onDone?.(r.data);
@@ -98,6 +104,7 @@ export function SetujuiModal({ usulan, entityId, pt, onClose, onDone }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /** Muat ulang angka → "" bila berhasil, kalimat galat bila gagal (juga tampil di pop-up). */
   async function muatAngka() {
     setMuat("memuat");
     try {
@@ -105,12 +112,13 @@ export function SetujuiModal({ usulan, entityId, pt, onClose, onDone }) {
       setPv(r.data || null);
       setCentang(false);
       setMuat("siap");
-      return true;
+      return "";
     } catch (e) {
+      const teks = apiErrorText(e, "Angka pindah saldo belum bisa dimuat.");
       setPv(null);
       setMuat("galat");
-      setErr(apiErrorText(e, "Angka pindah saldo belum bisa dimuat."));
-      return false;
+      setErr(teks);
+      return teks;
     }
   }
   useEffect(() => { muatAngka(); }, [usulan?.id, entityId]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -128,12 +136,13 @@ export function SetujuiModal({ usulan, entityId, pt, onClose, onDone }) {
       onDone?.(r.data);
     } catch (e) {
       const teks = apiErrorText(e, "Pindah saldo belum bisa disetujui.");
+      let galatMuat = "";
       if (angkaBerubah(teks)) {
-        await muatAngka();   // angka terbaru tampil; penyetuju memeriksa lagi lalu menyetujui dengan sidik baru
+        galatMuat = await muatAngka();   // angka terbaru tampil; penyetuju memeriksa lagi lalu menyetujui dengan sidik baru
       } else if (selisihBelumDicentang(teks)) {
         setPaksaCentang(true);
       }
-      setErr(teks);
+      setErr(galatMuat ? `${teks} ${galatMuat}` : teks);   // galat muat ulang tidak tertimpa kalimat 409
     } finally { setBusy(false); }
   }
 

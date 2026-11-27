@@ -9,8 +9,13 @@
  * dihitung ulang, sidik yang dilihat dikirim) / **Tolak** (`askReason`) / **Lanjutkan** (usulan yang terhenti) dan
  * tautan ke jurnalnya. Semua rute `accounting.manage` (izin, bukan peran); tanpa izin itu layar hanya memberi tahu.
  * Satu PT: mode "Semua PT" menampilkan petunjuk memilih PT.
+ *
+ * Tinjauan akhir: PT yang sudah aktif (I1) → keadaan sesudah pindah: saldo akun tiap rekening vs buku kasnya (selisih =
+ * pemeriksa "saldo per rekening = buku kas") dan angka yang dipindah saat disetujui. Posting tertunda (Minor 1) dirinci
+ * per jenis dengan nomor dokumen + arahan, tombol hanya ke layar yang benar-benar mendaftarnya (Posting Gagal / Proses
+ * Gaji). Muat bertumpuk (ganti PT cepat, Minor 5): hanya jawaban permintaan terakhir yang dipakai.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, Landmark, RefreshCw } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -29,7 +34,7 @@ import JournalDetailModal from "../JournalDetailModal";
 import { sourceLabel } from "../glSourceLabels";
 import { SetujuiModal, SiapkanModal } from "./PindahSaldoModals";
 import { KasTanpaRekening, TabelAkunLama, TabelJurnal, TabelRekening } from "./PindahSaldoTables";
-import { ALASAN_MIN, alasanTidakBisaSiapkan, statusUsulan } from "./cutoverShared";
+import { ALASAN_MIN, alasanTidakBisaSiapkan, rekeningBerselisih, statusUsulan, tombolTertunda } from "./cutoverShared";
 
 export const TEKS_BANTU = "Sebelum memakai akun buku besar per rekening, saldo kas tiap rekening dipindah dari akun kas "
   + "lama (1-1100 / 1-1110) ke akun rekening masing-masing. Pratinjau di bawah tidak menulis apa pun. Siapkan membuat "
@@ -53,33 +58,42 @@ export default function AkunPerRekeningView({ currentUser, selectedEntity }) {
   const [setujui, setSetujui] = useState(null);
   const [jurnal, setJurnal] = useState(null);
   const [sibuk, setSibuk] = useState("");
+  const muatKe = useRef(0);   // nomor permintaan muat terakhir (jawaban permintaan lama dibuang)
 
   const load = useCallback(async () => {
     if (!scoped || !canManage) return;
+    const ke = ++muatKe.current;
     setState("memuat");
     try {
       const [p, u] = await Promise.all([
         axios.get(`${API}/kas-per-rekening/${selectedEntity}/pratinjau`),
         axios.get(`${API}/kas-per-rekening/usulan`, { params: { entity_id: selectedEntity, page_size: 20 } }),
       ]);
+      if (ke !== muatKe.current) return;
       setPv(p.data || null);
       setUsulan(u.data?.items || []);
       setErr("");
       setState("siap");
     } catch (e) {
+      if (ke !== muatKe.current) return;
       setPv(null);
       setUsulan([]);
       setErr(apiErrorText(e, "Pindah saldo kas belum bisa dimuat."));
       setState("galat");
     }
   }, [scoped, canManage, selectedEntity]);
+  useEffect(() => {   // PT berganti: angka PT sebelumnya tidak ditampilkan dengan label PT baru
+    setPv(null);
+    setUsulan([]);
+  }, [selectedEntity]);
   useEffect(() => { load(); }, [load]);
 
   async function tolak(u) {
     const alasan = await askReason({
       title: `Tolak ${u.label}?`, danger: true, reasonLabel: "Alasan penolakan", reasonMinLength: ALASAN_MIN,
       message: `Usulan pindah saldo ${formatCurrency(u.total_dipindah)} di ${pt} ditolak. Saldo tidak dipindah dan PT tetap `
-        + "memakai akun kas lama; sub-akun rekening yang sudah dibuat tetap ada (kosong).",
+        + "memakai akun kas lama; sub-akun rekening buatan sistem yang sudah dibuat tetap ada (kosong), akun bagan PT "
+        + "pilihan Finance dilepas lagi seperti sebelum dipilih.",
       confirmLabel: "Tolak usulan", testId: "ps-reject-reason" });
     if (alasan === null || alasan === undefined) return;
     await kirimAksi(u, "tolak", { alasan }, `Usulan ${u.label} ditolak.`);
@@ -135,6 +149,7 @@ export default function AkunPerRekeningView({ currentUser, selectedEntity }) {
   }
 
   const alasan = alasanTidakBisaSiapkan(pv, { canManage });
+  const berselisih = pv?.aktif ? rekeningBerselisih(pv) : [];
   return (
     <div className="space-y-3" data-testid="kas-per-rekening-view">
       {header}
@@ -144,6 +159,7 @@ export default function AkunPerRekeningView({ currentUser, selectedEntity }) {
         count={pv ? (
           <span data-testid="ps-mode">
             {pv.aktif ? `${pt} memakai akun per rekening sejak ${formatDate(pv.aktif_sejak)}`
+                + (pv.pindah_saldo?.journal_number ? ` · dipindah ${formatCurrency(pv.total_dipindah)} (jurnal ${pv.pindah_saldo.journal_number})` : "")
               : `${pt} belum memakai akun per rekening · total dipindah ${formatCurrency(pv.total_dipindah)}`}
           </span>) : null}
         actions={(
@@ -163,19 +179,24 @@ export default function AkunPerRekeningView({ currentUser, selectedEntity }) {
       ) : pv ? (
         <>
           {Number(pv.posting_gagal) > 0 && !pv.aktif && (
-            <div className="notice-bar warning text-fs-13" data-testid="ps-pending-postings">
-              <span>
-                {pv.posting_gagal} posting kas gagal atau tertunda harus selesai dulu
-                {(pv.posting_gagal_rincian || []).length > 0 && ` (${pv.posting_gagal_rincian.map((x) => `${x.label}: ${x.jumlah}`).join("; ")})`}.
-                {canOpen("posting-failures") && (
-                  <button type="button" className="link-button ml-1" data-testid="ps-open-failures" onClick={() => go("posting-failures")}>
-                    Buka Posting Gagal <ExternalLink size={12} aria-hidden="true" className="inline" />
-                  </button>
-                )}
-              </span>
+            <PostingTertunda pv={pv} go={go} canOpen={canOpen} />
+          )}
+          {pv.aktif && pv.usulan?.status === "memproses" && (
+            <div className="notice-bar warning text-fs-13" data-testid="ps-active-unfinished">
+              <span>Pindah saldo {pt} belum selesai — lanjutkan dari daftar usulan di bawah; selisih di bawah hilang
+                sesudah jurnal pindah saldonya terbit.</span>
             </div>
           )}
-          <Bagian judul="Rekening" testId="ps-sec-accounts"><TabelRekening pv={pv} /><KasTanpaRekening pv={pv} /></Bagian>
+          {pv.aktif && pv.usulan?.status !== "memproses" && (
+            <div className={`notice-bar ${berselisih.length ? "warning" : "success"} text-fs-13`} data-testid="ps-active-check">
+              <span>{berselisih.length
+                ? `${berselisih.length} rekening berselisih dengan buku kasnya: ${berselisih.map((r) => `${r.nama} ${formatCurrency(r.selisih)}`).join("; ")}. Periksa jurnal yang menyentuh akun rekening tanpa dokumen kas.`
+                : "Saldo akun buku besar tiap rekening sama dengan saldo buku kasnya."}</span>
+            </div>
+          )}
+          <Bagian judul={pv.aktif ? "Rekening — saldo akun dan buku kas" : "Rekening"} testId="ps-sec-accounts">
+            <TabelRekening pv={pv} /><KasTanpaRekening pv={pv} />
+          </Bagian>
           <Bagian judul="Akun kas lama" testId="ps-sec-old"><TabelAkunLama pv={pv} /></Bagian>
           {!pv.aktif && <Bagian judul="Jurnal yang akan dibuat" testId="ps-sec-journal"><TabelJurnal pv={pv} /></Bagian>}
         </>
@@ -200,6 +221,40 @@ export default function AkunPerRekeningView({ currentUser, selectedEntity }) {
         <JournalDetailModal je={jurnal} sourceMeta={(c) => ({ label: sourceLabel(c), tone: "bg-kn-neutral-soft text-kn-text-2" })}
           entities={entities} selectedEntity={selectedEntity} onClose={() => setJurnal(null)} />
       )}
+    </div>
+  );
+}
+
+/** Posting kas gagal/tertunda per jenis: jumlah, nomor dokumen (jenis yang tidak tampil di Posting Gagal), arahan, dan
+ *  tombol ke layar yang mendaftarnya (tinjauan akhir Minor 1). */
+function PostingTertunda({ pv, go, canOpen }) {
+  const rincian = pv.posting_gagal_rincian || [];
+  const tombol = tombolTertunda(rincian).filter((t) => canOpen(t.view));
+  return (
+    <div className="notice-bar warning text-fs-13" data-testid="ps-pending-postings">
+      <div className="grid gap-1">
+        <span>{pv.posting_gagal} posting kas gagal atau tertunda harus selesai dulu sebelum pindah saldo disiapkan.</span>
+        {rincian.length > 0 && (
+          <ul className="grid gap-0.5" data-testid="ps-pending-list">
+            {rincian.map((x) => (
+              <li key={x.jenis} data-testid={`ps-pending-${x.jenis}`}>
+                <b>{x.label}: {x.jumlah}</b>
+                {(x.contoh || []).length > 0 && <span className="font-mono"> ({x.contoh.join(", ")})</span>}
+                {x.arahan && <span> — {x.arahan}.</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {tombol.length > 0 && (
+          <span className="flex flex-wrap gap-3">
+            {tombol.map((t) => (
+              <button key={t.view} type="button" className="link-button" data-testid={`ps-open-${t.view}`} onClick={() => go(t.view)}>
+                {t.label} <ExternalLink size={12} aria-hidden="true" className="inline" />
+              </button>
+            ))}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

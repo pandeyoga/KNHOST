@@ -3,6 +3,10 @@
  * Hanya-baca, dari `GET /api/kas-per-rekening/{entity_id}/pratinjau`: per rekening akun tujuan (sub-akun yang akan
  * dibuat atau akun bagan PT pilihan), saldo buku kas, akun asal saldo, selisih; kas lama tanpa rekening; akun kas lama
  * (saldo · dipindah · sisa); baris jurnal yang akan dibuat. Dipakai layar Akun per rekening dan pop-up Setujui.
+ *
+ * PT yang sudah aktif (`pv.aktif`, tinjauan akhir I1): keadaan SESUDAH pindah — per rekening saldo akun rekening vs
+ * saldo buku kasnya (selisih = akun − buku kas, pemeriksa "saldo per rekening = buku kas"), angka yang dipindah saat
+ * disetujui; akun kas lama = saldo sekarang. Kolom "Dipindah dari" / "Sisa" (hitungan pindah) tidak dipakai di sana.
  */
 import { formatCurrency } from "../../../utils/formatters";
 import { jenisKas } from "./cutoverShared";
@@ -18,45 +22,65 @@ export function AkunTujuan({ r }) {
   );
 }
 
+function DaftarAsal({ asal }) {
+  if (!(asal || []).length) return <span className="text-kn-text-2">—</span>;
+  return (
+    <ul className="grid gap-0.5">
+      {asal.map((a) => (
+        <li key={a.akun} className="text-fs-12">
+          <span className="font-mono">{a.akun}</span>{a.nama ? ` ${a.nama}` : ""} · <span className="tabular-nums">{rp(a.jumlah)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SelSelisih({ r, testId }) {
+  const selisih = Number(r.selisih) || 0;
+  const ada = Math.abs(selisih) >= 0.005;
+  return (
+    <td className={`text-right tabular-nums ${ada ? "font-semibold text-kn-warning-text" : "text-kn-text-2"}`}
+      data-testid={`${testId}-diff-${r.id}`}>
+      {ada ? rp(selisih) : "—"}
+    </td>
+  );
+}
+
 export function TabelRekening({ pv, testId = "ps-accounts" }) {
   const rows = pv?.rekening || [];
   if (!rows.length) return <p className="text-fs-13 text-kn-text-2" data-testid={`${testId}-empty`}>PT ini belum punya rekening.</p>;
+  const aktif = Boolean(pv?.aktif);
   return (
     <div className="overflow-x-auto">
       <table className="data-table head-wrap w-full" data-testid={testId}>
-        <thead><tr>
-          <th>Rekening</th><th>Akun buku besar tujuan</th><th className="text-right">Saldo buku kas</th>
-          <th>Dipindah dari</th><th className="text-right">Selisih</th>
-        </tr></thead>
+        <thead>{aktif ? (
+          <tr>
+            <th>Rekening</th><th>Akun buku besar</th><th className="text-right">Saldo akun</th>
+            <th className="text-right">Saldo buku kas</th><th>Dipindah saat disetujui</th>
+            <th className="text-right">Selisih akun − buku kas</th>
+          </tr>
+        ) : (
+          <tr>
+            <th>Rekening</th><th>Akun buku besar tujuan</th><th className="text-right">Saldo buku kas</th>
+            <th>Dipindah dari</th><th className="text-right">Selisih</th>
+          </tr>
+        )}</thead>
         <tbody>
-          {rows.map((r) => {
-            const selisih = Number(r.selisih) || 0;
-            return (
-              <tr key={r.id} data-testid={`${testId}-row-${r.id}`}>
-                <td className="min-w-[160px]">
-                  <span className="font-semibold">{r.nama}</span>
-                  <span className="block text-fs-12 text-kn-text-2">{jenisKas(r.cash_type)}{r.aktif === false ? " · nonaktif" : ""}</span>
-                </td>
-                <td className="min-w-[180px]"><AkunTujuan r={r} /></td>
-                <td className="text-right tabular-nums">{rp(r.saldo_buku)}</td>
-                <td className="min-w-[160px]">
-                  {(r.asal || []).length === 0 ? <span className="text-kn-text-2">—</span> : (
-                    <ul className="grid gap-0.5">
-                      {r.asal.map((a) => (
-                        <li key={a.akun} className="text-fs-12">
-                          <span className="font-mono">{a.akun}</span>{a.nama ? ` ${a.nama}` : ""} · <span className="tabular-nums">{rp(a.jumlah)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </td>
-                <td className={`text-right tabular-nums ${Math.abs(selisih) >= 0.005 ? "font-semibold text-kn-warning-text" : "text-kn-text-2"}`}
-                  data-testid={`${testId}-diff-${r.id}`}>
-                  {Math.abs(selisih) >= 0.005 ? rp(selisih) : "—"}
-                </td>
-              </tr>
-            );
-          })}
+          {rows.map((r) => (
+            <tr key={r.id} data-testid={`${testId}-row-${r.id}`}>
+              <td className="min-w-[160px]">
+                <span className="font-semibold">{r.nama}</span>
+                <span className="block text-fs-12 text-kn-text-2">{jenisKas(r.cash_type)}{r.aktif === false ? " · nonaktif" : ""}</span>
+              </td>
+              <td className="min-w-[180px]">
+                {aktif && !r.akun_tujuan ? <span className="text-kn-text-2" data-testid={`ps-target-${r.id}`}>Belum punya akun rekening</span> : <AkunTujuan r={r} />}
+              </td>
+              {aktif && <td className="text-right tabular-nums" data-testid={`${testId}-gl-${r.id}`}>{rp(r.saldo_akun_tujuan)}</td>}
+              <td className="text-right tabular-nums">{rp(r.saldo_buku)}</td>
+              <td className="min-w-[160px]"><DaftarAsal asal={r.asal} /></td>
+              <SelSelisih r={r} testId={testId} />
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -90,6 +114,27 @@ export function KasTanpaRekening({ pv }) {
 export function TabelAkunLama({ pv }) {
   const rows = pv?.akun_lama || [];
   if (!rows.length) return null;
+  if (pv?.aktif) {
+    return (
+      <div className="overflow-x-auto">
+        <table className="data-table w-full" data-testid="ps-old-accounts">
+          <thead><tr><th>Akun kas lama</th><th className="text-right">Dipindah saat disetujui</th>
+            <th className="text-right">Saldo sekarang</th></tr></thead>
+          <tbody>
+            {rows.map((a) => (
+              <tr key={a.akun} data-testid={`ps-old-${a.akun}`}>
+                <td><span className="font-mono">{a.akun}</span>{a.nama ? ` · ${a.nama}` : ""}</td>
+                <td className="text-right tabular-nums">{rp(a.dipindah)}</td>
+                <td className="text-right tabular-nums">{rp(a.saldo)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-1 text-fs-12 text-kn-text-2">Saldo sekarang = kas yang dicatat tanpa dokumen kas rekening dan kas
+          lama tanpa rekening; tetap di akun lama.</p>
+      </div>
+    );
+  }
   return (
     <div className="overflow-x-auto">
       <table className="data-table w-full" data-testid="ps-old-accounts">

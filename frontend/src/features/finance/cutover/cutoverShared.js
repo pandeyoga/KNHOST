@@ -36,11 +36,36 @@ export function alasanTidakBisaSiapkan(pv, { canManage }) {
   if (pv.aktif) return "PT ini sudah memakai akun per rekening — pindah saldo hanya sekali per PT.";
   if (pv.usulan) return "Usulan pindah saldo PT ini masih menunggu persetujuan. Setujui atau tolak dulu.";
   if (Number(pv.posting_gagal) > 0) {
-    return `Selesaikan dulu ${pv.posting_gagal} posting kas yang gagal atau tertunda di Keuangan › Posting Gagal.`;
+    return `Selesaikan dulu ${pv.posting_gagal} posting kas yang gagal atau tertunda — rincian dan tempat menyelesaikannya di bawah.`;
   }
   if (!(pv.rekening || []).length) return "PT ini belum punya rekening.";
   return "";
 }
+
+/**
+ * Tinjauan akhir Minor 1 — tempat menyelesaikan tiap jenis posting tertunda (`posting_gagal_rincian[].tempat` dari server
+ * `TEMPAT_TERTUNDA`): view yang dibuka tombolnya. Hanya jenis registri yang tampil di Posting Gagal; jurnal induk yang
+ * gagal juga tampil di sana; gaji jalur lama dibayar di Proses Gaji; yang sedang berjalan cukup dimuat ulang.
+ */
+export const TOMBOL_TERTUNDA = {
+  posting_gagal: { view: "posting-failures", label: "Buka Posting Gagal" },
+  dokumen_induk: { view: "posting-failures", label: "Buka Posting Gagal" },
+  proses_gaji: { view: "hr-payroll-runs", label: "Buka Proses Gaji" },
+};
+
+/** Tombol unik (per view) untuk rincian posting tertunda yang bisa diselesaikan di layar lain. */
+export function tombolTertunda(rincian) {
+  const out = [];
+  for (const x of rincian || []) {
+    const t = TOMBOL_TERTUNDA[x.tempat];
+    if (t && !out.some((o) => o.view === t.view)) out.push(t);
+  }
+  return out;
+}
+
+/** Nilai pilihan "Sub-akun baru (dibuat sistem)" di Siapkan untuk rekening yang akunnya sekarang akun pilihan Finance;
+ *  dikirim ke server sebagai "" (tinjauan akhir I2). */
+export const PILIH_SUBAKUN_BARU = "__subakun_baru__";
 
 /**
  * Akun bagan PT yang boleh dipilih untuk rekening `rek` (saringan layar; server memeriksa ulang `periksa_akun_pilihan`):

@@ -9,7 +9,8 @@
  * nonaktif dengan alasan tertulis bila ia pembuatnya). Aksi (izin, bukan peran — `fundTransferShared.aksiPindahDana`):
  * buat & Terima `cash.create`, Batal `cash.delete`, Setujui `cash.approve`. Satu pop-up per aksi: buat = `FormModal`
  * (`FundTransferForm`), Terima = `FormModal` bertanggal, Setujui = `askConfirm` (nominal & PT, N5), Batal = `askReason`
- * (≥ 5 huruf). Semua kirim lewat `moneyPost` + `useIntentKey` (N4). Galat aksi tampil di bilah galat layar / di pop-up.
+ * (≥ 5 huruf; "Teruskan pembatalan" yang terhenti = `askConfirm` dengan alasan yang sudah tercatat). Semua kirim
+ * lewat `moneyPost` + `useIntentKey` (N4). Galat aksi tampil di bilah galat layar / di pop-up.
  * Tautan masuk: antrean persetujuan & butir tutup buku (preset `{status}`), Posting Gagal & Jejak (`focusDoc`
  * `fund_transfer` → pratinjau dokumennya).
  */
@@ -115,15 +116,26 @@ export default function FundTransfersView({ currentUser, selectedEntity, focusDo
   }
 
   async function batal(d) {
-    const lanjut = d.status === "batal";
+    const ringkas = `${formatCurrency(d.nominal)} dari ${d.rekening_asal} ke ${d.rekening_tujuan}. `;
+    if (d.status === "batal") {
+      // Tinjauan akhir Minor 8 — meneruskan pembatalan yang terhenti memakai alasan yang sudah tercatat (server
+      // mengabaikan alasan baru), jadi cukup konfirmasi yang menyebut alasan itu.
+      const ok = await askConfirm({
+        title: `Teruskan pembatalan ${d.number}?`, danger: true, confirmLabel: "Teruskan", testId: "ft-cancel-resume",
+        message: `${ringkas}Kas dokumen ini yang belum dibalik dibalik sekarang dengan alasan yang sudah tercatat: `
+          + `"${d.alasan_batal || "—"}".`,
+      });
+      if (ok) await kirim(d, "cancel", { alasan: d.alasan_batal || "Teruskan pembatalan" }, (x) => `Pembatalan ${x.number} diteruskan.`);
+      return;
+    }
     const alasan = await askReason({
-      title: lanjut ? `Teruskan pembatalan ${d.number}?` : `Batalkan Pindah Dana ${d.number}?`, danger: true,
-      message: `${formatCurrency(d.nominal)} dari ${d.rekening_asal} ke ${d.rekening_tujuan}. `
+      title: `Batalkan Pindah Dana ${d.number}?`, danger: true,
+      message: ringkas
         + (d.status === "menunggu_persetujuan" && !Object.keys(d.kas_ids || {}).length
           ? "Kasnya belum terbit, jadi dokumen cukup ditandai batal."
           : "Semua kas dokumen ini dibalik dengan jurnal pembalik; ditolak bila salah satunya sudah dicocokkan dengan "
             + "mutasi bank (lepas dulu di Rekonsiliasi)."),
-      reasonLabel: "Alasan pembatalan", reasonMinLength: ALASAN_MIN, confirmLabel: lanjut ? "Teruskan" : "Batalkan",
+      reasonLabel: "Alasan pembatalan", reasonMinLength: ALASAN_MIN, confirmLabel: "Batalkan",
       testId: "ft-cancel-reason",
     });
     if (alasan === null || alasan === undefined) return;
