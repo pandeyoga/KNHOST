@@ -45,7 +45,7 @@ menjalankan pindah saldo untuk PT itu dan orang kedua menyetujuinya.**
 | Gelombang perbaikan akhir | `223e73a`, `b370cc1` ⟨+⟩ |
 
 Alur: T1–T5 (jalur uang) pelaksana → tinjauan tugas → perbaikan → tinjauan ulang; T6 (layar) tanpa tinjauan tugas
-(perintah pemilik "ya percepat"); tinjauan seluruh cabang → satu gelombang perbaikan → tinjauan ulang ⟨REREVIEW⟩.
+(perintah pemilik "ya percepat"); tinjauan seluruh cabang → satu gelombang perbaikan → tinjauan ulang: semua temuan (2 Important + 8 kecil) tertangani, tanpa temuan berat baru.
 
 Temuan nyata yang tertangkap tinjauan sebelum gabung:
 - akun tujuan pemetaan kas bisa dipilih jadi akun rekening (jurnal kas lama ikut masuk ke rekening) — T1;
@@ -58,7 +58,7 @@ Temuan nyata yang tertangkap tinjauan sebelum gabung:
 
 ## 3. Uji (apa adanya)
 
-- **Backend `tests_mem` penuh** di pohon akhir: ⟨SUITE⟩
+- **Backend `tests_mem` penuh** di `b370cc1`: 3236 lulus, 2 dilewati, 3 xfail, **0 gagal** (EXIT 0, 1228 dtk).
 - **Jest penuh** di `b370cc1`: 2173/2174 uji, 270/272 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan garis dasar).
 - **Uji baru:** `test_KB1_1`…`test_KB1_6` (backend) + `kb1KasBank.test.js` (jest). Setiap jalur uang diuji di PT belum
   aktif (rekaman jurnal kode lama) dan PT aktif (sub-akun).
@@ -90,6 +90,8 @@ Keputusan builder rancangan §7, ditambah ketetapan pengendali selama eksekusi:
 12. **R12** Tugas kecil T5 dijalankan sejajar dengan tinjauan T4 (tetap satu pelaksana aktif).
 13. **R13** Kategori kas manual apa pun yang memuat "transfer" ditolak — hari ini kategori seperti itu sudah dijurnal ke akun transit (salah).
 14. **R14** Satu butir kecil tinjauan akhir diparkir: daftar usulan pindah saldo lintas PT di mode "Semua PT".
+15. **R15** Pindah Dana sekali jalan menjurnal kedua kakinya lewat akun transit 1-1150 (keluar asal → 1-1150, 1-1150 → masuk tujuan); efek bersih = Dr tujuan / Cr asal dan 1-1150 nol per dokumen. *Kalimat rancangan §5.2 "Dr tujuan / Cr asal" dibaca sebagai efek bersih.*
+16. **R16** Dua temuan layar dari tangkapan (alasan tombol mati terpotong di layar 1440 px; tanggal mentah di pop-up kartu Meja dan riwayat pratinjau PDN) diperbaiki sebelum tangkapan akhir.
 - Diterima apa adanya: Admin boleh menyetujui Pindah Dana sendiri bila kontrol dua orang dinyalakan (perilaku kontrol
   baku; pindah dana rutin, berbeda dengan pindah saldo); batas nominal kontrol = nominal pindah tanpa biaya; nominal
   negatif ditolak skema (422).
@@ -110,7 +112,24 @@ Keputusan builder rancangan §7, ditambah ketetapan pengendali selama eksekusi:
 
 ## 6. Catatan kecil yang ditunda (tidak memblokir)
 
-⟨MINOR⟩
+Dari tinjauan per tugas dan tinjauan akhir; semua dinilai **boleh tetap** oleh tinjauan akhir:
+- Balapan nomor sub-akun bila dua rekening baru dibuat bersamaan di PT aktif (jendela sangat sempit) — usul indeks unik
+  `(PT, kode)` untuk akun khusus PT sesudah cek data VPS.
+- Label baris sub-akun di laporan multi-PT bisa memakai nama rekening PT lain (total benar).
+- Penjaga statis kode kas: pengecualian per lokasi tanpa hitungan; kunci pemetaan selain `kas_bank.*` tidak terlihat.
+- Usulan pindah saldo yang prosesnya mati di antara klaim dan menyala, lalu diteruskan, tidak mengulang cek penghalang
+  (hanya sesudah crash).
+- Dokumen Pindah Dana tanpa kontrol dua orang yang terbitnya terhenti tertinggal "menunggu persetujuan" (terlihat di
+  antrean, "Setujui lagi").
+- Siapkan pindah saldo yang gagal karena galat selain pembuatan sub-akun meninggalkan akun pilihan bertanda (layar
+  memberi jalan keluar); tombol Posting Gagal untuk "dokumen induk" bisa mendarat di panel kosong bila jurnal induknya
+  masih tertunda.
+- Pratinjau refund per roll belum membaca rekening (posting nyata benar).
+- Cacat lama: PT yang memetakan kas besar ke akun khusus PT — jurnal penjualan tunai tidak terbaca di `order_revenue_recognized`.
+- Skrip manual `backend/backend_test_epic7b_bank.py` memakai kategori "transfer" (kini 400).
+- Utang uji/kerapian: jalur pemulihan rekening baru, uji pembalik dokumen yang kasnya menumpang jurnal induk, logika
+  baris posisi kas ganda di dua pembaca, ukuran `gl_service`.
+- Daftar usulan pindah saldo lintas PT di mode "Semua PT" (R14, diparkir).
 
 ## 7. Catatan pembaruan VPS
 
