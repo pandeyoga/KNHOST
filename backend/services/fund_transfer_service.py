@@ -470,15 +470,20 @@ async def terima(doc_id: str, tanggal: str, actor: Dict[str, Any]) -> Dict[str, 
 
 
 # ── Batal ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+def _tolak_bila_tercocok(kas: List[Dict[str, Any]], nomor: str) -> None:
+    """Kas yang sudah dicocokkan dengan mutasi bank (`reconciled_amount` > 0, PK-21) tidak dibalik dari sini."""
+    for t in kas:
+        if _f(t.get("reconciled_amount")) > 0:
+            raise _galat(409, f"Kas {t.get('number', '')} dari Pindah Dana {nomor} sudah dicocokkan dengan mutasi "
+                              "bank — lepas dulu di Rekonsiliasi, lalu batalkan.")
+
+
 async def _periksa_pembalik(entity_id: str, kas: List[Dict[str, Any]], nomor: str) -> None:
     """Tiap kas yang akan dibalik: belum dicocokkan mutasi bank; periode tanggal pembalik terbuka; baris pembaliknya
     (akun kas dialihkan seperti `_reverse_once_ex`) lolos pemeriksa jurnal. Tanpa tulisan."""
     from services import gl_service as gl
     from services.posting_registry import tanggal_pembalik
-    for t in kas:
-        if _f(t.get("reconciled_amount")) > 0:
-            raise _galat(409, f"Kas {t.get('number', '')} dari Pindah Dana {nomor} sudah dicocokkan dengan mutasi "
-                              "bank — lepas dulu di Rekonsiliasi, lalu batalkan.")
+    _tolak_bila_tercocok(kas, nomor)
     for t in kas:
         tgl = tanggal_pembalik(t.get("txn_date")) or now_iso()
         je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": t["id"],
@@ -535,7 +540,13 @@ async def _balik_kas(doc: Dict[str, Any], kas: List[Dict[str, Any]], actor: Dict
 
 async def batal(doc_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     """`POST /api/fund-transfers/{id}/cancel` — batalkan Pindah Dana beralasan: semua kas tidak-batal dibalik (ditolak
-    bila ada yang tercocok mutasi bank). Dokumen batal yang pembaliknya belum tuntas → diteruskan."""
+    bila ada yang tercocok mutasi bank). Dokumen batal yang pembaliknya belum tuntas → diteruskan.
+
+    Tinjauan T4 putaran 1 (I1) — klaim berprasyarat status yang DILIHAT PERIKSA (bukan sembarang status hidup): Terima /
+    Setujui yang selesai di sela PERIKSA dan KLAIM membuat batal kalah (409 muat ulang, tidak ada yang berubah). Kas
+    dibaca ulang SESUDAH klaim (selama kunci dipegang tidak ada kas baru untuk dokumen ini); himpunan kas yang berbeda
+    dari yang diperiksa (mis. terbit yang diteruskan di sela tanpa mengubah status) → 409 yang sama; kas segar diperiksa
+    ulang rekonsiliasinya lalu SEMUANYA dibalik."""
     from services import atomic_claim as _saga
     teks = (alasan or "").strip()
     if len(teks) < ALASAN_MIN:
@@ -546,16 +557,28 @@ async def batal(doc_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, An
     # ── PERIKSA ──
     if doc.get("status") not in HIDUP and not lanjut:
         raise _galat(409, _pesan_status(doc, "batal"))
+    nomor = doc.get("number") or doc_id
     kas = [t for t in await _kas_dokumen(doc_id) if t.get("status") != "void"]
-    await _periksa_pembalik(eid, kas, doc.get("number") or doc_id)
-    # ── KLAIM ──
+    await _periksa_pembalik(eid, kas, nomor)
+    # ── KLAIM (status persis seperti yang diperiksa) ──
     nama = (actor or {}).get("name") or ""
-    syarat = ({"status": BATAL, "batal_gl_status": {"$in": ["pending", "failed"]}} if lanjut
-              else {"status": {"$in": list(HIDUP)}})
-    lk = await _saga.claim(COLL, doc_id, "fund_transfer_cancel", precondition=syarat, actor=nama,
-                           detail=f"Pindah Dana {doc.get('number')} sudah dibatalkan.")
+    syarat = ({"status": BATAL, "batal_gl_status": doc.get("batal_gl_status")} if lanjut
+              else {"status": doc.get("status")})
+    try:
+        lk = await _saga.claim(COLL, doc_id, "fund_transfer_cancel", precondition=syarat, actor=nama,
+                               detail=_pesan_berubah(doc))
+    except HTTPException as exc:
+        segar = await db[COLL].find_one({"id": doc_id}, {"_id": 0}) or {}
+        if isinstance(exc.detail, str) and segar.get("status") == BATAL and not lanjut:
+            raise _galat(409, _pesan_status(segar, "batal")) from exc   # batal lain menang lebih dulu
+        raise
     token = (lk.get(_saga.LOCK) or {}).get("token", "")
     try:
+        segar = [t for t in await _kas_dokumen(doc_id) if t.get("status") != "void"]
+        if {t["id"] for t in segar} != {t["id"] for t in kas}:
+            raise _galat(409, _pesan_berubah(doc))   # kunci dilepas di `finally`; belum ada yang ditulis
+        _tolak_bila_tercocok(segar, nomor)
+        kas = segar
         if not lanjut:
             niat = {"status": BATAL, "status_sebelum_batal": lk.get("status"), "alasan_batal": teks[:500],
                     "dibatalkan_oleh": nama, "dibatalkan_oleh_id": (actor or {}).get("id", ""),

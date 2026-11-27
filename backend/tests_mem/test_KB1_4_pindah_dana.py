@@ -648,3 +648,148 @@ async def test_KB1_4_U12_terbit_terhenti_diteruskan_tanpa_kas_ganda(db, monkeypa
     assert [t["status"] for t in (await _kas_dokumen(db, d2["id"])).values()] == ["void"]
     assert _beda(sebelum, await _potret(db, pt)) == await _harap(db, pt, {"BCA": -81_200.0, "MDR": 80_000.0},
                                                                 beban=1_200.0)
+
+
+# ═══ 13. Tinjauan T4 putaran 1 (I1) — balapan batal × terima / setujui: batal kalah utuh atau membalik SEMUA kas ═════
+async def _transit_dokumen(db, pt: dict, doc_id: str) -> float:
+    """Σ baris 1-1150 jurnal kas (dan pembaliknya) milik dokumen ini — harus 0 bila dokumen selesai atau batal."""
+    ids = [t["id"] async for t in db.cash_transactions.find({"ref_type": "fund_transfer", "ref_id": doc_id},
+                                                            {"_id": 0, "id": 1})]
+    total = 0.0
+    async for je in db.journal_entries.find({"entity_id": pt["id"], "status": {"$ne": "void"},
+                                             "source_type": {"$in": ["cash_transaction", "cash_transaction_void"]},
+                                             "source_id": {"$in": ids}}, {"_id": 0, "lines": 1}):
+        total += sum(ln["debit"] - ln["credit"] for ln in je["lines"] if ln["account_code"] == TRANSIT)
+    return round(total, 2)
+
+
+def _sela_sekali(fts, monkeypatch, nama: str, aksi):
+    """Bungkus `fts.<nama>`: sesudah pemeriksaan aslinya, jalankan `aksi()` SEKALI (orang lain bertindak tepat di sela
+    PERIKSA dan KLAIM). Hasil/galat aksi disimpan di `jejak`."""
+    asli, jejak = getattr(fts, nama), {}
+
+    async def _bungkus(*a, **kw):
+        hasil = await asli(*a, **kw)
+        if "hasil" not in jejak:
+            jejak["hasil"] = None
+            try:
+                jejak["hasil"] = await aksi()
+            except HTTPException as exc:
+                jejak["hasil"] = exc
+        return hasil
+
+    monkeypatch.setattr(fts, nama, _bungkus)
+    return jejak
+
+
+@pytest.mark.parametrize("mode", MODE)
+async def test_KB1_4_U13a_terima_di_sela_periksa_dan_klaim_batal(db, monkeypatch, mode):
+    from services import fund_transfer_service as fts
+    pt = await _pt(mode)
+    sebelum = await _potret(db, pt)
+    doc = await fts.buat(_isi(pt, "BCA", "MDR", 100_000, biaya=1_000, tanggal_kirim=_hari(-1), tanggal_terima=_hari()),
+                         PEMBUAT)
+    sela = _sela_sekali(fts, monkeypatch, "_periksa_pembalik", lambda: fts.terima(doc["id"], "", PENYETUJU))
+    await _ditolak(fts.batal(doc["id"], "uji balapan batal", PEMBUAT), 409,
+                   f"Pindah Dana {doc['number']} baru saja diubah orang lain. Muat ulang lalu periksa.")
+    assert isinstance(sela["hasil"], dict) and sela["hasil"]["status"] == "selesai", sela
+    # Batal kalah utuh: dokumen selesai, ketiga kas hidup, tidak ada pembalik, transit dokumen 0
+    d = await db.fund_transfers.find_one({"id": doc["id"]}, {"_id": 0})
+    assert (d["status"], d.get("saga_lock"), d.get("alasan_batal")) == ("selesai", None, None)
+    kas = await _kas_dokumen(db, doc["id"])
+    assert {s: t["status"] for s, t in kas.items()} == {"kirim": "posted", "biaya": "posted", "terima": "posted"}
+    assert await db.journal_entries.count_documents({"source_type": "cash_transaction_void",
+                                                     "source_id": {"$in": [t["id"] for t in kas.values()]}}) == 0
+    assert await _transit_dokumen(db, pt, doc["id"]) == 0.0
+    # Muat ulang lalu batal lagi → SEMUA kas (termasuk terima) dibalik, saldo kembali
+    monkeypatch.undo()
+    hasil = await fts.batal(doc["id"], "uji balapan batal", PEMBUAT)
+    assert (hasil["status"], hasil["batal_gl_status"]) == ("batal", "posted")
+    assert all(t["status"] == "void" for t in (await _kas_dokumen(db, doc["id"])).values())
+    assert await _transit_dokumen(db, pt, doc["id"]) == 0.0
+    assert _beda(sebelum, await _potret(db, pt)) == {}
+
+
+@pytest.mark.parametrize("mode", MODE)
+async def test_KB1_4_U13b_setujui_di_sela_periksa_dan_klaim_batal(db, monkeypatch, mode):
+    from services import fund_transfer_service as fts
+    pt = await _pt(mode)
+    await _atur("kontrol.pindah_dana.min_orang", "2", pt["id"])
+    sebelum = await _potret(db, pt)
+    doc = await fts.buat(_isi(pt, "BCA", "KK", 60_000, biaya=500), PEMBUAT)
+    assert doc["status"] == "menunggu_persetujuan"
+    sela = _sela_sekali(fts, monkeypatch, "_periksa_pembalik", lambda: fts.setujui(doc["id"], PENYETUJU))
+    await _ditolak(fts.batal(doc["id"], "uji balapan setujui", PEMBUAT), 409,
+                   f"Pindah Dana {doc['number']} baru saja diubah orang lain. Muat ulang lalu periksa.")
+    assert isinstance(sela["hasil"], dict) and sela["hasil"]["status"] == "selesai", sela
+    d = await db.fund_transfers.find_one({"id": doc["id"]}, {"_id": 0})
+    assert (d["status"], d.get("saga_lock"), d.get("batal_gl_status")) == ("selesai", None, None)
+    assert {s: t["status"] for s, t in (await _kas_dokumen(db, doc["id"])).items()} == {
+        "kirim": "posted", "biaya": "posted", "terima": "posted"}
+    monkeypatch.undo()
+    hasil = await fts.batal(doc["id"], "uji balapan setujui", PEMBUAT)
+    assert (hasil["status"], hasil["batal_gl_status"]) == ("batal", "posted")
+    assert all(t["status"] == "void" for t in (await _kas_dokumen(db, doc["id"])).values())
+    assert await _transit_dokumen(db, pt, doc["id"]) == 0.0
+    assert _beda(sebelum, await _potret(db, pt)) == {}
+
+
+async def test_KB1_4_U13c_kas_bertambah_di_sela_tanpa_ganti_status_batal_kalah(db, monkeypatch):
+    """Status sama tetapi himpunan kas berubah (terbit yang diteruskan di sela, berhenti lagi di kas berikutnya):
+    pertahanan baca-ulang sesudah klaim → 409, tidak ada yang berubah; batal berikutnya membalik semuanya."""
+    from services import cash_ledger
+    from services import fund_transfer_service as fts
+    pt = await _pt("aktif")
+    sebelum = await _potret(db, pt)
+    asli = cash_ledger.create_cash
+    tolak = {"biaya": 1, "terima": 1}
+
+    async def _palsu(**kw):
+        if tolak.get(kw.get("seq")):
+            tolak[kw["seq"]] -= 1
+            raise cash_ledger.CashRejected("Rekening berubah di sela.")
+        return await asli(**kw)
+
+    monkeypatch.setattr(cash_ledger, "create_cash", _palsu)
+    await _ditolak(fts.buat(_isi(pt, "BCA", "MDR", 40_000, biaya=700), PEMBUAT), 409)
+    d = await db.fund_transfers.find_one({"entity_id": pt["id"]}, {"_id": 0})
+    assert d["status"] == "menunggu_persetujuan" and sorted(await _kas_dokumen(db, d["id"])) == ["kirim"]
+    sela = _sela_sekali(fts, monkeypatch, "_periksa_pembalik", lambda: fts.setujui(d["id"], PEMBUAT))
+    await _ditolak(fts.batal(d["id"], "uji kas bertambah", PEMBUAT), 409,
+                   f"Pindah Dana {d['number']} baru saja diubah orang lain. Muat ulang lalu periksa.")
+    assert isinstance(sela["hasil"], HTTPException) and sela["hasil"].status_code == 409, sela   # terima ditolak lagi
+    d2 = await db.fund_transfers.find_one({"id": d["id"]}, {"_id": 0})
+    assert (d2["status"], d2.get("saga_lock")) == ("menunggu_persetujuan", None)
+    kas = await _kas_dokumen(db, d["id"])
+    assert {s: t["status"] for s, t in kas.items()} == {"kirim": "posted", "biaya": "posted"}
+    monkeypatch.undo()
+    hasil = await fts.batal(d["id"], "uji kas bertambah", PEMBUAT)
+    assert (hasil["status"], hasil["batal_gl_status"]) == ("batal", "posted")
+    assert all(t["status"] == "void" for t in (await _kas_dokumen(db, d["id"])).values())
+    assert await _transit_dokumen(db, pt, d["id"]) == 0.0
+    assert _beda(sebelum, await _potret(db, pt)) == {}
+
+
+@pytest.mark.parametrize("aksi", ["terima", "setujui"])
+async def test_KB1_4_U13d_batal_di_sela_periksa_dan_klaim_terima_setujui(db, monkeypatch, aksi):
+    """Arah sebaliknya: Terima / Setujui lolos PERIKSA, batal tuntas di sela → Terima / Setujui ditolak 409, tidak ada
+    kas baru; dokumen batal utuh."""
+    from services import fund_transfer_service as fts
+    pt = await _pt("lama")
+    sebelum = await _potret(db, pt)
+    if aksi == "terima":
+        doc = await fts.buat(_isi(pt, "BCA", "KK", 90_000, biaya=900, tanggal_kirim=_hari(-1),
+                                  tanggal_terima=_hari()), PEMBUAT)
+        jalan = lambda: fts.terima(doc["id"], "", PENYETUJU)   # noqa: E731
+    else:
+        await _atur("kontrol.pindah_dana.min_orang", "2", pt["id"])
+        doc = await fts.buat(_isi(pt, "BCA", "KK", 90_000, biaya=900), PEMBUAT)
+        jalan = lambda: fts.setujui(doc["id"], PENYETUJU)   # noqa: E731
+    sela = _sela_sekali(fts, monkeypatch, "_periksa_jurnal", lambda: fts.batal(doc["id"], "batal di sela", PEMBUAT))
+    e = await _ditolak(jalan(), 409)
+    assert e.detail == f"Pindah Dana {doc['number']} baru saja diubah orang lain. Muat ulang lalu periksa.", e.detail
+    assert isinstance(sela["hasil"], dict) and sela["hasil"]["status"] == "batal", sela
+    kas = await _kas_dokumen(db, doc["id"])
+    assert "terima" not in kas and all(t["status"] == "void" for t in kas.values())
+    assert await _transit_dokumen(db, pt, doc["id"]) == 0.0
+    assert _beda(sebelum, await _potret(db, pt)) == {}
