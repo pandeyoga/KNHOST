@@ -111,6 +111,8 @@ EXPECT = {
     # Kas & Bank 1 (Tugas 6) — Pindah Dana menunggu orang kedua & usulan pindah saldo kas per PT menunggu persetujuan.
     "fund_transfer": ("fund_transfers", {"status": "menunggu_persetujuan"}),
     "pindah_saldo_kas": ("cash_account_cutovers", {"status": "menunggu"}),
+    # Kas & Bank 2 (Tugas 4) — kas keluar manual di atas batas menunggu orang kedua.
+    "cash_out_request": ("cash_out_requests", {"status": "menunggu_persetujuan"}),
     "hr_leave": ("hr_leave_requests", {"status": "pending"}),
     "hr_overtime": ("hr_overtime", {"status": "pending"}),
     # ── UTANG ALUR F-6.7 DIBAYAR (2026-08-18) — opini kedua untuk 4 antrean baru.

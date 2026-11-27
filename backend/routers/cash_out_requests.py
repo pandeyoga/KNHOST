@@ -7,21 +7,25 @@ Izin (spesifikasi §6, §7 butir 7 — tanpa izin baru): lihat `cash.view`, setu
 (`guard_doc`, ketat untuk tulisan).
 
   GET  /api/cash-out-requests                     daftar (`entity_id`, `status`, `q`, `page`, `page_size`)
+  GET  /api/cash-out-requests/batas               batas kontrol PT efektif (catatan "Di atas Rp …" di form kas)
   GET  /api/cash-out-requests/{id}                pengajuan + kas yang terbit + penilaian kontrol dua orang
   POST /api/cash-out-requests/{id}/approve        orang kedua; kas keluar manual terbit
   POST /api/cash-out-requests/{id}/reject         `{alasan}` (≥ 5 huruf), bukan pengaju
   POST /api/cash-out-requests/{id}/cancel         `{alasan?}` — pengaju atau pemegang `cash.delete`, selama menunggu
 
-Antrean Pusat Persetujuan, Aturan Persetujuan (`guard_door`), layar, dan pemberitahuan menyusul di Tugas 3–4.
+Tugas 4 — antrean Pusat Persetujuan "Kas keluar manual menunggu" (`approval_backlog_service.QUEUES`) dan Aturan
+Persetujuan jenis `cash_out_request` (`approval_kinds`; bawaan: semua pemegang `cash.approve`) ditegakkan di pintu
+Setujui dan Tolak (`approval_policy_service.guard_door`). Layar: Kas & Bank › Transaksi Kas bagian "Menunggu
+persetujuan".
 """
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Query, Request
 
 from dependencies import audit, denied, has_permission, require_any_permission, require_permission
-from entity_scope import entity_ctx, guard_doc, resolve_scope_ids
+from entity_scope import entity_ctx, guard_doc, resolve_requested_entity, resolve_scope_ids
 from schemas_finance import CashOutRequestCancel, CashOutRequestReject
-from services import cash_out_request_service as cors
+from services import approval_policy_service, cash_out_request_service as cors
 
 router = APIRouter(prefix="/api/cash-out-requests")
 
@@ -47,6 +51,15 @@ async def list_cash_out_requests(request: Request, entity_id: str = Query(None),
     return await cors.daftar(ids, status or None, q=q, page=page, page_size=page_size, actor=actor)
 
 
+@router.get("/batas")
+async def get_cash_out_limit(request: Request, entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """Batas kontrol kas keluar manual yang berlaku untuk PT (kosong = PT aktif). Hanya-baca, untuk catatan form; rute
+    kas tetap penentu. PT di luar penugasan → 403 (N1)."""
+    await require_permission(request, "cash", "view")
+    eid = resolve_requested_entity(await entity_ctx(request), entity_id)
+    return await cors.batas_pt(eid)
+
+
 @router.get("/{pengajuan_id}")
 async def get_cash_out_request(pengajuan_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "view")
@@ -57,7 +70,9 @@ async def get_cash_out_request(pengajuan_id: str, request: Request) -> Dict[str,
 @router.post("/{pengajuan_id}/approve")
 async def approve_cash_out_request(pengajuan_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "approve")
-    await _dokumen(request, pengajuan_id, tulis=True)
+    doc = await _dokumen(request, pengajuan_id, tulis=True)
+    # Tugas 4 — Aturan Persetujuan jenis `cash_out_request` (bawaan: semua pemegang `cash.approve`).
+    await approval_policy_service.guard_door("cash_out_request", actor, doc=doc, amount=float(doc.get("amount") or 0))
     res = await cors.setujui(pengajuan_id, actor)
     await audit(actor["name"], "cash_out_request_approved", "cash_out_request", pengajuan_id, _jejak_audit(res),
                 scope_entity_id=res.get("entity_id", ""))
@@ -68,7 +83,9 @@ async def approve_cash_out_request(pengajuan_id: str, request: Request) -> Dict[
 async def reject_cash_out_request(pengajuan_id: str, payload: CashOutRequestReject,
                                   request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "approve")
-    await _dokumen(request, pengajuan_id, tulis=True)
+    doc = await _dokumen(request, pengajuan_id, tulis=True)
+    await approval_policy_service.guard_door("cash_out_request", actor, doc=doc, amount=float(doc.get("amount") or 0),
+                                             action="reject")
     res = await cors.tolak(pengajuan_id, payload.alasan, actor)
     await audit(actor["name"], "cash_out_request_rejected", "cash_out_request", pengajuan_id,
                 {**_jejak_audit(res), "alasan": payload.alasan}, scope_entity_id=res.get("entity_id", ""))

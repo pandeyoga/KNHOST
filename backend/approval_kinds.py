@@ -127,6 +127,14 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
                            note="Sekali per PT, saat PT mulai memakai akun buku besar per rekening.",
                            max_levels=1,
                            max_levels_message="Pindah saldo kas diputus satu orang: satu jenjang persetujuan."),
+    # Kas & Bank 2 (Tugas 4) — kas keluar manual di atas batas PT menunggu orang kedua (`POST /api/cash-out-requests/
+    # {id}/approve|reject` = `cash.approve`; pengaju ≠ penyetuju dijaga `kontrol.kas_keluar_manual`). Diputus SATU orang
+    # (persetujuan bertingkat bukan tujuan, spesifikasi §2). Kedua pintu memanggil `guard_door`.
+    "cash_out_request": _k("Kas keluar manual di atas batas", "Keuangan", "cash_out_request", ("cash.approve",),
+                           amount_field="amount",
+                           note="Pengajuan hanya ada bila kas keluar manual melewati batas kontrol dua orang PT itu.",
+                           max_levels=1,
+                           max_levels_message="Kas keluar manual diputus satu orang: satu jenjang persetujuan."),
     # AG-T5 — kartu tindakan asisten (uang keluar dan jurnal) menunggu orang kedua: pintu `POST /api/ai/actions/{id}/
     # second` = izin `ai_finance.approve` (+ izin pintu tindakannya); pembuat ≠ orang kedua dijaga kontrol dua orang.
     "ai_card_second": _k("Kartu asisten — uang keluar dan jurnal menunggu orang kedua", "Keuangan", "ai_card_second",

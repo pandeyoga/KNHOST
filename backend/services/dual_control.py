@@ -66,6 +66,16 @@ async def butuh_orang_kedua(aksi: str, entity_id: str, nominal: float = 0.0, *,
     return False
 
 
+async def nilai_aksi(aksi: str, entity_id: str) -> Dict[str, Any]:
+    """Nilai efektif satu aksi untuk satu PT — untuk layar yang memberi tahu SEBELUM dikirim (mis. catatan "Di atas
+    Rp …" di form kas). Keputusan tetap `butuh_orang_kedua`. → `{"min_orang": "1"|"2", "batas_nominal": float | None}`
+    (`None` = aksi tanpa nominal). Kas & Bank 2 (Tugas 4)."""
+    a = _aksi(aksi)
+    min_orang = str(await _nilai(kunci_min_orang(aksi), entity_id)).strip()
+    batas = _angka(await _nilai(kunci_batas(aksi), entity_id)) if a["punya_nominal"] else None
+    return {"min_orang": min_orang, "batas_nominal": batas}
+
+
 def _milik(aktor: Dict[str, Any]) -> set:
     return {str((aktor or {}).get(k) or "").strip().lower() for k in ("id", "name", "email")} - {""}
 

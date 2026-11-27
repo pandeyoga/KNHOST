@@ -164,6 +164,12 @@ QUEUES: List[tuple] = [
     # rekening. Usulan `memproses` (persetujuan terhenti) tampil di Posting Gagal bila jurnalnya gagal, bukan di sini.
     ("pindah_saldo_kas", "Pindah saldo kas per rekening menunggu persetujuan", "kas-per-rekening",
      "cash_account_cutovers", {"status": "menunggu"}),
+    # Kas & Bank 2 (Tugas 4) — kas keluar manual di atas batas PT yang menunggu orang kedua
+    # (`kontrol.kas_keluar_manual.*`; juga pengajuan yang kasnya gagal terbit dan diteruskan lewat Setujui). Pintunya
+    # `POST /api/cash-out-requests/{id}/approve|reject` (`cash.approve`); layar Kas & Bank › Transaksi Kas bagian
+    # "Menunggu persetujuan" (preset).
+    ("cash_out_request", "Kas keluar manual menunggu", "cash-management", "cash_out_requests",
+     {"status": "menunggu_persetujuan"}),
     # AG-T5 — kartu tindakan asisten golongan C (uang keluar dan jurnal) yang disetujui pembuatnya dan menunggu orang
     # kedua (`kontrol.asisten_uang_keluar.*`). Pintu keputusannya `POST /api/ai/actions/{id}/second`; layar Tanya KN ›
     # Tindakan › Menunggu orang lain (preset `QUEUE_PRESETS`).
@@ -243,7 +249,9 @@ QUEUE_PRESETS: Dict[str, Dict[str, str]] = {"ai_card_second": {"tab": "actions",
                                             # KM-T3 — Lembar Insentif dibuka dengan saringan "Diajukan".
                                             "incentive_sheet": {"status": "submitted"},
                                             # Kas & Bank 1 — Pindah Dana dibuka dengan saringan "Menunggu persetujuan".
-                                            "fund_transfer": {"status": "menunggu_persetujuan"}}
+                                            "fund_transfer": {"status": "menunggu_persetujuan"},
+                                            # Kas & Bank 2 — Transaksi Kas dibuka di bagian "Menunggu persetujuan".
+                                            "cash_out_request": {"status": "menunggu_persetujuan"}}
 
 
 def _preset(key: str) -> Dict[str, Any]:
@@ -350,6 +358,9 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
     "fund_transfer": {"since": ["created_at"], "number": ["number"], "title": ["rekening_asal_nama", "catatan"]},
     "pindah_saldo_kas": {"since": ["disiapkan_pada", "created_at"], "number": ["label", "id"],
                          "title": ["disiapkan_oleh", "label"]},
+    # Kas & Bank 2 (Tugas 4) — pengajuan kas keluar: menunggu sejak diajukan (langsung berstatus menunggu, tanpa draf);
+    # judul = keterangan kas, cadangan nama pengaju.
+    "cash_out_request": {"since": ["created_at"], "number": ["number"], "title": ["description", "pengaju.name"]},
     # AG-T5 — umur tunggu sejak pembuat menyetujui (`first_at`), bukan sejak kartu disiapkan.
     "ai_card_second": {"since": ["first_at", "created_at"], "number": ["title"],
                        "title": ["user_name"]},

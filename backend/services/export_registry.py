@@ -263,6 +263,21 @@ DATASETS: List[Dict[str, Any]] = [
      # = `fund_transfer_service.daftar` `q` (nomor / catatan / nama rekening asal & tujuan)
      "search_fields": ["number", "catatan", "rekening_asal_nama", "rekening_tujuan_nama"],
      "joins": [ENTITY_JOIN()]},
+    # Kas & Bank 2 (Tugas 4) — Transaksi Kas › bagian "Menunggu persetujuan" (pengajuan kas keluar manual di atas batas;
+    # tombol baku Unduh Excel/CSV, G-UI-07).
+    {"id": "cash_out_requests", "label": "Pengajuan Kas Keluar", "group": "Keuangan", "collection": "cash_out_requests",
+     "grain": "1 baris = 1 pengajuan kas keluar manual", "key": "id", "perm": ("cash", "view"),
+     "date_fields": [C("txn_date", "Tanggal kas", "date"), C("created_at", "Tanggal diajukan", "datetime")],
+     "columns": [C("number", "No. pengajuan"), C("txn_date", "Tanggal kas", "date"),
+                 C("account_name", "Rekening"), C("category", "Kategori"), C("description", "Keterangan"),
+                 C("amount", "Nominal", "money"), C("status", "Status"),
+                 C("pengaju_name", "Pengaju", path="pengaju.name"),
+                 C("disetujui_oleh", "Disetujui oleh"), C("cash_number", "No. kas"), C("alasan_tolak", "Alasan tolak"),
+                 C("alasan_batal", "Alasan batal"), C("created_at", "Diajukan pada", "datetime"),
+                 C("entity_id", "ID badan usaha", default=False)],
+     # = `cash_out_request_service.daftar` `q` (nomor / keterangan / kategori / nama pengaju)
+     "search_fields": ["number", "description", "category", "pengaju.name"],
+     "joins": [ENTITY_JOIN()]},
     {"id": "journal_entries", "label": "Jurnal Umum", "group": "Keuangan", "collection": "journal_entries",
      "grain": "1 baris = 1 jurnal (header)", "key": "id", "perm": ("accounting", "view"),
      "date_fields": [C("date", "Tanggal jurnal", "datetime")],

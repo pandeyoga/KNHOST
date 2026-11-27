@@ -32,3 +32,5 @@ export const loadSpecialOrder = loadDoc("/special-orders");
 export const loadInternalRequest = loadDoc("/internal-requests");
 // Kas & Bank bagian 1 (Tugas 6) — Pindah Dana: dokumen + kas-kasnya + penilaian kontrol untuk pembuka.
 export const loadFundTransfer = loadDoc("/fund-transfers");
+// Kas & Bank bagian 2 (Tugas 4) — pengajuan kas keluar manual: pengajuan + kas yang terbit + penilaian kontrol pembuka.
+export const loadCashOutRequest = loadDoc("/cash-out-requests");

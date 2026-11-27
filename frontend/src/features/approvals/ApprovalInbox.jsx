@@ -14,7 +14,8 @@ import useViewPreset from "../../hooks/useViewPreset";
 import ApprovalDecisionModal from "./ApprovalDecisionModal";
 import MyApprovalsPanel from "./MyApprovalsPanel";
 import { KIND_META, loadInbox, butuhLabel } from "./approvalInboxData";
-import { INBOX_TABS, LISTED_IN_INBOX, canSeeMatrix } from "./inboxTabs";
+import { INBOX_TABS, LISTED_IN_INBOX, QUEUE_DOC_TYPE, canSeeMatrix } from "./inboxTabs";
+import DocLink from "../documents/preview/DocLink";
 import { notifySuccess } from "../../utils/feedback";
 import { actorLabel } from "../../utils/actorLabel";
 
@@ -138,7 +139,14 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-[12px] font-bold text-[#1C1C1E] [overflow-wrap:anywhere]">{o.number}</span>
+            {QUEUE_DOC_TYPE[o.key] ? (
+              // Kas & Bank 2 (Tugas 4) — nomor dokumen berpratinjau = DocLink (pola UI §1 butir 8).
+              <DocLink docType={QUEUE_DOC_TYPE[o.key]} docId={o.id} number={o.number} entityId={o.entity_id}
+                perms={currentUser?.permissions} className="text-fs-12 font-bold [overflow-wrap:anywhere]"
+                testId={`${base}-doc-${o.id}`} />
+            ) : (
+              <span className="text-[12px] font-bold text-[#1C1C1E] [overflow-wrap:anywhere]">{o.number}</span>
+            )}
             <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#F2F2F7] text-[#6B6B73]">
               {queueText(o.queue_label)}
             </span>

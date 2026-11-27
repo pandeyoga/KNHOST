@@ -10,6 +10,8 @@ import PaginationBar from "../../components/PaginationBar";
 import { SearchBox } from "../../components/ListControls";
 import FormModal from "../../components/FormModal";
 import { askReason } from "../../services/confirmService";
+import { notifySuccess } from "../../utils/feedback";
+import useViewPreset from "../../hooks/useViewPreset";
 import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import useIntentKey from "../../hooks/useIntentKey";
@@ -25,6 +27,9 @@ import { previewFor } from "../documents/preview/docPreviewRegistry";
 import JournalDetailModal from "../finance/JournalDetailModal";   // Meja gelombang 2 — "Jurnal" membuka jurnal kas
 import { sourceLabel } from "../finance/glSourceLabels";
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
+import { CATEGORIES, categoryLabel } from "./cashCategories";
+import CashOutPendingSection from "../finance/cashout/CashOutPendingSection";   // Kas & Bank 2 — pengajuan menunggu
+import { bacaBatas, butuhPersetujuan } from "../finance/cashout/cashOutShared";
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -40,28 +45,21 @@ import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "..
  * kategori di server) dengan "Menampilkan a–b dari N transaksi"; dulu ≤ 500 baris dimuat lalu dipotong diam-diam.
  * Lencana tab dari `summary.counts` (jumlah di server, bukan baris yang termuat). Tombol Catat mati di mode Semua PT.
  * Tanggal lewat `formatDate` (WIB).
+ *
+ * Kas & Bank 2 (Tugas 4, C5/C6) — kategori Pembelian & Gaji ditutup untuk kas manual baru (`cashCategories`, label lama
+ * tetap). Kas KELUAR di atas batas PT (`GET /cash-out-requests/batas`, kontrol `kontrol.kas_keluar_manual`) = PENGAJUAN:
+ * form menulis "Di atas Rp … — akan diajukan untuk disetujui orang kedua" dan tombolnya "Ajukan"; jawaban 202 `{request}`
+ * → toast + baris di bagian "Menunggu persetujuan" (`CashOutPendingSection`), tanpa kas. Server tetap penentu: 202 juga
+ * ditangani bila batasnya belum termuat. Tautan masuk: Pusat Persetujuan (preset `{status}` → gulir ke bagian itu),
+ * notifikasi & Jejak (`focusDoc` `cash_out_request` → pratinjau pengajuan).
  */
 const EMPTY_FORM = {
   cash_type: "kas_kecil", direction: "out", amount: "",
   category: "operasional", description: "", account_id: "",   // PK-20 — rekening wajib (tunggal → otomatis)
 };
-// Kas & Bank 1 (Tugas 5/6) — kategori "Transfer / Top-up" DITUTUP untuk kas manual baru (server menolak kategori apa pun
-// yang memuat "transfer"/"topup"): setor tunai, isi kas kecil, dan pindah antar rekening dicatat lewat Pindah Dana.
-// Labelnya tetap untuk kas LAMA berkategori itu (tampil di daftar & CSV).
-export const CATEGORIES = [
-  { value: "operasional", label: "Operasional" },
-  { value: "pembelian", label: "Pembelian" },
-  { value: "gaji", label: "Gaji / Upah" },
-  { value: "modal", label: "Setoran Modal" },
-  { value: "lain", label: "Lain-lain" },
-];
-const CATEGORY_LABEL = { ...Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])), penagihan: "Penagihan",
-  transfer: "Transfer / Top-up", "pindah dana": "Pindah Dana", "biaya bank": "Biaya bank" };
-const categoryLabel = (c) => {
-  if (!c) return "—";
-  const s = String(c);
-  return CATEGORY_LABEL[s] || (s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ");
-};
+// Kategori kas manual: Transfer/Top-up (Kas & Bank 1) dan Pembelian/Gaji (Kas & Bank 2, C5) DITUTUP untuk kas baru; label
+// lama tetap untuk kas LAMA berkategori itu (daftar & CSV). Satu sumber: `cashCategories.js`.
+export { CATEGORIES };
 
 // PK-42 — butir CSV di "Unduh ▾" = kolom yang terlihat di layar (INV-UI-07).
 const CASH_CSV_COLUMNS = [
@@ -103,7 +101,8 @@ export const CASH_REF_DOC = {
 const refNomor = (t) => (t.ref_type === "fund_transfer" && t.fund_transfer_number ? `Pindah Dana ${t.fund_transfer_number}` : "");
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
-  const { go, canOpen } = useAppNav();   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
+  const nav = useAppNav();
+  const { go, canOpen } = nav;   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
   const [error, setError] = useState("");
@@ -123,6 +122,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const [journalErr, setJournalErr] = useState("");
   const createIntent = useIntentKey("kas");
   const voidIntent = useIntentKey("kasv");
+  // Kas & Bank 2 — batas kontrol kas keluar manual PT aktif (dimuat saat form dibuka) + muat ulang bagian menunggu.
+  const [batasKas, setBatasKas] = useState(null);
+  const [pengajuanKey, setPengajuanKey] = useState(0);
+  const [sorotPengajuan, setSorotPengajuan] = useState("");
 
   // Sisir gerbang peran (2026-10-20): catat = cash.create, anulir = cash.delete.
   const canCreate = can(currentUser?.permissions, "cash", "create");
@@ -142,6 +145,25 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const paged = usePagedList("/cash-transactions", { pageSize: 50, params: listParams, search });
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
+
+  // Kas & Bank 2 — batas PT dibaca saat form dibuka (nilai bisa diubah di Pusat Pengaturan sejak layar dibuka). Gagal →
+  // tanpa catatan; server tetap memutus (202 ditangani di `handleSubmit`).
+  useEffect(() => {
+    if (!showForm || !scoped || !canCreate) return undefined;
+    let hidup = true;
+    axios.get(`${API}/cash-out-requests/batas`, { params: { entity_id: selectedEntity } })
+      .then((r) => { if (hidup) setBatasKas(bacaBatas(r?.data)); })
+      .catch(() => { if (hidup) setBatasKas(null); });
+    return () => { hidup = false; };
+  }, [showForm, scoped, selectedEntity, canCreate]);
+  const pengajuan = butuhPersetujuan(batasKas, form);
+
+  // Pusat Persetujuan / pratinjau "Buka layar penuh" → bagian "Menunggu persetujuan" (baris pengajuan disorot).
+  useViewPreset("cash-management", (p) => {
+    if (p?.status !== "menunggu_persetujuan") return;
+    setSorotPengajuan(p.sorot || "");
+    gulirKe(p.sorot ? `cash-out-row-${p.sorot}` : "cash-out-pending", 600);
+  });
 
   // Muat ulang ringkasan + daftar (sesudah catat / anulir / "Coba lagi"). Pemuatan pertama daftar dijalankan hook.
   async function reloadAll() {
@@ -173,6 +195,17 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
       const payload = { ...form, amount: Number(form.amount) };
       if (!payload.account_id) delete payload.account_id;
       const res = await createIntent.send(payload, (k) => moneyPost(`${API}/cash-transactions`, payload, k));
+      // Kas & Bank 2 (C6) — 202 `{request}`: kas keluar di atas batas menjadi PENGAJUAN (belum ada kas & jurnal).
+      if (res?.status === 202 && res.data?.request) {
+        const req = res.data.request;
+        notifySuccess(`Diajukan ${req.number ? `${req.number} ` : ""}(${formatCurrency(req.amount)}) — menunggu persetujuan `
+          + "orang kedua. Kas keluar baru tercatat sesudah disetujui.");
+        setShowForm(false);
+        setForm(EMPTY_FORM);
+        setSorotPengajuan(req.id || "");
+        setPengajuanKey((k) => k + 1);
+        return;
+      }
       // PK-39 — peringatan anggaran (mode Peringatkan) ikut di bilah pemberitahuan; mode Tolak → 400 di pop-up.
       const bWarn = (res.data.budget_check?.warnings || []).join(" ");
       setNotice(`Transaksi ${res.data.number} (${res.data.direction === "in" ? "masuk" : "keluar"}) dicatat.`
@@ -196,6 +229,17 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
 
   /** Meja gelombang 2 — sumber kas: DocLink bila jenisnya punya pratinjau & id; selain itu teks nomor / label jenis. */
   const sourceCell = (t) => {
+    // Kas & Bank 2 — kas manual yang terbit dari pengajuan kas keluar (`ref_id` = id pengajuan): nomor PKK = pratinjau.
+    // Tetap kas manual (anulir di sini).
+    if (t.ref_type === "manual" && t.cash_out_request_number) {
+      return (
+        <p className="text-fs-12 text-kn-text-2" data-testid={`cash-source-row-${t.id}`}>
+          Dari pengajuan{" "}
+          <DocLink docType="cash_out_request" docId={t.ref_id} number={t.cash_out_request_number} entityId={t.entity_id}
+            perms={currentUser?.permissions} testId={`cash-request-${t.id}`} />
+        </p>
+      );
+    }
     const text = derivedFrom(t);
     if (!text) return null;
     const docType = CASH_REF_DOC[t.ref_type];
@@ -257,7 +301,12 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   // PK-44 (IA-04) — tautan dokumen: transaksi kas tidak punya panel rincian → dicari lewat kotak cari SERVER (nomornya;
   // halaman yang dimuat tidak harus memuatnya) lalu barisnya disorot. Tidak ada → "Dokumen … tidak ditemukan di PT ini."
   const [sorot, setSorot] = useState("");
-  const fokus = useFocusDoc(focusDoc, "cash_transaction", async (id, fd) => {
+  const fokus = useFocusDoc(focusDoc, ["cash_transaction", "cash_out_request"], async (id, fd) => {
+    // Kas & Bank 2 — pengajuan kas keluar (notifikasi, Jejak) dibuka sebagai pratinjau pengajuan.
+    if (fd.focus_type === "cash_out_request") {
+      nav.openDocPreview({ docType: "cash_out_request", docId: id, ...(fd.number ? { number: fd.number } : {}) });
+      return true;
+    }
     const params = { ...(scoped ? { entity_id: selectedEntity } : {}), q: fd.number || id, page: 1, page_size: 20 };
     const r = await axios.get(`${API}/cash-transactions`, { params });
     const list = Array.isArray(r.data) ? r.data : (r.data?.items || []);
@@ -329,6 +378,11 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         </div>}
       </div>
 
+      {/* Kas & Bank 2 (Tugas 4) — pengajuan kas keluar manual di atas batas yang menunggu orang kedua (tidak digambar
+          bila kosong). Setujui menerbitkan kas → ringkasan & daftar dimuat ulang. */}
+      <CashOutPendingSection currentUser={currentUser} selectedEntity={selectedEntity} entityName={entityName}
+        refreshKey={pengajuanKey} sorot={sorotPengajuan} onDecided={reloadAll} />
+
       {/* Header + filter */}
       <div className="section-card mb-3">
         <div className="section-head">
@@ -367,7 +421,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         size="md"
         testId="cash-form"
         onSubmit={handleSubmit}
-        submitLabel="Catat Transaksi"
+        submitLabel={pengajuan.butuh ? "Ajukan" : "Catat Transaksi"}
         submitTestId="submit-cash-button"
         cancelTestId="cancel-cash-button"
         busy={saving}
@@ -397,6 +451,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
               onChange={(v) => setForm((f) => ({ ...f, account_id: v }))} onState={setAccState} testId="cash-account" />
             {cashAccountBlocked(accState, form.account_id) && accState !== "kosong" && (
               <p className="text-fs-12 text-kn-text-2" data-testid="cash-account-reason">{cashAccountBlockReason(accState)}</p>
+            )}
+            {pengajuan.butuh && (
+              // Kas & Bank 2 (C6) — kas keluar di atas batas PT menjadi pengajuan (aturan sama dengan server).
+              <p className="notice-bar warning text-fs-12" data-testid="cash-approval-note">{pengajuan.catatan}</p>
             )}
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />

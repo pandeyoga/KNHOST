@@ -42,6 +42,13 @@ export const BACKLOG_INBOX_TAB = {
 export const LISTED_IN_INBOX = ["sales_order", "purchase_order", "price", "sales_return", "purchase_return", "cycle_count",
   "credit_override", "so_cancel"];
 
+/**
+ * Kunci antrean server → jenis pratinjau dokumen (`documents/preview/docPreviewRegistry.js`): nomor dokumen di daftar
+ * "Menunggu di layar lain" menjadi `DocLink` (pola UI §1 butir 8) — klik membuka pop-up pratinjau, "Buka layarnya" tetap
+ * pindah ke layar keputusannya. Kas & Bank 2 (Tugas 4): pengajuan kas keluar; Kas & Bank 1: Pindah Dana.
+ */
+export const QUEUE_DOC_TYPE = { cash_out_request: "cash_out_request", fund_transfer: "fund_transfer" };
+
 /** Fase 4 · R5 — SO mati: entri `pending_approvals` basi tidak menunggu siapa pun (sama dengan server SO_DEAD_STATUSES). */
 export const SO_DEAD_STATUSES = ["cancelled", "expired", "rejected", "void", "done"];
 

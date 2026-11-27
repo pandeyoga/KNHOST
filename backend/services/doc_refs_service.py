@@ -233,6 +233,11 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     # `ref_id` = id dokumen → simpul turunan & induk diturunkan `derived_refs`, tanpa `refs[]` tersimpan).
     _T("fund_transfer", "fund_transfers", "number", "Pindah Dana", "fund-transfers", order=62, needs_parent=False,
        perm=("cash", "view")),
+    # Kas & Bank 2 (Tugas 4) — pengajuan kas keluar manual di atas batas PT: induk kas yang terbit sesudah disetujui
+    # (kas manual ber-`ref_id` = id pengajuan → simpul turunan diturunkan `derived_refs`; dari kas lewat
+    # `cash_out_request_number`). Dibuka di Transaksi Kas (pratinjau pengajuan).
+    _T("cash_out_request", "cash_out_requests", "number", "Pengajuan kas keluar", "cash-management", order=62,
+       needs_parent=False, perm=("cash", "view")),
     # FASE E-7 (E7d) — permintaan internal adalah HULU transaksi antar-PT: tanpa
     # terdaftar di sini, pertanyaan "transaksi antar-PT ini untuk siapa/kenapa"
     # berhenti di catatan bebas.
@@ -601,6 +606,10 @@ async def derived_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any
         if doc.get("ref_type") in DOC_TYPES and doc.get("ref_id"):
             out.append({"rel": "parent", "doc_type": doc["ref_type"], "doc_id": doc["ref_id"],
                         "note": "kas atas dokumen ini"})
+        elif doc.get("ref_type") == "manual" and doc.get("cash_out_request_number") and doc.get("ref_id"):
+            # Kas & Bank 2 — kas keluar manual yang terbit dari pengajuan (`cash_out_request_service.setujui`).
+            out.append({"rel": "parent", "doc_type": "cash_out_request", "doc_id": doc["ref_id"],
+                        "doc_number": doc["cash_out_request_number"], "note": "kas atas pengajuan ini"})
     did = doc.get("id") or ""
     if not did:
         return out

@@ -16,7 +16,7 @@ import { can } from "../../../config/roles";
 import { ROW_TARGET } from "../../sales_admin/workDeskApi";
 import {
   loadDoc, loadSalesOrder, loadVendorBill, loadPurchaseOrder, loadArReceipt, loadContraBon,
-  loadSalesReturn, loadSpecialOrder, loadInternalRequest, loadFundTransfer,
+  loadSalesReturn, loadSpecialOrder, loadInternalRequest, loadFundTransfer, loadCashOutRequest,
 } from "./docLoaders";
 import SalesOrderPreview from "./bodies/SalesOrderPreview";
 import VendorBillPreview from "./bodies/VendorBillPreview";
@@ -27,6 +27,7 @@ import SalesReturnPreview from "./bodies/SalesReturnPreview";
 import SpecialOrderPreview from "./bodies/SpecialOrderPreview";
 import InternalRequestPreview from "./bodies/InternalRequestPreview";
 import FundTransferPreview from "./bodies/FundTransferPreview";
+import CashOutRequestPreview from "./bodies/CashOutRequestPreview";
 
 // Pemuat tinggal di `docLoaders.js` (bebas siklus); `loadDoc` tetap diekspor dari sini untuk pemakai lama.
 export { loadDoc };
@@ -100,6 +101,25 @@ export const DOC_PREVIEWS = {
     Body: FundTransferPreview,
     full: (doc) => ({ view: "fund-transfers", nav_id: "cash-bank", focus_type: "fund_transfer", focus_id: doc.id,
       number: doc.number }),
+  },
+  // Kas & Bank bagian 2 (Tugas 4) — pengajuan kas keluar manual di atas batas (`GET /cash-out-requests/{id}` = `cash.view`).
+  // Layar penuh: pengajuan menunggu → Transaksi Kas bagian "Menunggu persetujuan" (baris disorot; aksi Setujui / Tolak /
+  // Batal di sana); disetujui → baris kas yang terbit di Transaksi Kas; ditolak/dibatalkan → tanpa tombol (tidak ada kerja).
+  cash_out_request: {
+    label: "Pengajuan kas keluar",
+    perm: ["cash", "view"],
+    load: loadCashOutRequest,
+    Body: CashOutRequestPreview,
+    full: (doc) => {
+      if (doc.status === "disetujui" && doc.cash_id) {
+        return { view: "cash-management", nav_id: "cash-bank", focus_type: "cash_transaction", focus_id: doc.cash_id,
+          number: doc.cash_number || "" };
+      }
+      if (doc.status === "menunggu_persetujuan") {
+        return { view: "cash-management", nav_id: "cash-bank", preset: { status: "menunggu_persetujuan", sorot: doc.id } };
+      }
+      return null;
+    },
   },
 };
 

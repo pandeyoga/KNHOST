@@ -20,6 +20,10 @@ const LINK_PESANAN = /^\/?\?(?:[^#]*&)?view=orders&(?:[^#]*&)?id=([^&#]+)/;
 // F1 — notifikasi tanpa dokumen yang menunjuk LAYAR (bukan id layar polos): ringkasan impor mutasi → Meja Keuangan
 // (antrean "Mutasi berkode perlu dicek"). `bayar_masuk_mutasi` membawa tautan pesanan (`LINK_PESANAN`) seperti Lapor Bayar.
 const LAYAR_JENIS = { ringkasan_mutasi_otomatis: "finance-desk" };
+// Kas & Bank 2 (Tugas 4) — pengajuan kas keluar diajukan/diputus. Server melampirkan `doc` (`notification_doc_ref`); bila
+// tidak (lookup gagal), id pengajuan diambil dari `ref` (`<id>` · `<id>:<hasil>`, tanpa akhiran `#<penerima>`).
+const JENIS_PENGAJUAN_KAS = { kas_keluar_diajukan: "cash_out_request", kas_keluar_diputus: "cash_out_request" };
+const idDariRef = (ref) => String(ref || "").split("#", 1)[0].split(":", 1)[0];
 
 export function notifDocTarget(n) {
   if (!n?.doc && LAYAR_JENIS[n?.type]) return { link: { view: LAYAR_JENIS[n.type] } };
@@ -27,6 +31,9 @@ export function notifDocTarget(n) {
   if (!d && typeof n?.link === "string") {
     const m = LINK_PESANAN.exec(n.link);
     if (m) d = { ref_type: "sales_order", ref_id: decodeURIComponent(m[1]), number: "" };
+  }
+  if (!d && JENIS_PENGAJUAN_KAS[n?.type] && idDariRef(n.ref)) {
+    d = { ref_type: JENIS_PENGAJUAN_KAS[n.type], ref_id: idDariRef(n.ref), number: "" };
   }
   if (!d || !d.ref_id || !d.ref_type) return null;
   if (d.ref_type === "design") return { rnd: { view: "rnd-designs", designId: d.ref_id } };

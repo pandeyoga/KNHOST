@@ -633,7 +633,8 @@ describe("Transaksi Kas — Transfer/Top-up ditutup, kas Pindah Dana bertautan d
   }
 
   test("kategori Transfer/Top-up hilang dari form; petunjuk + tautan 'Pakai Pindah Dana' ke tab baru", async () => {
-    expect(CATEGORIES.map((c) => c.value)).not.toContain("transfer");
+    // Kas & Bank 2 (Tugas 4, C5) — Pembelian & Gaji juga ditutup untuk kas manual baru (uji lengkap: kb2KasManual.test.js).
+    expect(CATEGORIES.map((c) => c.value)).toEqual(["operasional", "modal", "lain"]);
     expect(CATEGORIES.some((c) => /transfer|top-?up/i.test(c.label))).toBe(false);
     pasangKas();
     const host = await mount(<CashManagementView currentUser={{ role: "finance", permissions: { cash: ["view", "create"] } }} selectedEntity="ent_ksc" />);

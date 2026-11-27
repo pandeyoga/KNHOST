@@ -153,7 +153,19 @@ async def _kontrol(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
                                      pengaju=_pengaju(doc), dua_orang=True)
     if out.get("ditolak"):
         out["pesan"] = PESAN_ORANG_KEDUA
+    # Tugas 4 — tombol Tolak nonaktif untuk pengaju dengan kalimat yang sama dengan penolakan server (`tolak`).
+    out["tolak_pesan"] = PESAN_TOLAK_SENDIRI if out.get("sendiri") else ""
     return out
+
+
+async def batas_pt(entity_id: str) -> Dict[str, Any]:
+    """Tugas 4 — batas kontrol `kas_keluar_manual` yang berlaku untuk PT (catatan "Di atas Rp …" di form Catat
+    Transaksi). Keputusan tetap di rute kas (`dual_control.butuh_orang_kedua`): "di atas" = nominal > batas (batas 0 =
+    tidak dipakai); `min_orang` "2" = semua kas keluar manual (`semua`)."""
+    from services import dual_control
+    n = await dual_control.nilai_aksi(AKSI, entity_id)
+    return {"entity_id": entity_id, "min_orang": n["min_orang"], "batas_nominal": n["batas_nominal"] or 0,
+            "semua": n["min_orang"] == "2"}
 
 
 async def rincian(request_id: str, actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
