@@ -77,6 +77,7 @@ MSG_IZIN_C_PAY = ("Anda belum punya akses untuk menyiapkan dan menyetujui uang k
 MSG_IZIN_C_POST = ("Anda belum punya akses untuk menyiapkan dan menyetujui jurnal lewat asisten. Minta Admin "
                    "menambahkan akses 'Asisten Tanya KN'.")
 MSG_KETIK_NOMOR = "Ketik ulang nomor jurnal persis seperti di kartu."
+MSG_KAS_DIAJUKAN = "Diajukan — menunggu persetujuan kas keluar"
 MSG_JURNAL_USULAN = "Usulan jurnal menunggu persetujuan di layar Jurnal"
 MSG_IZIN_KEDUA = ("Anda belum punya akses untuk menyetujui kartu asisten sebagai orang kedua. Minta Admin menambahkan "
                   "akses 'Asisten Tanya KN'.")
@@ -838,6 +839,13 @@ def _build_cash(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, A
 def _cash_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
     from services.doc_refs_service import link_of
     r = resp if isinstance(resp, dict) else {}
+    if isinstance(r.get("request"), dict):   # KB-2 T3 (C6) — kas keluar di atas batas PT = pengajuan (202), belum ada kas
+        q = r["request"]
+        return {"document": {"type": "cash_out_request", "label": "Pengajuan kas keluar", "id": q.get("id", ""),
+                             "number": q.get("number", ""),
+                             "link": {"view": "cash-management", "tab": "", "focus_type": "cash_out_request",
+                                      "focus_id": q.get("id", ""), "number": q.get("number", "")}},
+                "gl_status": None, "message": f"{MSG_KAS_DIAJUKAN} {q.get('number', '')}".strip()}
     return {"document": {"type": "cash_transaction", "label": "Transaksi Kas", "id": r.get("id", ""),
                          "number": r.get("number", ""), "link": link_of("cash_transaction", r)},
             "gl_status": r.get("gl_status")}

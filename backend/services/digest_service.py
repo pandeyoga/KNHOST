@@ -47,6 +47,8 @@ GROUP_LABEL = {
     "lapor_bayar_lewat_batas": "Lapor bayar menunggu melewati batas",  # LB-T5
     "bayar_masuk_mutasi": "Pembayaran masuk lewat mutasi bank",       # F1
     "ringkasan_mutasi_otomatis": "Kwitansi otomatis dari mutasi bank",  # F1
+    "kas_keluar_diajukan": "Kas keluar manual menunggu persetujuan",   # KB-2 T3
+    "kas_keluar_diputus": "Putusan pengajuan kas keluar manual",       # KB-2 T3
     "order_approval": "Order menunggu persetujuan",
     "po_approval": "PO menunggu persetujuan",
     "order_split": "Order split antar gudang",

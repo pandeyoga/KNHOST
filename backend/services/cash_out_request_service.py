@@ -36,6 +36,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
@@ -43,6 +44,8 @@ from starlette.responses import JSONResponse
 
 from core_utils import new_id, now_iso, safe_doc
 from db import db
+
+logger = logging.getLogger(__name__)
 
 COLL = "cash_out_requests"
 AKSI = "kas_keluar_manual"
@@ -296,6 +299,7 @@ async def ajukan(payload: Dict[str, Any], actor: Dict[str, Any], entity_id: str,
     doc["number"] = await next_doc_number(COLL, "number", "PKK-", entity_id=entity_id)
     if not kunci:
         await db[COLL].insert_one(dict(doc))
+        await _beritahu_diajukan(doc)
         return _bentuk(doc)
     try:
         await db[COLL].update_one({"id": doc["id"]}, {"$setOnInsert": doc}, upsert=True)
@@ -308,7 +312,29 @@ async def ajukan(payload: Dict[str, Any], actor: Dict[str, Any], entity_id: str,
         raise _galat(409, "Pengajuan kas keluar gagal tercatat. Muat ulang lalu ulangi.")
     if tersimpan.get("number") != doc["number"]:
         _cocokkan_sidik(tersimpan, sidik)   # kalah balapan: pengajuan pemenang dipakai (isi harus sama)
+        return _bentuk(tersimpan)
+    await _beritahu_diajukan(tersimpan)     # hanya yang MENANG membuat pengajuan yang memberi tahu
     return _bentuk(tersimpan)
+
+
+async def _beritahu_diajukan(doc: Dict[str, Any]) -> None:
+    from services import notification_service as ns
+    await _beritahu(ns.notify_kas_keluar_diajukan, doc)
+
+
+async def _beritahu_diputus(doc: Dict[str, Any], hasil: str, actor: Dict[str, Any], alasan: str = "",
+                            kas_number: str = "") -> None:
+    from services import notification_service as ns
+    await _beritahu(ns.notify_kas_keluar_diputus, doc, hasil=hasil, oleh=actor or {}, alasan=alasan,
+                    kas_number=kas_number)
+
+
+async def _beritahu(coro_fn, *args, **kw) -> None:
+    """Pemberitahuan sesudah keadaan uang tercatat: gagal apa pun hanya dicatat, tidak pernah menggagalkan tindakannya."""
+    try:
+        await coro_fn(*args, **kw)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[cash_out_request] pemberitahuan gagal: %s", exc)
 
 
 # ── Setujui ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -408,6 +434,7 @@ async def setujui(request_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         await db[COLL].update_one({"id": request_id, f"{_saga.LOCK}.token": token}, upd)
     finally:
         await _saga.release(COLL, request_id, token)
+    await _beritahu_diputus(doc, DISETUJUI, actor, kas_number=kas.get("number") or "")
     return await rincian(request_id)
 
 
@@ -436,6 +463,7 @@ async def _tutup(doc: Dict[str, Any], status_baru: str, aksi: str, isi: Dict[str
         await db[COLL].update_one({"id": doc["id"], f"{_saga.LOCK}.token": token}, upd)
     finally:
         await _saga.release(COLL, doc["id"], token)
+    await _beritahu_diputus(doc, status_baru, actor, catatan)   # sesudah tercatat; gagal tidak membatalkan putusan
     return await rincian(doc["id"])
 
 

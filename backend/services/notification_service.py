@@ -24,7 +24,7 @@ async def _has_unread(notif_type: str, ref: str) -> bool:
 
 async def create_addressed(
     *, permission: Optional[tuple] = None, division: str = "",
-    roles: tuple = (), also_users: tuple = (), **kw: Any,
+    roles: tuple = (), also_users: tuple = (), exclude_users: tuple = (), **kw: Any,
 ) -> List[Dict[str, Any]]:
     """FASE N — kirim notifikasi ke ORANG yang berwenang, satu per orang.
 
@@ -39,6 +39,9 @@ async def create_addressed(
     yang sama jalan dua kali, tiap orang tetap punya satu pesan (bukan "orang pertama
     dapat, sisanya hilang karena ref-nya sudah terpakai").
 
+    `exclude_users` (KB-2 T3) — orang yang TIDAK diberi tahu walau memegang izinnya (mis. pengaju yang peristiwanya
+    sedang diberitakan kepada pemegang izin persetujuan).
+
     Return: daftar notifikasi yang BENAR-BENAR dibuat (yang ter-dedupe tidak masuk).
     Daftar KOSONG berarti tidak ada penerima berwenang — pemanggil yang memutuskan
     apakah itu wajar. Sengaja TIDAK ada jalan mundur ke `recipient_role="all"`.
@@ -49,10 +52,11 @@ async def create_addressed(
         permission=permission, division=division, roles=roles,
         entity_id=kw.get("entity_id"), also_users=also_users)
     base_ref = str(kw.pop("ref", "") or "")
+    skip = {str(x) for x in exclude_users if x}
     out: List[Dict[str, Any]] = []
     for person in people:
         uid = str(person.get("id") or "")
-        if not uid:
+        if not uid or uid in skip:
             continue
         note = await create_notification(
             **{**kw, "recipient_role": "", "recipient_user": uid,
@@ -433,6 +437,51 @@ async def notify_ringkasan_mutasi_otomatis(*, entity_id: str, rekening: str, imp
         permission=("payment_report", "decide"), notif_type=RINGKASAN_MUTASI_TYPE, ref=f"f1_impor:{import_batch}",
         dedupe_scope="ever", title=f"Impor mutasi {rekening}", body=body[:400],
         severity="warning" if kartu else "info", link="/?view=finance-desk", entity_id=entity_id or None)
+
+
+#: KB-2 Tugas 3 (C6) — pengajuan kas keluar manual (`cash_out_requests`). Dokumen: `cash_out_request`, id = awalan `ref`
+#: (diajukan: `ref = <id>#<penerima>`; diputus: `ref = <id>:<status>#<penerima>`).
+KAS_KELUAR_DIAJUKAN_TYPE = "kas_keluar_diajukan"
+KAS_KELUAR_DIPUTUS_TYPE = "kas_keluar_diputus"
+KAS_KELUAR_LINK = "/?view=cash-management"
+_KAS_KELUAR_HASIL = {"disetujui": "disetujui", "ditolak": "ditolak", "dibatalkan": "dibatalkan"}
+
+
+async def notify_kas_keluar_diajukan(req: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """KB-2 T3 (§5.2) — SATU penyusun `kas_keluar_diajukan`: pengajuan kas keluar manual BARU → pemegang `cash.approve` di
+    PT pengajuan (per orang; pengaju dikecualikan; tanpa siaran peran), sekali per pengajuan per orang."""
+    pengaju = req.get("pengaju") or {}
+    nomor = req.get("number") or req.get("id") or ""
+    return await create_addressed(
+        permission=("cash", "approve"), exclude_users=(pengaju.get("id") or "",),
+        notif_type=KAS_KELUAR_DIAJUKAN_TYPE, ref=str(req.get("id") or ""), dedupe_scope="ever",
+        title=f"Kas keluar menunggu persetujuan — {nomor}",
+        body=(f"{pengaju.get('name') or 'Seseorang'} mengajukan kas keluar {_rupiah_aman(req.get('amount'))}"
+              + (f" ({req['category']})" if req.get("category") else "")
+              + f" — {nomor}. Perlu disetujui orang lain.")[:400],
+        severity="info", link=KAS_KELUAR_LINK, entity_id=req.get("entity_id") or None)
+
+
+async def notify_kas_keluar_diputus(req: Dict[str, Any], *, hasil: str, oleh: Dict[str, Any], alasan: str = "",
+                                    kas_number: str = "") -> List[Dict[str, Any]]:
+    """KB-2 T3 (§5.2) — SATU penyusun `kas_keluar_diputus`: pengajuan disetujui / ditolak / dibatalkan → pengaju (satu
+    orang). Putusan oleh pengaju sendiri (batal) tidak memberi tahu dirinya. Ditolak/dibatalkan membawa alasannya."""
+    pengaju = req.get("pengaju") or {}
+    uid = pengaju.get("id") or ""
+    kata = _KAS_KELUAR_HASIL.get(hasil)
+    if not uid or not kata or uid == (oleh or {}).get("id"):
+        return []
+    nomor = req.get("number") or req.get("id") or ""
+    body = f"Pengajuan kas keluar {nomor} ({_rupiah_aman(req.get('amount'))}) {kata} oleh {(oleh or {}).get('name') or '—'}."
+    if hasil == "disetujui" and kas_number:
+        body += f" Kas {kas_number} tercatat."
+    if hasil != "disetujui" and (alasan or "").strip():
+        body += f" Alasan: {alasan.strip()}"
+    return await create_addressed(
+        also_users=(uid,), notif_type=KAS_KELUAR_DIPUTUS_TYPE, ref=f"{req.get('id', '')}:{hasil}", dedupe_scope="ever",
+        title=f"Kas keluar {kata} — {nomor}", body=body[:400],
+        severity="warning" if hasil == "ditolak" else "info", link=KAS_KELUAR_LINK,
+        entity_id=req.get("entity_id") or None)
 
 
 #: Jenis notifikasi "PO custom menunggu keputusan". Hanya SATU fungsi di seluruh
