@@ -136,7 +136,10 @@ def test_U02_pemeriksa_hijau():
     # BTP-5 menambah `commission_carry_balances.uq_commission_carry` (satu saldo potongan komisi per PT, sales, bulan):
     # + 1.
     # LB-T4 menambah `ar_receipts.uq_payment_report` (satu kwitansi hidup per laporan bayar): + 1.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 42
+    # F1-T1 menambah `ar_receipts.uq_bank_line_receipt` (satu kwitansi per mutasi bank): + 1 (angka di sini belum ikut).
+    # Kas & Bank 2 (C6) menambah `cash_out_requests.uq_cor_idem_key` (satu pengajuan kas keluar manual per PT dan kunci
+    # kiriman): + 1.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 44
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

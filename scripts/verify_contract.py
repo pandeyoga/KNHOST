@@ -68,6 +68,8 @@ CANONICAL_COLLECTIONS = {
     "cash_account_cutovers",
     # ── Kas & Bank 1 (Tugas 4) — Pindah Dana antar rekening satu PT ──
     "fund_transfers",
+    # ── Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas (menunggu orang kedua) ──
+    "cash_out_requests",
     # ── AG-T1 (blueprint) — kartu tindakan Tanya KN (masa berlaku, gagal/kedaluwarsa) ──
     "ai_action_proposals",
     # ── AG-T4 (blueprint) — paket tutup buku Asisten Keuangan ──

@@ -295,6 +295,8 @@ SCOPED_COLLECTIONS = {
     "cash_account_cutovers",
     # Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT.
     "fund_transfers",
+    # Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas: kas satu PT yang menunggu orang kedua.
+    "cash_out_requests",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

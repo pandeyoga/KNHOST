@@ -28,7 +28,8 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
               "cairkan_uang_muka",   # PK-24 (K-17) — nominal = nilai PD
               "asisten_uang_keluar",   # AG-T5 (K-44) — nominal = nominal kartu (total debit untuk jurnal)
               "lembar_insentif",   # KM-T3 (K-25) — nominal = total lembar insentif
-              "pindah_dana"}   # Kas & Bank 1 (Tugas 4) — nominal = nominal yang dipindah
+              "pindah_dana",   # Kas & Bank 1 (Tugas 4) — nominal = nominal yang dipindah
+              "kas_keluar_manual"}   # Kas & Bank 2 (C6) — nominal = nominal kas keluar manual
 # PK-38 — aksi ke-36 `bayar_hutang` (bayar kontrabon; bawaan satu orang, bernominal) → 36 aksi, 21 bernominal,
 # 59 kunci `kontrol.*`. Batas pengurang piutang: bawaan Rp 1.000.000, maksimum Rp 1.000.000.000 (K-11).
 # PM-T1 — aksi ke-37 `ubah_rekening` (ubah/buat rekening kas-bank; bawaan satu orang, TANPA nominal) → 37 aksi,
@@ -45,9 +46,12 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # nominal) → 42 aksi, 25 bernominal, 69 kunci `kontrol.*`.
 # Kas & Bank 1 (Tugas 4) — aksi ke-43 `pindah_dana` (setujui Pindah Dana antar rekening; bawaan satu orang, bernominal)
 # → 43 aksi, 26 bernominal, 71 kunci `kontrol.*`.
-N_AKSI = 43   # Kas & Bank 1 — aksi ke-43 `pindah_dana` (bernominal)
-N_KUNCI = 71   # Kas & Bank 1 — `kontrol.pindah_dana.{min_orang,batas_nominal}`
-BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
+# Kas & Bank 2 (C6) — aksi ke-44 `kas_keluar_manual` (kas keluar manual di atas batas; bawaan satu orang, bernominal,
+# batas bawaan Rp 1.000.000) → 44 aksi, 27 bernominal, 73 kunci `kontrol.*`.
+N_AKSI = 44   # Kas & Bank 2 — aksi ke-44 `kas_keluar_manual` (bernominal)
+N_KUNCI = 73   # Kas & Bank 2 — `kontrol.kas_keluar_manual.{min_orang,batas_nominal}`
+BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),
+                "kas_keluar_manual": (1000000, 1000000000000)}   # Kas & Bank 2 (C6) — batas bawaan Rp 1.000.000
 
 
 def _kontrol():
@@ -85,7 +89,8 @@ async def test_katalog_35_aksi_20_bernominal():
     assert registry.require("kontrol.admin_boleh_sendiri")["default"] is True
     assert registry.require("kontrol.admin_tetap_dua_orang")["default"] == [
         "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-        "pindah_saldo_kas"]   # Kas & Bank 1 (ketetapan R9)
+        "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
+        "kas_keluar_manual"]   # Kas & Bank 2 (spesifikasi §7 butir 4)
     assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == N_KUNCI
 
 
@@ -160,7 +165,8 @@ async def test_aturan_endpoint(klien, kepala_admin):
     assert len(j["rows"]) == N_AKSI and j["can_edit"] is True
     assert j["admin_boleh_sendiri"] is True
     assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-                                          "pindah_saldo_kas"]   # Kas & Bank 1 (ketetapan R9)
+                                          "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
+                                          "kas_keluar_manual"]   # Kas & Bank 2 (spesifikasi §7 butir 4)
     po = next(x for x in j["rows"] if x["aksi"] == "setujui_po")
     assert {k: po[k] for k in ("label", "kelompok", "punya_nominal", "min_orang", "batas_nominal", "sumber")} == {
         "label": "Persetujuan PO", "kelompok": "B", "punya_nominal": True, "min_orang": "2", "batas_nominal": 0.0,

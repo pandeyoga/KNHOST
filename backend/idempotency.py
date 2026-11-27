@@ -63,7 +63,12 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/payment-reports",
                        # Kas & Bank 1 (Tugas 4) — Pindah Dana: buat/terima/setujui/batal dikirim ulang = satu dokumen,
                        # kas tidak ganda (layanan juga mengklaim per status).
-                       "/api/fund-transfers")
+                       "/api/fund-transfers",
+                       # Kas & Bank 2 (C6) — putusan pengajuan kas keluar manual (setujui/tolak/batal) dikirim ulang =
+                       # satu putusan, kas tidak ganda (layanan juga mengklaim per status). Pengajuannya sendiri lahir
+                       # di `/api/cash-transactions` (202 tidak disimpan: kunci yang sama dijawab layanan, lihat
+                       # `cash_out_request_service.jawab_diajukan`).
+                       "/api/cash-out-requests")
 #: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
 #: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
 IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),

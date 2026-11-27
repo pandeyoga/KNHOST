@@ -103,10 +103,16 @@ def _is_admin(aktor: Dict[str, Any]) -> bool:
 
 async def periksa(aksi: str, dokumen: Dict[str, Any], aktor: Dict[str, Any], entity_id: str = "", *,
                   nominal: float = 0.0, pengaju: Optional[Iterable[str]] = None,
-                  kecualikan_admin: bool = True, batas: Optional[float] = None) -> Dict[str, Any]:
-    """Penilaian tanpa efek samping (dipakai layar antrean untuk menonaktifkan tombol dengan alasan jujur)."""
+                  kecualikan_admin: bool = True, batas: Optional[float] = None,
+                  dua_orang: Optional[bool] = None) -> Dict[str, Any]:
+    """Penilaian tanpa efek samping (dipakai layar antrean untuk menonaktifkan tombol dengan alasan jujur).
+
+    Kas & Bank 2 (C6) — `dua_orang` (opsional) = penilaian "butuh orang kedua" yang sudah DIBEKUKAN pemanggil (pengajuan
+    kas keluar manual dinilai saat diajukan; batas tidak dinilai ulang saat disetujui — spesifikasi §7.8.3). None =
+    dinilai sekarang dari pengaturan."""
     eid = entity_id or (dokumen or {}).get("entity_id") or ""
-    dua = await butuh_orang_kedua(aksi, eid, nominal, batas=batas)   # PK-38 — `batas` dari pemanggil
+    dua = (bool(dua_orang) if dua_orang is not None
+           else await butuh_orang_kedua(aksi, eid, nominal, batas=batas))   # PK-38 — `batas` dari pemanggil
     sendiri = pelaku_sama(dokumen or {}, aktor or {}, pengaju)
     out = {"dua_orang": dua, "sendiri": sendiri, "admin_sendiri": False, "ditolak": False, "pesan": ""}
     if not dua or not sendiri:
@@ -122,17 +128,18 @@ async def tolak_bila_pelaku_sama(aksi: str, dokumen: Dict[str, Any], aktor: Dict
                                  entity_id: str = "", *, nominal: float = 0.0,
                                  pengaju: Optional[Iterable[str]] = None,
                                  kecualikan_admin: bool = True,
-                                 batas: Optional[float] = None) -> Dict[str, Any]:
+                                 batas: Optional[float] = None,
+                                 dua_orang: Optional[bool] = None) -> Dict[str, Any]:
     """(1) tidak butuh orang kedua, atau pelaku berbeda → lolos. (2) pelaku sama, aktor Admin,
     `kontrol.admin_boleh_sendiri` ya dan aksi tidak di `kontrol.admin_tetap_dua_orang` → lolos, dicatat di jejak
     persetujuan ("diputuskan sendiri oleh admin"). (3) selain itu 403.
 
     `kecualikan_admin=False` dipakai titik yang memang hanya bisa dijalankan Admin (buka kembali tutup buku): di sana
-    pengecualian Admin akan membuat aturan dua orang tidak pernah berlaku.
+    pengecualian Admin akan membuat aturan dua orang tidak pernah berlaku. `dua_orang` — lihat `periksa`.
     Jawaban: `{"dua_orang", "sendiri", "admin_sendiri"}`."""
     eid = entity_id or (dokumen or {}).get("entity_id") or ""
     res = await periksa(aksi, dokumen, aktor, eid, nominal=nominal, pengaju=pengaju,
-                        kecualikan_admin=kecualikan_admin, batas=batas)
+                        kecualikan_admin=kecualikan_admin, batas=batas, dua_orang=dua_orang)
     if res["ditolak"]:
         raise HTTPException(status_code=403, detail=res["pesan"])
     if res["admin_sendiri"]:

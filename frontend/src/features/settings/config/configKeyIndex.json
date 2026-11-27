@@ -2359,6 +2359,14 @@
    "persetujuan",
    "dua-orang-buku"
   ],
+  "kontrol.kas_keluar_manual.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.kas_keluar_manual.batas_nominal": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
    "dua-orang-admin"

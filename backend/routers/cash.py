@@ -152,7 +152,9 @@ async def _cash_counts(query: Dict[str, Any]) -> Dict[str, int]:
 
 @router.post("/cash-transactions")
 async def create_cash_transaction(payload: CashTransactionCreate, request: Request) -> Dict[str, Any]:
-    """Catat transaksi kas masuk/keluar."""
+    """Catat transaksi kas masuk/keluar. Kas & Bank 2 (C6) — kas keluar di atas batas PT → 202 `{request}` (pengajuan
+    `cash_out_requests` yang menunggu orang kedua; kas terbit saat disetujui lewat
+    `/api/cash-out-requests/{id}/approve`)."""
     actor = await require_permission(request, "cash", "create")
     ctx = await entity_ctx(request)
     if payload.cash_type not in VALID_TYPES:
@@ -170,6 +172,15 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # PK-09 E8 — PT dari penugasan (isi permintaan di luar penugasan → 403), tetap wajib satu PT (bukan grup).
     entity_id = assert_owned(resolve_requested_entity(ctx, payload.entity_id) if payload.entity_id
                              else ctx.active_entity_id, what="Transaksi kas")
+    # Kas & Bank 2 (C6, spesifikasi §7.8.5) — kiriman ulang berkunci sama dari PENGAJUAN yang sudah ada → pengajuan yang
+    # sama (202, keadaan terkini + tautan kas bila sudah disetujui), sebelum pemeriksaan apa pun: tidak pernah pengajuan
+    # kedua atau kas langsung, walau batas/periode/anggaran berubah sesudah diajukan. Isi berbeda → 409.
+    from services import cash_out_request_service as _cor
+    kunci = (request.headers.get("Idempotency-Key") or "").strip()[:120]
+    sidik = _cor.sidik_isian(payload.model_dump(), entity_id)
+    lama = await _cor.kiriman_ulang(entity_id, kunci, sidik)
+    if lama is not None:
+        return _cor.jawab_diajukan(lama)
     # Kas & Bank 1 (Tugas 5) — kategori Transfer/Top-up ditutup untuk kas manual baru (Pindah Dana menggantikannya).
     # Hanya pintu manual ini; `create_cash` (dipakai Pindah Dana, `ref_type="fund_transfer"`) tidak dijaga.
     from services import cash_ledger as _cl
@@ -202,10 +213,29 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
                                                     date=payload.txn_date or "", actor=actor)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+    # Kas & Bank 2 (C6, spesifikasi §5.2) — kas KELUAR manual di atas batas PT (`kontrol.kas_keluar_manual`, "di atas"
+    # = lebih dari; `min_orang` "2" = semua) → PENGAJUAN yang menunggu orang kedua: 202 `{request}`, tanpa kas, tanpa
+    # jurnal.
+    # Hanya sesudah SEMUA pemeriksaan di atas lolos (kategori, rujukan, rekening, periode, anggaran). Kunci yang sudah
+    # menjadi kas langsung (sebelum batas berubah) tetap kas yang sama lewat `create_cash` di bawah.
+    from services import dual_control as _dc
+    if payload.direction == "out" and not await _cor.kas_langsung_ada(entity_id, kunci) \
+            and await _dc.butuh_orang_kedua("kas_keluar_manual", entity_id, float(payload.amount)):
+        req = await _cor.ajukan({
+            "cash_type": rek["cash_type"], "account_id": rek["account_id"],
+            "account_name": (rek.get("account") or {}).get("name") or "", "amount": round(float(payload.amount), 2),
+            "category": payload.category.strip(), "description": payload.description.strip(),
+            "txn_date": payload.txn_date or "", "budget_check": budget_check, "sidik": sidik,
+            **card_field()}, actor, entity_id, kunci)
+        await audit(actor["name"], "cash_out_request_created", "cash_out_request", req["id"], {
+            "number": req.get("number", ""), "cash_type": req.get("cash_type", ""), "direction": "out",
+            "amount": req.get("amount"), "entity_id": entity_id, "account_id": req.get("account_id", "")},
+            scope_entity_id=entity_id)
+        return _cor.jawab_diajukan(req)
     # PK-20 (SL-11) — kas lahir lewat SATU pembuat: rekening wajib (atau rekening tunggal PT untuk jenis kasnya),
     # periode diperiksa sebelum tulisan, id tetap dari kunci idempotensi (`ref_type="manual"`, `ref_id` = kunci;
     # tanpa kunci → id baru). Jurnal gagal → kas TETAP tersimpan `failed` (tampil di Posting Gagal), bukan dihapus.
-    ref_id = (request.headers.get("Idempotency-Key") or "").strip()[:120] or new_id("kasm")
+    ref_id = kunci or new_id("kasm")
     try:
         doc = await cash_ledger.create_cash(
             entity_id=entity_id, direction=payload.direction, amount=float(payload.amount), ref_type="manual",

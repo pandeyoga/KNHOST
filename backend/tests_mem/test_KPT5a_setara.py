@@ -50,7 +50,8 @@ JENIS_KP35 = {"vbm", "emp", "sord"}
 # MP-T5a — deret baru `SJM-` (surat jalan kirim bahan makloon, per PT): alasan sama.
 # LB-T1 — deret baru `LB-` (laporan bayar pelanggan, per PT): alasan sama.
 # Kas & Bank 1 (Tugas 4) — deret baru `PDN-` (Pindah Dana antar rekening, per PT): alasan sama.
-AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-", "LIN-", "ICC-", "SJM-", "LB-", "PDN-"}
+# Kas & Bank 2 (C6) — deret baru `PKK-` (pengajuan kas keluar manual, per PT): alasan sama.
+AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-", "LIN-", "ICC-", "SJM-", "LB-", "PDN-", "PKK-"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────

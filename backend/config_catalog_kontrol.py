@@ -104,6 +104,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # PEMBUAT dokumen; bernominal = nominal yang dipindah (tanpa biaya transfer). Kelompok C, bawaan SATU orang
     # (perpindahan internal); dinaikkan per PT lewat jumlah orang atau batas nominal.
     _a("pindah_dana", "Pindah dana antar rekening", "C", "1", True, _BB),
+    # Kas & Bank 2 (C6, spesifikasi §5.2 / §7 butir 3–4) — kas KELUAR manual di atas batas PT menjadi pengajuan yang
+    # baru terbit sesudah disetujui orang kedua; pembanding = PENGAJU; bernominal = nominal kas. Kelompok C, bawaan SATU
+    # orang dengan batas Rp 1.000.000 ("di atas" = lebih dari, `_BATAS_KHUSUS`); "2" = semua kas keluar manual.
+    _a("kas_keluar_manual", "Kas keluar manual", "C", "1", True, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -153,6 +157,9 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "pindah_saldo_kas": ("services/cash_account_cutover_service.py:setujui",),   # Kas & Bank 1 (Tugas 3)
     "pindah_dana": ("services/fund_transfer_service.py:buat",
                     "services/fund_transfer_service.py:setujui"),   # Kas & Bank 1 (Tugas 4)
+    # Kas & Bank 2 (C6) — rute kas manual memutuskan "jadi pengajuan" (`butuh_orang_kedua`); Setujui menolak pengaju.
+    "kas_keluar_manual": ("routers/cash.py:create_cash_transaction",
+                          "services/cash_out_request_service.py:setujui"),
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -187,8 +194,11 @@ AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 
 #: Empat titik † yang dulu TIDAK mengecualikan Admin (ASUMSI unit: dipertahankan lewat daftar ini). Kas & Bank 1
 #: (ketetapan pengendali R9) — `pindah_saldo_kas`: Admin yang menyiapkan pindah saldo PT pun butuh orang kedua.
+#: Kas & Bank 2 (spesifikasi §7 butir 4) — `kas_keluar_manual`: Admin pun tidak menyetujui kas keluar manualnya sendiri
+#: (jalur kas manual berisiko terbesar, alasan pemilik di C6). Bawaan baru hanya berlaku bila tidak ada isian tersimpan
+#: (§7.8.6).
 ADMIN_TETAP_DUA_ORANG_AWAL = ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-                              "pindah_saldo_kas"]
+                              "pindah_saldo_kas", "kas_keluar_manual"]
 
 K_ADMIN_BOLEH = "kontrol.admin_boleh_sendiri"
 K_ADMIN_TETAP = "kontrol.admin_tetap_dua_orang"
@@ -218,6 +228,17 @@ _BATAS_KHUSUS: Dict[str, Dict[str, Any]] = {
         example="Rp 1.000.000 · biaya bank Rp 1.500.000 diputus pembuat kasusnya sendiri → ditolak, harus orang kedua",
         consumers=("services/ar_reduction_guard.py:batas", f"{_DC}:butuh_orang_kedua"),
         related=(kunci_min_orang("pengurang_piutang"), "case.auto_bank_charge_max")),
+    # Kas & Bank 2 (C6, keputusan pemilik 25 Nov "Ya, di atas Rp 1.000.000 (Bapak bisa ganti)") — batas bawaan kas
+    # keluar manual; "di atas" = nominal lebih dari batas (`dual_control.butuh_orang_kedua`).
+    "kas_keluar_manual": dict(
+        default=1000000, min=0, max=1000000000000, step=100000, unit="Rp",
+        label="Kas keluar manual: dua orang di atas",
+        help=("Kas keluar manual di atas nilai ini menjadi pengajuan: kas dan jurnalnya baru tercatat sesudah "
+              "disetujui orang selain pengajunya. Kas masuk tidak terkena. 0 = tidak dipakai."),
+        impact="Menaikkan nilai ini memperbesar uang yang bisa dikeluarkan satu orang tanpa persetujuan.",
+        example="Rp 1.000.000 · Rina mencatat kas keluar Rp 1.500.000 → menunggu persetujuan rekan lain",
+        consumers=_TITIK["kas_keluar_manual"] + (f"{_DC}:butuh_orang_kedua",),
+        related=(kunci_min_orang("kas_keluar_manual"),)),
 }
 #: KF-T4 — kartu di "Semua pengaturan" tanpa editor: kontrol dua orang diubah di satu tempat (tab Kontrol dua orang).
 _EDIT_AT = {"view": "settings-dual-control", "label": "Persetujuan › Kontrol dua orang"}

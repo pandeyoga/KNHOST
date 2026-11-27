@@ -256,6 +256,11 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("status", A), ("tanggal_kirim", D)],
         [("entity_id", A), ("dua_tahap", A), ("tanggal_kirim", A)],
     ],
+    # Kas & Bank 2 (C6) — pengajuan kas keluar manual: daftar / antrean per PT (status, terbaru dulu). Unik `number`:
+    # UNIQUE_DOC_NUMBER_FIELDS; satu pengajuan per (PT, Idempotency-Key): REQUIRED_UNIQUE_INDEXES `uq_cor_idem_key`.
+    "cash_out_requests": [
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
         [("entity_id", A), ("period", A), ("kind", A)],
     ],
@@ -542,6 +547,7 @@ UNIQUE_DOC_NUMBER_FIELDS = [
     ("incentive_sheets", "number"),   # KM-T3 — lembar insentif (`LIN-` per PT)
     ("interco_charges", "number"),    # KM-T4 — tagihan antar-PT (`ICC-` per PT penagih)
     ("fund_transfers", "number"),     # Kas & Bank 1 (Tugas 4) — Pindah Dana (`PDN-` per PT)
+    ("cash_out_requests", "number"),  # Kas & Bank 2 (C6) — pengajuan kas keluar manual (`PKK-` per PT)
 ]
 
 
@@ -612,6 +618,9 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "cash_account_cutovers",
     # Kas & Bank 1 (Tugas 4) — Pindah Dana (dicari per `id` di setiap aksi; kas menunjuknya lewat `ref_id`).
     "fund_transfers",
+    # Kas & Bank 2 (C6) — pengajuan kas keluar manual ber-id turunan (PT + Idempotency-Key, `$setOnInsert`): dua kiriman
+    # bersamaan berkunci sama = satu pengajuan; kas yang terbit menunjuknya lewat `ref_id`.
+    "cash_out_requests",
 ]
 # FIX-7 (butir 7, FIX-5 §8.7) — koleksi bisnis/master lain yang dicari per `id` di jalur permintaan (sensus kode: ≥ 3
 # pemakaian `find_one/update_one({"id": …})`; sensus data acuan 10 Nov 2026: 0 `id` kembar di semua kandidat).
@@ -1062,6 +1071,17 @@ REQUIRED_UNIQUE_INDEXES += [
     {"collection": "ar_receipts", "name": "uq_bank_line_receipt", "label": "satu kwitansi per mutasi bank",
      "keys": [("bank_line_id", 1)], "partial": {"bank_line_id": {"$exists": True}, "status": "posted"},
      "finder": _finder_dup("ar_receipts", '{bank_line_id:{$exists:true},status:"posted"}', '"$bank_line_id"')},
+]
+
+# Kas & Bank 2 (C6, spesifikasi §7.8.5) — Idempotency-Key unik per PT pada pengajuan kas keluar manual: kiriman ulang
+# berkunci sama tidak pernah membuat pengajuan kedua (id pengajuan juga diturunkan dari PT + kunci). Pengajuan tanpa
+# kunci (`idempotency_key` kosong) tidak ikut indeks. Koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "cash_out_requests", "name": "uq_cor_idem_key",
+     "label": "satu pengajuan kas keluar manual per PT dan kunci kiriman",
+     "keys": [("entity_id", 1), ("idempotency_key", 1)], "partial": {"idempotency_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("cash_out_requests", '{idempotency_key:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",k:"$idempotency_key"}')},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

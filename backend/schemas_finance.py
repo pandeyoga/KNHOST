@@ -90,6 +90,16 @@ class FundTransferCancel(BaseModel):
     alasan: str = ""
 
 
+class CashOutRequestReject(BaseModel):
+    """Kas & Bank 2 (C6) — tolak pengajuan kas keluar manual (alasan wajib ≥ 5 huruf, diperiksa layanan)."""
+    alasan: str = ""
+
+
+class CashOutRequestCancel(BaseModel):
+    """Kas & Bank 2 (C6) — batalkan pengajuan kas keluar manual yang masih menunggu (alasan opsional)."""
+    alasan: str = ""
+
+
 # ─── EPIC7-C: Chart of Accounts + General Ledger ─────────────────────────────
 
 class GLAccountCreate(BaseModel):

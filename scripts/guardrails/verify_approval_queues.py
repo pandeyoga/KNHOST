@@ -263,6 +263,17 @@ DOOR_EXEMPT: Dict[str, str] = {
     "putaway_orders.py::/api/putaway-orders/verify-labels":
         "Pindai label QR roll transit (tanpa RFID) → siap Putaway Order (`wms.update`) — pencocokan mesin, "
         "antrean kerjanya layar Putaway/Operasi Gudang.",
+    # Kas & Bank 2 (Tugas 2) — `cash_out_requests` berstatus `menunggu_persetujuan` (kas keluar manual di atas batas,
+    # kontrol `kontrol.kas_keluar_manual`). Baris `QUEUES` mensyaratkan layar yang dirender (invarian D); layar Kas &
+    # Bank › Transaksi Kas bagian "Menunggu persetujuan" + jenis persetujuan lahir di Tugas 4 paket yang sama.
+    "cash_out_requests.py::/api/cash-out-requests/{pengajuan_id}/approve":
+        "UTANG: antrean Pusat Persetujuan untuk kas keluar manual yang menunggu orang kedua menyusul layar Kas & "
+        "Bank › Transaksi Kas (Tugas 4 Kas & Bank bagian 2): pindahkan ke DOOR_QUEUE + baris QUEUES \"Kas keluar "
+        "manual menunggu\" (koleksi `cash_out_requests`, status `menunggu_persetujuan`) + jenis `approval_kinds` + "
+        "guard_door.",
+    "cash_out_requests.py::/api/cash-out-requests/{pengajuan_id}/reject":
+        "UTANG: idem pintu approve — antrean & jenis persetujuan kas keluar manual menyusul Tugas 4 Kas & Bank "
+        "bagian 2.",
 }
 
 # ─── Sapuan DATA: kosakata "menunggu keputusan" ───────────────────────────────
@@ -314,6 +325,10 @@ DATA_EXEMPT: Dict[Tuple[str, str], str] = {
     ("rfid_print_jobs", "verified"):
         "Status AKHIR cetak label RFID: label sudah diverifikasi fisik (sesi scan selesai). Tidak ada yang "
         "menunggu; kata `verified` di kosakata dimaksudkan untuk kontrabon (verified → menunggu ACC).",
+    ("cash_out_requests", "menunggu_persetujuan"):
+        "UTANG (Kas & Bank 2 Tugas 2 → Tugas 4): kas keluar manual di atas batas menunggu orang kedua; baris QUEUES "
+        "dipasang bersama layar Kas & Bank › Transaksi Kas (lihat DOOR_EXEMPT pintu "
+        "`/api/cash-out-requests/{pengajuan_id}/approve`).",
 }
 
 
