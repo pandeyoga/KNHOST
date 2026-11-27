@@ -353,15 +353,27 @@ async def ambil(usulan_id: str) -> Optional[Dict[str, Any]]:
     return _bentuk(await db[COLL].find_one({"id": usulan_id}, {"_id": 0}))
 
 
-async def daftar(scope: Dict[str, Any], status: str = "", page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-    """`GET /api/kas-per-rekening/usulan` — usulan pindah saldo per PT (terbaru dulu), berhalaman."""
+async def daftar(scope: Dict[str, Any], status: str = "", page: int = 1, page_size: int = 20,
+                 actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """`GET /api/kas-per-rekening/usulan` — usulan pindah saldo per PT (terbaru dulu), berhalaman. Usulan yang menunggu
+    membawa penilaian kontrol dua orang untuk `actor` (`kontrol`, aturan yang sama dengan `setujui`) supaya tombol
+    Setujui di layar nonaktif dengan alasan tertulis (Tugas 6)."""
+    from services import dual_control
     q: Dict[str, Any] = dict(scope or {})
     if status:
         q["status"] = status
     page, page_size = max(1, int(page or 1)), max(1, min(int(page_size or 20), 100))
     total = await db[COLL].count_documents(q)
     rows = await db[COLL].find(q, {"_id": 0}).sort("created_at", -1).skip((page - 1) * page_size).to_list(page_size)
-    return {"items": [_bentuk(r) for r in rows], "total": total, "page": page, "page_size": page_size,
+    items = []
+    for r in rows:
+        d = _bentuk(r)
+        if actor is not None and r.get("status") == "menunggu":
+            d["kontrol"] = await dual_control.periksa(
+                AKSI_KONTROL, r, actor, r.get("entity_id") or "",
+                pengaju=[r.get("disiapkan_oleh_id") or r.get("disiapkan_oleh") or ""])
+        items.append(d)
+    return {"items": items, "total": total, "page": page, "page_size": page_size,
             "has_more": page * page_size < total,
             "statuses": [{"value": k, "label": v} for k, v in STATUS_LABEL.items()]}
 

@@ -9,6 +9,9 @@
  * PM-T1 — rekening punya atas nama, peruntukan, cara bayar yang dilayani, bawaan penerimaan, dan tanda tampil di
  * dokumen pelanggan (form `BankAccountForm`, buat & ubah). Perubahan yang butuh orang kedua tampil di bagian
  * "Perubahan menunggu persetujuan" (`BankAccountChangesPanel`, tombol Setujui/Tolak untuk `cash.approve`).
+ * Kas & Bank 1 (Tugas 6) — tiap kartu menulis "Akun buku besar" (kode + nama sub-akun rekening, hanya-baca; server
+ * `gl_account_code` + `gl_account_name`) atau penanda "PT belum memakai akun per rekening" (`akun_per_rekening_aktif`);
+ * pemegang `accounting.manage` mendapat tautan ke alat pindah saldo (Kas & Bank › Akun per rekening).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -39,6 +42,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const canConfigure = can(currentUser?.permissions, "cash", "configure");   // PK-17 — kelola rekening kas & bank
   const canMatch = can(currentUser?.permissions, "cash", "create");          // PK-21 — cocokkan mutasi bank
   const canApprove = can(currentUser?.permissions, "cash", "approve");       // PM-T1 — setujui perubahan rekening
+  const canCutover = can(currentUser?.permissions, "accounting", "manage");  // Kas & Bank 1 — alat pindah saldo
   const { entities = [] } = useEntityScope() || {};
   const pm = usePaymentMethods("masuk");
   const [editing, setEditing] = useState(null);       // rekening yang sedang diubah (PM-T1)
@@ -119,6 +123,10 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   }, [accounts]);
 
   const gap = position ? Math.round((position.gl_total - summary.total) * 100) / 100 : 0;
+  // Kas & Bank 1 — satu PT dipilih: apakah PT itu sudah memakai akun buku besar per rekening (penanda + tautan alat).
+  const scoped = Boolean(selectedEntity) && selectedEntity !== "all";
+  const ptBelumAktif = scoped && accounts.length > 0 && accounts.some((a) => a.entity_id === selectedEntity && !a.akun_per_rekening_aktif);
+  const bukaAlat = canCutover && scoped && canOpen("kas-per-rekening") ? () => go("kas-per-rekening") : null;
   const unlinked = position?.unlinked || { count: 0, net: 0 };
 
   return (
@@ -182,6 +190,16 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
             entityLabel={entityShortById(entities, editing?.entity_id || selectedEntity, "")} />
 
           {srch.toolbar}
+          {!loading && !loadFailed && (ptBelumAktif || bukaAlat) && (
+            <p className="mb-2 text-fs-12 text-kn-text-2" data-testid="bank-gl-mode">
+              {ptBelumAktif ? "PT belum memakai akun per rekening — saldo kas semua rekening masih di akun kas bersama. " : ""}
+              {bukaAlat && (
+                <button type="button" className="link-button" data-testid="bank-gl-mode-link" onClick={bukaAlat}>
+                  {ptBelumAktif ? "Siapkan pindah saldo" : "Akun per rekening"}
+                </button>
+              )}
+            </p>
+          )}
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-loading">{[0, 1, 2].map((i) => <div key={i} className="h-28 bg-[#F5F5F7] rounded-lg animate-pulse" />)}</div>
           ) : loadFailed ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada akun" */
@@ -215,6 +233,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                       {a.holder_name && (
                         <p className="text-fs-12 text-kn-text-2 truncate" data-testid={`bank-holder-${a.id}`}>a.n. {a.holder_name}</p>
                       )}
+                      <AkunBukuBesar a={a} />
                       {(a.default_receiving_methods || []).length > 0 && (
                         <span data-testid={`bank-default-${a.id}`} className="status-pill mt-0.5 bg-kn-success-soft text-kn-success-text">
                           <CheckCircle2 size={12} aria-hidden="true" />Bawaan: {(a.default_receiving_methods || []).map(pm.labelOf).join(", ")}
@@ -273,6 +292,24 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
         </DetailModal>
       )}
     </div>
+  );
+}
+
+/** Kas & Bank 1 (Tugas 6) — "Akun buku besar" kartu rekening (hanya-baca). PT belum aktif → penanda; akun yang sudah
+ *  disiapkan (usulan pindah saldo) ditulis dengan keterangan "berlaku sesudah pindah saldo disetujui". */
+export function AkunBukuBesar({ a }) {
+  const kode = a?.gl_account_code || "";
+  const akun = kode ? `${kode}${a.gl_account_name ? ` · ${a.gl_account_name}` : ""}` : "";
+  if (a?.akun_per_rekening_aktif && akun) {
+    return <p className="text-fs-12 text-kn-text-2 truncate" data-testid={`bank-gl-${a.id}`} title={akun}>Akun buku besar <b className="font-mono">{akun}</b></p>;
+  }
+  const teks = a?.akun_per_rekening_aktif ? "Akun buku besar belum ditautkan — kas rekening ini masih ke akun kas bersama"
+    : "PT belum memakai akun per rekening";
+  return (
+    <p className="text-fs-12 text-kn-text-2" data-testid={`bank-gl-${a?.id}`}>
+      {akun && !a?.akun_per_rekening_aktif
+        ? <>Akun buku besar <b className="font-mono">{akun}</b> · berlaku sesudah pindah saldo disetujui</> : teks}
+    </p>
   );
 }
 

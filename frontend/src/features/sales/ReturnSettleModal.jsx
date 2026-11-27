@@ -127,16 +127,20 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const [pv, setPv] = useState(null);
   const [pvErr, setPvErr] = useState("");
   const [pvBusy, setPvBusy] = useState(false);
-  const pvKey = JSON.stringify([apiOutcome, outcome === "exchange", itemDecisions(), outcome === "nego" ? payout : "", refundAcc]);
+  // Kas & Bank 1 (Tugas 6) — rekening refund ikut ke pratinjau: di PT yang memakai akun per rekening, jurnal pratinjau
+  // menulis sub-akun rekening itu (sama dengan penyelesaian), bukan akun kas bersama.
+  const refundRek = refundAcc || outcome === "refund" ? refundAccountId : "";
+  const pvKey = JSON.stringify([apiOutcome, outcome === "exchange", itemDecisions(), outcome === "nego" ? payout : "", refundAcc,
+    refundRek]);
   useEffect(() => {
     if (!open) return undefined;
     let alive = true;
     setPvBusy(true);
     const t = setTimeout(async () => {
-      const [o, exchange, item_decisions, po, acc] = JSON.parse(pvKey);
+      const [o, exchange, item_decisions, po, acc, rek] = JSON.parse(pvKey);
       try {
         const r = await axios.post(`${API}/sales-returns/${ret.id}/settle-preview`,
-          { outcome: o, exchange, item_decisions, payout: po, refund_account_code: acc });
+          { outcome: o, exchange, item_decisions, payout: po, refund_account_code: acc, refund_account_id: rek });
         if (alive) { setPv(r.data); setPvErr(""); }
       } catch (e) {
         if (alive) { setPv(null); setPvErr(apiErrorText(e, "Nilai keputusan belum bisa dihitung.")); }
@@ -154,7 +158,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
     try {
       const failed = await onSettle(ret, apiOutcome, itemDecisions(), notes, movesStock && !physLocs.length ? returnWarehouseId : "",
                      refundAcc, decisionNote, outcome === "nego" ? payout : "", outcome === "exchange",
-                     refundAcc || outcome === "refund" ? refundAccountId : "");
+                     refundRek);
       if (failed) { setErr(failed); return; }
       onClose();
     } finally { setBusy(false); }

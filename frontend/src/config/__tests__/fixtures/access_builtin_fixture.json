@@ -386,6 +386,10 @@
     "update",
     "void"
    ],
+   "payment_report": [
+    "create",
+    "decide"
+   ],
    "payment_variance": [
     "view",
     "decide"
@@ -1058,6 +1062,10 @@
     "create",
     "void"
    ],
+   "payment_report": [
+    "create",
+    "decide"
+   ],
    "payment_variance": [
     "view",
     "decide"
@@ -1639,6 +1647,10 @@
     "create",
     "update",
     "void"
+   ],
+   "payment_report": [
+    "create",
+    "decide"
    ],
    "payment_variance": [
     "view",
@@ -2256,6 +2268,9 @@
    "payment_plan": [
     "view"
    ],
+   "payment_report": [
+    "create"
+   ],
    "payment_variance": [
     "view"
    ],
@@ -2465,6 +2480,9 @@
     "view",
     "create",
     "update"
+   ],
+   "payment_report": [
+    "create"
    ],
    "penalty": [
     "view"
@@ -3713,6 +3731,12 @@
     "assign"
    ]
   ],
+  "kas-per-rekening": [
+   [
+    "accounting",
+    "manage"
+   ]
+  ],
   "md-desk": [
    [
     "design_request",
@@ -3875,6 +3899,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -3892,6 +3917,7 @@
    "input_tax",
    "landed_cost",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "period",
@@ -3947,6 +3973,7 @@
    "od_pricing",
    "order",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "sales_force",
@@ -4093,6 +4120,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -4141,6 +4169,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -4227,6 +4256,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -4235,6 +4265,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -4247,6 +4278,7 @@
    "fixed_asset",
    "gl_mapping",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "period",
@@ -4265,6 +4297,9 @@
    "fixed_asset",
    "gl_mapping",
    "period"
+  ],
+  "fund-transfers": [
+   "cash"
   ],
   "general-ledger": [
    "accounting",
@@ -4439,6 +4474,13 @@
   "inventory-lots": [
    "field_visibility"
   ],
+  "kas-per-rekening": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
   "keep-pending": [
    "internal_request",
    "od_fulfillment",
@@ -4472,6 +4514,7 @@
    "od_pricing",
    "order",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "period",
@@ -4624,6 +4667,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -5072,6 +5116,7 @@
    "fixed_asset",
    "gl_mapping",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "period",
@@ -5119,6 +5164,7 @@
    "od_pricing",
    "order",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "payroll",
    "pdf_template",
@@ -5261,6 +5307,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"
@@ -5312,6 +5359,7 @@
    "input_tax",
    "landed_cost",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice",
@@ -5321,6 +5369,7 @@
    "ar_receipt",
    "credit_profile",
    "payment_plan",
+   "payment_report",
    "payment_variance",
    "penalty",
    "tax_invoice"

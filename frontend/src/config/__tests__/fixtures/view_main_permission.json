@@ -20,6 +20,8 @@
   "bank-reconciliation": {"izin": [["cash", "view"]], "endpoint": "/api/bank-reconciliation/lines?bank_account_id=rek_uji"},
   "petty-cash": {"izin": [["cash_advance", "view"], ["cash_settlement", "view"]], "endpoint": "/api/petty-cash/worklist"},
   "cash-holdings": {"izin": [["cash_holding", "view"]], "endpoint": "/api/cash-holdings"},
+  "fund-transfers": {"izin": [["cash", "view"]], "endpoint": "/api/fund-transfers"},
+  "kas-per-rekening": {"izin": [["accounting", "manage"]], "endpoint": "/api/kas-per-rekening/usulan"},
   "interco-transactions": {"izin": [["interco", "view"]], "endpoint": "/api/interco/transactions"},
   "general-ledger": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/summary"},
   "chart-of-accounts": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/accounts"},

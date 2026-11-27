@@ -239,7 +239,8 @@ LABEL_BIDANG = {"name": "Nama akun", "bank_name": "Bank", "account_number": "Nom
                 "opening_balance": "Saldo awal", "is_active": "Aktif", "note": "Catatan",
                 "holder_name": "Atas nama", "purposes": "Dipakai untuk", "payment_method_codes": "Cara bayar dilayani",
                 "default_receiving_methods": "Bawaan penerimaan", "show_on_documents": "Tampil di dokumen pelanggan",
-                "account_type": "Jenis", "cash_type": "Jenis kas"}
+                "account_type": "Jenis", "cash_type": "Jenis kas",
+                "gl_account_code": "Akun buku besar"}   # Kas & Bank 1 — akun bagan PT pilihan saat rekening dibuat
 
 
 async def putuskan(ch: Dict[str, Any], decision: str, note: str, actor: Dict[str, Any]) -> Dict[str, Any]:

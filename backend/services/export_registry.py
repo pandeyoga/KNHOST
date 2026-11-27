@@ -250,6 +250,19 @@ DATASETS: List[Dict[str, Any]] = [
                  C("status", "Status"), C("txn_date", "Tanggal", "datetime"), C("entity_id", "ID badan usaha")],
      "search_fields": ["number", "description", "category"],   # = routers/cash.py `q` (PK-42)
      "joins": [ENTITY_JOIN()]},
+    # Kas & Bank 1 (Tugas 6) — daftar Kas & Bank › Pindah Dana (tombol baku Unduh Excel/CSV, G-UI-07).
+    {"id": "fund_transfers", "label": "Pindah Dana", "group": "Keuangan", "collection": "fund_transfers",
+     "grain": "1 baris = 1 dokumen Pindah Dana", "key": "id", "perm": ("cash", "view"),
+     "date_fields": [C("tanggal_kirim", "Tanggal kirim", "date"), C("created_at", "Tanggal dicatat", "datetime")],
+     "columns": [C("number", "No. Pindah Dana"), C("tanggal_kirim", "Tanggal kirim", "date"),
+                 C("rekening_asal_nama", "Dari rekening"), C("rekening_tujuan_nama", "Ke rekening"),
+                 C("nominal", "Nominal", "money"), C("biaya", "Biaya transfer", "money"), C("status", "Status"),
+                 C("tanggal_terima", "Rencana tiba", "date"), C("tanggal_diterima", "Diterima", "date"),
+                 C("catatan", "Catatan"), C("created_by", "Dicatat oleh"), C("alasan_batal", "Alasan batal"),
+                 C("entity_id", "ID badan usaha", default=False)],
+     # = `fund_transfer_service.daftar` `q` (nomor / catatan / nama rekening asal & tujuan)
+     "search_fields": ["number", "catatan", "rekening_asal_nama", "rekening_tujuan_nama"],
+     "joins": [ENTITY_JOIN()]},
     {"id": "journal_entries", "label": "Jurnal Umum", "group": "Keuangan", "collection": "journal_entries",
      "grain": "1 baris = 1 jurnal (header)", "key": "id", "perm": ("accounting", "view"),
      "date_fields": [C("date", "Tanggal jurnal", "datetime")],

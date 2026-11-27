@@ -178,6 +178,12 @@ export const HUB_TABS = {
     { view: "petty-cash",        label: "Kas Kecil",             roles: ["admin", "manager", "sales"] },
     // PM-T4 — tunai yang diterima sales dan dipegang sampai disetor (setoran diterima kasir/Finance di sini).
     { view: "cash-holdings",     label: "Titipan Sales",         roles: ["admin", "manager", "finance"] },
+    // Kas & Bank 1 (Tugas 6) — pindah uang antar rekening satu PT (setor tunai, isi kas kecil, antar bank): `cash.*`.
+    { view: "fund-transfers",    label: "Pindah Dana",           roles: ["admin", "manager", "finance"] },
+    // Kas & Bank 1 (Tugas 6) — alat pindah saldo kas ke akun buku besar per rekening (sekali per PT, `accounting.manage`).
+    // Tab TERSEMBUNYI (batas enam tab L3; alat sekali pakai): dibuka dari Rekening & Saldo, antrean persetujuan, dan
+    // Posting Gagal; bilah tab menyorot Rekening & Saldo.
+    { view: "kas-per-rekening",  label: "Akun per rekening",     roles: ["admin", "manager", "finance"], hidden: true, aliasOf: "bank-accounts" },
   ],
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },

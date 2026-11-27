@@ -30,3 +30,5 @@ export const loadContraBon = loadDoc("/contra-bons");
 export const loadSalesReturn = loadDoc("/sales-returns");
 export const loadSpecialOrder = loadDoc("/special-orders");
 export const loadInternalRequest = loadDoc("/internal-requests");
+// Kas & Bank bagian 1 (Tugas 6) — Pindah Dana: dokumen + kas-kasnya + penilaian kontrol untuk pembuka.
+export const loadFundTransfer = loadDoc("/fund-transfers");

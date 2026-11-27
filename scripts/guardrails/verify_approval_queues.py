@@ -92,6 +92,13 @@ DOOR_EXPLICIT: Dict[str, str] = {
     "payment_reports.py::/api/payment-reports/{report_id}/tolak":
         "Finance menolak laporan bayar pelanggan dengan alasan (izin payment_report.decide) — keputusan orang atas "
         "`payment_reports` berstatus `menunggu`.",
+    # Kas & Bank 1 (Tugas 6) — usulan pindah saldo kas ke akun per rekening: pintu berbahasa Indonesia.
+    "cash_account_cutover.py::/api/kas-per-rekening/usulan/{usulan_id}/setujui":
+        "Orang kedua menyetujui pindah saldo kas PT ke akun per rekening (izin accounting.manage; penyiap ≠ penyetuju) "
+        "— keputusan orang atas `cash_account_cutovers` berstatus `menunggu`.",
+    "cash_account_cutover.py::/api/kas-per-rekening/usulan/{usulan_id}/tolak":
+        "Menolak usulan pindah saldo kas dengan alasan (izin accounting.manage) — keputusan orang atas "
+        "`cash_account_cutovers` berstatus `menunggu`.",
 }
 
 #: pintu → kunci antrean MEJA KERJA (`backend/services/work_desk_service.py`, `_queue("<kunci>", …)`) yang memuat
@@ -197,6 +204,10 @@ DOOR_QUEUE: Dict[str, str] = {
         "sales_return_exception",
     # BTP (tinjauan akhir M8) — pintu putusan pembatalan/tutup sisa pesanan (didaftarkan di `DOOR_EXPLICIT`).
     "sales_orders_extra.py::/api/sales-orders/{order_id}/cancel-request/decision": "so_cancel",
+    # Kas & Bank 1 (Tugas 6) — Pindah Dana menunggu orang kedua (UTANG Tugas 4 dibayar) dan usulan pindah saldo kas.
+    "fund_transfers.py::/api/fund-transfers/{transfer_id}/approve": "fund_transfer",
+    "cash_account_cutover.py::/api/kas-per-rekening/usulan/{usulan_id}/setujui": "pindah_saldo_kas",
+    "cash_account_cutover.py::/api/kas-per-rekening/usulan/{usulan_id}/tolak": "pindah_saldo_kas",
 }
 
 #: pintu yang SENGAJA tak punya antrean — alasannya WAJIB ditulis (dan diperiksa).
@@ -252,13 +263,6 @@ DOOR_EXEMPT: Dict[str, str] = {
     "putaway_orders.py::/api/putaway-orders/verify-labels":
         "Pindai label QR roll transit (tanpa RFID) → siap Putaway Order (`wms.update`) — pencocokan mesin, "
         "antrean kerjanya layar Putaway/Operasi Gudang.",
-    # Kas & Bank 1 (Tugas 4) — `fund_transfers` berstatus `menunggu_persetujuan` (kontrol dua orang
-    # `kontrol.pindah_dana`, bawaan satu orang). Baris `QUEUES` mensyaratkan layar yang dirender (invarian D); layar Kas & Bank › Pindah Dana
-    # (view `fund-transfers`) lahir di Tugas 6 paket yang sama.
-    "fund_transfers.py::/api/fund-transfers/{transfer_id}/approve":
-        "UTANG: antrean Pusat Persetujuan untuk Pindah Dana yang menunggu orang kedua menyusul layar Kas & Bank › "
-        "Pindah Dana (Tugas 6 Kas & Bank bagian 1): pindahkan ke DOOR_QUEUE + baris QUEUES (view `fund-transfers`, "
-        "koleksi `fund_transfers`, status `menunggu_persetujuan`) + jenis `approval_kinds`.",
 }
 
 # ─── Sapuan DATA: kosakata "menunggu keputusan" ───────────────────────────────
@@ -310,9 +314,6 @@ DATA_EXEMPT: Dict[Tuple[str, str], str] = {
     ("rfid_print_jobs", "verified"):
         "Status AKHIR cetak label RFID: label sudah diverifikasi fisik (sesi scan selesai). Tidak ada yang "
         "menunggu; kata `verified` di kosakata dimaksudkan untuk kontrabon (verified → menunggu ACC).",
-    ("fund_transfers", "menunggu_persetujuan"):
-        "UTANG (Kas & Bank 1 Tugas 4 → Tugas 6): Pindah Dana menunggu orang kedua; baris QUEUES dipasang bersama layar "
-        "Kas & Bank › Pindah Dana (lihat DOOR_EXEMPT pintu `/api/fund-transfers/{transfer_id}/approve`).",
 }
 
 

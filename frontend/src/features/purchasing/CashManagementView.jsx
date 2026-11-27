@@ -45,15 +45,18 @@ const EMPTY_FORM = {
   cash_type: "kas_kecil", direction: "out", amount: "",
   category: "operasional", description: "", account_id: "",   // PK-20 — rekening wajib (tunggal → otomatis)
 };
-const CATEGORIES = [
+// Kas & Bank 1 (Tugas 5/6) — kategori "Transfer / Top-up" DITUTUP untuk kas manual baru (server menolak kategori apa pun
+// yang memuat "transfer"/"topup"): setor tunai, isi kas kecil, dan pindah antar rekening dicatat lewat Pindah Dana.
+// Labelnya tetap untuk kas LAMA berkategori itu (tampil di daftar & CSV).
+export const CATEGORIES = [
   { value: "operasional", label: "Operasional" },
   { value: "pembelian", label: "Pembelian" },
   { value: "gaji", label: "Gaji / Upah" },
-  { value: "transfer", label: "Transfer / Top-up" },
   { value: "modal", label: "Setoran Modal" },
   { value: "lain", label: "Lain-lain" },
 ];
-const CATEGORY_LABEL = { ...Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])), penagihan: "Penagihan" };
+const CATEGORY_LABEL = { ...Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])), penagihan: "Penagihan",
+  transfer: "Transfer / Top-up", "pindah dana": "Pindah Dana", "biaya bank": "Biaya bank" };
 const categoryLabel = (c) => {
   if (!c) return "—";
   const s = String(c);
@@ -77,6 +80,8 @@ export const REF_LABEL = {
   cash_advance: "pengajuan dana", petty_cash_settlement: "LPJ kas kecil", refund: "pengembalian dana",
   // PK-24 — kas dari LPJ: pengembalian sisa uang muka (masuk) dan bayar hutang reimburse (keluar).
   cash_advance_return: "pengembalian sisa uang muka", reimburse_payable: "bayar reimburse karyawan",
+  // Kas & Bank 1 — label sama dengan backend `cash_ledger.REF_LABEL["fund_transfer"]`.
+  fund_transfer: "Pindah Dana",
   // S4 (pelatihan 18 Nov) — kas bayar gaji & setoran PPh 21/BPJS tidak membawa nomor dokumen: dulu "Anulir lewat dokumen lain".
   // Label pendek: kolom aksi tidak turun baris (teks panjang terpotong).
   payroll_run: "Proses Gaji", statutory_remittance: "Setoran gaji",
@@ -90,7 +95,12 @@ export const REF_LABEL = {
  */
 export const CASH_REF_DOC = {
   ar_receipt: "ar_receipt", vendor_bill: "vendor_bill", ap_advance: "vendor_bill", contra_bon: "contra_bon", sales_return: "sales_return",
+  // Kas & Bank 1 (Tugas 6) — kas Pindah Dana (`fund_transfer_service`: `ref_id` = id dokumen, nomor di `fund_transfer_number`).
+  fund_transfer: "fund_transfer",
 };
+
+/** Nomor dokumen asal yang dibawa kas tanpa `ref_number` (Pindah Dana: "Pindah Dana PDN-…"). */
+const refNomor = (t) => (t.ref_type === "fund_transfer" && t.fund_transfer_number ? `Pindah Dana ${t.fund_transfer_number}` : "");
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const { go, canOpen } = useAppNav();   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
@@ -182,7 +192,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   // dengan penjelasan, bukan dialog yang berakhir galat.
   // PK-20 — kas manual kini ber-`ref_type="manual"` (rujukan = kunci permintaan): tetap kas manual, boleh dianulir di sini.
   const derivedFrom = (t) => (t.ref_type === "manual" ? ""
-    : (t.ref_type || t.ref_id ? (t.ref_number || REF_LABEL[t.ref_type] || "dokumen lain") : ""));
+    : (t.ref_type || t.ref_id ? (t.ref_number || refNomor(t) || REF_LABEL[t.ref_type] || "dokumen lain") : ""));
 
   /** Meja gelombang 2 — sumber kas: DocLink bila jenisnya punya pratinjau & id; selain itu teks nomor / label jenis. */
   const sourceCell = (t) => {
@@ -193,8 +203,9 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
       <p className="text-fs-12 text-kn-text-2" data-testid={`cash-source-row-${t.id}`}>
         Sumber:{" "}
         {docType && previewFor(docType) ? (
-          <DocLink docType={docType} docId={t.ref_id} number={text} entityId={t.source_entity_id ? t.source_entity_id : t.entity_id}
-            perms={currentUser?.permissions} testId={`cash-source-${t.id}`} />
+          <DocLink docType={docType} docId={t.ref_id} number={t.ref_number || t.fund_transfer_number || text}
+            entityId={t.source_entity_id ? t.source_entity_id : t.entity_id}
+            perms={currentUser?.permissions} testId={`cash-source-${t.id}`}>{text}</DocLink>
         ) : <span data-testid={`cash-source-${t.id}-text`}>{text}</span>}
       </p>
     );
@@ -390,6 +401,19 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />
             </Field>
+            {/* Kas & Bank 1 (Tugas 5/6) — pindah uang antar rekening sendiri tidak dicatat sebagai kas manual. */}
+            {canOpen("fund-transfers") ? (
+              <p className="text-fs-12 text-kn-text-2" data-testid="cash-fund-transfer-link">
+                Setor tunai, isi kas kecil, atau pindah antar rekening?{" "}
+                <button type="button" className="link-button" onClick={() => { setShowForm(false); go("fund-transfers"); }}>
+                  Pakai Pindah Dana</button>
+                {" "}— biaya transfernya diisi di sana. Biaya administrasi bank dicatat dari Rekonsiliasi Bank (Catat biaya bank).
+              </p>
+            ) : (
+              <p className="text-fs-12 text-kn-text-2" data-testid="cash-fund-transfer-hint">
+                Setor tunai, isi kas kecil, dan pindah antar rekening dicatat lewat Kas &amp; Bank › Pindah Dana, bukan kas manual.
+              </p>
+            )}
             {/* MN-T3 — kas keluar untuk tagihan pemasok lewat satu form Bayar pemasok (hutang ikut berkurang). */}
             {form.direction === "out" && canOpen("vendor-bills") && (
               <p className="text-fs-12 text-kn-text-2" data-testid="cash-pay-supplier-link">

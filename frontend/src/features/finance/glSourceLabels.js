@@ -39,6 +39,8 @@ export const SOURCE_LABELS = {
   fixed_asset_transfer: "Mutasi Aset", fixed_asset_transfer_settlement: "Pelunasan Mutasi Aset",
   closing: "Tutup Buku", suspense_reclass: "Reklas Akun Penampung", finance_case: "Kasus Keuangan",
   manual_void: "Anulir Manual", "tanpa sumber": "Tanpa sumber",
+  // Kas & Bank 1 (Tugas 3/6) — sama dengan backend `gl_service.SOURCE_PINDAH_SALDO_KAS` (label jurnal pindah saldo).
+  pindah_saldo_kas: "Pindah Saldo Kas per Rekening",
 };
 
 /** Asal roll (`acquired.via` / `origin_type`) → kalimat Indonesia. */

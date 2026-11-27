@@ -236,6 +236,9 @@ export const PAGE_META = {
   "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema & Tarif Komisi" },   // KM-T5/KA-9 — alias
   "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },
   "cash-holdings":        { kicker: "Keuangan \u00b7 Kas & Bank", title: "Titipan Sales \u00b7 Tunai yang Dipegang Sales & Setorannya" },
+  // Kas & Bank 1 (Tugas 6)
+  "fund-transfers":       { kicker: "Keuangan \u00b7 Kas & Bank", title: "Pindah Dana \u00b7 Antar Rekening Satu PT" },
+  "kas-per-rekening":     { kicker: "Keuangan \u00b7 Kas & Bank", title: "Akun per Rekening \u00b7 Pindah Saldo Kas" },
 };
 
 // ROLE-HOME REGISTRY (F5) — landing per role

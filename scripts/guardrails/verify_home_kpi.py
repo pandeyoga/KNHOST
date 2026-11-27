@@ -108,6 +108,9 @@ EXPECT = {
     "journal_proposal": ("journal_proposals", {"status": "pending"}),   # KF-T6 — jurnal manual dua orang
     "ai_card_second": ("ai_action_proposals", {"status": "awaiting_second"}),   # AG-T5 — kartu asisten orang kedua
     "incentive_sheet": ("incentive_sheets", {"status": "submitted"}),   # KM-T3 — lembar insentif menunggu pengesahan
+    # Kas & Bank 1 (Tugas 6) — Pindah Dana menunggu orang kedua & usulan pindah saldo kas per PT menunggu persetujuan.
+    "fund_transfer": ("fund_transfers", {"status": "menunggu_persetujuan"}),
+    "pindah_saldo_kas": ("cash_account_cutovers", {"status": "menunggu"}),
     "hr_leave": ("hr_leave_requests", {"status": "pending"}),
     "hr_overtime": ("hr_overtime", {"status": "pending"}),
     # ── UTANG ALUR F-6.7 DIBAYAR (2026-08-18) — opini kedua untuk 4 antrean baru.

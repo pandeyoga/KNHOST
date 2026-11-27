@@ -154,6 +154,16 @@ QUEUES: List[tuple] = [
     # keputusannya `gl.py` `/gl/journal-proposals/{id}/approve|reject`, layarnya pita di Buku Besar.
     ("journal_proposal", "Usulan jurnal manual menunggu orang kedua", "general-ledger", "journal_proposals",
      {"status": "pending"}),
+    # Kas & Bank 1 (Tugas 6) — Pindah Dana yang menunggu orang kedua (`kontrol.pindah_dana.*`; juga dokumen yang kasnya
+    # gagal terbit dan diteruskan lewat Setujui). Pintunya `POST /api/fund-transfers/{id}/approve` (`cash.approve`);
+    # layar Kas & Bank › Pindah Dana (preset saringan "Menunggu persetujuan").
+    ("fund_transfer", "Pindah Dana menunggu persetujuan", "fund-transfers", "fund_transfers",
+     {"status": "menunggu_persetujuan"}),
+    # Kas & Bank 1 (Tugas 6) — usulan pindah saldo kas ke akun per rekening yang menunggu orang kedua (sekali per PT).
+    # Pintunya `POST /api/kas-per-rekening/usulan/{id}/setujui|tolak` (`accounting.manage`); layar Kas & Bank › Akun per
+    # rekening. Usulan `memproses` (persetujuan terhenti) tampil di Posting Gagal bila jurnalnya gagal, bukan di sini.
+    ("pindah_saldo_kas", "Pindah saldo kas per rekening menunggu persetujuan", "kas-per-rekening",
+     "cash_account_cutovers", {"status": "menunggu"}),
     # AG-T5 — kartu tindakan asisten golongan C (uang keluar dan jurnal) yang disetujui pembuatnya dan menunggu orang
     # kedua (`kontrol.asisten_uang_keluar.*`). Pintu keputusannya `POST /api/ai/actions/{id}/second`; layar Tanya KN ›
     # Tindakan › Menunggu orang lain (preset `QUEUE_PRESETS`).
@@ -231,7 +241,9 @@ QUEUES: List[tuple] = [
 #: Persetujuan. Baris tanpa preset tidak membawa field ini.
 QUEUE_PRESETS: Dict[str, Dict[str, str]] = {"ai_card_second": {"tab": "actions", "box": "others"},
                                             # KM-T3 — Lembar Insentif dibuka dengan saringan "Diajukan".
-                                            "incentive_sheet": {"status": "submitted"}}
+                                            "incentive_sheet": {"status": "submitted"},
+                                            # Kas & Bank 1 — Pindah Dana dibuka dengan saringan "Menunggu persetujuan".
+                                            "fund_transfer": {"status": "menunggu_persetujuan"}}
 
 
 def _preset(key: str) -> Dict[str, Any]:
@@ -333,6 +345,11 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
                       "title": ["reason", "period_label"]},
     "journal_proposal": {"since": ["proposed_at"], "number": ["id"],
                          "title": ["payload.description", "proposed_by"]},
+    # Kas & Bank 1 (Tugas 6) — Pindah Dana: menunggu sejak dibuat (langsung berstatus menunggu, tanpa draf); judul =
+    # rekening asal. Usulan pindah saldo: sejak disiapkan; nomor = label usulan ("Pindah saldo kas {PT}").
+    "fund_transfer": {"since": ["created_at"], "number": ["number"], "title": ["rekening_asal_nama", "catatan"]},
+    "pindah_saldo_kas": {"since": ["disiapkan_pada", "created_at"], "number": ["label", "id"],
+                         "title": ["disiapkan_oleh", "label"]},
     # AG-T5 — umur tunggu sejak pembuat menyetujui (`first_at`), bukan sejak kartu disiapkan.
     "ai_card_second": {"since": ["first_at", "created_at"], "number": ["title"],
                        "title": ["user_name"]},

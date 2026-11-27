@@ -16,7 +16,7 @@ import { can } from "../../../config/roles";
 import { ROW_TARGET } from "../../sales_admin/workDeskApi";
 import {
   loadDoc, loadSalesOrder, loadVendorBill, loadPurchaseOrder, loadArReceipt, loadContraBon,
-  loadSalesReturn, loadSpecialOrder, loadInternalRequest,
+  loadSalesReturn, loadSpecialOrder, loadInternalRequest, loadFundTransfer,
 } from "./docLoaders";
 import SalesOrderPreview from "./bodies/SalesOrderPreview";
 import VendorBillPreview from "./bodies/VendorBillPreview";
@@ -26,6 +26,7 @@ import ContraBonPreview from "./bodies/ContraBonPreview";
 import SalesReturnPreview from "./bodies/SalesReturnPreview";
 import SpecialOrderPreview from "./bodies/SpecialOrderPreview";
 import InternalRequestPreview from "./bodies/InternalRequestPreview";
+import FundTransferPreview from "./bodies/FundTransferPreview";
 
 // Pemuat tinggal di `docLoaders.js` (bebas siklus); `loadDoc` tetap diekspor dari sini untuk pemakai lama.
 export { loadDoc };
@@ -89,6 +90,16 @@ export const DOC_PREVIEWS = {
     load: loadInternalRequest,
     Body: InternalRequestPreview,
     full: (doc) => ({ ...ROW_TARGET.internal_request, focus_id: doc.id, number: doc.number }),
+  },
+  // Kas & Bank bagian 1 (Tugas 6) — Pindah Dana (`GET /fund-transfers/{id}` = `cash.view`); label sama dengan
+  // `cash_ledger.REF_LABEL["fund_transfer"]`. Layar penuh = Kas & Bank › Pindah Dana (aksi Setujui / Terima / Batal).
+  fund_transfer: {
+    label: "Pindah Dana",
+    perm: ["cash", "view"],
+    load: loadFundTransfer,
+    Body: FundTransferPreview,
+    full: (doc) => ({ view: "fund-transfers", nav_id: "cash-bank", focus_type: "fund_transfer", focus_id: doc.id,
+      number: doc.number }),
   },
 };
 

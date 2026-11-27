@@ -17,7 +17,7 @@ from fastapi import APIRouter, Query, Request
 from dependencies import audit, require_permission
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope, resolve_requested_entity
 from schemas_finance import PindahSaldoSetujui, PindahSaldoSiapkan, PindahSaldoTolak
-from services import cash_account_cutover_service as cut
+from services import approval_policy_service, cash_account_cutover_service as cut
 
 router = APIRouter(prefix="/api/kas-per-rekening")
 
@@ -44,9 +44,9 @@ async def _usulan(request: Request, usulan_id: str) -> Dict[str, Any]:
 @router.get("/usulan")
 async def list_usulan(request: Request, status: str = Query(""), entity_id: str = Query(None),
                       page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)) -> Dict[str, Any]:
-    await require_permission(request, "accounting", "manage", detail=PESAN_IZIN)
+    actor = await require_permission(request, "accounting", "manage", detail=PESAN_IZIN)
     scope = resolve_list_scope(cut.COLL, {}, await entity_ctx(request), entity_id)
-    return await cut.daftar(scope, status, page, page_size)
+    return await cut.daftar(scope, status, page, page_size, actor=actor)
 
 
 @router.get("/{entity_id}/pratinjau")
@@ -70,6 +70,8 @@ async def siapkan(entity_id: str, payload: PindahSaldoSiapkan, request: Request)
 async def setujui(usulan_id: str, payload: PindahSaldoSetujui, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage", detail=PESAN_IZIN)
     u = await _usulan(request, usulan_id)
+    # Kas & Bank 1 (Tugas 6) — Aturan Persetujuan jenis `pindah_saldo_kas` (bawaan: semua pemegang `accounting.manage`).
+    await approval_policy_service.guard_door("pindah_saldo_kas", actor, doc=u)
     res = await cut.setujui(usulan_id, payload.sidik, actor, selisih_diperiksa=payload.selisih_diperiksa)
     await audit(actor["name"], "cash_account_cutover_approved", "cash_account_cutover", usulan_id,
                 {"journal_number": res.get("journal_number"), "total_dipindah": res.get("total_dipindah"),
@@ -83,6 +85,7 @@ async def setujui(usulan_id: str, payload: PindahSaldoSetujui, request: Request)
 async def tolak(usulan_id: str, payload: PindahSaldoTolak, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage", detail=PESAN_IZIN)
     u = await _usulan(request, usulan_id)
+    await approval_policy_service.guard_door("pindah_saldo_kas", actor, doc=u, action="reject")
     res = await cut.tolak(usulan_id, payload.alasan, actor)
     await audit(actor["name"], "cash_account_cutover_rejected", "cash_account_cutover", usulan_id,
                 {"alasan": payload.alasan}, scope_entity_id=u.get("entity_id", ""))

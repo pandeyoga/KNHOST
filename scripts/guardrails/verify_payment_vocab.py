@@ -54,8 +54,8 @@ FE_PENGECUALIAN: Dict[Tuple[str, str], str] = {
         "jenis rekening (rekening bank · kas tunai), bukan cara bayar",
     ("features/settings/masters/masterFieldsConfig.js", "cash"):
         "kosakata termin: jenis syarat bayar (tunai · kredit · DP · bertahap)",
-    ("features/purchasing/CashManagementView.jsx", "transfer"):
-        "kategori transaksi kas \"Transfer / Top-up\", bukan cara bayar",
+    # Kas & Bank 1 (Tugas 6) — pengecualian `CashManagementView.jsx` · "transfer" (kategori kas "Transfer / Top-up")
+    # dicabut: kategori itu ditutup untuk kas manual baru (pilihan dihapus; pindah antar rekening = Pindah Dana).
 }
 #: berkas relatif `backend` → alasan (seluruh himpunan di berkas itu dikecualikan).
 BE_PENGECUALIAN: Dict[str, str] = {

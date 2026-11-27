@@ -50,11 +50,12 @@ export const canSeeMatrix = (role) => roleCanSee(["manager", "admin"], role, "my
 
 /**
  * Tujuan klik chip antrean di beranda: inbox di tab jenisnya bila daftarnya ada di inbox & peran boleh membuka
- * inbox; selain itu layar kerja antrean itu sendiri (`view` dari server).
+ * inbox; selain itu layar kerja antrean itu sendiri (`view` dari server) dengan preset saringannya bila server
+ * mengirimnya (`approval_backlog_service.QUEUE_PRESETS`, mis. Pindah Dana → status "Menunggu persetujuan").
  *   → { view, preset } | { view }
  */
 export function queueLink(q, canOpen = () => false) {
   const tab = BACKLOG_INBOX_TAB[q?.key];
   if (tab && tab !== "amendment" && canOpen("approval-inbox")) return { view: "approval-inbox", preset: { tab } };
-  return { view: q?.view };
+  return q?.preset ? { view: q?.view, preset: q.preset } : { view: q?.view };
 }

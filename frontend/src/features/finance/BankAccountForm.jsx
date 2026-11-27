@@ -179,6 +179,16 @@ export default function BankAccountForm({ open, account = null, entityId = "", e
             </label>
           )}
         </div>
+        {isEdit && (
+          // Kas & Bank 1 (Tugas 6) — akun buku besar rekening hanya-baca (dibuat saat rekening lahir di PT yang memakai
+          // akun per rekening, atau saat pindah saldo PT disiapkan); kodenya tidak berubah walau nama rekening berubah.
+          <p className="mt-2 text-fs-12 text-kn-text-2" data-testid="bank-form-gl">
+            Akun buku besar:{" "}
+            {account?.gl_account_code
+              ? <b className="font-mono">{account.gl_account_code}{account.gl_account_name ? ` · ${account.gl_account_name}` : ""}</b>
+              : "belum ada — PT belum memakai akun per rekening"}
+          </p>
+        )}
       </FormSection>
       <FormSection number={2} title="Dipakai untuk" subtitle="Rekening hanya ditawarkan di layar yang peruntukannya dicentang." testId="bank-form-sec-use">
         <CheckList items={PURPOSES} value={form.purposes} onChange={(v) => set({ purposes: v })} testId="bank-form-purpose" />

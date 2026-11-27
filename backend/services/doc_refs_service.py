@@ -229,6 +229,10 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     # PK-44 — `cash-bank` adalah id hub, bukan layar: transaksi kas dibuka di Pengelolaan Kas (cari nomor, sorot).
     _T("cash_transaction", "cash_transactions", "number", "Transaksi Kas / Bank",
        "cash-management", order=63, needs_parent=False, perm=("cash", "view")),
+    # Kas & Bank 1 (Tugas 6) — Pindah Dana antar rekening satu PT: induk kas-kasnya (`ref_type="fund_transfer"`,
+    # `ref_id` = id dokumen → simpul turunan & induk diturunkan `derived_refs`, tanpa `refs[]` tersimpan).
+    _T("fund_transfer", "fund_transfers", "number", "Pindah Dana", "fund-transfers", order=62, needs_parent=False,
+       perm=("cash", "view")),
     # FASE E-7 (E7d) — permintaan internal adalah HULU transaksi antar-PT: tanpa
     # terdaftar di sini, pertanyaan "transaksi antar-PT ini untuk siapa/kenapa"
     # berhenti di catatan bebas.
@@ -377,7 +381,7 @@ def _amount_of(doc: Dict[str, Any]) -> float:
     # tidak digambar), sehingga peserta tidak bisa mencocokkan nilai jurnal dengan kwitansi/SO tanpa membukanya.
     for k in ("grand_total", "total_amount", "amount", "gross_amount", "net_amount",
               "total_est_amount", "acquisition_cost", "total_pengeluaran",   # PK-44 — aset tetap, LPJ
-              "total_debit"):
+              "total_debit", "nominal"):   # Kas & Bank 1 — nominal Pindah Dana
         if doc.get(k) not in (None, ""):
             try:
                 return float(doc[k])

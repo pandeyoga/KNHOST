@@ -209,3 +209,6 @@ export const CustomerCreditView = lazy(() => import("./features/finance/Customer
 export const PettyCashView = lazy(() => import("./features/pettycash/PettyCashView"));
 // PM-T4 — Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai sales).
 export const CashHoldingsView = lazy(() => import("./features/finance/cashholding/CashHoldingsView"));
+// Kas & Bank 1 (Tugas 6) — Pindah Dana & Akun per rekening (alat pindah saldo).
+export const FundTransfersView = lazy(() => import("./features/finance/fundtransfer/FundTransfersView"));
+export const AkunPerRekeningView = lazy(() => import("./features/finance/cutover/AkunPerRekeningView"));

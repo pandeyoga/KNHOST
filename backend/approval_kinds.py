@@ -114,6 +114,19 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
     "journal_proposal": _k("Jurnal manual — usulan menunggu orang kedua", "Keuangan", "journal_proposal",
                            ("accounting.create",), amount_field="total_debit",
                            note="Usulan hanya ada bila kontrol dua orang jurnal manual aktif untuk PT itu."),
+    # Kas & Bank 1 (Tugas 6) — dua pintu keputusan baru, masing-masing diputus SATU orang (satu jenjang): Pindah Dana
+    # yang menunggu orang kedua (`POST /api/fund-transfers/{id}/approve` = `cash.approve`; pembuat ≠ penyetuju dijaga
+    # `kontrol.pindah_dana`) dan usulan pindah saldo kas per PT (`POST /api/kas-per-rekening/usulan/{id}/setujui|tolak`
+    # = `accounting.manage`; penyiap ≠ penyetuju dijaga `kontrol.pindah_saldo_kas`). Pintu memanggil `guard_door`.
+    "fund_transfer": _k("Pindah Dana antar rekening", "Keuangan", "fund_transfer", ("cash.approve",),
+                        amount_field="nominal",
+                        note="Pindah Dana hanya menunggu bila kontrol dua orang Pindah Dana aktif untuk PT itu.",
+                        max_levels=1, max_levels_message="Pindah Dana diputus satu orang: satu jenjang persetujuan."),
+    "pindah_saldo_kas": _k("Pindah saldo kas ke akun per rekening", "Keuangan", "pindah_saldo_kas",
+                           ("accounting.manage",),
+                           note="Sekali per PT, saat PT mulai memakai akun buku besar per rekening.",
+                           max_levels=1,
+                           max_levels_message="Pindah saldo kas diputus satu orang: satu jenjang persetujuan."),
     # AG-T5 — kartu tindakan asisten (uang keluar dan jurnal) menunggu orang kedua: pintu `POST /api/ai/actions/{id}/
     # second` = izin `ai_finance.approve` (+ izin pintu tindakannya); pembuat ≠ orang kedua dijaga kontrol dua orang.
     "ai_card_second": _k("Kartu asisten — uang keluar dan jurnal menunggu orang kedua", "Keuangan", "ai_card_second",

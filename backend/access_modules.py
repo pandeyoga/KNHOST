@@ -152,6 +152,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["cash", "finance_case", "finance_amendment"],
      "nav": ["keuangan", "finance-tower", "cash-bank", "bank-accounts", "cash-management",
              "bank-reconciliation", "finance-cases",
+             "fund-transfers",   # Kas & Bank 1 (Tugas 6) — tab Kas & Bank › Pindah Dana (`cash.*`)
              "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan bank & periode
     {"id": "accounting", "group": "Keuangan", "label": "Akuntansi & Tutup Buku",
      "description": "Buku besar, laporan keuangan, anggaran, aset tetap, tutup buku & buka periode.",
@@ -159,6 +160,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["keuangan", "akuntansi", "ledger", "general-ledger", "chart-of-accounts", "gl-account-mappings", "fin-reports",
              "financial-statements", "profitability", "cashflow-forecast", "budget",
              "consolidation", "closing", "period-unlock", "posting-failures", "kas-aset", "fixed-assets",
+             # Kas & Bank 1 (Tugas 6) — alat pindah saldo kas ke akun per rekening (tab tersembunyi Kas & Bank ›
+             # Akun per rekening, dibuka dari Rekening & Saldo; `accounting.manage`, lihat VIEW_ACTION_REQUIREMENTS).
+             "kas-per-rekening",
              # Fase 3 · P8 (P16-K1) — Pemetaan Akun kini di Pengaturan › Keuangan & Pajak.
              "settings-hub", "settings-finance", "settings-cfg-finance"]},
     {"id": "petty_cash", "group": "Keuangan", "label": "Kas Kecil (PD / LPJ)",
@@ -863,6 +867,9 @@ for _v in MODULE_BY_ID["finance_ops"]["nav"]:
         VIEW_RESOURCE_OVERRIDES[_v] = [r for r in MODULE_BY_ID["finance_ops"]["resources"] if r != "cash_holding"]
 VIEW_RESOURCE_OVERRIDES["cash-holdings"] = ["cash_holding"]
 del _v
+# Kas & Bank 1 (Tugas 6) — tab Kas & Bank › Pindah Dana dibuka izin `cash` (GET /api/fund-transfers = `cash.view`), bukan
+# seluruh modul "Kas, Bank & Kasus Keuangan" (pemegang izin kasus/amandemen saja tidak mendapat tab yang langsung menolak).
+VIEW_RESOURCE_OVERRIDES["fund-transfers"] = ["cash"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim
@@ -876,6 +883,9 @@ VIEW_ACTION_REQUIREMENTS: Dict[str, List[Tuple[str, str]]] = {
     "md-desk": [("design_request", "view")],
     "warehouse-admin-desk": [("wms", "view")],
     "sample-admin-desk": [("sample_order", "view")],
+    # Kas & Bank 1 (Tugas 6) — Akun per rekening: semua rutenya `accounting.manage` (lihat pun), jadi pemegang Akuntansi
+    # tingkat lihat tidak mendapat layar yang langsung menolak.
+    "kas-per-rekening": [("accounting", "manage")],
 }
 
 # CR-T5 — Keuangan › Piutang › tab "Kredit & Plafon" (`credit-overrides`) kini daftar kerja kredit enam antrean

@@ -31,7 +31,7 @@ export const CHECKLIST_ERROR = "Daftar periksa gagal dimuat.";
 
 // Satuan nilai hitungan per butir; butir rupiah ditulis rupiah. Nilai 0 pada butir yang beres tidak ditonjolkan.
 const UNIT = { posting_gagal: "dokumen", bank_cocok: "mutasi", buka_periode_aktif: "izin", penyusutan: "aset",
-  gaji: "penggajian" };
+  gaji: "penggajian", dana_dalam_perjalanan: "Pindah Dana" };   // Kas & Bank 1 — Pindah Dana masih dalam perjalanan
 const RUPIAH = new Set(["suspense_nol", "neraca_saldo", "stok_cocok"]);
 
 /** "Piutang: buku {a} · dokumen {b} · selisih {c} — Utang: buku {d} · dokumen {e} · selisih {f}" (butir antar-PT). */

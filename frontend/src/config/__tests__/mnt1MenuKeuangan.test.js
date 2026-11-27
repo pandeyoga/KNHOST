@@ -52,7 +52,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
     // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih). S5 (pelatihan 18 Nov) — + Hutang per Pemasok.
     // Meja gelombang 1 (R4) — + Pantau (tab hub saudara Meja Keuangan, bukan tab tingkat ketiga).
-    ["finance-tower", 4], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
+    // Kas & Bank 1 (Tugas 6) — + Pindah Dana (tab keenam; Akun per rekening = tab tersembunyi).
+    ["finance-tower", 4], ["ar-aging", 6], ["accounts-payable", 4], ["cash-bank", 6], ["closing", 3], ["ledger", 2],
     // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian; KM-T5 — − Kinerja Sales, − Komisi Otomatis.
     // KA-9 — + Skema & Tarif.
     ["hr-kpi-hub", 5], ["purchase-orders", 7],
@@ -66,7 +67,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)",   // PK-28
       "Hutang per Pemasok"]);   // S5 (pelatihan 18 Nov)
     // PM-T4 — + Titipan Sales (setoran titipan tunai sales).
-    expect(labels("cash-bank")).toEqual(["Rekening & Saldo", "Transaksi Kas", "Rekonsiliasi", "Kas Kecil", "Titipan Sales"]);
+    expect(labels("cash-bank")).toEqual(["Rekening & Saldo", "Transaksi Kas", "Rekonsiliasi", "Kas Kecil", "Titipan Sales",
+      "Pindah Dana"]);   // Kas & Bank 1 (Tugas 6)
     expect(labels("closing")).toEqual(["Daftar Periksa & Tutup", "Buka Periode", "Posting Gagal"]);
     expect(labels("ledger")).toEqual(["Jurnal", "Bagan Akun"]);
     expect(labels("fin-reports")).toEqual(["Laba-Rugi, Neraca & Arus Kas", "Profitabilitas", "Proyeksi Kas", "Anggaran", "Konsolidasi"]);

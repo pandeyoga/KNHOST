@@ -894,14 +894,13 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "link": {"view": "cash-holdings", "tab": "", "focus_type": "cash_deposit"},
         "posters": (), "retry": _retry_cash_deposit},
     # ── Kas & Bank 1 (Tugas 3) — jurnal pindah saldo kas per PT yang gagal SESUDAH PT menyala (usulan `memproses`);
-    #    ulang = teruskan persetujuan dari niat tersimpan. Tautan sementara ke Rekening & Saldo; layar Kas & Bank ›
-    #    Akun per rekening menyusul (Tugas 6). ──
+    #    ulang = teruskan persetujuan dari niat tersimpan. Tautan ke layar Kas & Bank › Akun per rekening (Tugas 6). ──
     "pindah_saldo_kas": {
         "label": "Pindah Saldo Kas per Rekening", "collection": "cash_account_cutovers",
         "failed_query": {"gl_status": "failed", "status": "memproses"}, "entity_field": "entity_id",
         "number_field": "label", "amount_field": "total_dipindah", "status_field": "gl_status",
         "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
-        "link": {"view": "bank-accounts", "tab": "", "focus_type": "cash_account_cutover"},
+        "link": {"view": "kas-per-rekening", "tab": "", "focus_type": "cash_account_cutover"},
         "posters": ("post_pindah_saldo_kas",), "retry": _retry_pindah_saldo_kas},
     # ── Kas & Bank 1 (Tugas 4) — Pindah Dana dibatalkan, jurnal pembalik salah satu kasnya gagal (dokumen `batal`,
     #    `batal_gl_status: failed`); ulang = teruskan pembalik kas yang tersisa. Jurnal kas Pindah Dana yang gagal saat

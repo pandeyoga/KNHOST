@@ -187,11 +187,32 @@ async def list_accounts(entity_id: Optional[str] = None,
     for eid in sorted({a.get("entity_id") or "" for a in accounts}):
         for a in await rekening_pt(eid):
             efektif[a["id"]] = a["_efektif"]
+    akun = await _akun_buku_besar(accounts)
     out = []
     for acc in accounts:
         txns = await _txns_for(acc["id"])
-        out.append({**_enrich(acc, txns), **efektif.get(acc["id"], bidang_efektif(acc))})
+        out.append({**_enrich(acc, txns), **efektif.get(acc["id"], bidang_efektif(acc)), **akun(acc)})
     return out
+
+
+async def _akun_buku_besar(accounts: List[Dict[str, Any]]):
+    """Kas & Bank 1 (Tugas 6, layar Rekening) — kolom "Akun buku besar" (kode + nama akun bagan PT) dan penanda PT
+    yang belum memakai akun per rekening. → fungsi rekening → `{gl_account_name, akun_per_rekening_aktif,
+    akun_per_rekening_sejak}`. Kode akun tetap dari `gl_account_code` rekening (hanya-baca)."""
+    from services import cash_account_mode as _mode
+    sejak = {eid: await _mode.aktif_sejak(eid) for eid in sorted({a.get("entity_id") or "" for a in accounts})}
+    pasang = sorted({(a.get("entity_id") or "", a["gl_account_code"]) for a in accounts if a.get("gl_account_code")})
+    nama: Dict[tuple, str] = {}
+    if pasang:
+        async for g in db.gl_accounts.find({"$or": [{"entity_id": e, "code": c} for e, c in pasang]},
+                                           {"_id": 0, "entity_id": 1, "code": 1, "name": 1}):
+            nama[(g.get("entity_id") or "", g.get("code") or "")] = g.get("name") or ""
+
+    def bidang(acc: Dict[str, Any]) -> Dict[str, Any]:
+        eid = acc.get("entity_id") or ""
+        return {"gl_account_name": nama.get((eid, acc.get("gl_account_code") or ""), ""),
+                "akun_per_rekening_aktif": bool(sejak.get(eid)), "akun_per_rekening_sejak": sejak.get(eid) or ""}
+    return bidang
 
 
 async def unlinked_transactions(entity_ids: List[str]) -> Dict[str, Any]:

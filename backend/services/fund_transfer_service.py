@@ -294,9 +294,11 @@ def _pengaju(doc: Dict[str, Any]) -> List[str]:
 
 
 async def daftar(entity_ids: List[str], *, status: str = "", q: str = "", page: int = 1,
-                 page_size: int = 25) -> Dict[str, Any]:
+                 page_size: int = 25, actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """`GET /api/fund-transfers` — Pindah Dana PT dalam cakupan (terbaru dulu), berhalaman. `q` = nomor / catatan /
-    nama rekening."""
+    nama rekening. Baris yang menunggu persetujuan membawa penilaian kontrol dua orang untuk `actor` (`kontrol`, sama
+    dengan rincian) supaya tombol Setujui di daftar nonaktif dengan alasan tertulis (Tugas 6)."""
+    from services import dual_control
     query: Dict[str, Any] = {"entity_id": {"$in": list(entity_ids or [])}}
     if status:
         query["status"] = status
@@ -308,7 +310,14 @@ async def daftar(entity_ids: List[str], *, status: str = "", q: str = "", page: 
     total = await db[COLL].count_documents(query)
     rows = await db[COLL].find(query, {"_id": 0}).sort([("tanggal_kirim", -1), ("created_at", -1), ("id", -1)]) \
         .skip((page - 1) * page_size).to_list(page_size)
-    return {"items": [_bentuk(r) for r in rows], "total": total, "page": page, "page_size": page_size,
+    items = []
+    for r in rows:
+        d = _bentuk(r)
+        if actor is not None and r.get("status") == MENUNGGU:
+            d["kontrol"] = await dual_control.periksa("pindah_dana", r, actor, r.get("entity_id") or "",
+                                                      nominal=_f(r.get("nominal")), pengaju=_pengaju(r))
+        items.append(d)
+    return {"items": items, "total": total, "page": page, "page_size": page_size,
             "has_more": page * page_size < total,
             "statuses": [{"value": k, "label": v} for k, v in STATUS_LABEL.items()]}
 

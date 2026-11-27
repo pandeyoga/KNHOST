@@ -20,7 +20,7 @@ from fastapi import APIRouter, Query, Request
 from dependencies import audit, require_permission
 from entity_scope import entity_ctx, guard_doc, resolve_requested_entity, resolve_scope_ids
 from schemas_finance import FundTransferCancel, FundTransferCreate, FundTransferReceive
-from services import fund_transfer_service as fts
+from services import approval_policy_service, fund_transfer_service as fts
 
 router = APIRouter(prefix="/api/fund-transfers")
 
@@ -41,9 +41,9 @@ def _jejak_audit(res: Dict[str, Any]) -> Dict[str, Any]:
 async def list_fund_transfers(request: Request, entity_id: str = Query(None), status: str = Query(""),
                               q: str = Query(""), page: int = Query(1, ge=1),
                               page_size: int = Query(25, ge=1, le=100)) -> Dict[str, Any]:
-    await require_permission(request, "cash", "view")
+    actor = await require_permission(request, "cash", "view")
     ids = resolve_scope_ids(await entity_ctx(request), entity_id)
-    return await fts.daftar(ids, status=status, q=q, page=page, page_size=page_size)
+    return await fts.daftar(ids, status=status, q=q, page=page, page_size=page_size, actor=actor)
 
 
 @router.post("")
@@ -78,7 +78,9 @@ async def receive_fund_transfer(transfer_id: str, payload: FundTransferReceive, 
 @router.post("/{transfer_id}/approve")
 async def approve_fund_transfer(transfer_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "approve")
-    await _dokumen(request, transfer_id, tulis=True)
+    doc = await _dokumen(request, transfer_id, tulis=True)
+    # Kas & Bank 1 (Tugas 6) — Aturan Persetujuan jenis `fund_transfer` (bawaan: semua pemegang `cash.approve`).
+    await approval_policy_service.guard_door("fund_transfer", actor, doc=doc, amount=float(doc.get("nominal") or 0))
     res = await fts.setujui(transfer_id, actor)
     await audit(actor["name"], "fund_transfer_approved", "fund_transfer", transfer_id, _jejak_audit(res),
                 scope_entity_id=res.get("entity_id", ""))

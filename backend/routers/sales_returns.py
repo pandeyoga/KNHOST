@@ -866,7 +866,8 @@ async def settle_preview(return_id: str, request: Request, payload: SalesReturnS
     try:
         out = await return_service.preview_settlement(
             return_id, payload.outcome, [d.dict() for d in payload.item_decisions],
-            nego_payout=(payload.payout or "").strip(), refund_account_code=payload.refund_account_code)
+            nego_payout=(payload.payout or "").strip(), refund_account_code=payload.refund_account_code,
+            refund_account_id=payload.refund_account_id)   # Kas & Bank 1 — akun kas = sub-akun rekening pilihan layar
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     from services import return_exception_service as rex
