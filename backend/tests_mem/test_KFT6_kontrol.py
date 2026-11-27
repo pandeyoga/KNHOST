@@ -27,7 +27,8 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
               "ubah_profil_kredit",   # CR-T1 (K-28) — nominal = plafon baru
               "cairkan_uang_muka",   # PK-24 (K-17) — nominal = nilai PD
               "asisten_uang_keluar",   # AG-T5 (K-44) — nominal = nominal kartu (total debit untuk jurnal)
-              "lembar_insentif"}   # KM-T3 (K-25) — nominal = total lembar insentif
+              "lembar_insentif",   # KM-T3 (K-25) — nominal = total lembar insentif
+              "pindah_dana"}   # Kas & Bank 1 (Tugas 4) — nominal = nominal yang dipindah
 # PK-38 — aksi ke-36 `bayar_hutang` (bayar kontrabon; bawaan satu orang, bernominal) → 36 aksi, 21 bernominal,
 # 59 kunci `kontrol.*`. Batas pengurang piutang: bawaan Rp 1.000.000, maksimum Rp 1.000.000.000 (K-11).
 # PM-T1 — aksi ke-37 `ubah_rekening` (ubah/buat rekening kas-bank; bawaan satu orang, TANPA nominal) → 37 aksi,
@@ -42,8 +43,10 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # 25 bernominal, 68 kunci `kontrol.*`.
 # Kas & Bank 1 (Tugas 3) — aksi ke-42 `pindah_saldo_kas` (setujui pindah saldo kas per PT; bawaan DUA orang, TANPA
 # nominal) → 42 aksi, 25 bernominal, 69 kunci `kontrol.*`.
-N_AKSI = 42   # Kas & Bank 1 — aksi ke-42 `pindah_saldo_kas` (tanpa nominal)
-N_KUNCI = 69   # Kas & Bank 1 — `kontrol.pindah_saldo_kas.min_orang`
+# Kas & Bank 1 (Tugas 4) — aksi ke-43 `pindah_dana` (setujui Pindah Dana antar rekening; bawaan satu orang, bernominal)
+# → 43 aksi, 26 bernominal, 71 kunci `kontrol.*`.
+N_AKSI = 43   # Kas & Bank 1 — aksi ke-43 `pindah_dana` (bernominal)
+N_KUNCI = 71   # Kas & Bank 1 — `kontrol.pindah_dana.{min_orang,batas_nominal}`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
 
 

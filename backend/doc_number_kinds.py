@@ -97,6 +97,8 @@ KINDS_LIST: List[Dict[str, Any]] = [
     # setoran kewajiban gaji PK-22: deret per PT berkunci awalan yang sama).
     _k("ttp", "Titipan tunai sales", "Keuangan", "cash_holdings", "number", "TTP-"),
     _k("stt", "Setoran titipan tunai sales", "Keuangan", "cash_deposits", "number", "STT-"),
+    # Kas & Bank 1 (Tugas 4) — Pindah Dana antar rekening satu PT. `PDN-`, bukan `PD-` (sudah dipakai uang muka).
+    _k("pdn", "Pindah dana antar rekening", "Keuangan", "fund_transfers", "number", "PDN-"),
     # ── Gudang ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("trf", "Mutasi gudang", "Gudang", "warehouse_transfers", "code", "TRF-"),
     _k("grn", "Penerimaan barang", "Gudang", "goods_receipts", "number", "GRN-"),

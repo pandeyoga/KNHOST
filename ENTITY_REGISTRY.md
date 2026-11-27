@@ -56,6 +56,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Kode Bayar & Instruksi Bayar *(PM-T2)* | `payment_codes` (+ field pesanan `payment_method_code`, `receiving_account_id`, `receiving_account`, `payment_code`; `payment_plans.lines[].pay_code`) | `services/payment_code_service.py` (`resolve_destination` dipanggil `create_order` & override SO; `ensure_for_order` dari `confirm_core`; `ensure_for_line` untuk jadwal tagihan CR-T2; `find_in_text` untuk PM-T3; `instruction`), `routers/payment_methods.py` (`GET /api/sales-orders/{id}/payment-instruction`), `services/pdf_resolvers.py` (blok "Instruksi Pembayaran" Konfirmasi Pesanan & Faktur) | `SalesOrderCreate`, `SoOverrideIn` | `CheckoutPaymentDestination` (checkout desktop & HP), `OrderPaymentInstructionCard` (detail pesanan), `SalesOrderOverrideDialog` |
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Pindah Saldo Kas per Rekening *(Kas & Bank 1, Tugas 3)* | `cash_account_cutovers` | `routers/cash_account_cutover.py` (`GET /kas-per-rekening/usulan`, `GET /kas-per-rekening/{entity_id}/pratinjau`, `POST …/{entity_id}/siapkan`, `POST /kas-per-rekening/usulan/{id}/setujui`, `…/tolak` — `accounting.manage`), `services/cash_account_cutover_service.py` | `PindahSaldoSiapkan`, `PindahSaldoSetujui`, `PindahSaldoTolak` | (layar Kas & Bank › Akun per rekening — Tugas 6) |
+| Pindah Dana *(Kas & Bank 1, Tugas 4)* | `fund_transfers` (+ kas `cash_transactions` ber-`ref_type: fund_transfer`, `seq` kirim/biaya/terima) | `routers/fund_transfers.py` (`GET/POST /fund-transfers`, `GET /fund-transfers/{id}`, `POST …/{id}/receive` — `cash.create`, `…/approve` — `cash.approve`, `…/cancel` — `cash.delete`), `services/fund_transfer_service.py` (`buat`, `setujui`, `terima`, `batal`, `lanjut_batal`, `daftar`, `rincian`, `dalam_perjalanan` — butir tutup buku) | `FundTransferCreate`, `FundTransferReceive`, `FundTransferCancel` | (layar Kas & Bank › Pindah Dana — Tugas 6) |
 | Jadwal Tagihan & Saldo Piutang *(CR-T2)* | `payment_plans` (`origin: term` = jadwal tagihan mesin per surat jalan / uang muka / nota debit; `manual` = rencana cicilan), `customer_balances` (saldo turunan per pelanggan × PT) | `services/billing_schedule_service.py` (kait `on_order_confirmed` dari `confirm_core`, `on_shipment_posted` sesudah jurnal surat jalan, `on_order_changed` dari `so_transition` status mati, `on_debit_note`; `open_lines` = satu-satunya pembaca jatuh tempo), `services/customer_balance_service.py` (`compute`, `refresh`, `get`, `rebuild_all`, `job_refresh_overdue`), `routers/customer_balances.py` (`GET /customers/{id}/billing-schedule`, `GET /customers/{id}/balance`, `POST /ar/balances/rebuild`), `scripts/build_billing_schedule.py` | — | `ARAgingDetail` (rincian pelanggan: baris jadwal tersimpan) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Meja Insentif — data dasar *(KM-T1)* | `sales_targets` (kunci baru PT × sales × jenis periode × periode), `incentive_components`, `incentive_definitions`, `fact_shipment_sales`, `fact_collections` (turunan) | `routers/incentive.py` (`GET/PUT /api/incentive/targets`, `POST …/targets/copy`, `GET/POST/PATCH /api/incentive/components`, `GET …/definitions/current`, `GET …/reconciliation`, `POST …/facts/rebuild`; KM-T2 hanya baca: `GET …/achievement`, `GET …/achievement/sources`, `GET …/achievement/export`), `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`, `incentive_achievement.py` (KM-T2) | `IncentiveTargetSave`, `IncentiveTargetCopy`, `IncentiveComponentCreate`, `IncentiveComponentUpdate`, `IncentiveFactRebuild` (`schemas_incentive.py`) | `IncentiveSetupView` (SDM › Kinerja & Insentif › Target & Aturan), `CapaianView` + `CapaianSourcesPanel` (… › Capaian, KM-T2) |
@@ -2229,6 +2230,34 @@ Index:       uq_id (unik) · (entity_id, status, created_at)
 Setujui: penyiap ≠ penyetuju (`kontrol.pindah_saldo_kas.min_orang`, bawaan 2); sidik beda → 409 "Angka berubah, muat
 ulang."; jurnal Dr akun rekening / Cr akun asal per rekening per akun asal; `cash_account_mode.nyalakan`; kas lama tanpa
 rekening yang ikut rekening tunggal mendapat `account_id` + `account_id_dari_pindah_saldo`.
+```
+
+### fund_transfers  [Kas & Bank 1, Tugas 4 — Pindah Dana antar dua rekening satu PT]
+```
+Collection:  fund_transfers     Prefix: pdn_ (acak)   Nomor: {KODE PT}/PDN-NNNNN (deret per PT, `doc_number_kinds` `pdn`)
+Router:      routers/fund_transfers.py (lihat `cash.view`, buat/terima `cash.create`, setujui `cash.approve`, batal
+             `cash.delete`)
+Service:     services/fund_transfer_service.py
+Index:       uq_id (unik) · uq_number (unik) · (entity_id, status, tanggal_kirim) · (entity_id, dua_tahap, tanggal_kirim)
+**SCOPED** (`entity_id` = PT kedua rekening).
+
+  id · number · entity_id
+  status            menunggu_persetujuan (kas belum terbit) | dalam_perjalanan (kas kirim terbit, belum diterima) |
+                    selesai | batal
+  rekening_asal_id · rekening_asal_nama · rekening_tujuan_id · rekening_tujuan_nama (nama = potret saat dibuat)
+  nominal · biaya (biaya transfer, dibebankan ke rekening asal) · catatan
+  tanggal_kirim · tanggal_terima (rencana; = tanggal kirim bila sekali jalan) · tanggal_diterima (nyata) · dua_tahap
+  butuh_persetujuan (kontrol.pindah_dana saat dibuat) · disetujui_oleh(_id) · disetujui_pada
+  kas_ids {kirim, biaya, terima} · akun_transit · akun_beban_bank (akun lawan saat kas terbit) · terbit_pada · terbit_error
+  gl_status · gl_error (ringkasan jurnal kasnya; ulang dari Posting Gagal › Transaksi Kas menyegarkan)
+  diterima_oleh(_id) · diterima_pada
+  alasan_batal · dibatalkan_oleh(_id) · dibatalkan_pada · status_sebelum_batal · batal_gl_status (pending | posted |
+  failed — Posting Gagal jenis `fund_transfer_cancel`) · batal_gl_error · batal_gl_failed_at · batal_selesai_pada ·
+  void_journal_entry_ids · jejak[{aksi, oleh, oleh_id, pada, catatan}] · saga_lock (selama aksi berjalan)
+  created_by(_id) · created_at · updated_at
+Kas: `create_cash(ref_type="fund_transfer", ref_id=id, seq=kirim|biaya|terima)` dengan `contra_account_code` = akun
+transit (`kas_bank.kas_transit`) atau beban bank (`kas_bank.beban_bank`); akun kas dipilih pintu kas (`akun_kas`).
+Batal: semua kas tidak-batal dibalik (`post_cash_void`), ditolak bila ada kas ber-`reconciled_amount` > 0.
 ```
 
 ### payment_plans — jadwal tagihan  [CR-T2 — tambahan field; satu jadwal hidup per pesanan]

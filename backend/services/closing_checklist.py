@@ -163,6 +163,30 @@ async def _bank_cocok(k: Konteks) -> Dict[str, Any]:
     return _hasil("warning", n, f"{n} mutasi bank sampai {_tgl(k.end)} belum dicocokkan.")
 
 
+# Kas & Bank 1 (Tugas 4, spesifikasi §5.2) — Pindah Dana dua tahap yang uangnya masih di jalan per akhir periode, dan
+# saldo akun dana dalam perjalanan (`kas_bank.kas_transit`) per tanggal itu: keduanya semestinya nol saat tutup buku.
+@butir("dana_dalam_perjalanan", "Dana dalam perjalanan nol",
+       {"view": "fund-transfers", "preset": {"status": "dalam_perjalanan"}})
+async def _dana_dalam_perjalanan(k: Konteks) -> Dict[str, Any]:
+    from services import fund_transfer_service as fts
+    from services import gl_mapping_service as glm
+    from services.nilai_pengaturan import nilai
+    dok = await fts.dalam_perjalanan(k.entity_id, k.end)
+    saldo = await gl.accounts_balance_cents(await glm.known_codes("kas_bank.kas_transit", k.entity_id), k.entity_id,
+                                            as_of=k.end)
+    tol = to_cents(float(await nilai("finance.rounding_tolerance_rupiah", k.entity_id)))   # KF-T7 — ambang sen
+    # `value` = jumlah dokumen (angka, seperti butir hitungan lain di layar); rincian rupiah di `rincian`.
+    rincian = {"jumlah": dok["jumlah"], "total": dok["total"], "saldo_akun": from_cents(saldo), "nomor": dok["nomor"]}
+    teks_saldo = f"Saldo akun dana dalam perjalanan per {_tgl(k.end)} {rupiah(from_cents(saldo))}."
+    if not dok["jumlah"] and abs(saldo) <= tol:
+        return {**_hasil("ok", 0, f"Tidak ada Pindah Dana yang masih dalam perjalanan per {_tgl(k.end)}. "
+                                  f"{teks_saldo}"), "rincian": rincian}
+    rinci = ", ".join(dok["nomor"]) + (" …" if dok["jumlah"] > len(dok["nomor"]) else "")
+    teks_dok = (f"{dok['jumlah']} Pindah Dana masih dalam perjalanan per {_tgl(k.end)} ({rupiah(dok['total'])}: "
+                f"{rinci}) — catat Terima saat dana masuk rekening tujuan. " if dok["jumlah"] else "")
+    return {**_hasil("warning", dok["jumlah"], teks_dok + teks_saldo), "rincian": rincian}
+
+
 async def _sisa_dokumen_antar_pt(entity_id: str) -> Dict[str, int]:
     """Σ sisa dokumen antar-PT TERBUKA (keadaan hari ini, sen) — rumus `interco_service`: dagang (sisa − refund yang
     belum dibayar), pinjaman (`outstanding`), pindah aset belum dibayar (`transfer.price`). Sisi piutang = PT ini

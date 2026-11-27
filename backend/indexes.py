@@ -250,6 +250,12 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "cash_account_cutovers": [       # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas per PT (antrean per PT)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    # Kas & Bank 1 (Tugas 4) — Pindah Dana: daftar per PT (status, tanggal kirim) dan butir tutup buku "dana dalam
+    # perjalanan" (PT, dua tahap, tanggal kirim). Unik `number`: UNIQUE_DOC_NUMBER_FIELDS.
+    "fund_transfers": [
+        [("entity_id", A), ("status", A), ("tanggal_kirim", D)],
+        [("entity_id", A), ("dua_tahap", A), ("tanggal_kirim", A)],
+    ],
     "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
         [("entity_id", A), ("period", A), ("kind", A)],
     ],
@@ -535,6 +541,7 @@ UNIQUE_DOC_NUMBER_FIELDS = [
     ("goods_receipts", "number"),   # GRN Fase 2
     ("incentive_sheets", "number"),   # KM-T3 — lembar insentif (`LIN-` per PT)
     ("interco_charges", "number"),    # KM-T4 — tagihan antar-PT (`ICC-` per PT penagih)
+    ("fund_transfers", "number"),     # Kas & Bank 1 (Tugas 4) — Pindah Dana (`PDN-` per PT)
 ]
 
 
@@ -603,6 +610,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     # Kas & Bank 1 (Tugas 3) — usulan pindah saldo ber-id per PT (`psk_{PT}_{urut}`): dua siapkan bersamaan = satu
     # usulan.
     "cash_account_cutovers",
+    # Kas & Bank 1 (Tugas 4) — Pindah Dana (dicari per `id` di setiap aksi; kas menunjuknya lewat `ref_id`).
+    "fund_transfers",
 ]
 # FIX-7 (butir 7, FIX-5 §8.7) — koleksi bisnis/master lain yang dicari per `id` di jalur permintaan (sensus kode: ≥ 3
 # pemakaian `find_one/update_one({"id": …})`; sensus data acuan 10 Nov 2026: 0 `id` kembar di semua kandidat).

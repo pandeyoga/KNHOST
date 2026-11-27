@@ -252,6 +252,13 @@ DOOR_EXEMPT: Dict[str, str] = {
     "putaway_orders.py::/api/putaway-orders/verify-labels":
         "Pindai label QR roll transit (tanpa RFID) → siap Putaway Order (`wms.update`) — pencocokan mesin, "
         "antrean kerjanya layar Putaway/Operasi Gudang.",
+    # Kas & Bank 1 (Tugas 4) — `fund_transfers` berstatus `menunggu_persetujuan` (kontrol dua orang
+    # `kontrol.pindah_dana`, bawaan satu orang). Baris `QUEUES` mensyaratkan layar yang dirender (invarian D); layar Kas & Bank › Pindah Dana
+    # (view `fund-transfers`) lahir di Tugas 6 paket yang sama.
+    "fund_transfers.py::/api/fund-transfers/{transfer_id}/approve":
+        "UTANG: antrean Pusat Persetujuan untuk Pindah Dana yang menunggu orang kedua menyusul layar Kas & Bank › "
+        "Pindah Dana (Tugas 6 Kas & Bank bagian 1): pindahkan ke DOOR_QUEUE + baris QUEUES (view `fund-transfers`, "
+        "koleksi `fund_transfers`, status `menunggu_persetujuan`) + jenis `approval_kinds`.",
 }
 
 # ─── Sapuan DATA: kosakata "menunggu keputusan" ───────────────────────────────
@@ -303,6 +310,9 @@ DATA_EXEMPT: Dict[Tuple[str, str], str] = {
     ("rfid_print_jobs", "verified"):
         "Status AKHIR cetak label RFID: label sudah diverifikasi fisik (sesi scan selesai). Tidak ada yang "
         "menunggu; kata `verified` di kosakata dimaksudkan untuk kontrabon (verified → menunggu ACC).",
+    ("fund_transfers", "menunggu_persetujuan"):
+        "UTANG (Kas & Bank 1 Tugas 4 → Tugas 6): Pindah Dana menunggu orang kedua; baris QUEUES dipasang bersama layar "
+        "Kas & Bank › Pindah Dana (lihat DOOR_EXEMPT pintu `/api/fund-transfers/{transfer_id}/approve`).",
 }
 
 

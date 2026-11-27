@@ -62,6 +62,9 @@ async def _retry_cash(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     if doc.get("ref_type") == "cash_deposit" and doc.get("ref_id"):   # PM-T4 — penanda jurnal setoran titipan ikut
         from services.cash_holding_service import tandai_jurnal_kas
         await tandai_jurnal_kas(doc)
+    if doc.get("ref_type") == "fund_transfer" and doc.get("ref_id"):   # Kas & Bank 1 — ringkasan jurnal Pindah Dana
+        from services.fund_transfer_service import segarkan_jurnal
+        await segarkan_jurnal(doc["ref_id"])
 
 
 async def _retry_ar_receipt(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -649,6 +652,13 @@ async def _retry_pindah_saldo_kas(doc: Dict[str, Any], actor: Dict[str, Any]) ->
     await lanjutkan(doc["id"], actor)
 
 
+async def _retry_fund_transfer_cancel(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Kas & Bank 1 (Tugas 4) — Pindah Dana yang sudah dibatalkan tetapi jurnal pembalik salah satu kasnya gagal: kas
+    yang belum dibalik diteruskan lewat pembalik kas yang sama (yang sudah dibalik tidak dibalik lagi)."""
+    from services.fund_transfer_service import lanjut_batal
+    await lanjut_batal(doc["id"], actor)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
@@ -893,6 +903,17 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
         "link": {"view": "bank-accounts", "tab": "", "focus_type": "cash_account_cutover"},
         "posters": ("post_pindah_saldo_kas",), "retry": _retry_pindah_saldo_kas},
+    # ── Kas & Bank 1 (Tugas 4) — Pindah Dana dibatalkan, jurnal pembalik salah satu kasnya gagal (dokumen `batal`,
+    #    `batal_gl_status: failed`); ulang = teruskan pembalik kas yang tersisa. Jurnal kas Pindah Dana yang gagal saat
+    #    terbit tampil sebagai Transaksi Kas biasa (`_retry_cash` ikut menyegarkan ringkasan dokumennya). Layar
+    #    Kas & Bank › Pindah Dana menyusul (Tugas 6). ──
+    "fund_transfer_cancel": {
+        "label": "Pembatalan Pindah Dana", "collection": "fund_transfers",
+        "failed_query": {"status": "batal", "batal_gl_status": "failed"}, "entity_field": "entity_id",
+        "number_field": "number", "amount_field": "nominal", "status_field": "batal_gl_status",
+        "error_field": "batal_gl_error", "failed_at_field": "batal_gl_failed_at", "doc_type": "",
+        "link": {"view": "fund-transfers", "tab": "", "focus_type": "fund_transfer"},
+        "posters": (), "retry": _retry_fund_transfer_cancel},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}

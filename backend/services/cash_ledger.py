@@ -39,6 +39,7 @@ REF_LABEL = {
     "fixed_asset": "perolehan aset tetap", "fixed_asset_transfer": "pembayaran pindah aset antar-PT",   # PK-23
     "statutory_remittance": "setoran kewajiban gaji",   # PK-22 — setoran BPJS / PPh 21
     "cash_deposit": "setoran titipan tunai sales",       # PM-T4 — tunai yang dipegang sales disetor ke kas/bank
+    "fund_transfer": "Pindah Dana",                      # Kas & Bank 1 (Tugas 4) — pindah dana antar rekening satu PT
 }
 
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.

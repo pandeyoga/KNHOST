@@ -60,7 +60,10 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        # KM-T3 (N4) — Meja Insentif: buat lembar, ubah baris, ajukan, sahkan dikirim ulang = satu tulisan.
                        "/api/incentive/",
                        # LB-T3 — lapor bayar CBD & DP: unggah bukti / keputusan terima-tolak dikirim ulang = satu tulisan.
-                       "/api/payment-reports")
+                       "/api/payment-reports",
+                       # Kas & Bank 1 (Tugas 4) — Pindah Dana: buat/terima/setujui/batal dikirim ulang = satu dokumen,
+                       # kas tidak ganda (layanan juga mengklaim per status).
+                       "/api/fund-transfers")
 #: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
 #: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
 IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),

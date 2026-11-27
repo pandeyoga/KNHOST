@@ -66,6 +66,8 @@ CANONICAL_COLLECTIONS = {
     "payment_methods", "bank_account_changes",
     # ── Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening (per PT) ──
     "cash_account_cutovers",
+    # ── Kas & Bank 1 (Tugas 4) — Pindah Dana antar rekening satu PT ──
+    "fund_transfers",
     # ── AG-T1 (blueprint) — kartu tindakan Tanya KN (masa berlaku, gagal/kedaluwarsa) ──
     "ai_action_proposals",
     # ── AG-T4 (blueprint) — paket tutup buku Asisten Keuangan ──

@@ -148,7 +148,8 @@ async def test_MNT2_U11_manajer_kosong_dan_semua_pt(klien, akun, sesi, peran_man
 
 # ── U8 — daftar periksa: dua tautan menunjuk seksi Tutup Buku; butir & aturan penghalang tetap ──────────────────────
 CEKLIS_PK43 = ["periode_berakhir", "tidak_bentrok", "suspense_nol", "posting_gagal", "neraca_saldo", "stok_cocok",
-               "bank_cocok", "antar_pt_cocok", "buka_periode_aktif", "penyusutan", "gaji"]
+               "bank_cocok", "dana_dalam_perjalanan", "antar_pt_cocok", "buka_periode_aktif", "penyusutan",
+               "gaji"]   # Kas & Bank 1 (Tugas 4) — + butir dana dalam perjalanan
 
 
 async def test_MNT2_U8_tautan_daftar_periksa_ke_seksi_tutup_buku(klien, kepala_admin):

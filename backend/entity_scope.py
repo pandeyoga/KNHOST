@@ -293,6 +293,8 @@ SCOPED_COLLECTIONS = {
     "credit_gate_rejections",
     # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening: buku satu PT.
     "cash_account_cutovers",
+    # Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT.
+    "fund_transfers",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

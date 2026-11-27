@@ -382,6 +382,8 @@ from routers import cash_holdings as _cash_holdings  # noqa: E402 — PM-T4 titi
 app.include_router(_cash_holdings.router)
 from routers import cash_account_cutover as _cash_account_cutover  # noqa: E402 — Kas & Bank 1 pindah saldo per PT
 app.include_router(_cash_account_cutover.router)
+from routers import fund_transfers as _fund_transfers  # noqa: E402 — Kas & Bank 1 Pindah Dana antar rekening
+app.include_router(_fund_transfers.router)
 
 
 @app.get("/api/")

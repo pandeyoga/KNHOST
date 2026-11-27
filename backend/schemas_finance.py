@@ -68,6 +68,28 @@ class PindahSaldoTolak(BaseModel):
     alasan: str = ""
 
 
+class FundTransferCreate(BaseModel):
+    """Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT. Tanggal `YYYY-MM-DD` (kosong = hari ini);
+    `tanggal_terima` kosong atau sama dengan `tanggal_kirim` = sekali jalan, lebih besar = dua tahap (dalam perjalanan).
+    Nominal 0 / biaya negatif ditolak layanan dengan kalimat (400); nilai negatif juga ditolak skema (INV-NUM-01)."""
+    entity_id: str = ""
+    rekening_asal_id: str = ""
+    rekening_tujuan_id: str = ""
+    nominal: float = Field(0, ge=0)
+    biaya: float = Field(0, ge=0)
+    tanggal_kirim: str = ""
+    tanggal_terima: str = ""
+    catatan: str = ""
+
+
+class FundTransferReceive(BaseModel):
+    tanggal: str = ""   # tanggal uang diterima rekening tujuan; kosong = tanggal terima rencana dokumen
+
+
+class FundTransferCancel(BaseModel):
+    alasan: str = ""
+
+
 # ─── EPIC7-C: Chart of Accounts + General Ledger ─────────────────────────────
 
 class GLAccountCreate(BaseModel):

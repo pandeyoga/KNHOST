@@ -110,6 +110,12 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     # PM-T4 — terima setoran titipan tunai sales: periksa tanpa tulis → klaim cash_deposits (status diajukan) → niat
     # (id kas tetap) → titipan naik bersyarat + penanda deposit_ids (ulang tidak ganda) → kas tahan-gagal → finish_set.
     ("cash_holdings.py", "POST /cash-deposits/{dep_id}/receive"): ("service", "PM-T4 — klaim cash_deposits berprasyarat status diajukan sebelum titipan (cash_holdings) dinaikkan bersyarat deposited_amount ≤ amount − alokasi dengan penanda deposit_ids; kas lewat create_cash ber-id tetap dari niat; finish_set status diterima", "cash_holding_service.terima_setoran"),
+    # Kas & Bank 1 (Tugas 4) — Pindah Dana: periksa tanpa tulis (rekening, periode, akun jurnal, rekonsiliasi) → klaim
+    # fund_transfers berprasyarat status → kas lewat create_cash ber-id tetap per `seq` (kirim ulang = kas yang sama) /
+    # pembalik kas lewat post_durable → finish_set. Buat (`POST ""`) memakai `_terbit` yang sama.
+    ("fund_transfers.py", "POST /{transfer_id}/approve"): ("service", "klaim fund_transfers berprasyarat status menunggu_persetujuan sebelum kas kirim/biaya/terima terbit (id kas tetap per seq); finish_set status dalam_perjalanan/selesai", "fund_transfer_service._terbit"),
+    ("fund_transfers.py", "POST /{transfer_id}/receive"): ("service", "klaim fund_transfers berprasyarat status dalam_perjalanan sebelum kas masuk rekening tujuan terbit (id kas tetap seq terima); finish_set status selesai", "fund_transfer_service.terima"),
+    ("fund_transfers.py", "POST /{transfer_id}/cancel"): ("service", "klaim fund_transfers berprasyarat status hidup (atau batal yang pembaliknya tertunda) sebelum niat batal ditulis dan tiap kas dibalik lewat post_cash_void tahan-gagal lalu void; gagal → batal_gl_status failed (Posting Gagal), kunci dilepas; finish_set", "fund_transfer_service.batal"),
     ("ar_receipts.py", "POST /ar-receipts/{receipt_id}/void"): ("service", "klaim ar_receipts (status != void) sebelum keputusan selisih/payments SO/kas/deposit dibalik; release bila reverse_decision gagal; finish_set status void", "ar_receipt_service.void_receipt"),
     ("inventory.py", "POST /inventory/initial-stock"): ("compensate", "roll baru per permintaan (tak ada dokumen bersama); mutasi+rebuild di try, except → rollback_initial_stock menghapus roll & mutasi yang lahir"),
     ("inbound_receiving.py", "POST /inbound/tasks/{task_id}/resolve-escalation"): ("cas", "find_one_and_update wms_tasks berprasyarat escalation.status != resolved → 409 bila kalah (pola outbound)"),

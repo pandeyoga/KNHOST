@@ -100,6 +100,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # per PT, menyalakan akun per rekening); pembanding = PENYIAP usulan; tanpa nominal. Kelompok B, bawaan DUA orang:
     # aksi baru yang rancangannya sudah mewajibkan orang kedua ("Finance menyetujui (orang kedua)").
     _a("pindah_saldo_kas", "Pindah saldo kas ke akun per rekening", "B", "2", False, _BB),
+    # Kas & Bank 1 (Tugas 4, spesifikasi §5.2 / §7 butir 5) — menyetujui Pindah Dana antar rekening satu PT; pembanding =
+    # PEMBUAT dokumen; bernominal = nominal yang dipindah (tanpa biaya transfer). Kelompok C, bawaan SATU orang
+    # (perpindahan internal); dinaikkan per PT lewat jumlah orang atau batas nominal.
+    _a("pindah_dana", "Pindah dana antar rekening", "C", "1", True, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -147,6 +151,8 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "asisten_uang_keluar": ("services/ai_cards.py:decide", "services/ai_cards.py:second"),   # AG-T5
     "lembar_insentif": ("services/incentive_sheet_service.py:approve_sheet",),   # KM-T3
     "pindah_saldo_kas": ("services/cash_account_cutover_service.py:setujui",),   # Kas & Bank 1 (Tugas 3)
+    "pindah_dana": ("services/fund_transfer_service.py:buat",
+                    "services/fund_transfer_service.py:setujui"),   # Kas & Bank 1 (Tugas 4)
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())

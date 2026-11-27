@@ -181,6 +181,9 @@ LB_R18_KUNCI = 1   # Lapor Bayar R18-c — sales.tenggang_sesudah_putusan_jam
 F1_KUNCI = 1   # F1 — sakelar kwitansi otomatis dari mutasi (bank.kwitansi_otomatis_mutasi)
 # Kas & Bank 1 (Tugas 3) — kontrol dua orang `kontrol.pindah_saldo_kas.min_orang` (izin `settings.manage`): U02 dan U04.
 KB13_KUNCI_KONTROL = 1
+# Kas & Bank 1 (Tugas 4) — kontrol dua orang `kontrol.pindah_dana.{min_orang,batas_nominal}` (izin `settings.manage`):
+# U02 dan U04.
+KB14_KUNCI_KONTROL = 2
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -221,7 +224,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
         - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI + PMT1_KUNCI + CRT1_KUNCI_KONTROL + AGT1_KUNCI \
         + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL + KMT3_KUNCI_KONTROL - KMT4_TIDAK_DIPAKAI + R0_FIX7_KUNCI + MPT5_KUNCI \
-        + KA1_KUNCI + BTP_KUNCI + LBT1_KUNCI + LB_R18_KUNCI + F1_KUNCI + KB13_KUNCI_KONTROL
+        + KA1_KUNCI + BTP_KUNCI + LBT1_KUNCI + LB_R18_KUNCI + F1_KUNCI + KB13_KUNCI_KONTROL + KB14_KUNCI_KONTROL
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -260,7 +263,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
         + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI + KMT1_KUNCI + PMT3_KUNCI \
         + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI + PYT5_KUNCI + KMT3_KUNCI_KONTROL \
         + R0_FIX7_KUNCI + MPT1_KUNCI + MPT5_KUNCI + MPT5B_KUNCI + MPT4B_KUNCI + KA1_KUNCI + BTP_KUNCI + LBT1_KUNCI \
-        + LB_R18_KUNCI + F1_KUNCI + KB13_KUNCI_KONTROL
+        + LB_R18_KUNCI + F1_KUNCI + KB13_KUNCI_KONTROL + KB14_KUNCI_KONTROL
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):
