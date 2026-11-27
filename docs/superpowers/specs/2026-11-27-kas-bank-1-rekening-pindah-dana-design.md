@@ -1,6 +1,6 @@
 # Rancangan — Kas & Bank bagian 1: akun buku besar per rekening, Pindah Dana, pindah saldo lama
 
-Tanggal: 27 Nov 2026 · Status: **keputusan pemilik D1–D4 disetujui** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
+Tanggal: 27 Nov 2026 · Status: **keputusan pemilik D1–D4 disetujui; builder check selesai 27 Nov (5 jawaban, §7-8)** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
 §D; D5 ditunda). Keputusan builder di §7 dikerjakan tanpa menunggu (perintah pemilik "langsung lanjut kerjakan saja
 semua", 27 Nov "ya percepat") dan dilaporkan. Inventaris kode: scratchpad `kasbank_inventaris.md` (27 Nov, HEAD `cd5ca87`).
 
@@ -69,6 +69,17 @@ saldo per rekening yang tidak sama dengan saldo buku kas rekening itu; kas lama 
 - **Pembaca saldo kas** (`cash_flow_service.CASH_CODES`, `bank_service.cash_position`, `finance_tower_service`,
   `cashflow_forecast_service`, pemilih akun refund `routers/gl.py` `startswith("1-11")`) memakai **kumpulan akun kas
   dinamis**: akun bertanda `is_cash` + induk `1-1100`/`1-1110` (satu pembantu `report_basis.kode_kas`).
+- **Satu pembantu akun kas untuk semua jurnal yang menyentuh kas.** Selain jurnal kas biasa, beberapa jalur menulis akun
+  kas langsung di jurnalnya sendiri: antar-PT (pinjaman, beban, pindah aset, `interco_service`), pembayaran gaji jalur lama,
+  refund retur (`return_service`, `return_roll_settlement_service`), penjualan tunai tanpa surat jalan (`gl_service`). Semua
+  jalur itu diubah memakai **satu pembantu** `akun_kas(entity_id, account_id, cash_type)`: mode per rekening aktif →
+  sub-akun rekening; tidak aktif → akun jenis kas seperti sekarang (dengan pemetaan PT). Penjaga statis baru menolak kode
+  `1-1100`/`1-1110` yang ditulis langsung di baris jurnal di luar pembantu itu (pola `verify_cash_single_door`). Jalur tanpa
+  rekening (penjualan tunai tanpa surat jalan): rekening tunggal PT untuk jenis kas itu bila ada; bila tidak tunggal,
+  tetap ke akun lama dan dicatat sebagai "belum tertaut" (jalur ini hari ini pun tidak masuk buku kas rekening).
+- **Pembalik jurnal kas lama sesudah PT aktif** (batal kas, kwitansi, retur, PD yang dicatat sebelum pindah): baris akun kas
+  pembalik memakai sub-akun rekening dokumen kas itu (saldonya sudah dipindah ke sana), bukan akun lama. Satu tempat: jalur
+  pembalik kas memanggil pembantu yang sama.
 - **Jurnal manual** ke sub-akun rekening **ditolak** (akun kas per rekening hanya diisi lewat kas/Pindah Dana), supaya
   saldo sub-akun = buku kas rekening (penjaga seperti akun kontrol buku pembantu).
 - Kas lama tidak berubah akun; pembalik kas lama memakai jurnal asalnya (perilaku yang ada).
@@ -100,15 +111,24 @@ saldo per rekening yang tidak sama dengan saldo buku kas rekening itu; kas lama 
 ### 5.3 Alat pindah saldo per PT (D1 aktif + D4)
 
 Layar **Kas & Bank › Akun per rekening** (pemegang `accounting.manage`), per PT:
-1. **Pratinjau** (tanpa tulisan): daftar rekening PT (jenis kas, sub-akun yang akan dibuat/sudah ada, saldo buku kas
-   rekening per tanggal pindah), saldo buku besar `1-1100`/`1-1110` PT itu, **selisih belum tertaut** (kas lama tanpa
-   rekening, `unlinked_transactions`), dan jurnal yang akan dibuat (Dr sub-akun per rekening / Cr akun lama sebesar saldo
-   buku kas rekening; rekening bersaldo negatif dibalik sisinya). Selisih belum tertaut **tetap di akun lama** dan
-   disebut terang-terangan ("selisih Rp … tetap di 1-1100 sampai ditautkan").
-2. **Siapkan**: tanggal pindah (bawaan hari ini; periode harus terbuka) → sub-akun dibuat (idempoten) + **usulan jurnal**
-   bertanda `pindah_saldo_kas_per_rekening` untuk PT itu (pola `journal_proposals`).
-3. **Setujui** (orang kedua, aturan usulan jurnal yang ada): jurnal terposting **dan** mode per rekening PT itu menyala dalam
-   satu langkah berklaim; sesudahnya kas baru PT itu masuk sub-akun. Tolak → tidak ada yang berubah selain sub-akun kosong.
+1. **Pratinjau** (tanpa tulisan): daftar rekening PT (jenis kas, akun tujuan: sub-akun yang akan dibuat **atau akun bagan
+   PT yang sudah ada** yang dipilih Finance untuk rekening itu), dan **dari akun mana saldo tiap rekening dipindah**:
+   dihitung dari baris jurnal yang benar-benar terbit untuk kas rekening itu (jurnal kas, jurnal saldo awal, dan jurnal
+   langsung jalur lain yang merujuk kas rekening itu), dikelompokkan per kode akun — jadi pemetaan akun PT yang berubah
+   dari waktu ke waktu dan saldo awal yang dijurnal ke akun lain ikut terbaca. Jurnal yang akan dibuat: per rekening per
+   akun asal, Dr akun tujuan / Cr akun asal (dibalik bila negatif). **Kas lama tanpa rekening**: bila PT punya tepat satu
+   rekening jenis kas itu (kas itu sudah tampil di buku kas rekening tersebut) → ikut dipindah dan, saat disetujui,
+   dokumen kasnya diberi `account_id` rekening itu (tanpa mengubah jurnal; tercatat di jejak); bila tidak tunggal → tetap di
+   akun lama, disebut terang-terangan ("Rp … tetap di 1-1100 — kas lama tanpa rekening").
+2. **Siapkan**: memeriksa **nol posting kas gagal/tertunda** di PT itu (bila ada → ditolak dengan jumlahnya dan tautan ke
+   Posting Gagal), membuat sub-akun (idempoten), lalu menyimpan **usulan pindah saldo** PT itu (koleksi sendiri, bukan
+   `journal_proposals` generik, karena angkanya dihitung ulang saat disetujui).
+3. **Setujui** (orang kedua; `tolak_bila_pelaku_sama`): server **menghitung ulang** pratinjau saat itu; layar persetujuan
+   menampilkan angka terbaru dan mengirim sidik angka yang dilihat penyetuju — bila berbeda dari hitungan server (ada kas
+   baru sejak dimuat) → 409 "Angka berubah, muat ulang". Lalu, dalam satu langkah berklaim: jurnal pindah saldo
+   **bertanggal hari persetujuan** terposting, `account_id` kas lama tunggal ditulis, dan mode per rekening PT menyala.
+   Sejak itu kas baru PT masuk sub-akun. Tolak → tidak ada yang berubah selain sub-akun kosong. Tanggal pindah tidak boleh
+   mundur (kas di antara tanggal mundur dan persetujuan akan terbelah).
 - Idempoten per PT: PT yang sudah aktif tidak bisa disiapkan lagi; usulan yang masih menunggu menghalangi usulan kedua.
 - Rekening baru di PT yang sudah aktif mendapat sub-akun langsung saat dibuat (saldo awal dijurnal ke sub-akunnya).
 
@@ -139,6 +159,13 @@ Layar **Kas & Bank › Akun per rekening** (pemegang `accounting.manage`), per P
 5. **Kontrol `kontrol.pindah_dana` bawaan 1 orang** (perpindahan internal); bisa dinaikkan per PT.
 6. **Kategori Transfer/Top-up ditutup untuk kas manual baru di server**; kas lama tidak disentuh.
 7. **Izin memakai `cash.create`/`cash.delete`/`cash.approve`/`accounting.manage` yang ada**; tidak ada izin baru.
+8. **Builder check 27 Nov — lima jawaban:** (1) semua jalur yang menulis akun kas sendiri (antar-PT, gaji lama, refund
+   retur, penjualan tunai) diubah ke satu pembantu akun kas + penjaga statis; (2) angka pindah saldo dihitung ulang saat
+   disetujui dengan sidik angka, tanggal = hari persetujuan, tanpa tanggal mundur; (3) pindah saldo ditolak selama ada
+   posting kas gagal/tertunda, dan pembalik kas lama sesudah aktif memakai sub-akun; (4) saldo dipindah per akun asal yang
+   terbaca dari jurnal per rekening, dan Finance boleh memilih akun bagan PT yang sudah ada untuk suatu rekening; (5) kas
+   lama tanpa rekening ikut rekening hanya bila tunggal (dokumen kasnya diberi `account_id` saat disetujui), selain itu
+   tetap di akun lama. Menautkan sisa itu belakangan = di luar bagian 1.
 
 ## 8. Untuk pemilik (tidak menghalangi pembangunan)
 
