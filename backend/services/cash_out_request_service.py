@@ -15,6 +15,8 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-2-kas-manual-design.md` �
   `uq_cor_idem_key`). Kiriman ulang berkunci sama → pengajuan yang SAMA dalam keadaan terkini (termasuk tautan kas bila
   sudah disetujui), tidak pernah pengajuan kedua atau kas langsung (§7.8.5); isi berbeda dengan kunci sama → 409.
   Jawaban 202 membawa `X-Idempotency-Retry` supaya penyangga idempotensi tidak memutar jawaban lama yang basi.
+  Kunci klien berawalan id pengajuan (`pkk_`) ditolak rute kas manual (400 `PESAN_KUNCI_DICADANGKAN`): kas pengajuan
+  ber-`ref_id` = id pengajuan dan kas langsung ber-`ref_id` = kunci klien tidak boleh bertabrakan.
 * **Setujui** (`cash.approve`) — pengaju tidak boleh menyetujui sendiri (`dual_control.tolak_bila_pelaku_sama`,
   penilaian dua orang DIBEKUKAN: batas tidak dinilai ulang, §7.8.3); Admin pun tidak (bawaan
   `kontrol.admin_tetap_dua_orang`, §7 butir 4 — tetap pengaturan). PERIKSA ulang tanpa tulisan: kategori masih boleh,
@@ -44,6 +46,7 @@ from starlette.responses import JSONResponse
 
 from core_utils import new_id, now_iso, safe_doc
 from db import db
+from pagination import MAX_PAGE_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +63,14 @@ PESAN_TIDAK_ADA = "Pengajuan kas keluar tidak ditemukan."
 PESAN_ALASAN_TOLAK = f"Alasan penolakan wajib diisi (minimal {ALASAN_MIN} huruf)."
 #: Sama persis dengan penyangga idempotensi (`idempotency.py`, IDEMPOTENCY_KEY_REUSED).
 PESAN_KUNCI_BEDA = "Kunci idempotensi sudah dipakai untuk isi permintaan yang berbeda."
+#: Gelombang perbaikan akhir (Minor 1) — awalan id pengajuan (`_id_dari_kunci`, `new_id("pkk")`). Kas yang terbit dari
+#: pengajuan ber-`ref_id` = id pengajuan, sedangkan kas manual langsung ber-`ref_id` = Idempotency-Key klien: keduanya
+#: satu ruang nama. Kunci klien berawalan ini ditolak di pintu kas manual (`kunci_dicadangkan`), jadi kunci klien tidak
+#: pernah sama dengan id pengajuan (dulu: kas kecil berkunci id pengajuan menunggu membuat Setujui/Tolak/Batal macet,
+#: dan berkunci id pengajuan disetujui dicocokkan ke kas pengajuannya).
+AWALAN_ID = "pkk_"
+PESAN_KUNCI_DICADANGKAN = (f'Kunci idempotensi berawalan "{AWALAN_ID}" dipakai untuk id pengajuan kas keluar. Kirim '
+                           "ulang dengan kunci lain.")
 #: §7.8.1 — tanpa jalan pintas: minta orang lain yang berizin; batas/aturan bisa diubah Admin di Pusat Pengaturan.
 PESAN_ORANG_KEDUA = ("Kas keluar manual ini harus disetujui orang lain: Anda yang mengajukannya. Minta orang lain yang "
                      "berizin menyetujui kas. Admin dapat menaikkan batas atau mengubah aturan ini di Pengaturan › "
@@ -190,7 +201,8 @@ async def daftar(entity_ids: List[str], status: Optional[str] = None, *, q: str 
     if teks:
         rx = {"$regex": re.escape(teks), "$options": "i"}
         query["$or"] = [{"number": rx}, {"description": rx}, {"category": rx}, {"pengaju.name": rx}]
-    page, page_size = max(1, int(page or 1)), max(1, min(int(page_size or 25), 100))
+    # Minor 2 — batas ukuran halaman = `pagination.MAX_PAGE_SIZE` (200; `usePagedList.fetchAll` memintanya untuk Unduh).
+    page, page_size = max(1, int(page or 1)), max(1, min(int(page_size or 25), MAX_PAGE_SIZE))
     total = await db[COLL].count_documents(query)
     rows = await db[COLL].find(query, {"_id": 0}).sort([("created_at", -1), ("id", -1)]) \
         .skip((page - 1) * page_size).to_list(page_size)
@@ -216,7 +228,13 @@ def sidik_isian(isian: Dict[str, Any], entity_id: str) -> str:
 
 
 def _id_dari_kunci(entity_id: str, kunci: str) -> str:
-    return "pkk_" + hashlib.sha1(f"{entity_id}|{kunci}".encode("utf-8")).hexdigest()[:24]
+    return AWALAN_ID + hashlib.sha1(f"{entity_id}|{kunci}".encode("utf-8")).hexdigest()[:24]
+
+
+def kunci_dicadangkan(kunci: str) -> bool:
+    """Kunci klien yang berawalan id pengajuan (`AWALAN_ID`, tanpa beda huruf besar/kecil) → True: ditolak rute kas
+    manual (400 `PESAN_KUNCI_DICADANGKAN`) sebelum pemeriksaan apa pun."""
+    return (kunci or "").strip().lower().startswith(AWALAN_ID)
 
 
 def _cocokkan_sidik(doc: Dict[str, Any], sidik: str) -> None:
@@ -238,12 +256,14 @@ async def kiriman_ulang(entity_id: str, kunci: str, sidik: str = "") -> Optional
 
 
 async def kas_keluar_langsung_sama(entity_id: str, kunci: str, sidik: str, *, amount: float, account_id: str,
-                                   category: str, txn_date: str) -> bool:
+                                   category: str, txn_date: str) -> str:
     """Kunci ini sudah menjadi kas KELUAR manual LANGSUNG di PT ini (sebelum batas/kontrol berubah) dengan isi yang
-    SAMA → True: kiriman ulangnya tetap kas yang sama (`create_cash` memakai ulang kas ber-rujukan `manual|kunci|out`),
-    bukan pengajuan baru di samping kas itu. Tidak ada kas keluar hidup berkunci ini di PT ini → False (jalur biasa:
-    pengajuan bila di atas batas). Ada tetapi isinya berbeda → 409 `PESAN_KUNCI_BEDA` (bukan kas kedua, bukan
-    pengajuan).
+    SAMA → **id kas itu**: kiriman ulangnya tetap kas yang sama, bukan pengajuan baru di samping kas itu. Rute WAJIB
+    meneruskan id ini ke `create_cash(txn_id=…)` — gelombang perbaikan akhir (R1): tanpa itu `create_cash` mencari id
+    sendiri, dan kas yang dianulir di sela pencocokan dan pencarian itu membuat kas KELUAR BARU di id generasi
+    berikutnya (`…#2`) di atas batas tanpa orang kedua; dengan id itu kas yang sudah dianulir → `CashRejected` 409
+    "… sudah dibatalkan". Tidak ada kas keluar hidup berkunci ini di PT ini → "" (jalur biasa: pengajuan bila di atas
+    batas). Ada tetapi isinya berbeda → 409 `PESAN_KUNCI_BEDA` (bukan kas kedua, bukan pengajuan).
 
     Perbaikan putaran 1 (Critical) — hanya kas KELUAR yang dihitung: kas MASUK berkunci sama ber-id lain (`create_cash`
     menurunkan id dari arah), jadi dulu kas keluar di atas batas berkunci kas masuk terjurnal langsung tanpa orang
@@ -252,12 +272,12 @@ async def kas_keluar_langsung_sama(entity_id: str, kunci: str, sidik: str, *, am
     tanggal (bila dikirim)."""
     kunci = (kunci or "").strip()[:120]
     if not kunci:
-        return False
+        return ""
     kas = await db.cash_transactions.find_one(
         {"entity_id": entity_id, "ref_type": "manual", "ref_id": kunci, "direction": "out", "status": {"$ne": "void"}},
-        {"_id": 0, "amount": 1, "account_id": 1, "category": 1, "txn_date": 1, "sidik_kiriman": 1})
+        {"_id": 0, "id": 1, "amount": 1, "account_id": 1, "category": 1, "txn_date": 1, "sidik_kiriman": 1})
     if not kas:
-        return False
+        return ""
     if kas.get("sidik_kiriman"):
         sama = kas["sidik_kiriman"] == sidik
     else:
@@ -267,7 +287,7 @@ async def kas_keluar_langsung_sama(entity_id: str, kunci: str, sidik: str, *, am
                 and (not tgl or (kas.get("txn_date") or "") == tgl))
     if not sama:
         raise _galat(409, PESAN_KUNCI_BEDA, HEADER_ULANG)
-    return True
+    return kas.get("id") or ""
 
 
 def jawab_diajukan(req: Dict[str, Any]) -> JSONResponse:

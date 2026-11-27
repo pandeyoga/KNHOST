@@ -817,9 +817,13 @@ async def _prep_cash_manual(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any
         raise _err(400, MSG_REKENING_KAS)
     saldo = _money(acc.get("balance"))
     after = round(saldo - amount if direction == "out" else saldo + amount, 2)
-    rows = [_row(f"Saldo {_acc_label(acc)}", saldo, after, "money"),
-            _row("Arah", "—", CASH_DIRECTION_LABEL[direction]), _row("Kategori", "—", category or "—"),
-            _row("Keterangan", "—", desc or "—"), _row("Tanggal transaksi", "—", tgl, "date")]
+    # Kas & Bank 2 (perbaikan akhir, Minor 4) — kas keluar di atas batas PT menjadi PENGAJUAN (rute kas → 202): rencana
+    # kartu mengatakannya lebih dulu (kalimat sama dengan catatan form kas), dan saldo baru berkurang sesudah disetujui.
+    aju = await _catatan_kas_diajukan(api.entity_header, amount) if direction == "out" else ""
+    rows = ([_row("Persetujuan", "—", aju)] if aju else []) + [
+        _row(f"Saldo {_acc_label(acc)}" + (" (sesudah disetujui)" if aju else ""), saldo, after, "money"),
+        _row("Arah", "—", CASH_DIRECTION_LABEL[direction]), _row("Kategori", "—", category or "—"),
+        _row("Keterangan", "—", desc or "—"), _row("Tanggal transaksi", "—", tgl, "date")]
     return {"args": {"account_id": acc_id, "cash_type": account_cash_type(acc), "direction": direction,
                      "amount": amount, "category": category, "description": desc, "txn_date": tgl},
             "plan": {"summary": f"{CASH_DIRECTION_LABEL[direction]} {rupiah(amount)} di {_acc_label(acc)}"
@@ -829,6 +833,19 @@ async def _prep_cash_manual(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any
             "fingerprint_source": [{"path": "/api/bank-accounts", "params": {},
                                     "pick": {"key": "id", "ids": [acc_id],
                                              "fields": ["is_active", "entity_id", "cash_type"]}}]}
+
+
+async def _catatan_kas_diajukan(entity_id: str, amount: float) -> str:
+    """Kalimat rencana bila kas KELUAR manual ini akan menjadi pengajuan (kontrol `kas_keluar_manual`, keputusan sama
+    dengan rute kas: `dual_control.butuh_orang_kedua`); "" bila langsung tercatat. Kalimatnya = catatan form Catat
+    Transaksi (`cashOutShared.butuhPersetujuan`)."""
+    from services import dual_control as _dc
+    if not await _dc.butuh_orang_kedua("kas_keluar_manual", entity_id, amount):
+        return ""
+    n = await _dc.nilai_aksi("kas_keluar_manual", entity_id)
+    if n["min_orang"] == "2":
+        return "Semua kas keluar manual PT ini diajukan untuk disetujui orang kedua."
+    return f"Di atas {rupiah(n['batas_nominal'] or 0)} — akan diajukan untuk disetujui orang kedua."
 
 
 def _build_cash(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
@@ -843,8 +860,9 @@ def _cash_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[
         q = r["request"]
         return {"document": {"type": "cash_out_request", "label": "Pengajuan kas keluar", "id": q.get("id", ""),
                              "number": q.get("number", ""),
-                             "link": {"view": "cash-management", "tab": "", "focus_type": "cash_out_request",
-                                      "focus_id": q.get("id", ""), "number": q.get("number", "")}},
+                             "link": {"view": "cash-management", "nav_id": "cash-bank", "tab": "",
+                                      "focus_type": "cash_out_request", "focus_id": q.get("id", ""),
+                                      "number": q.get("number", "")}},
                 "gl_status": None, "message": f"{MSG_KAS_DIAJUKAN} {q.get('number', '')}".strip()}
     return {"document": {"type": "cash_transaction", "label": "Transaksi Kas", "id": r.get("id", ""),
                          "number": r.get("number", ""), "link": link_of("cash_transaction", r)},

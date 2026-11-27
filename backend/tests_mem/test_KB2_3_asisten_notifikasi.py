@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from test_KB2_2_pengajuan import _ajukan, _atur, _kirim, _pt, URL_P
+from test_KB2_2_pengajuan import _ajukan, _kirim, _pt, URL_P
 
 pytestmark = pytest.mark.anyio
 
@@ -21,8 +21,12 @@ IZIN_KARTU = {"ai": ["view"], "ai_finance": ["view", "pay"], "cash": ["view", "c
 
 @pytest.fixture(scope="module", autouse=True)
 def _peran_segar(klien):
-    """Peran uji disimpan per modul di `_PERAN` (KB2_2) — basi bila modul lain sudah memakainya di DB sebelumnya."""
+    """Peran uji disimpan per modul di `_PERAN` (KB2_2) — basi bila modul lain sudah memakainya di DB sebelumnya.
+    Dikosongkan sebelum DAN sesudah modul ini (tiap modul mulai dari database kosong)."""
     import test_KB2_2_pengajuan as dua
+    dua._PERAN.clear()
+    _PERAN_KARTU.clear()
+    yield
     dua._PERAN.clear()
     _PERAN_KARTU.clear()
 
@@ -133,6 +137,11 @@ async def test_KB2_3_K1_kartu_di_atas_batas_menjadi_pengajuan(klien, db, akun, s
     pt = await _pt(akun, sesi, peran_tanpa_acuan)
     pg = await _siap_kartu(klien, akun, sesi, peran_tanpa_acuan, kepala_admin, pt)
     k = await _kartu(klien, pg["h"], pt["rek"]["BCA"], 3_000_000)
+    # Perbaikan akhir (Minor 4) — rencana kartu mengatakan lebih dulu bahwa kas ini menjadi pengajuan
+    rows = k["plan"]["rows"]
+    assert (rows[0]["label"], rows[0]["after"]) == (
+        "Persetujuan", "Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua."), rows
+    assert rows[1]["label"].startswith("Saldo ") and rows[1]["label"].endswith(" (sesudah disetujui)"), rows
     jurnal0 = await db.journal_entries.count_documents({"entity_id": pt["id"]})   # jurnal saldo awal rekening
     r = await _konfirmasi(klien, pg["h"], k, 3_000_000)
     assert r.status_code == 200, r.text
@@ -145,6 +154,8 @@ async def test_KB2_3_K1_kartu_di_atas_batas_menjadi_pengajuan(klien, db, akun, s
     assert res["message"] == f"Diajukan — menunggu persetujuan kas keluar {req['number']}"
     assert res["document"]["type"] == "cash_out_request" and res["document"]["id"] == req["id"]
     assert res["document"]["number"] == req["number"]
+    assert res["document"]["link"] == {"view": "cash-management", "nav_id": "cash-bank", "tab": "",   # Minor 9
+                                       "focus_type": "cash_out_request", "focus_id": req["id"], "number": req["number"]}
     assert await db.cash_transactions.count_documents({"entity_id": pt["id"], "ai_card_id": k["id"]}) == 0
     assert await db.journal_entries.count_documents({"entity_id": pt["id"]}) == jurnal0
     # pemegang cash.approve PT itu (aju, setuju, setuju2); pengaju kartu (tanpa izin itu) tidak termasuk
@@ -156,6 +167,8 @@ async def test_KB2_3_K2_kartu_di_bawah_batas_seperti_dulu(klien, db, akun, sesi,
     pt = await _pt(akun, sesi, peran_tanpa_acuan)
     pg = await _siap_kartu(klien, akun, sesi, peran_tanpa_acuan, kepala_admin, pt)
     k = await _kartu(klien, pg["h"], pt["rek"]["BCA"], 250_000)
+    assert [x["label"] for x in k["plan"]["rows"] if x["label"] == "Persetujuan"] == []   # langsung tercatat
+    assert not k["plan"]["rows"][0]["label"].endswith("(sesudah disetujui)")
     r = await _konfirmasi(klien, pg["h"], k, 250_000)
     assert r.status_code == 200 and r.json()["status"] == "confirmed", r.text
     res = r.json()["result"]

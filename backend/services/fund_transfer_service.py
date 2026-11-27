@@ -40,6 +40,7 @@ from fastapi import HTTPException
 
 from core_utils import from_cents, new_id, now_iso, safe_doc, to_cents
 from db import db
+from pagination import MAX_PAGE_SIZE
 
 COLL = "fund_transfers"
 REF_TYPE = "fund_transfer"
@@ -306,7 +307,8 @@ async def daftar(entity_ids: List[str], *, status: str = "", q: str = "", page: 
     if teks:
         rx = {"$regex": re.escape(teks), "$options": "i"}
         query["$or"] = [{"number": rx}, {"catatan": rx}, {"rekening_asal_nama": rx}, {"rekening_tujuan_nama": rx}]
-    page, page_size = max(1, int(page or 1)), max(1, min(int(page_size or 25), 100))
+    # Batas ukuran halaman = `pagination.MAX_PAGE_SIZE` (200; `usePagedList.fetchAll` memintanya untuk Unduh CSV).
+    page, page_size = max(1, int(page or 1)), max(1, min(int(page_size or 25), MAX_PAGE_SIZE))
     total = await db[COLL].count_documents(query)
     rows = await db[COLL].find(query, {"_id": 0}).sort([("tanggal_kirim", -1), ("created_at", -1), ("id", -1)]) \
         .skip((page - 1) * page_size).to_list(page_size)

@@ -24,6 +24,7 @@ from fastapi import APIRouter, Query, Request
 
 from dependencies import audit, denied, has_permission, require_any_permission, require_permission
 from entity_scope import entity_ctx, guard_doc, resolve_requested_entity, resolve_scope_ids
+from pagination import MAX_PAGE_SIZE
 from schemas_finance import CashOutRequestCancel, CashOutRequestReject
 from services import approval_policy_service, cash_out_request_service as cors
 
@@ -45,7 +46,7 @@ def _jejak_audit(res: Dict[str, Any]) -> Dict[str, Any]:
 @router.get("")
 async def list_cash_out_requests(request: Request, entity_id: str = Query(None), status: str = Query(""),
                                  q: str = Query(""), page: int = Query(1, ge=1),
-                                 page_size: int = Query(25, ge=1, le=100)) -> Dict[str, Any]:
+                                 page_size: int = Query(25, ge=1, le=MAX_PAGE_SIZE)) -> Dict[str, Any]:
     actor = await require_permission(request, "cash", "view")
     ids = resolve_scope_ids(await entity_ctx(request), entity_id)
     return await cors.daftar(ids, status or None, q=q, page=page, page_size=page_size, actor=actor)

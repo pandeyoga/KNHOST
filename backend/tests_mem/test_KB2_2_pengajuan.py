@@ -34,6 +34,16 @@ _urut = itertools.count(1)
 _PERAN: dict = {}
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _peran_segar(klien):
+    """`_PERAN` menyimpan id peran uji yang hanya ada di database modul yang membuatnya (tiap modul mulai dari database
+    kosong). Dikosongkan sebelum DAN sesudah modul ini, supaya urutan modul apa pun di satu proses (KB2_3/KB2_4 lalu
+    KB2_2, atau sebaliknya) tidak memakai id peran dari database modul lain."""
+    _PERAN.clear()
+    yield
+    _PERAN.clear()
+
+
 def _hari(geser: int = 0) -> str:
     from services.book_date import tanggal_buku
     return (date.fromisoformat(tanggal_buku()) + timedelta(days=geser)).isoformat()
@@ -671,3 +681,223 @@ async def test_KB2_2_U14_katalog_nomor_indeks(aplikasi):
     assert "cash_out_requests" in SCOPED_COLLECTIONS
     from idempotency import is_idempotent_path
     assert is_idempotent_path("/api/cash-out-requests/pkk_x/approve")
+
+
+# ═══ 15. Gelombang perbaikan akhir (R1) — kiriman ulang berkunci sama berbalapan dengan anulir kas lamanya ══════════
+def _anulir_di_sela(db, monkeypatch, kas_id: str) -> dict:
+    """Anulir kas `kas_id` tepat di dalam `create_cash`: panggilan `periksa_rekening` KEDUA milik `create_cash` (yang
+    pertama milik rute) — sela antara pencocokan kas lama di rute dan pencarian id kas di `create_cash`."""
+    from services import cash_ledger as cl
+    asli, hit = cl.periksa_rekening, {"n": 0}
+
+    async def _palsu(*a, **k):
+        hit["n"] += 1
+        if hit["n"] == 2:
+            await db.cash_transactions.update_one({"id": kas_id}, {"$set": {"status": "void"}})
+        return await asli(*a, **k)
+
+    monkeypatch.setattr(cl, "periksa_rekening", _palsu)
+    return hit
+
+
+@pytest.mark.parametrize("tanpa_sidik", [False, True], ids=["bersidik", "kas_lama_tanpa_sidik"])
+async def test_KB2_2_U15a_kirim_ulang_berbalapan_anulir_tidak_membuat_kas_baru(
+        klien, db, akun, sesi, peran_tanpa_acuan, monkeypatch, tanpa_sidik):
+    """Kas keluar langsung Rp 800.000 (batas lama), batas PT diturunkan ke Rp 500.000, lalu kunci yang sama dikirim
+    ulang sementara kas lamanya dianulir di sela → 409 "sudah dibatalkan", BUKAN kas keluar baru di atas batas tanpa
+    orang kedua (dulu: id generasi berikutnya `…#2`, terjurnal, nol pengajuan). Kas lama tanpa sidik dicocokkan per
+    isi."""
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    kunci = f"kb22-u15a-{int(tanpa_sidik)}"
+    r = await _kirim(klien, pt, 800_000, kunci=kunci)
+    assert r.status_code == 200, r.text
+    kas_id, nomor = r.json()["id"], r.json()["number"]
+    if tanpa_sidik:
+        await db.cash_transactions.update_one({"id": kas_id}, {"$unset": {"sidik_kiriman": ""}})
+    await _atur("kontrol.kas_keluar_manual.batas_nominal", 500_000, pt["id"])
+    jurnal0 = await db.journal_entries.count_documents({"entity_id": pt["id"]})
+    hit = _anulir_di_sela(db, monkeypatch, kas_id)
+    r = await klien.post(URL, headers={**pt["o"]["aju2"]["h"], "Idempotency-Key": kunci}, json=_isi(pt, 800_000))
+    assert hit["n"] == 2, hit                       # anulir benar-benar terjadi di dalam `create_cash`
+    assert r.status_code == 409 and r.json()["detail"] == (
+        f"Transaksi kas {nomor} untuk transaksi manual ini sudah dibatalkan. Muat ulang lalu periksa."), r.text
+    assert await db.cash_transactions.count_documents(
+        {"ref_type": "manual", "ref_id": kunci, "status": {"$ne": "void"}}) == 0
+    assert await _keluar_berkunci(db, kunci) == 1   # hanya kas lama (dianulir)
+    assert await db.cash_out_requests.count_documents({"entity_id": pt["id"]}) == 0
+    assert await db.journal_entries.count_documents({"entity_id": pt["id"]}) == jurnal0
+    # Kiriman ulang berikutnya (rekaman penyangga lain: PT dari isian) → kas lama sudah dibatalkan → pengajuan (orang
+    # kedua), tetap bukan kas langsung.
+    h = {**{k: v for k, v in pt["o"]["aju2"]["h"].items() if k != "X-Entity-Id"}, "Idempotency-Key": kunci}
+    r = await klien.post(URL, headers=h, json={**_isi(pt, 800_000), "entity_id": pt["id"]})
+    assert r.status_code == 202 and r.json()["request"]["status"] == "menunggu_persetujuan", r.text
+    assert await _keluar_berkunci(db, kunci) == 1
+
+
+# ═══ 15b. Minor 1 — id pengajuan dan kunci klien tidak boleh bertabrakan (awalan `pkk_` milik id pengajuan) ═════════
+async def test_KB2_2_U15b_kunci_id_pengajuan_menunggu_ditolak(klien, db, akun, sesi, peran_tanpa_acuan):
+    """(B) Kunci = id pengajuan MENUNGGU: dulu kas kecil keluar/masuk ber-`ref_id` pengajuan itu tercatat, sehingga
+    Setujui (409 "sudah tercatat dengan nominal Rp 10.000"), Tolak, dan Batal macet. Kini kunci berawalan `pkk_` ditolak
+    400 sebelum pemeriksaan apa pun: tanpa kas, tanpa pengajuan; pengajuannya tetap bisa disetujui."""
+    from services import cash_out_request_service as cors
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    p = await _ajukan(klien, pt, 3_000_000, kunci="kb22-u15b-menunggu")
+    assert p["id"].startswith("pkk_")
+    sebelum = await _potret(klien, db, pt)
+    for arah, siapa in (("out", "aju2"), ("in", "aju")):   # satu orang per arah: rekaman penyangga idempotensi sendiri
+        for kunci in (p["id"], "pkk_" + "0" * 12, "  PKK_lain  "):
+            r = await _kirim(klien, pt, 10_000, siapa=siapa, kunci=kunci, arah=arah)
+            assert r.status_code == 400 and r.json()["detail"] == cors.PESAN_KUNCI_DICADANGKAN, (arah, kunci, r.text)
+    assert cors.PESAN_KUNCI_DICADANGKAN == (
+        'Kunci idempotensi berawalan "pkk_" dipakai untuk id pengajuan kas keluar. Kirim ulang dengan kunci lain.')
+    assert await _potret(klien, db, pt) == sebelum
+    assert await _kas_pengajuan(db, p["id"]) == []
+    assert await db.cash_out_requests.count_documents({"entity_id": pt["id"]}) == 1
+    # Pengajuan tidak macet: Setujui menuntaskannya dengan kas pengajuan sendiri.
+    r = await klien.post(f"{URL_P}/{p['id']}/approve", headers=pt["o"]["setuju"]["h"])
+    assert r.status_code == 200 and r.json()["status"] == "disetujui" and r.json()["terbit_error"] == "", r.text
+    assert [t["id"] for t in await _kas_pengajuan(db, p["id"])] == [r.json()["cash_id"]]
+
+
+async def test_KB2_2_U15c_kunci_id_pengajuan_disetujui_ditolak(klien, db, akun, sesi, peran_tanpa_acuan, monkeypatch):
+    """(E, varian R1 tanpa batas yang diturunkan) Kunci = id pengajuan DISETUJUI, isi sama: dulu dicocokkan ke kas
+    pengajuannya (kas yang sama), dan bila kas itu dianulir di sela terbit kas langsung Rp 3.000.000 tanpa orang kedua
+    (tanpa nomor PKK, pengajuan menunjuk kas yang dianulir). Kini ditolak 400 — tanpa maupun dengan anulir di sela."""
+    from services import cash_out_request_service as cors
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    p = await _ajukan(klien, pt, 3_000_000, kunci="kb22-u15c")
+    r = await klien.post(f"{URL_P}/{p['id']}/approve", headers=pt["o"]["setuju"]["h"])
+    assert r.status_code == 200, r.text
+    kas_id = r.json()["cash_id"]
+    # Kunci id pengajuan yang sudah disetujui, isi sama: ditolak — tanpa anulir maupun dengan anulir di sela.
+    # Tanpa X-Entity-Id (PT dari isian) = rekaman penyangga idempotensi baru: yang menjawab rute, bukan rekaman lama.
+    isi = {**_isi(pt, 3_000_000, description=p["description"]), "entity_id": pt["id"]}
+
+    def _tanpa_entitas(siapa):
+        return {**{k: v for k, v in pt["o"][siapa]["h"].items() if k != "X-Entity-Id"}, "Idempotency-Key": p["id"]}
+
+    hit = _anulir_di_sela(db, monkeypatch, kas_id)
+    r = await klien.post(URL, headers=_tanpa_entitas("aju"), json=isi)
+    assert r.status_code == 400 and r.json()["detail"] == cors.PESAN_KUNCI_DICADANGKAN, r.text
+    assert hit["n"] == 0                              # ditolak sebelum rekening diperiksa: tidak ada sela
+    monkeypatch.undo()
+    r = await klien.post(URL, headers=_tanpa_entitas("aju2"), json=isi)
+    assert r.status_code == 400 and r.json()["detail"] == cors.PESAN_KUNCI_DICADANGKAN, r.text
+    assert [t["id"] for t in await _kas_pengajuan(db, p["id"])] == [kas_id]
+    d = await db.cash_out_requests.find_one({"id": p["id"]}, {"_id": 0})
+    assert (d["status"], d["cash_id"]) == ("disetujui", kas_id)
+    assert (await db.cash_transactions.find_one({"id": kas_id}))["status"] == "posted"
+
+
+# ═══ 16. Minor 6 (T2-M3) — Setujui dengan jurnal gagal: kas tetap tercatat (Posting Gagal), pengajuan disetujui ═════
+async def test_KB2_2_U16_setujui_jurnal_gagal_kas_tetap_tercatat(
+        klien, db, akun, sesi, peran_tanpa_acuan, paksa_jurnal_gagal):
+    from services import cash_ledger
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    p = await _ajukan(klien, pt, 3_000_000, kunci="kb22-u16")
+    jurnal0 = await db.journal_entries.count_documents({"entity_id": pt["id"]})
+    async with paksa_jurnal_gagal("akun", entity_id=pt["id"], kode_akun=OPERASIONAL):
+        r = await klien.post(f"{URL_P}/{p['id']}/approve", headers=pt["o"]["setuju"]["h"])
+    assert r.status_code == 200, r.text
+    j = r.json()
+    [kas] = await _kas_pengajuan(db, p["id"])
+    assert (j["status"], j["cash_id"], j["cash_number"], j["terbit_error"]) == (
+        "disetujui", kas["id"], kas["number"], "")
+    assert (kas["status"], kas["gl_status"], kas["amount"]) == ("posted", "failed", 3_000_000.0) and kas["gl_error"]
+    assert j["kas"]["gl_status"] == "failed" and j["kas"]["journal_number"] == ""
+    d = await db.cash_out_requests.find_one({"id": p["id"]}, {"_id": 0})
+    assert d.get("saga_lock") is None and d["status"] == "disetujui"
+    assert await db.journal_entries.count_documents({"entity_id": pt["id"]}) == jurnal0
+    # Ulang posting (akun dipulihkan) → jurnal kas terbit; pengajuan menampilkan jurnalnya, tanpa kas kedua.
+    await cash_ledger.ensure_posted(kas["id"])
+    r = await klien.get(f"{URL_P}/{p['id']}", headers=pt["o"]["lihat"]["h"])
+    assert r.json()["kas"]["gl_status"] == "posted" and r.json()["kas"]["journal_number"], r.text
+    assert len(await _kas_pengajuan(db, p["id"])) == 1
+
+
+# ═══ 17. Important 2 — kunci saga yang menggantung (proses mati di tengah Setujui) bisa dilepas di Kunci Saga ════════
+async def test_KB2_2_U17_kunci_menggantung_dilepas_lewat_kunci_saga(
+        klien, db, akun, sesi, peran_tanpa_acuan, kepala_admin, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    from routers.saga_locks import LOCKED_COLLECTIONS
+    from services import atomic_claim, cash_ledger, saga_lock_watch
+    from services import cash_out_request_service as cors
+    for koleksi in ("cash_out_requests", "fund_transfers", "cash_account_cutovers"):
+        assert koleksi in LOCKED_COLLECTIONS, koleksi
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    p = await _ajukan(klien, pt, 2_400_000, kunci="kb22-u17")
+    # Proses mati SESUDAH kas tercatat (restart/deploy di tengah persetujuan): `finally` tidak sempat melepas kunci.
+    asli = cash_ledger.create_cash
+
+    async def _mati(**kw):
+        await asli(**kw)
+        raise RuntimeError("proses mati (uji)")
+
+    async def _tanpa_lepas(*a, **k):
+        return None
+
+    monkeypatch.setattr(cash_ledger, "create_cash", _mati)
+    monkeypatch.setattr(atomic_claim, "release", _tanpa_lepas)
+    with pytest.raises(RuntimeError):
+        await cors.setujui(p["id"], PENYETUJU)
+    monkeypatch.undo()
+    [kas] = await _kas_pengajuan(db, p["id"])
+    lama = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
+    await db.cash_out_requests.update_one({"id": p["id"]}, {"$set": {"saga_lock.started_at": lama}})
+    hs = pt["o"]["setuju"]["h"]
+    # Layar: baris "sedang diproses"; Setujui → 409 yang menunjuk Kunci Saga
+    r = await klien.get(URL_P, headers=hs, params={"status": "menunggu_persetujuan"})
+    assert [x["dalam_proses"] for x in r.json()["items"] if x["id"] == p["id"]] == [True], r.text
+    r = await klien.post(f"{URL_P}/{p['id']}/approve", headers=hs)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "SAGA_IN_PROGRESS", r.text
+    assert "Pengaturan › Kunci Saga" in r.json()["detail"]["message"]
+    # Kunci Saga: terlihat (dengan nomor PKK), dipantau, efek hilir (kas pengajuan) terlihat saat diperiksa
+    r = await klien.get("/api/saga-locks", headers=kepala_admin)
+    assert r.status_code == 200, r.text
+    baris = [x for x in r.json() if x["collection"] == "cash_out_requests" and x["id"] == p["id"]]
+    assert len(baris) == 1 and baris[0]["number"] == p["number"] and baris[0]["status"] == "menunggu_persetujuan"
+    assert baris[0]["saga_lock"]["action"] == "cash_out_request_issue"
+    macet = await saga_lock_watch.stuck_locks(10)
+    assert [(x["collection"], x["entity_id"]) for x in macet if x["id"] == p["id"]] == [("cash_out_requests", pt["id"])]
+    r = await klien.get(f"/api/saga-locks/cash_out_requests/{p['id']}/inspect", headers=kepala_admin)
+    assert r.status_code == 200 and r.json()["active"] is False, r.text
+    assert {"collection": "cash_transactions", "count": 1, "samples": [kas["number"]]} in r.json()["effects"], r.json()
+    r = await klien.post(f"/api/saga-locks/cash_out_requests/{p['id']}/release", headers=kepala_admin,
+                         json={"reason": "uji KB22 proses mati di tengah"})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "SAGA_EFFECTS_PRESENT", r.text
+    r = await klien.post(f"/api/saga-locks/cash_out_requests/{p['id']}/release", headers=kepala_admin,
+                         json={"reason": "uji KB22 proses mati di tengah", "acknowledge_effects": True})
+    assert r.status_code == 200 and r.json()["released"] is True, r.text
+    # Sesudah dilepas: Setujui lagi menuntaskan pengajuan dengan kas yang SAMA (tanpa kas ganda)
+    r = await klien.get(URL_P, headers=hs, params={"status": "menunggu_persetujuan"})
+    assert [x["dalam_proses"] for x in r.json()["items"] if x["id"] == p["id"]] == [False], r.text
+    r = await klien.post(f"{URL_P}/{p['id']}/approve", headers=hs)
+    assert r.status_code == 200 and r.json()["status"] == "disetujui" and r.json()["cash_id"] == kas["id"], r.text
+    assert [t["id"] for t in await _kas_pengajuan(db, p["id"])] == [kas["id"]]
+    # Kas & Bank 1: Pindah Dana dan Pindah Saldo Kas per Rekening ikut terlihat dan bisa dilepas
+    for koleksi, did in (("fund_transfers", "ft_uji_kb22_u17"), ("cash_account_cutovers", "cut_uji_kb22_u17")):
+        await db[koleksi].insert_one({"id": did, "number": f"UJI/{koleksi}", "status": "menunggu",
+                                      "entity_id": pt["id"],
+                                      "saga_lock": {"action": "uji", "by": "uji", "started_at": lama, "token": "lk_u"}})
+        r = await klien.get("/api/saga-locks", headers=kepala_admin)
+        assert [x["id"] for x in r.json() if x["collection"] == koleksi] == [did], r.text
+        r = await klien.post(f"/api/saga-locks/{koleksi}/{did}/release", headers=kepala_admin,
+                             json={"reason": "uji KB22 kunci menggantung"})
+        assert r.status_code == 200, r.text
+        assert "saga_lock" not in (await db[koleksi].find_one({"id": did}))
+
+
+# ═══ 18. Minor 2 — Unduh CSV "Semua hasil filter" (`fetchAll`, page_size = MAX_PAGE_SIZE 200) tidak lagi 422 ═════════
+async def test_KB2_2_U18_daftar_menerima_ukuran_halaman_unduh(klien, db, akun, sesi, peran_tanpa_acuan):
+    from pagination import MAX_PAGE_SIZE
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    p = await _ajukan(klien, pt, 3_000_000, kunci="kb22-u18")
+    hl = pt["o"]["lihat"]["h"]
+    for url in (URL_P, "/api/fund-transfers"):
+        r = await klien.get(url, headers=hl, params={"status": "menunggu_persetujuan", "entity_id": pt["id"],
+                                                     "page": 1, "page_size": MAX_PAGE_SIZE})
+        assert r.status_code == 200 and r.json()["page_size"] == MAX_PAGE_SIZE, (url, r.text)
+        r = await klien.get(url, headers=hl, params={"page": 1, "page_size": MAX_PAGE_SIZE + 1})
+        assert r.status_code == 422, (url, r.text)
+    r = await klien.get(URL_P, headers=hl, params={"status": "menunggu_persetujuan", "page_size": MAX_PAGE_SIZE})
+    assert [x["id"] for x in r.json()["items"]] == [p["id"]] and r.json()["has_more"] is False

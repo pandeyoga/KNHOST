@@ -177,6 +177,11 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # kedua atau kas langsung, walau batas/periode/anggaran berubah sesudah diajukan. Isi berbeda → 409.
     from services import cash_out_request_service as _cor
     kunci = (request.headers.get("Idempotency-Key") or "").strip()[:120]
+    # Gelombang perbaikan akhir (Minor 1) — kunci klien tidak boleh menyamai id pengajuan (`pkk_…`): kas manual langsung
+    # ber-`ref_id` = kunci, kas pengajuan ber-`ref_id` = id pengajuan; tabrakan membuat pengajuan macet atau mencocokkan
+    # kiriman ke kas pengajuan. Ditolak sebelum pemeriksaan apa pun (arah masuk maupun keluar).
+    if _cor.kunci_dicadangkan(kunci):
+        raise HTTPException(status_code=400, detail=_cor.PESAN_KUNCI_DICADANGKAN)
     sidik = _cor.sidik_isian(payload.model_dump(), entity_id)
     lama = await _cor.kiriman_ulang(entity_id, kunci, sidik)
     if lama is not None:
@@ -219,10 +224,15 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # Hanya sesudah SEMUA pemeriksaan di atas lolos (kategori, rujukan, rekening, periode, anggaran). Kunci yang sudah
     # menjadi kas KELUAR langsung PT ini (sebelum batas berubah) dengan isi yang sama tetap kas yang sama lewat
     # `create_cash` di bawah; isi lain → 409; kas masuk / PT lain berkunci sama tidak dihitung (perbaikan putaran 1).
+    # Gelombang perbaikan akhir (R1) — id kas yang cocok diteruskan ke `create_cash(txn_id=…)`: kas itu dianulir di sela
+    # → 409 "sudah dibatalkan", bukan kas keluar baru di atas batas tanpa orang kedua (id generasi berikutnya).
     from services import dual_control as _dc
-    if payload.direction == "out" and not await _cor.kas_keluar_langsung_sama(
+    kas_sama = ""
+    if payload.direction == "out":
+        kas_sama = await _cor.kas_keluar_langsung_sama(
             entity_id, kunci, sidik, amount=float(payload.amount), account_id=rek["account_id"],
-            category=payload.category, txn_date=payload.txn_date or "") \
+            category=payload.category, txn_date=payload.txn_date or "")
+    if payload.direction == "out" and not kas_sama \
             and await _dc.butuh_orang_kedua("kas_keluar_manual", entity_id, float(payload.amount)):
         req = await _cor.ajukan({
             "cash_type": rek["cash_type"], "account_id": rek["account_id"],
@@ -242,7 +252,7 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     try:
         doc = await cash_ledger.create_cash(
             entity_id=entity_id, direction=payload.direction, amount=float(payload.amount), ref_type="manual",
-            ref_id=ref_id, account_id=rek["account_id"], cash_type=payload.cash_type,
+            ref_id=ref_id, txn_id=kas_sama, account_id=rek["account_id"], cash_type=payload.cash_type,
             txn_date=payload.txn_date or "", category=payload.category.strip(), description=payload.description.strip(),
             actor=actor.get("name", ""),   # PK-09 — nilai klien `created_by` diabaikan
             # AG-T5 — kas manual dari kartu tindakan asisten membawa `ai_card_id` (hanya kartu `running` milik pelaksana).
