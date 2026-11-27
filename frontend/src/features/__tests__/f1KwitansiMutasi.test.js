@@ -22,7 +22,7 @@ import { receiptFromLine, voidLineReceipt } from "../finance/bank/bankLineReceip
 import { TYPE_LABEL } from "../../components/NotificationCenter";
 import { notifDocTarget } from "../notifications/notifDocTarget";
 import { askConfirm, askReason } from "../../services/confirmService";
-import { badgeLabel } from "../sales_admin/workDeskApi";
+import { badgeGroup, badgeLabel } from "../sales_admin/workDeskApi";
 import { invalidatePaymentMethods } from "../../config/paymentMethods";
 
 const mockGet = jest.fn();
@@ -158,8 +158,10 @@ test("lencana alasan kartu berbahasa Indonesia (kamus BADGE_LABEL)", () => {
     laporan_beda: "Laporan bayar beda", laporan_diproses: "Laporan sedang diproses",
     laporan_dan_kwitansi: "Kwitansi & laporan menunggu", periode_tutup: "Periode ditutup", pt_tidak_jelas: "PT tak jelas",
     selisih_perlu_putusan: "Perlu putusan selisih", otomatis_mati: "Otomatis mati", galat: "Gagal otomatis",
+    kemungkinan_ganda: "Mungkin impor ganda",   // R11 — mutasi serupa sudah dicatat
   };
   Object.entries(harap).forEach(([k, v]) => expect([k, badgeLabel(k)]).toEqual([k, v]));
+  expect(badgeGroup("kemungkinan_ganda")).toBe("warn");
 });
 
 test("notifikasi: label dua jenis baru; bayar_masuk_mutasi → pesanan, ringkasan_mutasi_otomatis → Meja Keuangan", () => {
@@ -211,13 +213,13 @@ describe("Meja Keuangan — mutasi berkode perlu dicek", () => {
   });
 
   test("pop-up: alasan + pratinjau pesanan; Catat kwitansi → SATU pop-up form terisi dari mutasi", async () => {
-    await buka();
+    await buka(PERMS_F1, { reports: [] });
     await klik("fin-desk-uang_masuk-number-bl1");
     expect(q("fin-desk-bankline-panel")).not.toBeNull();
     expect(teks(q("fin-desk-bankline-reason"))).toContain(ALASAN);
     expect(teks(q("fin-desk-bankline-ref"))).toContain("TRX-77");
     expect(teks(q("doc-preview-lines"))).toContain("Katun A");          // pratinjau pesanan dari order_id
-    expect(q("fin-desk-bankline-accept-report")).toBeNull();              // tanpa laporan menunggu
+    expect(q("fin-desk-bankline-report")).toBeNull();                     // tanpa laporan menunggu
     expect(teks(q("fin-desk-detail-action"))).toBe("Catat kwitansi");
     await klik("fin-desk-detail-action");
     expect(q("fin-desk-detail")).toBeNull();                               // satu pop-up: rincian menutup dulu
@@ -263,7 +265,7 @@ describe("Meja Keuangan — mutasi berkode perlu dicek", () => {
     expect(teks(q("fin-desk-bankline-report"))).toContain("LB-1");
     expect(mockGet).toHaveBeenCalledWith("/api/sales-orders/so1/payment-reports");
     const awal = jumlahMuatMeja();
-    await klik("fin-desk-bankline-accept-report");
+    await klik("fin-desk-bankline-accept-report-lb1");
     expect(askConfirm).toHaveBeenCalledWith(expect.objectContaining({ testId: "fin-desk-bankline-accept-confirm" }));
     expect(mockPost).toHaveBeenCalledTimes(1);
     const [url, body, cfg] = mockPost.mock.calls[0];
@@ -275,12 +277,21 @@ describe("Meja Keuangan — mutasi berkode perlu dicek", () => {
     expect(jumlahMuatMeja()).toBeGreaterThan(awal);
   });
 
-  test("laporan menunggu: Tolak memakai aturan Lapor Bayar (alasan) — pop-up tetap terbuka untuk Catat kwitansi", async () => {
-    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "lb1", alasan_kode: "laporan_beda", badge: "laporan_beda" }]) });
+  // I3 (gelombang akhir) — bentuk baris yang SUNGGUH dihasilkan server: kartu `laporan_beda` tidak membawa `report_id`
+  // (nominal laporan ≠ mutasi). Pop-up tetap memuat laporan menunggu pesanan itu; Terima tidak ditawarkan (nominal beda),
+  // Tolak selalu ada.
+  test("laporan_beda tanpa report_id: laporan menunggu tetap tampil; Terima tidak ditawarkan, Tolak memakai aturan Lapor Bayar", async () => {
+    const BEDA = { ...LAPORAN, amount: 1450000 };
+    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "", alasan_kode: "laporan_beda", badge: "laporan_beda",
+      alasan: "Laporan bayar LB-1 menunggu dengan nominal Rp 1.450.000 ≠ mutasi Rp 1.500.000" }]), reports: [BEDA] });
     askReason.mockResolvedValue("Bukan transfer ini");
-    mockPost.mockResolvedValue({ data: { ...LAPORAN, status: "ditolak" } });
+    mockPost.mockResolvedValue({ data: { ...BEDA, status: "ditolak" } });
     await klik("fin-desk-uang_masuk-number-bl1");
-    await klik("fin-desk-bankline-reject-report");
+    expect(mockGet).toHaveBeenCalledWith("/api/sales-orders/so1/payment-reports");
+    expect(teks(q("fin-desk-bankline-report-lb1"))).toContain("LB-1");
+    expect(q("fin-desk-bankline-accept-report-lb1")).toBeNull();
+    expect(teks(q("fin-desk-bankline-report-note-lb1"))).toMatch(/nominal laporan/i);
+    await klik("fin-desk-bankline-reject-report-lb1");
     expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ reasonMinLength: 5 }));
     const [url, body] = mockPost.mock.calls[0];
     expect(url).toBe("/api/payment-reports/lb1/tolak");
@@ -288,31 +299,76 @@ describe("Meja Keuangan — mutasi berkode perlu dicek", () => {
     expect(q("fin-desk-detail")).not.toBeNull();
   });
 
+  test("laporan menunggu sama nominal & rekening pada kartu lain (tanpa report_id): Terima ditawarkan", async () => {
+    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "", alasan_kode: "rekening_beda", badge: "rekening_beda" }]) });
+    askConfirm.mockResolvedValue(true);
+    mockPost.mockResolvedValue({ data: { receipt: { id: "arc8", number: "KSC/KW-8", amount: 1500000 }, line: {}, released_order_ids: [] } });
+    await klik("fin-desk-uang_masuk-number-bl1");
+    await klik("fin-desk-bankline-accept-report-lb1");
+    const [url, body] = mockPost.mock.calls[0];
+    expect(url).toBe("/api/bank-reconciliation/lines/bl1/receipt");
+    expect(body).toMatchObject({ payment_report_id: "lb1", amount: 1500000 });
+  });
+
+  test("laporan menunggu ke rekening lain: Terima tidak ditawarkan (kalimat rekening), Tolak ada", async () => {
+    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "", alasan_kode: "laporan_beda", badge: "laporan_beda" }]),
+      reports: [{ ...LAPORAN, account_id: "acc2", account_name: "Mandiri KSC" }] });
+    await klik("fin-desk-uang_masuk-number-bl1");
+    expect(q("fin-desk-bankline-accept-report-lb1")).toBeNull();
+    expect(teks(q("fin-desk-bankline-report-note-lb1"))).toMatch(/rekening/i);
+    expect(q("fin-desk-bankline-reject-report-lb1")).not.toBeNull();
+  });
+
   test("galat Terima laporan tampil DI DALAM pop-up; pop-up tetap terbuka", async () => {
-    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "lb1" }]) });
+    await buka(PERMS_F1, { desk: deskDari([{ ...BARIS, report_id: "lb1", alasan_kode: "otomatis_mati", badge: "otomatis_mati" }]) });
     askConfirm.mockResolvedValue(true);
     mockPost.mockRejectedValue({ response: { status: 409, data: { detail: "Nominal laporan LB-1 berbeda dari mutasi." } } });
     await klik("fin-desk-uang_masuk-number-bl1");
-    await klik("fin-desk-bankline-accept-report");
+    await klik("fin-desk-bankline-accept-report-lb1");
     expect(q("fin-desk-detail")).not.toBeNull();
     expect(teks(q("fin-desk-bankline-error"))).toContain("Nominal laporan LB-1 berbeda dari mutasi.");
   });
 
   test("tanpa payment_report.decide: laporan hanya dibaca, tanpa Terima/Tolak", async () => {
-    await buka({ ...PERMS_F1, payment_report: [] }, { desk: deskDari([{ ...BARIS, report_id: "lb1" }]) });
+    await buka({ ...PERMS_F1, payment_report: [] });
     await klik("fin-desk-uang_masuk-number-bl1");
-    expect(q("fin-desk-bankline-accept-report")).toBeNull();
-    expect(q("fin-desk-bankline-reject-report")).toBeNull();
-    expect(q("fin-desk-bankline-report-note")).not.toBeNull();
+    expect(q("fin-desk-bankline-accept-report-lb1")).toBeNull();
+    expect(q("fin-desk-bankline-reject-report-lb1")).toBeNull();
+    expect(teks(q("fin-desk-bankline-report-note-lb1"))).toContain("pemutus Lapor Bayar");
   });
 
-  test("Buka Rekonsiliasi → layar Rekonsiliasi Bank dengan rekening mutasi terpilih", async () => {
+  // Gelombang akhir (Minor 2 tinjauan) — SATU tombol ke Rekonsiliasi: kaki pop-up "Buka Rekonsiliasi" (dulu dua tombol
+  // berbeda nama — "Buka Rekonsiliasi" di panel dan "Buka layar penuh" di kaki — ke tempat yang sama).
+  test("Buka Rekonsiliasi (satu tombol di kaki pop-up) → layar Rekonsiliasi Bank dengan rekening mutasi terpilih", async () => {
     const nav = jest.fn();
     await buka(PERMS_F1, { nav });
     await klik("fin-desk-uang_masuk-number-bl1");
-    await klik("fin-desk-bankline-open-recon");
+    expect(q("fin-desk-bankline-open-recon")).toBeNull();
+    expect(teks(q("fin-desk-detail-open-full"))).toBe("Buka Rekonsiliasi");
+    expect(Array.from(document.body.querySelectorAll("button")).filter((b) => /Rekonsiliasi|layar penuh/.test(b.textContent)))
+      .toHaveLength(1);
+    await klik("fin-desk-detail-open-full");
     expect(nav).toHaveBeenCalledWith("bank-reconciliation",
       expect.objectContaining({ preset: expect.objectContaining({ bank_account_id: "acc1" }) }));
+  });
+
+  // Gelombang akhir (Minor 3 tinjauan) — kartu yang menyebut kwitansi terbuka (`receipt_id`): "Catat kwitansi" tidak
+  // ditawarkan (uangnya mungkin sama); hanya "Buka Rekonsiliasi".
+  test("kartu menyebut kwitansi terbuka (receipt_id): tanpa Catat kwitansi, hanya Buka Rekonsiliasi", async () => {
+    const GANDA = "Mutasi serupa 26 November 2026 Rp 1.500.000 sudah dicatat sebagai kwitansi KSC/KW-5 — periksa apakah impor ganda";
+    const nav = jest.fn();
+    await buka(PERMS_F1, { nav, reports: [], desk: deskDari([{ ...BARIS, alasan_kode: "kemungkinan_ganda", badge: "kemungkinan_ganda",
+      alasan: GANDA, receipt_id: "arc5" }]) });
+    expect(teks(q("fin-desk-uang_masuk-badge-bl1"))).toBe("Mungkin impor ganda");
+    expect(teks(q("fin-desk-uang_masuk-action-bl1"))).not.toBe("Catat kwitansi");
+    await klik("fin-desk-uang_masuk-action-bl1");
+    expect(q("ar-receipt-modal")).toBeNull();                                // tidak membuka form kwitansi
+    expect(q("fin-desk-bankline-panel")).not.toBeNull();
+    expect(q("fin-desk-detail-action")).toBeNull();
+    expect(teks(q("fin-desk-bankline-receipt-note"))).toMatch(/tidak ditawarkan/);
+    expect(teks(q("fin-desk-detail-open-full"))).toBe("Buka Rekonsiliasi");
+    await klik("fin-desk-detail-open-full");
+    expect(nav).toHaveBeenCalledWith("bank-reconciliation", expect.anything());
   });
 });
 
@@ -509,6 +565,65 @@ test("pratinjau kwitansi bersumber mutasi_bank menulis 'Lahir dari mutasi bank �
   await mount(<ArReceiptPreview doc={{ ...doc, source: undefined, bank_line_id: undefined }} push={() => {}} canPush={() => false}
     currentUser={{ permissions: {} }} />);
   expect(q("doc-preview-ar-receipt-source")).toBeNull();
+});
+
+// I4 / R12 (gelombang akhir) — "Batalkan kwitansi dari mutasi" di rincian kwitansi bersumber mutasi_bank.
+const KW_MUTASI = { id: "arc1", number: "KSC/KW-1", customer_name: "Toko A", amount: 1500000, status: "posted", entity_id: "ent_ksc",
+  receipt_date: "2026-11-26T00:00:00+07:00", reference_no: "TRX-77", source: "mutasi_bank", bank_line_id: "bl1", bank_verified: true,
+  account_snapshot: { name: "BCA Utama", bank_name: "BCA", account_number: "123-456" }, allocations: [] };
+const PERMS_BATAL = { ar_receipt: ["view", "void"], cash: ["create"] };
+const pratinjau = (doc, permissions) => mount(<ArReceiptPreview doc={doc} push={() => {}} canPush={() => false}
+  currentUser={{ permissions }} />);
+async function bersih() {
+  for (const r of roots) await act(async () => r.unmount());
+  roots = []; document.body.innerHTML = "";
+}
+
+test("rincian kwitansi dari mutasi: Batalkan → alasan ≥ 5 → voidLineReceipt(bank_line_id) → peringatan tampil", async () => {
+  const PERINGATAN = "Pesanan KSC/SO-1 sudah dilepas ke gudang (Terkonfirmasi); membatalkan kwitansi tidak menahan barang — tahan pesanan atau hubungi Gudang bila perlu.";
+  askReason.mockResolvedValue("Salah pesanan");
+  mockPost.mockResolvedValue({ data: { order_released: true, peringatan: PERINGATAN, receipt: { number: "KSC/KW-1", status: "void" } } });
+  await pratinjau(KW_MUTASI, PERMS_BATAL);
+  expect(teks(q("doc-preview-ar-receipt-void-line"))).toBe("Batalkan kwitansi dari mutasi");
+  await klik("doc-preview-ar-receipt-void-line");
+  expect(askReason).toHaveBeenCalledWith(expect.objectContaining({ reasonMinLength: 5, danger: true,
+    testId: "doc-preview-ar-receipt-void-reason" }));
+  expect(mockPost).toHaveBeenCalledTimes(1);
+  const [url, body, cfg] = mockPost.mock.calls[0];
+  expect(url).toBe("/api/bank-reconciliation/lines/bl1/void-receipt");
+  expect(body).toEqual({ reason: "Salah pesanan" });
+  expect(cfg.headers["Idempotency-Key"]).toBeTruthy();
+  expect(teks(q("doc-preview-ar-receipt-void-warning"))).toContain(PERINGATAN);
+  expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringContaining("KSC/KW-1") }));
+  expect(q("doc-preview-ar-receipt-void-line")).toBeNull();
+  expect(teks(q("doc-preview-status"))).toBe("Dianulir");
+});
+
+test("rincian kwitansi dari mutasi: galat server tampil di rincian; dialog dibatalkan → tanpa permintaan", async () => {
+  askReason.mockResolvedValueOnce(null);
+  await pratinjau(KW_MUTASI, PERMS_BATAL);
+  await klik("doc-preview-ar-receipt-void-line");
+  expect(mockPost).not.toHaveBeenCalled();
+  askReason.mockResolvedValueOnce("Salah pesanan");
+  mockPost.mockRejectedValue({ response: { status: 409, data: { detail: "Mutasi ini tidak tertaut ke kwitansi pelanggan — tidak ada yang dibatalkan." } } });
+  await klik("doc-preview-ar-receipt-void-line");
+  expect(teks(q("doc-preview-ar-receipt-void-error"))).toContain("tidak tertaut");
+  expect(q("doc-preview-ar-receipt-void-line")).not.toBeNull();
+});
+
+test("rincian kwitansi: tombol batal dari mutasi hanya untuk ar_receipt.void + cash.create, kwitansi mutasi hidup & terverifikasi", async () => {
+  const kasus = [
+    [KW_MUTASI, { ar_receipt: ["view", "void"] }],                          // tanpa cash.create
+    [KW_MUTASI, { ar_receipt: ["view"], cash: ["create"] }],               // tanpa ar_receipt.void
+    [{ ...KW_MUTASI, source: undefined, bank_line_id: undefined }, PERMS_BATAL],   // kwitansi biasa
+    [{ ...KW_MUTASI, status: "void" }, PERMS_BATAL],                       // sudah batal
+    [{ ...KW_MUTASI, bank_verified: false }, PERMS_BATAL],                 // tautan sudah dilepas: batal biasa berlaku
+  ];
+  for (const [doc, perms] of kasus) {
+    await pratinjau(doc, perms);
+    expect(q("doc-preview-ar-receipt-void-line")).toBeNull();
+    await bersih();
+  }
 });
 
 // ─── 7. Pemanggil API ─────────────────────────────────────────────────────────────────────────────────────

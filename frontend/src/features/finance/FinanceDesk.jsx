@@ -19,7 +19,8 @@
  * F1 (kwitansi otomatis dari mutasi, §5.4) — kelompok yang sama memuat antrean `mutasi_berkode` (mutasi berkode bayar yang
  * tidak cocok sempurna; hanya pemegang `cash.create` DAN `ar_receipt.create`): "Catat kwitansi" di tempat membuka form
  * Terima pembayaran terisi dari mutasi (`bankLineId` → satu permintaan atomik); klik baris → pop-up `BankLineQueuePanel`
- * (alasan, pratinjau pesanan, Terima/Tolak laporan bayar bersama mutasi); "Buka layar penuh" → Rekonsiliasi Bank.
+ * (alasan, pratinjau pesanan, Terima/Tolak laporan bayar menunggu pesanan itu bersama mutasi); satu tombol kaki
+ * "Buka Rekonsiliasi" → Rekonsiliasi Bank. Kartu yang menyebut kwitansi terbuka (`receipt_id`) tanpa "Catat kwitansi".
  *
  * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
  * gulir). Meja ini SUDAH tab hub Beranda Keuangan, jadi tidak menggambar tab Antrean/Pantau sendiri (R4: tanpa tab
@@ -211,6 +212,13 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     }
     if (r._queue === "hutang_jatuh_tempo" && r.supplier_id && cardsEnabled && can(perms, "supplier", "view")) {
       return { ...r, action: "Bayar", action_kind: "supplier_card" };
+    }
+    // F1 — satu tombol ke Rekonsiliasi Bank di kaki pop-up ("Buka layar penuh" bernama tujuannya). Kartu yang menyebut
+    // kwitansi terbuka (`receipt_id`: calon kwitansi di rekening lain/berselisih pecahan, lunas oleh kwitansi terbuka,
+    // mutasi serupa sudah dicatat) tidak menawarkan "Catat kwitansi" — uangnya mungkin sama; baris hanya dibuka (Lihat).
+    if (r._queue === "mutasi_berkode") {
+      return r.receipt_id ? { ...r, _openFullLabel: "Buka Rekonsiliasi", action: "Lihat", action_kind: "view" }
+        : { ...r, _openFullLabel: "Buka Rekonsiliasi" };
     }
     return r;
   }) })))

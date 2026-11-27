@@ -152,6 +152,7 @@ const BADGE_LABEL = {
   laporan_beda: "Laporan bayar beda", laporan_diproses: "Laporan sedang diproses",
   laporan_dan_kwitansi: "Kwitansi & laporan menunggu", periode_tutup: "Periode ditutup", pt_tidak_jelas: "PT tak jelas",
   selisih_perlu_putusan: "Perlu putusan selisih", otomatis_mati: "Otomatis mati", galat: "Gagal otomatis",
+  kemungkinan_ganda: "Mungkin impor ganda",   // R11 — mutasi serupa (tanggal, nominal, kode) sudah dicatat
   covered: "Barang masuk menutup",
   partial: "Tertutup sebagian",
   uncovered: "Belum ada penutup",
@@ -198,7 +199,7 @@ const BADGE_GROUP = {
          // F1 — kartu mutasi berkode: perlu dicek Finance
          "nominal_beda", "kode_ganda", "rekening_beda", "rekening_tolak_cara", "pesanan_mati", "sudah_lunas", "laporan_beda",
          "laporan_diproses", "laporan_dan_kwitansi", "periode_tutup", "pt_tidak_jelas", "selisih_perlu_putusan",
-         "otomatis_mati"],
+         "otomatis_mati", "kemungkinan_ganda"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],
   info: ["reserved", "submitted", "open", "partially_picked", "partially_shipped", "picking", "packing", "loading",
          "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban", "info", "low",

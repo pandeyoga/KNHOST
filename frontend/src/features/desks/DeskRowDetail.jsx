@@ -21,6 +21,7 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
   // Sama dengan tombol baris di kartu: baris tanpa aksi sendiri memakai aksi antreannya.
   // `action_kind: "view"` ("Lihat") = membuka pop-up ini saja; tak ada aksi utama lagi (ubah → "Buka layar penuh").
   // `decide_payment_report` (LB-T8) = keputusan Terima/Tolak ada DI panel (`PayReportQueuePanel`), bukan tombol kaki.
+  // `row._openFullLabel` — nama tujuan "Buka layar penuh" bila meja tahu tempatnya (F1: "Buka Rekonsiliasi").
   const actionLabel = (row.action_kind === "view" || row.action_kind === "decide_payment_report") ? "" : row.action || queue.action_label || "";
   const more = Array.isArray(row._moreActions) ? row._moreActions : [];
 
@@ -46,7 +47,7 @@ export default function DeskRowDetail({ row, queue: queueProp, testPrefix = "des
           ))}
           {onOpenFull && (
             <button type="button" className="link-button" data-testid={`${p}-detail-open-full`}
-              onClick={() => { onClose && onClose(); onOpenFull(row, queue); }}>Buka layar penuh</button>
+              onClick={() => { onClose && onClose(); onOpenFull(row, queue); }}>{row._openFullLabel || "Buka layar penuh"}</button>
           )}
         </div>
       </div>
