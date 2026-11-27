@@ -48,9 +48,9 @@ Temuan nyata yang tertangkap sebelum gabung:
 ## 3. Uji (apa adanya)
 
 - **Backend `tests_mem` penuh** di `d1c25e7`: ⟨SUITE⟩
-- **Jest penuh** di `d1c25e7`: ⟨JEST⟩
+- **Jest penuh** di `d1c25e7`: 2196/2197 uji, 271/273 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan garis dasar).
 - **Uji baru:** `test_KB2_1`…`test_KB2_4` (backend) + `kb2KasManual.test.js` (jest).
-- **MongoDB sungguhan** (`backend/tests/test_bp_KB2_bersamaan.py`): ⟨LIVE⟩
+- **MongoDB sungguhan** (`backend/tests/test_bp_KB2_bersamaan.py`, salinan data acuan + backend terpisah :8032, salinan dibuang, 3 kali jalan): (1) dua Setujui bersamaan ×3 → selalu satu 200 + satu 409, satu kas + satu jurnal; (2) Setujui × Batal bersamaan ×5 → tidak pernah campuran (disetujui = 1 kas, dibatalkan = 0 kas), kedua urutan menang terjadi; (3) dua kiriman berkunci sama bersamaan → satu pengajuan, nol kas langsung. 3/3 lulus.
 
 ### 3a. Gate
 
