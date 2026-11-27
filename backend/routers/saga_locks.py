@@ -18,7 +18,20 @@ LOCKED_COLLECTIONS = ["wms_tasks", "sales_orders", "warehouse_transfers", "cycle
                       "goods_receipts", "purchase_orders", "purchase_requisitions", "customers", "bank_statement_lines",
                       "mkt_campaign_costs", "finance_cases",
                       # PK-33 — klaim karyawan saat pengajuan cuti (`hr_leave_service.submit_leave`).
-                      "hr_employees"]
+                      "hr_employees",
+                      # Kas & Bank 2 (perbaikan akhir, I2) — koleksi yang diklaim lewat konstanta modul
+                      # (`claim(COLL, …)`) luput dari penjaga OPS-04 lama (hanya `claim("literal"`): kunci yang
+                      # menggantung tidak terlihat dan tidak bisa dilepas, padahal 409 `SAGA_IN_PROGRESS` menyuruh
+                      # admin melepasnya di sini. Pengajuan kas keluar (Setujui/Tolak/Batal), Pindah Dana, setoran
+                      # titipan tunai (PM-T4), PD/LPJ, antar-PT, retur antar-PT, kontrabon (bayar AP), pembersihan
+                      # master, sample R&D.
+                      "cash_out_requests", "fund_transfers", "cash_deposits", "cash_advances",
+                      "cash_advance_settlements", "interco_transactions", "interco_returns", "contra_bons",
+                      "master_cleanup_batches", "md_samples",
+                      # Pindah Saldo Kas per Rekening (Kas & Bank 1) memakai jatah waktu `memproses`
+                      # (`lease_until`), bukan `saga_lock`; didaftarkan supaya tetap terlihat bila kelak memakai
+                      # `atomic_claim`.
+                      "cash_account_cutovers"]
 
 
 @router.get("/saga-locks")
@@ -26,7 +39,7 @@ async def list_saga_locks(request: Request) -> List[Dict[str, Any]]:
     await require_permission(request, "system_tools", "configure")
     out: List[Dict[str, Any]] = []
     for coll in LOCKED_COLLECTIONS:
-        async for d in db[coll].find({LOCK: {"$exists": True}}, {"_id": 0, "id": 1, "status": 1, LOCK: 1}):
+        async for d in db[coll].find({LOCK: {"$exists": True}}, {"_id": 0, "id": 1, "number": 1, "status": 1, LOCK: 1}):
             out.append({"collection": coll, **d})
     return out
 
@@ -38,6 +51,8 @@ EFFECT_SOURCES = [
     ("inventory_movements", "source_document", "timestamp"),
     ("shipments", "task_id", "created_at"),
     ("cash_transactions", "source_id", "created_at"),
+    # Kas & Bank 2 — kas yang terbit dari pengajuan kas keluar / Pindah Dana menunjuk dokumennya lewat `ref_id`.
+    ("cash_transactions", "ref_id", "created_at"),
     ("inventory_rolls", "source_ref.id", "created_at"),
 ]
 

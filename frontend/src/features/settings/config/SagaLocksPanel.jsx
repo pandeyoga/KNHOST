@@ -18,6 +18,11 @@ const COLL_LABEL = {
   payment_variance_decisions: "Keputusan selisih bayar", ar_receipts: "Kwitansi pembayaran", sample_requests: "Permintaan sample", crm_leads: "Prospek (lead)", period_closings: "Tutup buku periode",
   product_categories: "Kategori produk", special_orders: "Pesanan khusus", esign_requests: "Permintaan tanda tangan", tax_invoices_in: "Faktur pajak masukan", landed_cost_vouchers: "Voucher landed cost",
   makloon_orders: "Order makloon", rfid_verify_sessions: "Sesi verifikasi RFID", product_templates: "Template produk", rfqs: "RFQ", products: "Produk", business_entities: "Badan usaha",
+  // Kas & Bank 2 (perbaikan akhir) — koleksi yang diklaim lewat konstanta modul, kini terdaftar di Kunci Saga.
+  cash_out_requests: "Pengajuan kas keluar", fund_transfers: "Pindah Dana", cash_account_cutovers: "Pindah saldo kas per rekening",
+  cash_deposits: "Setoran titipan tunai", cash_advances: "Pengajuan Dana (PD)", cash_advance_settlements: "Pertanggungjawaban Dana (LPJ)",
+  interco_transactions: "Transaksi antar-PT", interco_returns: "Retur antar-PT", contra_bons: "Kontrabon",
+  master_cleanup_batches: "Pembersihan data master", md_samples: "Permintaan sample R&D",
 };
 
 export default function SagaLocksPanel() {
@@ -93,7 +98,11 @@ export default function SagaLocksPanel() {
               const lk = r.saga_lock || {};
               return (
                 <tr key={key} data-testid={`saga-lock-row-${r.id}`}>
-                  <td><b>{COLL_LABEL[r.collection] || r.collection}</b><br /><code className="cfg-key">{r.id}</code></td>
+                  <td>
+                    <b>{COLL_LABEL[r.collection] || r.collection}</b>
+                    {r.number ? <span data-testid={`saga-lock-number-${r.id}`}> {r.number}</span> : null}
+                    <br /><code className="cfg-key">{r.id}</code>
+                  </td>
                   <td>
                     <code className="cfg-key">{lk.action}</code>
                     {lk.error ? <p className="cfg-hint-sm" data-testid={`saga-lock-error-${r.id}`}>Gagal: {lk.error}</p> : null}
