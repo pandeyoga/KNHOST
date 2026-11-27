@@ -804,6 +804,9 @@ async def _prep_cash_manual(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any
     if amount <= 0:
         raise _err(400, "Nominal kas harus lebih dari 0.")
     category, desc = _text(a.get("category"), 80), _text(a.get("description"))
+    from services import cash_ledger as _cl   # Kas & Bank 1 (Tugas 5) — kategori Transfer/Top-up ditutup (pakai Pindah Dana)
+    if _cl.kategori_transfer_ditutup(category):
+        raise _err(400, _cl.PESAN_KATEGORI_TRANSFER_DITUTUP)
     tgl = _date(a.get("txn_date"), "Tanggal transaksi") or _today_wib()
     accs = await api.call("GET", "/api/bank-accounts")
     acc = next((x for x in accs or [] if isinstance(x, dict) and str(x.get("id")) == acc_id), None)

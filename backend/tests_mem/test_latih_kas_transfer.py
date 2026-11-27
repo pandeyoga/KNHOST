@@ -23,20 +23,19 @@ async def test_transfer_antar_kas_lewat_transit_dan_bisa_dicari(klien, db, kepal
         "cash_type": "kas_besar", "direction": "in", "amount": 500_000, "category": "modal",
         "description": "modal awal uji transfer", "account_id": "ba_trf_1"})
     assert r.status_code == 200, r.text
-    r = await klien.post("/api/cash-transactions", headers=h, json={
-        "cash_type": "kas_besar", "direction": "out", "amount": 200_000, "category": "transfer",
-        "description": "setor kas toko ke bank (uji)", "account_id": "ba_trf_1"})
-    assert r.status_code == 200, r.text
-    keluar = r.json()
-    r = await klien.post("/api/cash-transactions", headers=h, json={
-        "cash_type": "kas_besar", "direction": "in", "amount": 200_000, "category": "transfer",
-        "description": "terima setoran kas toko (uji)", "account_id": "ba_trf_2"})
-    assert r.status_code == 200, r.text
+    # KB-1 Tugas 5: kas manual BARU berkategori transfer ditolak (pakai Pindah Dana) — kas "lama" dibuat lewat pembuat kas.
+    from services import cash_ledger
+    keluar = await cash_ledger.create_cash(entity_id=ent, direction="out", amount=200_000, ref_type="manual",
+                                           ref_id="latih_trf_keluar", account_id="ba_trf_1", category="transfer",
+                                           description="setor kas toko ke bank (uji)", actor="Uji")
+    masuk_kas = await cash_ledger.create_cash(entity_id=ent, direction="in", amount=200_000, ref_type="manual",
+                                              ref_id="latih_trf_masuk", account_id="ba_trf_2", category="transfer",
+                                              description="terima setoran kas toko (uji)", actor="Uji")
     je = {j["source_id"]: j async for j in db.journal_entries.find({"source_type": "cash_transaction"}, {"_id": 0})}
     kode_keluar = {(ln["account_code"], ln["debit"] > 0) for ln in je[keluar["id"]]["lines"]}
     assert ("1-1150", True) in kode_keluar                     # Dr Kas Transit
     assert not any(c.startswith("6-") for c, _ in kode_keluar)  # bukan beban
-    masuk = je[r.json()["id"]]
+    masuk = je[masuk_kas["id"]]
     assert {(ln["account_code"], ln["credit"] > 0) for ln in masuk["lines"]} >= {("1-1150", True)}   # Cr Kas Transit
     assert not any(ln["account_code"] == "1-9999" for ln in masuk["lines"])                           # bukan Suspense
     # jurnal bisa dicari dengan nomor transaksi kas (source_label)

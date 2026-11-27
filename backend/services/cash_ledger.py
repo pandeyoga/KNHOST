@@ -42,6 +42,19 @@ REF_LABEL = {
     "fund_transfer": "Pindah Dana",                      # Kas & Bank 1 (Tugas 4) — pindah dana antar rekening satu PT
 }
 
+#: Kas & Bank 1 (Tugas 5) — kategori kas manual "Transfer / Top-up" ditutup untuk kas manual BARU: setor tunai, isi kas
+#: kecil, dan pindah antar rekening kini lewat dokumen Pindah Dana. Kas LAMA berkategori ini tetap utuh (bisa dibatalkan,
+#: diposting ulang; kata kunci jurnal `gl_service.CASH_*_KEYWORDS` tetap untuk pembalik lama).
+PESAN_KATEGORI_TRANSFER_DITUTUP = "Pakai Pindah Dana untuk setor tunai, isi kas kecil, dan pindah antar rekening."
+_KATA_TRANSFER_DITUTUP = ("transfer", "topup")
+
+
+def kategori_transfer_ditutup(category: Any) -> bool:
+    """True bila kategori kas manual memuat "transfer" atau "top-up" (semua ejaan/huruf: `Top-up`, `top up`, `TOPUP`)."""
+    teks = "".join(ch for ch in str(category or "").lower() if ch.isalnum())
+    return any(k in teks for k in _KATA_TRANSFER_DITUTUP)
+
+
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.
 _PROTECTED = frozenset({"id", "amount", "direction", "entity_id", "account_id", "account_code", "cash_type",
                         "ref_type", "ref_id", "seq", "status", "gl_status", "gl_error", "gl_posted",

@@ -170,6 +170,11 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # PK-09 E8 — PT dari penugasan (isi permintaan di luar penugasan → 403), tetap wajib satu PT (bukan grup).
     entity_id = assert_owned(resolve_requested_entity(ctx, payload.entity_id) if payload.entity_id
                              else ctx.active_entity_id, what="Transaksi kas")
+    # Kas & Bank 1 (Tugas 5) — kategori Transfer/Top-up ditutup untuk kas manual baru (Pindah Dana menggantikannya).
+    # Hanya pintu manual ini; `create_cash` (dipakai Pindah Dana, `ref_type="fund_transfer"`) tidak dijaga.
+    from services import cash_ledger as _cl
+    if _cl.kategori_transfer_ditutup(payload.category):
+        raise HTTPException(status_code=400, detail=_cl.PESAN_KATEGORI_TRANSFER_DITUTUP)
     # Kas MANUAL tidak boleh menunjuk dokumen lain (pembayaran dokumen dicatat dari dokumennya, bukan dari sini).
     if (payload.ref_type or "") not in ("", "manual") or (payload.ref_id or ""):
         raise HTTPException(status_code=400, detail=(
