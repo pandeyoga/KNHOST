@@ -105,7 +105,7 @@ async def _dua_orang(entity_id: str) -> bool:
 def _payload_buat(payload) -> Dict[str, Any]:
     d = payload.model_dump() if hasattr(payload, "model_dump") else dict(payload)
     return {k: d.get(k) for k in ("name", "account_type", "cash_type", "bank_name", "account_number", "entity_id",
-                                  "opening_balance", "currency", "note")}
+                                  "opening_balance", "currency", "note", "gl_account_code")}
 
 
 async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
@@ -121,6 +121,10 @@ async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
                                  else payload.payment_method_codes),
         "default_receiving_methods": payload.default_receiving_methods or [],
         "show_on_documents": payload.show_on_documents}, account_number=payload.account_number)
+    try:   # Kas & Bank 1 — akun buku besar pilihan diperiksa saat diajukan (dan sekali lagi saat diterapkan)
+        await bs.periksa_akun_rekening_baru(eid, getattr(payload, "gl_account_code", "") or "")
+    except ValueError as exc:
+        raise _galat(400, str(exc))
     dasar = _payload_buat(payload)
     changes = [{"field": f, "from": None, "to": v} for f, v in {**dasar, **bidang}.items()
                if f not in ("entity_id", "currency", "cash_type") and v not in (None, "", [], False, 0, 0.0)]

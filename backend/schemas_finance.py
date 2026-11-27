@@ -24,6 +24,9 @@ class BankAccountCreate(BaseModel):
     default_receiving_methods: List[str] = Field(default_factory=list)
     show_on_documents: bool = False
     reason: str = ""                   # catatan untuk penyetuju (bila perubahan butuh orang kedua)
+    # Kas & Bank 1 (D1) — akun bagan PT yang sudah ada untuk rekening baru di PT yang memakai akun per rekening.
+    # Kosong = sistem membuat sub-akun `{induk}-{NN}`. PT belum aktif → harus kosong. Tidak bisa diubah sesudahnya.
+    gl_account_code: str = ""
 
 
 class BankAccountUpdate(BaseModel):

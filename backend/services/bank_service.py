@@ -222,16 +222,21 @@ async def unlinked_transactions(entity_ids: List[str]) -> Dict[str, Any]:
 
 
 async def cash_position(entity_ids: List[str]) -> Dict[str, Any]:
-    """Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo BUKU BESAR akun kas+bank (kode
-    `CASH_CODES`, sumber yang sama dengan Dasbor Keuangan & Proyeksi Arus Kas). Rekening & Saldo = rincian per
-    rekening; selisih keduanya dijelaskan lewat transaksi kas yang belum tertaut ke rekening."""
+    """Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo BUKU BESAR akun kas+bank (sumber yang sama
+    dengan Dasbor Keuangan & Proyeksi Arus Kas). Rekening & Saldo = rincian per rekening; selisih keduanya dijelaskan
+    lewat transaksi kas yang belum tertaut ke rekening.
+
+    Kas & Bank 1 — akun kas = `report_basis.kode_kas` (bawaan 1-1100/1-1110 + pemetaan + akun `is_cash`, termasuk
+    sub-akun rekening). Baris: dua akun bawaan selalu tampil; akun kas lain tampil bila pernah dijurnal."""
     from services import financial_statement_service as fs
+    from services import report_basis as rb
     from services.cash_flow_service import CASH_CODES
     scope = {"entity_id": {"$in": list(entity_ids or [])}}
     amap = await fs._accounts_map(scope)   # noqa: SLF001 — helper laporan yang sama dipakai Dasbor Keuangan
     agg = await fs._aggregate(scope, None, include_closing=True)   # noqa: SLF001
+    kas = await rb.kode_kas(scope)
     lines, total = [], 0.0
-    for code in sorted(CASH_CODES):
+    for code in sorted(set(CASH_CODES) | {c for c in kas if c in agg}):
         v = agg.get(code, {"debit": 0.0, "credit": 0.0})
         bal = round(float(v.get("debit", 0) or 0) - float(v.get("credit", 0) or 0), 2)
         total += bal
@@ -264,6 +269,21 @@ async def _tulis_bawaan(entity_id: str, account_id: str, methods: List[str], tul
     return None
 
 
+async def periksa_akun_rekening_baru(entity_id: str, kode: str, account_id: str = "") -> None:
+    """Kas & Bank 1 — PERIKSA (tanpa tulisan) akun buku besar pilihan Finance untuk rekening BARU: hanya di PT yang sudah
+    memakai akun per rekening, dan akunnya layak (`cash_account_mode.periksa_akun_pilihan`). Kosong = lolos (sistem
+    membuat sub-akun bila PT aktif). Gagal → `ValueError` berkalimat."""
+    from services import cash_account_mode as _mode
+    kode = (kode or "").strip()
+    if not kode:
+        return
+    if not await _mode.aktif(entity_id):
+        from services.cash_ledger import _nama_pt
+        raise ValueError(f"{await _nama_pt(entity_id)} belum memakai akun buku besar per rekening. Kosongkan pilihan "
+                         f"akun buku besar; akun rekening diatur saat pindah saldo PT ini.")
+    await _mode.periksa_akun_pilihan({"entity_id": entity_id, "id": account_id}, kode)
+
+
 async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """`bidang` = field PM-T1 yang sudah diperiksa (`bank_account_change_service.periksa_isian`)."""
     if payload.account_type not in VALID_ACCOUNT_TYPES:
@@ -289,14 +309,24 @@ async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[s
         raise ValueError("cash_type harus 'kas_kecil' atau 'kas_besar'")
     doc["cash_type"] = ct or account_cash_type(doc)
     doc.update(bidang or bidang_efektif(doc))
+    from services import cash_account_mode as _mode
     from services import gl_service as _gl
+    # Kas & Bank 1 (D1) — PT yang sudah memakai akun per rekening: rekening baru langsung mendapat akun buku besarnya
+    # (sub-akun baru, atau akun PT pilihan Finance) dan saldo awalnya dijurnal ke akun itu. PT belum aktif: seperti dulu.
+    kode_pilih = (getattr(payload, "gl_account_code", "") or "").strip()
+    per_rekening = await _mode.aktif(doc["entity_id"])
+    await periksa_akun_rekening_baru(doc["entity_id"], kode_pilih, doc["id"])   # PERIKSA sebelum rekening tertulis
     if doc["opening_balance"]:
         await _gl.preflight_posting(doc["entity_id"], now_iso())
     await _tulis_bawaan(doc["entity_id"], doc["id"], doc.get("default_receiving_methods") or [],
                         lambda: db.bank_accounts.insert_one(dict(doc)))
     try:
+        if per_rekening:
+            doc["gl_account_code"] = await _mode.buat_subakun(doc, kode=kode_pilih)
         je = await _post_opening(doc, doc["opening_balance"], "bank_opening_balance", doc["id"])
     except Exception:
+        if per_rekening:
+            await _mode.lepas_subakun(doc["id"])
         await db.bank_accounts.delete_one({"id": doc["id"]})  # FN-08 — rekening + jurnal pembukaan satu operasi
         raise
     if je:
@@ -309,12 +339,15 @@ OPENING_EQUITY_ACC = "3-2900"
 
 
 async def _post_opening(acc: Dict[str, Any], amount: float, source_type: str, source_id: str):
-    """FN-08 — saldo awal rekening terikat GL: Dr Kas/Bank ↔ Cr Ekuitas Saldo Awal (tanda dibalik bila negatif)."""
+    """FN-08 — saldo awal rekening terikat GL: Dr Kas/Bank ↔ Cr Ekuitas Saldo Awal (tanda dibalik bila negatif).
+    Kas & Bank 1 — akun kas lewat `gl_service.akun_kas`: sub-akun rekening di PT yang sudah memakai akun per rekening,
+    selain itu akun menurut JENIS REKENING seperti dulu (tunai → 1-1110, bank → 1-1100)."""
     from services import gl_service as _gl
     amt = round(float(amount or 0), 2)
     if abs(amt) <= 0.005:
         return None
-    cash_acc = "1-1110" if acc.get("account_type") == "cash" else "1-1100"
+    cash_acc = await _gl.akun_kas(acc.get("entity_id") or DEFAULT_ENTITY_ID, acc.get("id") or "",
+                                  "kas_kecil" if acc.get("account_type") == "cash" else "kas_besar")
     dr, cr = (cash_acc, OPENING_EQUITY_ACC) if amt > 0 else (OPENING_EQUITY_ACC, cash_acc)
     await _gl.seed_default_coa()
     return await _gl._insert_entry(
@@ -367,6 +400,9 @@ async def update_account(account_id: str, patch: Dict[str, Any],
         return res
     await _tulis_bawaan(acc.get("entity_id") or "", account_id, upd.get("default_receiving_methods") or [], _tulis)
     acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0})
+    if "name" in upd and acc.get("gl_account_code"):   # Kas & Bank 1 — nama sub-akun ikut nama rekening, kode tetap
+        from services import cash_account_mode as _mode
+        await _mode.ikut_nama_rekening(acc, upd["name"])
     txns = await _txns_for(account_id)
     return {**_enrich(acc, txns), **bidang_efektif(acc)}
 

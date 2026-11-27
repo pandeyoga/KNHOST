@@ -682,7 +682,7 @@ async def pay(penalty_id: str, amount: float, method: str, actor: Dict[str, Any]
     await gl_service.preflight_posting(entity_id)
     await gl_service.account_for("penjualan.piutang_denda", entity_id)
     await gl_service.preflight_entry(
-        lines=gl_service._balanced_pair(gl_service._cash_account(cash), gl_service.ACC_PIUTANG_DENDA, amt,
+        lines=gl_service._balanced_pair(await gl_service._cash_account(cash), gl_service.ACC_PIUTANG_DENDA, amt,
                                         "preflight"),
         entity_id=entity_id, source_type="cash_transaction")
     # ── NIAT ────────────────────────────────────────────────────────────

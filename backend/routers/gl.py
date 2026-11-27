@@ -62,10 +62,14 @@ async def list_cash_accounts(request: Request) -> List[Dict[str, Any]]:
     Dipakai modal settle retur jual & supplier-accept retur beli."""
     await require_permission(request, "sales_return", "view")
     accts = await gl_service.list_accounts(active_only=True)
+    # Kas & Bank 1 — akun rekening (akun khusus PT ber-`bank_account_id`) TIDAK pernah ditawarkan: akun itu hanya diisi
+    # lewat kas ber-rekening (refund retur memakai `akun_kas` rekeningnya — Tugas 2). Daftar tetap akun templat 1-11xx:
+    # kode pilihan ini dibaca sebagai JENIS kas (`cash_ledger.cash_type_for`), jadi akun PT hasil pemetaan sengaja tidak
+    # ditambahkan (kas kecil berkode lain akan terbaca kas besar).
     out = [
         {"code": a.get("code"), "name": a.get("name")}
         for a in accts
-        if str(a.get("code", "")).startswith("1-11") and a.get("is_postable", True)
+        if str(a.get("code", "")).startswith("1-11") and a.get("is_postable", True) and not a.get("bank_account_id")
     ]
     return out or [{"code": "1-1100", "name": "Kas Besar / Bank"}, {"code": "1-1110", "name": "Kas Kecil"}]
 

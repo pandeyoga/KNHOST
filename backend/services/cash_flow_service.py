@@ -28,8 +28,9 @@ from core_utils import now_iso
 from services import financial_statement_service as fs
 
 EPS = 0.005
-# Kas Besar/Bank + Kas Kecil (kas & setara kas) — kode bawaan, dipakai posisi kas Dasbor/Proyeksi/Rekening. Laporan Arus
-# Kas memakai `report_basis.kode_kas` (bawaan ∪ pemetaan ∪ riwayat ∪ tanda `is_cash`).
+# Kas Besar/Bank + Kas Kecil — dua akun kas BAWAAN (selalu tampil sebagai baris posisi kas). Kumpulan akun kas yang
+# dijumlah semua pembaca saldo kas (Arus Kas, posisi kas Rekening, Dasbor Keuangan, Proyeksi) = `report_basis.kode_kas`
+# (bawaan ∪ pemetaan ∪ riwayat ∪ tanda `is_cash`, termasuk sub-akun rekening — Kas & Bank 1).
 CASH_CODES = {"1-1100", "1-1110"}
 METHOD_LABEL = "Metode langsung: tiap jurnal kas digolongkan menurut jenis transaksinya."
 

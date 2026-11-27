@@ -234,8 +234,29 @@ async def _known(key: str) -> List[str]:
     return await _glm.known_codes(key)
 
 
-def _cash_account(txn: Dict[str, Any]) -> str:
-    return ACC_KAS_KECIL if txn.get("cash_type") == "kas_kecil" else ACC_KAS_BESAR
+async def akun_kas(entity_id: str, account_id: str, cash_type: str) -> str:
+    """Kas & Bank bagian 1 (D1) — SATU pembantu akun kas untuk jurnal yang menyentuh kas.
+
+    PT `entity_id` sudah memakai akun per rekening (`cash_account_mode.aktif`) DAN rekening `account_id` milik PT itu
+    ber-`gl_account_code` → kode akun rekening itu (akun khusus PT; bukan kode bawaan, jadi `remap_lines` tidak
+    memetakannya ulang). Selain itu → akun jenis kas lama: 1-1110 kas kecil, 1-1100 kas besar/bank — dipetakan per PT
+    di `_insert_entry` seperti sebelumnya, sehingga PT yang belum aktif menghasilkan jurnal yang persis sama."""
+    if account_id and entity_id:
+        from services import cash_account_mode as _mode
+        if await _mode.aktif(entity_id):
+            acc = await db.bank_accounts.find_one({"id": account_id},
+                                                  {"_id": 0, "entity_id": 1, "gl_account_code": 1}) or {}
+            kode = acc.get("gl_account_code") or ""
+            if kode and (acc.get("entity_id") or "") == entity_id:
+                return kode
+    return ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR
+
+
+async def _cash_account(txn: Dict[str, Any], entity_id: str = "") -> str:
+    """Akun kas dokumen kas `txn` = `akun_kas(PT buku jurnal, rekening, jenis kas)`. `entity_id` = PT buku jurnal
+    (kosong → pemilik `owner_entity_id`, lalu PT dokumen kas). Rekening milik PT lain dari buku jurnalnya → akun lama."""
+    ent = entity_id or txn.get("owner_entity_id") or txn.get("entity_id") or ""
+    return await akun_kas(ent, txn.get("account_id") or "", txn.get("cash_type") or "")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -393,12 +414,27 @@ class AccountInUseError(ValueError):
     """PK-18 (GL-02) — akun yang masih dipakai pemetaan atau masih bersaldo tidak boleh dinonaktifkan (router → 409)."""
 
 
+async def _tolak_akun_rekening_dipakai(acc: Dict[str, Any], aksi: str) -> None:
+    """Kas & Bank 1 — akun buku besar rekening (ber-`bank_account_id`) yang masih ditautkan rekeningnya tidak boleh
+    dihapus / dinonaktifkan: jurnal kas rekening itu akan gagal. `AccountInUseError` (router → 409)."""
+    rid = (acc or {}).get("bank_account_id") or ""
+    if not rid:
+        return
+    rek = await db.bank_accounts.find_one({"id": rid, "gl_account_code": acc.get("code")}, {"_id": 0, "name": 1})
+    if rek:
+        raise AccountInUseError(f"Akun {acc.get('code')} adalah akun buku besar rekening {rek.get('name') or rid} "
+                                f"dan tidak bisa {aksi}.")
+
+
 async def assert_can_deactivate(code: str, entity_id: Optional[str] = None) -> None:
     """PK-18 — tolak menonaktifkan akun yang (1) menjadi hasil Pemetaan Akun (`gl_mapping_service.account_for`) untuk
     salah satu kebutuhan `gl_mapping_registry.ENTRIES` pada PT itu — tanpa `entity_id`: bawaan global dan tiap PT yang
     tidak punya baris akun sendiri berkode sama; atau (2) bersaldo: Σ debit − Σ kredit jurnal tidak-void akun itu pada
     PT itu (tanpa `entity_id`: semua PT) ≠ 0 dalam sen. Akun nonaktif membuat setiap jurnal yang memakainya gagal."""
     from services import gl_mapping_registry as _reg, gl_mapping_service as _glm
+    if entity_id:   # Kas & Bank 1 — akun buku besar rekening yang masih dipakai rekeningnya
+        await _tolak_akun_rekening_dipakai(await db.gl_accounts.find_one(
+            {"code": code, "entity_id": entity_id}, {"_id": 0}) or {}, "dinonaktifkan")
     nama = ((await effective_accounts([code], entity_id)).get(code) or {}).get("name", "")
     label = f"{code} {nama}".strip()
     if entity_id:
@@ -483,6 +519,7 @@ async def delete_account(code: str, entity_id: Optional[str] = None) -> None:
         raise ValueError("Akun tidak ditemukan.")
     if acc.get("system") and not entity_id:
         raise ValueError("Akun baku sistem tidak dapat dihapus (boleh dinonaktifkan).")
+    await _tolak_akun_rekening_dipakai(acc, "dihapus")   # Kas & Bank 1
     # PK-36 (GL-10) — baris PT: (1) ada templat berkode sama → hanya penimpa, hapus boleh (laporan kembali ke templat);
     # (2) akun khusus PT → tolak bila dipakai jurnal PT itu; (3) templat maupun akun khusus PT → tolak bila masih
     # dipetakan (Pemetaan Akun). Pemetaan diperiksa dulu: pesannya bisa ditindaklanjuti (ganti pemetaan).
@@ -540,12 +577,25 @@ def _norm_lines(raw_lines: List[Dict[str, Any]], names: Dict[str, str]) -> List[
     return out
 
 
-async def _account_names(codes: List[str]) -> Dict[str, str]:
-    """Nama akun by-code — SELALU dari template global (posting-agnostik terhadap PT)."""
+async def _account_names(codes: List[str], entity_id: Optional[str] = None) -> Dict[str, str]:
+    """Nama akun by-code — dari template global (posting-agnostik terhadap PT).
+
+    Kas & Bank 1 — akun rekening (akun khusus PT ber-`bank_account_id`) tidak punya template global: di PT yang sudah
+    memakai akun per rekening, namanya diambil dari bagan akun PT itu. Akun khusus PT lainnya tetap tanpa nama di baris
+    (seperti sebelumnya)."""
     rows = await db.gl_accounts.find(
         {"code": {"$in": list(set(codes))}, "entity_id": {"$in": [None, ""]}},
         {"_id": 0, "code": 1, "name": 1}).to_list(2000)
-    return {r["code"]: r["name"] for r in rows}
+    names = {r["code"]: r["name"] for r in rows}
+    hilang = sorted({c for c in codes if c and c not in names})
+    if hilang and entity_id:
+        from services import cash_account_mode as _mode
+        if await _mode.aktif(entity_id):
+            async for a in db.gl_accounts.find({"code": {"$in": hilang}, "entity_id": entity_id,
+                                                "bank_account_id": {"$nin": [None, ""]}},
+                                               {"_id": 0, "code": 1, "name": 1}):
+                names[a["code"]] = a.get("name", "")
+    return names
 
 
 # ─── FASE G-5 — Hard-lock periode tertutup (unlock berotoritas) ──────────────
@@ -633,6 +683,18 @@ async def assert_no_control_accounts(codes: List[str], entity_id: Optional[str],
     raise ControlAccountError(msg, code=code, ledger=ledger)
 
 
+async def assert_bukan_akun_rekening(codes: List[str], accounts: Dict[str, Dict[str, Any]]) -> None:
+    """Kas & Bank 1 — tolak jurnal manual ke akun rekening (akun bagan PT ber-`bank_account_id`, `accounts` = bagan
+    akun efektif PT buku jurnal) dengan kalimat siap tampil (`ValueError` → router 400)."""
+    for c in codes:
+        rid = (accounts.get(c) or {}).get("bank_account_id") or ""
+        if rid:
+            rek = await db.bank_accounts.find_one({"id": rid}, {"_id": 0, "name": 1}) or {}
+            nama = rek.get("name") or accounts[c].get("name") or rid
+            raise ValueError(f"Akun {c} adalah akun rekening {nama}; isi lewat kas atau Pindah Dana, bukan jurnal "
+                             f"manual.")
+
+
 async def effective_accounts(codes: Optional[List[str]] = None,
                              entity_id: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
     """FN-05/FN-06 — COA efektif satu entitas: template global + override/akun khusus entitas
@@ -702,7 +764,7 @@ async def preflight_entry(*, lines: List[Dict[str, Any]], entity_id: str, date: 
     Melempar `JournalValidationError` atau `ClosedPeriodError`."""
     from services import gl_mapping_service as _glm
     lines = await _glm.remap_lines(lines, entity_id or DEFAULT_ENTITY_ID, source_type)
-    names = await _account_names([l["account_code"] for l in lines])
+    names = await _account_names([l["account_code"] for l in lines], entity_id)
     norm = [ln for ln in _norm_lines(lines, names) if ln["debit"] or ln["credit"]]
     await _validate_entry_lines(norm, entity_id)
     await enforce_closed_period_guard(entity_id or DEFAULT_ENTITY_ID, date or now_iso(),
@@ -767,7 +829,7 @@ async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: 
     `ref` (opsional) = tautan dokumen induk, mis. {"order_id": ...} untuk jurnal per surat jalan."""
     from services import gl_mapping_service as _glm  # GL-01 — akun dari Pemetaan Akun
     lines = await _glm.remap_lines(lines, entity_id or DEFAULT_ENTITY_ID, source_type)
-    names = await _account_names([l["account_code"] for l in lines])
+    names = await _account_names([l["account_code"] for l in lines], entity_id)
     norm = _norm_lines(lines, names)
     norm = [ln for ln in norm if ln["debit"] or ln["credit"] or ln["debit"] != ln["debit"]]  # buang baris 0/0
     await _validate_entry_lines(norm, entity_id)  # FN-15 — pintu kontrol, bukan tanggung jawab tiap caller
@@ -866,7 +928,9 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
             raise ValueError(f"Akun '{c}' adalah header — pilih akun detail (postable).")
         if accounts[c].get("is_active") is False:
             raise ValueError(f"Akun '{c}' nonaktif.")
-    # PK-36 (IC-06) — akun kontrol hanya lewat dokumennya; juga untuk usulan (`hanya_periksa`) & saat disetujui.
+    # Kas & Bank 1 (§7 butir 3) — akun rekening hanya diisi lewat kas/Pindah Dana, supaya saldonya = buku kas rekening;
+    # juga untuk usulan (`hanya_periksa`) & saat disetujui.
+    await assert_bukan_akun_rekening(codes, accounts)
     await assert_no_control_accounts(codes, eid, aksi="jurnal_manual")
     names = {c: accounts[c]["name"] for c in codes}
     lines = _norm_lines(raw, names)
@@ -3337,7 +3401,8 @@ async def preflight_cash(txn: Dict[str, Any]) -> None:
     if amount <= EPS or txn.get("direction") != "out":
         return
     ent = txn.get("owner_entity_id") or txn.get("entity_id") or ""
-    await preflight_entry(lines=_balanced_pair(_cash_out_contra(txn), _cash_account(txn), amount, "preflight"),
+    await preflight_entry(lines=_balanced_pair(_cash_out_contra(txn), await _cash_account(txn, ent), amount,
+                                               "preflight"),
                           entity_id=ent, date=txn.get("txn_date") or now_iso(), source_type="cash_transaction")
 
 
@@ -3449,7 +3514,6 @@ async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]
     amount = round(float(txn.get("amount", 0) or 0), 2)
     if amount <= EPS:
         return None
-    cash_acc = _cash_account(txn)
     ref_type = txn.get("ref_type") or ""
     direction = txn.get("direction")
     desc = txn.get("description") or txn.get("category") or "Transaksi kas"
@@ -3470,6 +3534,7 @@ async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]
     # dibukukan di buku entitas PEMILIK kewajiban (pola KN-076-AR-GL-DRIFT).
     if txn.get("owner_entity_id"):
         je_entity = txn["owner_entity_id"]
+    cash_acc = await _cash_account(txn, je_entity)   # Kas & Bank 1 — akun kas menurut PT buku jurnal & rekening
 
     if direction == "in":
         if ref_type == "ar_receipt":

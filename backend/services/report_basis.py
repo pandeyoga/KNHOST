@@ -255,12 +255,15 @@ async def baris_tagihan(orders: List[Dict[str, Any]], customers: Dict[str, Dict[
 
 
 # ── Arus kas ────────────────────────────────────────────────────────────────────────────────────────────────────────
-async def kode_kas(scope: Optional[Dict[str, Any]]) -> set:
-    """Akun kas & setara kas laporan bercakupan `scope` (saringan Mongo `{"entity_id": …}`): semua akun yang pernah
-    dipakai `kas_bank.kas_besar` dan `kas_bank.kas_kecil` (bawaan + pemetaan + riwayat; satu PT = lapisan PT itu) ∪ akun
-    bertanda `is_cash` / `cash_equivalent` di bagan akun efektif."""
+async def kode_kas(scope: Any) -> set:
+    """Akun kas & setara kas laporan bercakupan `scope` (saringan Mongo `{"entity_id": …}`, atau id satu PT): semua akun
+    yang pernah dipakai `kas_bank.kas_besar` dan `kas_bank.kas_kecil` (bawaan + pemetaan + riwayat; satu PT = lapisan PT
+    itu) ∪ akun bertanda `is_cash` / `cash_equivalent` di bagan akun efektif — termasuk sub-akun rekening (Kas & Bank 1).
+    Satu pembantu untuk semua pembaca saldo kas (Arus Kas, posisi kas, Dasbor Keuangan, Proyeksi Arus Kas)."""
     from services import financial_statement_service as fs
     from services.gl_mapping_service import known_codes
+    if isinstance(scope, str):
+        scope = {"entity_id": scope} if scope else None
     eid = fs.scope_entity(scope)
     codes = set(await known_codes("kas_bank.kas_besar", eid)) | set(await known_codes("kas_bank.kas_kecil", eid))
     amap = await fs._accounts_map(scope)   # noqa: SLF001 — bagan akun efektif laporan (pembantu yang sama)

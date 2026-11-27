@@ -19,11 +19,15 @@ EPS = 0.005
 
 
 async def _cash_position(scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Posisi kas buku besar. Kas & Bank 1 — akun kas = `report_basis.kode_kas` (termasuk sub-akun rekening); dua akun
+    bawaan selalu tampil, akun kas lain bila pernah dijurnal (sama dengan `bank_service.cash_position`)."""
+    from services import report_basis as rb
     amap = await fs._accounts_map()
     agg = await fs._aggregate(scope, None, include_closing=True)
+    kas = await rb.kode_kas(scope)
     lines = []
     total = 0.0
-    for code in sorted(CASH_CODES):
+    for code in sorted(set(CASH_CODES) | {c for c in kas if c in agg}):
         v = agg.get(code, {"debit": 0.0, "credit": 0.0})
         bal = round(float(v.get("debit", 0) or 0) - float(v.get("credit", 0) or 0), 2)
         total += bal

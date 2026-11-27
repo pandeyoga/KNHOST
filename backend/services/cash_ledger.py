@@ -97,7 +97,9 @@ async def periksa_rekening(entity_id: str, account_id: str = "", cash_type: str 
 
     `account_id` dikirim → harus rekening AKTIF milik `entity_id`; kosong → rekening tunggal PT untuk `cash_type`
     (`bank_service.sole_account_id`); tetap kosong → `CashRejected` 409 "Pilih rekening kas/bank…". Jenis kas dan akun
-    buku besar diturunkan dari rekening (`bank_service.account_cash_type`), bukan dari pemanggil."""
+    buku besar diturunkan dari rekening (`bank_service.account_cash_type`), bukan dari pemanggil. Kas & Bank 1 — akun
+    buku besar = `gl_service.akun_kas` (sub-akun rekening bila PT sudah memakai akun per rekening, selain itu akun jenis
+    kas seperti sebelumnya)."""
     from services import bank_service as bs
     from services import gl_service as gl
     account_id = (account_id or "").strip()
@@ -118,7 +120,7 @@ async def periksa_rekening(entity_id: str, account_id: str = "", cash_type: str 
         acc = await db.bank_accounts.find_one({"id": sole}, {"_id": 0})
     ct = bs.account_cash_type(acc)
     return {"account": acc, "account_id": acc["id"], "cash_type": ct,
-            "account_code": gl._cash_account({"cash_type": ct})}
+            "account_code": await gl.akun_kas(entity_id, acc["id"], ct)}
 
 
 async def _cari_kas(cid: str, *, txn_id: str, ref_type: str, ref_id: str, direction: str,

@@ -40,9 +40,11 @@ def _bucket_key(days: int) -> str:
 
 
 async def _cash_now(scope: Optional[Dict[str, Any]]) -> float:
+    """Saldo kas buku besar saat ini. Kas & Bank 1 — akun kas = `report_basis.kode_kas` (termasuk sub-akun rekening)."""
+    from services import report_basis as rb
     agg = await fs._aggregate(scope, None, include_closing=True)
     total = 0.0
-    for code in CASH_CODES:
+    for code in set(CASH_CODES) | await rb.kode_kas(scope):
         v = agg.get(code, {"debit": 0.0, "credit": 0.0})
         total += float(v.get("debit", 0) or 0) - float(v.get("credit", 0) or 0)
     return round(total, 2)
