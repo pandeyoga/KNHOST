@@ -51,6 +51,9 @@ TANPA_PPN = {"tax_override": "non_ppn", "tax_override_reason": "uji F1-4 tanpa P
 PEMICU = "Uji Pengimpor F14"
 CSV = "Tanggal,Keterangan,Cabang,Jumlah,DB/CR,Saldo\n{tgl},{ket},0000,\"{nom}\",{arah},0\n"
 PESAN_LAPORAN = "Putuskan dulu laporan bayar {nomor}: Terima bila buktinya mutasi ini, Tolak bila bukan."
+PESAN_NOMINAL = ("Nominal kwitansi dari mutasi harus sama dengan nominal mutasi Rp 1.000.000 (diisi {badan}). Uang "
+                 "yang masuk adalah nominal mutasi; selisih dengan tagihan diputus lewat alokasi dan keputusan "
+                 "selisih.")
 PESAN_BUKAN_MUTASI = "Kwitansi ini tidak lahir dari mutasi — batalkan lewat Rekonsiliasi dan Kwitansi seperti biasa."
 PERINGATAN = ("Pesanan {no} sudah dilepas ke gudang ({status}); membatalkan kwitansi tidak menahan barang — tahan "
               "pesanan atau hubungi Gudang bila perlu.")
@@ -379,21 +382,29 @@ async def test_kwitansi_dari_mutasi_nominal_harus_sama_mutasi(klien, db, siap, n
     r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(so, nominal))
     assert r.status_code == kode, r.text
     if kode == 400:
-        assert _detail(r) == ("Nominal kwitansi Rp 900.000 berbeda dari nominal mutasi Rp 1.000.000. Uang yang masuk "
-                              "adalah nominal mutasi; selisih dengan tagihan diputus lewat keputusan selisih.")
+        assert _detail(r) == PESAN_NOMINAL.format(badan="Rp 900.000")
         assert await _kwitansi_baris(db, ln["id"]) == [] and "match_lock" not in await _baris(db, ln["id"])
     else:
         assert r.json()["receipt"]["amount"] == 1_000_000        # kas = nominal mutasi (cent-tepat untuk tautan)
 
 
 async def test_kwitansi_dari_mutasi_keputusan_selisih_kas_tetap_mutasi(klien, db, siap):
-    """Dengan keputusan selisih, nominal badan tidak dibandingkan — kas kwitansi tetap nominal mutasi."""
+    """R9 — nominal form ≠ nominal mutasi selalu 400, JUGA bila membawa keputusan selisih (keputusan dihitung server dari
+    nominal kwitansi, bukan angka yang dilihat pengguna). Keputusan selisih tetap boleh untuk alokasi < kas: nominal =
+    mutasi Rp 1.000.000, alokasi Rp 800.000 → kas Rp 1.000.000, teralokasi Rp 800.000, sisa Rp 200.000."""
     so = await _pesan(klien, db, siap)
     ln = await _impor_svc(db, siap["A"], 1_000_000, f"TRSF {await _kode(db, so['id'])} SELISIH")
-    r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(so, 1_200_000, variance={
-        "kind": "deposit", "reason_code": "lebih_bayar", "note": "uji F1-4"}))
+    keputusan = {"kind": "deposit", "reason_code": "customer_overtransfer", "note": "uji F1-4"}
+    r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(so, 1_200_000, variance=keputusan))
+    assert r.status_code == 400, r.text
+    assert _detail(r) == PESAN_NOMINAL.format(badan="Rp 1.200.000")
+    assert await _kwitansi_baris(db, ln["id"]) == [] and "match_lock" not in await _baris(db, ln["id"])
+    r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(
+        so, 1_000_000, variance=keputusan, allocations=[{"order_id": so["id"], "amount": 800_000}]))
     assert r.status_code == 200, r.text
-    assert r.json()["receipt"]["amount"] == 1_000_000 and r.json()["line"]["status"] == "matched"
+    kw = r.json()["receipt"]
+    assert (kw["amount"], kw["applied_total"], kw["unapplied_amount"]) == (1_000_000, 800_000, 200_000), kw
+    assert r.json()["line"]["status"] == "matched" and kw["bank_verified"] is True
 
 
 @pytest.mark.parametrize("alokasi", ["eksplisit", "tertua_dulu"])

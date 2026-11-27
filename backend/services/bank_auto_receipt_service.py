@@ -842,8 +842,11 @@ async def proses_rekening(bank_account_id: str, entity_ids: Optional[List[str]],
 PESAN_LAPORAN_TERTUNDA = "Putuskan dulu laporan bayar {nomor}: Terima bila buktinya mutasi ini, Tolak bila bukan."
 PESAN_BUKAN_DARI_MUTASI = ("Kwitansi ini tidak lahir dari mutasi — batalkan lewat Rekonsiliasi dan Kwitansi seperti "
                            "biasa.")
-PESAN_NOMINAL = ("Nominal kwitansi {badan} berbeda dari nominal mutasi {mutasi}. Uang yang masuk adalah nominal "
-                 "mutasi; selisih dengan tagihan diputus lewat keputusan selisih.")
+#: R9 — kas kwitansi dari mutasi SELALU = nominal mutasi; nominal form yang berbeda (≥ Rp 1) selalu ditolak, juga bila
+#: membawa keputusan selisih (keputusan itu dihitung server dari nominal kwitansi, bukan dari angka yang dilihat
+#: pengguna). Keputusan selisih tetap boleh untuk alokasi yang lebih kecil dari kas.
+PESAN_NOMINAL = ("Nominal kwitansi dari mutasi harus sama dengan nominal mutasi {mutasi} (diisi {badan}). Uang yang "
+                 "masuk adalah nominal mutasi; selisih dengan tagihan diputus lewat alokasi dan keputusan selisih.")
 PESAN_SUDAH_BERKWITANSI = ("Mutasi ini sudah punya kwitansi {nomor}. Cocokkan kwitansi itu di Rekonsiliasi Bank, atau "
                            "batalkan dulu bila keliru.")
 PESAN_BUKAN_MASUK = "Hanya mutasi dana masuk yang bisa menjadi kwitansi pelanggan."
@@ -1012,9 +1015,9 @@ async def kwitansi_dari_mutasi(line_id: str, payload: Dict[str, Any], actor: Dic
     kunci yang sama). Tautan gagal sesudah kwitansi lahir → kwitansi itu dibatalkan, 409 (tidak ada kwitansi tanpa
     tautan).
 
-    Pagar sebelum tulisan: baris masuk & `unmatched` & PT jelas; nominal form = nominal mutasi (selisih < Rp 1) kecuali
-    ada keputusan selisih (kas kwitansi tetap nominal mutasi); belum ada kwitansi hidup lahir dari baris ini; pesanan
-    tujuan tanpa laporan bayar `menunggu`/`memproses` (409 pemandu) kecuali laporan itu yang diterima bersama mutasi.
+    Pagar sebelum tulisan: baris masuk & `unmatched` & PT jelas; nominal form = nominal mutasi (selisih < Rp 1), dengan
+    atau tanpa keputusan selisih (R9 — kas kwitansi = nominal mutasi); belum ada kwitansi hidup lahir dari baris ini;
+    pesanan tujuan tanpa laporan bayar `menunggu`/`memproses` (409 pemandu) kecuali laporan itu yang diterima bersama mutasi.
     Izin (`cash.create` + `ar_receipt.create`, `payment_report.decide` untuk laporan) milik router.
 
     → `{receipt, line, released_order_ids}`. Penanda baris `f1.status = "manual"` (mesin tidak memprosesnya lagi bila
@@ -1025,9 +1028,8 @@ async def kwitansi_dari_mutasi(line_id: str, payload: Dict[str, Any], actor: Dic
     line = await _baris_berpagar(line_id, entity_ids)
     _periksa_baris_masuk(line)
     uang = brs._round(line.get("amount"))
-    keputusan = payload.get("variance") if isinstance(payload.get("variance"), dict) else {}
     badan = round(float(payload.get("amount") or 0), 2)
-    if not str(keputusan.get("kind") or "").strip() and abs(badan - uang) >= SELISIH_COCOK:
+    if abs(badan - uang) >= SELISIH_COCOK:   # R9 — juga bila membawa keputusan selisih
         raise HTTPException(status_code=400, detail=PESAN_NOMINAL.format(badan=_rp(badan), mutasi=_rp(uang)))
     report_id = str(payload.get("payment_report_id") or "").strip()
     report, order_laporan = None, None
