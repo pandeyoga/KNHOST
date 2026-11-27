@@ -1,5 +1,19 @@
 # SESSION HANDOFF — Kain Nusantara (WMS/ERP)
 
+> **27 Nov 2026 — F1 Kwitansi otomatis dari mutasi + Kas & Bank bagian 1 selesai** di cabang `claude/nifty-carson-jjx3c8`
+> (belum digabung ke `main`; Lapor Bayar sudah di `main` `a6fb7f8`; F1 menunggu izin gabung sampai `b41e21f`).
+> **F1:** impor mutasi bank → mutasi berkode bayar yang cocok sempurna jadi kwitansi terverifikasi bank (jalur A/B/C),
+> sisanya kartu "Mutasi berkode perlu dicek" di Meja Keuangan; sakelar `bank.kwitansi_otomatis_mutasi`. Hasil:
+> `docs/superpowers/plans/2026-11-27-kwitansi-otomatis-mutasi-hasil.md`. **Kas & Bank 1:** sub-akun buku besar per
+> rekening (`1-1100-NN`) yang menyala per PT lewat **pindah saldo** (Finance siapkan → orang kedua setujui, hitung ulang +
+> sidik), satu pembantu akun kas `gl_service.akun_kas` + penjaga `verify_akun_kas_satu_pintu`, dokumen **Pindah Dana**
+> (`fund_transfers`, `PDN-`, 1-1150, biaya, kontrol), kategori kas manual Transfer/Top-up ditutup. Pembaruan VPS tidak
+> menulis data; tiap PT tetap di akun lama sampai pindah saldo disetujui (data nyata = STOP & ASK). Hasil & bukti:
+> `docs/superpowers/plans/2026-11-27-kas-bank-1-hasil.md` (tests_mem 3236 lulus; jest 2173/2174 — lingkungan; gate
+> --ci/--quick tanpa pelanggaran baru; MongoDB sungguhan 3/3; 33 tangkapan). Berikutnya menurut urutan G1: Kas & Bank
+> bagian 2 (C5+C6), 3 (C1–C3), 4 (C7–C8); C4 menunggu pemilik; Meja gelombang 3; F2 → OCR → F3 → F4; G2.
+
+
 > **26 Nov 2026 — Lapor Bayar CBD & DP (tahan sebelum gudang) selesai** di cabang `claude/nifty-carson-jjx3c8`
 > (belum digabung ke `main`; meja gelombang 1+2 sudah di `main` `4e98a42`). Pesanan wajib bayar dulu (CBD, DP, K-27)
 > berhenti di tahap **"Bayar dicek Finance"** antara Disetujui dan Dilepas ke gudang; sales **Lapor bayar** (bukti

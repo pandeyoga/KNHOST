@@ -142,6 +142,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `bank_reconciliation.py` | 25 | 577 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 10 | 207 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` … |
 | `cash.py` | 4 | 296 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
+| `cash_account_cutover.py` | 5 | 94 | `/kas-per-rekening/usulan`, `/kas-per-rekening/{entity_id}/pratinjau`, `/kas-per-rekening/{entity_id}/siapkan`, `/kas-per-rekening/usulan/{id}/setujui`, `/kas-per-rekening/usulan/{id}/tolak` (Kas & Bank 1 — pindah saldo per PT) |
 | `cash_advances.py` | 25 | 233 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `cash_holdings.py` | 7 | 132 | `/cash-deposits`, `/cash-deposits/{dep_id}/cancel`, `/cash-deposits/{dep_id}/receive`, `/cash-deposits/{dep_id}/reject`, `/cash-holdings`, `/cash-holdings/me/summary` |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
@@ -182,6 +183,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `financial_statements.py` | 8 | 294 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 216 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
+| `fund_transfers.py` | 6 | 98 | `/fund-transfers`, `/fund-transfers/{id}`, `/fund-transfers/{id}/receive`, `/fund-transfers/{id}/approve`, `/fund-transfers/{id}/cancel` (Kas & Bank 1 — Pindah Dana) |
 | `gl.py` | 24 | 511 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
 | `gl_mappings.py` | 5 | 88 | `/gl/account-mappings`, `/gl/account-mappings/history`, `/gl/account-mappings/{key}`, `/gl/account-mappings/{key}/candidates`, `/gl/account-mappings/{key}/reset` |
 | `goods_receipts.py` | 39 | 333 | `/goods-receipts`, `/goods-receipts/arrival`, `/goods-receipts/arrival-candidates`, `/goods-receipts/dn-profiles`, `/goods-receipts/dn-profiles/{partner_id}`, `/goods-receipts/doc-variance` … |
@@ -363,6 +365,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `book_date.py` | 123 | PK-37 (GL-05, keputusan K-03) — SATU tanggal buku WIB dan kunci periode untuk dokumen, pembayaran, dan mutasi  |
 | `budget_service.py` | 867 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
 | `cash_advance_service.py` | 1136 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
+| `cash_account_cutover_service.py` | 825 | Kas & Bank 1 (T3) — pindah saldo kas lama ke akun buku besar per rekening per PT: pratinjau (baris jurnal per rekening per akun asal, sidik), siapkan, setujui orang kedua (hitung ulang, klaim, jurnal `pindah_saldo_kas`, menyalakan mode), tolak (melepas akun pilihan), keadaan sesudah aktif. |
+| `cash_account_mode.py` | 300 | Kas & Bank 1 (T1) — mode akun per rekening per PT (`aktif`, `aktif_sejak`, `nyalakan` sekali tulis) dan sub-akun rekening `{induk}-{NN}` / akun pilihan Finance (`buat_subakun`, `lepas_subakun`, `periksa_akun_pilihan`). Pembantu akun kas jurnal: `gl_service.akun_kas`. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 198 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_holding_service.py` | 672 | PM-T4 (PM-06, K-36) — tunai yang diterima sales dicatat sebagai TITIPAN di tangan pencatatnya sampai disetor. |
@@ -454,6 +458,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `financial_statement_service.py` | 316 | FINANCE — Laporan Keuangan (Laba-Rugi & Neraca) diturunkan dari GL. |
 | `fixed_asset_service.py` | 831 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
 | `fixed_asset_transfer_service.py` | 408 | PK-23 (FY-04) — pindah aset tetap antar-PT dan pembayarannya: dua PT atau tidak sama sekali, tidak dua kali. |
+| `fund_transfer_service.py` | 637 | Kas & Bank 1 (T4) — dokumen Pindah Dana (`fund_transfers`, `PDN-`): pasangan kas lewat `create_cash`, biaya transfer, dua tahap lewat 1-1150 + Terima, kontrol dua orang `kontrol.pindah_dana`, batal berklaim (status yang diperiksa + baca ulang kas). |
 | `fleet_service.py` | 138 | Armada internal — master kendaraan (`fleet_vehicles`, SCOPED) + ketersediaan sopir. |
 | `fulfillment_decision_service.py` | 369 | FASE E-8 (E8.10b#4 · US16) — **KEPUTUSAN PEMENUHAN** milik Admin Sales. |
 | `fulfillment_plan_service.py` | 294 | 2026-10 — RENCANA PEMENUHAN per baris (keputusan pemilik): Admin Sales membagi |

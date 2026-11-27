@@ -63,6 +63,7 @@ Temuan nyata yang tertangkap tinjauan sebelum gabung:
 - **Jest penuh** di `b370cc1`: 2173/2174 uji, 270/272 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan garis dasar). `ed51714` (layar saja): uji jest terkait 18 suite lulus (64 + 230 uji).
 - **Uji baru:** `test_KB1_1`…`test_KB1_6` (backend) + `kb1KasBank.test.js` (jest). Setiap jalur uang diuji di PT belum
   aktif (rekaman jurnal kode lama) dan PT aktif (sub-akun).
+- **MongoDB sungguhan** (`backend/tests/test_bp_KB1_bersamaan.py`, salinan data acuan + backend terpisah :8031, salinan dibuang): (1) Terima × Batal Pindah Dana bersamaan, 5 dokumen — tiap dokumen utuh selesai **atau** utuh batal, 1-1150 bersih nol, tidak pernah campuran; (2) dua Setujui Pindah Dana bersamaan → satu set kas; (3) dua Setujui pindah saldo bersamaan → satu jurnal pindah saldo, mode menyala sekali, sub-akun tiap rekening = buku kasnya. 3/3 lulus.
 - **Waktu pratinjau** pindah saldo: ±0,03 dtk pada data ukuran demo, ±1,0 dtk pada 10× (database tiruan tanpa indeks;
   MongoDB asli memakai dua indeks baru `cash_transactions.journal_entry_id` / `parent_journal`).
 
@@ -71,7 +72,7 @@ Temuan nyata yang tertangkap tinjauan sebelum gabung:
 | Mode | FAIL (garis dasar) | Lebih merah | Pelanggaran baru (per pelanggaran) |
 |---|---|---|---|
 | `--ci` (`1cb2b63`) | 36 (43) | 2 POC bawaan (sama dengan F1 & Lapor Bayar) | **0** |
-| `--quick` (pohon akhir) | ⟨GQ⟩ | ⟨GQ2⟩ | ⟨GQ3⟩ |
+| `--quick` (pohon akhir `ed51714`, data acuan) | 10 (16) | 0 | **0** |
 
 ## 4. Keputusan pelaksanaan (periksa)
 
