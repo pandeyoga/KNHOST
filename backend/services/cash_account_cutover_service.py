@@ -18,14 +18,17 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-de
   ulang; sidik berbeda dari sidik yang dilihat penyetuju → 409 "Angka berubah, muat ulang." Lalu satu langkah berklaim
   (pola `interco_charge_service.settle` / `_lanjut_settle`: klaim bersyarat status + jatah waktu, niat tersimpan, jurnal
   tahan-gagal, ulang dari Posting Gagal meneruskan niat): akun rekening lengkap → periksa jurnal (akun, periode) →
-  `cash_account_mode.nyalakan` → hitung ulang dengan batas waktu `aktif_sejak` → jurnal `pindah_saldo_kas` bertanggal
-  hari persetujuan (WIB) → `account_id` kas lama tunggal → `disetujui`.
+  `account_id` kas lama tunggal → `cash_account_mode.nyalakan` → hitung ulang dengan batas waktu `aktif_sejak` → jurnal
+  `pindah_saldo_kas` bertanggal hari persetujuan (WIB) → `disetujui`.
 
   Konsistensi dengan penanda waktu (ketetapan pengendali (a)): hitungan yang DIPOSTING dibuat SESUDAH `nyalakan`, dengan
   batas yang sama dengan aturan pembalik (`baris_kas_rekening`: jurnal & kas terbit sebelum `aktif_sejak`). Kas yang
-  dijurnal sebelum penanda (masih ke akun lama) ikut dipindah; kas sesudah penanda langsung ke sub-akun. Tidak ada kas
-  yang jatuh di luar kedua ember. Hitungan sebelum klaim hanya untuk membandingkan sidik; bila berbeda dari yang
-  diposting (kas tercatat di antara keduanya), keduanya dicatat (`sidik_disetujui`, `sidik_diposting`).
+  dijurnal sebelum penanda (masih ke akun lama) ikut dipindah; kas sesudah penanda langsung ke sub-akun. Pembatalan kas
+  lama SESUDAH penanda (di jendela hitung ulang, atau sebelum persetujuan yang terhenti diteruskan) sudah dialihkan
+  pembalik ke sub-akun, jadi jurnal aslinya tetap dipindah (`_dibalik_sebelum`); kas tunggal ditautkan ke rekeningnya
+  SEBELUM penanda supaya pembatalannya juga dialihkan. Tidak ada kas yang jatuh di luar kedua ember. Hitungan sebelum
+  klaim hanya untuk membandingkan sidik; bila berbeda dari yang diposting (kas tercatat di antara keduanya), keduanya
+  dicatat (`sidik_disetujui`, `sidik_diposting`).
 * **Tolak** (`tolak`) — tidak ada yang berubah selain akun rekening yang sudah dibuat (tetap, kosong). Sebelum disetujui
   akun rekening bisa diganti lewat siapkan ulang (§7 butir 2: kode boleh diganti sebelum pindah saldo disetujui).
 
@@ -165,6 +168,17 @@ async def _tolak_bila_tertunda(entity_id: str) -> None:
 
 
 # ── Hitungan (pratinjau) ─────────────────────────────────────────────────────────────────────────────────────────────
+async def _dibalik_sebelum(je: Dict[str, Any], sejak: str) -> bool:
+    """Jurnal kas `je` sudah dibalik SEBELUM batas `sejak` (kosong = kapan pun) → pasangannya bersih 0 di akun lama,
+    tidak dipindah. Pembalik yang terbit pada/sesudah `sejak` (PT sudah menyala) dianggap belum ada: pembalik itu sudah
+    dialihkan ke akun rekening oleh `baris_kas_rekening`, jadi jurnal aslinya WAJIB ikut dipindah (tinjauan T3 putaran 1
+    — batal kas di jendela antara `nyalakan` dan hitung ulang, atau sebelum persetujuan yang terhenti diteruskan).
+    Penanda warisan tanpa `created_at` dianggap sebelum `sejak`."""
+    from services import gl_service as gl
+    rev = await gl.reversal_of(je)
+    return bool(rev) and (not sejak or (rev.get("created_at") or "") < sejak)
+
+
 def _sidik(rekening: List[Dict[str, Any]], tunggal: List[Dict[str, Any]]) -> str:
     """Sidik angka: rekening, akun tujuan (sub-akun yang belum dibuat = "(baru)"), nominal per akun asal (sen), dan kas
     lama tanpa rekening yang ikut rekening tunggal. Berubah bila ada kas/jurnal baru sejak dimuat."""
@@ -237,11 +251,12 @@ async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
                     if ln.get("account_code") in lama:
                         tambah("saldo_awal", je, i, rid)
             continue
+        # Kas ber-rekening berstatus apa pun (seperti `baris_kas_rekening`: pembalik dipanggil saat kasnya dibatalkan).
         kas = [t for t in await gl.kas_jurnal(je)
                if (t.get("account_id") in rek_by_id or (not t.get("account_id") and t.get("id") in tunggal_kas))
                and (not sejak or (t.get("created_at") or "") < sejak)]
-        if not kas or await gl.reversal_of(je):
-            continue   # jurnal yang sudah dibalik: pembaliknya ikut tidak dipindah (keduanya di akun lama, bersih 0)
+        if not kas or await _dibalik_sebelum(je, sejak):
+            continue
         for i, t in gl.pasang_baris_kas(lines, kas, lama).items():
             tambah("kas", je, i, t.get("account_id") or tunggal_kas[t["id"]])
     # Rekening: akun tujuan, saldo buku, asal, selisih.
@@ -558,6 +573,16 @@ async def _lepas_jatah(usulan_id: str, actor: Dict[str, Any], galat: str, *, kem
     await db[COLL].update_one({"id": usulan_id}, {"$set": upd, **jejak})
 
 
+async def _tautkan_tunggal(eid: str, uid: str, kelompok: List[Dict[str, Any]]) -> None:
+    """Kas lama tanpa rekening (tidak-void) yang ikut rekening tunggal jenis kasnya → `account_id` rekening itu +
+    `account_id_dari_pindah_saldo` (jurnal kasnya tidak diubah; buku kas rekening tunggal tetap sama)."""
+    for g in kelompok:
+        await db.cash_transactions.update_many(
+            {"id": {"$in": g["kas_ids"]}, "entity_id": eid, "status": {"$ne": "void"},
+             "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]},
+            {"$set": {"account_id": g["rekening_id"], "account_id_dari_pindah_saldo": uid, "updated_at": now_iso()}})
+
+
 async def _lanjutkan(u: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     """EFEK + JURNAL + SELESAI untuk usulan yang sudah diklaim (`memproses`, jatah waktu dipegang pemanggil)."""
     from services import bank_service as bs
@@ -585,10 +610,17 @@ async def _lanjutkan(u: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
         except Exception as exc:
             await _lepas_jatah(uid, actor, str(exc) or exc.__class__.__name__, kembali_menunggu=True)
             raise
-        # 2. PT menyala (tulis sekali). Sejak penanda ini kas baru PT masuk sub-akun.
+        # 2. Kas lama tanpa rekening yang ikut rekening tunggal → `account_id` SEBELUM PT menyala (tinjauan T3
+        #    putaran 1): sejak menyala, pembatalannya dialihkan ke akun rekening oleh `baris_kas_rekening` (kas
+        #    ber-rekening, terbit sebelum `aktif_sejak`) — sama dengan hitung ulang yang memindahnya. Bila ditautkan
+        #    sesudah jurnal (dulu langkah 5), kas yang dibatalkan di antara keduanya (mis. jurnal pindah saldo gagal
+        #    lalu diulang hari lain) dipindah tetapi pembaliknya tetap di akun lama. Jurnal kasnya tidak diubah; buku
+        #    kas rekening tunggal sama.
+        await _tautkan_tunggal(eid, uid, pra["kas_tanpa_rekening"]["tunggal"])
+        # 3. PT menyala (tulis sekali). Sejak penanda ini kas baru PT masuk sub-akun.
         await mode.nyalakan(eid, oleh)
     try:
-        # 3. Niat: hitung ulang dengan batas `aktif_sejak` (aturan pembalik Tugas 2), disimpan sekali.
+        # 4. Niat: hitung ulang dengan batas `aktif_sejak` (aturan pembalik Tugas 2), disimpan sekali.
         if not u.get("rencana"):
             sejak = await mode.aktif_sejak(eid)
             hit = await _hitung(eid, sejak=sejak)
@@ -600,19 +632,15 @@ async def _lanjutkan(u: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
                 "hitungan_diposting": _ringkas(hit), "total_dipindah": hit["total_dipindah"], "updated_at": now_iso()}})
             u = await db[COLL].find_one({"id": uid}, {"_id": 0})
         rencana = u["rencana"]
-        # 4. Jurnal tahan-gagal (gagal → `gl_status: failed`, panel Posting Gagal; ulang = `lanjutkan`).
+        # Sisa kas tunggal yang baru terbaca sesudah menyala (rekening tunggalnya berubah di sela itu) — ditautkan
+        # SEBELUM jurnal, dengan alasan yang sama dengan langkah 2.
+        await _tautkan_tunggal(eid, uid, rencana.get("tunggal") or [])
+        # 5. Jurnal tahan-gagal (gagal → `gl_status: failed`, panel Posting Gagal; ulang = `lanjutkan`).
         res = await gl.post_durable(
             COLL, uid, lambda: gl.post_pindah_saldo_kas(
                 usulan_id=uid, entity_id=eid, lines=rencana["baris_jurnal"], date=u.get("tanggal_jurnal") or "",
                 label=label, created_by=oleh["name"] or "system"),
             source_type=gl.SOURCE_PINDAH_SALDO_KAS, source_id=uid, raise_on_fail=True)
-        # 5. Kas lama tanpa rekening yang ikut rekening tunggal → `account_id` (jurnalnya tidak diubah).
-        for g in rencana.get("tunggal") or []:
-            await db.cash_transactions.update_many(
-                {"id": {"$in": g["kas_ids"]}, "entity_id": eid,
-                 "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]},
-                {"$set": {"account_id": g["rekening_id"], "account_id_dari_pindah_saldo": uid,
-                          "updated_at": now_iso()}})
         ditautkan = await db.cash_transactions.count_documents({"entity_id": eid, "account_id_dari_pindah_saldo": uid})
     except HTTPException as exc:
         await _lepas_jatah(uid, actor, str(exc.detail))

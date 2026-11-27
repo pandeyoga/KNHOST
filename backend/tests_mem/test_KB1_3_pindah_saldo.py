@@ -62,6 +62,15 @@ async def _kas_tanpa_rekening(db, eid: str, jenis_kas: str, arah: str, nominal: 
     return t
 
 
+async def _batal_api(klien, kepala_admin, eid: str, kas_id: str, alasan: str = "uji batal KB3") -> None:
+    """Batal kas lewat `POST /api/cash-transactions/{id}/void` (Admin, PT uji aktif di kepala)."""
+    from services.entity_lifecycle_service import invalidate_status_cache
+    invalidate_status_cache()   # PT uji baru harus terlihat di penugasan Admin (cache status PT)
+    res = await klien.post(f"/api/cash-transactions/{kas_id}/void", headers={**kepala_admin, "X-Entity-Id": eid},
+                           json={"reason": alasan})
+    assert res.status_code == 200, res.text
+
+
 def _baris(je: dict) -> list:
     return [(ln["account_code"], ln["debit"], ln["credit"]) for ln in je["lines"]]
 
@@ -300,14 +309,17 @@ async def test_KB1_3_U5_setujui_ganda_satu_jurnal(db):
     assert len(penanda) == 1 and penanda[0]["oleh"] == ok[0]["disetujui_oleh"]
 
 
-# ═══ 6. Kas yang tercatat SELAMA persetujuan masuk tepat satu ember (ketetapan (a)) ═══════════════════════════════
-@pytest.mark.parametrize("kapan", ["sebelum_nyala", "sesudah_nyala"])
-async def test_KB1_3_U6_kas_selama_persetujuan(db, monkeypatch, kapan):
+# ═══ 6. Kas yang tercatat / dibatalkan SELAMA persetujuan masuk tepat satu ember (ketetapan (a), tinjauan putaran 1) ═
+@pytest.mark.parametrize("kapan", ["sebelum_nyala", "sesudah_nyala", "batal_sesudah_nyala"])
+async def test_KB1_3_U6_kas_selama_persetujuan(db, klien, kepala_admin, monkeypatch, kapan):
     """Pindah saldo menghitung ulang SESUDAH penanda waktu `nyalakan` ditulis, dengan batas waktu yang sama dengan
-    aturan pembalik Tugas 2. Kas yang dijurnal sebelum penanda → ikut dipindah; sesudahnya → langsung ke sub-akun."""
+    aturan pembalik Tugas 2. Kas yang dijurnal sebelum penanda → ikut dipindah; sesudahnya → langsung ke sub-akun. Kas
+    lama yang DIBATALKAN sesudah penanda tetapi sebelum hitung ulang (probe peninjau T3 putaran 1): pembaliknya sudah
+    dialihkan ke sub-akun, jadi jurnal aslinya tetap dipindah → sub-akun = buku kas, akun lama = 0."""
     from services import bank_service, cash_account_mode as mode, cash_account_cutover_service as cut
-    eid = await pt_uji(f"KB3G{kapan[:3]}")
+    eid = await pt_uji(f"KB3G{kapan[:3]}{kapan[-4:]}")
     bank = await _rekening(eid, f"BCA KB3G {kapan}", awal=500_000)
+    kas_lama = await _kas(eid, bank, "in", 70_000) if kapan == "batal_sesudah_nyala" else None
     u = await cut.siapkan(eid, {}, PENYIAP)
     sidik = (await cut.pratinjau(eid))["sidik"]
     asli = mode.nyalakan
@@ -319,9 +331,20 @@ async def test_KB1_3_U6_kas_selama_persetujuan(db, monkeypatch, kapan):
         await asli(entity_id, by)
         if kapan == "sesudah_nyala":
             tercatat["kas"] = await _kas(eid, bank, "in", 70_000)
+        if kapan == "batal_sesudah_nyala":
+            await _batal_api(klien, kepala_admin, eid, kas_lama["id"], "batal di jendela")
 
     monkeypatch.setattr(mode, "nyalakan", nyalakan_dengan_kas)
     hasil = await cut.setujui(u["id"], sidik, PENYETUJU)
+    buku = (await bank_service.account_ledger(bank))["balance"]
+    if kapan == "batal_sesudah_nyala":
+        balik = await db.journal_entries.find_one({"source_type": "cash_transaction_void",
+                                                   "source_id": kas_lama["id"]}, {"_id": 0})
+        assert ("1-1100-01", 0.0, 70_000.0) in _baris(balik)   # pembalik dialihkan ke sub-akun
+        assert hasil["total_dipindah"] == 570_000.0               # jurnal aslinya tetap dipindah
+        assert await _saldo("1-1100-01", eid) == buku == 500_000.0
+        assert await _saldo("1-1100", eid) == 0.0
+        return
     je_kas = await db.journal_entries.find_one({"source_type": "cash_transaction",
                                                 "source_id": tercatat["kas"]["id"]}, {"_id": 0})
     if kapan == "sebelum_nyala":
@@ -329,8 +352,51 @@ async def test_KB1_3_U6_kas_selama_persetujuan(db, monkeypatch, kapan):
         assert hasil["sidik_diposting"] != hasil["sidik_disetujui"]   # angka diposting dicatat, berbeda dari dilihat
     else:
         assert ("1-1100-01", 70_000.0, 0.0) in _baris(je_kas) and hasil["total_dipindah"] == 500_000.0
-    assert await _saldo("1-1100-01", eid) == (await bank_service.account_ledger(bank))["balance"] == 570_000.0
+    assert await _saldo("1-1100-01", eid) == buku == 570_000.0
     assert await _saldo("1-1100", eid) == 0.0
+
+
+@pytest.mark.parametrize("henti", ["sebelum_rencana", "jurnal_gagal"])
+async def test_KB1_3_U6b_diteruskan_sesudah_batal_di_sela(db, klien, kepala_admin, monkeypatch, paksa_jurnal_gagal,
+                                                          henti):
+    """Persetujuan terhenti SESUDAH `nyalakan` — sebelum niat tersimpan (galat hitung ulang) atau jurnal pindah saldo
+    gagal (niat sudah tersimpan) — lalu kas lama ber-rekening DAN kas lama tanpa rekening (tunggal) dibatalkan sebelum
+    diteruskan, dan kas baru dicatat. Diteruskan → tiap sub-akun = buku kas rekeningnya, akun lama = 0."""
+    from services import bank_service, cash_account_mode as mode, cash_account_cutover_service as cut
+    eid = await pt_uji(f"KB3N{henti[:4]}")
+    bank = await _rekening(eid, "BCA KB3N", awal=300_000)
+    kk = await _rekening(eid, "Kas Kecil KB3N", "cash", "kas_kecil", awal=50_000)
+    kas_bank = await _kas(eid, bank, "in", 40_000)
+    kas_tunggal = await _kas_tanpa_rekening(db, eid, "kas_kecil", "out", 15_000)
+    u = await cut.siapkan(eid, {}, PENYIAP)
+    sidik = (await cut.pratinjau(eid))["sidik"]
+    asli = cut._hitung
+    if henti == "sebelum_rencana":
+        async def hitung_henti(entity_id, *, sejak=""):
+            if sejak:
+                raise RuntimeError("uji: proses berhenti sebelum niat tersimpan")
+            return await asli(entity_id, sejak=sejak)
+        monkeypatch.setattr(cut, "_hitung", hitung_henti)
+        with pytest.raises(HTTPException) as e:
+            await cut.setujui(u["id"], sidik, PENYETUJU)
+        monkeypatch.setattr(cut, "_hitung", asli)
+    else:
+        async with paksa_jurnal_gagal("sisip", entity_id=eid, source_type="pindah_saldo_kas"):
+            with pytest.raises(HTTPException) as e:
+                await cut.setujui(u["id"], sidik, PENYETUJU)
+    assert e.value.status_code == 409 and await mode.aktif(eid)
+    doc = await db.cash_account_cutovers.find_one({"id": u["id"]}, {"_id": 0})
+    assert doc["status"] == "memproses" and bool(doc.get("rencana")) is (henti == "jurnal_gagal")
+    assert (await db.cash_transactions.find_one({"id": kas_tunggal["id"]}))["account_id"] == kk   # ditautkan dulu
+    for kas in (kas_bank, kas_tunggal):   # pembatalan di sela → pembalik ke sub-akun
+        await _batal_api(klien, kepala_admin, eid, kas["id"], "batal sebelum diteruskan")
+    await _kas(eid, bank, "in", 25_000)   # kas baru sesudah aktif → sub-akun
+    hasil = await cut.setujui(u["id"], "", PENYETUJU)   # diteruskan (sidik tidak dibandingkan lagi)
+    assert hasil["status"] == "disetujui", hasil
+    for rid, sub in ((bank, "1-1100-01"), (kk, "1-1110-01")):
+        assert await _saldo(sub, eid) == (await bank_service.account_ledger(rid))["balance"], rid
+    assert (await _saldo("1-1100-01", eid), await _saldo("1-1110-01", eid)) == (325_000.0, 50_000.0)
+    assert (await _saldo("1-1100", eid), await _saldo("1-1110", eid)) == (0.0, 0.0)
 
 
 # ═══ 7. R8b — baris yang dipindah = baris yang kelak dialihkan pembalik; batal kas lama sesudah aktif; kas kembar ═══
@@ -359,9 +425,7 @@ async def test_KB1_3_U7_pindah_sama_dengan_pembalik_lalu_batal(db, klien, kepala
             dialihkan[(je["id"], i)] = a["rekening"]
     assert dialihkan == dipindah and (je_pinjam["id"], 1) in dialihkan, (dialihkan, dipindah)
     # Batal kas lama sesudah aktif (lewat API) → sub-akun tetap = buku kas, akun lama untuk baris rekening itu = 0
-    res = await klien.post(f"/api/cash-transactions/{kas_a['id']}/void", headers={**kepala_admin, "X-Entity-Id": eid},
-                           json={"reason": "uji batal KB3"})
-    assert res.status_code == 200, res.text
+    await _batal_api(klien, kepala_admin, eid, kas_a["id"])
     for rid in r.values():
         akun = (await db.bank_accounts.find_one({"id": rid}))["gl_account_code"]
         assert await _saldo(akun, eid) == (await bank_service.account_ledger(rid))["balance"], rid
