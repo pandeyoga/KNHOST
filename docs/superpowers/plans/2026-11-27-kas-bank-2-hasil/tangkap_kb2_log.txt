@@ -1,0 +1,173 @@
+── fase k1 (2026-11-27T18:08:43.715Z)
+[API] keadaan awal PT KSC: Kas Besar (ringkasan) Rp 877.373.077,5 (keluar Rp 0), buku BCA Rp 877.373.077,5 (3 transaksi), akun 1-1100 Rp 877.373.077,5, kas PT 9 baris, jurnal PT 21
+[API] GET /cash-out-requests/batas (pengaju): HTTP 200 {"entity_id":"ent_ksc","min_orang":"1","batas_nominal":1000000,"semua":false}
+[API] pengajuan PT KSC yang sudah ada (data acuan): KSC/PKK-00001 disetujui Rp 1.250.000 "Perbaikan forklift gudang (demo)" oleh Sri Mulyani
+K1 Pengaju (finance@) — Kas & Bank › Transaksi Kas › Catat Transaksi: buka daftar Kategori
+  potret 01_kas_transaksi_kas_awal.jpg
+  potret 02_kas_form_kategori_tanpa_pembelian_gaji.jpg
+  kategori di form: Operasional · Setoran Modal · Lain-lain — Pembelian tidak ada, Gaji tidak ada, Transfer tidak ada
+  [API] POST /cash-transactions kategori "pembelian" arah out Rp 50.000: HTTP 400 "Kategori Pembelian dan Gaji tidak lagi dipakai di kas manual: pembelian barang lewat PO/tagihan pemasok, gaji lewat Proses Gaji. Belanja kecil kebutuhan kantor pakai kategori Operasional." — kalimat C5 persis
+  [API] POST /cash-transactions kategori "gaji" arah out Rp 50.000: HTTP 400 "Kategori Pembelian dan Gaji tidak lagi dipakai di kas manual: pembelian barang lewat PO/tagihan pemasok, gaji lewat Proses Gaji. Belanja kecil kebutuhan kantor pakai kategori Operasional." — kalimat C5 persis
+  [API] POST /cash-transactions kategori "Beli kain" arah out Rp 50.000: HTTP 400 "Kategori Pembelian dan Gaji tidak lagi dipakai di kas manual: pembelian barang lewat PO/tagihan pemasok, gaji lewat Proses Gaji. Belanja kecil kebutuhan kantor pakai kategori Operasional." — kalimat C5 persis
+  [API] POST /cash-transactions kategori "pembelian" arah in Rp 50.000: HTTP 400 "Kategori Pembelian dan Gaji tidak lagi dipakai di kas manual: pembelian barang lewat PO/tagihan pemasok, gaji lewat Proses Gaji. Belanja kecil kebutuhan kantor pakai kategori Operasional." — kalimat C5 persis
+  [API] sesudah uji kategori: Kas Besar (ringkasan) Rp 877.373.077,5 (keluar Rp 0), buku BCA Rp 877.373.077,5 (3 transaksi), akun 1-1100 Rp 877.373.077,5, kas PT 9 baris, jurnal PT 21 — kas baru 0, jurnal baru 0
+── fase k2 (2026-11-27T18:09:05.279Z)
+K2 Pengaju — kas keluar Kas Besar / Bank Rp 1.000.000 (sama dengan batas) → langsung tercatat
+  rekening terisi: "REKENING BCA Operasional KSC · BCA 7415595554 BCA Operasional KSC · BCA 7415595554 Satu-satunya rekening Bank Sukacita"
+  catatan pengajuan: tidak ada; tombol kirim "Catat Transaksi"
+  potret 03_kas_form_1jt_tanpa_catatan_catat_transaksi.jpg
+  [API] jawaban POST /cash-transactions: HTTP 200 KSC/CASH-00010 Rp 1.000.000 out ref_type manual gl_status posted jurnal je_5bfc0516c601
+  bilah: "Transaksi KSC/CASH-00010 (keluar) dicatat."
+  baris kas di daftar: KSC/CASH-00010Jurnal 28 Nov 2026 Servis AC ruang kantor Operasional Kas Besar Sukacita −Rp 1.000.000
+  potret 04_kas_1jt_tercatat_langsung.jpg
+  [API] sesudah: Kas Besar (ringkasan) Rp 876.373.077,5 (keluar Rp 1.000.000), buku BCA Rp 876.373.077,5 (4 transaksi), akun 1-1100 Rp 876.373.077,5, kas PT 10 baris, jurnal PT 22 — kas baru 1, Kas Besar turun Rp 1.000.000, 1-1100 turun Rp 1.000.000, jurnal baru 1; pengajuan baru 0
+  [API] jurnal kas 1 juta: KSC/JE-00022 (posted) tgl 2026-11-28 [6-4000 D Rp 1.000.000 / 1-1100 K Rp 1.000.000]
+── fase k3 (2026-11-27T18:09:33.272Z)
+K3 Pengaju — kas keluar Kas Besar / Bank Rp 2.500.000 (di atas batas) → Ajukan
+  catatan pengajuan: "Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua."; tombol kirim "Ajukan"
+  potret 05_kas_form_2_5jt_catatan_di_atas_batas_ajukan.jpg
+  potret 06_kas_ajukan_toast.jpg
+  toast: "Diajukan KSC/PKK-00002 (Rp 2.500.000) — menunggu persetujuan orang kedua. Kas keluar baru tercatat sesudah disetujui."
+  [API] jawaban POST /cash-transactions: HTTP 202, request KSC/PKK-00002 (pkk_ac1782f4e832bb8764e8bed5) status menunggu_persetujuan Rp 2.500.000 rekening BCA Operasional KSC kategori operasional "Sewa tenda acara" pengaju Sri Mulyani; kas di jawaban: tidak ada
+  bagian "Menunggu persetujuan" jumlah 1; baris KSC/PKK-00002: KSC/PKK-00002 28 Nov 2026 BCA Operasional KSC Operasional Sewa tenda acara −Rp 2.500.000 Sri Mulyani Setujui Tolak Batal Kas keluar manual ini harus disetujui orang lain: Anda yang mengajukannya. Minta orang lain yang berizin menyetujui kas. Admin dapat menaikkan batas atau mengubah aturan ini di Pe
+  baris disorot: row-focus
+  potret 07_kas_bagian_menunggu_persetujuan.jpg
+  [API] sesudah: Kas Besar (ringkasan) Rp 876.373.077,5 (keluar Rp 1.000.000), buku BCA Rp 876.373.077,5 (4 transaksi), akun 1-1100 Rp 876.373.077,5, kas PT 10 baris, jurnal PT 22 — kas baru 0, Kas Besar berubah Rp 0, buku BCA berubah Rp 0, 1-1100 berubah Rp 0, jurnal baru 0; pengajuan PT 1 → 2
+  [API] GET /cash-out-requests/pkk_ac1782f4e832bb8764e8bed5: status menunggu_persetujuan (Menunggu persetujuan), kas null, txn_date 2026-11-27T18:09:55.239243+00:00, jejak ajukan Sri Mulyani
+── fase k4 (2026-11-27T18:10:01.531Z)
+K4 Pengaju — bagian menunggu: Setujui/Tolak KSC/PKK-00002 mati untuk pengaju
+  Setujui nonaktif true (title "Kas keluar manual ini harus disetujui orang lain: Anda yang mengajukannya. Minta orang lain yang berizin menyetujui kas. Admin dapat menaikkan batas atau mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."); Tolak nonaktif true (title "Pengajuan ini Anda ajukan sendiri, jadi tidak bisa Anda tolak. Pakai Batal bila tidak jadi."); Batal nonaktif false
+  catatan di sel aksi: "Kas keluar manual ini harus disetujui orang lain: Anda yang mengajukannya. Minta orang lain yang berizin menyetujui kas. Admin dapat menaikkan batas atau mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
+  tata letak catatan: span 260×80 px (white-space normal), tabel 1178 px dalam wadah 1178 px — muat
+  potret 08_kas_pengaju_setujui_tolak_mati_berkalimat.jpg
+K4 Pengaju — klik nomor KSC/PKK-00002 → pratinjau pengajuan
+  potret 09_kas_pratinjau_pkk_menunggu.jpg
+  pratinjau: judul "Pengajuan kas keluar · KSC/PKK-00002"; status "Menunggu persetujuan"; fakta "PT Sukacita Status Menunggu persetujuan Tanggal kas 28 Nov 2026 Rekening BCA Operasional KSC Kategori Operasional Keterangan Sewa tenda acara Pengaju Sri Mulyani Diajukan 28 Nov 2026, 01.09 WIB"
+  kontrol: "Kas keluar manual ini harus disetujui orang lain: Anda yang mengajukannya. Minta orang lain yang berizin menyetujui kas. Admin dapat menaikkan batas atau mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."; kas: "Kas dan jurnalnya terbit sesudah disetujui orang kedua."
+  riwayat: "Diajukan · Sri Mulyani · 28 Nov 2026, 01.09 WIB — menunggu persetujuan orang kedua"; kaki: Jejak 1, Buka layar penuh 1
+K4 Pengaju — dua pengajuan lagi lewat API (untuk Tolak & Batal; form sudah dipotret di K3)
+  [API] Konsumsi rapat Rp 1.800.000: HTTP 202 → KSC/PKK-00003 (pkk_f2c7c0843c82b7e07ae63eb7) menunggu_persetujuan
+  [API] Cetak spanduk promo Rp 1.500.000: HTTP 202 → KSC/PKK-00004 (pkk_54d39af8ad1226c2a5120b9b) menunggu_persetujuan
+── fase k5 (2026-11-27T18:10:20.843Z)
+K5 Penyetuju (manager@) — lonceng
+  [API] pemberitahuan penyetuju untuk KSC/PKK-00002: kas_keluar_diajukan "Kas keluar menunggu persetujuan — KSC/PKK-00002" — "Sri Mulyani mengajukan kas keluar Rp 2.500.000 (operasional) — KSC/PKK-00002. Perlu disetujui orang lain." doc cash_out_request/pkk_ac1782f4e832bb8764e8bed5
+  potret 10_penyetuju_lonceng_kas_keluar_menunggu.jpg
+  lonceng: Kas keluar menunggu persetujuan — KSC/PKK-00004 | Sri Mulyani mengajukan kas keluar Rp 1.500.000 (operasional) — KSC/PKK-00004. Perlu disetujui orang lain. | baru saja · kas keluar diajukan | Kas keluar menunggu persetujuan — KSC/PKK-00003 | Sri Mulyani mengajukan kas keluar Rp 1.800.000 (operasional) — KSC/PKK-00003. Perlu disetujui orang lain. | baru saja · kas keluar diajukan
+K5 Penyetuju — Persetujuan › Pusat Persetujuan: antrean "Kas keluar manual menunggu"
+  antrean: "Kas keluar manual menunggu 3", bisa diklik: true, title "Buka Kas keluar manual menunggu"
+  "Menunggu di layar lain" baris PKK: tidak tampil di 5 teratas
+  potret 11_penyetuju_pusat_persetujuan_antrean_kas_keluar.jpg
+  klik antrean → /?view=cash-management&entity=ent_ksc
+  bagian menunggu (penyetuju): Menunggu persetujuan 3 NOMOR TANGGAL REKENING KATEGORI / KETERANGAN NOMINAL PENGAJU AKSI KSC/PKK-00004 28 Nov 2026 BCA Operasional KSC Operasional Cetak spanduk promo −Rp 1.500.000 Sri Mulyani Setujui Tolak Batal KSC/PKK-00003 28 Nov 2026 BCA Operasional KSC Operasional Konsumsi rapat −Rp 1.800.000 Sri Mulyani Setujui Tolak Batal KSC/PKK-00002 28 Nov 2026 BCA Operasional KSC Operasional Sewa tenda acara −Rp 2.500.000 Sri Mulyani Setujui Tolak Batal Menampilkan 1–3 dari 3 pengajuan Unduh Sebelumn
+  Setujui KSC/PKK-00002 aktif true, Tolak aktif true, Batal ada
+  posisi bagian menunggu dari atas layar: 293 px (dari antrean)
+  potret 12_penyetuju_transaksi_kas_bagian_menunggu.jpg
+K5 Penyetuju — Setujui KSC/PKK-00002 → konfirmasi
+  potret 13_penyetuju_setujui_konfirmasi.jpg
+  konfirmasi: "Rp 2.500.000 keluar dari BCA Operasional KSC (Sukacita) — Operasional · Sewa tenda acara. Diajukan Sri Mulyani. Kas keluar dan jurnalnya tercatat sekarang dengan tanggal 28 Nov 2026; saldo kas berkurang."
+  potret 14_penyetuju_setujui_toast.jpg
+  toast: "Kas keluar KSC/PKK-00002 disetujui — kas KSC/CASH-00011 tercatat."
+  [API] POST approve: HTTP 200 status disetujui, kas KSC/CASH-00011 Rp 2.500.000 gl posted jurnal KSC/JE-00023
+  [API] kas terbit: KSC/CASH-00011 out Rp 2.500.000 ref_type manual, ref_id pkk_ac1782f4e832bb8764e8bed5 (= id pengajuan), cash_out_request_number KSC/PKK-00002, gl_status posted, tanggal 2026-11-27T18:09:55.239243+00:00, dibuat_oleh Sri Mulyani, disetujui_oleh Dewi Manager
+  [API] jurnal: KSC/JE-00023 (posted) tgl 2026-11-28 [6-4000 D Rp 2.500.000 / 1-1100 K Rp 2.500.000]
+  [API] pengajuan KSC/PKK-00002: status disetujui, disetujui Dewi Manager 2026-11-27T18:10:52.533173+00:00, cash_number KSC/CASH-00011, jejak ajukan Sri Mulyani, setujui Dewi Manager
+  [API] sesudah Setujui: Kas Besar (ringkasan) Rp 873.873.077,5 (keluar Rp 3.500.000), buku BCA Rp 873.873.077,5 (5 transaksi), akun 1-1100 Rp 873.873.077,5, kas PT 11 baris, jurnal PT 23 — kas baru 1, Kas Besar turun Rp 2.500.000, 1-1100 turun Rp 2.500.000, jurnal baru 1
+  baris kas di daftar: KSC/CASH-00011Jurnal 28 Nov 2026 Sewa tenda acara Operasional Dari pengajuan KSC/PKK-00002 Kas Besar Sukacita −Rp 2.500.000
+  sumber: "Dari pengajuan KSC/PKK-00002"; anulir tersedia
+  potret 15_penyetuju_daftar_kas_dari_pengajuan.jpg
+K5 Penyetuju — klik "Dari pengajuan KSC/PKK-00002" → pratinjau (Disetujui)
+  potret 16_pratinjau_pkk_disetujui_kas_jurnal.jpg
+  pratinjau: status "Disetujui"; kas "Kas KSC/CASH-00011 Tanggal 28 Nov 2026 Jurnal KSC/JE-00023"; riwayat "Diajukan · Sri Mulyani · 28 Nov 2026, 01.09 WIB — menunggu persetujuan orang kedua Disetujui · Dewi Manager · 28 Nov 2026, 01.10 WIB — kas KSC/CASH-00011"; Buka layar penuh 1
+  baris Jurnal di pratinjau: tautan "KSC/JE-00023" (title "Buka jurnalnya di Buku Besar")
+  [API] pemberitahuan pengaju untuk KSC/PKK-00002: kas_keluar_diputus "Kas keluar disetujui — KSC/PKK-00002" — "Pengajuan kas keluar KSC/PKK-00002 (Rp 2.500.000) disetujui oleh Dewi Manager. Kas KSC/CASH-00011 tercatat."
+── fase k5b (2026-11-27T18:11:03.286Z)
+K5b Penyetuju — Pusat Persetujuan › Menunggu di layar lain › Lihat semua (baris PKK)
+  baris PKK di "Lihat semua": KSC/PKK-00003 KAS KELUAR MANUAL MENUNGGU Konsumsi rapat menunggu < 1 hari Buka layarnya | KSC/PKK-00003 | KSC/PKK-00004 KAS KELUAR MANUAL MENUNGGU Cetak spanduk promo menunggu < 1 hari Buka layarnya | KSC/PKK-00004 (4 elemen)
+  potret 16b_penyetuju_pusat_persetujuan_lihat_semua_pkk.jpg
+  potret 16c_penyetuju_pusat_persetujuan_pratinjau_pkk.jpg
+  klik KSC/PKK-00003 → pratinjau "Pengajuan kas keluar · KSC/PKK-00003" status "Menunggu persetujuan"; Buka layar penuh 1
+── fase k6 (2026-11-27T18:11:30.297Z)
+K6 Penyetuju — Tolak KSC/PKK-00003 beralasan
+  pop-up: "Rp 1.800.000 keluar dari BCA Operasional KSC (Sukacita) — Operasional · Konsumsi rapat. Tidak ada kas yang tercatat; pengaju diberi tahu alasannya."; tombol Tolak nonaktif saat kosong: true
+  potret 17_penyetuju_tolak_popup_kosong_tombol_mati.jpg
+  alasan "Bukan" (5 huruf): tombol nonaktif false
+  potret 18_penyetuju_tolak_toast.jpg
+  toast: "Pengajuan KSC/PKK-00003 ditolak."
+  [API] POST reject: HTTP 200 status ditolak, alasan_tolak "Bukan biaya kantor", ditolak_oleh Dewi Manager
+  [API] sesudah Tolak: kas baru 0, Kas Besar berubah Rp 0, jurnal baru 0
+  [API] pemberitahuan pengaju untuk KSC/PKK-00003: kas_keluar_diputus "Kas keluar ditolak — KSC/PKK-00003" — "Pengajuan kas keluar KSC/PKK-00003 (Rp 1.800.000) ditolak oleh Dewi Manager. Alasan: Bukan biaya kantor"
+── fase k7 (2026-11-27T18:11:50.570Z)
+K7 Pengaju — lonceng (disetujui & ditolak)
+  potret 19_pengaju_lonceng_disetujui_ditolak.jpg
+  lonceng: Kas keluar ditolak — KSC/PKK-00003 | Pengajuan kas keluar KSC/PKK-00003 (Rp 1.800.000) ditolak oleh Dewi Manager. Alasan: Bukan biaya kantor | baru saja · kas keluar diputus | Kas keluar disetujui — KSC/PKK-00002 | Pengajuan kas keluar KSC/PKK-00002 (Rp 2.500.000) disetujui oleh Dewi Manager. Kas KSC/CASH-00011 tercatat. | 1 mnt lalu · kas keluar diputus | Kas keluar disetujui — KSC/PKK-00001 | Pengajuan kas keluar KSC/PKK-00001 (Rp 1.250.000) disetujui oleh Dewi Manager. Kas KSC/CASH-00008 terc
+  potret 20_pengaju_pratinjau_pkk_ditolak_alasan.jpg
+  klik pemberitahuan KSC/PKK-00003 → /?view=cash-management&entity=ent_ksc; pratinjau status "Ditolak"; fakta "PT Sukacita Status Ditolak Tanggal kas 28 Nov 2026 Rekening BCA Operasional KSC Kategori Operasional Keterangan Konsumsi rapat Pengaju Sri Mulyani Diajukan 28 Nov 2026, 01.10 WIB Ditolak Dewi Manager · 28 Nov 2026, 01.11 WIB Alasan tolak Bukan biaya kantor"; riwayat "Diajukan · Sri Mulyani · 28 Nov 2026, 01.10 WIB — menunggu persetujuan orang kedua Ditolak · Dewi Manager · 28 Nov 2026, 01.11 WIB — Bukan biaya kantor"; Buka layar penuh 0
+K7 Pengaju — Batal KSC/PKK-00004
+  potret 21_pengaju_batal_popup_alasan.jpg
+  pop-up: "Rp 1.500.000 keluar dari BCA Operasional KSC (Sukacita) — Operasional · Cetak spanduk promo. Kasnya belum tercatat, jadi pengajuan cukup ditandai dibatalkan."
+  tombol pop-up: penutup "Tutup", aksi "Batalkan"
+  toast: "Pengajuan KSC/PKK-00004 dibatalkan."
+  [API] POST cancel: HTTP 200 status dibatalkan, alasan_batal "Spanduk sudah dicetak vendor sponsor", dibatalkan_oleh Sri Mulyani
+  potret 22_pengaju_sesudah_batal_bagian_menunggu.jpg
+  bagian menunggu sesudah: (tidak digambar)
+  [API] pemberitahuan pengaju untuk KSC/PKK-00004 (batal sendiri): 0 — tidak ada (sesuai: tidak memberi tahu diri sendiri)
+  [API] pemberitahuan penyetuju untuk KSC/PKK-00004: kas_keluar_diajukan "Kas keluar menunggu persetujuan — KSC/PKK-00004" read false
+── fase k8 (2026-11-27T18:12:55.451Z)
+K8 (opsional) — kartu Asisten cash_manual di atas batas → "Diajukan — menunggu persetujuan kas keluar PKK-…"
+  keadaan sebelum (dipulihkan fase pulih): users.ai_finance Finance null; config_values []
+  [API] Admin: sakelar akun Finance B+C HTTP 200; ai.tindakan_uang_keluar KSC = nyala HTTP 200
+  [API] kartu aiact_1db4d961f017 (Catat kas manual) status pending; rencana: Persetujuan: — → Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua. | Saldo BCA Operasional KSC · 7415595554 (sesudah disetujui): 873873077.5 → 870873077.5 | Arah: — → Kas keluar | Kategori: — → Operasional | Keterangan: — → Sewa sound system acara | Tanggal transaksi: — → 2026-11-28; ringkasan "Kas keluar Rp 3.000.000 di BCA Operasional KSC · 7415595554 untuk Operasional."
+K8 Pengaju — Tanya KN › Tindakan: buka kartu Catat kas manual Rp 3.000.000
+  potret 23_asisten_kartu_kas_manual_rencana_diajukan.jpg
+  rencana di kartu: "RENCANA HAL SEKARANG SESUDAH Persetujuan — Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua. Saldo BCA Operasional KSC · 7415595554 (sesudah disetujui) Rp 873.873.078 Rp 870.873.078 Arah — Kas keluar Kategori — Operasional Keterangan — Sewa sound system acara Tanggal transaksi — 28 Nov 2026 Jurnal dibuat sistem saat disimpan."
+  potret 24_asisten_kartu_hasil_diajukan_menunggu.jpg
+  [API] POST confirm: HTTP 200 kartu confirmed; result status_code 202, message "Diajukan — menunggu persetujuan kas keluar KSC/PKK-00005", document cash_out_request KSC/PKK-00005
+  hasil di kartu: "Berhasil — Pengajuan kas keluar KSC/PKK-00005 Diajukan — menunggu persetujuan kas keluar KSC/PKK-00005 Buka dokumen"
+  lencana kartu: "Berhasil"; baris "Berhasil — …": ADA
+  lencana baris daftar kartu: ""
+  potret 25_asisten_daftar_kartu_lencana_diajukan.jpg
+  [API] pengajuan dari kartu: KSC/PKK-00005 menunggu_persetujuan Rp 3.000.000 pengaju Sri Mulyani ai_card_id aiact_1db4d961f017; pengajuan PT 4 → 5; kas baru 0, jurnal baru 0, Kas Besar berubah Rp 0
+── fase pulih (2026-11-27T18:13:51.168Z)
+PULIH — ai.tindakan_uang_keluar (entity ent_ksc) ke bawaan: HTTP 200
+  ai.enabled tidak diubah k8 — tidak disentuh
+PULIH — users.ai_finance Finance dihapus (sebelumnya tidak ada): diubah 1
+  sesudah pulih: users.ai_finance null; config_values [{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":true},{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":false}]
+── fase cek (2026-11-27T18:13:52.622Z)
+CEK — ringkasan akhir PT KSC
+  awal:  Kas Besar (ringkasan) Rp 877.373.077,5 (keluar Rp 0), buku BCA Rp 877.373.077,5 (3 transaksi), akun 1-1100 Rp 877.373.077,5, kas PT 9 baris, jurnal PT 21
+  akhir: Kas Besar (ringkasan) Rp 873.873.077,5 (keluar Rp 3.500.000), buku BCA Rp 873.873.077,5 (5 transaksi), akun 1-1100 Rp 873.873.077,5, kas PT 11 baris, jurnal PT 23 — Kas Besar turun Rp 3.500.000 (harap Rp 1.000.000 + Rp 2.500.000 = Rp 3.500.000), 1-1100 turun Rp 3.500.000, kas baru 2
+  pengajuan PT KSC: KSC/PKK-00005 menunggu_persetujuan Rp 3.000.000 "Sewa sound system acara"; KSC/PKK-00004 dibatalkan Rp 1.500.000 "Cetak spanduk promo"; KSC/PKK-00003 ditolak Rp 1.800.000 "Konsumsi rapat"; KSC/PKK-00002 disetujui Rp 2.500.000 "Sewa tenda acara" → KSC/CASH-00011; KSC/PKK-00001 disetujui Rp 1.250.000 "Perbaikan forklift gudang (demo)" → KSC/CASH-00008
+  KSC/PKK-00002: disetujui; kas KSC/CASH-00011 posted jurnal KSC/JE-00023; alasan tolak "" batal ""; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), setujui:Dewi Manager(kas KSC/CASH-00011)
+  KSC/PKK-00003: ditolak; kas -; alasan tolak "Bukan biaya kantor" batal ""; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), tolak:Dewi Manager(Bukan biaya kantor)
+  KSC/PKK-00004: dibatalkan; kas -; alasan tolak "" batal "Spanduk sudah dicetak vendor sponsor"; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), batal:Sri Mulyani(Spanduk sudah dicetak vendor sponsor)
+  antrean Pusat Persetujuan (manager@): HTTP 200 "Kas keluar manual menunggu" 1
+── catatan (2026-11-27T18:16:25Z): k8 pertama memakai layar Tanya KN basi (server dev :3000 belum memuat 82b9f02 untuk TanyaActionCard) — server dev dinyalakan ulang; pengajuan KSC/PKK-00005 dari kartu itu dibatalkan pengaju lewat API: HTTP 200 status dibatalkan, alasan "Tangkapan langkah 8 diulang: layar kartu tadi masih kode lama (server dev basi)"; k8 diulang di bawah
+── fase k8 (2026-11-27T18:16:43.546Z)
+K8 (opsional) — kartu Asisten cash_manual di atas batas → "Diajukan — menunggu persetujuan kas keluar PKK-…"
+  keadaan sebelum (dipulihkan fase pulih): users.ai_finance Finance null; config_values [{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":true},{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":false}]
+  [API] Admin: sakelar akun Finance B+C HTTP 200; ai.tindakan_uang_keluar KSC = nyala HTTP 200
+  [API] kartu aiact_c101b5367990 (Catat kas manual) status pending; rencana: Persetujuan: — → Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua. | Saldo BCA Operasional KSC · 7415595554 (sesudah disetujui): 873873077.5 → 870873077.5 | Arah: — → Kas keluar | Kategori: — → Operasional | Keterangan: — → Sewa sound system acara | Tanggal transaksi: — → 2026-11-28; ringkasan "Kas keluar Rp 3.000.000 di BCA Operasional KSC · 7415595554 untuk Operasional."
+K8 Pengaju — Tanya KN › Tindakan: buka kartu Catat kas manual Rp 3.000.000
+  potret 23_asisten_kartu_kas_manual_rencana_diajukan.jpg
+  rencana di kartu: "RENCANA HAL SEKARANG SESUDAH Persetujuan — Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua. Saldo BCA Operasional KSC · 7415595554 (sesudah disetujui) Rp 873.873.078 Rp 870.873.078 Arah — Kas keluar Kategori — Operasional Keterangan — Sewa sound system acara Tanggal transaksi — 28 Nov 2026 Jurnal dibuat sistem saat disimpan."
+  potret 24_asisten_kartu_hasil_diajukan_menunggu.jpg
+  [API] POST confirm: HTTP 200 kartu confirmed; result status_code 202, message "Diajukan — menunggu persetujuan kas keluar KSC/PKK-00006", document cash_out_request KSC/PKK-00006
+  hasil di kartu: "Diajukan — menunggu persetujuan kas keluar KSC/PKK-00006 Buka dokumen"
+  lencana kartu: "Diajukan"; baris "Berhasil — …": tidak ada
+  Tindakan › Selesai, lencana baris kartu: "Diajukan"
+  potret 25_asisten_daftar_kartu_lencana_diajukan.jpg
+  [API] pengajuan dari kartu: KSC/PKK-00006 menunggu_persetujuan Rp 3.000.000 pengaju Sri Mulyani ai_card_id aiact_c101b5367990; pengajuan PT 5 → 6; kas baru 0, jurnal baru 0, Kas Besar berubah Rp 0
+── fase pulih (2026-11-27T18:17:11.910Z)
+PULIH — ai.tindakan_uang_keluar (entity ent_ksc) ke bawaan: HTTP 200
+  ai.enabled tidak diubah k8 — tidak disentuh
+PULIH — users.ai_finance Finance dihapus (sebelumnya tidak ada): diubah 1
+  sesudah pulih: users.ai_finance null; config_values [{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":true},{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":false},{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":true},{"key":"ai.tindakan_uang_keluar","scope_type":"entity","scope_id":"ent_ksc","value":false}]
+── fase cek (2026-11-27T18:17:13.417Z)
+CEK — ringkasan akhir PT KSC
+  awal:  Kas Besar (ringkasan) Rp 877.373.077,5 (keluar Rp 0), buku BCA Rp 877.373.077,5 (3 transaksi), akun 1-1100 Rp 877.373.077,5, kas PT 9 baris, jurnal PT 21
+  akhir: Kas Besar (ringkasan) Rp 873.873.077,5 (keluar Rp 3.500.000), buku BCA Rp 873.873.077,5 (5 transaksi), akun 1-1100 Rp 873.873.077,5, kas PT 11 baris, jurnal PT 23 — Kas Besar turun Rp 3.500.000 (harap Rp 1.000.000 + Rp 2.500.000 = Rp 3.500.000), 1-1100 turun Rp 3.500.000, kas baru 2
+  pengajuan PT KSC: KSC/PKK-00006 menunggu_persetujuan Rp 3.000.000 "Sewa sound system acara"; KSC/PKK-00005 dibatalkan Rp 3.000.000 "Sewa sound system acara"; KSC/PKK-00004 dibatalkan Rp 1.500.000 "Cetak spanduk promo"; KSC/PKK-00003 ditolak Rp 1.800.000 "Konsumsi rapat"; KSC/PKK-00002 disetujui Rp 2.500.000 "Sewa tenda acara" → KSC/CASH-00011; KSC/PKK-00001 disetujui Rp 1.250.000 "Perbaikan forklift gudang (demo)" → KSC/CASH-00008
+  KSC/PKK-00002: disetujui; kas KSC/CASH-00011 posted jurnal KSC/JE-00023; alasan tolak "" batal ""; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), setujui:Dewi Manager(kas KSC/CASH-00011)
+  KSC/PKK-00003: ditolak; kas -; alasan tolak "Bukan biaya kantor" batal ""; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), tolak:Dewi Manager(Bukan biaya kantor)
+  KSC/PKK-00004: dibatalkan; kas -; alasan tolak "" batal "Spanduk sudah dicetak vendor sponsor"; jejak ajukan:Sri Mulyani(menunggu persetujuan orang kedua), batal:Sri Mulyani(Spanduk sudah dicetak vendor sponsor)
+  antrean Pusat Persetujuan (manager@): HTTP 200 "Kas keluar manual menunggu" 1

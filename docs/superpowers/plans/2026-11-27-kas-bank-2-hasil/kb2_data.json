@@ -1,0 +1,66 @@
+{
+  "saldo_awal": {
+    "kas_besar": 877373077.5,
+    "kas_besar_out": 0,
+    "kas_total": 9,
+    "buku_bca": 877373077.5,
+    "bca_txn": 3,
+    "gl_1100": 877373077.5,
+    "kas_n": 9,
+    "jurnal_n": 21
+  },
+  "pengajuan_awal": 1,
+  "kas_1jt": {
+    "id": "cash_3350dfffdfa0631e69a56269",
+    "number": "KSC/CASH-00010",
+    "status": 200
+  },
+  "A": {
+    "id": "pkk_ac1782f4e832bb8764e8bed5",
+    "number": "KSC/PKK-00002",
+    "amount": 2500000
+  },
+  "saldo_sebelum_setuju": {
+    "kas_besar": 876373077.5,
+    "kas_besar_out": 1000000,
+    "kas_total": 10,
+    "buku_bca": 876373077.5,
+    "bca_txn": 4,
+    "gl_1100": 876373077.5,
+    "kas_n": 10,
+    "jurnal_n": 22
+  },
+  "B": {
+    "id": "pkk_f2c7c0843c82b7e07ae63eb7",
+    "number": "KSC/PKK-00003",
+    "amount": 1800000
+  },
+  "C": {
+    "id": "pkk_54d39af8ad1226c2a5120b9b",
+    "number": "KSC/PKK-00004",
+    "amount": 1500000
+  },
+  "kasA": {
+    "id": "cash_bc24a6766c7975a8d75f2065",
+    "number": "KSC/CASH-00011"
+  },
+  "k8_sebelum": {
+    "user": {
+      "id": "user_2b2048d88a82"
+    },
+    "config": []
+  },
+  "D_basi": {
+    "id": "pkk_fb1fa8751f91cfb8997ac0fb",
+    "number": "KSC/PKK-00005",
+    "amount": 3000000
+  },
+  "kartu": {
+    "id": "aiact_c101b5367990"
+  },
+  "D": {
+    "id": "pkk_a057fac10dc759b00ae6d6c4",
+    "number": "KSC/PKK-00006",
+    "amount": 3000000
+  }
+}
