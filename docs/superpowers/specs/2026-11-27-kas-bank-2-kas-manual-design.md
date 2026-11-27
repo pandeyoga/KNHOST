@@ -1,6 +1,6 @@
 # Rancangan — Kas & Bank bagian 2: kas manual tanpa Pembelian/Gaji (C5) dan kas keluar besar butuh orang kedua (C6)
 
-Tanggal: 27 Nov 2026 · Status: **keputusan pemilik C5 dan C6 disetujui 25 Nov** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
+Tanggal: 27 Nov 2026 · Status: **keputusan pemilik C5 dan C6 disetujui 25 Nov; builder check selesai 27 Nov (7 jawaban, §7.8)** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
 §C: C5 "Ya"; C6 "Ya, di atas Rp 1.000.000 (Bapak bisa ganti)"). Keputusan builder di §7 dikerjakan tanpa menunggu
 (perintah pemilik "langsung lanjut kerjakan saja semua", 27 Nov "ya percepat") dan dilaporkan.
 Dibangun di atas Kas & Bank bagian 1 (cabang `claude/nifty-carson-jjx3c8`, `336410d`).
@@ -118,6 +118,25 @@ berkategori Pembelian/Gaji tidak bisa dibatalkan/diposting ulang.
 6. **Kartu Asisten** tetap dengan kontrolnya sendiri; bila kedua kontrol menyala dan nominal di atas kedua batas, uang baru
    keluar sesudah dua persetujuan (dicatat untuk pemilik).
 7. Izin memakai `cash.create`/`cash.approve`/`cash.delete` yang ada; tidak ada izin baru.
+8. **Builder check 27 Nov — tujuh jawaban (semua keputusan builder):**
+   1. *PT dengan satu pemegang `cash.approve`*: tidak ada jalan pintas; pengajuan tetap menunggu orang kedua. Kalimat
+      penolakan menyebut "minta orang lain yang berizin menyetujui kas"; pemilik bisa menaikkan batas atau mengubah
+      `kontrol.admin_tetap_dua_orang` di Pusat Pengaturan. Pengaju bisa membatalkan.
+   2. *C5 hanya membaca isian kategori* (yang menentukan akun lawan jurnal), bukan keterangan. Teks bebas seperti
+      "Operasional – beli ATK" atau "bahan bakar" hari ini sudah dijurnal ke Persediaan (kata kunci `beli`/`bahan` lebih dulu
+      dari `operasional`) — menolaknya benar; pesan mengarahkan ke kategori Operasional. Daftar kata kunci tidak diubah.
+   3. *Batas tidak dinilai ulang saat disetujui*: pengajuan yang sudah ada tetap butuh persetujuan walau batas dinaikkan;
+      tidak pernah terbit otomatis.
+   4. *Anggaran tidak dicadangkan*: diperiksa saat diajukan (memberi tahu lebih awal) dan **saat disetujui** (yang
+      menentukan). Beberapa pengajuan menunggu bisa bersama-sama melewati anggaran; yang disetujui belakangan ditolak
+      anggaran seperti kas langsung.
+   5. *Idempotency-Key*: unik per PT pada pengajuan; kiriman ulang dengan kunci sama mengembalikan pengajuan yang sama (202,
+      berikut tautan kas bila sudah disetujui) — tidak pernah pengajuan kedua atau kas langsung. Kas yang terbit memakai
+      `ref_id` = id pengajuan (id kas tetap → persetujuan ulang tidak menggandakan).
+   6. *Tanpa migrasi* untuk isian `kontrol.admin_tetap_dua_orang` yang sudah tersimpan di VPS (sama dengan Kas & Bank 1
+      R9): bawaan baru hanya berlaku bila tidak ada isian tersimpan; kueri cek + catatan VPS di laporan.
+   7. *Kartu Asisten*: pengaju pengajuan = pengguna yang menjalankan kartu (pemanggil rute); hasil 202 menjadi status kartu
+      "Diajukan — menunggu persetujuan kas keluar {nomor}" (bukan galat).
 
 ## 8. Untuk pemilik (tidak menghalangi pembangunan)
 
