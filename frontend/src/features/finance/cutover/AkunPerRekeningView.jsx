@@ -304,7 +304,9 @@ function DaftarUsulan({ rows, sibuk, canJournal, onSetujui, onTolak, onLanjutkan
                         <button type="button" className="danger-button btn-sm" data-testid={`ps-reject-${u.id}`}
                           disabled={mati} onClick={() => onTolak(u)}>Tolak</button>
                       </div>
-                      {ditolak && <span className="max-w-[220px] text-left text-fs-12 text-kn-text-2" data-testid={`ps-approve-why-${u.id}`}>{ditolak}</span>}
+                      {/* Sel aksi `text-right` mewarisi `white-space: nowrap` (components.css, kolom angka): kalimat alasan
+                          wajib dibungkus sendiri, kalau tidak tabel melebar dan kalimatnya terpotong di tepi kanan. */}
+                      {ditolak && <span className="max-w-[260px] whitespace-normal break-words text-left text-fs-12 text-kn-text-2" data-testid={`ps-approve-why-${u.id}`}>{ditolak}</span>}
                     </div>
                   )}
                   {u.status === "memproses" && (

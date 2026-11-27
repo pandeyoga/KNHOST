@@ -24,6 +24,13 @@ export const formatDate = (v) => {
   const d = _validDate(v);
   return d ? d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: WIB }) : "—";
 };
+/** Tanggal ISO "YYYY-MM-DD" yang tertulis di dalam teks server (catatan riwayat, keterangan baris antrean) → "23 Okt
+ *  2026" lewat `formatDate`; teks lain apa adanya. Stempel waktu ("…T10:00") dan tanggal tak sah tidak diubah. */
+export const formatDatesInText = (text) => (typeof text !== "string" || !text ? text
+  : text.replace(/\b\d{4}-\d{2}-\d{2}\b(?![T:\d])/g, (iso) => {
+    const t = formatDate(iso);
+    return t === "—" ? iso : t;
+  }));
 /** "23 Okt 2026 01.47 WIB". Kosong/tak sah → "—". */
 export const formatDateTime = (v) => {
   const d = _validDate(v);

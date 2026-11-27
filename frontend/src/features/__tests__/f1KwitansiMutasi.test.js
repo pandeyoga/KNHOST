@@ -218,6 +218,10 @@ describe("Meja Keuangan — mutasi berkode perlu dicek", () => {
     expect(q("fin-desk-bankline-panel")).not.toBeNull();
     expect(teks(q("fin-desk-bankline-reason"))).toContain(ALASAN);
     expect(teks(q("fin-desk-bankline-ref"))).toContain("TRX-77");
+    // Tangkapan 27 Nov (temuan 3): Keterangan = tanggal baku + rekening + kode, tanpa alasan (sudah di bilah alasan).
+    expect(teks(q("fin-desk-detail-field-subtitle"))).toMatch(/26 Nov 2026 · BCA Utama · KN-7F3K2/);
+    expect(teks(q("fin-desk-detail-field-subtitle"))).not.toMatch(/2026-11-26/);
+    expect(teks(q("fin-desk-detail-field-subtitle"))).not.toContain(ALASAN);
     expect(teks(q("doc-preview-lines"))).toContain("Katun A");          // pratinjau pesanan dari order_id
     expect(q("fin-desk-bankline-report")).toBeNull();                     // tanpa laporan menunggu
     expect(teks(q("fin-desk-detail-action"))).toBe("Catat kwitansi");

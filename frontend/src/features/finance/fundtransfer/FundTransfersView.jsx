@@ -283,7 +283,8 @@ function BarisAksi({ d, aksi, mati, onSetujui, onTerima, onBatal }) {
         )}
       </div>
       {(alasan || aksi.catatan) && (
-        <span className="max-w-[220px] text-left text-fs-12 text-kn-text-2" data-testid={`ft-action-note-${d.id}`}>
+        // Sel aksi `text-right` mewarisi `white-space: nowrap` (kolom angka) — kalimat alasan dibungkus sendiri.
+        <span className="max-w-[260px] whitespace-normal break-words text-left text-fs-12 text-kn-text-2" data-testid={`ft-action-note-${d.id}`}>
           {alasan || aksi.catatan}
         </span>
       )}

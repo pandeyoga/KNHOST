@@ -147,6 +147,14 @@ function pasangDaftar(items = Object.values(DOK)) {
 }
 const pindahDana = (perms) => mount(<FundTransfersView currentUser={{ role: "finance", permissions: perms }} selectedEntity="ent_ksc" />);
 
+/** Tangkapan 27 Nov (temuan 1): kalimat alasan/anulir di sel aksi `text-right` (mewarisi `white-space: nowrap` dari
+ *  components.css untuk kolom angka) harus membungkus sendiri — kalau tidak, tabel melebar dan kalimatnya terpotong. */
+function expectBungkus(el) {
+  expect(el.closest("td").classList.contains("text-right")).toBe(true);
+  expect(el.classList.contains("whitespace-normal")).toBe(true);
+  expect(el.className).toMatch(/max-w-\[\d+px\]/);
+}
+
 describe("Pindah Dana — daftar, izin, satu pop-up", () => {
   test("tab hub Kas & Bank: Pindah Dana tampak (6 tab), Akun per rekening tersembunyi menyorot Rekening & Saldo", () => {
     const tabs = HUB_TABS["cash-bank"];
@@ -198,6 +206,7 @@ describe("Pindah Dana — daftar, izin, satu pop-up", () => {
     const host = await pindahDana(izinPenuh);
     expect(q(host, "ft-approve-pdn_1").disabled).toBe(true);
     expect(q(host, "ft-action-note-pdn_1").textContent).toBe(pesan);
+    expectBungkus(q(host, "ft-action-note-pdn_1"));
   });
 
   test("Setujui: konfirmasi menyebut nominal & rekening → POST approve berkunci idempotensi", async () => {
@@ -320,12 +329,16 @@ describe("Registri pratinjau dokumen — fund_transfer", () => {
         amount: 2000000, txn_date: "2026-11-26", status: "posted", gl_status: "posted", journal_number: "JE-1" },
       { id: "k2", number: "KSC/CASH-2", peran: "Biaya transfer", account_name: "BCA Operasional", direction: "out", amount: 6500,
         txn_date: "2026-11-26", status: "void", void_journal_number: "JE-9" }],
-      jejak: [{ aksi: "buat", oleh: "Rina", pada: "2026-11-26T02:00:00Z" }] };
+      jejak: [{ aksi: "buat", oleh: "Rina", pada: "2026-11-26T02:00:00Z" },
+        { aksi: "terima", oleh: "Budi", pada: "2026-11-27T03:00:00Z", catatan: "diterima 2026-11-27" }] };
     const host = await mount(<FundTransferPreview doc={doc} push={() => {}} canPush={() => false} currentUser={{ permissions: {} }} />);
     expect(q(host, "doc-preview-ft-cash").textContent).toMatch(/Jurnal JE-1/);
     expect(q(host, "doc-preview-ft-cash").textContent).toMatch(/Dibatalkan · pembalik JE-9/);
     expect(q(host, "doc-preview-totals").textContent).toMatch(/Keluar dari rekening asal\s*Rp\s?2\.006\.500/);
     expect(q(host, "doc-preview-ft-history").textContent).toMatch(/Dibuat · Rina/);
+    // Tangkapan 27 Nov (temuan 3): tanggal ISO di catatan server ditulis dengan pemformat tanggal baku.
+    expect(q(host, "doc-preview-ft-history").textContent).toMatch(/Diterima rekening tujuan · Budi · .* — diterima 27 Nov 2026/);
+    expect(q(host, "doc-preview-ft-history").textContent).not.toMatch(/2026-11-27/);
   });
 });
 
@@ -567,6 +580,7 @@ describe("Akun per rekening — pratinjau, siapkan, setujui dengan sidik", () =>
     const host = await alat(izinPenuh);
     expect(q(host, "ps-approve-psk_ent_ksc_001").disabled).toBe(true);
     expect(q(host, "ps-approve-why-psk_ent_ksc_001").textContent).toBe(pesan);
+    expectBungkus(q(host, "ps-approve-why-psk_ent_ksc_001"));
     await click(q(host, "ps-reject-psk_ent_ksc_001"));
     expect(posts("/usulan/psk_ent_ksc_001/tolak")[0][1]).toEqual({ alasan: "angka belum dicek" });
   });
@@ -643,6 +657,7 @@ describe("Transaksi Kas — Transfer/Top-up ditutup, kas Pindah Dana bertautan d
     expect(mockPreview).toHaveBeenCalledWith({ docType: "fund_transfer", docId: "pdn_1", number: "KSC/PDN-00001", entityId: "ent_ksc" });
     expect(q(host, "void-cash-cash_1")).toBeNull();
     expect(q(host, "void-cash-note-cash_1").textContent).toBe("Anulir lewat Pindah Dana KSC/PDN-00001");
+    expectBungkus(q(host, "void-cash-note-cash_1"));
   });
 });
 

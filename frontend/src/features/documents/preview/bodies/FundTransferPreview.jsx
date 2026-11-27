@@ -7,7 +7,7 @@
 import StatusBadge from "../../../../components/StatusBadge";
 import { useEntityScope } from "../../../../context/EntityScopeContext";
 import { entityShortById } from "../../../../utils/entityLabel";
-import { formatCurrency, formatDate, formatDateTime } from "../../../../utils/formatters";
+import { formatCurrency, formatDate, formatDateTime, formatDatesInText } from "../../../../utils/formatters";
 import { JEJAK_LABEL, statusPindahDana } from "../../../finance/fundtransfer/fundTransferShared";
 import { PreviewFacts, PreviewLines, PreviewTotals } from "../previewParts";
 
@@ -76,7 +76,8 @@ export default function FundTransferPreview({ doc }) {
           {jejak.map((j, i) => (
             <li key={`${j.aksi}-${i}`} className="text-fs-12 text-kn-text-2">
               <span className="font-semibold text-kn-text">{JEJAK_LABEL[j.aksi] || j.aksi}</span>
-              {j.oleh ? ` · ${j.oleh}` : ""}{j.pada ? ` · ${formatDateTime(j.pada)}` : ""}{j.catatan ? ` — ${j.catatan}` : ""}
+              {/* catatan server memuat tanggal ISO ("diterima 2026-11-27") → tanggal baku ("27 Nov 2026") */}
+              {j.oleh ? ` · ${j.oleh}` : ""}{j.pada ? ` · ${formatDateTime(j.pada)}` : ""}{j.catatan ? ` — ${formatDatesInText(j.catatan)}` : ""}
             </li>
           ))}
         </ol>

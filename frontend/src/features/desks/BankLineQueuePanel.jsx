@@ -28,7 +28,7 @@ import { askConfirm, askReason } from "../../services/confirmService";
 import useIntentKey from "../../hooks/useIntentKey";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatDatesInText } from "../../utils/formatters";
 import { ALASAN_MIN, listReports, tolak } from "../orders/payReport/payReportApi";
 import { receiptFromLine } from "../finance/bank/bankLineReceiptApi";
 import { badgeLabel } from "../sales_admin/workDeskApi";
@@ -40,11 +40,12 @@ const TERTUNDA = ["menunggu", "memproses"];
 /** "Cocok sempurna" F1 — selisih nominal di bawah Rp 1 (server `SELISIH_COCOK`). */
 const SELISIH_COCOK = 1;
 
-/** Keterangan baris tanpa alasan di ujungnya (alasan sudah tampil di bilah alasan panel). */
-function tanpaAlasan(row) {
+/** Keterangan baris tanpa alasan di ujungnya (alasan sudah tampil di bilah alasan panel); tanggal mutasi dari server
+ *  ("2026-11-27 · BCA … · KN-…") ditulis dengan pemformat tanggal baku ("27 Nov 2026"). */
+function keteranganMutasi(row) {
   const sub = String(row?.subtitle || "");
   const alasan = String(row?.alasan || "");
-  return alasan && sub.endsWith(` · ${alasan}`) ? sub.slice(0, -(alasan.length + 3)) : sub;
+  return formatDatesInText(alasan && sub.endsWith(` · ${alasan}`) ? sub.slice(0, -(alasan.length + 3)) : sub);
 }
 
 /** Mengapa laporan ini tidak bisa diterima BERSAMA mutasi ini ("" = bisa) — cermin pagar server `_laporan_untuk_mutasi`. */
@@ -217,7 +218,7 @@ export default function BankLineQueuePanel({ row, queue, currentUser, testPrefix
         Pilihan lain — titipkan, abaikan, cocokkan manual — ada di Rekonsiliasi Bank (tombol Buka Rekonsiliasi di bawah).
       </p>
 
-      <DeskDocPanel row={{ ...row, subtitle: tanpaAlasan(row) }} queue={queue} currentUser={currentUser} docType="sales_order"
+      <DeskDocPanel row={{ ...row, subtitle: keteranganMutasi(row) }} queue={queue} currentUser={currentUser} docType="sales_order"
         docId={orderId} testPrefix={p} pt={pt} traceEnabled={traceEnabled} />
     </div>
   );

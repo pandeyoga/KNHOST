@@ -485,8 +485,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
                     </td>
                     <td className="col-sticky-end text-right">
                       {canVoid && t.status !== "void" && (derivedFrom(t) ? (
-                        // Alasan tertulis (bukan tombol mati bertooltip): kas turunan dianulir lewat dokumen asalnya.
-                        <span className="inline-block max-w-[180px] text-left text-fs-12 text-kn-text-2" data-testid={`void-cash-note-${t.id}`}>
+                        // Alasan tertulis (bukan tombol mati bertooltip): kas turunan dianulir lewat dokumen asalnya. Sel
+                        // `text-right` mewarisi `white-space: nowrap` (kolom angka) — kalimat dibungkus sendiri supaya nomor
+                        // dokumen panjang ("Pindah Dana KSC/PDN-00001") tidak terpotong di tepi kanan.
+                        <span className="inline-block max-w-[180px] whitespace-normal break-words text-left text-fs-12 text-kn-text-2" data-testid={`void-cash-note-${t.id}`}>
                           Anulir lewat {derivedFrom(t)}
                         </span>
                       ) : (
