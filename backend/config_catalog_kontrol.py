@@ -179,8 +179,10 @@ for _x in KONTROL_AKSI:
     _x["sub_judul"] = next((s for s, aksi in _SUB_JUDUL.items() if _x["aksi"] in aksi), _SUB_BAGIAN.get(_x["bagian"], ""))
 AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 
-#: Empat titik † yang dulu TIDAK mengecualikan Admin (ASUMSI unit: dipertahankan lewat daftar ini).
-ADMIN_TETAP_DUA_ORANG_AWAL = ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]
+#: Empat titik † yang dulu TIDAK mengecualikan Admin (ASUMSI unit: dipertahankan lewat daftar ini). Kas & Bank 1
+#: (ketetapan pengendali R9) — `pindah_saldo_kas`: Admin yang menyiapkan pindah saldo PT pun butuh orang kedua.
+ADMIN_TETAP_DUA_ORANG_AWAL = ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
+                              "pindah_saldo_kas"]
 
 K_ADMIN_BOLEH = "kontrol.admin_boleh_sendiri"
 K_ADMIN_TETAP = "kontrol.admin_tetap_dua_orang"

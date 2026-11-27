@@ -53,7 +53,9 @@ BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"}
                    **{k: {"scopes"} for k in ("payment.penalty_mode", "payment.penalty_base", "payment.penalty_cap_pct",
                                               "ar.denda_rate_pct_per_month", "ar.grace_days")},
                    # KM-T4 — tarif komisi dihitung dari satuan dasar barang: kunci satuan insentif ditandai tidak dipakai.
-                   "commission.incentive_unit": {"status"}}
+                   "commission.incentive_unit": {"status"},
+                   # Kas & Bank 1 (ketetapan R9) — bawaan daftar "tetap dua orang walau Admin" + `pindah_saldo_kas`.
+                   "kontrol.admin_tetap_dua_orang": {"default"}}
 #: Pilihan yang SENGAJA ditambahkan unit sesudah KF-T4 (pilihan lama tetap ada, urutannya tetap).
 #: KM-T4 (K-22) — sakelar per PT `sheet` "Dari Lembar Insentif yang disahkan".
 PILIHAN_TAMBAH_SESUDAH = {"hr.payroll_commission_mode": ["sheet", "auto_and_sheet"]}

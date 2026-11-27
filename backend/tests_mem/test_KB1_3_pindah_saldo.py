@@ -158,8 +158,9 @@ async def test_KB1_3_U2_setujui_lengkap(db):
     kode = {x["id"]: x["akun_tujuan"] for x in (await cut.pratinjau(eid))["rekening"]}
     assert kode == {r["A"]: "1-1100-01", r["B"]: "1-1100-02", r["K"]: "1-1110-01", r["Z"]: "1-1100-03"}
     assert all(not x["akun_tujuan_baru"] for x in (await cut.pratinjau(eid))["rekening"])   # sub-akun sudah dibuat
-    hasil = await cut.setujui(u["id"], (await cut.pratinjau(eid))["sidik"], PENYETUJU)
+    hasil = await cut.setujui(u["id"], (await cut.pratinjau(eid))["sidik"], PENYETUJU)   # tanpa selisih: tanpa centang
     assert hasil["status"] == "disetujui", hasil
+    assert (hasil["selisih_diperiksa"], hasil["selisih_disetujui"]) == (False, [])
     assert await mode.aktif(eid)
     je = await db.journal_entries.find_one({"source_type": "pindah_saldo_kas", "source_id": u["id"]}, {"_id": 0})
     assert je and je["total_debit"] == je["total_credit"] == 2_170_000.0 and je["entity_id"] == eid
@@ -428,8 +429,18 @@ async def test_KB1_3_U8_tolak_lalu_pilih_akun_yang_ada(db):
     x = _rek(await cut.pratinjau(eid), bank)
     assert (x["akun_tujuan"], x["akun_tujuan_baru"], x["saldo_akun_tujuan"], x["saldo_sesudah"], x["selisih"]) == (
         "1-1105", False, 5_000.0, 205_000.0, 5_000.0)
-    hasil = await cut.setujui(u2["id"], (await cut.pratinjau(eid))["sidik"], PENYETUJU)
+    # Ketetapan R10 — rekening berselisih dengan buku kasnya: setujui wajib membawa `selisih_diperiksa`
+    sidik2 = (await cut.pratinjau(eid))["sidik"]
+    with pytest.raises(HTTPException) as e:
+        await cut.setujui(u2["id"], sidik2, PENYETUJU)
+    assert (e.value.status_code, e.value.detail) == (409, (
+        "Rekening BCA KB3I berselisih Rp 5.000 dengan buku kasnya — centang 'sudah diperiksa' untuk melanjutkan."))
+    assert (await db.cash_account_cutovers.find_one({"id": u2["id"]}))["status"] == "menunggu"
+    assert not await mode.aktif(eid)
+    hasil = await cut.setujui(u2["id"], sidik2, PENYETUJU, selisih_diperiksa=True)
     assert hasil["status"] == "disetujui"
+    assert (hasil["selisih_diperiksa"], hasil["selisih_disetujui"]) == (
+        True, [{"rekening_id": bank, "nama": "BCA KB3I", "selisih": 5_000.0}])
     assert (await _saldo("1-1105", eid), await _saldo("1-1100", eid)) == (205_000.0, 0.0)
     # Pilihan tak layak → 400, tanpa tulisan
     eid2 = await pt_uji("KB3I2")
@@ -513,3 +524,50 @@ async def test_KB1_3_U10_rute(db, klien, akun, sesi):
     assert r.status_code == 409, r.text
     r = await klien.post("/api/kas-per-rekening/usulan/psk_tidak_ada/setujui", headers=setuju, json={"sidik": "x"})
     assert r.status_code == 404, r.text
+
+
+# ═══ 11. Ketetapan R9 — Admin penyiap tetap butuh orang kedua (bawaan `kontrol.admin_tetap_dua_orang`) ═══════════════
+async def test_KB1_3_U11_admin_penyiap_tetap_dua_orang(db):
+    import config_registry as registry
+    from services import cash_account_cutover_service as cut
+    from services.dual_control import pesan_tolak
+    assert "pindah_saldo_kas" in registry.require("kontrol.admin_tetap_dua_orang")["default"]
+    eid = await pt_uji("KB3L")
+    await _rekening(eid, "BCA KB3L", awal=60_000)
+    admin = {"id": "usr_kb3_admin", "name": "Ani Admin", "role": "admin", "email": "ani.kb3@uji.id"}
+    u = await cut.siapkan(eid, {}, admin)
+    with pytest.raises(HTTPException) as e:
+        await cut.setujui(u["id"], (await cut.pratinjau(eid))["sidik"], admin)
+    assert (e.value.status_code, e.value.detail) == (403, pesan_tolak("pindah_saldo_kas"))
+    assert e.value.detail.startswith("Pindah saldo kas ke akun per rekening harus diputuskan orang lain")
+    assert (await db.cash_account_cutovers.find_one({"id": u["id"]}))["status"] == "menunggu"
+    admin2 = {**admin, "id": "usr_kb3_admin2", "name": "Rudi Admin"}
+    assert (await cut.setujui(u["id"], (await cut.pratinjau(eid))["sidik"], admin2))["status"] == "disetujui"
+
+
+# ═══ 12. Ketetapan R11 — jurnal saldo awal rekening tidak bisa dibalik manual di PT aktif ════════════════════════════
+async def test_KB1_3_U12_balik_manual_saldo_awal_rekening(db):
+    from services import gl_service as gl
+    tgl = now_iso()[:10]
+    # PT belum aktif → tidak berubah (pembalikan manual diterima)
+    eid0 = await pt_uji("KB3M0")
+    bank0 = await _rekening(eid0, "BCA KB3M0", awal=40_000)
+    je0 = await db.journal_entries.find_one({"source_type": "bank_opening_balance", "source_id": bank0}, {"_id": 0})
+    rev = await gl.reverse_entry(je0["id"], tgl, "uji balik saldo awal KB3", AKTOR_UJI)
+    assert rev and rev["source_type"] == "reversal"
+    # PT aktif → ditolak, jurnal tidak ditandai dibalik
+    eid = await pt_uji("KB3M")
+    bank = await _rekening(eid, "BCA KB3M", awal=90_000)
+    await _siapkan_setujui(eid)
+    je = await db.journal_entries.find_one({"source_type": "bank_opening_balance", "source_id": bank}, {"_id": 0})
+    assert ("1-1100", 90_000.0, 0.0) in _baris(je)   # terbit sebelum aktif, di akun lama
+    with pytest.raises(ValueError) as e:
+        await gl.reverse_entry(je["id"], tgl, "uji balik saldo awal KB3", AKTOR_UJI)
+    assert str(e.value) == (f"Jurnal {je['number']} mencatat saldo awal rekening BCA KB3M yang saldonya sudah dipindah "
+                            f"ke akun 1-1100-01; koreksi lewat ubah saldo awal rekening itu di Rekening & Saldo, bukan "
+                            f"pembalikan manual."), str(e.value)
+    assert not (await db.journal_entries.find_one({"id": je["id"]})).get("reversed_by_entry_id")
+    # Koreksi lewat ubah saldo awal → penyesuaian ke akun rekening, akun rekening tetap = buku kas
+    from services import bank_service
+    await bank_service.update_account(bank, {"opening_balance": 70_000})
+    assert await _saldo("1-1100-01", eid) == (await bank_service.account_ledger(bank))["balance"] == 70_000.0

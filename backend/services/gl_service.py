@@ -1178,12 +1178,33 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
             raise ValueError(f"Jurnal {je.get('number') or je.get('id', '')} mencatat kas rekening "
                              f"{rek.get('name') or a['rekening']} yang saldonya sudah dipindah ke akun {a['akun']}; "
                              f"balik lewat pembatalan dokumen kasnya, bukan pembalikan manual.")
+        await _tolak_balik_saldo_awal_rekening(je)
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
     return await _reverse_once(
         je, source_type="reversal", source_id=entry_id, date=f"{d}T00:00:00",
         description=f"Pembalik {je.get('number', '')}: {reason}", created_by=actor.get("name", "system"),
         source_label=f"Pembalik {je.get('number', '')}", line_desc=f"Pembalik {je.get('number', '')}",
         reason=reason, extra_ref={"reason": reason}, strict=True)
+
+
+async def _tolak_balik_saldo_awal_rekening(je: Dict[str, Any]) -> None:
+    """Kas & Bank 1 (ketetapan pengendali R11) — jurnal saldo awal rekening (`bank_opening_balance` / penyesuaiannya
+    `bank_opening_adjustment`) di PT yang sudah memakai akun per rekening tidak bisa dibalik manual: buku kas rekening
+    tetap memuat saldo awalnya, jadi pembalikan memecah akun rekening ↔ buku kas. Koreksi lewat ubah saldo awal rekening
+    (`bank_service.update_account` menjurnal selisihnya ke akun rekening). PT belum aktif → tidak berubah."""
+    from services.report_basis import SUMBER_SALDO_AWAL
+    eid = je.get("entity_id") or ""
+    if je.get("source_type") not in SUMBER_SALDO_AWAL or not eid:
+        return
+    from services import cash_account_mode as _mode
+    if not await _mode.aktif(eid):
+        return
+    rid = (je.get("source_id") or "").split(":")[0]
+    rek = await db.bank_accounts.find_one({"id": rid}, {"_id": 0, "name": 1, "gl_account_code": 1}) or {}
+    akun = f" yang saldonya sudah dipindah ke akun {rek['gl_account_code']}" if rek.get("gl_account_code") else ""
+    raise ValueError(f"Jurnal {je.get('number') or je.get('id', '')} mencatat saldo awal rekening "
+                     f"{rek.get('name') or rid}{akun}; koreksi lewat ubah saldo awal rekening itu di Rekening & Saldo, "
+                     f"bukan pembalikan manual.")
 
 
 # ═════════════════════════════════════════════════════════════════════════════

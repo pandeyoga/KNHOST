@@ -81,7 +81,8 @@ async def test_katalog_35_aksi_20_bernominal():
             assert (b["type"], b["default"], b["min"], b["max"], b["unit"]) == ("money", awal, 0, maks, "Rp")
     assert registry.require("kontrol.admin_boleh_sendiri")["default"] is True
     assert registry.require("kontrol.admin_tetap_dua_orang")["default"] == [
-        "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]
+        "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
+        "pindah_saldo_kas"]   # Kas & Bank 1 (ketetapan R9)
     assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == N_KUNCI
 
 
@@ -155,7 +156,8 @@ async def test_aturan_endpoint(klien, kepala_admin):
     j = r.json()
     assert len(j["rows"]) == N_AKSI and j["can_edit"] is True
     assert j["admin_boleh_sendiri"] is True
-    assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]
+    assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
+                                          "pindah_saldo_kas"]   # Kas & Bank 1 (ketetapan R9)
     po = next(x for x in j["rows"] if x["aksi"] == "setujui_po")
     assert {k: po[k] for k in ("label", "kelompok", "punya_nominal", "min_orang", "batas_nominal", "sumber")} == {
         "label": "Persetujuan PO", "kelompok": "B", "punya_nominal": True, "min_orang": "2", "batas_nominal": 0.0,

@@ -6,7 +6,8 @@ Semua rute: izin `accounting.manage` (spesifikasi §5.3, §7 butir 7 — tanpa i
   GET  /api/kas-per-rekening/usulan                  daftar usulan (cakupan PT pengguna; `status`, berhalaman)
   GET  /api/kas-per-rekening/{entity_id}/pratinjau   hitungan pindah saldo (tanpa tulisan) + `sidik`
   POST /api/kas-per-rekening/{entity_id}/siapkan     `{pilihan_akun}` → akun rekening + usulan `menunggu`
-  POST /api/kas-per-rekening/usulan/{id}/setujui     `{sidik}` — orang kedua; hitung ulang, jurnal, PT menyala
+  POST /api/kas-per-rekening/usulan/{id}/setujui     `{sidik, selisih_diperiksa}` — orang kedua; hitung ulang, jurnal,
+                                                     PT menyala
   POST /api/kas-per-rekening/usulan/{id}/tolak       `{alasan}` (≥ 5 huruf)
 """
 from typing import Any, Dict
@@ -69,11 +70,12 @@ async def siapkan(entity_id: str, payload: PindahSaldoSiapkan, request: Request)
 async def setujui(usulan_id: str, payload: PindahSaldoSetujui, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage", detail=PESAN_IZIN)
     u = await _usulan(request, usulan_id)
-    res = await cut.setujui(usulan_id, payload.sidik, actor)
+    res = await cut.setujui(usulan_id, payload.sidik, actor, selisih_diperiksa=payload.selisih_diperiksa)
     await audit(actor["name"], "cash_account_cutover_approved", "cash_account_cutover", usulan_id,
                 {"journal_number": res.get("journal_number"), "total_dipindah": res.get("total_dipindah"),
                  "kas_ditautkan": res.get("kas_ditautkan"), "sidik_disetujui": res.get("sidik_disetujui"),
-                 "sidik_diposting": res.get("sidik_diposting")}, scope_entity_id=u.get("entity_id", ""))
+                 "sidik_diposting": res.get("sidik_diposting"), "selisih_diperiksa": res.get("selisih_diperiksa"),
+                 "selisih_disetujui": res.get("selisih_disetujui")}, scope_entity_id=u.get("entity_id", ""))
     return res
 
 

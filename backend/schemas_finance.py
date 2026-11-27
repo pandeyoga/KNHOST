@@ -59,8 +59,9 @@ class PindahSaldoSiapkan(BaseModel):
 
 class PindahSaldoSetujui(BaseModel):
     """Sidik angka pratinjau yang dilihat penyetuju (beda dari hitung ulang server → 409 "Angka berubah, muat
-    ulang.")."""
+    ulang."). `selisih_diperiksa` wajib true bila ada rekening berselisih dengan buku kasnya (ketetapan R10)."""
     sidik: str = ""
+    selisih_diperiksa: bool = False
 
 
 class PindahSaldoTolak(BaseModel):

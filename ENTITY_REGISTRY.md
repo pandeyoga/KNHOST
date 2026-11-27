@@ -2220,6 +2220,7 @@ Index:       uq_id (unik) · (entity_id, status, created_at)
   hitungan_disiapkan · sidik_disiapkan · total_dipindah
   disiapkan_oleh(_id) · disiapkan_pada · disetujui_oleh(_id) · disetujui_pada · tanggal_jurnal (hari persetujuan WIB)
   sidik_disetujui (dilihat penyetuju) · sidik_diposting (hitung ulang sesudah `nyalakan`) · hitungan_diposting
+  selisih_diperiksa · selisih_disetujui[{rekening_id, nama, selisih}] (R10: wajib dicentang bila ada selisih)
   rencana {aktif_sejak, baris_jurnal, tunggal[{rekening_id, kas_ids}]} (niat; tidak dikirim API) · aktif_sejak
   gl_status · gl_error · gl_failed_at · journal_entry_id · journal_number (jurnal `pindah_saldo_kas`, Posting Gagal
   jenis `pindah_saldo_kas`) · kas_ditautkan · selesai_pada

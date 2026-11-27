@@ -463,9 +463,24 @@ async def tolak(usulan_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str,
     return await ambil(usulan_id) or {}
 
 
-async def setujui(usulan_id: str, sidik: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+def rekening_berselisih(hit: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Rekening yang saldo akun rekening sesudah pindah ≠ buku kas rekeningnya (|selisih| ≥ Rp 0,01)."""
+    return [r for r in hit.get("rekening") or [] if abs(_sen(r.get("selisih"))) >= 1]
+
+
+def _pesan_selisih(berselisih: List[Dict[str, Any]]) -> str:
+    isi = " dan ".join(f"rekening {r['nama']} berselisih {rupiah(r['selisih'])}" for r in berselisih)
+    return f"{isi[:1].upper()}{isi[1:]} dengan buku kasnya — centang 'sudah diperiksa' untuk melanjutkan."
+
+
+async def setujui(usulan_id: str, sidik: str, actor: Dict[str, Any], *,
+                  selisih_diperiksa: bool = False) -> Dict[str, Any]:
     """`POST /api/kas-per-rekening/usulan/{id}/setujui` — lihat docstring modul. Usulan `memproses` (persetujuan yang
-    terhenti di tengah) diteruskan dari niat tersimpan (sidik tidak dibandingkan lagi; PT mungkin sudah menyala)."""
+    terhenti di tengah) diteruskan dari niat tersimpan (sidik tidak dibandingkan lagi; PT mungkin sudah menyala).
+
+    Ketetapan pengendali R10 — selisih tidak menghalangi, tetapi bila hitung ulang server menemukan rekening yang saldo
+    akunnya sesudah pindah ≠ buku kasnya (`selisih`), penyetuju wajib mengirim `selisih_diperiksa=True` (409 berkalimat
+    menyebut rekening & nominalnya). Tanpa selisih, isian itu tidak diperlukan."""
     from services import cash_account_mode as mode
     from services import dual_control
     from services import gl_service as gl
@@ -487,6 +502,9 @@ async def setujui(usulan_id: str, sidik: str, actor: Dict[str, Any]) -> Dict[str
     hit = await _hitung(eid)
     if hit["sidik"] != (sidik or "").strip():
         raise _galat(409, PESAN_ANGKA_BERUBAH)
+    berselisih = rekening_berselisih(hit)
+    if berselisih and selisih_diperiksa is not True:
+        raise _galat(409, _pesan_selisih(berselisih))
     tanggal = tanggal_buku()
     try:
         await gl.preflight_posting(eid, tanggal)
@@ -497,8 +515,12 @@ async def setujui(usulan_id: str, sidik: str, actor: Dict[str, Any]) -> Dict[str
         {"id": usulan_id, "status": "menunggu"},
         {"$set": {"status": "memproses", "disetujui_oleh": actor.get("name", ""),
                   "disetujui_oleh_id": actor.get("id", ""), "disetujui_pada": now_iso(), "tanggal_jurnal": tanggal,
-                  "sidik_disetujui": hit["sidik"], "lease_until": _lease_until(), "updated_at": now_iso()},
-         "$push": {"jejak": _jejak("setujui", actor, f"Sidik {hit['sidik']}")}},
+                  "sidik_disetujui": hit["sidik"], "lease_until": _lease_until(), "updated_at": now_iso(),
+                  "selisih_diperiksa": bool(berselisih),
+                  "selisih_disetujui": [{"rekening_id": r["id"], "nama": r["nama"], "selisih": r["selisih"]}
+                                        for r in berselisih]},
+         "$push": {"jejak": _jejak("setujui", actor, f"Sidik {hit['sidik']}" + "".join(
+             f"; selisih diperiksa {r['nama']} {rupiah(r['selisih'])}" for r in berselisih))}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not klaim:
         raise _galat(409, PESAN_SEDANG.format(pt=pt))
@@ -530,7 +552,8 @@ async def _lepas_jatah(usulan_id: str, actor: Dict[str, Any], galat: str, *, kem
     if kembali_menunggu:
         upd.update(status="menunggu", disetujui_oleh="", disetujui_oleh_id="", disetujui_pada="", sidik_disetujui="")
         await db[COLL].update_one({"id": usulan_id, "status": "memproses"},
-                                  {"$set": upd, "$unset": {"tanggal_jurnal": "", "rencana": ""}, **jejak})
+                                  {"$set": upd, "$unset": {"tanggal_jurnal": "", "rencana": "", "selisih_diperiksa": "",
+                                                           "selisih_disetujui": ""}, **jejak})
         return
     await db[COLL].update_one({"id": usulan_id}, {"$set": upd, **jejak})
 
