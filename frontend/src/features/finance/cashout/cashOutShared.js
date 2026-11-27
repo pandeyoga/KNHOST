@@ -24,6 +24,11 @@ export const JEJAK_LABEL = { ajukan: "Diajukan", setujui: "Disetujui", tolak: "D
 
 export const ALASAN_MIN = 5;   // sama dengan server (K-14: alasan minimum 5 huruf)
 
+/** Pengajuan yang sedang diklaim (`dalam_proses`, kunci saga). Kunci yang tertinggal karena proses mati di tengah dilepas
+ *  admin di Kunci Saga — kalimatnya sama dengan 409 `SAGA_IN_PROGRESS` server (`atomic_claim.claim`). */
+export const PESAN_SEDANG_DIPROSES = "Sedang diproses — muat ulang sebentar lagi. Bila beberapa menit kemudian masih "
+  + "tertahan, minta admin melepas kuncinya di Pengaturan › Kunci Saga.";
+
 export const TEKS_BANTU = "Kas keluar manual di atas batas PT tidak langsung tercatat: ia menjadi pengajuan yang baru "
   + "menjadi kas dan jurnal sesudah orang kedua yang berizin menyetujuinya. Pengajuan yang menunggu belum mengurangi saldo "
   + "kas. Pengaju bisa membatalkan selama menunggu. Batas diatur per PT di Pengaturan › Persetujuan › Kontrol dua orang.";
@@ -72,7 +77,7 @@ export function pengajuSendiri(d, user) {
 export function aksiPengajuan(d, perms, user) {
   const out = { setujui: null, tolak: null, batal: null };
   if (!d || d.status !== MENUNGGU) return out;
-  const sibuk = d.dalam_proses ? "Sedang diproses — muat ulang sebentar lagi." : "";
+  const sibuk = d.dalam_proses ? PESAN_SEDANG_DIPROSES : "";
   const sendiri = pengajuSendiri(d, user);
   if (can(perms, "cash", "approve")) {
     const ditolak = d.kontrol?.ditolak ? (d.kontrol.pesan || "Kas keluar ini harus disetujui orang lain.") : "";

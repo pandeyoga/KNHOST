@@ -300,7 +300,9 @@ describe("Pindah Dana — daftar, izin, satu pop-up", () => {
 
   test("aturan aksi & validasi (fungsi murni)", () => {
     expect(aksiPindahDana({ ...DOK.selesai, status: "batal", batal_tertunda: true }, izinPenuh).batal.label).toBe("Teruskan pembatalan");
-    expect(aksiPindahDana({ ...DOK.perjalanan, dalam_proses: true }, izinPenuh).terima.alasan).toMatch(/Sedang diproses/);
+    expect(aksiPindahDana({ ...DOK.perjalanan, dalam_proses: true }, izinPenuh).terima.alasan).toBe("Sedang diproses — "
+      + "muat ulang sebentar lagi. Bila beberapa menit kemudian masih tertahan, minta admin melepas kuncinya di "
+      + "Pengaturan › Kunci Saga.");   // kunci yang tertinggal dilepas di Kunci Saga (fund_transfers kini terdaftar)
     expect(aksiPindahDana({ ...DOK.selesai, status: "batal" }, izinPenuh)).toMatchObject({ setujui: null, terima: null, batal: null });
     const isi = { rekening_asal_id: "a", rekening_tujuan_id: "b", nominal: "10", biaya: "" };
     expect(validasiPindahDana(isi)).toBe("");

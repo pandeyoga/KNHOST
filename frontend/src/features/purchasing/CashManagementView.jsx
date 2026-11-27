@@ -200,6 +200,13 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         const req = res.data.request;
         notifySuccess(`Diajukan ${req.number ? `${req.number} ` : ""}(${formatCurrency(req.amount)}) — menunggu persetujuan `
           + "orang kedua. Kas keluar baru tercatat sesudah disetujui.");
+        // Perbaikan akhir (Minor 3, §7.8.4 "memberi tahu lebih awal") — peringatan anggaran (mode Peringatkan) saat
+        // diajukan ikut di bilah pemberitahuan, seperti kas langsung; anggaran yang menentukan diperiksa lagi saat disetujui.
+        const reqWarn = (req.budget_check?.warnings || []).join(" ");
+        if (reqWarn) {
+          setNotice(`Pengajuan ${req.number ? `${req.number} ` : ""}menunggu persetujuan orang kedua. `
+            + `Peringatan anggaran: ${reqWarn}`);
+        }
         setShowForm(false);
         setForm(EMPTY_FORM);
         setSorotPengajuan(req.id || "");

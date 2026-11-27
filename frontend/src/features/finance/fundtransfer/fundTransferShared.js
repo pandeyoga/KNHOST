@@ -63,7 +63,9 @@ export function badanPindahDana(f, entityId) {
 export function aksiPindahDana(d, perms) {
   const out = { setujui: null, terima: null, batal: null, catatan: "" };
   if (!d) return out;
-  const sibuk = d.dalam_proses ? "Sedang diproses — muat ulang sebentar lagi." : "";
+  // Kunci saga yang tertinggal (proses mati di tengah) dilepas admin di Kunci Saga — kalimat sama dengan 409 server.
+  const sibuk = d.dalam_proses ? "Sedang diproses — muat ulang sebentar lagi. Bila beberapa menit kemudian masih "
+    + "tertahan, minta admin melepas kuncinya di Pengaturan › Kunci Saga." : "";
   if (d.status === "menunggu_persetujuan") {
     if (can(perms, "cash", "approve")) {
       const ditolak = d.kontrol?.ditolak ? (d.kontrol.pesan || "Rekan lain yang berwenang yang menyetujui.") : "";

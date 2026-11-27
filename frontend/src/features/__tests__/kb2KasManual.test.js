@@ -6,7 +6,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import CashManagementView, { CATEGORIES } from "../purchasing/CashManagementView";
-import { aksiPengajuan, butuhPersetujuan, bacaBatas } from "../finance/cashout/cashOutShared";
+import { PESAN_SEDANG_DIPROSES, aksiPengajuan, butuhPersetujuan, bacaBatas } from "../finance/cashout/cashOutShared";
 import CashOutRequestPreview from "../documents/preview/bodies/CashOutRequestPreview";
 import { canPreview, previewFor } from "../documents/preview/docPreviewRegistry";
 import { notifDocTarget } from "../notifications/notifDocTarget";
@@ -239,6 +239,22 @@ describe("form Catat Transaksi — kas keluar di atas batas", () => {
     expect(txt(q(host, "cash-out-pending-count"))).toBe("1");
     expect(gets("/cash-transactions").length).toBe(daftarSebelum); // daftar kas tidak berubah: belum ada kas
   });
+
+  test("202 dengan peringatan anggaran (mode Peringatkan): peringatan tampil di bilah pemberitahuan (§7.8.4)", async () => {
+    const state = pasang();
+    const host = await layar(IZIN_AJU);
+    await click(q(host, "create-cash-button"));
+    await choose(q(host, "cash-type-select"), "kas_besar");
+    await type(q(host, "cash-amount-input"), "3500000");
+    await type(q(host, "cash-description-input"), "Sewa tenda acara");
+    const req = PKK({ kontrol: SENDIRI, budget_check: { mode: "warn", warnings: ["Beban Operasional Lainnya terpakai 92% dari pagu."] } });
+    mockPost.mockImplementation(async () => { state.menunggu = [req]; return { status: 202, data: { request: req } }; });
+    await submit(host, "submit-cash-button");
+    expect(notifySuccess).toHaveBeenCalledTimes(1);
+    expect(txt(q(host, "cash-notice"))).toBe("Pengajuan KSC/PKK-00001 menunggu persetujuan orang kedua. "
+      + "Peringatan anggaran: Beban Operasional Lainnya terpakai 92% dari pagu.");
+    expect(q(host, "cash-out-row-pkk_1")).not.toBeNull();
+  });
 });
 
 // ── 3. Bagian "Menunggu persetujuan" ─────────────────────────────────────────────────────────────────────────────────
@@ -313,6 +329,36 @@ describe("Menunggu persetujuan", () => {
     expect(notifySuccess).toHaveBeenCalledWith("Kas keluar KSC/PKK-00001 disetujui — kas KSC/CASH-00009 tercatat.");
     expect(gets("/cash-transactions/summary").length).toBeGreaterThan(kasSebelum);
     expect(q(host, "cash-out-pending")).toBeNull();               // tidak ada lagi yang menunggu
+  });
+
+  test("Setujui: peringatan anggaran saat diajukan di konfirmasi, hasil periksa ulang saat disetujui di toast", async () => {
+    const aju = { mode: "warn", warnings: ["Beban Operasional Lainnya terpakai 92% dari pagu."] };
+    const setuju = { mode: "warn", warnings: ["Beban Operasional Lainnya melewati pagu Rp 500.000."] };
+    const state = pasang({ menunggu: [PKK({ budget_check: aju })] });
+    const host = await layar(IZIN_SETUJU, REKAN);
+    mockAskConfirm.mockResolvedValue(true);
+    mockPost.mockImplementation(async () => {
+      state.menunggu = [];
+      return { data: { ...PKK(), status: "disetujui", cash_id: "cash_9", cash_number: "KSC/CASH-00009", budget_check_setuju: setuju } };
+    });
+    await click(q(host, "cash-out-approve-pkk_1"));
+    expect(txt({ textContent: mockAskConfirm.mock.calls[0][0].message })).toMatch(
+      / saldo kas berkurang\. Peringatan anggaran saat diajukan: Beban Operasional Lainnya terpakai 92% dari pagu\.$/);
+    expect(notifySuccess).toHaveBeenCalledWith("Kas keluar KSC/PKK-00001 disetujui — kas KSC/CASH-00009 tercatat. "
+      + "Peringatan anggaran: Beban Operasional Lainnya melewati pagu Rp 500.000.");
+  });
+
+  test("sedang diproses (kunci saga): Setujui/Tolak/Batal nonaktif dengan kalimat yang menunjuk Kunci Saga", async () => {
+    expect(PESAN_SEDANG_DIPROSES).toBe("Sedang diproses — muat ulang sebentar lagi. Bila beberapa menit kemudian masih "
+      + "tertahan, minta admin melepas kuncinya di Pengaturan › Kunci Saga.");
+    const a = aksiPengajuan(PKK({ dalam_proses: true }), { cash: ["view", "approve", "delete"] }, REKAN);
+    expect([a.setujui.alasan, a.tolak.alasan, a.batal.alasan]).toEqual(Array(3).fill(PESAN_SEDANG_DIPROSES));
+    pasang({ menunggu: [PKK({ dalam_proses: true })] });
+    const host = await layar({ cash: ["view", "approve", "delete"] }, REKAN);
+    expect(q(host, "cash-out-approve-pkk_1").disabled).toBe(true);
+    expect(q(host, "cash-out-reject-pkk_1").disabled).toBe(true);
+    expect(q(host, "cash-out-cancel-pkk_1").disabled).toBe(true);
+    expect(txt(q(host, "cash-out-action-note-pkk_1"))).toBe(PESAN_SEDANG_DIPROSES);
   });
 
   test("Tolak: alasan wajib (askReason ≥ 5 huruf) → reject {alasan}; pop-up dibatalkan → tidak ada kiriman", async () => {

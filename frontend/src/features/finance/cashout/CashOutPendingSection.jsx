@@ -32,6 +32,9 @@ import DocLink from "../../documents/preview/DocLink";
 import { categoryLabel } from "../../purchasing/cashCategories";
 import { ALASAN_MIN, MENUNGGU, TEKS_BANTU, aksiPengajuan } from "./cashOutShared";
 
+/** Teks peringatan anggaran (mode Peringatkan) dari hasil pemeriksaan server (`budget_check*.warnings`); "" bila tidak ada. */
+const peringatan = (cek) => (Array.isArray(cek?.warnings) ? cek.warnings.filter(Boolean).join(" ") : "");
+
 const CSV = [
   { key: "number", header: "Nomor" },
   { key: "txn_date", header: "Tanggal", type: "date" },
@@ -80,14 +83,21 @@ export default function CashOutPendingSection({ currentUser, selectedEntity, ent
     + ` — ${categoryLabel(d.category)}${d.description ? ` · ${d.description}` : ""}.`;
 
   async function setujui(d) {
+    // Perbaikan akhir (Minor 3) — peringatan anggaran (mode Peringatkan) saat diajukan tampil di konfirmasi; hasil
+    // pemeriksaan ulang saat disetujui (`budget_check_setuju`, yang menentukan) tampil di toast sukses.
+    const warnAju = peringatan(d.budget_check);
     const ok = await askConfirm({
       title: `Setujui kas keluar ${d.number}?`, confirmLabel: "Setujui", testId: "cash-out-approve-confirm",
       message: `${ringkas(d)} Diajukan ${d.pengaju?.name || d.created_by || "—"}. Kas keluar dan jurnalnya tercatat `
-        + `sekarang dengan tanggal ${formatDate(d.txn_date)}; saldo kas berkurang.`,
+        + `sekarang dengan tanggal ${formatDate(d.txn_date)}; saldo kas berkurang.`
+        + (warnAju ? ` Peringatan anggaran saat diajukan: ${warnAju}` : ""),
     });
     if (ok) {
-      await kirim(d, "approve", {}, (x) => `Kas keluar ${x.number || d.number} disetujui`
-        + `${x.cash_number ? ` — kas ${x.cash_number} tercatat` : ""}.`);
+      await kirim(d, "approve", {}, (x) => {
+        const warn = peringatan(x.budget_check_setuju);
+        return `Kas keluar ${x.number || d.number} disetujui${x.cash_number ? ` — kas ${x.cash_number} tercatat` : ""}.`
+          + (warn ? ` Peringatan anggaran: ${warn}` : "");
+      });
     }
   }
 
