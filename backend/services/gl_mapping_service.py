@@ -179,6 +179,12 @@ async def set_mapping(key: str, entity_id: Optional[str], account_code: str, rea
         raise ValueError(f"Akun {code} tidak ada di bagan akun.")
     if a.get("is_active") is False or a.get("is_postable") is False:
         raise ValueError(f"Akun {code} nonaktif atau akun induk — tidak bisa dipakai.")
+    if a.get("bank_account_id"):
+        # Kas & Bank 1 — akun rekening hanya diisi lewat kas ber-rekening; pemetaan ke sana membuat jurnal lain menulis
+        # akun rekening tanpa dokumen kas (saldo akun ≠ buku kas rekening).
+        rek = await db.bank_accounts.find_one({"id": a["bank_account_id"]}, {"_id": 0, "name": 1}) or {}
+        raise ValueError(f"Akun {code} adalah akun rekening {rek.get('name') or a.get('name') or code}; akun rekening "
+                         f"hanya diisi lewat kas atau Pindah Dana, bukan lewat Pemetaan Akun.")
     if reg.norm_type(a.get("type")) not in entry["allowed_types"]:
         allowed = ", ".join(reg.TYPE_LABEL[t] for t in entry["allowed_types"])
         raise ValueError(f"Akun {code} berjenis {reg.TYPE_LABEL.get(a.get('type'), a.get('type'))}; kebutuhan ini hanya menerima {allowed}.")

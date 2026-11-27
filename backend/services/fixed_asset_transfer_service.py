@@ -288,16 +288,18 @@ async def resume_transfer(asset: Dict[str, Any], actor: Dict[str, Any]) -> None:
     await _run_transfer(src, actor, resume=True)
 
 
-def _settle_sides(a: Dict[str, Any], tr: Dict[str, Any]):
+def _settle_sides(a: Dict[str, Any], tr: Dict[str, Any], akun_bayar: str, akun_terima: str):
+    """Rencana jurnal kembar pelunasan pindah aset. Kas & Bank 1 — `akun_bayar` / `akun_terima` = akun kas rekening
+    pembayar / penerima (`interco_money_service.akun_kas_bank`; PT belum aktif: akun lama)."""
     from services import interco_money_service as money
     from services.twin_journal import TwinSide
     price = round(float(tr.get("price") or 0), 2)
     label = f"Pelunasan pindah aset {a.get('number')}"
     return [
-        TwinSide("a", tr["to_entity_id"], money.pair_line(gl_service.ACC_IC_AP, gl_service.ACC_KAS_BESAR, price,
+        TwinSide("a", tr["to_entity_id"], money.pair_line(gl_service.ACC_IC_AP, akun_bayar, price,
                                                           f"Bayar pindah aset {a.get('number')}"),
                  label, label, ("fin_fixed_assets", a["id"]), "_settle_payer"),
-        TwinSide("b", tr["from_entity_id"], money.pair_line(gl_service.ACC_KAS_BESAR, gl_service.ACC_IC_AR, price,
+        TwinSide("b", tr["from_entity_id"], money.pair_line(akun_terima, gl_service.ACC_IC_AR, price,
                                                             f"Terima pembayaran pindah aset {a.get('number')}"),
                  label, label, ("fin_fixed_assets", a["id"]), "_settle_payee"),
     ]
@@ -336,7 +338,6 @@ async def settle_transfer(asset_id: str, actor: Dict[str, Any], note: str = "", 
         raise ValueError("Pembayaran pindah aset ini sudah dicatat.")
     price = round(float(tr.get("price") or 0), 2)
     tgl = tanggal_buku()
-    sides = _settle_sides(a, tr)
     base = f"{asset_id}:settle"
     if st == "settling":
         won = await db.fin_fixed_assets.find_one_and_update(
@@ -348,11 +349,14 @@ async def settle_transfer(asset_id: str, actor: Dict[str, Any], note: str = "", 
             raise AssetError(f"Aset {nomor} sedang diproses. Muat ulang.")
     else:
         # ── PERIKSA (tanpa tulisan): periode & rekening Bank kedua PT, baris jurnal kedua sisi ────────────────────
+        rek = {}
         for ent in (payer, payee):
             await _preflight_period(ent, tgl)
-            await cash_ledger.periksa_rekening(ent, await money.default_cash_account(ent), "kas_besar")
+            rek[ent] = (await cash_ledger.periksa_rekening(ent, await money.default_cash_account(ent),
+                                                           "kas_besar"))["account_id"]
         try:
-            await twin.preflight_twin(source_type=SETTLE_SOURCE, base_id=base, date=tgl, sides=sides)
+            await twin.preflight_twin(source_type=SETTLE_SOURCE, base_id=base, date=tgl, sides=_settle_sides(
+                a, tr, await money.akun_kas_bank(payer, rek[payer]), await money.akun_kas_bank(payee, rek[payee])))
         except twin.TwinJournalError as exc:
             raise AssetError(str(exc), 409) from exc
         # ── NIAT: klaim none → settling ───────────────────────────────────────────────────────────────────────────
@@ -380,6 +384,7 @@ async def settle_transfer(asset_id: str, actor: Dict[str, Any], note: str = "", 
         await lepas()
         raise
     # ── JURNAL: dua buku, status per sisi di aset ────────────────────────────────────────────────────────────────
+    sides = _settle_sides(a, tr, await money.akun_kas_dokumen(cash["out"]), await money.akun_kas_dokumen(cash["in"]))
     hasil = await twin.post_twin(source_type=SETTLE_SOURCE, base_id=base, date=tgl, sides=sides,
                                  created_by=actor.get("name", "system"))
     if any(v.get("status") == "failed" for v in hasil.values()):

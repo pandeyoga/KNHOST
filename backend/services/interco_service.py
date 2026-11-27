@@ -1288,7 +1288,7 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "", idempotenc
     # PERIKSA jurnal kedua buku sebelum apa pun tertulis (periode tertutup / akun nonaktif → 409).
     from services import twin_journal as _twin
     await _twin.preflight_twin(source_type="interco_settlement", base_id=settle_id, date=settle_date,
-                               sides=_settlement_sides(doc))
+                               sides=await _settlement_sides(doc))
     doc["number"] = await next_doc_number(COLL_ICS, "number", "ICS-", entity_id=payer)
     await db[COLL_ICS].insert_one(dict(doc))
     return await _run_settlement(doc, actor)
@@ -1411,7 +1411,7 @@ async def _run_settlement(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
         print(f"[interco] tautan settlement gagal: {exc}")
     out = safe_doc(await db[COLL_ICS].find_one({"id": sid}, {"_id": 0}))
     out["gl"] = gl_res
-    out["warning"] = await _twin.warning_for(gl_res, _settlement_sides(out))
+    out["warning"] = await _twin.warning_for(gl_res, await _settlement_sides(out))
     return out
 
 
@@ -1502,7 +1502,7 @@ async def create_refund(payload: Dict[str, Any], actor: str = "", idempotency_ke
            "idempotency_key": idempotency_key, "created_at": now_iso(), "created_by": actor}
     from services import twin_journal as _twin
     await _twin.preflight_twin(source_type="interco_settlement", base_id=sid, date=settle_date,
-                               sides=_settlement_sides(doc))
+                               sides=await _settlement_sides(doc))
     doc["number"] = await next_doc_number(COLL_ICS, "number", "ICS-", entity_id=payer)
     await db[COLL_ICS].insert_one(dict(doc))
     return await _run_refund(doc, actor)
@@ -1592,7 +1592,7 @@ async def _run_refund(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
         print(f"[interco] tautan refund gagal: {exc}")
     out = await _refund_answer(await db[COLL_ICS].find_one({"id": sid}, {"_id": 0}))
     out["gl"] = gl_res
-    out["warning"] = await _twin.warning_for(gl_res, _settlement_sides(out))
+    out["warning"] = await _twin.warning_for(gl_res, await _settlement_sides(out))
     return out
 
 
@@ -1743,23 +1743,27 @@ async def job_interco_payment_reminder() -> Dict[str, Any]:
     return {"created": sent, "skipped_pending_cutoff": skipped, "detail": f"{sent} pengingat bayar antar-PT dikirim"}
 
 
-def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
+async def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
     """Rencana jurnal settlement (baris sama dengan kode lama).
 
     netting : Payer Dr IC-AP / Cr IC-AR · Payee Dr IC-AP / Cr IC-AR (saling hapus piutang/utang antar-PT)
-    transfer/cash : Payer Dr IC-AP / Cr Kas Besar · Payee Dr Kas Besar / Cr IC-AR (uang benar-benar berpindah)
+    transfer/cash : Payer Dr IC-AP / Cr Kas · Payee Dr Kas / Cr IC-AR (uang benar-benar berpindah)
+    Kas & Bank 1 — akun kas tiap buku = akun rekening dokumen (`payer_account_id` / `payee_account_id`) lewat
+    `interco_money_service.akun_kas_bank`; PT belum memakai akun per rekening → akun kas besar lama seperti dulu.
     """
+    from services.interco_money_service import akun_kas_bank
     from services.twin_journal import TwinSide
     total = round(float(doc.get("total_applied") or 0), 2)
     sid, label = doc["id"], doc.get("number") or doc["id"]
     payer_ent, payee_ent = doc["payer_entity_id"], doc["payee_entity_id"]
+    kas_payer = await akun_kas_bank(payer_ent, doc.get("payer_account_id") or "")
+    kas_payee = await akun_kas_bank(payee_ent, doc.get("payee_account_id") or "")
     if doc.get("kind") == "refund":
         # PK-31 (IC-07) — REFUND: penjual (pembayar) mengembalikan kelebihan bayar; arah kas & akun antar-PT terbalik
         # dari pelunasan. Penjual Dr IC-AR / Cr Kas · pembeli Dr Kas / Cr IC-AP (akun kas sama dengan settlement).
-        cash_acc = gl_service.ACC_KAS_BESAR
-        lp = gl_service._balanced_pair(gl_service.ACC_IC_AR, cash_acc, total,
+        lp = gl_service._balanced_pair(gl_service.ACC_IC_AR, kas_payer, total,
                                        f"Pengembalian dana antar-PT {label} → {doc.get('payee_entity_name', '')}")
-        le = gl_service._balanced_pair(cash_acc, gl_service.ACC_IC_AP, total,
+        le = gl_service._balanced_pair(kas_payee, gl_service.ACC_IC_AP, total,
                                        f"Terima pengembalian dana antar-PT {label} ← {doc.get('payer_entity_name', '')}")
         dp, de = f"Pengembalian dana antar-PT {label}", f"Terima pengembalian dana antar-PT {label}"
     elif doc.get("method", "netting") == "netting":
@@ -1769,10 +1773,9 @@ def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
                                        f"Netting antar-PT {label} ← {doc.get('payer_entity_name', '')}")
         dp = de = f"Settlement antar-PT (netting) {label}"
     else:
-        cash_acc = gl_service.ACC_KAS_BESAR
-        lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, cash_acc, total,
+        lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, kas_payer, total,
                                        f"Bayar utang antar-PT {label} → {doc.get('payee_entity_name', '')}")
-        le = gl_service._balanced_pair(cash_acc, gl_service.ACC_IC_AR, total,
+        le = gl_service._balanced_pair(kas_payee, gl_service.ACC_IC_AR, total,
                                        f"Terima pelunasan antar-PT {label} ← {doc.get('payer_entity_name', '')}")
         dp, de = f"Bayar utang antar-PT {label}", f"Terima pelunasan antar-PT {label}"
     return [TwinSide("payer", payer_ent, lp, dp, label, (COLL_ICS, sid), "_payer"),
@@ -1789,7 +1792,7 @@ async def repost_settlement_gl(settlement_id: str, actor: str = "") -> Dict[str,
         await db[COLL_ICS].update_one({"id": settlement_id}, {"$set": {"gl_status": "not_required"}})
         return {}
     res = await _twin.post_twin(source_type="interco_settlement", base_id=settlement_id,
-                                date=doc.get("settle_date") or now_iso(), sides=_settlement_sides(doc),
+                                date=doc.get("settle_date") or now_iso(), sides=await _settlement_sides(doc),
                                 created_by=actor or "system")
     errs = [v["error"] for v in res.values() if v["status"] == "failed"]
     await db[COLL_ICS].update_one({"id": settlement_id}, {"$set": {

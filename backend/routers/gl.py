@@ -62,10 +62,11 @@ async def list_cash_accounts(request: Request) -> List[Dict[str, Any]]:
     Dipakai modal settle retur jual & supplier-accept retur beli."""
     await require_permission(request, "sales_return", "view")
     accts = await gl_service.list_accounts(active_only=True)
-    # Kas & Bank 1 — akun rekening (akun khusus PT ber-`bank_account_id`) TIDAK pernah ditawarkan: akun itu hanya diisi
-    # lewat kas ber-rekening (refund retur memakai `akun_kas` rekeningnya — Tugas 2). Daftar tetap akun templat 1-11xx:
-    # kode pilihan ini dibaca sebagai JENIS kas (`cash_ledger.cash_type_for`), jadi akun PT hasil pemetaan sengaja tidak
-    # ditambahkan (kas kecil berkode lain akan terbaca kas besar).
+    # Kas & Bank 1 (ketetapan R5) — daftar ini SENGAJA tetap akun templat global 1-11xx: `list_accounts` tanpa PT hanya
+    # mengembalikan templat global (akun rekening dan akun hasil pemetaan adalah akun khusus PT, jadi tidak pernah ikut;
+    # saringan `bank_account_id` hanya penjaga). Kode pilihan ini dibaca sebagai JENIS kas (`cash_ledger.cash_type_for`
+    # membandingkan persis dengan 1-1110), bukan akun jurnal: akun jurnal refund = `cash_ledger.akun_refund` — sub-akun
+    # rekening penerima bila PT sudah memakai akun per rekening, selain itu kode pilihan ini (seperti dulu).
     out = [
         {"code": a.get("code"), "name": a.get("name")}
         for a in accts

@@ -292,16 +292,18 @@ async def get_charge(cid: str) -> Optional[Dict[str, Any]]:
 
 
 # ── Pelunasan ────────────────────────────────────────────────────────────────────────────────────────────────────────
-def _settle_sides(doc: Dict[str, Any], seq: int, amount: float):
+async def _settle_sides(doc: Dict[str, Any], seq: int, amount: float, akun_bayar: str, akun_terima: str):
+    """Rencana jurnal kembar pelunasan. Kas & Bank 1 — `akun_bayar` / `akun_terima` = akun kas rekening pembayar /
+    penerima (`interco_money_service.akun_kas_bank`; PT belum aktif: akun lama)."""
     from services import gl_service as gl
     from services.twin_journal import TwinSide
     label = f"Pelunasan tagihan insentif {doc['number']} #{seq}"
     return [
-        TwinSide("a", doc["to_entity_id"], _pair(gl.ACC_IC_AP, gl.ACC_KAS_BESAR, amount,
+        TwinSide("a", doc["to_entity_id"], _pair(gl.ACC_IC_AP, akun_bayar, amount,
                                                  f"Bayar tagihan insentif {doc['number']} ke "
                                                  f"{doc.get('from_entity_name') or ''}".strip(), doc["number"]),
                  label, doc["number"], (COLL, doc["id"]), "_settle_payer"),
-        TwinSide("b", doc["from_entity_id"], _pair(gl.ACC_KAS_BESAR, gl.ACC_IC_AR, amount,
+        TwinSide("b", doc["from_entity_id"], _pair(akun_terima, gl.ACC_IC_AR, amount,
                                                    f"Terima pelunasan tagihan insentif {doc['number']} dari "
                                                    f"{doc.get('to_entity_name') or ''}".strip(), doc["number"]),
                  label, doc["number"], (COLL, doc["id"]), "_settle_payee"),
@@ -370,7 +372,9 @@ async def settle(cid: str, payload: Dict[str, Any], actor: Dict[str, Any], *,
         seq = len(doc.get("settlements") or []) + 1
         try:
             await twin.preflight_twin(source_type=SETTLE_SOURCE, base_id=f"{cid}:st{seq}", date=tgl,
-                                      sides=_settle_sides(doc, seq, amount))
+                                      sides=await _settle_sides(doc, seq, amount,
+                                                                await money.akun_kas_bank(payer, rek[payer]),
+                                                                await money.akun_kas_bank(payee, rek[payee])))
         except twin.TwinJournalError as exc:
             raise ChargeError(str(exc), 409) from exc
         niat = {"seq": seq, "amount": amount, "date": tgl, "account_id_from": rek[payer], "account_id_to": rek[payee],
@@ -408,7 +412,8 @@ async def _lanjut_settle(doc: Dict[str, Any], niat: Dict[str, Any], actor: Dict[
         await lepas()
         raise
     # ── JURNAL: dua buku, status per sisi di tagihan ─────────────────────────────────────────────────────────────
-    sides = _settle_sides(doc, seq, amount)
+    sides = await _settle_sides(doc, seq, amount, await money.akun_kas_dokumen(cash["out"]),
+                                await money.akun_kas_dokumen(cash["in"]))
     hasil = await twin.post_twin(source_type=SETTLE_SOURCE, base_id=f"{cid}:st{seq}", date=niat["date"], sides=sides,
                                  created_by=niat.get("by") or actor.get("name", "system"))
     if any(v.get("status") == "failed" for v in hasil.values()):

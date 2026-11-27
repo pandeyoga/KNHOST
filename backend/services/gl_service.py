@@ -234,13 +234,10 @@ async def _known(key: str) -> List[str]:
     return await _glm.known_codes(key)
 
 
-async def akun_kas(entity_id: str, account_id: str, cash_type: str) -> str:
-    """Kas & Bank bagian 1 (D1) — SATU pembantu akun kas untuk jurnal yang menyentuh kas.
-
-    PT `entity_id` sudah memakai akun per rekening (`cash_account_mode.aktif`) DAN rekening `account_id` milik PT itu
-    ber-`gl_account_code` → kode akun rekening itu (akun khusus PT; bukan kode bawaan, jadi `remap_lines` tidak
-    memetakannya ulang). Selain itu → akun jenis kas lama: 1-1110 kas kecil, 1-1100 kas besar/bank — dipetakan per PT
-    di `_insert_entry` seperti sebelumnya, sehingga PT yang belum aktif menghasilkan jurnal yang persis sama."""
+async def akun_rekening(entity_id: str, account_id: str) -> str:
+    """Kode akun buku besar rekening `account_id` bila PT `entity_id` sudah memakai akun per rekening
+    (`cash_account_mode.aktif`) DAN rekening itu milik PT itu ber-`gl_account_code`; selain itu "" (rekening PT lain,
+    rekening tanpa sub-akun, PT belum aktif → jurnal memakai akun lama)."""
     if account_id and entity_id:
         from services import cash_account_mode as _mode
         if await _mode.aktif(entity_id):
@@ -249,7 +246,38 @@ async def akun_kas(entity_id: str, account_id: str, cash_type: str) -> str:
             kode = acc.get("gl_account_code") or ""
             if kode and (acc.get("entity_id") or "") == entity_id:
                 return kode
-    return ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR
+    return ""
+
+
+async def akun_kas(entity_id: str, account_id: str, cash_type: str, *, akun_lama: str = "") -> str:
+    """Kas & Bank bagian 1 (D1) — SATU pembantu akun kas untuk jurnal yang menyentuh kas.
+
+    PT `entity_id` sudah memakai akun per rekening DAN rekening `account_id` milik PT itu ber-`gl_account_code` → kode
+    akun rekening itu (`akun_rekening`; akun khusus PT, bukan kode bawaan, jadi `remap_lines` tidak memetakannya ulang).
+    Selain itu → akun lama: `akun_lama` bila pemanggil sudah memegang akun kas pilihan (mis. kode pemilih refund retur,
+    akun sumber dana aset yang tersimpan), kalau kosong akun jenis kas: 1-1110 kas kecil, 1-1100 kas besar/bank —
+    dipetakan per PT di `_insert_entry` seperti sebelumnya, sehingga PT yang belum aktif menghasilkan jurnal yang persis
+    sama. Penjaga statik `scripts/guardrails/verify_akun_kas_satu_pintu.py` (INV-CASH-02) menolak kode kas harfiah di
+    baris jurnal di luar fungsi ini."""
+    kode = await akun_rekening(entity_id, account_id)
+    if kode:
+        return kode
+    return akun_lama or (ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR)
+
+
+async def akun_kas_tanpa_rekening(entity_id: str, cash_type: str) -> Dict[str, Any]:
+    """Kas & Bank 1 (§5.1) — akun kas jurnal yang menyentuh kas TANPA dokumen kas / rekening (penjualan tunai tanpa
+    surat jalan): rekening TUNGGAL PT untuk jenis kas itu (`bank_service.sole_account_id`) → akun rekening itu (lewat
+    `akun_kas`); tidak tunggal → akun lama. → `{"account_code", "account_id", "belum_tertaut"}`; `belum_tertaut` = PT
+    sudah memakai akun per rekening tetapi kas ini tetap di akun lama (dicatat di `ref.kas_belum_tertaut` jurnal)."""
+    from services import cash_account_mode as _mode
+    if not entity_id or not await _mode.aktif(entity_id):
+        return {"account_code": await akun_kas(entity_id, "", cash_type), "account_id": "", "belum_tertaut": False}
+    from services.bank_service import sole_account_id
+    rid = await sole_account_id(entity_id, cash_type)
+    kode = await akun_rekening(entity_id, rid)
+    return {"account_code": kode or await akun_kas(entity_id, "", cash_type), "account_id": rid if kode else "",
+            "belum_tertaut": not kode}
 
 
 async def _cash_account(txn: Dict[str, Any], entity_id: str = "") -> str:
@@ -473,6 +501,10 @@ async def update_account(code: str, patch: Dict[str, Any],
         cur = await get_account(code, entity_id=entity_id)
         if cur and cur.get("is_active") is not False:
             await assert_can_deactivate(code, entity_id)
+    if tolak_bila_dipakai and patch.get("is_postable") is False and entity_id:
+        # Kas & Bank 1 (tinjauan T1 M2) — akun rekening yang dijadikan akun induk membuat jurnal kas rekening gagal
+        await _tolak_akun_rekening_dipakai(await db.gl_accounts.find_one(
+            {"code": code, "entity_id": entity_id}, {"_id": 0}) or {}, "diubah menjadi akun induk")
     scope: Dict[str, Any] = {"code": code}
     if entity_id:
         scope["entity_id"] = entity_id
@@ -580,21 +612,19 @@ def _norm_lines(raw_lines: List[Dict[str, Any]], names: Dict[str, str]) -> List[
 async def _account_names(codes: List[str], entity_id: Optional[str] = None) -> Dict[str, str]:
     """Nama akun by-code — dari template global (posting-agnostik terhadap PT).
 
-    Kas & Bank 1 — akun rekening (akun khusus PT ber-`bank_account_id`) tidak punya template global: di PT yang sudah
-    memakai akun per rekening, namanya diambil dari bagan akun PT itu. Akun khusus PT lainnya tetap tanpa nama di baris
-    (seperti sebelumnya)."""
+    Kas & Bank 1 — akun rekening (akun khusus PT ber-`bank_account_id`) tidak punya template global: namanya diambil
+    dari bagan akun PT itu, PT sudah memakai akun per rekening atau belum (jurnal pindah saldo Tugas 3 bisa terbit
+    sebelum PT menyala; tinjauan T1 M4). Akun khusus PT lainnya tetap tanpa nama di baris (seperti sebelumnya)."""
     rows = await db.gl_accounts.find(
         {"code": {"$in": list(set(codes))}, "entity_id": {"$in": [None, ""]}},
         {"_id": 0, "code": 1, "name": 1}).to_list(2000)
     names = {r["code"]: r["name"] for r in rows}
     hilang = sorted({c for c in codes if c and c not in names})
     if hilang and entity_id:
-        from services import cash_account_mode as _mode
-        if await _mode.aktif(entity_id):
-            async for a in db.gl_accounts.find({"code": {"$in": hilang}, "entity_id": entity_id,
-                                                "bank_account_id": {"$nin": [None, ""]}},
-                                               {"_id": 0, "code": 1, "name": 1}):
-                names[a["code"]] = a.get("name", "")
+        async for a in db.gl_accounts.find({"code": {"$in": hilang}, "entity_id": entity_id,
+                                            "bank_account_id": {"$nin": [None, ""]}},
+                                           {"_id": 0, "code": 1, "name": 1}):
+            names[a["code"]] = a.get("name", "")
     return names
 
 
@@ -1131,6 +1161,15 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
         # `_reverse_once` (bukan fungsi ini) dan tidak terhalang; pemilik dokumen (`periksa_akun_kontrol=False`) juga.
         kode = [ln.get("account_code", "") for ln in je.get("lines") or []]
         await assert_bukan_akun_rekening(kode, await effective_accounts(kode, je.get("entity_id")), jurnal=je)
+        # Kas & Bank 1 (Tugas 2) — jurnal kas LAMA (akun lama) yang saldonya sudah dipindah ke akun rekening:
+        # pembaliknya akan masuk akun rekening (`baris_kas_rekening`), padahal dokumen kasnya tetap tercatat → ditolak.
+        alih = await baris_kas_rekening(je)
+        if alih:
+            a = next(iter(alih.values()))
+            rek = await db.bank_accounts.find_one({"id": a["rekening"]}, {"_id": 0, "name": 1}) or {}
+            raise ValueError(f"Jurnal {je.get('number') or je.get('id', '')} mencatat kas rekening "
+                             f"{rek.get('name') or a['rekening']} yang saldonya sudah dipindah ke akun {a['akun']}; "
+                             f"balik lewat pembatalan dokumen kasnya, bukan pembalikan manual.")
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
     return await _reverse_once(
         je, source_type="reversal", source_id=entry_id, date=f"{d}T00:00:00",
@@ -1208,11 +1247,14 @@ async def _reverse_once_ex(je: Dict[str, Any], *, source_type: str, source_id: s
     ref = {**(je.get("ref") or {}), **(extra_ref or {}),
            "reverses_entry_id": je["id"], "reverses_entry_number": je.get("number", "")}
     try:
+        # Kas & Bank 1 (§5.1) — baris kas LAMA milik dokumen kas ber-rekening yang saldonya sudah dipindah ke akun
+        # rekening (PT aktif sesudah jurnal & kasnya terbit) dibalik ke akun rekening itu, bukan ke akun lama.
+        alih = await baris_kas_rekening(je)
         rev = await _insert_entry(
-            lines=[{"account_code": ln["account_code"], "debit": float(ln.get("credit", 0) or 0),
-                    "credit": float(ln.get("debit", 0) or 0),
+            lines=[{"account_code": (alih.get(i) or {}).get("akun") or ln["account_code"],
+                    "debit": float(ln.get("credit", 0) or 0), "credit": float(ln.get("debit", 0) or 0),
                     "description": line_desc or f"{line_prefix} {ln.get('description', '')}".strip()}
-                   for ln in je.get("lines", [])],
+                   for i, ln in enumerate(je.get("lines", []))],
             description=description, date=date or now_iso(), source_type=source_type, source_id=source_id,
             entity_id=je.get("entity_id", ""), created_by=created_by, source_label=source_label, ref=ref)
     except Exception:
@@ -1229,6 +1271,55 @@ async def _reverse_once_ex(je: Dict[str, Any], *, source_type: str, source_id: s
 async def _reverse_once(je: Dict[str, Any], **kw: Any) -> Optional[Dict[str, Any]]:
     rev, _created = await _reverse_once_ex(je, **kw)
     return rev
+
+
+async def kas_jurnal(je: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Dokumen kas yang dijurnal `je`: kas sumber jurnal `cash_transaction` (id kas = `source_id`), atau kas yang
+    menumpang jurnal induk (`journal_entry_id` / `parent_journal` = id jurnal — refund retur, gaji jalur lama, aset).
+    Kas berstatus apa pun (pembalik dipanggil saat kasnya sedang dibatalkan)."""
+    if je.get("source_type") == "cash_transaction":
+        t = await db.cash_transactions.find_one({"id": je.get("source_id") or "__none__"}, {"_id": 0})
+        return [t] if t else []
+    if not je.get("id"):
+        return []
+    return await db.cash_transactions.find({"$or": [{"journal_entry_id": je["id"]}, {"parent_journal": je["id"]}]},
+                                           {"_id": 0}).to_list(50)
+
+
+async def baris_kas_rekening(je: Dict[str, Any]) -> Dict[int, Dict[str, str]]:
+    """Kas & Bank 1 (§5.1 "pembalik jurnal kas lama sesudah PT aktif") — baris akun kas LAMA jurnal `je` yang mencatat
+    kas ber-rekening dan saldonya SUDAH dipindah ke akun rekening (pindah saldo Tugas 3 memindah saldo per rekening per
+    akun asal dari jurnal yang terbit sebelum PT menyala). → `{indeks baris: {"akun": kode akun rekening, "rekening": id
+    rekening}}`; kosong = baris jurnal dipakai apa adanya.
+
+    Syarat (semuanya): PT jurnal sudah aktif; jurnal DAN dokumen kasnya terbit sebelum PT aktif (`aktif_sejak`);
+    rekening dokumen kas milik PT jurnal ber-akun rekening (`akun_rekening` — rekening PT lain tetap akun lama, R4);
+    baris = akun kas lama PT itu (`report_basis.kode_kas` tanpa akun rekening: bawaan + pemetaan + riwayat) di sisi kas
+    dokumen (kas masuk = debit, keluar = kredit) bernominal sama. Satu baris per dokumen kas. Dipakai pembalik terpadu
+    (`_reverse_once_ex`: batal kas, batal dokumen) dan penolakan pembalikan manual (`reverse_entry`)."""
+    eid = je.get("entity_id") or ""
+    from services import cash_account_mode as _mode
+    sejak = await _mode.aktif_sejak(eid)
+    if not sejak or not (je.get("created_at") or "") or je["created_at"] >= sejak:
+        return {}
+    kas = [t for t in await kas_jurnal(je) if t.get("account_id") and (t.get("created_at") or "") < sejak]
+    if not kas:
+        return {}
+    from services import report_basis as _rb
+    lama = await _rb.kode_kas(eid) - await kode_akun_rekening(eid)
+    lines = je.get("lines") or []
+    out: Dict[int, Dict[str, str]] = {}
+    for t in kas:
+        akun = await akun_rekening(eid, t["account_id"])
+        if not akun:
+            continue
+        sisi = "debit" if t.get("direction") == "in" else "credit"
+        sen = _sen(t.get("amount"))
+        for i, ln in enumerate(lines):
+            if i not in out and ln.get("account_code") in lama and _sen(ln.get(sisi)) == sen:
+                out[i] = {"akun": akun, "rekening": t["account_id"]}
+                break
+    return out
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1308,6 +1399,28 @@ async def _sum_lines(flt: Dict[str, Any], account: str, side: str) -> float:
     return round(total, 2)
 
 
+async def kode_akun_rekening(entity_id: str) -> set:
+    """Kas & Bank 1 — kode akun rekening (akun bagan PT ber-`bank_account_id`) PT `entity_id`."""
+    if not entity_id:
+        return set()
+    return {a["code"] async for a in db.gl_accounts.find(
+        {"entity_id": entity_id, "bank_account_id": {"$nin": [None, ""]}}, {"_id": 0, "code": 1})}
+
+
+async def _kas_jual_tunai(flt: Dict[str, Any]) -> float:
+    """Σ debit kas jurnal penjualan tunai tanpa surat jalan (`post_sales_order`, Dr kas): akun kas besar lama ATAU akun
+    rekening PT jurnal itu (Kas & Bank 1 — rekening tunggal PT). Pembaca, bukan baris jurnal."""
+    total = 0.0
+    rekening: Dict[str, set] = {}
+    async for je in db.journal_entries.find({**flt, "status": {"$ne": "void"}}, {"_id": 0, "lines": 1, "entity_id": 1}):
+        eid = je.get("entity_id") or ""
+        if eid not in rekening:
+            rekening[eid] = await kode_akun_rekening(eid)
+        total += sum(float(l.get("debit") or 0) for l in je.get("lines") or []
+                     if l.get("account_code") == ACC_KAS_BESAR or l.get("account_code") in rekening[eid])
+    return round(total, 2)
+
+
 async def order_revenue_posted(order_id: str) -> bool:
     """Sudah ada pendapatan yang lahir (per pesanan ATAU per surat jalan)?"""
     if await _already_posted("sales_order", order_id):
@@ -1340,7 +1453,7 @@ async def order_revenue_recognized(order_id: str) -> Dict[str, float]:
                    {"source_type": "shipment_revenue", "ref.order_id": order_id}]}
     rev = await _sum_lines(flt, ACC_PENDAPATAN, "credit")
     ppn = await _sum_lines(flt, ACC_PPN_OUT, "credit")
-    ar = await _sum_lines(flt, ACC_PIUTANG, "debit") + await _sum_lines(flt, ACC_KAS_BESAR, "debit")
+    ar = await _sum_lines(flt, ACC_PIUTANG, "debit") + await _kas_jual_tunai(flt)
     amd = await order_amendment_recognized(order_id)
     return {"revenue": round(rev + amd["revenue"], 2), "ppn": round(ppn + amd["ppn"], 2),
             "ar": round(ar + amd["ar"], 2)}
@@ -1654,7 +1767,11 @@ async def post_sales_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return None
     ppn = round(eff["ppn"] - amd["ppn"], 2)
     is_cash = order_payment_method(order) in NON_AR_METHODS
-    debit_acc = ACC_KAS_BESAR if is_cash else ACC_PIUTANG
+    debit_acc, ref = ACC_PIUTANG, None
+    if is_cash:   # Kas & Bank 1 — tanpa dokumen kas: rekening tunggal PT, selain itu akun lama (belum tertaut)
+        kas = await akun_kas_tanpa_rekening(order.get("entity_id", ""), "kas_besar")
+        debit_acc = kas["account_code"]
+        ref = {"kas_belum_tertaut": True} if kas["belum_tertaut"] else None
     num = order.get("number", sid)
     lines = [{"account_code": debit_acc, "debit": grand, "credit": 0.0,
               "description": f"{'Tunai' if is_cash else 'Piutang'} {num}"}]
@@ -1675,7 +1792,7 @@ async def post_sales_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return await _insert_entry(
         lines=lines, description=f"Pengakuan penjualan {num}", date=await _revenue_date(order),
         source_type="sales_order", source_id=sid, entity_id=order.get("entity_id", ""),
-        created_by="system", source_label=num)
+        created_by="system", source_label=num, ref=ref)
 
 
 COGS_ROLL_STATUSES = ["reserved", "committed", "picked", "packed", "in_transit_sales", "delivered"]
@@ -2571,7 +2688,9 @@ async def post_penalty_payment(*, penalty_id: str, entity_id: str, amount: float
         return None
     await seed_default_coa()
     from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
-    cash_acc = ACC_KAS_KECIL if await is_cash(entity_id or "", method) else ACC_KAS_BESAR
+    # Kas & Bank 1 — tanpa dokumen kas / rekening → akun jenis kas lama (satu pembantu `akun_kas`)
+    jenis = "kas_kecil" if await is_cash(entity_id or "", method) else "kas_besar"
+    cash_acc = await akun_kas(entity_id or "", "", jenis)
     lbl = label or f"Pembayaran denda {penalty_id}"
     lines = _balanced_pair(cash_acc, ACC_PIUTANG_DENDA, amount, lbl)
     return await _insert_entry(
@@ -2881,10 +3000,10 @@ async def variance_writeoff_total(entity_id: str = "") -> float:
 
 
 async def post_asset_acquisition(*, asset_id: str, entity_id: str, amount: float,
-                                 asset_acc: str, funding_acc: str = ACC_KAS_BESAR, funding_fixed: bool = False,
+                                 asset_acc: str, funding_acc: str = "", funding_fixed: bool = False,
                                  label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
     """R6.2 — Perolehan aset tetap → GL.
-      Dr <akun aset> (harga perolehan) / Cr <akun sumber dana> (default 1-1100 Kas/Bank).
+      Dr <akun aset> (harga perolehan) / Cr <akun sumber dana> (kosong = akun kas besar lama lewat `akun_kas`).
     Menaruh aset di neraca sehingga disposal (Cr aset) tidak membuat saldo negatif.
     Idempotent per asset (source_type='fixed_asset_acquisition').
     PK-23 — `funding_fixed=True`: akun sumber dana sudah hasil pemetaan khusus aset (`aset.sumber_hutang`,
@@ -2893,6 +3012,7 @@ async def post_asset_acquisition(*, asset_id: str, entity_id: str, amount: float
     if amount <= EPS or await _already_posted("fixed_asset_acquisition", asset_id):
         return None
     await seed_default_coa()
+    funding_acc = funding_acc or await akun_kas(entity_id or "", "", "kas_besar")
     lbl = label or asset_id
     lines = [
         {"account_code": asset_acc, "debit": amount, "credit": 0.0,
@@ -2934,7 +3054,7 @@ async def post_depreciation(*, asset_id: str, period: str, entity_id: str, amoun
 
 async def post_asset_disposal(*, asset_id: str, entity_id: str, acquisition_cost: float,
                               accumulated: float, proceeds: float, asset_acc: str,
-                              acc_dep_acc: str = ACC_FA_ACCUM_DEP, cash_acc: str = ACC_KAS_BESAR,
+                              acc_dep_acc: str = ACC_FA_ACCUM_DEP, cash_acc: str = "",
                               gain_acc: str = ACC_FA_GAIN, loss_acc: str = ACC_FA_LOSS,
                               label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
     """R6.2 — Pelepasan/disposal aset tetap → GL (menyertakan gain/loss).
@@ -2944,13 +3064,22 @@ async def post_asset_disposal(*, asset_id: str, entity_id: str, acquisition_cost
       Cr <akun aset>  (harga perolehan)
       [Cr 4-9100 Laba Pelepasan]   ← bila proceeds > book value
     book_value = acquisition_cost − accumulated; gain_loss = proceeds − book_value.
-    Self-balancing (lihat pembuktian POC). Idempotent per asset (source_type='fixed_asset_disposal')."""
+    Self-balancing (lihat pembuktian POC). Idempotent per asset (source_type='fixed_asset_disposal').
+    Kas & Bank 1 — hasil pelepasan tidak punya dokumen kas / rekening: `cash_acc` kosong = akun kas besar lama
+    (`akun_kas` tanpa rekening); di PT yang sudah memakai akun per rekening jurnalnya ditandai
+    `ref.kas_belum_tertaut`."""
     acquisition_cost = round(float(acquisition_cost or 0), 2)
     accumulated = round(float(accumulated or 0), 2)
     proceeds = round(float(proceeds or 0), 2)
     if await _already_posted("fixed_asset_disposal", asset_id):
         return None
     await seed_default_coa()
+    ref = None
+    if not cash_acc:
+        cash_acc = await akun_kas(entity_id or "", "", "kas_besar")
+        from services import cash_account_mode as _mode
+        if proceeds > EPS and await _mode.aktif(entity_id or ""):
+            ref = {"kas_belum_tertaut": True}
     book_value = round(acquisition_cost - accumulated, 2)
     gain_loss = round(proceeds - book_value, 2)
     lbl = label or asset_id
@@ -2972,7 +3101,7 @@ async def post_asset_disposal(*, asset_id: str, entity_id: str, acquisition_cost
     return await _insert_entry(
         lines=lines, description=f"Pelepasan aset {lbl} (gain/loss)",
         date=date or now_iso(), source_type="fixed_asset_disposal",
-        source_id=asset_id, entity_id=entity_id or "", created_by="system", source_label=lbl)
+        source_id=asset_id, entity_id=entity_id or "", created_by="system", source_label=lbl, ref=ref)
 
 
 
@@ -3055,8 +3184,9 @@ async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float
     ppn = round(float(ppn or 0), 2)
     net = round(amount - ppn, 2)
     basis = ap_basis if ap_basis in PURCHASE_RETURN_BASES else await purchase_return_basis(ret, outcome)
-    if basis == "kas":
-        debit_acc, debit_amt = cash_account_code or ACC_KAS_BESAR, amount
+    if basis == "kas":   # Kas & Bank 1 — akun kas refund dari pemanggil (`cash_ledger.akun_refund`)
+        debit_acc = cash_account_code or await akun_kas(ret.get("entity_id", ""), "", "kas_besar")
+        debit_amt = amount
         debit_desc = f"Refund tunai supplier — retur beli {label}"
     elif basis == "hutang":
         debit_acc, debit_amt = ACC_HUTANG, amount
@@ -3148,6 +3278,9 @@ async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_pp
     rid = ret.get("id")
     if not rid or await _already_posted("sales_return", rid):
         return None
+    if (is_cash or (settlement or "").lower() == "cash") and not cash_account_code:
+        # Kas & Bank 1 — akun kas refund dari pemanggil (`cash_ledger.akun_refund`); kosong = akun kas besar lama
+        cash_account_code = await akun_kas(ret.get("entity_id", ""), "", "kas_besar")
     lines = sales_return_lines(return_net=return_net, return_ppn=return_ppn, return_cogs=return_cogs, is_cash=is_cash,
                                settlement=settlement, cash_account_code=cash_account_code, ar_part=ar_part,
                                label=credit_note_number or ret.get("number", rid))
@@ -3180,7 +3313,9 @@ def sales_return_lines(*, return_net: float, return_ppn: float, return_cogs: flo
             lines.append({"account_code": ACC_PPN_OUT, "debit": return_ppn, "credit": 0.0,
                           "description": f"Reversal PPN Keluaran {label}"})
         if is_cash or stype == "cash":
-            credit_acc, credit_desc = (cash_account_code or ACC_KAS_BESAR), "Refund tunai"
+            if not cash_account_code:   # Kas & Bank 1 — akun kas refund dari pemanggil (`cash_ledger.akun_refund`)
+                raise ValueError("Akun kas refund tunai belum ditentukan.")
+            credit_acc, credit_desc = cash_account_code, "Refund tunai"
         elif stype == "store_credit":
             credit_acc, credit_desc = ACC_STORE_CREDIT, "Saldo kredit pelanggan (store credit)"
         else:

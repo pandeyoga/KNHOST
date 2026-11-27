@@ -67,7 +67,41 @@ class CashPostingError(HTTPException):
 
 
 def cash_type_for(account_code: str) -> str:
+    """Jenis kas dari kode akun TEMPLAT (pemilih refund `/gl/cash-accounts`, akun kas lama): persis 1-1110 = kas kecil,
+    lainnya kas besar. Jangan dipakai untuk akun rekening (`1-1110-01` terbaca kas besar) — pakai `jenis_kas_akun`."""
     return "kas_kecil" if (account_code or "") == KAS_KECIL_CODE else "kas_besar"
+
+
+async def jenis_kas_akun(entity_id: str, kode: str) -> str:
+    """Kas & Bank 1 (ketetapan R2) — jenis kas akun buku besar `kode` di PT `entity_id`: akun rekening (akun PT
+    ber-`bank_account_id`) → jenis REKENING pemiliknya (`bank_service.account_cash_type`); akun lain → `cash_type_for`
+    (akun templat lama, seperti dulu)."""
+    from services import bank_service as bs
+    akun = await db.gl_accounts.find_one({"code": kode or "__none__", "entity_id": entity_id or "__none__",
+                                          "bank_account_id": {"$nin": [None, ""]}}, {"_id": 0, "bank_account_id": 1})
+    if akun:
+        rek = await db.bank_accounts.find_one({"id": akun["bank_account_id"]}, {"_id": 0})
+        if rek:
+            return bs.account_cash_type(rek)
+    return cash_type_for(kode)
+
+
+async def akun_refund(entity_id: str, account_id: str, kode_pilihan: str = "") -> Dict[str, str]:
+    """Kas & Bank 1 — akun kas jurnal refund retur tunai (R5.3: retur jual, retur jual per roll, retur beli).
+
+    `kode_pilihan` = kode pemilih refund `/gl/cash-accounts` (akun templat global, dibaca sebagai JENIS kas —
+    ketetapan R5; kosong = kas besar). → `{"account_code": akun kas jurnal, "cash_type": jenis kas akun itu (dikirim ke
+    `record_return_cash`), "kode_pilihan": kode pilihan yang disimpan di dokumen (kosong → akun kas besar lama)}`. PT
+    sudah memakai akun per rekening + rekening `account_id` ber-sub-akun → sub-akun rekening itu dan jenis REKENINGNYA
+    (R2); selain itu kode pilihan dan jenisnya — PT belum aktif: persis seperti dulu."""
+    from services import bank_service as bs
+    from services import gl_service as gl
+    ct = cash_type_for(kode_pilihan)
+    pilihan = kode_pilihan or await gl.akun_kas(entity_id, "", ct)
+    sub = await gl.akun_rekening(entity_id, account_id)
+    if sub:
+        ct = bs.account_cash_type(await db.bank_accounts.find_one({"id": account_id}, {"_id": 0}) or {})
+    return {"account_code": sub or pilihan, "cash_type": ct, "kode_pilihan": pilihan}
 
 
 def cash_id(ref_type: str, ref_id: str, direction: str, seq: str = "") -> str:
@@ -262,13 +296,15 @@ async def record_return_cash(*, direction: str, amount: float, account_code: str
                              category: str, description: str, entity_id: str,
                              ref_type: str, ref_id: str, journal_entry_id: str = "",
                              created_by: str = "system", txn_date: str = "",
-                             account_id: str = "") -> Optional[Dict[str, Any]]:
+                             account_id: str = "", cash_type: str = "") -> Optional[Dict[str, Any]]:
     """R5.3 — 1 mutasi kas untuk refund retur (in = pemasok kembalikan dana; out = refund ke pelanggan), yang JURNALNYA
     milik dokumen induk (nota kredit / nota debit, `account_code` = akun kas jurnal itu).
 
     PK-20 — pembungkus `create_cash(..., journal_by_parent=…)`: rekening = `account_id` (rekening dokumen) atau rekening
-    tunggal PT untuk jenis kas `account_code`; `account_id` tidak pernah lagi berisi kode akun. Idempoten per rujukan
-    (id tetap `ref_type|ref_id|direction`; kas lama ber-id acak untuk rujukan sama dipakai ulang)."""
+    tunggal PT untuk jenis kas akun jurnal; `account_id` tidak pernah lagi berisi kode akun. Idempoten per rujukan
+    (id tetap `ref_type|ref_id|direction`; kas lama ber-id acak untuk rujukan sama dipakai ulang). Kas & Bank 1 (R2) —
+    `cash_type` = jenis kas akun jurnal dari `akun_refund` (sub-akun rekening → jenis rekening); kosong = dibaca dari
+    kode templat `account_code` (`cash_type_for`, pemanggil lama)."""
     amount = round(float(amount or 0), 2)
     if amount <= 0.01 or not ref_id:
         return None
@@ -277,7 +313,7 @@ async def record_return_cash(*, direction: str, amount: float, account_code: str
     txn_entity = resolve_owner(entity_id, what="Kas refund retur")
     return await create_cash(
         entity_id=txn_entity, direction=direction, amount=amount, ref_type=ref_type, ref_id=ref_id,
-        account_id=account_id, cash_type=cash_type_for(account_code), txn_date=txn_date, category=category,
+        account_id=account_id, cash_type=cash_type or cash_type_for(account_code), txn_date=txn_date, category=category,
         description=description, actor=created_by,
         # id jurnal induk bila sudah ada; bila jurnalnya terbit kemudian (penyelesaian per roll), rujukan dokumennya
         journal_by_parent=journal_entry_id or f"{ref_type}:{ref_id}",

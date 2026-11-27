@@ -218,7 +218,10 @@ async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payou
     if ar_rest > 0.01:
         problem = (f"Sisa tagihan {ret.get('order_number') or 'SO asal'} hanya {rupiah(max(open_amt, 0))} — kompensasi "
                    f"cutloss/diskon {rupiah(group_gross['nego'])} melebihinya. Pilih 'Jadi saldo' atau 'Refund tunai'.")
-    cash_acc = (refund_account_code or "1-1100")
+    # Kas & Bank 1 — kode pemilih refund (jenis kas) disimpan di rencana; akun jurnal = `cash_ledger.akun_refund` saat
+    # posting (`_settlement_credits`, rekening penerima diisi `execute`). Pratinjau di sini belum tahu rekeningnya.
+    from services import cash_ledger as _cl
+    cash_acc = (await _cl.akun_refund(eid, "", refund_account_code))["kode_pilihan"]
     split = [x for x in (
         {"kind": "source_bill", "label": f"Potong sisa tagihan {ret.get('order_number') or 'SO asal'}", "amount": bill_total},
         {"kind": "cash", "label": "Refund tunai ke pelanggan", "amount": round(cash, 2)},
@@ -300,7 +303,7 @@ async def execute(return_id: str, decisions: List[Dict[str, Any]], actor: Dict[s
         from services import cash_ledger as _cl
         plan["refund_account_id"] = (await _cl.periksa_rekening(
             ret.get("entity_id", ""), refund_account_id,
-            _cl.cash_type_for(plan["refund_account_code"] or "1-1100")))["account_id"]
+            _cl.cash_type_for(plan["refund_account_code"])))["account_id"]
     seq = int(ret.get("settlement_seq") or 0) + 1
     await saga.claim("sales_returns", return_id, "sales_return_roll_settle",
                      precondition={"status": ret["status"], "settlement_seq": ret.get("settlement_seq")},
@@ -331,9 +334,14 @@ async def complete(return_id: str, settlement_id: str, actor: Dict[str, Any]) ->
     return await _apply(return_id, settlement_id, actor)
 
 
-def _settlement_credits(plan: Dict[str, Any]) -> List[Any]:
+async def _settlement_credits(ret: Dict[str, Any], plan: Dict[str, Any]) -> List[Any]:
+    """Sisi kredit jurnal satu penyelesaian. Kas & Bank 1 — akun kas refund = `cash_ledger.akun_refund` (rekening
+    penerima rencana: sub-akun rekening bila PT sudah memakai akun per rekening, selain itu kode pemilih)."""
+    from services import cash_ledger as _cl
+    kas = (await _cl.akun_refund(ret.get("entity_id", ""), plan.get("refund_account_id", ""),
+                                 plan.get("refund_account_code", "")))["account_code"]
     return [(gl_service.ACC_PIUTANG, plan["bill_total"] + plan["ar_rest"], "Pengurang piutang"),
-            (plan["refund_account_code"] or "1-1100", plan["cash_total"], "Refund tunai"),
+            (kas, plan["cash_total"], "Refund tunai"),
             (gl_service.ACC_STORE_CREDIT, plan["saldo_total"], "Saldo kredit pelanggan (store credit)")]
 
 
@@ -348,11 +356,12 @@ async def post_settlement_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, plan: O
         if not ev:
             raise RollSettlementError("Penyelesaian nota kredit ini tidak ditemukan di retur.")
         plan = ev["plan"]
+    credits = await _settlement_credits(ret, plan)
     jr = await gl_service.post_durable(
         "credit_notes", cn["id"],
         lambda: gl_service.post_sales_return_settlement(
             ret, sid, net=plan["net_amount"], ppn=plan["ppn_amount"], cogs=plan["cogs_amount"],
-            credits=_settlement_credits(plan), label=cn["number"]),
+            credits=credits, label=cn["number"]),
         source_type="sales_return", source_id=f"{ret['id']}:{sid}", raise_on_fail=raise_on_fail)
     if jr["journal_entry_id"]:
         ref_id = f"{ret['id']}:{sid}"
@@ -437,8 +446,10 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
         # 5) Refund kas.
         if plan["cash_total"] > 0:
             from services import cash_ledger
+            ak = await cash_ledger.akun_refund(ret.get("entity_id", ""), plan.get("refund_account_id", ""),
+                                               plan.get("refund_account_code", ""))   # Kas & Bank 1 (R2)
             await cash_ledger.record_return_cash(
-                direction="out", amount=plan["cash_total"], account_code=plan["refund_account_code"] or "1-1100",
+                direction="out", amount=plan["cash_total"], account_code=ak["account_code"], cash_type=ak["cash_type"],
                 category="Refund Retur Jual", description=f"Refund tunai retur {label} → {ret.get('customer_name', '')}",
                 entity_id=ret.get("entity_id", ""), ref_type="sales_return", ref_id=ref_id,
                 journal_entry_id=(je or {}).get("id", ""), created_by=actor.get("name", ""),

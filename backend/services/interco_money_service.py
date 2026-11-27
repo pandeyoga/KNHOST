@@ -73,6 +73,18 @@ async def default_cash_account(entity_id: str) -> str:
     return ""
 
 
+async def akun_kas_bank(entity_id: str, account_id: str) -> str:
+    """Kas & Bank 1 — akun kas jurnal uang antar-PT di PT `entity_id` untuk rekening `account_id` (uang antar-PT selalu
+    lewat rekening Bank / kas besar): `gl_service.akun_kas` — sub-akun rekening bila PT sudah memakai akun per
+    rekening, selain itu akun kas besar lama (dipetakan per PT seperti dulu)."""
+    return await gl_service.akun_kas(entity_id, account_id, "kas_besar")
+
+
+async def akun_kas_dokumen(kas: Dict[str, Any]) -> str:
+    """Akun kas jurnal untuk satu sisi kas kembar `twin_cash` (PT & rekening dokumen kas itu)."""
+    return await akun_kas_bank(kas.get("entity_id") or "", kas.get("account_id") or "")
+
+
 async def twin_cash(*, out_entity: str, in_entity: str, amount: float, category: str,
                     description: str, ref_type: str, ref_id: str,
                     actor: str = "system", txn_date: str = "",

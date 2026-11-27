@@ -393,12 +393,19 @@ async def post_acquisition_gl(asset: Dict[str, Any], *, raise_on_fail: bool = Fa
     gagal tercatat di `gl_status` aset. Akun dan tanggal dari yang tersimpan di aset. PK-23 — akun lawan sumber
     `hutang`/`saldo_awal` dipakai apa adanya (tidak dialihkan pemetaan lain); aset lama tanpa sumber dana = kas."""
     fixed = asset.get("funding_source") in FUNDING_KEY
+    eid = asset.get("entity_id") or DEFAULT_ENTITY_ID
+    funding = asset.get("funding_account") or ""
+    if not fixed:
+        # Kas & Bank 1 — sumber kas: akun kas dihitung saat posting lewat `akun_kas` (rekening aset bersub-akun di PT
+        # aktif → sub-akun; selain itu akun tersimpan / akun kas besar lama, seperti dulu).
+        funding = await gl_service.akun_kas(eid, asset.get("account_id") or "", asset.get("funding_cash_type") or "",
+                                            akun_lama=funding or await gl_service.akun_kas(eid, "", "kas_besar"))
     jr = await gl_service.post_durable(
         "fin_fixed_assets", asset["id"],
         lambda: gl_service.post_asset_acquisition(
-            asset_id=asset["id"], entity_id=asset.get("entity_id") or DEFAULT_ENTITY_ID,
+            asset_id=asset["id"], entity_id=eid,
             amount=float(asset.get("acquisition_cost") or 0), asset_acc=asset.get("gl_account_asset") or DEFAULT_ASSET_ACC,
-            funding_acc=asset.get("funding_account") or gl_service.ACC_KAS_BESAR, funding_fixed=fixed,
+            funding_acc=funding, funding_fixed=fixed,
             label=_label(asset), date=asset.get("acquisition_date") or ""),
         source_type="fixed_asset_acquisition", source_id=asset["id"], raise_on_fail=raise_on_fail)
     upd = {"gl_status": jr["gl_status"], "gl_error": jr["gl_error"], "journal_entry_id": jr["journal_entry_id"]}

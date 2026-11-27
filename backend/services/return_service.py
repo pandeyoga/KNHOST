@@ -191,12 +191,17 @@ async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, raise_on_fail:
     PK-18 — lewat pintu tahan-gagal `post_durable` (hasil di nota kredit, dicerminkan ke retur); dipakai juga Ulang
     Posting panel (`raise_on_fail=True`)."""
     is_cash = cn.get("settlement") == "cash"
+    kas_acc = ""
+    if is_cash:   # Kas & Bank 1 — akun kas jurnal refund dari rekening penerima (sub-akun bila PT aktif)
+        from services import cash_ledger as _cl
+        kas_acc = (await _cl.akun_refund(ret.get("entity_id", ""), cn.get("refund_account_id", ""),
+                                         cn.get("refund_account_code", "")))["account_code"]
     jr = await gl_service.post_durable(
         "credit_notes", cn["id"],
         lambda: gl_service.post_sales_return(
             ret, return_net=cn["net_amount"], return_ppn=cn["ppn_amount"], return_cogs=cn["cogs_amount"],
             is_cash=is_cash, settlement=cn.get("settlement", ""),
-            cash_account_code=cn.get("refund_account_code", "") if is_cash else "",
+            cash_account_code=kas_acc,
             ar_part=float(cn.get("ar_applied") or 0) if cn.get("settlement") in ("cash", "store_credit") else 0.0,
             credit_note_number=cn["number"]),
         source_type="sales_return", source_id=ret["id"], raise_on_fail=raise_on_fail)
@@ -393,6 +398,7 @@ async def _create_credit_note_and_post_gl(
     post_stock: bool = True,
     settlement_type: str = None,
     refund_account_code: str = "",
+    refund_account_id: str = "",
 ) -> Dict[str, Any]:
     """F3/R1 — buat Credit Note dari sales_return + posting GL reversal (idempotent).
 
@@ -424,9 +430,17 @@ async def _create_credit_note_and_post_gl(
     extra: Dict[str, Any] = {
         "ppn_rate": ppn_rate, "cogs_source": fig.get("cogs_source", ""),   # PK-27 — surat_jalan | rata_surat_jalan | wac
         "settlement": settlement,   # cash | ar | store_credit | nego
-        "refund_account_code": (refund_account_code or "1-1100") if settlement == "cash" else "",
+        "refund_account_code": "",
         "outcome": ret.get("outcome", ""), "created_by": ret.get("settled_by") or ret.get("approved_by", "system"),
         "allocation_amount": ar_amt if applies else 0.0}
+    if settlement == "cash":
+        # Kas & Bank 1 — kode pemilih (jenis kas) + rekening penerima disimpan; akun jurnal ditentukan `_post_cn_gl`
+        # lewat `cash_ledger.akun_refund` (sub-akun rekening bila PT sudah memakai akun per rekening).
+        from services import cash_ledger as _cl
+        ak = await _cl.akun_refund(eid, refund_account_id, refund_account_code)
+        extra["refund_account_code"] = ak["kode_pilihan"]
+        if refund_account_id:
+            extra["refund_account_id"] = refund_account_id
     if applies:
         extra.update({"excess_amount": round(gross - ar_amt, 2), "bill_scope": "source_order", "ar_applied": 0})
     cn_number = await next_credit_note_number(eid)   # KP-T5 — PT dokumen (N1)
@@ -1717,7 +1731,8 @@ SETTLE_SPLIT_LABEL = {"cash": "Refund tunai ke pelanggan", "store_credit": "Jadi
 
 
 async def preview_settlement(return_id: str, outcome: str, item_decisions: List[Dict] = None,
-                             nego_payout: str = "", refund_account_code: str = "") -> Dict[str, Any]:
+                             nego_payout: str = "", refund_account_code: str = "",
+                             refund_account_id: str = "") -> Dict[str, Any]:
     """23 Okt — pratinjau keputusan retur SEBELUM diselesaikan: nilai Nota Kredit (DPP + PPN), pembagiannya (potong
     tagihan SO asal / refund / saldo / pengurang piutang), HPP yang balik ke stok, dan baris jurnalnya. Memakai fungsi
     hitung yang SAMA dengan penyelesaian (`_settle_lines` → `_cn_figures` → `_source_bill_split` →
@@ -1745,7 +1760,11 @@ async def preview_settlement(return_id: str, outcome: str, item_decisions: List[
     if settlement == "nego" and rest > 0 and fig["order"]:
         problem = (f"Sisa tagihan {ret.get('order_number') or 'SO asal'} hanya {rupiah(ar_amt)}, Nota Kredit {rupiah(fig['gross'])}. "
                    "Pilih 'Jadi saldo' atau 'Refund tunai' untuk kelebihannya — utang SO lain tidak ikut dipotong.")
-    cash_acc = (refund_account_code or "1-1100") if settlement == "cash" else ""
+    cash_acc = ""
+    if settlement == "cash":   # Kas & Bank 1 — akun kas jurnal refund yang sama dengan penyelesaian (`akun_refund`)
+        from services import cash_ledger as _cl
+        cash_acc = (await _cl.akun_refund(ret.get("entity_id", ""), refund_account_id,
+                                          refund_account_code))["account_code"]
     raw = gl_service.sales_return_lines(return_net=fig["net"], return_ppn=fig["ppn"], return_cogs=fig["cogs"],
                                         is_cash=settlement == "cash", settlement=settlement, cash_account_code=cash_acc,
                                         ar_part=ar_amt if settlement in ("cash", "store_credit") else 0.0,
@@ -1808,7 +1827,8 @@ async def settle_return(return_id: str, actor: str, outcome: str,
     # PK-20 — refund TUNAI: rekening penerima diperiksa SEBELUM stok / nota kredit / jurnal (tanpa tulisan). Bagian
     # tunai dibaca dari pratinjau yang memakai fungsi hitung yang sama dengan penyelesaian.
     try:
-        _pv = await preview_settlement(return_id, outcome, item_decisions, nego_payout, refund_account_code)
+        _pv = await preview_settlement(return_id, outcome, item_decisions, nego_payout, refund_account_code,
+                                       refund_account_id)
     except Exception:  # noqa: BLE001 — pratinjau gagal: kas diperiksa lagi saat dibuat (jalur `cash_failed`)
         _pv = {}
     if float(_pv.get("gross_amount") or 0) > 0 and not ret.get("credit_note_id"):
@@ -1818,7 +1838,7 @@ async def settle_return(return_id: str, actor: str, outcome: str,
     if sum(float(x.get("amount") or 0) for x in (_pv.get("split") or []) if x.get("kind") == "cash") > 0:
         from services import cash_ledger as _cl
         refund_account_id = (await _cl.periksa_rekening(
-            ret.get("entity_id", ""), refund_account_id, _cl.cash_type_for(refund_account_code or "1-1100")))["account_id"]
+            ret.get("entity_id", ""), refund_account_id, _cl.cash_type_for(refund_account_code)))["account_id"]
     # KN-B02 — klaim ATOMIK berprasyarat status: dua "selesaikan" bersamaan tidak boleh
     # restock dua kali, menerbitkan dua nota kredit, atau refund dua kali.
     from services import atomic_claim as _saga
@@ -1851,7 +1871,7 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         try:
             cn = await _create_credit_note_and_post_gl(
                 ret, items=effective, post_stock=post_stock, settlement_type=settlement_type,
-                refund_account_code=refund_account_code)
+                refund_account_code=refund_account_code, refund_account_id=refund_account_id)
             cn_fields = {"credit_note_id": cn["id"], "credit_note_number": cn["number"],
                          "credit_note_amount": cn["gross_amount"]}
             settlement.update({"credit_note_number": cn["number"], "gross_amount": cn["gross_amount"],
@@ -1863,9 +1883,11 @@ async def settle_return(return_id: str, actor: str, outcome: str,
             if cn.get("settlement") == "cash" and payout > 0:
                 try:
                     from services import cash_ledger
-                    acc = refund_account_code or "1-1100"
+                    ak = await cash_ledger.akun_refund(ret.get("entity_id", ""), refund_account_id,
+                                                       refund_account_code)   # Kas & Bank 1 — akun & jenis kas jurnal
+                    acc = ak["kode_pilihan"]
                     ctxn = await cash_ledger.record_return_cash(
-                        direction="out", amount=payout, account_code=acc,
+                        direction="out", amount=payout, account_code=ak["account_code"], cash_type=ak["cash_type"],
                         category="Refund Retur Jual",
                         description=f"Refund tunai retur {ret.get('number', '')} → {ret.get('customer_name', '')}",
                         entity_id=ret.get("entity_id", ""), ref_type="sales_return", ref_id=ret["id"],

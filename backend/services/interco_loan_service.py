@@ -226,18 +226,19 @@ async def disburse(loan_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     amount = round(float(doc["principal"]), 2)
     await _approval_gate(lender, amount, actor)
 
-    await money.twin_cash(
+    kas = await money.twin_cash(
         out_entity=lender, in_entity=borrower, amount=amount,
         category="pinjaman antar-PT",
         description=f"Pencairan pinjaman ke {doc['borrower_entity_name']} — {doc['purpose']}",
         ref_type="interco_loan", ref_id=doc["pair_id"], actor=actor.get("name", "system"))
+    # Kas & Bank 1 — akun kas tiap buku = akun rekening kas kembarnya (`akun_kas`; PT belum aktif: akun lama)
     await money.twin_je(
         source_type="interco_loan", pair_id=doc["pair_id"], suffix="disburse",
         entity_a=lender,
-        lines_a=money.pair_line(gl_service.ACC_IC_AR, gl_service.ACC_KAS_BESAR, amount,
+        lines_a=money.pair_line(gl_service.ACC_IC_AR, await money.akun_kas_dokumen(kas["out"]), amount,
                                 f"Pinjaman kepada {doc['borrower_entity_name']}"),
         entity_b=borrower,
-        lines_b=money.pair_line(gl_service.ACC_KAS_BESAR, gl_service.ACC_IC_AP, amount,
+        lines_b=money.pair_line(await money.akun_kas_dokumen(kas["in"]), gl_service.ACC_IC_AP, amount,
                                 f"Pinjaman dari {doc['lender_entity_name']}"),
         label=f"Pinjaman antar-PT {doc.get('number', '')}")
 
@@ -269,7 +270,7 @@ async def repay(loan_id: str, actor: Dict[str, Any], amount: float,
     seq = len(doc.get("repayments") or []) + 1
     ref_id = f"{doc['pair_id']}:rp{seq}"
 
-    await money.twin_cash(
+    kas = await money.twin_cash(
         out_entity=borrower, in_entity=lender, amount=amount,
         category="angsuran pinjaman antar-PT",
         description=(f"Angsuran #{seq} pinjaman ke {doc['lender_entity_name']}"
@@ -278,10 +279,10 @@ async def repay(loan_id: str, actor: Dict[str, Any], amount: float,
     await money.twin_je(
         source_type="interco_loan_repayment", pair_id=doc["pair_id"], suffix=f"rp{seq}",
         entity_a=borrower,
-        lines_a=money.pair_line(gl_service.ACC_IC_AP, gl_service.ACC_KAS_BESAR, amount,
+        lines_a=money.pair_line(gl_service.ACC_IC_AP, await money.akun_kas_dokumen(kas["out"]), amount,
                                 f"Angsuran pinjaman ke {doc['lender_entity_name']}"),
         entity_b=lender,
-        lines_b=money.pair_line(gl_service.ACC_KAS_BESAR, gl_service.ACC_IC_AR, amount,
+        lines_b=money.pair_line(await money.akun_kas_dokumen(kas["in"]), gl_service.ACC_IC_AR, amount,
                                 f"Terima angsuran dari {doc['borrower_entity_name']}"),
         label=f"Angsuran pinjaman antar-PT #{seq}")
 

@@ -331,7 +331,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
     await _glp.preflight_posting(entity_id, now)  # IX-17 — periode tertutup ditolak sebelum stok/AP
     if (outcome or "").lower() == prs.OUTCOME_REFUND:
         from services import cash_ledger as _cl
-        _acc = refund_account_code or ret.get("refund_account_code") or "1-1100"
+        _acc = refund_account_code or ret.get("refund_account_code") or ""
         refund_account_id = (await _cl.periksa_rekening(
             entity_id, refund_account_id or ret.get("refund_account_id") or "", _cl.cash_type_for(_acc)))["account_id"]
 
@@ -426,13 +426,18 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
     #   refund    → Dr Kas/Bank        / Cr Persediaan [+ reversal PPN]  (supplier kembalikan dana)
     fresh = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
     from services import gl_service
-    acc = refund_account_code or ret.get("refund_account_code") or "1-1100"
+    from services import cash_ledger as _cl
+    # Kas & Bank 1 — akun kas jurnal refund = `akun_refund` (sub-akun rekening penerima bila PT sudah memakai akun per
+    # rekening); kode pemilih (jenis kas) tetap disimpan di retur.
+    ak = await _cl.akun_refund(entity_id, refund_account_id,
+                               refund_account_code or ret.get("refund_account_code") or "")
+    acc = ak["kode_pilihan"]
     try:
         je = await gl_service.post_purchase_return(
             fresh, amount=gross_value,
             ppn=float(fresh.get("ppn_amount", 0) or fresh.get("ppn", 0) or 0),
             label=debit_note or fresh.get("number", ""),   # ganti barang: tanpa Nota Debit → nomor retur
-            outcome=outcome, cash_account_code=(acc if is_refund else ""), ap_basis=ap_basis,
+            outcome=outcome, cash_account_code=(ak["account_code"] if is_refund else ""), ap_basis=ap_basis,
             book_value=fresh.get("book_value"))
     except Exception as exc:  # noqa: BLE001
         await db.purchase_returns.update_one({"id": return_id}, {"$set": {
@@ -449,7 +454,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         try:
             from services import cash_ledger
             ctxn = await cash_ledger.record_return_cash(
-                direction="in", amount=gross_value, account_code=acc,
+                direction="in", amount=gross_value, account_code=ak["account_code"], cash_type=ak["cash_type"],
                 category="Refund Retur Beli (Supplier)",
                 description=f"Refund tunai supplier — retur beli {debit_note} ({fresh.get('supplier_name', '')})",
                 entity_id=entity_id, ref_type="purchase_return", ref_id=return_id,

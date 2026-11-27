@@ -259,8 +259,11 @@ async def _kas_bayar(run: Dict[str, Any], acc: Dict[str, Any], tanggal: str, akt
         {"_id": 0, "id": 1, "lines": 1})
     if lama:   # jurnal bayar jalur lama sudah terbit: kas menumpang jurnal itu (jenis kas = akun kas jurnal itu)
         kredit = next((ln.get("account_code") for ln in lama.get("lines") or [] if float(ln.get("credit") or 0) > 0),
-                      gl.ACC_KAS_BESAR)
-        kw.update(journal_by_parent=lama["id"], cash_type=cash_ledger.cash_type_for(kredit))
+                      "")
+        # Kas & Bank 1 (ketetapan R2) — jenis kas dari REKENING pemilik akun bila akun itu akun rekening
+        # (`cash_type_for("1-1110-01")` = kas besar); akun lama dibaca seperti dulu; tanpa baris kredit = kas besar.
+        kw.update(journal_by_parent=lama["id"],
+                  cash_type=await cash_ledger.jenis_kas_akun(eid, kredit) if kredit else "kas_besar")
     else:
         kw["contra_account_code"] = await gl.account_for("sdm.hutang_gaji", eid)
     return await cash_ledger.create_cash(**kw)

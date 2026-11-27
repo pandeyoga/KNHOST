@@ -303,6 +303,11 @@ STATIK=(
   # jurnal tahan-gagal); sisipan `cash_transactions`, pintu jurnal kas lama, dan salinan pemberi nomor kas = MERAH.
   "guard:cash_single_door SELF-TEST (bukti-merah dua arah, 15 kasus)|python scripts/guardrails/verify_cash_single_door.py --self-test"
   "guard:cash_single_door (INV-CASH-01, kas lewat satu pembuat)|python scripts/guardrails/verify_cash_single_door.py"
+  # Kas & Bank 1 (§5.1) — INV-CASH-02. Akun kas di baris jurnal hanya dari `gl_service.akun_kas` (sub-akun rekening
+  # bila PT memakai akun per rekening); kode 1-1100/1-1110 harfiah, ACC_KAS_BESAR/KECIL, dan kunci pemetaan kas_bank.*
+  # di luar daftar pengecualian berkomentar (bagan akun, katalog pemetaan, pembaca) = MERAH; pengecualian basi = MERAH.
+  "guard:akun_kas_satu_pintu SELF-TEST (bukti-merah dua arah, 13 kasus)|python scripts/guardrails/verify_akun_kas_satu_pintu.py --self-test"
+  "guard:akun_kas_satu_pintu (INV-CASH-02, akun kas jurnal lewat satu pembantu)|python scripts/guardrails/verify_akun_kas_satu_pintu.py"
   # FIX-10 (audit 2026-11-09 B3a SSOT-1) — INV-ROLL-02. Status roll dulu ditulis 63+ panggilan di 18 berkas tanpa
   # tabel transisi; kini satu pintu `services/roll_state.transition()` (daftar-izin + CAS + jejak + saldo). Ratchet:
   # penulis `status` inventory_rolls di luar roll_state hanya boleh turun (baseline 0); berkas baru = MERAH.
