@@ -436,6 +436,8 @@ Centang langkah yang hasilnya sama dengan kolom *Yang harus terlihat*. Bila berb
 
 ## 3.3.4 · Rekonsiliasi bank — impor mutasi, cocokkan, bukukan biaya bank (F10)
 
+> **Berubah sejak F1 (27 Nov 2026):** mutasi masuk berkode bayar yang cocok sempurna (pesanan, PT, rekening, nominal) kini langsung menjadi **kwitansi terverifikasi bank saat diimpor** (bilah hijau menyebut "… kwitansi otomatis"), dan yang tidak sempurna muncul sebagai kartu **"Mutasi berkode perlu dicek"** di Meja Keuangan. Langkah 3–4 di bawah ditulis untuk alur lama; bila baris transfer masuk sudah 'Tercocok' sesudah impor, itu hasil F1. Lihat `docs/superpowers/specs/2026-11-27-kwitansi-otomatis-mutasi-design.md`.
+
 | No | Lakukan | Yang harus terlihat | Sama? | Temuan |
 |---|---|---|---|---|
 | 1 | Masuk dengan akun peserta dan buka tab Rekonsiliasi. Pilih rekening di kanan atas. | Enam kartu: REKENING (BERSIH), BUKU (BERSIH), TERCOCOK, PERLU KEPUTUSAN, DANA TITIPAN, dan SELISIH REKENING VS BUKU. Di tab 'Mutasi & Pencocokan' ada tombol Impor mutasi bank dan Cocokkan otomatis. | ☐ | |
