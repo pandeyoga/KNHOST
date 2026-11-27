@@ -436,6 +436,82 @@ async def test_KB1_1_U14_akun_rekening_tidak_bisa_dihapus_atau_dinonaktifkan(kli
     assert (await _akun_pt(db, KANDA, "1-1110-01"))["is_active"] is True
 
 
+# ═══ Perbaikan putaran 1 (tinjauan Tugas 1: I1–I3) ═════════════════════════════════════════════════════════════════
+async def test_KB1_1_U15_ringkasan_per_pt_membaca_kode_kas(db):
+    """I2 — `_entity_financials` (ringkasan per PT / konsolidasi) menjumlah kas dari `kode_kas` PT itu. PT tidak aktif
+    tanpa pemetaan → angka sama persis dengan sebelum perbaikan (`ringkasan_pt_tidak_aktif` direkam dari 663d0b2)."""
+    from services import bank_service, gl_service as gl
+    _cocok("ringkasan_pt_tidak_aktif", await gl._entity_financials(KSC))
+    pos = await bank_service.cash_position([KANDA])
+    assert (await gl._entity_financials(KANDA))["cash"] == pos["gl_total"]
+    cons = await gl.consolidation([KSC, KANDA])
+    row = next(r for r in cons["entities"] if r["entity_id"] == KANDA)
+    assert row["cash"] == pos["gl_total"]
+
+
+async def test_KB1_1_U16_akun_pemetaan_kas_dan_akun_berjurnal_ditolak(klien, db, pt):
+    """I1 — akun hasil pemetaan `kas_bank.*` PT itu tidak bisa jadi akun rekening; rekening BARU tidak boleh memakai akun
+    yang sudah berjurnal."""
+    from services import cash_account_mode as mode, gl_mapping_service as glm, gl_service as gl
+    from schemas_finance import GLAccountCreate
+    B = pt["B"]
+    await gl.create_account(GLAccountCreate(code="1-1121", name="Kas Kecil Pemetaan B", type="asset"), entity_id=B)
+    await glm.set_mapping("kas_bank.kas_kecil", B, "1-1121", "uji KB1 pemetaan kas kecil B", AKTOR_UJI)
+    try:
+        await db.bank_accounts.insert_one({"id": "rek_b4", "name": "Kas B Baru", "entity_id": B, "account_type": "cash",
+                                           "cash_type": "kas_kecil", "is_active": True, "opening_balance": 0.0})
+        with pytest.raises(ValueError) as e:
+            await mode.buat_subakun({"id": "rek_b4"}, kode="1-1121")
+        assert "kas_bank.kas_kecil" in str(e.value) and "Pemetaan Akun" in str(e.value), str(e.value)
+        assert not (await db.bank_accounts.find_one({"id": "rek_b4"})).get("gl_account_code")
+        assert not (await _akun_pt(db, B, "1-1121")).get("bank_account_id")
+    finally:
+        await glm.reset_mapping("kas_bank.kas_kecil", B, "pulihkan uji KB1", AKTOR_UJI)
+
+    h = SIMPAN["h_kanda"]
+    r = await klien.post("/api/gl/accounts", headers=h, params={"entity_id": KANDA}, json={
+        "code": "1-1106", "name": "Bank Berjurnal Kanda", "type": "asset", "parent_code": "1-1000"})
+    assert r.status_code == 200, r.text
+    r = await klien.post("/api/gl/journal", headers=h, json={
+        "date": now_iso()[:10], "description": "Saldo lama 1-1106", "entity_id": KANDA,
+        "lines": [{"account_code": "1-1106", "debit": 25_000, "credit": 0},
+                  {"account_code": "3-1000", "debit": 0, "credit": 25_000}]})
+    assert r.status_code == 200, r.text   # jurnal manual sebelum akun ditautkan ke rekening: boleh
+    n0 = await db.bank_accounts.count_documents({})
+    r = await klien.post("/api/bank-accounts", headers=h, json={
+        "name": "BNI Tolak", "account_type": "bank", "bank_name": "BNI", "entity_id": KANDA,
+        "gl_account_code": "1-1106"})
+    assert (r.status_code, r.json().get("detail")) == (400, (
+        "Akun 1-1106 sudah punya saldo atau riwayat jurnal. Pilih akun yang masih kosong, atau kosongkan pilihan "
+        "supaya sistem membuat sub-akun rekening.")), r.text
+    assert await db.bank_accounts.count_documents({}) == n0
+
+
+async def test_KB1_1_U17_pembalikan_manual_jurnal_akun_rekening_ditolak(klien, db, lama):
+    """I3 — pembalikan manual (`reverse_entry`) jurnal yang menyentuh akun rekening ditolak; jurnal ke akun kas lama
+    tetap boleh dibalik; batal kas (`post_cash_void`) tidak terhalang dan membalik sub-akun."""
+    h = SIMPAN["h_kanda"]
+    kas = await db.cash_transactions.find_one({"entity_id": KANDA, "description": "Sewa Kanda"}, {"_id": 0})
+    je = await _jurnal_sumber(db, "cash_transaction", kas["id"])
+    r = await klien.post(f"/api/gl/journal/{je['id']}/reverse", headers=h,
+                         json={"date": now_iso()[:10], "reason": "uji balik manual"})
+    assert (r.status_code, r.json().get("detail")) == (400, (
+        f"Jurnal {je['number']} menyentuh akun 1-1100-01, akun rekening BCA KB1 Kanda; balik lewat pembatalan "
+        f"dokumen kasnya, bukan pembalikan manual.")), r.text
+    assert not (await db.journal_entries.find_one({"id": je["id"]})).get("reversed_by_entry_id")
+    # Batal kas (jalur dokumen kas) tetap jalan dan membalik sub-akun
+    r = await klien.post(f"/api/cash-transactions/{kas['id']}/void", headers=h, json={"reason": "uji batal KB1"})
+    assert r.status_code == 200, r.text
+    balik = await _jurnal_sumber(db, "cash_transaction_void", kas["id"])
+    assert ("1-1100-01", 150_000.0, 0.0) in {(ln["account_code"], ln["debit"], ln["credit"]) for ln in balik["lines"]}
+    # Jurnal kas ke akun kas lama (PT tidak aktif) tetap bisa dibalik manual seperti dulu
+    lama_kas = await db.cash_transactions.find_one({"entity_id": KSC, "description": "Sewa gudang KB1"}, {"_id": 0})
+    je_lama = await _jurnal_sumber(db, "cash_transaction", lama_kas["id"])
+    r = await klien.post(f"/api/gl/journal/{je_lama['id']}/reverse", headers=lama["h"],
+                         json={"date": now_iso()[:10], "reason": "uji balik manual lama"})
+    assert r.status_code == 200, r.text
+
+
 #: Direkam dari kode SEBELUM Tugas 1 (c76ba9a) — jangan disunting tangan.
 BARIS_LAMA: dict = {'kas_keluar_manual': [{'account_code': '6-2000',
                         'account_name': 'Beban Sewa',
@@ -504,3 +580,24 @@ BARIS_LAMA: dict = {'kas_keluar_manual': [{'account_code': '6-2000',
                        'credit': 750000.0,
                        'debit': 0.0,
                        'description': 'Saldo awal Kas Toko KB1 KSC'}]}
+
+#: Perbaikan putaran 1 (I2) — `_entity_financials(ent_ksc)` direkam dari 663d0b2 (sebelum perbaikan I2).
+BARIS_LAMA["ringkasan_pt_tidak_aktif"] = {'ap': 0.0,
+ 'ar': 0.0,
+ 'assets': 105400000.0,
+ 'balanced': True,
+ 'cash': 114650000.0,
+ 'cogs': 0.0,
+ 'equity': 106750000.0,
+ 'equity_total': 105000000.0,
+ 'expense': 1750000.0,
+ 'gross_profit': 0.0,
+ 'inventory': 750000.0,
+ 'journal_count': 9,
+ 'liabilities': 400000.0,
+ 'net_income': -1750000.0,
+ 'net_margin': 0.0,
+ 'opex': 1750000.0,
+ 'ppn_out': 0.0,
+ 'retained_earnings': -1750000.0,
+ 'revenue': 0.0}

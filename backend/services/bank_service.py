@@ -271,8 +271,9 @@ async def _tulis_bawaan(entity_id: str, account_id: str, methods: List[str], tul
 
 async def periksa_akun_rekening_baru(entity_id: str, kode: str, account_id: str = "") -> None:
     """Kas & Bank 1 — PERIKSA (tanpa tulisan) akun buku besar pilihan Finance untuk rekening BARU: hanya di PT yang sudah
-    memakai akun per rekening, dan akunnya layak (`cash_account_mode.periksa_akun_pilihan`). Kosong = lolos (sistem
-    membuat sub-akun bila PT aktif). Gagal → `ValueError` berkalimat."""
+    memakai akun per rekening, akunnya layak (`cash_account_mode.periksa_akun_pilihan`), dan belum berjurnal (rekening
+    baru bersaldo awal sendiri; saldo/riwayat akun lama tidak ikut buku kas rekening — tinjauan T1 I1). Kosong = lolos
+    (sistem membuat sub-akun bila PT aktif). Gagal → `ValueError` berkalimat."""
     from services import cash_account_mode as _mode
     kode = (kode or "").strip()
     if not kode:
@@ -282,6 +283,10 @@ async def periksa_akun_rekening_baru(entity_id: str, kode: str, account_id: str 
         raise ValueError(f"{await _nama_pt(entity_id)} belum memakai akun buku besar per rekening. Kosongkan pilihan "
                          f"akun buku besar; akun rekening diatur saat pindah saldo PT ini.")
     await _mode.periksa_akun_pilihan({"entity_id": entity_id, "id": account_id}, kode)
+    if await db.journal_entries.find_one({"entity_id": entity_id, "lines.account_code": kode,
+                                          "status": {"$ne": "void"}}, {"_id": 0, "id": 1}):
+        raise ValueError(f"Akun {kode} sudah punya saldo atau riwayat jurnal. Pilih akun yang masih kosong, atau "
+                         f"kosongkan pilihan supaya sistem membuat sub-akun rekening.")
 
 
 async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

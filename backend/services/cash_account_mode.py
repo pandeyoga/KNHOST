@@ -93,7 +93,9 @@ async def periksa_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Dict[str,
     """PERIKSA (tanpa tulisan) akun bagan PT `kode` yang dipilih Finance untuk `rekening`. → dokumen akun.
 
     Syarat: bukan kode bawaan bersama (kode bawaan dipetakan ulang per PT), akun khusus PT rekening itu, aktif, bisa
-    diposting, berjenis aset, bukan akun kontrol buku pembantu, belum dipakai rekening lain. Gagal → `SubAkunError`."""
+    diposting, berjenis aset, bukan akun kontrol buku pembantu, bukan hasil pemetaan `kas_bank.*` PT itu (jurnal kas tanpa
+    akun rekening dipetakan ke sana — saldo akun rekening tidak lagi sama dengan buku kas rekening), belum dipakai
+    rekening lain. Gagal → `SubAkunError`."""
     from services import gl_mapping_registry as reg, gl_mapping_service as glm
     kode = (kode or "").strip()
     eid = rekening.get("entity_id") or ""
@@ -113,6 +115,11 @@ async def periksa_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Dict[str,
         raise SubAkunError(f"Akun {kode} bukan akun aset (kas/bank).")
     if kode in await glm.control_accounts(eid):
         raise SubAkunError(f"Akun {kode} adalah akun kontrol buku pembantu, bukan akun kas/bank.")
+    for entry in reg.ENTRIES:   # tinjauan T1 I1 — pemetaan efektif PT itu (PT → global → bawaan)
+        if entry["key"].startswith("kas_bank.") and await glm.account_for(entry["key"], eid) == kode:
+            raise SubAkunError(f"Akun {kode} sedang dipakai Pemetaan Akun \"{entry['label']}\" ({entry['key']}) di "
+                               f"{pt}, jadi jurnal kas tanpa akun rekening ikut masuk ke akun ini. Pilih akun lain, "
+                               f"atau ganti pemetaannya dulu di Pemetaan Akun.")
     pemakai = akun.get("bank_account_id") or ""
     if not pemakai or pemakai == rid:
         lain = await db.bank_accounts.find_one({"entity_id": eid, "gl_account_code": kode, "id": {"$ne": rid}},

@@ -683,14 +683,19 @@ async def assert_no_control_accounts(codes: List[str], entity_id: Optional[str],
     raise ControlAccountError(msg, code=code, ledger=ledger)
 
 
-async def assert_bukan_akun_rekening(codes: List[str], accounts: Dict[str, Dict[str, Any]]) -> None:
+async def assert_bukan_akun_rekening(codes: List[str], accounts: Dict[str, Dict[str, Any]], *,
+                                     jurnal: Optional[Dict[str, Any]] = None) -> None:
     """Kas & Bank 1 — tolak jurnal manual ke akun rekening (akun bagan PT ber-`bank_account_id`, `accounts` = bagan
-    akun efektif PT buku jurnal) dengan kalimat siap tampil (`ValueError` → router 400)."""
+    akun efektif PT buku jurnal) dengan kalimat siap tampil (`ValueError` → router 400). `jurnal` diisi = pembalikan
+    manual jurnal itu (tinjauan T1 I3): saldo akun rekening hanya berubah lewat dokumen kasnya (batal kas)."""
     for c in codes:
         rid = (accounts.get(c) or {}).get("bank_account_id") or ""
         if rid:
             rek = await db.bank_accounts.find_one({"id": rid}, {"_id": 0, "name": 1}) or {}
             nama = rek.get("name") or accounts[c].get("name") or rid
+            if jurnal is not None:
+                raise ValueError(f"Jurnal {jurnal.get('number') or jurnal.get('id', '')} menyentuh akun {c}, akun "
+                                 f"rekening {nama}; balik lewat pembatalan dokumen kasnya, bukan pembalikan manual.")
             raise ValueError(f"Akun {c} adalah akun rekening {nama}; isi lewat kas atau Pindah Dana, bukan jurnal "
                              f"manual.")
 
@@ -1120,6 +1125,12 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
     if periksa_akun_kontrol and je.get("source_type") != "manual":
         await assert_no_control_accounts([ln.get("account_code", "") for ln in je.get("lines") or []],
                                          je.get("entity_id"), aksi="pembalikan_manual", jurnal=je)
+    if periksa_akun_kontrol:
+        # Kas & Bank 1 (tinjauan T1 I3) — pembalikan manual jurnal apa pun yang menyentuh akun rekening ditolak: dokumen
+        # kasnya tetap tercatat sehingga saldo akun ≠ buku kas rekening. Batal kas memakai `post_cash_void` /
+        # `_reverse_once` (bukan fungsi ini) dan tidak terhalang; pemilik dokumen (`periksa_akun_kontrol=False`) juga.
+        kode = [ln.get("account_code", "") for ln in je.get("lines") or []]
+        await assert_bukan_akun_rekening(kode, await effective_accounts(kode, je.get("entity_id")), jurnal=je)
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
     return await _reverse_once(
         je, source_type="reversal", source_id=entry_id, date=f"{d}T00:00:00",
@@ -4765,9 +4776,13 @@ _CONS_SUM_FIELDS = [
 
 
 async def _entity_financials(entity_id: str, as_of: Optional[str] = None) -> Dict[str, Any]:
-    """Ringkasan keuangan satu buku (entity_id) dari trial balance terisolasi."""
+    """Ringkasan keuangan satu buku (entity_id) dari trial balance terisolasi. Kas & Bank 1 (tinjauan T1 I2) — kas =
+    akun `report_basis.kode_kas` PT itu (bawaan + pemetaan + `is_cash`, termasuk sub-akun rekening), sama dengan
+    pembaca saldo kas lain."""
+    from services import report_basis as _rb
     scope = {"entity_id": entity_id}
     tb = await trial_balance(as_of=as_of, scope=scope)
+    kas = await _rb.kode_kas(scope)
     revenue = cogs = opex = 0.0
     assets = liabilities = equity = 0.0
     cash = ar = ap = ppn_out = inventory = 0.0
@@ -4789,7 +4804,7 @@ async def _entity_financials(entity_id: str, as_of: Optional[str] = None) -> Dic
             liabilities += credit_net
         elif t == "equity":
             equity += credit_net
-        if code in (ACC_KAS_BESAR, ACC_KAS_KECIL):
+        if code in kas:
             cash += debit_net
         elif code == ACC_PIUTANG:
             ar += debit_net
