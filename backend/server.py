@@ -102,6 +102,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger("server").warning("[cara bayar] benih dilewati: %s", exc)
+    try:  # F1 — catat waktu aktif kwitansi otomatis dari mutasi bank (ditulis sekali; mutasi lama tidak diproses)
+        from services.bank_auto_receipt_service import ensure_aktif_sejak as _f1_aktif
+        await _f1_aktif()
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("server").warning("[F1] waktu aktif kwitansi mutasi dilewati: %s", exc)
     # Sub-fase 1.7 — init object storage (best-effort; tak menggagalkan startup)
     try:
         from services.storage_service import init_storage

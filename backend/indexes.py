@@ -1019,6 +1019,9 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("payment_report_id", 1)], "partial": {"payment_report_id": {"$exists": True}, "status": "posted"},
      "finder": _finder_dup("ar_receipts", '{payment_report_id:{$exists:true},status:"posted"}',
                            '"$payment_report_id"')},
+    {"collection": "ar_receipts", "name": "uq_bank_line_receipt", "label": "satu kwitansi per mutasi bank",
+     "keys": [("bank_line_id", 1)], "partial": {"bank_line_id": {"$exists": True}, "status": "posted"},
+     "finder": _finder_dup("ar_receipts", '{bank_line_id:{$exists:true},status:"posted"}', '"$bank_line_id"')},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

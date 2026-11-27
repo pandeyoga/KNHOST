@@ -1631,6 +1631,10 @@
    "bank-kasus",
    "bank"
   ],
+  "bank.kwitansi_otomatis_mutasi": [
+   "bank-kasus",
+   "kwitansi-bank"
+  ],
   "case.sla_hours": [
    "bank-kasus",
    "kasus"

@@ -148,3 +148,15 @@ E("bank.holding_max_age_days", group="bank-kasus", section="bank", type="duratio
   impact="Menentukan kapan dana titipan dianggap terlalu lama menggantung.",
   example="Batas 7 hari · titipan 20 Juli belum teralokasi pada 28 Juli → ditandai perlu tindakan",
   consumers=("services/bank_recon_service.py:holding_summary",), risk="medium")
+
+# F1 (27 Nov) — kwitansi otomatis dari mutasi bank. Penilai & pelaksana: `services/bank_auto_receipt_service.py`.
+E("bank.kwitansi_otomatis_mutasi", group="bank-kasus", section="kwitansi-bank", type="bool", default=True, scopes=G,
+  label="Kwitansi otomatis dari mutasi bank",
+  help="Mutasi masuk berkode bayar yang cocok sempurna (pesanan, PT, rekening, nominal) langsung menjadi kwitansi "
+       "terverifikasi bank saat mutasi diimpor. Mati = mutasi berkode tetap tampil sebagai kartu di Meja Keuangan "
+       "untuk dicatat manual.",
+  impact="Menyala: Finance tidak perlu lagi mencatat kwitansi untuk mutasi yang cocok sempurna. Mati: semua mutasi "
+         "berkode menunggu dicatat manual; kwitansi yang sudah terbit tidak berubah.",
+  example="Menyala · pelanggan transfer Rp 1.000.000 dengan kode bayar pesanan CBD Rp 1.000.000 → kwitansi terbit "
+          "otomatis saat mutasi diimpor",
+  consumers=("services/bank_auto_receipt_service.py:menyala",), risk="medium")

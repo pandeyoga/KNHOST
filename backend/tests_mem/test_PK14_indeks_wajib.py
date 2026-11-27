@@ -67,6 +67,7 @@ KA6_INDEKS = 1
 BTP5_INDEKS = 1
 #: LB-T4 (R10-c) — `ar_receipts.uq_payment_report` (satu kwitansi per laporan bayar).
 LB4_INDEKS = 1
+F11_INDEKS = 1   # F1-T1 — satu kwitansi per mutasi bank (`uq_bank_line_receipt`)
 
 
 def _info_lengkap() -> dict:
@@ -118,11 +119,12 @@ def test_U12_pembanding_indeks():
     # KA-6 — + satu potret aturan komisi per (PT, bulan): + KA6_INDEKS.
     # BTP-5 — + satu saldo potongan komisi per (PT, sales, bulan): + BTP5_INDEKS.
     # LB-T4 — + satu kwitansi per laporan bayar: + LB4_INDEKS.
+    # F1-T1 — + satu kwitansi per mutasi bank: + F11_INDEKS.
     assert len(indexes.REQUIRED_UNIQUE_INDEXES) == (9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
                                                     + PMT2_INDEKS + PK39_INDEKS + AGT3_INDEKS + KMT1_INDEKS
                                                     + PYT1_INDEKS + PYT2_INDEKS + CRT2_INDEKS + PMT4_INDEKS + PYT3_INDEKS
                                                     + KMT3_INDEKS + KMT4_INDEKS + KA2_INDEKS + KA6_INDEKS + BTP5_INDEKS
-                                                    + LB4_INDEKS)
+                                                    + LB4_INDEKS + F11_INDEKS)
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

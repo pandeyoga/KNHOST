@@ -606,6 +606,10 @@ async def _pagar_lapor_bayar(payload: Dict[str, Any], actor: Dict[str, Any], *, 
     kwitansi dikecualikan HANYA bila seluruh dananya uang TUNAI baru (cara bayar tunai daftar induk,
     `payment_method_service.is_cash`, tanpa deposit dipakai) — tunai diatur `pembayaran.sales_terima_tunai`. Keputusan
     selisih "alokasikan" memakai titipan pelanggan, jadi selalu dinilai."""
+    # F1 — pelaku sistem mutasi bank (kwitansi bersumber mutasi, uangnya sudah terbukti masuk rekening) dikecualikan.
+    from services.bank_auto_receipt_service import SUMBER as _SUMBER_MUTASI
+    if payload.get("source") == _SUMBER_MUTASI and (actor or {}).get("sistem") == _SUMBER_MUTASI:
+        return
     from services import payment_method_service as _pms
     tunai_baru = amount > EPS and use_deposit_amount <= EPS and await _pms.is_cash(entity_id, method)
     ids: List[str] = [] if tunai_baru else await _rencana_pesanan(
@@ -861,6 +865,10 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         **({"source": "payment_report", "payment_report_id": str(payload["payment_report_id"]),
             "payment_report_number": str(payload.get("payment_report_number") or "")}
            if payload.get("payment_report_id") else {}),
+        # F1 — kwitansi lahir dari satu baris mutasi bank (hanya pemanggil layanan; indeks `uq_bank_line_receipt` menjaga
+        # satu kwitansi hidup per baris).
+        **({"source": str(payload["source"]), "bank_line_id": str(payload["bank_line_id"])}
+           if payload.get("source") == "mutasi_bank" and payload.get("bank_line_id") else {}),
     }
     await db.ar_receipts.insert_one(doc)
     # FASE G-4 — kwitansi menaut ke SETIAP pesanan yang dilunasinya (dua arah).
