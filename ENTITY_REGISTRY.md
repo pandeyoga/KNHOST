@@ -3406,6 +3406,9 @@ INV-CASH-01 `scripts/guardrails/verify_cash_single_door.py`); nomor hanya dari `
                              permintaan (atau id baru); kas keluar manual dari pengajuan yang disetujui (Kas & Bank 2,
                              C6): `ref_id` = id `cash_out_requests` + `disetujui_oleh(_id)`, `disetujui_pada`,
                              `cash_out_request_number` (pembuat = pengaju). Indeks tidak unik (ref_type, ref_id, direction).
+  sidik_kiriman      string  Kas & Bank 2 (C6) — kas manual langsung berkunci: sidik isi kiriman
+                             (`cash_out_request_service.sidik_isian`); kiriman ulang kas keluar berkunci sama berisi lain
+                             → 409, berisi sama → kas yang sama (bukan pengajuan di sampingnya).
   ai_card_id         string  AG-T5 — id kartu tindakan asisten (kas manual, bayar tagihan pemasok / kontrabon) yang
                              mencatat kas ini; tidak ada = dicatat di layar.
   seq                string  pembeda kas searah satu dokumen (id pembayaran landed cost, `out`/`in` antar-PT, langkah

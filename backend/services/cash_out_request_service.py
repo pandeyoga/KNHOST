@@ -222,15 +222,37 @@ async def kiriman_ulang(entity_id: str, kunci: str, sidik: str = "") -> Optional
     return _bentuk(doc)
 
 
-async def kas_langsung_ada(entity_id: str, kunci: str) -> bool:
-    """Kunci ini sudah menjadi kas manual LANGSUNG (sebelum batas/kontrol berubah) → kiriman ulangnya tetap kas yang
-    sama (`create_cash` memakai ulang kas ber-rujukan sama), bukan pengajuan baru di samping kas itu."""
+async def kas_keluar_langsung_sama(entity_id: str, kunci: str, sidik: str, *, amount: float, account_id: str,
+                                   category: str, txn_date: str) -> bool:
+    """Kunci ini sudah menjadi kas KELUAR manual LANGSUNG di PT ini (sebelum batas/kontrol berubah) dengan isi yang
+    SAMA → True: kiriman ulangnya tetap kas yang sama (`create_cash` memakai ulang kas ber-rujukan `manual|kunci|out`),
+    bukan pengajuan baru di samping kas itu. Tidak ada kas keluar hidup berkunci ini di PT ini → False (jalur biasa:
+    pengajuan bila di atas batas). Ada tetapi isinya berbeda → 409 `PESAN_KUNCI_BEDA` (bukan kas kedua, bukan
+    pengajuan).
+
+    Perbaikan putaran 1 (Critical) — hanya kas KELUAR yang dihitung: kas MASUK berkunci sama ber-id lain (`create_cash`
+    menurunkan id dari arah), jadi dulu kas keluar di atas batas berkunci kas masuk terjurnal langsung tanpa orang
+    kedua (orang lain, atau `X-Entity-Id` diubah/dihilangkan — rekaman penyangga idempotensi berbeda). Isi dibandingkan
+    lewat sidik kiriman yang disimpan di kas (`sidik_kiriman`); kas lama tanpa sidik: nominal, rekening, kategori, dan
+    tanggal (bila dikirim)."""
     kunci = (kunci or "").strip()[:120]
     if not kunci:
         return False
-    return bool(await db.cash_transactions.find_one(
-        {"entity_id": entity_id, "ref_type": "manual", "ref_id": kunci, "status": {"$ne": "void"}},
-        {"_id": 0, "id": 1}))
+    kas = await db.cash_transactions.find_one(
+        {"entity_id": entity_id, "ref_type": "manual", "ref_id": kunci, "direction": "out", "status": {"$ne": "void"}},
+        {"_id": 0, "amount": 1, "account_id": 1, "category": 1, "txn_date": 1, "sidik_kiriman": 1})
+    if not kas:
+        return False
+    if kas.get("sidik_kiriman"):
+        sama = kas["sidik_kiriman"] == sidik
+    else:
+        tgl = (txn_date or "").strip()
+        sama = (_f(kas.get("amount")) == _f(amount) and (kas.get("account_id") or "") == (account_id or "")
+                and (kas.get("category") or "").strip() == (category or "").strip()
+                and (not tgl or (kas.get("txn_date") or "") == tgl))
+    if not sama:
+        raise _galat(409, PESAN_KUNCI_BEDA, HEADER_ULANG)
+    return True
 
 
 def jawab_diajukan(req: Dict[str, Any]) -> JSONResponse:

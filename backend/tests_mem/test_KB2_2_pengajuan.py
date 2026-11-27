@@ -247,6 +247,83 @@ async def test_KB2_2_U3b_kunci_kas_langsung_tetap_kas_yang_sama(klien, db, akun,
     assert await db.cash_transactions.count_documents({"ref_type": "manual", "ref_id": kunci}) == 1
 
 
+async def _keluar_berkunci(db, kunci: str) -> int:
+    return await db.cash_transactions.count_documents({"ref_type": "manual", "ref_id": kunci, "direction": "out"})
+
+
+# ═══ 3c. Perbaikan putaran 1 (Critical) — kunci kas MASUK / PT lain / isi lain tidak membuka kas keluar langsung ═
+async def test_KB2_2_U3c_kunci_kas_masuk_tidak_meloloskan_kas_keluar(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Kunci yang dipakai kas MASUK lalu dikirim lagi untuk kas KELUAR di atas batas → 202 pengajuan, nol kas keluar
+    langsung: (a) oleh orang lain; (b) oleh orang yang sama tanpa X-Entity-Id (PT dari isian); (c) oleh orang yang sama
+    dengan X-Entity-Id PT lain miliknya (rekaman penyangga idempotensi berbeda di ketiganya)."""
+    pt, lain = await _pt(akun, sesi, peran_tanpa_acuan), await _pt(akun, sesi, peran_tanpa_acuan)
+    dua_pt = await akun(await _peran(peran_tanpa_acuan, "Aju", {"cash": ["view", "create", "approve"]}),
+                        entitas=(pt["id"], lain["id"]))
+    for varian in ("orang_lain", "tanpa_header", "header_pt_lain"):
+        kunci = f"kb22-u3c-{varian}"
+        r = await _kirim(klien, pt, 10_000, kunci=kunci, arah="in")
+        assert r.status_code == 200 and r.json()["direction"] == "in", (varian, r.text)
+        isi = {**_isi(pt, 5_000_000), "entity_id": pt["id"]}
+        if varian == "orang_lain":
+            h = {**pt["o"]["aju2"]["h"], "Idempotency-Key": kunci}
+        elif varian == "tanpa_header":
+            h = {k: v for k, v in pt["o"]["aju"]["h"].items() if k != "X-Entity-Id"}
+            h["Idempotency-Key"] = kunci
+        else:
+            h = {**(await sesi(dua_pt, entitas=lain["id"])), "Idempotency-Key": kunci}
+        r = await klien.post(URL, headers=h, json=isi)
+        assert r.status_code in (202, 409), (varian, r.text)
+        if r.status_code == 202:
+            p = r.json()["request"]
+            assert (p["status"], p["entity_id"], p["amount"]) == ("menunggu_persetujuan", pt["id"], 5_000_000.0)
+        assert await _keluar_berkunci(db, kunci) == 0, varian
+    assert await db.cash_out_requests.count_documents({"entity_id": pt["id"]}) == 3
+
+
+async def test_KB2_2_U3d_kunci_kas_keluar_pt_lain_dan_isi_lain(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Kunci kas keluar langsung PT A dipakai di PT B di atas batas → pengajuan PT B. Kunci kas keluar langsung yang
+    dikirim ulang dengan isi lain (sesudah batas diturunkan) → 409, bukan kas kedua dan bukan pengajuan di sampingnya;
+    kas lama tanpa sidik (sebelum perbaikan) dicocokkan per nominal/rekening/kategori/tanggal."""
+    from services import cash_out_request_service as cors
+    pa, pb = await _pt(akun, sesi, peran_tanpa_acuan), await _pt(akun, sesi, peran_tanpa_acuan)
+    kunci = "kb22-u3d-lintas-pt"
+    r = await _kirim(klien, pa, 800_000, kunci=kunci)
+    assert r.status_code == 200 and r.json()["direction"] == "out", r.text
+    kas_a = r.json()["id"]
+    r = await _kirim(klien, pb, 2_000_000, kunci=kunci)
+    assert r.status_code == 202 and r.json()["request"]["entity_id"] == pb["id"], r.text
+    assert await db.cash_transactions.count_documents({"ref_id": kunci, "entity_id": pb["id"]}) == 0
+    assert [t["id"] async for t in db.cash_transactions.find({"ref_id": kunci}, {"_id": 0, "id": 1})] == [kas_a]
+    # Isi lain dengan kunci kas keluar langsung yang sama (batas PT A diturunkan di bawah nominalnya)
+    await _atur("kontrol.kas_keluar_manual.batas_nominal", 500_000, pa["id"])
+    h = {**pa["o"]["aju2"]["h"], "Idempotency-Key": kunci}
+    for beda in ({"amount": 900_000}, {"category": "sewa"}, {"account_id": pa["rek"]["KT"]}, {"txn_date": _hari(-1)}):
+        r = await klien.post(URL, headers=h, json={**_isi(pa, 800_000), **beda})
+        assert r.status_code == 409 and r.json()["detail"] == PESAN_KUNCI_BEDA, (beda, r.text)
+    r = await klien.post(URL, headers=h, json=_isi(pa, 800_000))        # isi sama → kas yang sama
+    assert r.status_code == 200 and r.json()["id"] == kas_a, r.text
+    assert await db.cash_out_requests.count_documents({"entity_id": pa["id"]}) == 0
+    assert await _keluar_berkunci(db, kunci) == 1
+    # Kas lama tanpa sidik: cocok per nominal, rekening, kategori (dan tanggal bila dikirim). Kiriman tanpa X-Entity-Id
+    # (PT dari isian) = rekaman penyangga lain, jadi yang menjawab layanan, bukan rekaman 200 di atas.
+    await db.cash_transactions.update_one({"id": kas_a}, {"$unset": {"sidik_kiriman": ""}})
+
+    def _tanpa_entitas(siapa):
+        return {**{k: v for k, v in pa["o"][siapa]["h"].items() if k != "X-Entity-Id"}, "Idempotency-Key": kunci}
+
+    isi = {**_isi(pa, 800_000), "entity_id": pa["id"]}
+    r = await klien.post(URL, headers=_tanpa_entitas("aju"), json={**isi, "category": "sewa"})
+    assert r.status_code == 409 and r.json()["detail"] == PESAN_KUNCI_BEDA, r.text
+    r = await klien.post(URL, headers=_tanpa_entitas("aju"), json=isi)
+    assert r.status_code == 200 and r.json()["id"] == kas_a, r.text
+    # Kas langsung yang sudah dibatalkan tidak dihitung: kiriman ulang di atas batas → pengajuan
+    await db.cash_transactions.update_one({"id": kas_a}, {"$set": {"status": "void"}})
+    r = await klien.post(URL, headers=_tanpa_entitas("aju2"), json=isi)
+    assert r.status_code == 202, r.text
+    assert await _keluar_berkunci(db, kunci) == 1
+    assert cors.PESAN_KUNCI_BEDA == PESAN_KUNCI_BEDA
+
+
 # ═══ 4. Orang kedua: pengaju tidak menyetujui sendiri; Admin pun tidak (bawaan admin-tetap) ═════════════════════════
 async def test_KB2_2_U4_setujui_sendiri_403_dan_admin_tetap(klien, db, akun, sesi, peran_tanpa_acuan, kepala_admin):
     import config_registry as registry

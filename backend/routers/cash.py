@@ -217,9 +217,12 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # = lebih dari; `min_orang` "2" = semua) → PENGAJUAN yang menunggu orang kedua: 202 `{request}`, tanpa kas, tanpa
     # jurnal.
     # Hanya sesudah SEMUA pemeriksaan di atas lolos (kategori, rujukan, rekening, periode, anggaran). Kunci yang sudah
-    # menjadi kas langsung (sebelum batas berubah) tetap kas yang sama lewat `create_cash` di bawah.
+    # menjadi kas KELUAR langsung PT ini (sebelum batas berubah) dengan isi yang sama tetap kas yang sama lewat
+    # `create_cash` di bawah; isi lain → 409; kas masuk / PT lain berkunci sama tidak dihitung (perbaikan putaran 1).
     from services import dual_control as _dc
-    if payload.direction == "out" and not await _cor.kas_langsung_ada(entity_id, kunci) \
+    if payload.direction == "out" and not await _cor.kas_keluar_langsung_sama(
+            entity_id, kunci, sidik, amount=float(payload.amount), account_id=rek["account_id"],
+            category=payload.category, txn_date=payload.txn_date or "") \
             and await _dc.butuh_orang_kedua("kas_keluar_manual", entity_id, float(payload.amount)):
         req = await _cor.ajukan({
             "cash_type": rek["cash_type"], "account_id": rek["account_id"],
@@ -243,7 +246,9 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
             txn_date=payload.txn_date or "", category=payload.category.strip(), description=payload.description.strip(),
             actor=actor.get("name", ""),   # PK-09 — nilai klien `created_by` diabaikan
             # AG-T5 — kas manual dari kartu tindakan asisten membawa `ai_card_id` (hanya kartu `running` milik pelaksana).
-            extra={**({"budget_check": budget_check} if budget_check is not None else {}), **card_field()} or None)
+            extra={**({"budget_check": budget_check} if budget_check is not None else {}), **card_field(),
+                   # Kas & Bank 2 (C6) — sidik isi kiriman berkunci: kiriman ulang berisi lain dikenali (409)
+                   **({"sidik_kiriman": sidik} if kunci else {})} or None)
     except cash_ledger.CashPostingError as exc:
         await audit(actor["name"], "cash_transaction_created", "cash_transaction", exc.txn.get("id", ""), {
             "number": exc.txn.get("number", ""), "cash_type": exc.txn.get("cash_type", ""),
