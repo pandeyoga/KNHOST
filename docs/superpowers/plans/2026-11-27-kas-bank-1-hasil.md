@@ -1,12 +1,12 @@
 # Hasil — Kas & Bank bagian 1: akun buku besar per rekening, Pindah Dana, pindah saldo
 
 Tanggal: 27 Nov 2026 · Cabang: `claude/nifty-carson-jjx3c8` · Garis dasar: `b41e21f` (F1, menunggu izin gabung) ·
-Pohon kode akhir: ⟨AKHIR⟩.
+Pohon kode akhir: `ed51714`.
 
 - **Rancangan:** `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-design.md` (keputusan pemilik D1–D4;
   builder check §7–8).
 - **Rencana:** `docs/superpowers/plans/2026-11-27-kas-bank-1-rekening-pindah-dana.md`, 7 tugas.
-- **Tangkapan layar (F1 + Kas & Bank 1, data acuan):** `2026-11-27-kas-bank-1-hasil/tangkapan/` — ⟨TANGKAPAN⟩.
+- **Tangkapan layar (F1 + Kas & Bank 1, data acuan):** `2026-11-27-kas-bank-1-hasil/tangkapan/` — 33 potret PT KSC (F1: impor mutasi → kwitansi otomatis + kartu Meja Keuangan + pesanan CBD lepas; Kas & Bank: penanda → pratinjau → siapkan → setujui orang kedua + "Angka berubah" → sesudah aktif; Pindah Dana dua tahap, kontrol dua orang, pratinjau PDN, batal; kas manual tanpa Transfer/Top-up). Skrip `tangkap_kb1.js` + `siapkan_kb1.py`, log angka API `tangkap_kb1_log.txt`: di setiap langkah saldo sub-akun tiap rekening = buku kas rekening itu; akun lama 1-1100/1-1110 jadi Rp 0 untuk bagian yang dipindah.
 
 **Status: selesai, belum digabung ke `main`.** Pembaruan VPS **tidak menulis data nyata**: tidak ada akun, rekening, atau
 jurnal yang dibuat/diubah saat backend menyala. Setiap PT tetap memakai akun lama (1-1100 / 1-1110) **sampai Finance
@@ -42,7 +42,8 @@ menjalankan pindah saldo untuk PT itu dan orang kedua menyetujuinya.**
 | T4 Pindah Dana (server) | `e2020bc`, `479d0af` |
 | T5 Tutup kategori Transfer/Top-up | `0be3d11` |
 | T6 Layar | `1cb2b63` |
-| Gelombang perbaikan akhir | `223e73a`, `b370cc1` ⟨+⟩ |
+| Gelombang perbaikan akhir | `223e73a`, `b370cc1` |
+| Temuan tangkapan layar (alasan tombol terpotong, tanggal mentah) | `ed51714` |
 
 Alur: T1–T5 (jalur uang) pelaksana → tinjauan tugas → perbaikan → tinjauan ulang; T6 (layar) tanpa tinjauan tugas
 (perintah pemilik "ya percepat"); tinjauan seluruh cabang → satu gelombang perbaikan → tinjauan ulang: semua temuan (2 Important + 8 kecil) tertangani, tanpa temuan berat baru.
@@ -59,7 +60,7 @@ Temuan nyata yang tertangkap tinjauan sebelum gabung:
 ## 3. Uji (apa adanya)
 
 - **Backend `tests_mem` penuh** di `b370cc1`: 3236 lulus, 2 dilewati, 3 xfail, **0 gagal** (EXIT 0, 1228 dtk).
-- **Jest penuh** di `b370cc1`: 2173/2174 uji, 270/272 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan garis dasar).
+- **Jest penuh** di `b370cc1`: 2173/2174 uji, 270/272 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan garis dasar). `ed51714` (layar saja): uji jest terkait 18 suite lulus (64 + 230 uji).
 - **Uji baru:** `test_KB1_1`…`test_KB1_6` (backend) + `kb1KasBank.test.js` (jest). Setiap jalur uang diuji di PT belum
   aktif (rekaman jurnal kode lama) dan PT aktif (sub-akun).
 - **Waktu pratinjau** pindah saldo: ±0,03 dtk pada data ukuran demo, ±1,0 dtk pada 10× (database tiruan tanpa indeks;
