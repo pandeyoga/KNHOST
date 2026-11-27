@@ -35,9 +35,11 @@ async def _pt(request: Request, entity_id: str) -> str:
 
 
 async def _usulan(request: Request, usulan_id: str) -> Dict[str, Any]:
+    """Usulan untuk pintu TULIS (setujui/tolak): milik PT aktif kepala (`guard_doc` strict, konvensi jalur tulis — sama
+    dengan Pindah Dana; tinjauan akhir Minor 4). Akun multi-PT yang berdiri di PT lain → 404."""
     from db import db
     doc = await db[cut.COLL].find_one({"id": usulan_id}, {"_id": 0})
-    await guard_doc(request, cut.COLL, doc, strict=False, not_found=cut.PESAN_TIDAK_ADA)
+    await guard_doc(request, cut.COLL, doc, strict=True, not_found=cut.PESAN_TIDAK_ADA)
     return doc
 
 

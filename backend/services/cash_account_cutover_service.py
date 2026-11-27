@@ -29,8 +29,15 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-de
   SEBELUM penanda supaya pembatalannya juga dialihkan. Tidak ada kas yang jatuh di luar kedua ember. Hitungan sebelum
   klaim hanya untuk membandingkan sidik; bila berbeda dari yang diposting (kas tercatat di antara keduanya), keduanya
   dicatat (`sidik_disetujui`, `sidik_diposting`).
-* **Tolak** (`tolak`) — tidak ada yang berubah selain akun rekening yang sudah dibuat (tetap, kosong). Sebelum disetujui
-  akun rekening bisa diganti lewat siapkan ulang (§7 butir 2: kode boleh diganti sebelum pindah saldo disetujui).
+* **Tolak** (`tolak`) — tidak ada yang berubah selain sub-akun buatan sistem yang sudah dibuat (tetap, kosong). Akun
+  bagan PT pilihan Finance dilepas lagi: tanda akun rekening dipulihkan persis seperti sebelum dipilih (potret di
+  usulan, `cash_account_mode.pulihkan_akun_pilihan`; tinjauan akhir I2 — PT yang belum aktif memposting dan melapor
+  seperti dulu). Sebelum disetujui akun rekening bisa diganti lewat siapkan ulang (§7 butir 2: kode boleh diganti
+  sebelum pindah saldo disetujui; "" = kembali ke sub-akun buatan sistem).
+* **Pratinjau PT yang sudah aktif** (`_keadaan_aktif`, tinjauan akhir I1) — keadaan SESUDAH pindah, bukan hitungan
+  pindah: per rekening saldo akun rekening vs saldo buku kasnya (`selisih` = pemeriksa anti-tujuan "saldo per rekening =
+  buku kas rekening"), angka dipindah dari hitungan yang diposting usulan yang disetujui, akun kas lama = saldo
+  sekarang.
 
 Tidak ada yang berjalan saat aplikasi menyala; tidak ada tanggal mundur.
 """
@@ -75,6 +82,19 @@ LABEL_TERTUNDA = {
     "kas_tanpa_jurnal_induk": "Kas yang menunggu jurnal dokumen induknya",
     "gaji_jalur_lama": "Penggajian yang jurnal bayarnya sudah terbit tetapi kasnya belum tercatat",
 }
+#: Tinjauan akhir Minor 1 (T3-M3) — di mana tiap jenis diselesaikan (`tempat`, dibaca layar Akun per rekening untuk
+#: tombolnya) dan kalimat arahannya. Hanya jenis registri (`JENIS_POSTING_KAS`) tampil di panel Posting Gagal; jenis
+#: lain membawa nomor dokumennya (`contoh`) karena tidak ada panel yang mendaftarnya.
+TEMPAT_TERTUNDA = {"kas_tertunda": "tunggu", "pembalik_tertunda": "tunggu", "kas_tanpa_jurnal_induk": "dokumen_induk",
+                   "gaji_jalur_lama": "proses_gaji"}
+ARAHAN_TERTUNDA = {
+    "posting_gagal": "ulangi di Keuangan › Posting Gagal",
+    "tunggu": "jurnal atau pembatalannya sedang berjalan — muat ulang sebentar lagi; bila tidak berubah, prosesnya "
+              "terhenti: laporkan nomornya ke Admin",
+    "dokumen_induk": "selesaikan jurnal dokumen induknya (jurnal induk yang gagal tampil di Keuangan › Posting Gagal)",
+    "proses_gaji": "catat pembayarannya lewat Bayar di SDM › Penggajian › Proses Gaji",
+}
+CONTOH_TERTUNDA = 5   # nomor dokumen yang disebut per jenis (tampilan), bukan aturan bisnis
 
 
 def _galat(status: int, pesan: str) -> HTTPException:
@@ -107,7 +127,9 @@ async def _pt_ada(entity_id: str) -> None:
 
 # ── Posting kas gagal / tertunda ─────────────────────────────────────────────────────────────────────────────────────
 async def posting_tertunda(entity_id: str) -> Tuple[int, List[Dict[str, Any]]]:
-    """Jumlah posting kas yang gagal atau tertunda di PT itu + rinciannya `[{jenis, label, jumlah}]`.
+    """Jumlah posting kas yang gagal atau tertunda di PT itu + rinciannya `[{jenis, label, jumlah, tempat, arahan,
+    contoh}]` (`tempat` = `TEMPAT_TERTUNDA`, jenis registri = "posting_gagal"; `contoh` = ≤ `CONTOH_TERTUNDA` nomor
+    dokumen untuk jenis yang tidak tampil di Posting Gagal).
 
     * Baris panel Posting Gagal PT itu untuk jenis `JENIS_POSTING_KAS` (saringan `failed_query` registri);
     * kas yang jurnalnya masih `pending` atau sedang dibatalkan (`voiding`); jurnal yang sedang dibalik
@@ -120,31 +142,40 @@ async def posting_tertunda(entity_id: str) -> Tuple[int, List[Dict[str, Any]]]:
     from services import posting_registry as reg
     rincian: List[Dict[str, Any]] = []
 
-    def catat(jenis: str, label: str, n: int) -> None:
+    def catat(jenis: str, label: str, n: int, contoh: Optional[List[str]] = None) -> None:
         if n:
-            rincian.append({"jenis": jenis, "label": label, "jumlah": int(n)})
+            tempat = TEMPAT_TERTUNDA.get(jenis, "posting_gagal")
+            rincian.append({"jenis": jenis, "label": label, "jumlah": int(n), "tempat": tempat,
+                            "arahan": ARAHAN_TERTUNDA[tempat], "contoh": [c for c in (contoh or []) if c]})
+
+    async def nomor(coll: str, q: Dict[str, Any]) -> List[str]:
+        rows = await db[coll].find(q, {"_id": 0, "number": 1, "id": 1}).sort("created_at", 1).to_list(CONTOH_TERTUNDA)
+        return [r.get("number") or r.get("id") or "" for r in rows]
 
     for kind, pihak in JENIS_POSTING_KAS.items():
         spec = reg.KINDS[kind]
         fields = pihak or (spec["entity_field"],)
         q = {"$and": [dict(spec["failed_query"]), {"$or": [{f: entity_id} for f in fields]}]}
         catat(kind, spec["label"], await db[spec["collection"]].count_documents(q))
-    catat("kas_tertunda", LABEL_TERTUNDA["kas_tertunda"], await db.cash_transactions.count_documents(
-        {"entity_id": entity_id, "status": {"$ne": "void"}, "$or": [{"gl_status": "pending"}, {"voiding": True}]}))
-    catat("pembalik_tertunda", LABEL_TERTUNDA["pembalik_tertunda"], await db.journal_entries.count_documents(
-        {"entity_id": entity_id, "reversed_by_entry_id": "pending"}))
+    q = {"entity_id": entity_id, "status": {"$ne": "void"}, "$or": [{"gl_status": "pending"}, {"voiding": True}]}
+    catat("kas_tertunda", LABEL_TERTUNDA["kas_tertunda"], await db.cash_transactions.count_documents(q),
+          await nomor("cash_transactions", q))
+    q = {"entity_id": entity_id, "reversed_by_entry_id": "pending"}
+    catat("pembalik_tertunda", LABEL_TERTUNDA["pembalik_tertunda"], await db.journal_entries.count_documents(q),
+          await nomor("journal_entries", q))
     menumpang = [t async for t in db.cash_transactions.find(
         {"entity_id": entity_id, "status": {"$ne": "void"}, "gl_posted": True, "parent_journal": {"$nin": [None, ""]}},
         {"_id": 0, "id": 1, "entity_id": 1, "journal_entry_id": 1, "parent_journal": 1})]
     ids = {x for t in menumpang for x in (t.get("journal_entry_id"), t.get("parent_journal")) if x}
     ada = {j["id"] async for j in db.journal_entries.find({"id": {"$in": sorted(ids)}, "status": {"$ne": "void"}},
                                                           {"_id": 0, "id": 1})}
-    n = 0
+    tanpa_induk: List[str] = []
     for t in menumpang:
         if not ({t.get("journal_entry_id"), t.get("parent_journal")} & ada) and not await gl.jurnal_induk_kas(t):
-            n += 1
-    catat("kas_tanpa_jurnal_induk", LABEL_TERTUNDA["kas_tanpa_jurnal_induk"], n)
-    n = 0
+            tanpa_induk.append(t.get("number") or t.get("id") or "")
+    catat("kas_tanpa_jurnal_induk", LABEL_TERTUNDA["kas_tanpa_jurnal_induk"], len(tanpa_induk),
+          tanpa_induk[:CONTOH_TERTUNDA])
+    gaji: List[str] = []
     async for run in db.hr_payroll_runs.find({"entity_id": entity_id, "status": {"$in": ["posted", "paying"]}},
                                              {"_id": 0}):
         je = await db.journal_entries.find_one(
@@ -154,17 +185,26 @@ async def posting_tertunda(entity_id: str) -> Tuple[int, List[Dict[str, Any]]]:
                 {"status": {"$ne": "void"}, "$or": [{"ref_type": "payroll_run", "ref_id": run["id"]},
                                                     {"journal_entry_id": je["id"]}, {"parent_journal": je["id"]}]},
                 {"_id": 0, "id": 1}):
-            n += 1
-    catat("gaji_jalur_lama", LABEL_TERTUNDA["gaji_jalur_lama"], n)
+            gaji.append(run.get("number") or run.get("id") or "")
+    catat("gaji_jalur_lama", LABEL_TERTUNDA["gaji_jalur_lama"], len(gaji), gaji[:CONTOH_TERTUNDA])
     return sum(x["jumlah"] for x in rincian), rincian
+
+
+def kalimat_tertunda(rincian: List[Dict[str, Any]]) -> str:
+    """Rincian `posting_tertunda` → kalimat berarahan per tempat penyelesaiannya (tinjauan akhir Minor 1): jenis
+    registri ke Posting Gagal, jenis lain dengan nomor dokumennya dan tempat/cara menyelesaikannya."""
+    kelompok: Dict[str, List[str]] = {}
+    for x in rincian:
+        contoh = f" ({', '.join(x['contoh'])})" if x.get("contoh") else ""
+        kelompok.setdefault(x["arahan"], []).append(f"{x['label']}: {x['jumlah']}{contoh}")
+    return "; ".join(f"{', '.join(isi)} — {arahan}" for arahan, isi in kelompok.items())
 
 
 async def _tolak_bila_tertunda(entity_id: str) -> None:
     n, rincian = await posting_tertunda(entity_id)
     if n:
-        isi = "; ".join(f"{x['label']}: {x['jumlah']}" for x in rincian)
-        raise _galat(409, f"{await _nama_pt(entity_id)} masih punya {n} posting kas yang gagal atau tertunda ({isi}). "
-                          f"Selesaikan dulu di Keuangan › Posting Gagal, lalu ulangi.")
+        raise _galat(409, f"{await _nama_pt(entity_id)} masih punya {n} posting kas yang gagal atau tertunda. "
+                          f"{kalimat_tertunda(rincian)}. Selesaikan dulu, lalu ulangi.")
 
 
 # ── Hitungan (pratinjau) ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -188,6 +228,19 @@ def _sidik(rekening: List[Dict[str, Any]], tunggal: List[Dict[str, Any]]) -> str
     return hashlib.sha256(json.dumps(isi, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:24]
 
 
+async def _kas_tanpa_rekening(entity_id: str, cash_type: str, sejak: str = "") -> List[Dict[str, Any]]:
+    """Kas lama tanpa rekening (tidak-void) jenis kas itu; `sejak` = hanya yang tercatat sebelum batas itu."""
+    q: Dict[str, Any] = {"entity_id": entity_id, "cash_type": cash_type, "status": {"$ne": "void"},
+                         "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]}
+    if sejak:
+        q["created_at"] = {"$lt": sejak}
+    return [t async for t in db.cash_transactions.find(q, {"_id": 0, "id": 1, "amount": 1, "direction": 1})]
+
+
+def _neto(rows: List[Dict[str, Any]]) -> int:
+    return sum(_sen(t.get("amount")) * (1 if t.get("direction") == "in" else -1) for t in rows)
+
+
 async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
     """Hitungan pindah saldo PT itu (tanpa tulisan). `sejak` (ISO) = batas waktu aturan pembalik: hanya jurnal & kas
     yang terbit SEBELUM-nya (dipakai saat disetujui, sesudah `nyalakan`); kosong = semuanya (pratinjau).
@@ -207,14 +260,10 @@ async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
     tunggal: List[Dict[str, Any]] = []
     tetap: List[Dict[str, Any]] = []
     for ct in ("kas_besar", "kas_kecil"):
-        q: Dict[str, Any] = {"entity_id": entity_id, "cash_type": ct, "status": {"$ne": "void"},
-                             "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]}
-        if sejak:
-            q["created_at"] = {"$lt": sejak}
-        rows = [t async for t in db.cash_transactions.find(q, {"_id": 0, "id": 1, "amount": 1, "direction": 1})]
+        rows = await _kas_tanpa_rekening(entity_id, ct, sejak)
         if not rows:
             continue
-        net = sum(_sen(t.get("amount")) * (1 if t.get("direction") == "in" else -1) for t in rows)
+        net = _neto(rows)
         sole = await bs.sole_account_id(entity_id, ct)
         if sole:
             tunggal_kas.update({t["id"]: sole for t in rows})
@@ -280,7 +329,9 @@ async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
             "id": r["id"], "nama": r.get("name", ""), "cash_type": bs.account_cash_type(r),
             "aktif": bs._aktif(r), "akun_tujuan": kode,
             "akun_tujuan_nama": r.get("name", "") if baru else (akun_ef.get(kode) or {}).get("name", ""),
-            "akun_tujuan_baru": baru, "saldo_buku": _rp(saldo_buku), "asal": daftar, "dipindah": _rp(dipindah),
+            "akun_tujuan_baru": baru,
+            "akun_tujuan_buatan_sistem": baru or bool((akun_ef.get(kode) or {}).get("dibuat_dari_rekening")),
+            "saldo_buku": _rp(saldo_buku), "asal": daftar, "dipindah": _rp(dipindah),
             "saldo_akun_tujuan": _rp(saldo_tujuan), "saldo_sesudah": _rp(saldo_tujuan + dipindah),
             "selisih": _rp(saldo_tujuan + dipindah - saldo_buku)})
     # Baris jurnal: per rekening per akun asal Dr tujuan / Cr asal; asal negatif → sisi dibalik; nol dilewati.
@@ -316,15 +367,91 @@ async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
     }
 
 
+async def _usulan_penyala(entity_id: str) -> Optional[Dict[str, Any]]:
+    """Usulan yang menyalakan PT itu: `disetujui`, atau `memproses` (persetujuan yang terhenti sesudah PT menyala)."""
+    rows = await db[COLL].find({"entity_id": entity_id, "status": {"$in": ["disetujui", "memproses"]}},
+                               {"_id": 0}).sort("created_at", -1).to_list(1)
+    return rows[0] if rows else None
+
+
+async def _keadaan_aktif(entity_id: str) -> Dict[str, Any]:
+    """Tinjauan akhir I1 — pratinjau PT yang SUDAH memakai akun per rekening: keadaan sesudah pindah (tanpa tulisan),
+    bentuk sama dengan `_hitung` supaya layar yang sama membacanya.
+
+    Hitungan pindah TIDAK diulang: jurnal `pindah_saldo_kas` bukan jurnal kas, jadi `_hitung` sesudah aktif membaca lagi
+    semua jurnal kas pra-pindah sebagai "yang akan dipindah" padahal saldonya sudah ada di akun rekening (terhitung dua
+    kali). Di sini per rekening: akun rekening, saldo akunnya, saldo buku kas, `selisih = saldo akun − buku kas`
+    (pemeriksa anti-tujuan "saldo per rekening = buku kas rekening"; 0 bila benar); `asal`/`dipindah` = hitungan yang
+    DIPOSTING usulan penyala (`hitungan_diposting`; kosong bila belum ada). Akun kas lama: saldo sekarang (`sisa` =
+    `saldo`) dan yang dipindah saat disetujui. Kas lama tanpa rekening yang tersisa: tetap di akun lama. Tidak ada
+    jurnal yang akan dibuat (`baris_jurnal` kosong, `sidik` kosong); `pindah_saldo` = ringkasan usulan penyala."""
+    from services import bank_service as bs
+    from services import cash_account_mode as mode
+    from services import gl_service as gl
+    from services import report_basis as rb
+    reks = await bs.rekening_pt(entity_id)
+    u = await _usulan_penyala(entity_id) or {}
+    diposting = u.get("hitungan_diposting") or {}
+    rek_pos = {x.get("id"): x for x in diposting.get("rekening") or []}
+    lama_pos = {a.get("akun"): a for a in diposting.get("akun_lama") or []}
+    lama = await rb.kode_kas(entity_id) - await gl.kode_akun_rekening(entity_id)
+    tujuan = {r.get("gl_account_code") for r in reks if r.get("gl_account_code")}
+    akun_ef = await gl.effective_accounts(sorted(lama | tujuan | set(lama_pos)), entity_id)
+    rekening: List[Dict[str, Any]] = []
+    for r in reks:
+        kode = r.get("gl_account_code") or ""
+        pos = rek_pos.get(r["id"]) or {}
+        saldo_akun = await gl.accounts_balance_cents([kode], entity_id) if kode else 0
+        saldo_buku = _sen(((await bs.account_ledger(r["id"])) or {}).get("balance"))
+        rekening.append({
+            "id": r["id"], "nama": r.get("name", ""), "cash_type": bs.account_cash_type(r), "aktif": bs._aktif(r),
+            "akun_tujuan": kode, "akun_tujuan_nama": (akun_ef.get(kode) or {}).get("name", "") if kode else "",
+            "akun_tujuan_baru": False,
+            "akun_tujuan_buatan_sistem": bool((akun_ef.get(kode) or {}).get("dibuat_dari_rekening")),
+            "saldo_buku": _rp(saldo_buku), "asal": list(pos.get("asal") or []),
+            "dipindah": round(float(pos.get("dipindah") or 0), 2), "saldo_akun_tujuan": _rp(saldo_akun),
+            "saldo_sesudah": _rp(saldo_akun), "selisih": _rp(saldo_akun - saldo_buku)})
+    akun_lama = []
+    for c in sorted(lama | set(lama_pos)):
+        saldo = await gl.accounts_balance_cents([c], entity_id)
+        pindah = _sen((lama_pos.get(c) or {}).get("dipindah"))
+        if saldo or pindah:
+            akun_lama.append({"akun": c, "nama": (akun_ef.get(c) or {}).get("name", ""), "saldo": _rp(saldo),
+                              "dipindah": _rp(pindah), "sisa": _rp(saldo)})
+    tetap = []
+    for ct in ("kas_besar", "kas_kecil"):
+        rows = await _kas_tanpa_rekening(entity_id, ct)
+        if rows:
+            n_rek = sum(1 for r in reks if bs._aktif(r) and bs.account_cash_type(r) == ct)
+            tetap.append({"cash_type": ct, "jumlah_kas": len(rows), "jumlah": _rp(_neto(rows)),
+                          "rekening_aktif": n_rek})
+    jumlah, rincian = await posting_tertunda(entity_id)
+    return {
+        "entity_id": entity_id, "pt": await _nama_pt(entity_id), "aktif": True,
+        "aktif_sejak": await mode.aktif_sejak(entity_id), "rekening": rekening,
+        "kas_tanpa_rekening": {"tunggal": [], "tetap": _rp(sum(_sen(x["jumlah"]) for x in tetap)),
+                               "tetap_rincian": tetap},
+        "akun_lama": akun_lama, "posting_gagal": jumlah, "posting_gagal_rincian": rincian, "baris_jurnal": [],
+        "total_dipindah": round(float(u.get("total_dipindah") or 0), 2), "sidik": "",
+        "pindah_saldo": {k: u.get(k, "") for k in ("id", "label", "status", "journal_entry_id", "journal_number",
+                                                   "disetujui_oleh", "disetujui_pada")} if u else None,
+    }
+
+
 async def pratinjau(entity_id: str) -> Dict[str, Any]:
     """`GET /api/kas-per-rekening/{entity_id}/pratinjau` — hitungan pindah saldo PT itu (tanpa tulisan) + usulan yang
     masih hidup. Bentuk: `{entity_id, pt, aktif, aktif_sejak, rekening: [{id, nama, cash_type, aktif, akun_tujuan,
-    akun_tujuan_nama, akun_tujuan_baru, saldo_buku, asal: [{akun, nama, jumlah}], dipindah, saldo_akun_tujuan,
-    saldo_sesudah, selisih}], kas_tanpa_rekening: {tunggal: [...], tetap, tetap_rincian}, akun_lama: [{akun, nama,
-    saldo, dipindah, sisa}], posting_gagal, posting_gagal_rincian, baris_jurnal, total_dipindah, sidik, usulan}`."""
+    akun_tujuan_nama, akun_tujuan_baru, akun_tujuan_buatan_sistem, saldo_buku, asal: [{akun, nama, jumlah}], dipindah,
+    saldo_akun_tujuan, saldo_sesudah, selisih}], kas_tanpa_rekening: {tunggal: [...], tetap, tetap_rincian}, akun_lama:
+    [{akun, nama, saldo, dipindah, sisa}], posting_gagal, posting_gagal_rincian, baris_jurnal, total_dipindah, sidik,
+    usulan}`. PT yang sudah aktif → keadaan sesudah pindah (`_keadaan_aktif`, + `pindah_saldo`)."""
+    from services import cash_account_mode as mode
     await _pt_ada(entity_id)
-    hit = await _hitung(entity_id)
-    hit.pop("sumber", None)
+    if await mode.aktif(entity_id):
+        hit = await _keadaan_aktif(entity_id)
+    else:
+        hit = await _hitung(entity_id)
+        hit.pop("sumber", None)
     hit["usulan"] = await _usulan_hidup(entity_id)
     return hit
 
@@ -341,6 +468,7 @@ def _bentuk(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         return None
     out = safe_doc(doc)
     out.pop("rencana", None)
+    out.pop("akun_pilihan_sebelum", None)
     out["status_label"] = STATUS_LABEL.get(out.get("status"), out.get("status") or "")
     return out
 
@@ -444,17 +572,29 @@ async def siapkan(entity_id: str, pilihan_akun: Optional[Dict[str, Any]], actor:
     await _tolak_bila_tertunda(entity_id)
     reks = await bs.rekening_pt(entity_id)
     pilihan = await _periksa_pilihan(entity_id, pilihan_akun or {}, reks)
+    # Tinjauan akhir I2 — potret tanda akun bagan PT pilihan Finance SEBELUM ditandai akun rekening: Tolak
+    # memulihkannya persis (PT yang belum aktif memposting dan melapor seperti dulu).
+    potret = []
+    for r in reks:
+        kode = pilihan.get(r["id"]) or ""
+        if kode and kode != (r.get("gl_account_code") or ""):
+            p = await mode.potret_akun_pilihan(r, kode)
+            if p:
+                potret.append(p)
     try:
         for r in reks:
             await _pasang_akun(r, pilihan.get(r["id"]) if r["id"] in pilihan else None)
     except mode.SubAkunError as exc:
+        for p in potret:   # usulan tidak lahir → akun pilihan yang sudah ditandai dikembalikan seperti sebelum dipilih
+            await mode.pulihkan_akun_pilihan(p)
         raise _galat(400, str(exc)) from exc
     hit = await _hitung(entity_id)
     n = await db[COLL].count_documents({"entity_id": entity_id})
     now = now_iso()
     doc = {
         "id": f"psk_{entity_id}_{n + 1:03d}", "entity_id": entity_id, "label": f"Pindah saldo kas {pt}",
-        "status": "menunggu", "pilihan_akun": pilihan, "hitungan_disiapkan": _ringkas(hit),
+        "status": "menunggu", "pilihan_akun": pilihan, "akun_pilihan_sebelum": potret,
+        "hitungan_disiapkan": _ringkas(hit),
         "sidik_disiapkan": hit["sidik"], "total_dipindah": hit["total_dipindah"],
         "disiapkan_oleh": actor.get("name", ""), "disiapkan_oleh_id": actor.get("id", ""), "disiapkan_pada": now,
         "disetujui_oleh": "", "disetujui_oleh_id": "", "disetujui_pada": "", "ditolak_oleh": "", "ditolak_oleh_id": "",
@@ -472,21 +612,29 @@ async def siapkan(entity_id: str, pilihan_akun: Optional[Dict[str, Any]], actor:
 
 
 async def tolak(usulan_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    """`POST /api/kas-per-rekening/usulan/{id}/tolak` — hanya usulan `menunggu`; tidak ada yang berubah selain akun
-    rekening yang sudah dibuat (tetap, kosong)."""
+    """`POST /api/kas-per-rekening/usulan/{id}/tolak` — hanya usulan `menunggu`; tidak ada yang berubah selain sub-akun
+    buatan sistem yang sudah dibuat (tetap, kosong). Tinjauan akhir I2 — akun bagan PT pilihan Finance dilepas SESUDAH
+    klaim status (penyetuju yang menang lebih dulu tidak kehilangan akunnya): tandanya dipulihkan persis dari potret
+    `siapkan`, rekening kembali tanpa akun (pratinjau: sub-akun buatan sistem)."""
+    from services import cash_account_mode as mode
     u = await db[COLL].find_one({"id": usulan_id}, {"_id": 0})
     if not u:
         raise _galat(404, PESAN_TIDAK_ADA)
     alasan = (alasan or "").strip()
     if len(alasan) < 5:
         raise _galat(400, "Alasan penolakan wajib diisi (minimal 5 huruf).")
+    potret = list(u.get("akun_pilihan_sebelum") or [])
     res = await db[COLL].update_one({"id": usulan_id, "status": "menunggu"}, {
         "$set": {"status": "ditolak", "alasan_tolak": alasan, "ditolak_oleh": actor.get("name", ""),
-                 "ditolak_oleh_id": actor.get("id", ""), "ditolak_pada": now_iso(), "updated_at": now_iso()},
+                 "ditolak_oleh_id": actor.get("id", ""), "ditolak_pada": now_iso(), "updated_at": now_iso(),
+                 "akun_pilihan_dilepas": [p["kode"] for p in potret]},
         "$push": {"jejak": _jejak("tolak", actor, alasan)}})
     if not res.modified_count:
         raise _galat(409, f"Usulan pindah saldo ini berstatus {STATUS_LABEL.get(u.get('status'), u.get('status'))}, "
                           "jadi tidak bisa ditolak.")
+    if potret and not await mode.aktif(u["entity_id"]):
+        for p in potret:
+            await mode.pulihkan_akun_pilihan(p)
     return await ambil(usulan_id) or {}
 
 
@@ -659,8 +807,13 @@ async def _lanjutkan(u: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
         raise
     except Exception as exc:  # noqa: BLE001 — PT sudah menyala: usulan tetap `memproses`, bisa diteruskan
         await _lepas_jatah(uid, actor, str(exc) or exc.__class__.__name__)
+        # Tinjauan akhir Minor 1 (T3-M3) — usulan hanya tampil di Posting Gagal bila jurnalnya yang gagal
+        # (`gl_status: failed` ditulis `post_durable`); galat sebelum jurnal → cukup Lanjutkan di layarnya.
+        gagal_jurnal = ((await db[COLL].find_one({"id": uid}, {"_id": 0, "gl_status": 1})) or {}).get("gl_status")
+        tempat = ("Ulangi dari Keuangan › Posting Gagal, atau Lanjutkan di Kas & Bank › Akun per rekening."
+                  if gagal_jurnal == "failed" else "Lanjutkan di Kas & Bank › Akun per rekening.")
         raise _galat(409, f"{pt} sudah memakai akun per rekening, tetapi pindah saldonya belum selesai: "
-                          f"{str(exc)[:300]}. Ulangi dari Keuangan › Posting Gagal atau setujui lagi.") from exc
+                          f"{str(exc)[:300]}. {tempat}") from exc
     # 6. SELESAI.
     je = res.get("journal") or {}
     await db[COLL].update_one({"id": uid, "status": "memproses"}, {

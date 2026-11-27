@@ -644,6 +644,13 @@ ID_INDEX_COLLECTIONS_MORE: List[str] = [
 ROLL_REF_FIELDS = ("reserved_ref.id", "transfer_ref.id", "last_transfer.ref_id", "returned_from_transfer.ref_id",
                    "active_movement.id", "bucket_ref.id", "length_reservations.id", "length_reservations.ref.id",
                    "earmarked_for.id", "acquired.ref_id")
+# Kas & Bank 1 (tinjauan akhir Minor 2, T2-M3) — kas yang menumpang jurnal dicari per id jurnal
+# (`gl_service.kas_jurnal`: `$or journal_entry_id | parent_journal`; dipanggil pindah saldo per jurnal non-kas yang
+# menyentuh akun kas lama, dan pembalik kas lama). Tiap cabang `$or` wajib ber-index agar bukan pindai penuh. Non-unik,
+# parsial `$gt ""` (pola `ROLL_REF_FIELDS`) → hanya kas yang punya rujukan itu; nama `kn_ref_<field>`.
+PARTIAL_REF_INDEXES: Dict[str, Tuple[str, ...]] = {
+    "cash_transactions": ("journal_entry_id", "parent_journal"),
+}
 # FIX-5 — index jalur panas lain (profil/explain uji beban FIX-5): non-unik, nama `kn_…` deterministik.
 HOT_PATH_INDEXES: Dict[str, List[IndexKeys]] = {
     "putaway_orders": [[("status", A), ("created_at", D)]],          # PA hidup per roll (`rolls_in_live_orders`)
@@ -786,6 +793,24 @@ async def ensure_performance_indexes() -> dict:
                 await coll.create_index(keys, name=name, background=True)
                 created += 1
             except Exception as exc:  # noqa: BLE001 — index bentrok / field issue
+                failed += 1
+                logger.warning("[indexes] %s.%s gagal: %s", collection, name, exc)
+    for collection, fields in PARTIAL_REF_INDEXES.items():   # Kas & Bank 1 — rujukan jurnal kas (parsial)
+        coll = db[collection]
+        try:
+            existing = set((await coll.index_information()).keys())
+        except Exception:  # noqa: BLE001
+            existing = set()
+        for field in fields:
+            name = "kn_ref_" + field.replace(".", "_")
+            if name in existing:
+                existed += 1
+                continue
+            try:
+                await coll.create_index([(field, ASCENDING)], name=name, background=True,
+                                        partialFilterExpression={field: {"$gt": ""}})
+                created += 1
+            except Exception as exc:  # noqa: BLE001
                 failed += 1
                 logger.warning("[indexes] %s.%s gagal: %s", collection, name, exc)
     summary = {"created": created, "existed": existed, "failed": failed}

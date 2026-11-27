@@ -2226,7 +2226,12 @@ Index:       uq_id (unik) · (entity_id, status, created_at)
   gl_status · gl_error · gl_failed_at · journal_entry_id · journal_number (jurnal `pindah_saldo_kas`, Posting Gagal
   jenis `pindah_saldo_kas`) · kas_ditautkan · selesai_pada
   ditolak_oleh(_id) · ditolak_pada · alasan_tolak · jejak[{aksi, oleh, oleh_id, pada, catatan}]
+  akun_pilihan_sebelum[{rekening_id, kode, akun_id, sebelum{is_cash, bank_account_id, is_cash_dari_rekening}}] (potret
+  akun bagan PT pilihan Finance sebelum ditandai; tidak dikirim API) · akun_pilihan_dilepas[kode] (saat ditolak)
   created_at · updated_at
+Tolak: sub-akun buatan sistem tetap (kosong); akun pilihan Finance dipulihkan persis dari potret, rekening kembali tanpa
+akun (tinjauan akhir I2). Pratinjau PT aktif = keadaan sesudah pindah (saldo akun rekening vs buku kas, angka
+`hitungan_diposting`; tinjauan akhir I1).
 Setujui: penyiap ≠ penyetuju (`kontrol.pindah_saldo_kas.min_orang`, bawaan 2); sidik beda → 409 "Angka berubah, muat
 ulang."; jurnal Dr akun rekening / Cr akun asal per rekening per akun asal; `cash_account_mode.nyalakan`; kas lama tanpa
 rekening yang ikut rekening tunggal mendapat `account_id` + `account_id_dari_pindah_saldo`.
@@ -2248,7 +2253,7 @@ Index:       uq_id (unik) · uq_number (unik) · (entity_id, status, tanggal_kir
   nominal · biaya (biaya transfer, dibebankan ke rekening asal) · catatan
   tanggal_kirim · tanggal_terima (rencana; = tanggal kirim bila sekali jalan) · tanggal_diterima (nyata) · dua_tahap
   butuh_persetujuan (kontrol.pindah_dana saat dibuat) · disetujui_oleh(_id) · disetujui_pada
-  kas_ids {kirim, biaya, terima} · akun_transit · akun_beban_bank (akun lawan saat kas terbit) · terbit_pada · terbit_error
+  kas_ids {kirim, biaya, terima} (juga kas yang sudah terbit bila terbit terhenti) · akun_transit · akun_beban_bank (akun lawan saat kas terbit) · terbit_pada · terbit_error
   gl_status · gl_error (ringkasan jurnal kasnya; ulang dari Posting Gagal › Transaksi Kas menyegarkan)
   diterima_oleh(_id) · diterima_pada
   alasan_batal · dibatalkan_oleh(_id) · dibatalkan_pada · status_sebelum_batal · batal_gl_status (pending | posted |
@@ -3350,6 +3355,8 @@ Dipakai:     auto-isi harga di PO create + PR→PO convert (Depth #3).
 ```
 Collection:  cash_transactions  Prefix: cash_
 Router:      routers/cash.py
+Index:       uq_id · (ref_type, ref_id, direction) · kn_ref_journal_entry_id & kn_ref_parent_journal (parsial `$gt ""`,
+             Kas & Bank 1 — `gl_service.kas_jurnal`)
 Schema:      schemas.py → CashTransactionCreate
 Component:   CashManagementView.jsx (Pembelian → Pengelolaan Kas)
 cash_type:   kas_kecil | kas_besar (buku bank) — jenis BUKU, bukan kepemilikan (kas grup dihapus, E7.4)

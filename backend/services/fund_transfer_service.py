@@ -407,8 +407,11 @@ async def _terbit(doc_id: str, actor: Dict[str, Any], *, disetujui: bool) -> Dic
             ids = await _terbitkan(doc, rencana, actor)
         except cash_ledger.CashRejected as exc:
             sudah = [t for t in await _kas_dokumen(doc_id) if t.get("status") != "void"]
-            await db[COLL].update_one({"id": doc_id}, {"$set": {"terbit_error": str(exc.detail)[:300],
-                                                                "updated_at": now_iso()}})
+            # Tinjauan akhir Minor 7 — kas yang sudah terbit dicatat di `kas_ids` (layar Batal menyebut kasnya dibalik,
+            # bukan "kasnya belum terbit"); terbit berikutnya menggabungkannya.
+            await db[COLL].update_one({"id": doc_id}, {"$set": {
+                "terbit_error": str(exc.detail)[:300], "updated_at": now_iso(),
+                "kas_ids": {**(doc.get("kas_ids") or {}), **{t["seq"]: t["id"] for t in sudah if t.get("seq")}}}})
             lanjut = ("Kas yang sudah terbit tetap tercatat; ulangi lewat Setujui atau batalkan Pindah Dana ini."
                       if sudah else "Belum ada kas yang terbit; ulangi lewat Setujui atau batalkan Pindah Dana ini.")
             raise _galat(409, f"Kas Pindah Dana {doc.get('number')} belum terbit: {exc.detail} {lanjut}") from exc

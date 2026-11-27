@@ -9,8 +9,9 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-de
 * **Sub-akun rekening** — `buat_subakun`: akun khusus PT `{induk}-{NN}` (induk 1-1100 untuk bank/kas besar, 1-1110 untuk
   kas kecil; NN = nomor dua digit terkecil yang belum dipakai di PT itu di bawah induk itu), nama = nama rekening,
   `is_cash`, `bank_account_id`, `dibuat_dari_rekening`; atau akun bagan PT yang sudah ada pilihan Finance (diperiksa
-  `periksa_akun_pilihan`). Kodenya ditulis ke `bank_accounts.gl_account_code` dan tidak berubah walau nama rekening
-  berubah (nama akun buatan sistem ikut nama rekening: `ikut_nama_rekening`).
+  `periksa_akun_pilihan`; tandanya dipotret sebelum dipasang dan dipulihkan persis bila usulan pindah saldo ditolak —
+  `potret_akun_pilihan` / `pulihkan_akun_pilihan`). Kodenya ditulis ke `bank_accounts.gl_account_code` dan tidak
+  berubah walau nama rekening berubah (nama akun buatan sistem ikut nama rekening: `ikut_nama_rekening`).
 * Pemakai: `gl_service.akun_kas` (satu pembantu akun kas jurnal), `bank_service.create_account` (rekening baru di PT
   aktif), `gl_service.create_manual_entry` (jurnal manual ke akun ber-`bank_account_id` ditolak).
 
@@ -18,7 +19,7 @@ Batas: tidak ada indeks unik (database uji tiruan tidak menguji indeks parsial);
 dengan klaim bersyarat pada rekening (`gl_account_code` kosong) dan pemeriksaan kode tunggal sesudah sisip.
 """
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from core_utils import new_id, now_iso
 from db import db
@@ -28,6 +29,9 @@ SCOPE = "__kas_per_rekening__"
 INDUK = {"kas_besar": "1-1100", "kas_kecil": "1-1110"}
 _KUNCI_SAH = re.compile(r"^[A-Za-z0-9_\-]+$")
 _COBA_NOMOR = 5
+#: Tanda akun rekening yang dipasang `buat_subakun(kode=…)` pada akun bagan PT pilihan Finance (dipotret sebelum
+#: dipasang dan dipulihkan persis bila usulan pindah saldo ditolak — `potret_akun_pilihan` / `pulihkan_akun_pilihan`).
+TANDA_AKUN_PILIHAN = ("is_cash", "bank_account_id", "is_cash_dari_rekening")
 
 
 class SubAkunError(ValueError):
@@ -93,8 +97,9 @@ async def periksa_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Dict[str,
     """PERIKSA (tanpa tulisan) akun bagan PT `kode` yang dipilih Finance untuk `rekening`. → dokumen akun.
 
     Syarat: bukan kode bawaan bersama (kode bawaan dipetakan ulang per PT), akun khusus PT rekening itu, aktif, bisa
-    diposting, berjenis aset, bukan akun kontrol buku pembantu, bukan hasil pemetaan `kas_bank.*` PT itu (jurnal kas tanpa
-    akun rekening dipetakan ke sana — saldo akun rekening tidak lagi sama dengan buku kas rekening), belum dipakai
+    diposting, berjenis aset, bukan akun kontrol buku pembantu, bukan hasil pemetaan PT itu untuk kebutuhan APA PUN
+    (`kas_bank.*`: jurnal kas tanpa akun rekening dipetakan ke sana; kebutuhan lain — tinjauan akhir Minor 3: jurnal
+    otomatis jalur itu ikut masuk — saldo akun rekening tidak lagi sama dengan buku kas rekening), belum dipakai
     rekening lain. Gagal → `SubAkunError`."""
     from services import gl_mapping_registry as reg, gl_mapping_service as glm
     kode = (kode or "").strip()
@@ -115,11 +120,13 @@ async def periksa_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Dict[str,
         raise SubAkunError(f"Akun {kode} bukan akun aset (kas/bank).")
     if kode in await glm.control_accounts(eid):
         raise SubAkunError(f"Akun {kode} adalah akun kontrol buku pembantu, bukan akun kas/bank.")
-    for entry in reg.ENTRIES:   # tinjauan T1 I1 — pemetaan efektif PT itu (PT → global → bawaan)
-        if entry["key"].startswith("kas_bank.") and await glm.account_for(entry["key"], eid) == kode:
+    for entry in reg.ENTRIES:   # tinjauan T1 I1 + akhir Minor 3 — pemetaan efektif PT itu (PT → global → bawaan)
+        if await glm.account_for(entry["key"], eid) == kode:
+            jalur = ("jurnal kas tanpa akun rekening" if entry["key"].startswith("kas_bank.")
+                     else "jurnal otomatis jalur itu")
             raise SubAkunError(f"Akun {kode} sedang dipakai Pemetaan Akun \"{entry['label']}\" ({entry['key']}) di "
-                               f"{pt}, jadi jurnal kas tanpa akun rekening ikut masuk ke akun ini. Pilih akun lain, "
-                               f"atau ganti pemetaannya dulu di Pemetaan Akun.")
+                               f"{pt}, jadi {jalur} ikut masuk ke akun ini. Pilih akun lain, atau ganti pemetaannya "
+                               f"dulu di Pemetaan Akun.")
     pemakai = akun.get("bank_account_id") or ""
     if not pemakai or pemakai == rid:
         lain = await db.bank_accounts.find_one({"entity_id": eid, "gl_account_code": kode, "id": {"$ne": rid}},
@@ -240,6 +247,34 @@ async def _lepas_akun(rekening_id: str, kode: str) -> None:
         if a.get("is_cash_dari_rekening"):
             cabut.update(is_cash="", is_cash_dari_rekening="")
         await db.gl_accounts.update_one({"id": a["id"]}, {"$unset": cabut, "$set": {"updated_at": now_iso()}})
+
+
+async def potret_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Optional[Dict[str, Any]]:
+    """Tinjauan akhir I2 — keadaan tanda (`TANDA_AKUN_PILIHAN`) akun bagan PT `kode` SEBELUM dipilih Finance untuk
+    `rekening`, tanpa tulisan; disimpan di usulan pindah saldo. None = akun tidak ada di bagan PT itu."""
+    akun = await db.gl_accounts.find_one({"code": kode, "entity_id": rekening.get("entity_id") or ""},
+                                         {"_id": 0, "id": 1, **{f: 1 for f in TANDA_AKUN_PILIHAN}})
+    if not akun:
+        return None
+    return {"rekening_id": rekening.get("id") or "", "kode": kode, "akun_id": akun["id"],
+            "sebelum": {f: akun[f] for f in TANDA_AKUN_PILIHAN if f in akun}}
+
+
+async def pulihkan_akun_pilihan(potret: Dict[str, Any]) -> None:
+    """Tinjauan akhir I2 (usulan pindah saldo ditolak) — tanda akun pilihan Finance kembali PERSIS seperti `potret`
+    (field yang dulu tidak ada dihapus), dan rekening dilepas dari akun itu (`gl_account_code` kosong → pratinjau
+    menawarkan sub-akun buatan sistem lagi). Hanya bila akun itu masih ditautkan ke rekening tersebut."""
+    rid, kode = potret.get("rekening_id") or "", potret.get("kode") or ""
+    sebelum: Dict[str, Any] = potret.get("sebelum") or {}
+    upd: Dict[str, Any] = {"$set": {**{f: sebelum[f] for f in TANDA_AKUN_PILIHAN if f in sebelum},
+                                    "updated_at": now_iso()}}
+    hapus: List[str] = [f for f in TANDA_AKUN_PILIHAN if f not in sebelum]
+    if hapus:
+        upd["$unset"] = {f: "" for f in hapus}
+    res = await db.gl_accounts.update_one({"id": potret.get("akun_id") or "", "bank_account_id": rid}, upd)
+    if res.matched_count:
+        await db.bank_accounts.update_one({"id": rid, "gl_account_code": kode},
+                                          {"$set": {"gl_account_code": "", "updated_at": now_iso()}})
 
 
 async def lepas_subakun(rekening_id: str) -> None:

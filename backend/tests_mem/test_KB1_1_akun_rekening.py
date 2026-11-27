@@ -487,6 +487,38 @@ async def test_KB1_1_U16_akun_pemetaan_kas_dan_akun_berjurnal_ditolak(klien, db,
     assert await db.bank_accounts.count_documents({}) == n0
 
 
+async def test_KB1_1_U16b_akun_pemetaan_non_kas_ditolak(db, pt):
+    """Tinjauan akhir Minor 3 — akun yang dipakai pemetaan PT untuk kebutuhan APA PUN (bukan hanya `kas_bank.*`) tidak
+    bisa jadi akun rekening: jurnal otomatis jalur itu akan menulis akun rekening tanpa dokumen kas."""
+    from services import cash_account_mode as mode, gl_mapping_service as glm, gl_service as gl
+    from schemas_finance import GLAccountCreate
+    B = pt["B"]
+    await gl.create_account(GLAccountCreate(code="1-1123", name="Penampung B", type="asset"), entity_id=B)
+    await glm.set_mapping("lain.suspense", B, "1-1123", "uji KB1 pemetaan non-kas B", AKTOR_UJI)
+    try:
+        await db.bank_accounts.insert_one({"id": "rek_b5", "name": "Bank B Pemetaan", "entity_id": B,
+                                           "account_type": "bank", "is_active": True, "opening_balance": 0.0})
+        with pytest.raises(ValueError) as e:
+            await mode.buat_subakun({"id": "rek_b5"}, kode="1-1123")
+        assert str(e.value) == (
+            "Akun 1-1123 sedang dipakai Pemetaan Akun \"Akun penampung (suspense)\" (lain.suspense) di "
+            f"{await mode._nama_pt(B)}, jadi jurnal otomatis jalur itu ikut masuk ke akun ini. Pilih akun lain, atau "
+            "ganti pemetaannya dulu di Pemetaan Akun."), str(e.value)
+        assert not (await db.bank_accounts.find_one({"id": "rek_b5"})).get("gl_account_code")
+        assert not (await _akun_pt(db, B, "1-1123")).get("bank_account_id")
+    finally:
+        await glm.reset_mapping("lain.suspense", B, "pulihkan uji KB1", AKTOR_UJI)
+        await db.bank_accounts.delete_one({"id": "rek_b5"})
+    # Pemetaan dipulihkan → akun yang sama boleh dipilih
+    await db.bank_accounts.insert_one({"id": "rek_b5", "name": "Bank B Pemetaan", "entity_id": B,
+                                       "account_type": "bank", "is_active": True, "opening_balance": 0.0})
+    try:
+        assert await mode.periksa_akun_pilihan(await db.bank_accounts.find_one({"id": "rek_b5"}, {"_id": 0}),
+                                               "1-1123")
+    finally:
+        await db.bank_accounts.delete_one({"id": "rek_b5"})
+
+
 async def test_KB1_1_U17_pembalikan_manual_jurnal_akun_rekening_ditolak(klien, db, lama):
     """I3 — pembalikan manual (`reverse_entry`) jurnal yang menyentuh akun rekening ditolak; jurnal ke akun kas lama
     tetap boleh dibalik; batal kas (`post_cash_void`) tidak terhalang dan membalik sub-akun."""

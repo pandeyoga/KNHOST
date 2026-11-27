@@ -632,6 +632,8 @@ async def test_KB1_4_U12_terbit_terhenti_diteruskan_tanpa_kas_ganda(db, monkeypa
     assert (d["status"], d["terbit_error"], bool(d.get("saga_lock"))) == (
         "menunggu_persetujuan", "Rekening Mandiri baru saja dinonaktifkan.", False)
     assert sorted(await _kas_dokumen(db, d["id"])) == ["biaya", "kirim"]
+    # Tinjauan akhir Minor 7 — kas yang sudah terbit tercatat di dokumen (layar: kalimat Batal "kas dibalik")
+    assert d["kas_ids"] == {s: t["id"] for s, t in (await _kas_dokumen(db, d["id"])).items()}
     hasil = await fts.setujui(d["id"], PEMBUAT)   # kontrol satu orang: pembuat boleh meneruskan sendiri
     assert (hasil["status"], hasil["terbit_error"]) == ("selesai", "")
     kas = await _kas_dokumen(db, d["id"])
