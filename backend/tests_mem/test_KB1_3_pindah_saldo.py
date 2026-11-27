@@ -641,7 +641,8 @@ async def test_KB1_3_U11_admin_penyiap_tetap_dua_orang(db):
 # ═══ 12. Ketetapan R11 — jurnal saldo awal rekening tidak bisa dibalik manual di PT aktif ════════════════════════════
 async def test_KB1_3_U12_balik_manual_saldo_awal_rekening(db):
     from services import gl_service as gl
-    tgl = now_iso()[:10]
+    from services.book_date import tanggal_buku
+    tgl = tanggal_buku()   # tanggal bisnis WIB, bukan potongan stempel UTC
     # PT belum aktif → tidak berubah (pembalikan manual diterima)
     eid0 = await pt_uji("KB3M0")
     bank0 = await _rekening(eid0, "BCA KB3M0", awal=40_000)
@@ -714,6 +715,7 @@ async def test_KB1_3_U15_tolak_melepas_akun_pilihan(db, klien, kepala_admin):
     from schemas_finance import GLAccountCreate, JournalEntryCreate
     from services import cash_account_mode as mode, cash_account_cutover_service as cut, gl_service as gl
     from services import report_basis as rb
+    from services.book_date import tanggal_buku
     from pembantu import jurnal
     eid = await pt_uji("KB3O")
     bank = await _rekening(eid, "BCA KB3O", awal=200_000)
@@ -734,11 +736,11 @@ async def test_KB1_3_U15_tolak_melepas_akun_pilihan(db, klien, kepala_admin):
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == ""
     # Jurnal manual dan pembalikan manual ke akun itu lolos lagi (PT belum aktif — persis seperti dulu)
     manual = await gl.create_manual_entry(JournalEntryCreate(
-        date=now_iso()[:10], description="Koreksi manual KB3O", entity_id=eid,
+        date=tanggal_buku(), description="Koreksi manual KB3O", entity_id=eid,
         lines=[{"account_code": "1-1105", "debit": 1_000.0, "credit": 0.0},
                {"account_code": "3-1000", "debit": 0.0, "credit": 1_000.0}]), AKTOR_UJI, entity_id=eid)
     assert manual and manual["entity_id"] == eid
-    rev = await gl.reverse_entry(je["id"], now_iso()[:10], "uji balik KB3O", AKTOR_UJI)
+    rev = await gl.reverse_entry(je["id"], tanggal_buku(), "uji balik KB3O", AKTOR_UJI)
     assert rev and rev["source_type"] == "reversal"
     # Rekening kembali ke sub-akun buatan sistem; Siapkan ulang tanpa pilihan → sub-akun baru, 1-1105 tidak disentuh
     x = _rek(await cut.pratinjau(eid), bank)

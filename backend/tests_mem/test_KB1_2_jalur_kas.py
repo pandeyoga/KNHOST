@@ -28,6 +28,7 @@ from pathlib import Path
 import pytest
 
 from core_utils import now_iso
+from services.book_date import tanggal_buku
 from pembantu import AKTOR_UJI, pt_uji
 
 pytestmark = pytest.mark.anyio
@@ -238,7 +239,7 @@ async def _bayar_gaji(db, eid: str, rekening: str, kredit_lama: str = "") -> dic
                                       {"account_code": kredit_lama, "debit": 0.0, "credit": 1_200_000.0}],
                                description="Bayar gaji lama", date=now_iso(), source_type="payroll_pay",
                                source_id=run["id"], entity_id=eid, created_by="uji")
-    return await hp._kas_bayar(run, {"id": rekening}, now_iso()[:10], "Uji")
+    return await hp._kas_bayar(run, {"id": rekening}, tanggal_buku(), "Uji")
 
 
 async def test_KB1_2_U1e_gaji_pt_tidak_aktif_sama(db, pt):
@@ -463,7 +464,7 @@ async def _perolehan_aset(db, eid: str, rekening: str, akun_tersimpan: str, jeni
     from services import fixed_asset_service as fas
     aid = _uid("fa")
     aset = {"id": aid, "number": _no("FA-KB2P"), "name": "Mesin KB2", "entity_id": eid, "status": "active",
-            "acquisition_cost": 2_500_000.0, "acquisition_date": now_iso()[:10], "gl_account_asset": "1-2100",
+            "acquisition_cost": 2_500_000.0, "acquisition_date": tanggal_buku(), "gl_account_asset": "1-2100",
             "funding_source": "kas", "funding_account": akun_tersimpan, "account_id": rekening,
             "funding_cash_type": jenis, "acquisition_cash_txn_id": "", "created_at": now_iso()}
     await db.fin_fixed_assets.insert_one(dict(aset))
@@ -534,7 +535,7 @@ async def test_KB1_2_U3_batal_kas_lama_sesudah_aktif_ke_subakun(db, pt):
     # Pembalikan MANUAL jurnal kas lama (kas k2 masih tercatat) ditolak: saldonya sudah di sub-akun
     je2 = await _satu(db, "cash_transaction", k2["id"])
     with pytest.raises(ValueError) as e:
-        await gl.reverse_entry(je2["id"], now_iso()[:10], "uji balik manual KB2", AKTOR_UJI)
+        await gl.reverse_entry(je2["id"], tanggal_buku(), "uji balik manual KB2", AKTOR_UJI)
     assert str(e.value) == (f"Jurnal {je2['number']} mencatat kas rekening BCA V yang saldonya sudah dipindah ke akun "
                             f"1-1100-01; balik lewat pembatalan dokumen kasnya, bukan pembalikan manual."), str(e.value)
     assert not (await db.journal_entries.find_one({"id": je2["id"]})).get("reversed_by_entry_id")

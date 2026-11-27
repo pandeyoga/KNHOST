@@ -23,6 +23,7 @@ import uuid
 import pytest
 
 from core_utils import now_iso
+from services.book_date import tanggal_buku
 from pembantu import AKTOR_UJI, pt_uji
 
 pytestmark = pytest.mark.anyio
@@ -372,13 +373,13 @@ async def test_KB1_1_U10_jurnal_manual_ke_subakun_ditolak(klien, db):
     h = SIMPAN["h_kanda"]
     for kode, nama in (("1-1100-01", "BCA KB1 Kanda"), ("1-1105", "Mandiri KB1 Kanda")):
         r = await klien.post("/api/gl/journal", headers=h, json={
-            "date": now_iso()[:10], "description": "Coba manual", "entity_id": KANDA,
+            "date": tanggal_buku(), "description": "Coba manual", "entity_id": KANDA,
             "lines": [{"account_code": kode, "debit": 50_000, "credit": 0},
                       {"account_code": "3-1000", "debit": 0, "credit": 50_000}]})
         assert (r.status_code, r.json().get("detail")) == (400, PESAN_MANUAL.format(kode=kode, nama=nama)), r.text
     # Akun kas lama (bukan akun rekening) tetap boleh dijurnal manual
     r = await klien.post("/api/gl/journal", headers=h, json={
-        "date": now_iso()[:10], "description": "Manual ke akun lama", "entity_id": KANDA,
+        "date": tanggal_buku(), "description": "Manual ke akun lama", "entity_id": KANDA,
         "lines": [{"account_code": "1-1100", "debit": 10_000, "credit": 0},
                   {"account_code": "3-1000", "debit": 0, "credit": 10_000}]})
     assert r.status_code in (200, 202), r.text
@@ -473,7 +474,7 @@ async def test_KB1_1_U16_akun_pemetaan_kas_dan_akun_berjurnal_ditolak(klien, db,
         "code": "1-1106", "name": "Bank Berjurnal Kanda", "type": "asset", "parent_code": "1-1000"})
     assert r.status_code == 200, r.text
     r = await klien.post("/api/gl/journal", headers=h, json={
-        "date": now_iso()[:10], "description": "Saldo lama 1-1106", "entity_id": KANDA,
+        "date": tanggal_buku(), "description": "Saldo lama 1-1106", "entity_id": KANDA,
         "lines": [{"account_code": "1-1106", "debit": 25_000, "credit": 0},
                   {"account_code": "3-1000", "debit": 0, "credit": 25_000}]})
     assert r.status_code == 200, r.text   # jurnal manual sebelum akun ditautkan ke rekening: boleh
@@ -526,7 +527,7 @@ async def test_KB1_1_U17_pembalikan_manual_jurnal_akun_rekening_ditolak(klien, d
     kas = await db.cash_transactions.find_one({"entity_id": KANDA, "description": "Sewa Kanda"}, {"_id": 0})
     je = await _jurnal_sumber(db, "cash_transaction", kas["id"])
     r = await klien.post(f"/api/gl/journal/{je['id']}/reverse", headers=h,
-                         json={"date": now_iso()[:10], "reason": "uji balik manual"})
+                         json={"date": tanggal_buku(), "reason": "uji balik manual"})
     assert (r.status_code, r.json().get("detail")) == (400, (
         f"Jurnal {je['number']} menyentuh akun 1-1100-01, akun rekening BCA KB1 Kanda; balik lewat pembatalan "
         f"dokumen kasnya, bukan pembalikan manual.")), r.text
@@ -540,7 +541,7 @@ async def test_KB1_1_U17_pembalikan_manual_jurnal_akun_rekening_ditolak(klien, d
     lama_kas = await db.cash_transactions.find_one({"entity_id": KSC, "description": "Sewa gudang KB1"}, {"_id": 0})
     je_lama = await _jurnal_sumber(db, "cash_transaction", lama_kas["id"])
     r = await klien.post(f"/api/gl/journal/{je_lama['id']}/reverse", headers=lama["h"],
-                         json={"date": now_iso()[:10], "reason": "uji balik manual lama"})
+                         json={"date": tanggal_buku(), "reason": "uji balik manual lama"})
     assert r.status_code == 200, r.text
 
 
