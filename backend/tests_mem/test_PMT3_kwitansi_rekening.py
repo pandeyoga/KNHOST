@@ -69,6 +69,20 @@ async def _rekening(klien, h, **isi) -> str:
     return r.json()["id"]
 
 
+@pytest.fixture(scope="module", autouse=True)
+async def _f1_mati(aplikasi):
+    """F1 (kwitansi otomatis dari mutasi, `bank.kwitansi_otomatis_mutasi`) dimatikan untuk modul ini: uji PM-T3 menilai
+    pencocokan kode bayar jalur lama (cocokkan otomatis, kandidat, cocok manual) atas mutasi yang diimpor lewat rute
+    `/import` — dengan F1 menyala, mesin F1 sudah menautkan / membuat kwitansi saat impor (diuji `test_F1_*`)."""
+    from services import config_resolver as resolver
+    kunci = "bank.kwitansi_otomatis_mutasi"
+    for ent in (KSC, KANDA):
+        await resolver.set_value(kunci, False, scope_type="entity", scope_id=ent, actor="uji", reason="uji PM-T3")
+    yield
+    for ent in (KSC, KANDA):
+        await resolver.clear_layer(kunci, scope_type="entity", scope_id=ent, actor="uji", reason="pulihkan uji PM-T3")
+
+
 @pytest.fixture(scope="module")
 async def siap(klien, db, kepala_admin, sesi):
     h_kanda = await sesi("admin@kainnusantara.id", entitas=KANDA)

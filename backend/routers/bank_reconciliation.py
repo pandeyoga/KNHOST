@@ -7,6 +7,12 @@ gabung N:1, aturan hasil pembelajaran, dan **titipan dana belum teridentifikasi*
 RBAC: memakai modul izin `cash` yang SUDAH ADA (tidak menambah modul izin baru).
   * `cash:view`   → melihat mutasi, skor, usulan, ringkasan, aturan
   * `cash:create` → impor, cocokkan, titipkan, alokasikan titipan, memutus aturan
+  * F1 — kwitansi dari mutasi: `cash:create` + `ar_receipt:create` (+ `payment_report:decide` bila menerima laporan
+    bayar bersama mutasi); batal kwitansi mutasi: `ar_receipt:void` + `cash:create`.
+
+F1 (kwitansi otomatis dari mutasi bank) — impor (`/import`, `/import-file`) dan "Cocokkan otomatis" menjalankan mesin
+`bank_auto_receipt_service` sesudah jalur lama; responsnya bertambah `kwitansi_otomatis`, `kartu`, `nilai_otomatis`.
+Galat mesin tidak menggagalkan impor/pencocokan (dicatat, jumlah 0).
 
 ISOLASI ENTITAS: setiap endpoint menghitung `entity_ids` lewat `resolve_scope_ids(ctx)`
 lalu meneruskannya ke service. Akun/baris/transaksi milik PT lain → **403**, termasuk bila
@@ -14,6 +20,7 @@ id-nya dikirim eksplisit. Sebelum FASE G-8 celah ini terbuka (lihat POC G-8 bukt
 
 Respons OBJEK/ARRAY telanjang (konsisten dgn `bank.py`).
 """
+import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -21,9 +28,12 @@ from pydantic import BaseModel, Field
 
 from dependencies import audit, require_permission
 from entity_scope import EntityContext, entity_ctx, resolve_scope_ids
+from routers.ar_receipts import ReceiptPayload
+from services import bank_auto_receipt_service as f1
 from services import bank_recon_service as svc
 
 router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 def _ids(ctx: EntityContext, entity_id: Optional[str] = None) -> List[str]:
@@ -120,6 +130,16 @@ class RuleDecisionInput(BaseModel):
     action: str = "activate"      # activate | reject | suspend
 
 
+class LineReceiptInput(ReceiptPayload):
+    """F1 §5.5 — isian form "Terima pembayaran" + laporan bayar yang diterima BERSAMA mutasi ini (opsional). Rekening,
+    tanggal, nominal kas, PT, dan sumber kwitansi diisi server dari baris mutasi."""
+    payment_report_id: str = Field("", max_length=80)
+
+
+class LineReceiptVoidInput(BaseModel):
+    reason: Optional[str] = Field("", max_length=500)   # panjang minimum diperiksa layanan (400 berkalimat)
+
+
 class FormatInput(BaseModel):
     id: Optional[str] = ""
     name: str = ""
@@ -136,6 +156,23 @@ class FormatInput(BaseModel):
     header_signature: List[str] = Field(default_factory=list)
     note: Optional[str] = ""
     active: Optional[bool] = True
+
+
+#: F1 — jumlah respons impor / "Cocokkan otomatis" bila mesin gagal atau tidak ada baris (galat tidak menggagalkan).
+F1_KOSONG = {"kwitansi_otomatis": 0, "kartu": 0, "nilai_otomatis": 0.0}
+
+
+def _f1_jumlah(out: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: out.get(k, v) for k, v in F1_KOSONG.items()}
+
+
+async def _f1_impor(import_batch: str, pemicu: str) -> Dict[str, Any]:
+    """F1 §5.1 — baris baru batch impor diproses mesin kwitansi otomatis. Galat → dicatat, jumlah 0."""
+    try:
+        return _f1_jumlah(await f1.proses_impor(import_batch, pemicu))
+    except Exception as exc:  # noqa: BLE001 — impor sudah sah; mesin F1 tidak boleh menggagalkannya
+        logger.exception("[F1] mesin kwitansi otomatis gagal untuk impor %s: %s", import_batch, exc)
+        return dict(F1_KOSONG)
 
 
 def _bad(e: Exception):
@@ -206,8 +243,10 @@ async def import_statement(payload: StatementImportInput, request: Request,
                                      _actor_name(actor), _ids(ctx), ctx.active_entity_id, source="tempel")
     except Exception as e:  # noqa: BLE001
         _bad(e)
+    res.update(await _f1_impor(res.get("import_batch", ""), _actor_name(actor)))
     await audit(_actor_name(actor), "bank_statement_imported", "bank_account",
-                payload.bank_account_id, {"imported": res["imported"], "skipped": res["skipped"]})
+                payload.bank_account_id, {"imported": res["imported"], "skipped": res["skipped"],
+                                          **_f1_jumlah(res)})
     return res
 
 
@@ -223,11 +262,12 @@ async def import_file(payload: RawImportInput, request: Request,
                                    file_b64=payload.file_b64 or "")
     except Exception as e:  # noqa: BLE001
         _bad(e)
+    res.update(await _f1_impor(res.get("import_batch", ""), _actor_name(actor)))
     await audit(_actor_name(actor), "bank_statement_imported_file", "bank_account",
                 payload.bank_account_id,
                 {"imported": res["imported"], "skipped": res["skipped"],
                  "format": res.get("format_name", ""), "file_kind": (res.get("source") or {}).get("file_kind", ""),
-                 "file_name": payload.file_name or ""})
+                 "file_name": payload.file_name or "", **_f1_jumlah(res)})
     return res
 
 
@@ -241,6 +281,19 @@ async def auto_match(payload: AutoMatchInput, request: Request,
                                    payload.amount_tol, _actor_name(actor), ctx.active_entity_id)
     except Exception as e:  # noqa: BLE001
         _bad(e)
+    # F1 §5.1 — sesudah pencocokan lama: baris berkode yang belum pernah diproses / berstatus kartu dinilai (ulang).
+    try:
+        out = await f1.proses_rekening(payload.bank_account_id, _ids(ctx),
+                                       f"Cocokkan otomatis oleh {_actor_name(actor)}")
+    except Exception as exc:  # noqa: BLE001 — pencocokan lama sudah sah; mesin F1 tidak boleh menggagalkannya
+        logger.exception("[F1] mesin kwitansi otomatis gagal untuk rekening %s: %s", payload.bank_account_id, exc)
+        out = {}
+    res.update(_f1_jumlah(out))
+    otomatis = [r for r in out.get("rincian") or [] if r.get("hasil") == "otomatis"]
+    if otomatis and isinstance(res.get("unmatched_lines"), int):   # sisa sesudah mesin F1 (jalur A memakai kas lama)
+        res["unmatched_lines"] = max(0, res["unmatched_lines"] - len(otomatis))
+        res["unmatched_txns"] = max(0, int(res.get("unmatched_txns") or 0)
+                                    - sum(1 for r in otomatis if r.get("jalur") == "A"))
     await audit(_actor_name(actor), "bank_auto_matched", "bank_account",
                 payload.bank_account_id, res)
     return res
@@ -331,6 +384,75 @@ async def unmatch_line(line_id: str, request: Request,
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(_actor_name(actor), "bank_line_unmatched", "bank_statement_line", line_id, {})
+    return res
+
+
+async def _perm_kwitansi_mutasi(request: Request) -> Dict[str, Any]:
+    # Izin sebagai DEPENDENCY (pola T-10 `POST /ar-receipts`): pemanggil tak berwenang menerima 403, bukan 422.
+    await require_permission(request, "cash", "create")
+    return await require_permission(request, "ar_receipt", "create")
+
+
+async def _perm_batal_kwitansi_mutasi(request: Request) -> Dict[str, Any]:
+    await require_permission(request, "ar_receipt", "void")
+    return await require_permission(request, "cash", "create")
+
+
+@router.post("/bank-reconciliation/lines/{line_id}/receipt")
+async def receipt_from_line(line_id: str, payload: LineReceiptInput, request: Request,
+                            ctx: EntityContext = Depends(entity_ctx),
+                            actor: Dict[str, Any] = Depends(_perm_kwitansi_mutasi)) -> Dict[str, Any]:
+    """F1 §5.5 — "Kwitansi dari mutasi" dalam SATU permintaan: klaim baris → kwitansi (atau Terima laporan bayar
+    bersama mutasi) → tautan. Tautan gagal → kwitansi dibatalkan + 409 (tidak ada kwitansi tanpa tautan)."""
+    body = payload.model_dump()
+    if body.get("payment_report_id"):   # menerima laporan bayar = putusan Lapor Bayar (aturan yang ada)
+        await require_permission(request, "payment_report", "decide")
+    try:
+        res = await f1.kwitansi_dari_mutasi(line_id, body, actor, _ids(ctx))
+    except Exception as e:  # noqa: BLE001
+        _bad(e)
+    rc = res["receipt"]
+    await audit(_actor_name(actor), "bank_line_receipt_created", "bank_statement_line", line_id, {
+        "receipt_id": rc.get("id", ""), "receipt_number": rc.get("number", ""), "amount": rc.get("amount", 0),
+        "order_ids": [a.get("order_id") for a in rc.get("allocations") or [] if a.get("order_id")],
+        "payment_report_id": body.get("payment_report_id") or "", "released_order_ids": res["released_order_ids"]},
+        scope_entity_id=rc.get("entity_id") or "")
+    if body.get("payment_report_id"):   # jejak laporan sama dengan `POST /payment-reports/{id}/terima`
+        oid = next((a.get("order_id") for a in rc.get("allocations") or [] if a.get("order_id")), "")
+        await audit(_actor_name(actor), "payment_report_accepted", "payment_report", body["payment_report_id"], {
+            "number": rc.get("payment_report_number", ""), "order_id": oid, "amount": rc.get("amount", 0),
+            "receipt_number": rc.get("number", ""), "released": oid in res["released_order_ids"],
+            "source": f1.SUMBER, "bank_line_id": line_id}, scope_entity_id=rc.get("entity_id") or "")
+    # Sama dengan `POST /ar-receipts`: kirim WhatsApp kwitansi bila ada aturan aktif (efek samping, tidak menggagalkan).
+    try:
+        from services import delivery_service as _ds
+        await _ds.dispatch_event("ar_receipt", rc.get("id", ""), "created", rc.get("entity_id") or None,
+                                 _actor_name(actor))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[F1] kirim kwitansi %s gagal diabaikan: %s", rc.get("number"), exc)
+    return res
+
+
+@router.post("/bank-reconciliation/lines/{line_id}/void-receipt")
+async def void_line_receipt(line_id: str, payload: LineReceiptVoidInput, request: Request,
+                            ctx: EntityContext = Depends(entity_ctx),
+                            actor: Dict[str, Any] = Depends(_perm_batal_kwitansi_mutasi)) -> Dict[str, Any]:
+    """F1 §5.6 — "Batalkan kwitansi dari mutasi": lepas tautan + batal kwitansi dalam SATU permintaan; baris tidak
+    diproses mesin lagi. Pesanan yang sudah dilepas ke gudang hanya diperingatkan (`peringatan`)."""
+    try:
+        res = await f1.batal_kwitansi_mutasi(line_id, payload.reason or "", actor, _ids(ctx))
+    except Exception as e:  # noqa: BLE001
+        _bad(e)
+    rc = res["receipt"]
+    alasan = (payload.reason or "").strip()
+    await audit(_actor_name(actor), "bank_line_receipt_voided", "bank_statement_line", line_id, {
+        "receipt_id": rc.get("id", ""), "receipt_number": rc.get("number", ""), "amount": rc.get("amount", 0),
+        "reason": alasan, "order_ids": res["order_ids"], "order_released": res["order_released"]},
+        scope_entity_id=rc.get("entity_id") or "")
+    # Jejak kwitansi sama dengan `POST /ar-receipts/{id}/void`.
+    await audit(_actor_name(actor), "ar_receipt_voided", "ar_receipt", rc.get("id", ""), {
+        "reason": alasan, "number": rc.get("number", ""), "amount": rc.get("amount", 0), "bank_line_id": line_id},
+        scope_entity_id=rc.get("entity_id") or "")
     return res
 
 

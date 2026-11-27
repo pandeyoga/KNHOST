@@ -74,6 +74,7 @@ def test_PMT3_U17_dua_auto_match_bersamaan_satu_tautan(siap):
             "bank_account_id": ACC, "lines": [{"stmt_date": NOW[:10], "amount": 1_500_000, "direction": "in",
                                                "description": f"TRSF {KODE} TOKO UJI", "external_id": f"ext_{TAG}"}]})
         assert r.status_code == 200 and r.json()["imported"] == 1, r.text
+        impor = r.json()
         ln = DB.bank_statement_lines.find_one({"bank_account_id": ACC, "external_id": f"ext_{TAG}"})
         assert [x["code"] for x in ln.get("pay_code_hits") or []] == [KODE]
 
@@ -83,7 +84,11 @@ def test_PMT3_U17_dua_auto_match_bersamaan_satu_tautan(siap):
         with ThreadPoolExecutor(2) as ex:
             hasil = [f.result() for f in [ex.submit(cocok), ex.submit(cocok)]]
         assert any(x.status_code == 200 for x in hasil), [x.text for x in hasil]
-        assert sum(x.json().get("matched", 0) for x in hasil if x.status_code == 200) == 1, [x.text for x in hasil]
+        # F1 (kwitansi otomatis dari mutasi): mutasi berkode yang sama persis dengan kwitansi terbuka bisa sudah
+        # ditautkan mesin saat impor (jalur A, `kwitansi_otomatis`). Tetap SATU tautan — dari impor atau salah satu
+        # "Cocokkan otomatis".
+        assert sum(x.json().get("matched", 0) for x in hasil if x.status_code == 200) \
+            + int(impor.get("kwitansi_otomatis") or 0) == 1, ([x.text for x in hasil], impor)
         ln = DB.bank_statement_lines.find_one({"id": ln["id"]})
         assert ln["status"] == "matched" and [a["txn_id"] for a in ln["allocations"]] == [kas["id"]]
         kas = DB.cash_transactions.find_one({"id": kas["id"]})

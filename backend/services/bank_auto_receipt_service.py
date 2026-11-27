@@ -1,9 +1,10 @@
-"""F1 — kwitansi otomatis dari mutasi bank: fondasi (konstanta, waktu aktif, pembaca pengaturan), penilai baris, dan
-pelaksana (jalur A/B/C, proses impor & rekening, pemberitahuan).
+"""F1 — kwitansi otomatis dari mutasi bank: fondasi (konstanta, waktu aktif, pembaca pengaturan), penilai baris,
+pelaksana (jalur A/B/C, proses impor & rekening, pemberitahuan), dan operasi manual (kwitansi dari mutasi, batal
+kwitansi mutasi).
 
-Rancangan `docs/superpowers/specs/2026-11-27-kwitansi-otomatis-mutasi-design.md` §5.1–§5.4, §5.7, §5.8. Uang tetap lewat
-pintu yang ada: kwitansi `ar_receipt_service.create_receipt` / `payment_report_service.terima`, tautan mutasi
-`bank_recon_service._link` (tidak ada posting jurnal baru).
+Rancangan `docs/superpowers/specs/2026-11-27-kwitansi-otomatis-mutasi-design.md` §5.1–§5.8. Uang tetap lewat pintu yang
+ada: kwitansi `ar_receipt_service.create_receipt` / `payment_report_service.terima`, tautan mutasi
+`bank_recon_service._link`/`_unlink`, batal `ar_receipt_service.void_receipt` (tidak ada posting jurnal baru).
 
 PENILAI (`nilai_baris`, tanpa tulisan apa pun)
 ==============================================
@@ -40,8 +41,19 @@ Kunci diserahkan ke `_link(..., op=kunci)`; sesudah tautan kwitansi terverifikas
 `_link` yang ada). Tidak ganda: indeks unik `uq_bank_line_receipt` (`DuplicateKeyError` → kwitansi pemenang ditautkan) +
 pemulihan (kwitansi ber-`bank_line_id` sudah ada tetapi baris belum tertaut → hanya tautkan). Galat tak terduga →
 kartu `galat` berkalimat; kwitansi setengah jadi dicabut rollback `create_receipt`; batch berlanjut ke baris berikutnya.
-Penanda baris `f1 = {status otomatis|kartu|dibatalkan, jalur, alasan_kode, alasan, dinilai_at, receipt_id, order_id,
-report_id, pernah_otomatis, dilepas_at}`; `pernah_otomatis` tidak pernah dihapus (`_unlink` mengisi `dilepas_at`).
+Penanda baris `f1 = {status otomatis|kartu|manual|dibatalkan, jalur, alasan_kode, alasan, dinilai_at, receipt_id,
+order_id, report_id, pernah_otomatis, dilepas_at}`; `pernah_otomatis` tidak pernah dihapus (`_unlink` mengisi
+`dilepas_at`). Penanda yang menutup baris dari mesin (`pernah_otomatis`, `dibatalkan`, `manual`) tidak pernah ditimpa
+kartu dan dicek ulang di bawah kunci sebelum pemulihan (R7-M2).
+
+OPERASI MANUAL (`kwitansi_dari_mutasi`, `batal_kwitansi_mutasi`; rute Rekonsiliasi Bank)
+=========================================================================================
+* **Kwitansi dari mutasi** (§5.5) — klaim baris (kunci yang sama) → kwitansi berisian form (rekening, tanggal, nominal
+  kas, PT, sumber dari mutasi; pelaku = pengguna, B3 normal) atau Terima laporan bayar bersama mutasi → tautan. Tautan
+  gagal → kwitansi itu dibatalkan (alasan "tautan mutasi gagal") + 409: tidak ada kwitansi tanpa tautan. Penanda
+  `f1.status = manual`.
+* **Batal kwitansi mutasi** (§5.6) — hanya kwitansi yang lahir dari baris itu: lepas → batal (ditolak → tautan dipasang
+  kembali) → `f1.status = dibatalkan`; pesanan yang sudah dilepas ke gudang hanya diperingatkan.
 """
 from __future__ import annotations
 
@@ -51,7 +63,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 
-from core_utils import new_id, now_iso, qty_num_id, rupiah
+from core_utils import new_id, now_iso, qty_num_id, rupiah, safe_doc
 from db import db
 from services import bank_recon_service as brs
 
@@ -263,6 +275,26 @@ async def _bila_menyala(jalur: str, entity_id: str, nomor: str, rincian: str, **
     return _hasil(jalur, KODE_COCOK, f"Cocok sempurna dengan {nomor} — {rincian}", **isi)
 
 
+#: `f1.status` baris yang kwitansinya dicatat MANUSIA lewat "kwitansi dari mutasi" (`kwitansi_dari_mutasi`).
+STATUS_MANUAL = "manual"
+#: `f1.status` yang membuat baris tidak pernah diproses mesin lagi (selain `f1.pernah_otomatis`): kwitansinya dibatalkan
+#: lewat "Batalkan kwitansi dari mutasi", atau dicatat manusia dari mutasi itu (pelepasan oleh manusia dihormati).
+STATUS_TERKUNCI = ("dibatalkan", STATUS_MANUAL)
+
+
+def _lewati_penanda(line: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Penanda `f1` yang menutup baris dari mesin → keputusan `lewati`, atau `None`. Dipakai penilai dan dicek ULANG di
+    bawah kunci sebelum pemulihan (R7-M2)."""
+    f1 = line.get("f1") or {}
+    if f1.get("pernah_otomatis"):
+        return _lewati("pernah_otomatis", "Mutasi ini pernah ditautkan otomatis — tidak diproses otomatis lagi")
+    if f1.get("status") == "dibatalkan":
+        return _lewati("dibatalkan", "Kwitansi otomatis mutasi ini pernah dibatalkan — tidak diproses otomatis lagi")
+    if f1.get("status") == STATUS_MANUAL:
+        return _lewati("dicatat_manual", "Kwitansi mutasi ini dicatat manual dari mutasi — tidak diproses otomatis")
+    return None
+
+
 async def nilai_baris(line: Dict[str, Any]) -> Dict[str, Any]:
     """Nilai satu baris mutasi bank TANPA menulis apa pun (rancangan §5.1–§5.2, R3). →
     `{keputusan: "A"|"B"|"C"|"kartu"|"lewati", alasan_kode, alasan, order, harapan, receipt, report}`."""
@@ -274,11 +306,9 @@ async def nilai_baris(line: Dict[str, Any]) -> Dict[str, Any]:
         return _lewati("bukan_masuk", "Mutasi keluar — bukan uang masuk pelanggan")
     if line.get("status") != "unmatched":
         return _lewati("bukan_unmatched", f"Mutasi berstatus {line.get('status') or '-'} — sudah ditangani")
-    f1 = line.get("f1") or {}
-    if f1.get("pernah_otomatis"):
-        return _lewati("pernah_otomatis", "Mutasi ini pernah ditautkan otomatis — tidak diproses otomatis lagi")
-    if f1.get("status") == "dibatalkan":
-        return _lewati("dibatalkan", "Kwitansi otomatis mutasi ini pernah dibatalkan — tidak diproses otomatis lagi")
+    berpenanda = _lewati_penanda(line)
+    if berpenanda:
+        return berpenanda
     aktif = await aktif_sejak()
     if not aktif or str(line.get("created_at") or "") < aktif:
         return _lewati("sebelum_aktif", "Mutasi diimpor sebelum kwitansi otomatis aktif")
@@ -495,10 +525,15 @@ async def _lepas_kunci(line_id: str, op: str) -> None:
 
 async def _tulis_kartu(line_id: str, op: str, penanda: Dict[str, Any]) -> None:
     """Penanda kartu + lepas kunci: hanya baris yang masih `unmatched` dan kuncinya milik operasi ini (atau sudah
-    dicabut — `_link` mencabut kunci saat gagal)."""
-    await db.bank_statement_lines.update_one(
-        {"id": line_id, "status": "unmatched", "$or": [{"match_lock": op or "-"}, {"match_lock": {"$exists": False}}]},
+    dicabut — `_link` mencabut kunci saat gagal). R7-M2 — penanda yang menutup baris dari mesin (`f1.pernah_otomatis`,
+    `f1.status` ∈ `STATUS_TERKUNCI`) tidak pernah ditimpa; kunci milik operasi ini tetap dilepas."""
+    res = await db.bank_statement_lines.update_one(
+        {"id": line_id, "status": "unmatched", "f1.pernah_otomatis": {"$ne": True},
+         "f1.status": {"$nin": list(STATUS_TERKUNCI)},
+         "$or": [{"match_lock": op or "-"}, {"match_lock": {"$exists": False}}]},
         {"$set": {"f1": penanda, "updated_at": now_iso()}, "$unset": {"match_lock": "", "match_lock_at": ""}})
+    if res.matched_count == 0 and op:
+        await _lepas_kunci(line_id, op)
 
 
 async def _kwitansi_baris(line_id: str) -> Optional[Dict[str, Any]]:
@@ -506,20 +541,26 @@ async def _kwitansi_baris(line_id: str) -> Optional[Dict[str, Any]]:
     return await db.ar_receipts.find_one({"bank_line_id": line_id, "status": "posted"}, {"_id": 0})
 
 
-async def _tautkan(line: Dict[str, Any], receipt: Dict[str, Any], op: str, match_type: str) -> None:
+async def _tautkan(line: Dict[str, Any], receipt: Dict[str, Any], op: str, match_type: str,
+                   pelaku: str = AKTOR_MUTASI["name"]) -> None:
     """Tautkan seluruh nominal mutasi ke kas kwitansi lewat `bank_recon_service._link` (kunci milik pemanggil)."""
     kas = receipt.get("cash_txn_id") or ""
     if not kas:
         raise ValueError(f"Kwitansi {receipt.get('number', '')} belum punya transaksi kas")
-    await brs._link(line, [{"txn_id": kas, "amount": brs._round(line.get("amount"))}], AKTOR_MUTASI["name"],
-                    match_type, "1:1", op=op)
+    await brs._link(line, [{"txn_id": kas, "amount": brs._round(line.get("amount"))}], pelaku, match_type, "1:1",
+                    op=op)
+
+
+def _belum_tuntas(nomor: str) -> _GagalTindak:
+    return _GagalTindak(f"Kwitansi {nomor} dari mutasi ini belum tuntas dibuat. Tunggu sebentar lalu tekan "
+                        "\"Cocokkan otomatis\" lagi.")
 
 
 async def _kwitansi_c(line: Dict[str, Any], h: Dict[str, Any]) -> Dict[str, Any]:
     """Jalur C (§5.3): kwitansi baru berisian mutasi lewat `create_receipt`. Alokasi = harapan, paling banyak nominal
     mutasi (alokasi tidak boleh melebihi dana); selisih pecahan < Rp 1 diputus aturan pembulatan selisih bayar.
     `DuplicateKeyError` (`uq_bank_line_receipt`: proses lain sudah melahirkan kwitansi baris ini) → kwitansi
-    pemenang."""
+    pemenang; pemenang yang belum tuntas (`effects_done: False`) tidak ditautkan (R7-M1, pola `_pulihkan`)."""
     from services import ar_receipt_service as ars
     order = h["order"]
     hits = line.get("pay_code_hits") or await brs.pay_code_hits(line)
@@ -539,18 +580,29 @@ async def _kwitansi_c(line: Dict[str, Any], h: Dict[str, Any]) -> Dict[str, Any]
         menang = await _kwitansi_baris(line["id"])
         if not menang:
             raise
+        if menang.get("effects_done") is False:
+            raise _belum_tuntas(menang.get("number", ""))
         logger.info("[F1] kwitansi baris %s sudah dibuat proses lain (%s) — hanya ditautkan", line["id"],
                     menang.get("number"))
         return menang
+
+
+def _sudah_dilepas(order: Optional[Dict[str, Any]]) -> bool:
+    """Pesanan sudah dilepas ke gudang: `confirmed` atau lebih jauh (bukan status sebelum gudang, bukan pesanan
+    mati)."""
+    from services import pay_hold_service as phs
+    from services.customer_service import DEAD_STATUSES
+    st = (order or {}).get("status")
+    return bool(order) and st not in phs.STATUS_SEBELUM_GUDANG and st not in DEAD_STATUSES
 
 
 async def _sesudah_tautan(line: Dict[str, Any], *, jalur: str, receipt: Dict[str, Any],
                           order: Optional[Dict[str, Any]], tertahan: bool, alasan: str, pemicu: str,
                           report: Optional[Dict[str, Any]] = None, kirim: bool = True) -> Dict[str, Any]:
     """Sesudah tautan berhasil: penanda `f1` otomatis, kirim kwitansi WhatsApp (kwitansi baru), jejak audit, notifikasi
-    sales (hanya pesanan yang tadinya tertahan bayar). Semua efek samping: galatnya dicatat, tidak mengubah hasil."""
+    sales (hanya pesanan yang tadinya tertahan bayar; jalur B tidak — `terima` sudah mengirim `lapor_bayar_diterima`,
+    R7-M5). Semua efek samping: galatnya dicatat, tidak mengubah hasil."""
     from services import pay_hold_service as phs
-    from services.customer_service import DEAD_STATUSES
     lid = line["id"]
     ent = line.get("entity_id") or ""
     report_id = (report or {}).get("id") or receipt.get("payment_report_id") or ""
@@ -561,8 +613,7 @@ async def _sesudah_tautan(line: Dict[str, Any], *, jalur: str, receipt: Dict[str
     except Exception as exc:  # noqa: BLE001 — tautan sudah sah
         logger.error("[F1] penanda otomatis baris %s gagal ditulis: %s", lid, exc)
     sesudah = await db.sales_orders.find_one({"id": order["id"]}, {"_id": 0}) if order else None
-    released = bool(tertahan and sesudah and sesudah.get("status") not in phs.STATUS_SEBELUM_GUDANG
-                    and sesudah.get("status") not in DEAD_STATUSES)
+    released = bool(tertahan and _sudah_dilepas(sesudah))
     if kirim:   # sama dengan `POST /ar-receipts`: kirim kwitansi WhatsApp bila ada aturan aktif
         try:
             from services import delivery_service as ds
@@ -583,7 +634,7 @@ async def _sesudah_tautan(line: Dict[str, Any], *, jalur: str, receipt: Dict[str
                 "auto": True, "source": SUMBER, "bank_line_id": lid}, scope_entity_id=ent)
     except Exception as exc:  # noqa: BLE001
         logger.warning("[F1] jejak audit baris %s gagal: %s", lid, exc)
-    if tertahan and sesudah:
+    if tertahan and sesudah and jalur != "B":   # R7-M5 — jalur B: sales sudah diberi tahu `lapor_bayar_diterima`
         try:
             from services import notification_service as ns
             keadaan = "dilepas" if released else ("tertahan" if phs.ditahan(sesudah) else "admin")
@@ -595,17 +646,35 @@ async def _sesudah_tautan(line: Dict[str, Any], *, jalur: str, receipt: Dict[str
                      released=released)
 
 
+async def _tuntaskan_laporan(receipt: Dict[str, Any], order: Optional[Dict[str, Any]], line: Dict[str, Any]) -> None:
+    """R7-M3 — kwitansi jalur B yang dipulihkan: Terima laporannya terhenti sesudah kwitansi tuntas (laporan tertinggal
+    `memproses`) → `payment_report_service.terima` dijalankan lagi; cabang pemulihannya memakai kwitansi itu dan menulis
+    laporan `diterima` (tanpa kwitansi kedua). Klaim laporan yang belum basi → `terima` menolak tanpa tulisan (proses
+    pemiliknya yang menuntaskan). Efek samping: galat dicatat, tautan tetap dipulihkan."""
+    rid = receipt.get("payment_report_id") or ""
+    if not rid or not order:
+        return
+    from services import payment_report_service as prs
+    rep = await db.payment_reports.find_one({"id": rid}, {"_id": 0})
+    if not rep or rep.get("status") != prs.MEMPROSES:
+        return
+    try:
+        await prs.terima(rep, order, dict(AKTOR_MUTASI), bank_line=line)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[F1] laporan %s belum bisa dituntaskan saat pemulihan: %s", rep.get("number"), _pesan(exc))
+
+
 async def _pulihkan(line: Dict[str, Any], receipt: Dict[str, Any], op: str, pemicu: str) -> Dict[str, Any]:
     """Pemulihan (§5.3): kwitansi baris ini sudah lahir (proses sebelumnya terputus sebelum tautan, atau kalah indeks
-    unik) → hanya tautkan; tidak ada kwitansi kedua."""
+    unik) → hanya tautkan; tidak ada kwitansi kedua. Kwitansi jalur B: laporannya dituntaskan lebih dulu (R7-M3)."""
     from services import pay_hold_service as phs
     nomor = receipt.get("number", "")
     if receipt.get("effects_done") is False:
-        raise _GagalTindak(f"Kwitansi {nomor} dari mutasi ini belum tuntas dibuat. Tunggu sebentar lalu tekan "
-                           "\"Cocokkan otomatis\" lagi.")
+        raise _belum_tuntas(nomor)
     oid = next((a.get("order_id") for a in receipt.get("allocations") or [] if a.get("order_id")), "")
     order = await db.sales_orders.find_one({"id": oid}, {"_id": 0}) if oid else None
     tertahan = phs.ditahan(order)
+    await _tuntaskan_laporan(receipt, order, line)
     try:
         await _tautkan(line, receipt, op, "auto_receipt")
     except Exception as exc:  # noqa: BLE001
@@ -633,6 +702,8 @@ async def _bertindak(line: Dict[str, Any], h: Dict[str, Any], op: str, pemicu: s
                 raise ValueError("kwitansi laporan tidak ditemukan sesudah diterima")
         else:
             receipt = await _kwitansi_c(line, h)
+    except _GagalTindak:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise _GagalTindak(_kalimat_galat(jalur, exc, (report or {}).get("number", ""))) from exc
     try:
@@ -658,7 +729,8 @@ async def _galat(line: Dict[str, Any], op: str, exc: BaseException, pemicu: str,
                 op = kunci
                 try:
                     fresh = await db.bank_statement_lines.find_one({"id": lid}, {"_id": 0}) or line
-                    return await _pulihkan(fresh, lama, op, pemicu)
+                    if not _lewati_penanda(fresh):   # R7-M2 — penanda dicek ulang sebelum pemulihan
+                        return await _pulihkan(fresh, lama, op, pemicu)
                 except Exception as err:  # noqa: BLE001
                     alasan = err.alasan if isinstance(err, _GagalTindak) else _kalimat_galat("", err)
     hits = line.get("pay_code_hits") or []
@@ -680,6 +752,10 @@ async def _proses(line_id: str, pemicu: str) -> Dict[str, Any]:
     pulihkan = True
     try:
         line = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or line
+        berpenanda = _lewati_penanda(line)   # R7-M2 — penanda yang terpasang sesudah penilaian awal, sebelum klaim
+        if berpenanda:
+            await _lepas_kunci(line_id, op)
+            return _keluaran(line_id, "lewati", kode=berpenanda["alasan_kode"], alasan=berpenanda["alasan"])
         lama = await _kwitansi_baris(line_id)
         if lama:
             pulihkan = False
@@ -760,3 +836,355 @@ async def proses_rekening(bank_account_id: str, entity_ids: Optional[List[str]],
     out = await _proses_daftar(lines, pemicu)
     out["rincian"] = [r for r in out["rincian"] if r["hasil"] != "lewati"]
     return out
+
+
+# ── Kwitansi dari mutasi (manual, atomik) & pembatalan (Tugas 4, §5.5–§5.6) ─────────────────────────────────────────
+PESAN_LAPORAN_TERTUNDA = "Putuskan dulu laporan bayar {nomor}: Terima bila buktinya mutasi ini, Tolak bila bukan."
+PESAN_BUKAN_DARI_MUTASI = ("Kwitansi ini tidak lahir dari mutasi — batalkan lewat Rekonsiliasi dan Kwitansi seperti "
+                           "biasa.")
+PESAN_NOMINAL = ("Nominal kwitansi {badan} berbeda dari nominal mutasi {mutasi}. Uang yang masuk adalah nominal "
+                 "mutasi; selisih dengan tagihan diputus lewat keputusan selisih.")
+PESAN_SUDAH_BERKWITANSI = ("Mutasi ini sudah punya kwitansi {nomor}. Cocokkan kwitansi itu di Rekonsiliasi Bank, atau "
+                           "batalkan dulu bila keliru.")
+PESAN_BUKAN_MASUK = "Hanya mutasi dana masuk yang bisa menjadi kwitansi pelanggan."
+PESAN_STATUS_BARIS = {"matched": "Mutasi ini sudah tertaut. Lepaskan dulu di Rekonsiliasi Bank.",
+                      "holding": "Mutasi ini berstatus titipan dana — batalkan titipannya dulu.",
+                      "ignored": "Mutasi ini diabaikan — batal abaikan dulu."}
+PESAN_PT_GRUP = "PT penerima mutasi ini belum jelas (tercatat di tingkat grup) — catat lewat titipan dana."
+PESAN_DIKLAIM = "Mutasi ini sedang diproses pencocokan lain. Tunggu sebentar lalu muat ulang."
+PESAN_LAPORAN_NOMINAL = ("Nominal laporan bayar {nomor} {laporan} berbeda dari mutasi {mutasi} — Tolak laporan itu "
+                         "bila bukan pembayaran ini.")
+PESAN_LAPORAN_REKENING = ("Laporan bayar {nomor} ke rekening {laporan} ≠ rekening mutasi {mutasi} — Tolak laporan itu "
+                          "bila bukan pembayaran ini.")
+PESAN_LAPORAN_PT = "Laporan bayar {nomor} bukan milik PT mutasi ini."
+PESAN_LAPORAN_PESANAN = "Kwitansi dari laporan bayar {nomor} hanya untuk pesanan {pesanan} — alokasi mengikuti laporan."
+PESAN_LAPORAN_PELANGGAN = "Pelanggan berbeda dari laporan bayar {nomor}."
+PESAN_TAUTAN_GAGAL = ("Mutasi gagal ditautkan ke kwitansi {nomor}: {galat}. Kwitansi itu dibatalkan lagi (tidak ada "
+                      "kwitansi tanpa mutasi) — muat ulang lalu coba lagi.")
+PESAN_TAUTAN_BATAL_GAGAL = ("Mutasi gagal ditautkan ke kwitansi {nomor}: {galat}. Kwitansi itu juga gagal dibatalkan "
+                            "otomatis ({galat2}) — cocokkan kwitansi itu di Rekonsiliasi Bank atau batalkan "
+                            "kwitansinya.")
+#: Alasan sistem pembatalan kwitansi yang mutasinya gagal ditautkan (keputusan builder Tugas 4, Step 3).
+ALASAN_TAUTAN_GAGAL = "tautan mutasi gagal"
+ALASAN_BATAL_MIN = 5
+PESAN_ALASAN_BATAL = f"Alasan pembatalan wajib diisi (min. {ALASAN_BATAL_MIN} huruf)."
+PESAN_TANPA_KWITANSI = "Mutasi ini tidak tertaut ke kwitansi pelanggan — tidak ada yang dibatalkan."
+PESAN_TAUTAN_LAIN = ("Mutasi ini juga tertaut ke transaksi lain — lepaskan di Rekonsiliasi Bank, lalu batalkan "
+                     "kwitansinya seperti biasa.")
+PESAN_PERINGATAN_DILEPAS = ("Pesanan {nomor} sudah dilepas ke gudang ({status}); membatalkan kwitansi tidak menahan "
+                            "barang — tahan pesanan atau hubungi Gudang bila perlu.")
+PESAN_BATAL_TAUTAN_ULANG_GAGAL = ("Kwitansi {nomor} gagal dibatalkan ({galat}), dan mutasi gagal ditautkan kembali "
+                                  "({galat2}) — cocokkan ulang mutasi itu di Rekonsiliasi Bank.")
+#: `match_type` tautan kwitansi yang dicatat manusia dari mutasi — sama dengan pencocokan manual di Rekonsiliasi.
+MATCH_TYPE_MANUAL = "manual"
+#: Isian form "Terima pembayaran" yang diteruskan ke `create_receipt`; rekening, tanggal, nominal kas, PT, dan sumber
+#: diisi server dari baris mutasi.
+_ISIAN_FORM = ("customer_id", "method", "notes", "use_deposit_amount", "reference_no", "giro_due_date", "proof_url",
+               "mismatch_note", "allocations", "variance")
+_ULANG = {"X-Idempotency-Retry": "true"}   # keadaan sementara: kirim ulang kunci sama dijalankan lagi
+
+
+def _galat_409(detail: str, *, ulang: bool = False) -> HTTPException:
+    return HTTPException(status_code=409, detail=detail, headers=dict(_ULANG) if ulang else None)
+
+
+def _nama_pelaku(actor: Dict[str, Any]) -> str:
+    return str(actor.get("name") or actor.get("email") or "")
+
+
+async def _baris_berpagar(line_id: str, entity_ids: Optional[List[str]]) -> Dict[str, Any]:
+    """Baris mutasi dalam cakupan PT pengguna (`bank_recon_service._line`: PT lain → 403); tidak ada → 404."""
+    try:
+        return await brs._line(line_id, entity_ids)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+def _periksa_baris_masuk(line: Dict[str, Any]) -> None:
+    """Baris yang boleh menjadi kwitansi: dana masuk, `unmatched`, PT jelas. Tanpa tulisan; 409 berkalimat."""
+    if (line.get("direction") or "") != "in":
+        raise _galat_409(PESAN_BUKAN_MASUK)
+    st = line.get("status")
+    if st != "unmatched":
+        raise _galat_409(PESAN_STATUS_BARIS.get(st, f"Mutasi berstatus {st or '-'} — tidak bisa dicatat."))
+    ent = line.get("entity_id") or ""
+    if not ent or ent == brs.GROUP_ENTITY:
+        raise _galat_409(PESAN_PT_GRUP)
+
+
+async def _tolak_bila_berkwitansi(line_id: str) -> None:
+    lama = await _kwitansi_baris(line_id)
+    if lama:
+        raise _galat_409(PESAN_SUDAH_BERKWITANSI.format(nomor=lama.get("number", "")))
+
+
+async def _laporan_untuk_mutasi(report_id: str, line: Dict[str, Any], payload: Dict[str, Any],
+                                actor: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Laporan bayar yang diterima BERSAMA mutasi ini (§5.5): menunggu, PT sama, nominal sama (selisih < Rp 1), rekening
+    sama; isian form tidak boleh menunjuk pelanggan/pesanan lain (kwitansi mengikuti laporan). Tanpa tulisan.
+    → (laporan, pesanannya)."""
+    from services import payment_report_service as prs
+    from services import sales_ownership
+    rep = await db.payment_reports.find_one({"id": report_id}, {"_id": 0})
+    if not rep:
+        raise HTTPException(status_code=404, detail="Laporan bayar tidak ditemukan")
+    nomor = rep.get("number") or rep["id"]
+    order = await db.sales_orders.find_one({"id": rep.get("order_id") or ""}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order tidak ditemukan")
+    if (rep.get("entity_id") or order.get("entity_id") or "") != (line.get("entity_id") or ""):
+        raise _galat_409(PESAN_LAPORAN_PT.format(nomor=nomor))
+    sales_ownership.assert_may_open(order, actor)
+    if rep.get("status") != prs.MENUNGGU:
+        raise prs._galat_status(rep.get("status"))
+    uang = brs._round(line.get("amount"))
+    if abs(float(rep.get("amount") or 0) - uang) >= SELISIH_COCOK:
+        raise _galat_409(PESAN_LAPORAN_NOMINAL.format(nomor=nomor, laporan=_rp(rep.get("amount")), mutasi=_rp(uang)))
+    if (rep.get("account_id") or "") != (line.get("bank_account_id") or ""):
+        nama = await _nama_rekening(rep.get("account_id") or "", line.get("bank_account_id") or "")
+        raise _galat_409(PESAN_LAPORAN_REKENING.format(
+            nomor=nomor, laporan=nama.get(rep.get("account_id"), rep.get("account_name") or "-"),
+            mutasi=nama.get(line.get("bank_account_id"), "-")))
+    pelanggan = rep.get("customer_id") or order.get("customer_id") or ""
+    if payload.get("customer_id") and payload["customer_id"] != pelanggan:
+        raise HTTPException(status_code=400, detail=PESAN_LAPORAN_PELANGGAN.format(nomor=nomor))
+    if any(a.get("order_id") and a["order_id"] != order["id"] for a in payload.get("allocations") or []):
+        raise HTTPException(status_code=400, detail=PESAN_LAPORAN_PESANAN.format(
+            nomor=nomor, pesanan=order.get("number") or order["id"]))
+    return rep, order
+
+
+async def _isi_kwitansi_manual(line: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Isian `create_receipt` dari form + baris mutasi: kas = nominal MUTASI (tautan cent-tepat, INV-BNK-01), rekening &
+    tanggal & PT mutasi, sumber `mutasi_bank` + `bank_line_id` (indeks `uq_bank_line_receipt`). Referensi kosong →
+    referensi mutasi → kode bayar."""
+    hits = line.get("pay_code_hits") or await brs.pay_code_hits(line)
+    kode = (hits[0].get("code") or "") if len(hits) == 1 else ""
+    isi = {k: payload[k] for k in _ISIAN_FORM if payload.get(k) is not None}
+    isi.update({"amount": brs._round(line.get("amount")), "entity_id": line.get("entity_id") or "",
+                "account_id": line.get("bank_account_id") or "", "receipt_date": line.get("stmt_date") or "",
+                "method": str(payload.get("method") or "").strip() or "transfer",
+                "reference_no": (str(payload.get("reference_no") or "").strip() or (line.get("ref") or "").strip()
+                                 or kode),
+                "source": SUMBER, "bank_line_id": line["id"]})
+    if not str(isi.get("notes") or "").strip():
+        isi["notes"] = f"Kwitansi dari mutasi bank {await label_mutasi(line)}" + (f" · {kode}" if kode else "")
+    return isi
+
+
+async def _pesanan_tujuan(isi: Dict[str, Any]) -> List[str]:
+    """Pesanan yang akan menerima dana kwitansi ini — rencana YANG SAMA dengan `create_receipt` (alokasi eksplisit atau
+    tertua dulu) + tujuan keputusan selisih "alokasikan"."""
+    from services import ar_receipt_service as ars
+    dana = round(float(isi.get("amount") or 0) + float(isi.get("use_deposit_amount") or 0), 2)
+    ids = await ars._rencana_pesanan(isi.get("customer_id") or "", isi.get("entity_id") or "",
+                                     isi.get("allocations") or [], dana)
+    return list(dict.fromkeys(ids + ars._tujuan_keputusan_alokasi(isi)))
+
+
+async def _batalkan_tanpa_tautan(receipt: Dict[str, Any], actor: Dict[str, Any], line: Dict[str, Any],
+                                 exc: BaseException) -> HTTPException:
+    """Tautan gagal sesudah kwitansi lahir → kwitansi itu dibatalkan (`void_receipt`, alasan sistem) supaya tidak ada
+    kwitansi `posted` tanpa mutasinya. → 409 berkalimat untuk dilempar pemanggil."""
+    from services import ar_receipt_service as ars
+    nomor, galat = receipt.get("number", ""), _pesan(exc)
+    logger.error("[F1] tautan mutasi %s ke kwitansi %s gagal: %s — kwitansi dibatalkan", line["id"], nomor, galat)
+    try:
+        await ars.void_receipt(receipt["id"], actor, reason=ALASAN_TAUTAN_GAGAL)
+    except Exception as err:  # noqa: BLE001
+        logger.error("[F1] kwitansi %s gagal dibatalkan sesudah tautan gagal: %s", nomor, err)
+        return _galat_409(PESAN_TAUTAN_BATAL_GAGAL.format(nomor=nomor, galat=galat, galat2=_pesan(err)))
+    try:
+        from dependencies import audit
+        await audit(_nama_pelaku(actor), "ar_receipt_voided", "ar_receipt", receipt["id"], {
+            "reason": ALASAN_TAUTAN_GAGAL, "number": nomor, "amount": receipt.get("amount", 0),
+            "bank_line_id": line["id"], "galat": galat}, scope_entity_id=line.get("entity_id") or "")
+    except Exception as err:  # noqa: BLE001
+        logger.warning("[F1] jejak pembatalan kwitansi %s gagal: %s", nomor, err)
+    return _galat_409(PESAN_TAUTAN_GAGAL.format(nomor=nomor, galat=galat), ulang=True)
+
+
+async def kwitansi_dari_mutasi(line_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
+                               entity_ids: Optional[List[str]]) -> Dict[str, Any]:
+    """§5.5 — "Kwitansi dari mutasi" (manual, SATU permintaan): klaim baris (`match_lock` yang sama dengan `_link` dan
+    pelaksana F1) → kwitansi (`create_receipt` berisian form + mutasi; pelaku = pengguna, pagar B3 berlaku normal) atau,
+    bila `payment_report_id` disebut, `payment_report_service.terima(..., bank_line=baris)` → tautan (`_link` dengan
+    kunci yang sama). Tautan gagal sesudah kwitansi lahir → kwitansi itu dibatalkan, 409 (tidak ada kwitansi tanpa
+    tautan).
+
+    Pagar sebelum tulisan: baris masuk & `unmatched` & PT jelas; nominal form = nominal mutasi (selisih < Rp 1) kecuali
+    ada keputusan selisih (kas kwitansi tetap nominal mutasi); belum ada kwitansi hidup lahir dari baris ini; pesanan
+    tujuan tanpa laporan bayar `menunggu`/`memproses` (409 pemandu) kecuali laporan itu yang diterima bersama mutasi.
+    Izin (`cash.create` + `ar_receipt.create`, `payment_report.decide` untuk laporan) milik router.
+
+    → `{receipt, line, released_order_ids}`. Penanda baris `f1.status = "manual"` (mesin tidak memprosesnya lagi bila
+    tautannya dilepas)."""
+    from services import ar_receipt_service as ars
+    from services import pay_hold_service as phs
+    from services import payment_report_service as prs
+    line = await _baris_berpagar(line_id, entity_ids)
+    _periksa_baris_masuk(line)
+    uang = brs._round(line.get("amount"))
+    keputusan = payload.get("variance") if isinstance(payload.get("variance"), dict) else {}
+    badan = round(float(payload.get("amount") or 0), 2)
+    if not str(keputusan.get("kind") or "").strip() and abs(badan - uang) >= SELISIH_COCOK:
+        raise HTTPException(status_code=400, detail=PESAN_NOMINAL.format(badan=_rp(badan), mutasi=_rp(uang)))
+    report_id = str(payload.get("payment_report_id") or "").strip()
+    report, order_laporan = None, None
+    if report_id:
+        report, order_laporan = await _laporan_untuk_mutasi(report_id, line, payload, actor)
+    nama = _nama_pelaku(actor)
+
+    op = await _klaim(line_id)
+    if not op:   # baris berubah sejak dibaca (sudah tertaut / dititipkan) atau sedang dipegang proses lain
+        kini = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0, "status": 1}) or {}
+        if kini.get("status") in PESAN_STATUS_BARIS:
+            raise _galat_409(PESAN_STATUS_BARIS[kini["status"]])
+        raise _galat_409(PESAN_DIKLAIM, ulang=True)
+    try:   # di bawah kunci: keadaan dibaca ulang
+        line = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or line
+        await _tolak_bila_berkwitansi(line_id)
+        isi: Dict[str, Any] = {}
+        if report:
+            target = [order_laporan["id"]]
+        else:
+            isi = await _isi_kwitansi_manual(line, payload)
+            target = await _pesanan_tujuan(isi)
+            tertunda = await prs.laporan_tertunda(target)
+            if tertunda:
+                nomor = ", ".join(n for oid in target for n in tertunda.get(oid, []))
+                raise _galat_409(PESAN_LAPORAN_TERTUNDA.format(nomor=nomor), ulang=True)
+        sebelum = {o["id"]: o.get("status") async for o in db.sales_orders.find({"id": {"$in": target}},
+                                                                               {"_id": 0, "id": 1, "status": 1})}
+    except BaseException:
+        await _lepas_kunci(line_id, op)
+        raise
+
+    dilepas: List[str] = []
+    try:
+        if report:
+            out = await prs.terima(report, order_laporan, actor, bank_line=line)
+            receipt = await db.ar_receipts.find_one({"id": (out.get("report") or {}).get("receipt_id") or ""},
+                                                    {"_id": 0})
+            if not receipt:
+                raise ValueError("kwitansi laporan tidak ditemukan sesudah diterima")
+        else:
+            receipt = await ars.create_receipt(isi, actor)
+            dilepas = list(receipt.get("released_order_ids") or [])
+    except DuplicateKeyError as exc:   # `uq_bank_line_receipt`: kwitansi lain lahir dari baris ini (di luar kunci)
+        await _lepas_kunci(line_id, op)
+        lain = await _kwitansi_baris(line_id)
+        raise _galat_409(PESAN_SUDAH_BERKWITANSI.format(nomor=(lain or {}).get("number", ""))) from exc
+    except Exception:
+        tuntas = await _kwitansi_baris(line_id)
+        if not tuntas or tuntas.get("effects_done") is False:
+            await _lepas_kunci(line_id, op)   # kwitansi tidak lahir / dicabut rollback `create_receipt`
+            raise
+        receipt = tuntas   # galat sesudah kwitansi tuntas (langkah turunan): uangnya sah → tetap ditautkan
+
+    try:
+        await _tautkan(line, receipt, op, MATCH_TYPE_MANUAL, pelaku=nama)
+    except Exception as exc:  # noqa: BLE001
+        await _lepas_kunci(line_id, op)
+        raise await _batalkan_tanpa_tautan(receipt, actor, line, exc) from exc
+
+    f1_lama = line.get("f1") or {}
+    oid = next((a.get("order_id") for a in receipt.get("allocations") or [] if a.get("order_id")), "")
+    penanda = {**_penanda(STATUS_MANUAL, jalur=STATUS_MANUAL, alasan=f"Kwitansi {receipt.get('number', '')} dicatat "
+                                                                     f"{nama} dari mutasi ini",
+                          receipt_id=receipt["id"], order_id=oid, report_id=(report or {}).get("id", "")),
+               "pernah_otomatis": bool(f1_lama.get("pernah_otomatis"))}
+    try:
+        await db.bank_statement_lines.update_one({"id": line_id, "status": "matched"}, {"$set": {"f1": penanda}})
+    except Exception as exc:  # noqa: BLE001 — tautan sudah sah
+        logger.error("[F1] penanda manual baris %s gagal ditulis: %s", line_id, exc)
+    async for so in db.sales_orders.find({"id": {"$in": list(sebelum)}}, {"_id": 0}):
+        if sebelum.get(so["id"]) in phs.STATUS_SEBELUM_GUDANG and _sudah_dilepas(so):
+            dilepas.append(so["id"])   # dilepas kwitansinya, atau oleh tautan (dasar `terverifikasi`)
+    return {"receipt": safe_doc(await db.ar_receipts.find_one({"id": receipt["id"]}, {"_id": 0}) or receipt),
+            "line": safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or line),
+            "released_order_ids": list(dict.fromkeys(dilepas))}
+
+
+async def _tautkan_kembali(asli: Dict[str, Any], op: str, nama: str, nomor: str, exc: BaseException) -> HTTPException:
+    """Pembatalan kwitansi ditolak sesudah tautan dilepas → tautan semula dipasang lagi (`_link`, kunci milik pemanggil
+    bila ada), penanda `f1` & pencatat tautan dipulihkan. → galat asli; bila tautan ulang gagal → 409 berkalimat."""
+    lid = asli["id"]
+    try:
+        fresh = await db.bank_statement_lines.find_one({"id": lid}, {"_id": 0}) or asli
+        await brs._link(fresh, list(asli.get("allocations") or []), nama, asli.get("match_type") or MATCH_TYPE_MANUAL,
+                        asli.get("match_kind") or "1:1", op=op)
+        pulih = {"matched_by": asli.get("matched_by", ""), "matched_at": asli.get("matched_at", "")}
+        if "f1" in asli:
+            pulih["f1"] = asli["f1"]
+        await db.bank_statement_lines.update_one({"id": lid, "status": "matched"}, {"$set": pulih})
+    except Exception as err:  # noqa: BLE001
+        await _lepas_kunci(lid, op)
+        logger.error("[F1] mutasi %s gagal ditautkan kembali sesudah batal kwitansi %s ditolak: %s", lid, nomor, err)
+        return _galat_409(PESAN_BATAL_TAUTAN_ULANG_GAGAL.format(nomor=nomor, galat=_pesan(exc), galat2=_pesan(err)))
+    if isinstance(exc, HTTPException):
+        return exc
+    return HTTPException(status_code=409, detail=_pesan(exc))
+
+
+async def batal_kwitansi_mutasi(line_id: str, reason: str, actor: Dict[str, Any],
+                                entity_ids: Optional[List[str]]) -> Dict[str, Any]:
+    """§5.6 — "Batalkan kwitansi dari mutasi" (SATU permintaan): hanya baris yang tertaut ke kwitansi yang LAHIR dari
+    mutasi itu (`source = mutasi_bank`, `bank_line_id` = baris; otomatis jalur B/C atau dicatat dari mutasi). Lepas
+    tautan (`_unlink`) → klaim baris → `void_receipt` (aturan yang ada; ditolak → tautan dipasang kembali) → penanda
+    `f1.status = "dibatalkan"` (mesin tidak memproses baris ini lagi; `pernah_otomatis` dipertahankan). Pesanan yang
+    sudah dilepas ke gudang TIDAK ditahan ulang — hanya diperingatkan. Izin (`ar_receipt.void` + `cash.create`) milik
+    router.
+
+    → `{order_released, peringatan, receipt, line, order_ids}`."""
+    from services import ar_receipt_service as ars
+    from services.pdf_engine import status_label
+    alasan = str(reason or "").strip()
+    if len(alasan) < ALASAN_BATAL_MIN:
+        raise HTTPException(status_code=400, detail=PESAN_ALASAN_BATAL)
+    line = await _baris_berpagar(line_id, entity_ids)
+    if line.get("status") != "matched":
+        raise _galat_409(PESAN_TANPA_KWITANSI)
+    txn_ids = [a.get("txn_id") for a in line.get("allocations") or [] if a.get("txn_id")]
+    receipts = await db.ar_receipts.find({"cash_txn_id": {"$in": txn_ids}, "status": {"$ne": "void"}},
+                                         {"_id": 0}).to_list(20) if txn_ids else []
+    if not receipts:
+        raise _galat_409(PESAN_TANPA_KWITANSI)
+    if any(r.get("source") != SUMBER or r.get("bank_line_id") != line_id for r in receipts):
+        raise _galat_409(PESAN_BUKAN_DARI_MUTASI)
+    if len(set(txn_ids)) != 1 or len(receipts) != 1:
+        raise _galat_409(PESAN_TAUTAN_LAIN)
+    rc = receipts[0]
+    ent = rc.get("entity_id") or ""
+    if entity_ids is not None and ent and ent != brs.GROUP_ENTITY and ent not in entity_ids:
+        raise HTTPException(status_code=403, detail="Tidak berwenang atas kwitansi entitas ini")
+    nama, nomor = _nama_pelaku(actor), rc.get("number", "")
+
+    await brs._unlink(line, actor=nama)   # 409 bila baris baru saja dilepas/diubah proses lain
+    op = await _klaim(line_id)            # tahan baris selama kwitansi dibatalkan: pencocokan lain tidak menyela
+    try:
+        batal = await ars.void_receipt(rc["id"], actor, reason=alasan)
+    except Exception as exc:  # noqa: BLE001
+        raise await _tautkan_kembali(line, op, nama, nomor, exc) from exc
+
+    fresh = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or line
+    f1_lama = fresh.get("f1") or line.get("f1") or {}
+    sekarang = now_iso()
+    oids = [a.get("order_id") for a in rc.get("allocations") or [] if a.get("order_id")]
+    penanda = {**_penanda("dibatalkan", jalur=f1_lama.get("jalur", ""), kode="dibatalkan",
+                          alasan=f"Kwitansi {nomor} dibatalkan {nama}: {alasan}", receipt_id=rc["id"],
+                          order_id=oids[0] if oids else "", report_id=rc.get("payment_report_id") or ""),
+               "pernah_otomatis": bool(f1_lama.get("pernah_otomatis")),
+               "dilepas_at": f1_lama.get("dilepas_at") or sekarang, "dibatalkan_at": sekarang, "dibatalkan_by": nama}
+    await db.bank_statement_lines.update_one({"id": line_id}, {"$set": {"f1": penanda, "updated_at": sekarang}})
+    if op:
+        await _lepas_kunci(line_id, op)
+    pesanan = {o["id"]: o async for o in db.sales_orders.find({"id": {"$in": oids}}, {"_id": 0, "id": 1, "number": 1,
+                                                                                        "status": 1})}
+    dilepas = [pesanan[o] for o in dict.fromkeys(oids) if o in pesanan and _sudah_dilepas(pesanan[o])]
+    peringatan = " ".join(PESAN_PERINGATAN_DILEPAS.format(nomor=o.get("number") or o["id"],
+                                                          status=status_label(o.get("status")) or o.get("status"))
+                          for o in dilepas)
+    return {"order_released": bool(dilepas), "peringatan": peringatan, "receipt": safe_doc(batal),
+            "line": safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or fresh),
+            "order_ids": oids}
