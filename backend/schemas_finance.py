@@ -1,6 +1,6 @@
 """Finance schemas (EPIC7) — Kas & Bank (7B), dipisah agar schemas.py < 800 baris.
 Di-reexport oleh schemas.py."""
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -48,6 +48,23 @@ class BankAccountChangeDecision(BaseModel):
     """PM-T1 — putusan atas perubahan rekening yang menunggu orang kedua."""
     decision: str                                         # approve | reject
     note: str = ""
+
+
+class PindahSaldoSiapkan(BaseModel):
+    """Kas & Bank 1 (Tugas 3) — siapkan pindah saldo PT: akun bagan PT pilihan Finance per rekening
+    (`{id rekening: kode akun}`; "" = sub-akun buatan sistem; rekening yang tidak disebut = akun yang ada /
+    sub-akun)."""
+    pilihan_akun: Dict[str, str] = Field(default_factory=dict)
+
+
+class PindahSaldoSetujui(BaseModel):
+    """Sidik angka pratinjau yang dilihat penyetuju (beda dari hitung ulang server → 409 "Angka berubah, muat
+    ulang.")."""
+    sidik: str = ""
+
+
+class PindahSaldoTolak(BaseModel):
+    alasan: str = ""
 
 
 # ─── EPIC7-C: Chart of Accounts + General Ledger ─────────────────────────────

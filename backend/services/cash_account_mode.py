@@ -130,11 +130,12 @@ async def periksa_akun_pilihan(rekening: Dict[str, Any], kode: str) -> Dict[str,
     return akun
 
 
-async def _kode_berikutnya(entity_id: str, induk: str) -> str:
+async def _kode_berikutnya(entity_id: str, induk: str, lewati: frozenset = frozenset()) -> str:
     """`{induk}-{NN}` dengan NN dua digit terkecil yang belum dipakai di PT itu (akun global berkode sama ikut dihitung:
-    akun PT berkode sama akan menutupinya di bagan akun efektif)."""
+    akun PT berkode sama akan menutupinya di bagan akun efektif). `lewati` = kode yang dianggap sudah dipakai (perkiraan
+    kode beberapa sub-akun sekaligus di pratinjau pindah saldo, tanpa tulisan)."""
     pola = re.compile(rf"^{re.escape(induk)}-(\d{{2}})$")
-    dipakai = set()
+    dipakai = {int(m.group(1)) for m in (pola.match(k) for k in lewati) if m}
     async for a in db.gl_accounts.find({"code": {"$regex": pola.pattern},
                                         "entity_id": {"$in": [entity_id, None, ""]}}, {"_id": 0, "code": 1}):
         m = pola.match(a.get("code") or "")
@@ -145,6 +146,12 @@ async def _kode_berikutnya(entity_id: str, induk: str) -> str:
             return f"{induk}-{n:02d}"
     raise SubAkunError(f"Nomor sub-akun {induk} di {await _nama_pt(entity_id)} sudah habis (99). Pilih akun bagan "
                        f"PT yang sudah ada untuk rekening ini.")
+
+
+async def perkiraan_kode(rekening: Dict[str, Any], lewati: frozenset = frozenset()) -> str:
+    """Kode sub-akun yang AKAN dibuat `buat_subakun` untuk rekening tanpa akun — pratinjau pindah saldo, tanpa tulisan.
+    `lewati` = kode perkiraan rekening lain di pratinjau yang sama."""
+    return await _kode_berikutnya(rekening.get("entity_id") or "", induk_untuk(rekening), lewati)
 
 
 async def _kode_milik(entity_id: str, kode: str, akun_id: str) -> bool:

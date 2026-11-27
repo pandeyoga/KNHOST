@@ -291,6 +291,8 @@ SCOPED_COLLECTIONS = {
     "customer_credit_profiles", "credit_profile_requests",
     # CR-T3 — penolakan gerbang kredit (isi permintaan pesanan + potret eksposur satu PT).
     "credit_gate_rejections",
+    # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening: buku satu PT.
+    "cash_account_cutovers",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

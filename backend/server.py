@@ -380,6 +380,8 @@ from routers import return_disposition as _rdisp  # noqa: E402 — LN-093 / LN-0
 app.include_router(_rdisp.router)
 from routers import cash_holdings as _cash_holdings  # noqa: E402 — PM-T4 titipan tunai sales & setorannya
 app.include_router(_cash_holdings.router)
+from routers import cash_account_cutover as _cash_account_cutover  # noqa: E402 — Kas & Bank 1 pindah saldo per PT
+app.include_router(_cash_account_cutover.router)
 
 
 @app.get("/api/")

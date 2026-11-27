@@ -64,6 +64,8 @@ CANONICAL_COLLECTIONS = {
     "journal_proposals",
     # ── PM-T1 (blueprint) — master cara bayar + perubahan rekening yang menunggu orang kedua ──
     "payment_methods", "bank_account_changes",
+    # ── Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening (per PT) ──
+    "cash_account_cutovers",
     # ── AG-T1 (blueprint) — kartu tindakan Tanya KN (masa berlaku, gagal/kedaluwarsa) ──
     "ai_action_proposals",
     # ── AG-T4 (blueprint) — paket tutup buku Asisten Keuangan ──

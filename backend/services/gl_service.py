@@ -1281,17 +1281,91 @@ async def _reverse_once(je: Dict[str, Any], **kw: Any) -> Optional[Dict[str, Any
     return rev
 
 
+#: Kas & Bank 1 (Tugas 3, ketetapan R8b) — kas yang menumpang jurnal dokumen induk lewat RUJUKAN, bukan id jurnal:
+#: `parent_journal = "{jenis}:{rujukan}"` (kas kembar antar-PT `interco_money_service.twin_cash`, refund retur per roll
+#: yang jurnalnya terbit sesudah kas, kas perolehan aset sebelum jurnalnya tertaut). Jurnal induknya = jurnal PT kas itu
+#: ber-`source_type` ∈ jenis di bawah (bawaan: jenis itu sendiri) dan `source_id` = rujukan, atau rujukan + sisi jurnal
+#: kembar (`twin_journal.post_twin` / `interco_money_service.twin_je`: `{rujukan}:payer`, `{rujukan}:disburse:a`,
+#: `{rujukan}:settle:b`, … — bagian terakhir ∈ `_SISI_KEMBAR`).
+_JENIS_INDUK_RUJUKAN: Dict[str, Tuple[str, ...]] = {
+    "fixed_asset_transfer": ("fixed_asset_transfer_settlement",),   # pelunasan pindah aset: `{aset}:settle:a|b`
+}
+_SISI_KEMBAR = ("a", "b", "payer", "payee")
+
+
+def _rujukan_kas(parent: Any) -> Optional[Tuple[Tuple[str, ...], str]]:
+    """`parent_journal` berbentuk rujukan → (jenis jurnal induk, rujukan); id jurnal / kosong → None."""
+    jenis, sep, rujukan = str(parent or "").partition(":")
+    if not sep or not jenis or not rujukan:
+        return None
+    return _JENIS_INDUK_RUJUKAN.get(jenis, (jenis,)), rujukan
+
+
+def _rujukan_jurnal(je: Dict[str, Any]) -> List[str]:
+    """Kebalikan `_rujukan_kas`: semua nilai `parent_journal` kas yang menumpang jurnal `je` lewat rujukan."""
+    st, sid = je.get("source_type") or "", je.get("source_id") or ""
+    if not st or not sid:
+        return []
+    jenis = [j for j in sorted({st, *_JENIS_INDUK_RUJUKAN}) if st in _JENIS_INDUK_RUJUKAN.get(j, (j,))]
+    bagian = sid.split(":")
+    awalan = [sid] + ([":".join(bagian[:i]) for i in range(1, len(bagian))] if bagian[-1] in _SISI_KEMBAR else [])
+    return [f"{j}:{a}" for j in jenis for a in awalan]
+
+
 async def kas_jurnal(je: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Dokumen kas yang dijurnal `je`: kas sumber jurnal `cash_transaction` (id kas = `source_id`), atau kas yang
-    menumpang jurnal induk (`journal_entry_id` / `parent_journal` = id jurnal — refund retur, gaji jalur lama, aset).
-    Kas berstatus apa pun (pembalik dipanggil saat kasnya sedang dibatalkan)."""
+    menumpang jurnal induk (`journal_entry_id` / `parent_journal` = id jurnal — refund retur, gaji jalur lama, aset;
+    Tugas 3: juga lewat rujukan `parent_journal = "{jenis}:{rujukan}"` di PT jurnal itu — kas kembar antar-PT, refund
+    per roll). Kas berstatus apa pun (pembalik dipanggil saat kasnya sedang dibatalkan)."""
     if je.get("source_type") == "cash_transaction":
         t = await db.cash_transactions.find_one({"id": je.get("source_id") or "__none__"}, {"_id": 0})
         return [t] if t else []
     if not je.get("id"):
         return []
-    return await db.cash_transactions.find({"$or": [{"journal_entry_id": je["id"]}, {"parent_journal": je["id"]}]},
-                                           {"_id": 0}).to_list(50)
+    kas = await db.cash_transactions.find({"$or": [{"journal_entry_id": je["id"]}, {"parent_journal": je["id"]}]},
+                                          {"_id": 0}).to_list(50)
+    rujukan = _rujukan_jurnal(je)
+    if rujukan:
+        ada = {t.get("id") for t in kas}
+        kas += [t for t in await db.cash_transactions.find(
+            {"parent_journal": {"$in": rujukan}, "entity_id": je.get("entity_id") or "__none__"},
+            {"_id": 0}).to_list(50) if t.get("id") not in ada]
+    return kas
+
+
+async def jurnal_induk_kas(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Jurnal dokumen induk (tidak-void) yang ditumpangi kas `txn` (`gl_posted`): `journal_entry_id` / `parent_journal`
+    = id jurnal, atau rujukan `parent_journal = "{jenis}:{rujukan}"` (`_rujukan_kas`). Tidak ada → None (jurnal
+    induknya belum terbit — "tertunda" bagi pindah saldo Tugas 3)."""
+    for jid in (txn.get("journal_entry_id"), txn.get("parent_journal")):
+        if jid:
+            je = await db.journal_entries.find_one({"id": jid, "status": {"$ne": "void"}}, {"_id": 0})
+            if je:
+                return je
+    ruj = _rujukan_kas(txn.get("parent_journal"))
+    if not ruj:
+        return None
+    jenis, rujukan = ruj
+    sisi = "^" + re.escape(rujukan) + ":([^:]+:)*(" + "|".join(_SISI_KEMBAR) + ")$"
+    return await db.journal_entries.find_one(
+        {"entity_id": txn.get("entity_id") or "__none__", "source_type": {"$in": list(jenis)},
+         "status": {"$ne": "void"}, "$or": [{"source_id": rujukan}, {"source_id": {"$regex": sisi}}]}, {"_id": 0})
+
+
+def pasang_baris_kas(lines: List[Dict[str, Any]], kas: List[Dict[str, Any]], lama: set) -> Dict[int, Dict[str, Any]]:
+    """Kas & Bank 1 — SATU aturan pemasangan dokumen kas ↔ baris jurnal kas lama (dipakai pembalik `baris_kas_rekening`
+    DAN pindah saldo Tugas 3, supaya saldo yang dipindah = baris yang kelak dialihkan pembaliknya). Tiap dokumen kas
+    (berurutan) mengambil baris PERTAMA yang belum terpakai: akun ∈ `lama`, di sisi kas dokumen (masuk = debit, keluar =
+    kredit), bernominal sama (sen). → `{indeks baris: dokumen kas}`."""
+    out: Dict[int, Dict[str, Any]] = {}
+    for t in kas:
+        sisi = "debit" if t.get("direction") == "in" else "credit"
+        sen = _sen(t.get("amount"))
+        for i, ln in enumerate(lines):
+            if i not in out and ln.get("account_code") in lama and _sen(ln.get(sisi)) == sen:
+                out[i] = t
+                break
+    return out
 
 
 async def baris_kas_rekening(je: Dict[str, Any]) -> Dict[int, Dict[str, str]]:
@@ -1315,19 +1389,15 @@ async def baris_kas_rekening(je: Dict[str, Any]) -> Dict[int, Dict[str, str]]:
         return {}
     from services import report_basis as _rb
     lama = await _rb.kode_kas(eid) - await kode_akun_rekening(eid)
-    lines = je.get("lines") or []
-    out: Dict[int, Dict[str, str]] = {}
+    akun: Dict[str, str] = {}
+    berakun = []
     for t in kas:
-        akun = await akun_rekening(eid, t["account_id"])
-        if not akun:
-            continue
-        sisi = "debit" if t.get("direction") == "in" else "credit"
-        sen = _sen(t.get("amount"))
-        for i, ln in enumerate(lines):
-            if i not in out and ln.get("account_code") in lama and _sen(ln.get(sisi)) == sen:
-                out[i] = {"akun": akun, "rekening": t["account_id"]}
-                break
-    return out
+        kode = await akun_rekening(eid, t["account_id"])
+        if kode:
+            akun[t["id"]] = kode
+            berakun.append(t)
+    return {i: {"akun": akun[t["id"]], "rekening": t["account_id"]}
+            for i, t in pasang_baris_kas(je.get("lines") or [], berakun, lama).items()}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -2828,6 +2898,30 @@ async def post_paired_entry(*, source_type: str, source_id: str, entity_id: str,
         lines=lines, description=label or source_type, date=date or now_iso(),
         source_type=source_type, source_id=source_id, entity_id=entity_id or "",
         created_by=created_by, source_label=label or source_id)
+
+
+SOURCE_PINDAH_SALDO_KAS = "pindah_saldo_kas"
+
+
+async def post_pindah_saldo_kas(*, usulan_id: str, entity_id: str, lines: List[Dict[str, Any]], date: str,
+                                label: str, created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """Kas & Bank 1 (D4, Tugas 3) — jurnal pindah saldo kas lama ke akun per rekening satu PT: per rekening per akun
+    asal Dr akun rekening / Cr akun asal (dibalik bila negatif), bertanggal hari persetujuan. Baris disusun
+    `cash_account_cutover_service` dari hitung ulang saat disetujui; kode akun dipakai APA ADANYA (`fixed_account`:
+    akun asal 1-1100 tidak boleh dipetakan ulang ke akun pemetaan PT). Bukan jurnal manual — penjaga akun rekening
+    `assert_bukan_akun_rekening` tidak berlaku. Idempoten per usulan (`source_id`); tanpa baris (semua rekening nol) →
+    None. Dipanggil lewat `post_durable` (jenis Posting Gagal `pindah_saldo_kas`)."""
+    ada = await db.journal_entries.find_one(
+        {"source_type": SOURCE_PINDAH_SALDO_KAS, "source_id": usulan_id, "status": {"$ne": "void"}}, {"_id": 0})
+    if ada:
+        return safe_doc(ada)
+    if not lines:
+        return None
+    await seed_default_coa()
+    return await _insert_entry(
+        lines=[{**ln, "fixed_account": True} for ln in lines], description=label, date=date,
+        source_type=SOURCE_PINDAH_SALDO_KAS, source_id=usulan_id, entity_id=entity_id, created_by=created_by,
+        source_label=label, ref={"cash_account_cutover_id": usulan_id})
 
 
 async def post_finance_case(*, case_id: str, entity_id: str, amount: float,
@@ -4594,6 +4688,7 @@ JOURNAL_SOURCE_LABEL: Dict[str, str] = {
     "suspense_reclass": "Reklas Akun Penampung", "finance_case": "Kasus Keuangan",
     "grir_clearing": "Kliring GR/IR",   # PK-28
     "cash_holding": "Titipan Tunai Sales", "cash_holding_reversal": "Pembalik Titipan Tunai",   # PM-T4
+    "pindah_saldo_kas": "Pindah Saldo Kas per Rekening",   # Kas & Bank 1 (Tugas 3)
 }
 
 

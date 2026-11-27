@@ -2347,6 +2347,10 @@
    "persetujuan",
    "dua-orang-sdm"
   ],
+  "kontrol.pindah_saldo_kas.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
    "dua-orang-admin"

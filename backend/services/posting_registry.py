@@ -642,6 +642,13 @@ async def _retry_finance_case(doc: Dict[str, Any], actor: Dict[str, Any]) -> Non
     await resume_resolution(doc, actor)
 
 
+async def _retry_pindah_saldo_kas(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Kas & Bank 1 (Tugas 3) — jurnal pindah saldo gagal sesudah PT menyala: persetujuan yang terhenti diteruskan dari
+    niat tersimpan (jurnal idempoten per usulan, lalu `account_id` kas lama tunggal dan status `disetujui`)."""
+    from services.cash_account_cutover_service import lanjutkan
+    await lanjutkan(doc["id"], actor)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
@@ -876,6 +883,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "updated_at", "doc_type": "",
         "link": {"view": "cash-holdings", "tab": "", "focus_type": "cash_deposit"},
         "posters": (), "retry": _retry_cash_deposit},
+    # ── Kas & Bank 1 (Tugas 3) — jurnal pindah saldo kas per PT yang gagal SESUDAH PT menyala (usulan `memproses`);
+    #    ulang = teruskan persetujuan dari niat tersimpan. Tautan sementara ke Rekening & Saldo; layar Kas & Bank ›
+    #    Akun per rekening menyusul (Tugas 6). ──
+    "pindah_saldo_kas": {
+        "label": "Pindah Saldo Kas per Rekening", "collection": "cash_account_cutovers",
+        "failed_query": {"gl_status": "failed", "status": "memproses"}, "entity_field": "entity_id",
+        "number_field": "label", "amount_field": "total_dipindah", "status_field": "gl_status",
+        "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
+        "link": {"view": "bank-accounts", "tab": "", "focus_type": "cash_account_cutover"},
+        "posters": ("post_pindah_saldo_kas",), "retry": _retry_pindah_saldo_kas},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}

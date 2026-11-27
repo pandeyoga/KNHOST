@@ -96,6 +96,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # KM-T3 (K-25) — mengesahkan lembar insentif; pembanding = PENGAJU lembar (`submitted_by`); bernominal = total lembar
     # (yang terbesar antara sebelum dan sesudah koreksi pemutus), bawaan satu orang.
     _a("lembar_insentif", "Pengesahan lembar insentif", "C", "1", True, _SDM),
+    # Kas & Bank 1 (Tugas 3, spesifikasi §5.3) — menyetujui pindah saldo kas lama ke akun per rekening satu PT (sekali
+    # per PT, menyalakan akun per rekening); pembanding = PENYIAP usulan; tanpa nominal. Kelompok B, bawaan DUA orang:
+    # aksi baru yang rancangannya sudah mewajibkan orang kedua ("Finance menyetujui (orang kedua)").
+    _a("pindah_saldo_kas", "Pindah saldo kas ke akun per rekening", "B", "2", False, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -142,6 +146,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "cairkan_uang_muka": ("services/cash_advance_service.py:disburse_cash_advance",),   # PK-24
     "asisten_uang_keluar": ("services/ai_cards.py:decide", "services/ai_cards.py:second"),   # AG-T5
     "lembar_insentif": ("services/incentive_sheet_service.py:approve_sheet",),   # KM-T3
+    "pindah_saldo_kas": ("services/cash_account_cutover_service.py:setujui",),   # Kas & Bank 1 (Tugas 3)
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -163,6 +168,7 @@ _PENDEK: Dict[str, str] = {
     "ubah_profil_kredit": "Profil kredit pelanggan",   # CR-T1
     "asisten_uang_keluar": "Kartu asisten uang keluar",   # AG-T5
     "lembar_insentif": "Lembar insentif",   # KM-T3
+    "pindah_saldo_kas": "Pindah saldo kas per rekening",   # Kas & Bank 1
 }
 #: AG-T5 — contoh khusus (`example`) untuk kunci min_orang / batas_nominal satu aksi (spesifikasi unit).
 _CONTOH: Dict[str, Tuple[str, str]] = {

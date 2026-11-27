@@ -247,6 +247,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "bank_account_changes": [        # PM-T1 — perubahan rekening menunggu orang kedua (antrean per PT)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "cash_account_cutovers": [       # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas per PT (antrean per PT)
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
         [("entity_id", A), ("period", A), ("kind", A)],
     ],
@@ -597,6 +600,9 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "credit_gate_rejections",
     # KM-T4 — tagihan antar-PT ber-id turunan (proses gaji × PT tertagih, `icc_` + SHA-1).
     "interco_charges",
+    # Kas & Bank 1 (Tugas 3) — usulan pindah saldo ber-id per PT (`psk_{PT}_{urut}`): dua siapkan bersamaan = satu
+    # usulan.
+    "cash_account_cutovers",
 ]
 # FIX-7 (butir 7, FIX-5 §8.7) — koleksi bisnis/master lain yang dicari per `id` di jalur permintaan (sensus kode: ≥ 3
 # pemakaian `find_one/update_one({"id": …})`; sensus data acuan 10 Nov 2026: 0 `id` kembar di semua kandidat).

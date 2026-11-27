@@ -17,7 +17,8 @@ PESAN_PO = ("Persetujuan PO harus diputuskan orang lain: Anda yang mengajukannya
             "Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.")
 AWAL_DUA = {"acc_desain", "acc_sample", "po_custom", "permintaan_pembelian", "harga_khusus", "amandemen",
             "setujui_po", "po_tingkat_berikut", "tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye",
-            "retur_antar_pt", "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"}
+            "retur_antar_pt", "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
+            "pindah_saldo_kas"}   # Kas & Bank 1 (Tugas 3) — aksi baru, rancangan mewajibkan orang kedua
 BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "tagihan_pemasok", "biaya_masuk",
               "kontrabon", "tagihan_kampanye", "retur_antar_pt", "susut_makloon", "retur_penjualan",
               "retur_pembelian", "proses_gaji", "uang_muka", "lpj_uang_muka", "pengurang_piutang",
@@ -39,8 +40,10 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # 40 aksi, 24 bernominal, 66 kunci `kontrol.*`.
 # KM-T3 — aksi ke-41 `lembar_insentif` (pengesahan lembar insentif; bawaan satu orang, bernominal) → 41 aksi,
 # 25 bernominal, 68 kunci `kontrol.*`.
-N_AKSI = 41   # KM-T3 — aksi ke-41 `lembar_insentif` (bernominal)
-N_KUNCI = 68   # KM-T3 — `kontrol.lembar_insentif.{min_orang,batas_nominal}`
+# Kas & Bank 1 (Tugas 3) — aksi ke-42 `pindah_saldo_kas` (setujui pindah saldo kas per PT; bawaan DUA orang, TANPA
+# nominal) → 42 aksi, 25 bernominal, 69 kunci `kontrol.*`.
+N_AKSI = 42   # Kas & Bank 1 — aksi ke-42 `pindah_saldo_kas` (tanpa nominal)
+N_KUNCI = 69   # Kas & Bank 1 — `kontrol.pindah_saldo_kas.min_orang`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
 
 
