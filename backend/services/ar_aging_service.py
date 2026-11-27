@@ -202,12 +202,9 @@ AR_DEFINITIONS = {
 
 async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
     """Σ piutang yang lahir per pesanan (Dr 1-1200/kas dari jurnal penjualan, per surat jalan, dan nota debit PK-32).
-    Pengurang piutang nota kredit amandemen tidak dihitung di sini: barisnya ada di `payments[]` (Σ terbayar).
-    Kas & Bank 1 — Dr kas penjualan tunai ke akun rekening tunggal PT (`gl_service.post_sales_order`) ikut terbaca."""
+    Pengurang piutang nota kredit amandemen tidak dihitung di sini: barisnya ada di `payments[]` (Σ terbayar)."""
     from services.gl_mapping_service import known_codes
-    from services.gl_service import kode_akun_rekening
     codes = set(await known_codes("penjualan.piutang")) | set(await known_codes("kas_bank.kas_besar"))
-    rekening: Dict[str, set] = {}
     out: Dict[str, float] = {}
     if not order_ids:
         return out
@@ -216,14 +213,10 @@ async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
                 {"source_type": "sales_order", "source_id": {"$in": order_ids}},
                 # PK-32 — tagihan tambahan nota debit yang sudah dijurnal (Dr 1-1200) ikut piutang ledger
                 {"source_type": {"$in": ["shipment_revenue", "amendment_debit_note"]}, "ref.order_id": {"$in": order_ids}}]},
-            {"_id": 0, "source_type": 1, "source_id": 1, "ref": 1, "lines": 1, "entity_id": 1}):
+            {"_id": 0, "source_type": 1, "source_id": 1, "ref": 1, "lines": 1}):
         oid = je["source_id"] if je["source_type"] == "sales_order" else (je.get("ref") or {}).get("order_id")
-        eid = je.get("entity_id") or ""
-        if je["source_type"] == "sales_order" and eid not in rekening:
-            rekening[eid] = await kode_akun_rekening(eid)
-        kas = rekening.get(eid, set()) if je["source_type"] == "sales_order" else set()
         amt = sum(float(l.get("debit") or 0) for l in je.get("lines") or []
-                  if l.get("account_code") in codes or l.get("account_code") in kas)
+                  if l.get("account_code") in codes)
         out[oid] = round(out.get(oid, 0.0) + amt, 2)
     return out
 

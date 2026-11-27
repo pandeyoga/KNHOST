@@ -265,19 +265,27 @@ async def akun_kas(entity_id: str, account_id: str, cash_type: str, *, akun_lama
     return akun_lama or (ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR)
 
 
-async def akun_kas_tanpa_rekening(entity_id: str, cash_type: str) -> Dict[str, Any]:
-    """Kas & Bank 1 (§5.1) — akun kas jurnal yang menyentuh kas TANPA dokumen kas / rekening (penjualan tunai tanpa
-    surat jalan): rekening TUNGGAL PT untuk jenis kas itu (`bank_service.sole_account_id`) → akun rekening itu (lewat
-    `akun_kas`); tidak tunggal → akun lama. → `{"account_code", "account_id", "belum_tertaut"}`; `belum_tertaut` = PT
-    sudah memakai akun per rekening tetapi kas ini tetap di akun lama (dicatat di `ref.kas_belum_tertaut` jurnal)."""
+async def akun_kas_tanpa_dokumen(entity_id: str, cash_type: str) -> Dict[str, Any]:
+    """Kas & Bank 1 — akun kas jurnal yang menyentuh kas TANPA dokumen kas / rekening (penjualan tunai tanpa surat
+    jalan, hasil pelepasan aset): selalu akun lama (`akun_kas` tanpa rekening, dipetakan per PT seperti dulu).
+    Ketetapan pengendali R6: TIDAK ke sub-akun rekening tunggal — tanpa dokumen kas, saldo sub-akun ≠ buku kas
+    rekening (anti-tujuan §2 mengalahkan klausul rekening tunggal §5.1). → `{"account_code", "belum_tertaut"}`;
+    `belum_tertaut` = PT sudah memakai akun per rekening (jurnal ditandai `ref.kas_belum_tertaut`)."""
+    from services import cash_account_mode as _mode
+    return {"account_code": await akun_kas(entity_id, "", cash_type),
+            "belum_tertaut": bool(entity_id) and await _mode.aktif(entity_id)}
+
+
+async def menyentuh_kas_lama(entity_id: str, codes: List[str]) -> bool:
+    """Kas & Bank 1 (ketetapan R7) — PT `entity_id` sudah memakai akun per rekening DAN salah satu `codes` adalah akun
+    kas LAMA PT itu (`report_basis.kode_kas` tanpa akun rekening: bawaan + pemetaan + riwayat) → jurnal tanpa dokumen
+    kas ini ditandai `ref.kas_belum_tertaut` (mis. ongkir retur dibayar dari akun kas lama)."""
     from services import cash_account_mode as _mode
     if not entity_id or not await _mode.aktif(entity_id):
-        return {"account_code": await akun_kas(entity_id, "", cash_type), "account_id": "", "belum_tertaut": False}
-    from services.bank_service import sole_account_id
-    rid = await sole_account_id(entity_id, cash_type)
-    kode = await akun_rekening(entity_id, rid)
-    return {"account_code": kode or await akun_kas(entity_id, "", cash_type), "account_id": rid if kode else "",
-            "belum_tertaut": not kode}
+        return False
+    from services import report_basis as _rb
+    lama = await _rb.kode_kas(entity_id) - await kode_akun_rekening(entity_id)
+    return any(c in lama for c in codes)
 
 
 async def _cash_account(txn: Dict[str, Any], entity_id: str = "") -> str:
@@ -1407,20 +1415,6 @@ async def kode_akun_rekening(entity_id: str) -> set:
         {"entity_id": entity_id, "bank_account_id": {"$nin": [None, ""]}}, {"_id": 0, "code": 1})}
 
 
-async def _kas_jual_tunai(flt: Dict[str, Any]) -> float:
-    """Σ debit kas jurnal penjualan tunai tanpa surat jalan (`post_sales_order`, Dr kas): akun kas besar lama ATAU akun
-    rekening PT jurnal itu (Kas & Bank 1 — rekening tunggal PT). Pembaca, bukan baris jurnal."""
-    total = 0.0
-    rekening: Dict[str, set] = {}
-    async for je in db.journal_entries.find({**flt, "status": {"$ne": "void"}}, {"_id": 0, "lines": 1, "entity_id": 1}):
-        eid = je.get("entity_id") or ""
-        if eid not in rekening:
-            rekening[eid] = await kode_akun_rekening(eid)
-        total += sum(float(l.get("debit") or 0) for l in je.get("lines") or []
-                     if l.get("account_code") == ACC_KAS_BESAR or l.get("account_code") in rekening[eid])
-    return round(total, 2)
-
-
 async def order_revenue_posted(order_id: str) -> bool:
     """Sudah ada pendapatan yang lahir (per pesanan ATAU per surat jalan)?"""
     if await _already_posted("sales_order", order_id):
@@ -1453,7 +1447,7 @@ async def order_revenue_recognized(order_id: str) -> Dict[str, float]:
                    {"source_type": "shipment_revenue", "ref.order_id": order_id}]}
     rev = await _sum_lines(flt, ACC_PENDAPATAN, "credit")
     ppn = await _sum_lines(flt, ACC_PPN_OUT, "credit")
-    ar = await _sum_lines(flt, ACC_PIUTANG, "debit") + await _kas_jual_tunai(flt)
+    ar = await _sum_lines(flt, ACC_PIUTANG, "debit") + await _sum_lines(flt, ACC_KAS_BESAR, "debit")
     amd = await order_amendment_recognized(order_id)
     return {"revenue": round(rev + amd["revenue"], 2), "ppn": round(ppn + amd["ppn"], 2),
             "ar": round(ar + amd["ar"], 2)}
@@ -1768,8 +1762,8 @@ async def post_sales_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     ppn = round(eff["ppn"] - amd["ppn"], 2)
     is_cash = order_payment_method(order) in NON_AR_METHODS
     debit_acc, ref = ACC_PIUTANG, None
-    if is_cash:   # Kas & Bank 1 — tanpa dokumen kas: rekening tunggal PT, selain itu akun lama (belum tertaut)
-        kas = await akun_kas_tanpa_rekening(order.get("entity_id", ""), "kas_besar")
+    if is_cash:   # Kas & Bank 1 (R6) — tanpa dokumen kas: akun lama; PT aktif → ditandai belum tertaut
+        kas = await akun_kas_tanpa_dokumen(order.get("entity_id", ""), "kas_besar")
         debit_acc = kas["account_code"]
         ref = {"kas_belum_tertaut": True} if kas["belum_tertaut"] else None
     num = order.get("number", sid)
@@ -3076,9 +3070,9 @@ async def post_asset_disposal(*, asset_id: str, entity_id: str, acquisition_cost
     await seed_default_coa()
     ref = None
     if not cash_acc:
-        cash_acc = await akun_kas(entity_id or "", "", "kas_besar")
-        from services import cash_account_mode as _mode
-        if proceeds > EPS and await _mode.aktif(entity_id or ""):
+        kas = await akun_kas_tanpa_dokumen(entity_id or "", "kas_besar")
+        cash_acc = kas["account_code"]
+        if proceeds > EPS and kas["belum_tertaut"]:
             ref = {"kas_belum_tertaut": True}
     book_value = round(acquisition_cost - accumulated, 2)
     gain_loss = round(proceeds - book_value, 2)

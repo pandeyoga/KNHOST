@@ -122,11 +122,13 @@ async def sync_journals(ret: Dict[str, Any], rows: List[Dict[str, Any]], actor: 
                 r.update(journal_entry_id="", journal_entry_number="")
             continue
         seq = await db.journal_entries.count_documents({"source_type": SOURCE, "ref.return_id": ret["id"], "ref.cost_type": t})
+        ref = {"return_id": ret["id"], "return_number": ret.get("number", ""), "cost_type": t}
+        if await gl_service.menyentuh_kas_lama(r["charged_entity_id"], [ln["account_code"] for ln in resolved]):
+            ref["kas_belum_tertaut"] = True   # Kas & Bank 1 (R7) — ongkir dibayar dari akun kas lama tanpa dokumen kas
         je = await gl_service._insert_entry(
             lines=want, description=f"{r['label']} · retur {ret.get('number', '')} ({r['bearer_label']})",
             date=now_iso(), source_type=SOURCE, source_id=f"{ret['id']}:{t}:{seq + 1}", entity_id=r["charged_entity_id"],
-            created_by=actor.get("name", "system"), source_label=f"Ongkir retur {ret.get('number', '')}",
-            ref={"return_id": ret["id"], "return_number": ret.get("number", ""), "cost_type": t})
+            created_by=actor.get("name", "system"), source_label=f"Ongkir retur {ret.get('number', '')}", ref=ref)
         r.update(journal_entry_id=je["id"], journal_entry_number=je.get("number", ""))
 
 

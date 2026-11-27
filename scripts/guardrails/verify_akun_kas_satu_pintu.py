@@ -3,7 +3,7 @@
 
 Sejak PT bisa memakai akun buku besar per rekening (sub-akun `1-1100-NN` / `1-1110-NN`), kode kas `1-1100` / `1-1110`
 yang ditulis langsung di baris jurnal membuat kas rekening masuk akun lama: saldo sub-akun ≠ buku kas rekening. Semua
-jalur jurnal yang menyentuh kas memakai `gl_service.akun_kas` (atau pembungkusnya: `akun_kas_tanpa_rekening`,
+jalur jurnal yang menyentuh kas memakai `gl_service.akun_kas` (atau pembungkusnya: `akun_kas_tanpa_dokumen`,
 `cash_ledger.akun_refund`, `interco_money_service.akun_kas_bank`).
 
 Statik (`ast`) atas `backend/` kecuali `tests/`, `tests_mem/`, `scripts/`, `bootstrap.py`, `seed_*.py` dan berkas
@@ -52,7 +52,7 @@ PENGECUALIAN: Dict[str, str] = {
     "services/report_basis.py:kode_kas": "pembaca: kumpulan akun kas laporan (`known_codes` kunci `kas_bank.*`)",
     "services/ar_aging_service.py:recognized_by_order": "pembaca: piutang lahir per pesanan (Dr kas jual tunai lama)",
     # pembaca & pemilih
-    "services/gl_service.py:_kas_jual_tunai": "pembaca: Σ Dr kas jurnal penjualan tunai (`order_revenue_recognized`)",
+    "services/gl_service.py:order_revenue_recognized": "pembaca: Σ Dr kas besar jurnal penjualan tunai (piutang lahir)",
     "services/cash_flow_service.py:<modul>": "`CASH_CODES` — pembaca saldo kas (Arus Kas), bukan baris jurnal",
     "services/cash_ledger.py:<modul>": "`KAS_KECIL_CODE` — `cash_type_for` membaca JENIS kas dari kode pemilih",
     "routers/gl.py:list_cash_accounts": "pemilih refund: daftar cadangan akun templat (dibaca sebagai jenis kas, R5)",

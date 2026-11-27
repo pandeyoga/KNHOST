@@ -429,15 +429,14 @@ async def test_KB1_2_U1i_penjualan_tunai_tidak_aktif_sama(db, pt):
     _cocok("penjualan_tunai", _baris(je))
 
 
-async def test_KB1_2_U2i_penjualan_tunai_rekening_tunggal_atau_belum_tertaut(db, pt):
-    # AA: satu rekening kas besar → sub-akun rekening itu
-    je, ar = await _jual_tunai(db, pt["id"]["AA"])
-    assert ("1-1100-01", 220_000.0, 0.0) in _kas(je) and ar == 220_000.0
-    assert not (je.get("ref") or {}).get("kas_belum_tertaut")
-    # AB: dua rekening kas besar → akun lama, dicatat "belum tertaut"
-    je, ar = await _jual_tunai(db, pt["id"]["AB"])
-    assert ("1-1100", 220_000.0, 0.0) in _kas(je) and ar == 220_000.0
-    assert (je.get("ref") or {}).get("kas_belum_tertaut") is True
+async def test_KB1_2_U2i_penjualan_tunai_aktif_akun_lama_belum_tertaut(db, pt):
+    """Ketetapan pengendali R6 — tanpa dokumen kas → akun lama + tanda belum tertaut, juga bila PT punya SATU rekening
+    kas besar (AA; dulu diusulkan ke sub-akunnya: saldo sub-akun akan ≠ buku kas rekening)."""
+    for k in ("AA", "AB"):
+        je, ar = await _jual_tunai(db, pt["id"][k])
+        assert ("1-1100", 220_000.0, 0.0) in _kas(je) and ar == 220_000.0, (k, je["lines"])
+        assert not {"1-1100-01", "1-1100-02"} & {c for c, _, _ in _kas(je)}
+        assert (je.get("ref") or {}).get("kas_belum_tertaut") is True, k
 
 
 # ═══ Pelepasan aset (hasil jual tanpa rekening) — akun lama; di PT aktif ditandai belum tertaut ════════════════════
@@ -563,6 +562,36 @@ async def test_KB1_2_U4_pemilih_ongkir_tanpa_akun_rekening(db, pt):
     assert not await db.journal_entries.find_one({"source_type": rl.SOURCE, "ref.return_id": ret["id"]})
 
 
+async def _ongkir(db, eid: str, kode_bayar: str) -> dict:
+    from services import return_logistics_service as rl
+    ret = {"id": _uid("sr"), "number": _no("RJ/KB2/ONG"), "entity_id": eid, "customer_name": "Toko KB2"}
+    await db.sales_returns.insert_one(dict(ret))
+    biaya = {"type": "customer_return", "mode": "third_party", "bearer": "company", "amount": 50_000}
+    if kode_bayar:
+        biaya["pay_account_code"] = kode_bayar
+    await rl.save(ret, [biaya], AKTOR_UJI, True)
+    jes = await db.journal_entries.find({"source_type": rl.SOURCE, "ref.return_id": ret["id"]}, {"_id": 0}).to_list(5)
+    assert len(jes) == 1, jes
+    return jes[0]
+
+
+async def test_KB1_2_U1l_ongkir_retur_tidak_aktif_sama(db, pt):
+    out = {}
+    for nama, kode in (("kas_kecil", "1-1110"), ("bawaan_pemetaan", ""), ("hutang", "2-1100")):
+        je = await _ongkir(db, pt["id"]["LA"], kode)
+        out[nama] = {"baris": _baris(je), "ref": sorted(je.get("ref") or {})}
+    _cocok("ongkir_retur", out)
+
+
+async def test_KB1_2_U2l_ongkir_retur_aktif_akun_kas_lama_belum_tertaut(db, pt):
+    """Ketetapan pengendali R7 — ongkir dibayar dari akun kas lama (pilihan, atau bawaan `retur.ongkir_pembayaran`
+    1-1110) di PT aktif → `ref.kas_belum_tertaut`; dibayar lewat hutang → tanpa tanda."""
+    for kode, tanda in (("1-1110", True), ("1-1100", True), ("", True), ("2-1100", False)):
+        je = await _ongkir(db, pt["id"]["AA"], kode)
+        assert bool((je.get("ref") or {}).get("kas_belum_tertaut")) is tanda, (kode, je.get("ref"), je["lines"])
+        assert {"return_id", "return_number", "cost_type"} <= set(je["ref"])
+
+
 # ═══ Penjaga akun rekening: PATCH bukan-postable (M2), nama baris (M4), Pemetaan Akun ═════════════════════════════
 async def test_KB1_2_U5_akun_rekening_tidak_bisa_jadi_akun_induk(klien, db, sesi, pt):
     h = await sesi("admin@kainnusantara.id", entitas=pt["id"]["AA"])
@@ -646,6 +675,45 @@ BARIS_LAMA: dict = {'batal_kas': [['6-2000', 'Beban Sewa', 0.0, 125000.0, 'Pemba
                     'KB#LA/CASH-# · Pembayaran gaji November # (PAY-KB#)',
                     '']],
           'lama': ['kas_kecil', True, '1-1110']},
+ 'ongkir_retur': {'bawaan_pemetaan': {'baris': [['6-4500',
+                                                 'Beban Kirim Dokumen & Ekspedisi',
+                                                 50000.0,
+                                                 0.0,
+                                                 'Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                                 'retur.ongkir_perusahaan'],
+                                                ['1-1110',
+                                                 'Kas Kecil',
+                                                 0.0,
+                                                 50000.0,
+                                                 'Pembayaran Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                                 'retur.ongkir_pembayaran']],
+                                      'ref': ['cost_type', 'return_id', 'return_number']},
+                  'hutang': {'baris': [['6-4500',
+                                        'Beban Kirim Dokumen & Ekspedisi',
+                                        50000.0,
+                                        0.0,
+                                        'Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                        'retur.ongkir_perusahaan'],
+                                       ['2-1100',
+                                        'Hutang Usaha',
+                                        0.0,
+                                        50000.0,
+                                        'Pembayaran Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                        '']],
+                             'ref': ['cost_type', 'return_id', 'return_number']},
+                  'kas_kecil': {'baris': [['6-4500',
+                                           'Beban Kirim Dokumen & Ekspedisi',
+                                           50000.0,
+                                           0.0,
+                                           'Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                           'retur.ongkir_perusahaan'],
+                                          ['1-1110',
+                                           'Kas Kecil',
+                                           0.0,
+                                           50000.0,
+                                           'Pembayaran Ongkir retur dari customer · retur RJ/KB#/ONG/#',
+                                           '']],
+                                'ref': ['cost_type', 'return_id', 'return_number']}},
  'pelepasan_aset': [['1-2900',
                      'Akumulasi Penyusutan Aset Tetap',
                      400000.0,
