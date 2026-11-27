@@ -182,7 +182,10 @@ async def _nilai(line: dict) -> dict:
 
 
 def _kartu(hasil: dict, kode: str) -> str:
+    """Kontrak (R5-M7): setiap kode kartu yang dikembalikan penilai ada di `KODE_KARTU` (string tetap untuk layar)."""
+    from services.bank_auto_receipt_service import KODE_KARTU
     assert (hasil["keputusan"], hasil["alasan_kode"]) == ("kartu", kode), hasil
+    assert hasil["alasan_kode"] in KODE_KARTU, hasil
     return hasil["alasan"]
 
 
@@ -249,6 +252,26 @@ async def test_kwitansi_pecahan_nominal_beda(klien, db, siap):
     alasan = _kartu(await _nilai(await _impor(db, siap["A"], 173_438, f"TRSF {await _kode(db, so['id'])}")),
                     "nominal_beda")
     assert alasan == f"Kwitansi {kw['number']} Rp 173.437,5 berbeda Rp 0,5 dari mutasi Rp 173.438"
+
+
+async def test_kas_lama_tanpa_rekening_di_rekening_tunggal_A(klien, db, siap):
+    """R5-M1 — kas kwitansi lama tanpa `account_id` termasuk buku rekening mutasi bila rekening itu satu-satunya
+    rekening aktif PT untuk jenis kasnya (`bank_recon_service._book_query`, `bank_service.sole_account_id`): calon
+    jalur A, bukan `rekening_beda`. PT berekening ganda: kas tanpa rekening bukan milik buku rekening mana pun →
+    `rekening_beda`."""
+    so = await _pesanan_fixture(db, siap, 1_000_000)
+    kw = await _kwitansi(siap, so, 1_000_000)
+    await db.cash_transactions.update_one({"id": kw["cash_txn_id"]}, {"$set": {"account_id": ""}})   # FIXTURE: kas lama
+    ln = await _impor(db, siap["A"], 1_000_000, f"TRSF {so['kode']}")
+    _kartu(await _nilai(ln), "rekening_beda")                  # rekening kas besar PT ini lebih dari satu
+    lain = [a["id"] async for a in db.bank_accounts.find(
+        {"entity_id": KSC, "id": {"$ne": siap["A"]}, "is_active": {"$ne": False}}, {"_id": 0, "id": 1})]
+    await db.bank_accounts.update_many({"id": {"$in": lain}}, {"$set": {"is_active": False}})   # FIXTURE
+    try:
+        h = await _nilai(ln)
+    finally:
+        await db.bank_accounts.update_many({"id": {"$in": lain}}, {"$set": {"is_active": True}})
+    assert (h["keputusan"], h["receipt"]["id"]) == ("A", kw["id"]), h
 
 
 async def test_kwitansi_sama_rekening_lain_kartu(klien, db, siap):
@@ -325,6 +348,17 @@ async def test_sudah_lunas_kartu(klien, db, siap):
     assert alasan == f"Pesanan {so['number']} sudah lunas"
 
 
+async def test_sudah_lunas_oleh_kwitansi_terbuka_disebut(klien, db, siap):
+    """R5-M2 — sisa < Rp 1 karena kwitansi yang belum cocok mutasi (nominalnya ≠ mutasi): alasannya menyebut kwitansi
+    itu, supaya Finance tahu uangnya mungkin sama."""
+    so = await _pesanan_fixture(db, siap, 1_000_000)
+    k1 = await _kwitansi(siap, so, 600_000)
+    k2 = await _kwitansi(siap, so, 400_000)
+    alasan = _kartu(await _nilai(await _impor(db, siap["A"], 1_000_000, f"TRSF {so['kode']}")), "sudah_lunas")
+    assert alasan == (f"Pesanan {so['number']} sudah lunas oleh kwitansi {k1['number']}, {k2['number']} yang belum "
+                      "cocok mutasi")
+
+
 async def test_rekening_beda_instruksi_kartu(klien, db, siap):
     so = await _pesan(klien, db, siap)                       # rekening instruksi = BCA Penerimaan F12
     alasan = _kartu(await _nilai(await _impor(db, siap["B"], 1_000_000, f"TRSF {await _kode(db, so['id'])}")),
@@ -343,7 +377,7 @@ async def test_periode_tutup_kartu(klien, db, siap):
     await tutup_periode(KSC, "2026-10")
     alasan = _kartu(await _nilai(await _impor(db, siap["A"], 1_000_000, f"TRSF {await _kode(db, so['id'])}",
                                               tgl="2026-10-15")), "periode_tutup")
-    assert "2026-10" in alasan
+    assert alasan == "Periode Oktober 2026 sudah ditutup"   # R5-M8 — kalimat pendek, nama bulan Indonesia
 
 
 async def test_selisih_perlu_putusan_kartu(klien, db, siap):
@@ -383,18 +417,24 @@ async def test_lewati(klien, db, siap):
     kode = await _kode(db, so["id"])
     ln = await _impor(db, siap["A"], 1_000_000, f"TRSF {kode}")
     assert (await _nilai(ln))["keputusan"] == "C"
-    kasus = {
-        "arah keluar": await _impor(db, siap["A"], 1_000_000, f"TRSF {kode}", arah="out"),
-        "tanpa kode": await _impor(db, siap["A"], 1_000_000, "TRSF TOKO TANPA KODE"),
-        "sebelum aktif": {**ln, "created_at": "2000-01-01T00:00:00+00:00"},
-        "pernah otomatis": {**ln, "f1": {"status": "kartu", "pernah_otomatis": True}},
+    kasus = {   # R5-M7 — kode lewati yang tepat per kasus
+        "bukan_masuk": await _impor(db, siap["A"], 1_000_000, f"TRSF {kode}", arah="out"),
+        "tanpa_kode": await _impor(db, siap["A"], 1_000_000, "TRSF TOKO TANPA KODE"),
+        "sebelum_aktif": {**ln, "created_at": "2000-01-01T00:00:00+00:00"},
+        "pernah_otomatis": {**ln, "f1": {"status": "kartu", "pernah_otomatis": True}},
         "dibatalkan": {**ln, "f1": {"status": "dibatalkan"}},
-        "matched": {**ln, "status": "matched"},
+        "bukan_unmatched": {**ln, "status": "matched"},
     }
-    for nama, baris in kasus.items():
+    for kode_lewati, baris in kasus.items():
         h = await _nilai(baris)
-        assert h["keputusan"] == "lewati", (nama, h)
-        assert h["alasan_kode"] and h["alasan"], (nama, h)
+        assert (h["keputusan"], h["alasan_kode"]) == ("lewati", kode_lewati), (kode_lewati, h)
+        assert h["alasan"], (kode_lewati, h)
+
+
+def test_kode_kartu_tetap_dan_unik():
+    """R5-M7 — daftar kode kartu tetap (dipakai layar), tanpa kembar; `galat` milik pelaksana ikut terdaftar."""
+    from services.bank_auto_receipt_service import KODE_COCOK, KODE_KARTU
+    assert len(KODE_KARTU) == len(set(KODE_KARTU)) and "galat" in KODE_KARTU and KODE_COCOK not in KODE_KARTU
 
 
 # ── Tanpa tulisan ────────────────────────────────────────────────────────────────────────────────────────────────────

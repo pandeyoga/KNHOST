@@ -265,27 +265,44 @@ async def _kwitansi_laporan(report_id: str) -> Optional[Dict[str, Any]]:
     return await db.ar_receipts.find_one({"payment_report_id": report_id, "status": "posted"}, {"_id": 0})
 
 
-def isi_kwitansi(report: Dict[str, Any], order: Dict[str, Any]) -> Dict[str, Any]:
+def isi_kwitansi(report: Dict[str, Any], order: Dict[str, Any],
+                 bank_line: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Isian `create_receipt` dari laporan: kwitansi AR biasa (jurnal uang muka/piutang menurut pesanan), bertanggal
     transfer, ke rekening & cara bayar yang dilaporkan, bukti = lampiran pertama (rute unduh berpagar), dialokasikan
-    penuh ke pesanan laporan. `payment_report_id`/`payment_report_number` = rujukan balik (isian opsional kwitansi)."""
-    att0 = _lampiran(report)[0]
-    return {
+    penuh ke pesanan laporan. `payment_report_id`/`payment_report_number` = rujukan balik (isian opsional kwitansi).
+
+    F1 — `bank_line` (Terima yang membawa baris mutasi bank; laporan & mutasi bernominal sama, selisih < Rp 1, rekening
+    sama): mutasi = buktinya (lampiran tidak wajib, `proof_url` kosong bila tidak ada). Kas kwitansi = nominal & tanggal
+    MUTASI supaya kasnya cocok penuh dengan mutasi itu (`bank_recon_service._link` menautkan cent-tepat); alokasi =
+    nominal laporan, paling banyak nominal mutasi — selisih pecahan diputus aturan pembulatan selisih bayar. Kwitansi
+    bersumber `mutasi_bank` + `bank_line_id` (indeks `uq_bank_line_receipt`: satu kwitansi hidup per mutasi)."""
+    lampiran = _lampiran(report)
+    nominal = float(report.get("amount") or 0)
+    isi = {
         "customer_id": report.get("customer_id") or order.get("customer_id") or "",
         "entity_id": report.get("entity_id") or order.get("entity_id") or "",
-        "amount": float(report.get("amount") or 0),
+        "amount": nominal,
         "method": report.get("method") or "",
         "account_id": report.get("account_id") or "",
         "receipt_date": report.get("transfer_date") or "",
         "reference_no": report.get("reference_no") or "",
-        "proof_url": f"/api/payment-reports/{report['id']}/attachments/{att0['id']}",
-        "allocations": [{"order_id": order["id"], "amount": float(report.get("amount") or 0)}],
+        "proof_url": f"/api/payment-reports/{report['id']}/attachments/{lampiran[0]['id']}" if lampiran else "",
+        "allocations": [{"order_id": order["id"], "amount": nominal}],
         "notes": f"Lapor bayar {report.get('number', '')}".strip(),
         # R10-a — alasan pelapor bila rekening ≠ rekening instruksi bayar pesanan (diperiksa ulang `create_receipt`)
         "mismatch_note": report.get("mismatch_note") or "",
         "payment_report_id": report["id"],
         "payment_report_number": report.get("number", ""),
     }
+    if bank_line:
+        from services.bank_auto_receipt_service import SUMBER
+        uang = round(float(bank_line.get("amount") or 0), 2)
+        isi.update({"amount": uang, "account_id": bank_line.get("bank_account_id") or isi["account_id"],
+                    "receipt_date": bank_line.get("stmt_date") or isi["receipt_date"],
+                    "reference_no": isi["reference_no"] or bank_line.get("ref") or "",
+                    "allocations": [{"order_id": order["id"], "amount": round(min(nominal, uang), 2)}],
+                    "source": SUMBER, "bank_line_id": bank_line["id"]})
+    return isi
 
 
 async def _klaim(report_id: str, actor: Dict[str, Any]) -> tuple:
@@ -321,9 +338,10 @@ async def _tulis_diterima(saring: Dict[str, Any], receipt: Dict[str, Any], actor
 
 
 async def _selesai_diterima(report_id: str, token: str, receipt: Dict[str, Any],
-                            actor: Dict[str, Any]) -> Dict[str, Any]:
+                            actor: Dict[str, Any], catatan: str = "") -> Dict[str, Any]:
     """Tulisan akhir: `memproses` (klaim milik pemanggil) → `diterima` + kwitansi + riwayat; klaim dicabut."""
-    doc = await _tulis_diterima({"id": report_id, "status": MEMPROSES, "claim.token": token}, receipt, actor)
+    doc = await _tulis_diterima({"id": report_id, "status": MEMPROSES, "claim.token": token}, receipt, actor,
+                                catatan=catatan)
     if not doc:
         # Klaim diambil alih proses lain (lewat KLAIM_BASI_MENIT): ia menemukan kwitansi ini lewat rujukan balik dan
         # menyelesaikan laporan — tidak ada kwitansi kedua. Pemanggil ini TIDAK melaporkan sukses dan tidak mengirim
@@ -407,20 +425,26 @@ async def _beritahu_putusan(report: Dict[str, Any], order: Dict[str, Any], jenis
         logger.warning("[payment_report] notifikasi %s laporan %s gagal: %s", jenis, report.get("id"), err)
 
 
-async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str, Any], *,
+                 bank_line: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Finance menerima laporan: kwitansi AR lewat `create_receipt` (pintu kas satu-satunya; pencatat = Finance, jadi
     pagar B3 tidak menghalanginya), tahan bayar dibuka + lepas otomatis (di dalam `create_receipt`, R5), notifikasi.
 
     → `{report, receipt_number, released, waiting_bank}`. `released` = pesanan dilepas ke gudang oleh Terima ini;
     `waiting_bank` = PT berdasar `terverifikasi` dan pesanan masih tertahan (kwitansi belum cocok mutasi bank).
-    Pagar izin/PT/pemilik milik router."""
+    Pagar izin/PT/pemilik milik router.
+
+    F1 — `bank_line` = baris mutasi bank yang menjadi bukti laporan ini (jalur B kwitansi otomatis, §5.2-11): lampiran
+    tidak wajib, kwitansinya bersumber mutasi (`isi_kwitansi`). Pemanggil yang menautkan mutasi ke kas kwitansinya.
+    Pelaku sistem mutasi (`actor.sistem == "mutasi_bank"`) → riwayat laporan "Diterima otomatis dari mutasi bank …"."""
     from services import ar_receipt_service as ars
+    from services.bank_auto_receipt_service import SUMBER
     from services.customer_service import DEAD_STATUSES
     if report.get("status") in (DITERIMA, DITOLAK):
         raise _galat_status(report.get("status"))
     if report.get("status") == MEMPROSES and str((report.get("claim") or {}).get("at") or "") >= _basi_sebelum():
         raise _galat_status(MEMPROSES)   # klik kedua selagi Terima pertama berjalan: "sedang diproses", bukan sisa Rp 0
-    if not _lampiran(report):
+    if not _lampiran(report) and not bank_line:
         # keadaan sementara (pelapor bisa melampirkan bukti): kirim ulang kunci sama dijalankan lagi (Minor-3)
         raise HTTPException(status_code=409, detail=PESAN_TANPA_BUKTI, headers=dict(HEADER_ULANG))
     if order.get("status") in DEAD_STATUSES:
@@ -440,7 +464,7 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
         released = await _lepas(order["id"], actor)
     else:
         try:
-            receipt = await ars.create_receipt(isi_kwitansi(rep, order), actor)
+            receipt = await ars.create_receipt(isi_kwitansi(rep, order, bank_line), actor)
             released = order["id"] in (receipt.get("released_order_ids") or [])
         except BaseException as exc:
             try:
@@ -472,13 +496,19 @@ async def terima(report: Dict[str, Any], order: Dict[str, Any], actor: Dict[str,
                          tuntas.get("number"), rep["id"], exc)
             receipt = tuntas
             released = await _lepas(order["id"], actor)
-    doc = await _selesai_diterima(rep["id"], token, receipt, actor)
+    sistem = bool(bank_line) and actor.get("sistem") == SUMBER
+    catatan = ""
+    if sistem:
+        from services.bank_auto_receipt_service import label_mutasi
+        catatan = f"Diterima otomatis dari mutasi bank {await label_mutasi(bank_line)}"
+    doc = await _selesai_diterima(rep["id"], token, receipt, actor, catatan)
     from core_utils import rupiah
     # R18-c — diterima tetapi pesanan masih kurang (atau belum disetujui) dan batasnya sudah lewat: diberi tenggang
     batas = "" if released else await _perpanjang_sesudah_putusan(order["id"], actor, doc or rep, "diterima")
     await _beritahu_putusan(doc or rep, order, "lapor_bayar_diterima",
                             f"Lapor bayar diterima — {rep.get('order_number', '')}",
-                            f"{rep.get('number', '')} {rupiah(rep.get('amount') or 0)} diterima Finance; kwitansi "
+                            f"{rep.get('number', '')} {rupiah(rep.get('amount') or 0)} diterima "
+                            f"{'otomatis dari mutasi bank' if sistem else 'Finance'}; kwitansi "
                             f"{receipt.get('number', '')}." + batas)
     return {"report": tampil(doc), "receipt_number": receipt.get("number", ""), "released": bool(released),
             "waiting_bank": await _menunggu_bank(order["id"])}

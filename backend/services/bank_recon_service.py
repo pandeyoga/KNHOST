@@ -911,10 +911,14 @@ async def _assert_target(ln: Dict[str, Any], t: Dict[str, Any], entity_ids: Opti
 
 
 async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: str,
-                match_type: str, match_kind: str) -> None:
+                match_type: str, match_kind: str, op: str = "") -> None:
     """Tautkan satu baris ke satu/beberapa transaksi buku (append-only pada dua sisi).
     CX-07 — kapasitas transaksi diklaim ATOMIK (CAS reconciled_amount+alokasi ≤ amount);
-    satu gagal → alokasi yang sudah diklaim dikembalikan dan tidak ada yang ditautkan."""
+    satu gagal → alokasi yang sudah diklaim dikembalikan dan tidak ada yang ditautkan.
+
+    F1 — `op` = kunci `match_lock` baris yang SUDAH dipegang pemanggil (klaim yang sama, dipasang sebelum pemanggil
+    membuat kwitansinya; `bank_auto_receipt_service`): klaim di sini mensyaratkan kunci itu, bukan kunci kosong. Kosong
+    (semua pemanggil lain) = baris diklaim di sini. Gagal sesudah klaim → kunci dicabut, milik siapa pun klaimnya."""
     now = now_iso()
     merged: Dict[str, float] = {}
     for a in allocations:
@@ -922,10 +926,11 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
     allocations = [{"txn_id": k, "amount": v} for k, v in merged.items()]
     # G3 V3-BANK-01 — baris mutasi DIKLAIM dulu (CAS status+kunci) sebelum kapasitas transaksi:
     # dua pencocokan paralel atas satu baris → satu menang, yang lain konflik tanpa efek.
-    op = new_id("bmatch")
+    kunci: Dict[str, Any] = ({"match_lock": op} if op else
+                             {"$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": _stale_before()}}]})
+    op = op or new_id("bmatch")
     got = await db.bank_statement_lines.update_one(
-        {"id": line["id"], "status": {"$nin": ["matched", "ignored"]},
-         "$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": _stale_before()}}]},
+        {"id": line["id"], "status": {"$nin": ["matched", "ignored"]}, **kunci},
         {"$set": {"match_lock": op, "match_lock_at": now}})
     if got.modified_count != 1:
         raise ValueError("Mutasi bank ini baru saja dicocokkan proses lain — muat ulang.")
@@ -969,7 +974,9 @@ async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
        Baris biaya/bunga bank: kas di-void + jurnal dibalik SESUDAH klaim; gagal → kunci dicabut, baris tetap `matched`.
     2. Tiap alokasi: satu pembaruan bersyarat `reconciled_amount ≥ alokasi − 0,01` yang menulis sekaligus angka dan
        turunannya (`_recon_pipeline`). Tidak cocok → sudah dilepas proses lain; dicatat di log, dilewati.
-    3. Baris → `unmatched`, tautan dikosongkan, kunci dicabut — bersyarat kunci milik operasi ini.
+    3. Baris → `unmatched`, tautan dikosongkan, kunci dicabut — bersyarat kunci milik operasi ini. Penanda F1 (`f1`)
+       TIDAK dihapus: baris yang pernah ditautkan mesin (`f1.pernah_otomatis`) diberi `f1.dilepas_at` dan tidak pernah
+       diproses otomatis lagi, lewat jalan pelepasan apa pun.
     """
     now = now_iso()
     op = op or new_id("bunmatch")
@@ -994,10 +1001,11 @@ async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
         if res.modified_count != 1:
             logger.warning("[PK-21 _unlink] %s → %s: alokasi %s sudah dilepas sebelumnya (dilewati)",
                            line["id"], a.get("txn_id"), amt)
+    lepas_f1 = {"f1.dilepas_at": now} if (claimed.get("f1") or {}).get("pernah_otomatis") else {}
     res = await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op}, {
         "$set": {"status": "unmatched", "match_kind": "", "matched_txn_id": "", "matched_txn_ids": [],
                  "allocations": [], "match_type": "", "matched_at": "", "matched_by": "",
-                 "score": 0, "score_explain": [], "updated_at": now},
+                 "score": 0, "score_explain": [], "updated_at": now, **lepas_f1},
         "$unset": {"match_lock": "", "match_lock_at": ""}})
     if res.modified_count != 1:
         logger.warning("[PK-21 _unlink] kunci %s atas %s sudah diambil alih proses lain", op, line["id"])
@@ -1903,6 +1911,7 @@ async def list_lines(bank_account_id: str, entity_ids: Optional[List[str]] = Non
         if end:
             rng["$lte"] = end[:10]
         q["stmt_date"] = rng
+    # F1 — dokumen utuh: penanda `f1` (otomatis / kartu + alasan / dibatalkan, `pernah_otomatis`) ikut apa adanya.
     lines = await db.bank_statement_lines.find(q, {"_id": 0}).sort("stmt_date", -1).to_list(20000)
     await _isi_hits(lines)   # PM-T3 — tiap mutasi memuat `pay_code_hits`
     await _lengkapi_hits(lines)

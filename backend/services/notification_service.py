@@ -390,6 +390,51 @@ async def notify_pay_overdue_pending(order: Dict[str, Any], *, sebab: str, batas
         severity="warning", link=f"/?view=orders&id={order.get('id', '')}", entity_id=order.get("entity_id") or None)
 
 
+#: F1 — kwitansi otomatis dari mutasi bank (rancangan `2026-11-27-kwitansi-otomatis-mutasi` §5.8).
+BAYAR_MASUK_MUTASI_TYPE = "bayar_masuk_mutasi"
+RINGKASAN_MUTASI_TYPE = "ringkasan_mutasi_otomatis"
+#: Keadaan pesanan sesudah kwitansi otomatis → akhir kalimat notifikasi sales.
+KEADAAN_SESUDAH_MUTASI = {
+    "dilepas": "pesanan dilepas ke gudang",
+    "admin": "pesanan menunggu Admin Sales",
+    "tertahan": "pesanan masih tertahan bayar",
+}
+
+
+async def notify_bayar_masuk_mutasi(order: Dict[str, Any], *, amount: float, receipt_number: str, keadaan: str,
+                                    line_id: str) -> List[Dict[str, Any]]:
+    """F1 (§5.8) — SATU penyusun `bayar_masuk_mutasi`: pembayaran pesanan yang SEDANG tertahan bayar masuk lewat mutasi
+    bank dan menjadi kwitansi otomatis. Ke sales pemilik pesanan (per orang), sekali per baris mutasi
+    (`dedupe_scope="ever"`). `keadaan` ∈ `KEADAAN_SESUDAH_MUTASI` (dilepas ke gudang / menunggu Admin Sales / masih
+    tertahan). Pesanan yang tidak tertahan tidak diberi tahu (pemanggil yang memutuskan)."""
+    sales = tuple(dict.fromkeys(x for x in (order.get("sales_id"), order.get("assigned_sales_id")) if x))
+    if not sales:
+        return []
+    nomor = order.get("number") or order.get("id") or ""
+    akhir = KEADAAN_SESUDAH_MUTASI.get(keadaan, KEADAAN_SESUDAH_MUTASI["admin"])
+    return await create_addressed(
+        also_users=sales, notif_type=BAYAR_MASUK_MUTASI_TYPE, ref=f"f1_bayar:{line_id}", dedupe_scope="ever",
+        title=f"Pembayaran masuk — {nomor}",
+        body=(f"Pembayaran {nomor} {_rupiah_aman(amount)} masuk lewat mutasi bank (kwitansi {receipt_number}); "
+              f"{akhir}"),
+        severity="info", link=f"/?view=orders&id={order.get('id', '')}", entity_id=order.get("entity_id") or None)
+
+
+async def notify_ringkasan_mutasi_otomatis(*, entity_id: str, rekening: str, import_batch: str, jumlah: int,
+                                           nilai: float, kartu: int) -> List[Dict[str, Any]]:
+    """F1 (§5.8) — SATU penyusun `ringkasan_mutasi_otomatis`: satu notifikasi per impor mutasi ke pemegang
+    `payment_report.decide` di PT baris (per orang, sekali per batch impor). Tidak dikirim bila keduanya 0."""
+    if not jumlah and not kartu:
+        return []
+    kalimat = (f"Impor mutasi {rekening}: {jumlah} kwitansi otomatis ({_rupiah_aman(nilai)}), {kartu} mutasi berkode "
+               "perlu dicek")
+    body = kalimat + (". Lihat antrean \"Mutasi berkode perlu dicek\" di Meja Keuangan." if kartu else ".")
+    return await create_addressed(
+        permission=("payment_report", "decide"), notif_type=RINGKASAN_MUTASI_TYPE, ref=f"f1_impor:{import_batch}",
+        dedupe_scope="ever", title=f"Impor mutasi {rekening}", body=body[:400],
+        severity="warning" if kartu else "info", link="/?view=finance-desk", entity_id=entity_id or None)
+
+
 #: Jenis notifikasi "PO custom menunggu keputusan". Hanya SATU fungsi di seluruh
 #: backend yang boleh menyusunnya (dijaga INV-NOTIF-02 aturan K3).
 SPECIAL_ORDER_WAITING_TYPE = "special_order_approval"

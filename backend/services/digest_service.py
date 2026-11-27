@@ -45,6 +45,8 @@ GROUP_LABEL = {
     "reservation_expiring": "Reservasi mendekati kedaluwarsa",
     "pay_due_soon": "Batas bayar pesanan segera habis",              # LB-T5
     "lapor_bayar_lewat_batas": "Lapor bayar menunggu melewati batas",  # LB-T5
+    "bayar_masuk_mutasi": "Pembayaran masuk lewat mutasi bank",       # F1
+    "ringkasan_mutasi_otomatis": "Kwitansi otomatis dari mutasi bank",  # F1
     "order_approval": "Order menunggu persetujuan",
     "po_approval": "PO menunggu persetujuan",
     "order_split": "Order split antar gudang",
