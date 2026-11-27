@@ -126,14 +126,16 @@ async def test_PK39_U11_kas_keluar_peringatkan_lalu_tolak(klien, db, kepala_admi
         await _pulihkan(klien, kepala_admin, KSC)
 
 
-async def test_PK39_U11b_kas_keluar_ke_akun_bukan_beban_tidak_diperiksa(klien, db, kepala_admin):
-    """Lawan akun kas "pembelian" = persediaan (aset) → bukan sasaran pemeriksaan kas keluar."""
+async def test_PK39_U11b_kas_keluar_ke_akun_tanpa_pagu_tidak_diperiksa(klien, db, kepala_admin):
+    """Kas keluar manual ke akun yang tidak punya pagu → tidak ada pemeriksaan anggaran. (Kategori "pembelian" — lawan
+    akun persediaan — sudah ditutup di kas manual baru oleh KB-2 C5, jadi uji ini memakai "operasional" tanpa pagu.)"""
     await _bersih(db)
     r = await klien.post("/api/cash-transactions", headers=kepala_admin, json={
-        "cash_type": "kas_kecil", "direction": "out", "amount": 1000, "category": "pembelian",
-        "description": "Beli bahan PK39", "txn_date": HARI})
+        "cash_type": "kas_kecil", "direction": "out", "amount": 1000, "category": "operasional",
+        "description": "Belanja kecil PK39", "txn_date": HARI})
     assert r.status_code == 200, r.text
-    assert r.json()["budget_check"]["checks"] == [], r.json()["budget_check"]
+    cek = r.json()["budget_check"]
+    assert not cek["warnings"] and not cek["blocked"], cek       # tanpa pagu → tidak ada peringatan/penolakan
 
 
 # ── U12 — LPJ: ajukan hanya diperingatkan; setujui ditolak ───────────────────────────────────────────────────────────

@@ -175,6 +175,9 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     from services import cash_ledger as _cl
     if _cl.kategori_transfer_ditutup(payload.category):
         raise HTTPException(status_code=400, detail=_cl.PESAN_KATEGORI_TRANSFER_DITUTUP)
+    # Kas & Bank 2 (C5) — kategori Pembelian/Gaji (akun lawan persediaan/beban gaji) ditutup untuk kas manual baru.
+    if _cl.kategori_kas_manual_ditutup(payload.category):
+        raise HTTPException(status_code=400, detail=_cl.PESAN_KATEGORI_PEMBELIAN_GAJI_DITUTUP)
     # Kas MANUAL tidak boleh menunjuk dokumen lain (pembayaran dokumen dicatat dari dokumennya, bukan dari sini).
     if (payload.ref_type or "") not in ("", "manual") or (payload.ref_id or ""):
         raise HTTPException(status_code=400, detail=(

@@ -55,6 +55,24 @@ def kategori_transfer_ditutup(category: Any) -> bool:
     return any(k in teks for k in _KATA_TRANSFER_DITUTUP)
 
 
+#: Kas & Bank 2 (Tugas 1, C5) — kategori kas manual Pembelian/Gaji ditutup untuk kas manual BARU: pembelian barang lewat
+#: PO/tagihan pemasok, gaji lewat Proses Gaji. Kas LAMA tetap utuh (bisa dibatalkan, diposting ulang). `create_cash`
+#: (bayar tagihan, Proses Gaji) tidak dijaga — penjagaan hanya di pintu manual (rute + kartu Asisten).
+PESAN_KATEGORI_PEMBELIAN_GAJI_DITUTUP = (
+    "Kategori Pembelian dan Gaji tidak lagi dipakai di kas manual: pembelian barang lewat PO/tagihan pemasok, "
+    "gaji lewat Proses Gaji. Belanja kecil kebutuhan kantor pakai kategori Operasional.")
+
+
+def kategori_kas_manual_ditutup(category: Any) -> bool:
+    """True bila akun lawan jurnal kas manual untuk kategori ini = persediaan atau beban gaji.
+
+    Dihitung dari tabel kata kunci KELUAR yang sama dengan jurnalnya (`gl_service.cash_contra_account`), jadi satu sumber
+    kebenaran; dinilai dengan tabel KELUAR untuk kedua arah (spesifikasi §7.8 butir 2)."""
+    from services import gl_service as gl
+    akun = gl.cash_contra_account({"ref_type": "manual", "direction": "out", "category": str(category or "")})
+    return akun in (gl.ACC_PERSEDIAAN, gl.ACC_BEBAN_GAJI)
+
+
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.
 _PROTECTED = frozenset({"id", "amount", "direction", "entity_id", "account_id", "account_code", "cash_type",
                         "ref_type", "ref_id", "seq", "status", "gl_status", "gl_error", "gl_posted",
