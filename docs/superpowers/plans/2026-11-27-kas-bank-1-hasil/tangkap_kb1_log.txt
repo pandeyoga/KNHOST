@@ -1,0 +1,171 @@
+── fase f1 (2026-11-27T14:38:54.924Z)
+F1 — pesanan CBD KSC/SO-00004 (kode KN-4X5AA, wajib sebelum gudang Rp 291.375), DP50 KSC/SO-00005 (kode KN-QLYLP, wajib Rp 124.875); berkas mutasi_uji_kb1.csv: baris (a) Rp 291.375 kode CBD, (b) Rp 374.875 kode DP50 (lebih dari tagihan)
+F1-1 Finance — Meja Keuangan sebelum impor (kartu Uang masuk: kedua pesanan Tertahan bayar)
+  potret 01_f1_meja_keuangan_sebelum_impor.jpg
+F1-2 Finance — Rekonsiliasi › Impor mutasi bank (BCA Operasional KSC): unggah CSV → Pratinjau → Impor
+  rekening terpilih: BCA Operasional KSC · 7415595554
+  potret 02_f1_rekon_impor_pratinjau.jpg
+  pratinjau: Terbaca 2 baris memakai template BCA — Rekening Koran (CSV) (dikenali otomatis) · masuk Rp 666.250 · keluar Rp 0 TANGGAL KETERANGAN REFERENSI NOMINAL ARAH 27 Nov 2026 TRSF E-BANKING CR 2711/FTSCY/WS95051 KN-4X5AA Toko Kain Sejahtera FTSCY/WS95051 Rp 291.375 Ma
+  bilah hasil: "Impor BCA — Rekening Koran (CSV): 2 baris baru, 0 dilewati (sudah pernah masuk). Mutasi berkode bayar: 1 kwitansi otomatis (Rp 291.375), 1 perlu dicek di Meja Keuangan."
+  [API] baris (a) Rp 291.375: status matched, match_type auto_receipt, f1 otomatis/jalur C, kwitansi KSC/AR-00003 Rp 291.375 source mutasi_bank bank_verified true, kas tertaut cash_243f9d387529a115c3fe6c0c
+  [API] baris (b) Rp 374.875: status unmatched, f1 kartu, alasan_kode nominal_beda, alasan "Nominal mutasi Rp 374.875 ≠ tagihan Rp 124.875 (lebih Rp 250.000)"
+  potret 03_f1_rekon_hasil_impor.jpg
+  potret 04_f1_rekon_baris_otomatis_dan_kartu.jpg
+  baris (a) di layar: 27 Nov 2026 TRSF E-BANKING CR 2711/FTSCY/WS95051 KN-4X5AA Toko Kain Sejahtera Pihak: FTSCY WS95051 KN-4X5AA Toko Kain Sejahtera Referensi: FTSCY/WS95051 Kode Bayar KN-4X5AA Rp 291.375 — Tercocok satu-satu Kwitansi otomat
+  baris (b) di layar: 27 Nov 2026 TRSF E-BANKING CR 2711/FTSCY/WS95052 KN-QLYLP Toko Kain Sejahtera Pihak: FTSCY WS95052 KN-QLYLP Toko Kain Sejahtera Referensi: FTSCY/WS95052 Kode Bayar KN-QLYLP Nominal beda: Nominal mutasi Rp 374.875 ≠ tagihan Rp 124.875 (lebih Rp 250.000) Catat s
+F1-3 Finance — pratinjau kwitansi otomatis (Penagihan & Penerimaan › riwayat kwitansi)
+  potret 05_f1_pratinjau_kwitansi_otomatis.jpg
+  asal kwitansi di pratinjau: "Lahir dari mutasi bank 27 Nov 2026 · BCA Operasional KSC · ref FTSCY/WS95051"
+F1-4 Finance — Meja Keuangan: kartu "Mutasi berkode perlu dicek" → pop-up → Catat kwitansi
+  potret 06_f1_meja_keuangan_mutasi_berkode.jpg
+  baris kartu di meja: KSC/SO-00005 Toko Kain Sejahtera Nominal beda < 1 hari Rp 374.875 Catat kwitansi | aksi "Catat kwitansi" | lencana "Nominal beda"
+  baris kartu Uang masuk: KSC/SO-00002 · KSC/SO-00005 · KSC/SO-00005 — pesanan CBD KSC/SO-00004 sudah tidak ada
+  potret 07_f1_meja_popup_mutasi_berkode.jpg
+  pop-up alasan: "Nominal beda: Nominal mutasi Rp 374.875 ≠ tagihan Rp 124.875 (lebih Rp 250.000)" · tombol "Catat kwitansi"
+  pop-up Keterangan 27 Nov 2026 · BCA Operasional KSC · KN-QLYLP
+  potret 08_f1_meja_form_catat_kwitansi_dari_mutasi.jpg
+  form: nominal "Rp 374.875", tanggal "27 Nov 2026", rekening dikunci true, referensi "FTSCY/WS95052" — tidak disimpan (kartu dibiarkan)
+── fase f1s (2026-11-27T14:40:02.820Z)
+F1-5 Sales — pesanan sesudah impor. [API] KSC/SO-00004: status confirmed, pay_hold dibuka, bayar paid, release.waiting ""; KSC/SO-00005: status approved, pay_hold masih, bayar pending
+  [DB] tugas gudang: KSC/SO-00004 → wms_804a62fb2865 outbound created; KSC/SO-00005 → tidak ada (masih tertahan)
+  potret 09_f1_sales_pesanan_cbd_lepas_perjalanan.jpg
+  Perjalanan, tahap kini: Disiapkan gudang
+  potret 10_f1_sales_notifikasi_bayar_masuk_mutasi.jpg
+  notifikasi: Pembayaran KSC/SO-00004 Rp 291.375 masuk lewat mutasi bank (kwitansi KSC/AR-00003); pesanan dilepas ke gudang | 1 mnt lalu · Pembayaran masuk (mutasi bank)
+── fase ps1 (2026-11-27T14:40:30.161Z)
+  [API] sebelum pindah saldo
+    BCA Operasional KSC: buku kas Rp 877.664.452,5 (4 transaksi) · akun (belum)  → -
+    Kas Toko KSC: buku kas Rp 33.150.000 (6 transaksi) · akun (belum)  → -
+    akun 1-1100: Rp 877.664.452,5
+    akun 1-1110: Rp 33.150.000
+    akun 1-1150: Rp -10.000.000
+KB1-1 Admin — Kas & Bank › Rekening & Saldo (PT Sukacita/KSC): penanda PT belum memakai akun per rekening
+  potret 11_kb1_rekening_sebelum_penanda.jpg
+  penanda: "PT belum memakai akun per rekening — saldo kas semua rekening masih di akun kas bersama. Siapkan pindah saldo"
+  kartu BCA Operasional KSC: "PT belum memakai akun per rekening"
+  kartu Kas Toko KSC: "PT belum memakai akun per rekening"
+KB1-2 Admin — klik "Siapkan pindah saldo" → Akun per rekening (pratinjau)
+  potret 12_kb1_akun_per_rekening_pratinjau.jpg
+  [API] pratinjau: aktif false, total dipindah Rp 910.814.452,5, posting gagal 0, sidik eb6190aa868caa4895c2d4c3; BCA Operasional KSC → 1-1100-01 (baru) saldo buku Rp 877.664.452,5, dipindah Rp 877.664.452,5 dari 1-1100; Kas Toko KSC → 1-1110-01 (baru) saldo buku Rp 33.150.000, dipindah Rp 33.150.000 dari 1-1110
+KB1-3 Admin — Siapkan pindah saldo (pop-up) → Siapkan usulan
+  potret 13_kb1_siapkan_popup.jpg
+  pilihan akun: BCA Operasional KSC = "Sub-akun baru 1-1100-01 (dibuat sistem)"; Kas Toko KSC = "Sub-akun baru 1-1110-01 (dibuat sistem)"
+  ringkasan: "Saldo kas Rp 910.814.453 di Sukacita akan dipindah dari akun kas lama ke akun buku besar tiap rekening. Usulan ini baru berlaku sesudah disetujui orang lain; angkanya dihitung ulang saat disetujui dan jurnalnya bertanggal hari persetujuan."
+  [API] usulan psk_ent_ksc_001: status menunggu, disiapkan Budi Santoso; kontrol untuk Admin: {"dua_orang":true,"sendiri":true,"admin_sendiri":false,"ditolak":true,"pesan":"Pindah saldo kas ke akun per rekening harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."}
+  [API] sub-akun dibuat saat disiapkan: 1-1100-01 BCA Operasional KSC is_cash=true; 1-1110-01 Kas Toko KSC is_cash=true
+  potret 14_kb1_usulan_menunggu_setujui_mati_untuk_penyiap.jpg
+  tombol Setujui nonaktif: true; alasan: "Pindah saldo kas ke akun per rekening harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
+  tata letak alasan: span 260×80 px (white-space normal), tabel 1150 px dalam wadah 1150 px — muat
+  bilah: "Sukacita belum memakai akun per rekening · total dipindah Rp 910.814.453" · alasan Siapkan mati: "Usulan pindah saldo PT ini masih menunggu persetujuan. Setujui atau tolak dulu."
+── fase ps2 (2026-11-27T14:40:57.879Z)
+KB1-4 Finance — usulan psk_ent_ksc_001 menunggu; kontrol untuk Finance: {"dua_orang":true,"sendiri":false,"admin_sendiri":false,"ditolak":false,"pesan":""}
+  potret 15_kb1_pusat_persetujuan_antrean_pindah_saldo.jpg
+  antrean di Pusat Persetujuan: "Pindah saldo kas per rekening menunggu persetujuan 1", bisa diklik: true
+  klik antrean → layar Akun per rekening (/?view=kas-per-rekening&entity=ent_ksc)
+  potret 16_kb1_setujui_popup_angka_terbaru.jpg
+  pop-up Setujui: "Rp 910.814.453 dipindah ke akun buku besar per rekening Sukacita. Jurnalnya bertanggal hari ini; sesudah disetujui kas baru Sukacita masuk akun rekening masing-masing dan langkah ini tidak bisa diulang."
+  [API] kas baru sesudah pop-up dibuka: HTTP 200 KSC/CASH-00011 Rp 150.000 (Kas Toko KSC, keluar)
+  potret 17_kb1_setujui_409_angka_berubah.jpg
+  galat di pop-up: "Angka berubah, muat ulang."; angka dimuat ulang: "Rp 910.664.453"
+  [API] sesudah Setujui: usulan disetujui, diputus Sri Mulyani, jurnal KSC/JE-00024, dipindah Rp 910.664.452,5
+  potret 18_kb1_akun_per_rekening_sesudah_aktif.jpg
+  bilah: "Sukacita memakai akun per rekening sejak 27 Nov 2026 · dipindah Rp 910.664.453 (jurnal KSC/JE-00024)"; cek: "Saldo akun buku besar tiap rekening sama dengan saldo buku kasnya."
+  [API] sesudah pindah saldo disetujui (sub-akun = buku kas; akun lama)
+    BCA Operasional KSC: buku kas Rp 877.664.452,5 (4 transaksi) · akun 1-1100-01 Rp 877.664.452,5 → SAMA
+    Kas Toko KSC: buku kas Rp 33.000.000 (7 transaksi) · akun 1-1110-01 Rp 33.000.000 → SAMA
+    akun 1-1100: Rp 0
+    akun 1-1110: Rp 0
+    akun 1-1150: Rp -10.000.000
+── fase ps3 (2026-11-27T14:41:28.061Z)
+KB1-5 Admin — Rekening & Saldo sesudah PT aktif
+  potret 19_kb1_rekening_sesudah_aktif.jpg
+  baris alat: "Akun per rekening"
+  kartu BCA Operasional KSC: "Akun buku besar 1-1100-01 · BCA Operasional KSC" · [API] gl_account_code 1-1100-01, aktif true, sejak 2026-11-27T14:41:21.720739+00:00
+  kartu Kas Toko KSC: "Akun buku besar 1-1110-01 · Kas Toko KSC" · [API] gl_account_code 1-1110-01, aktif true, sejak 2026-11-27T14:41:21.720739+00:00
+  potret 20_kb1_form_ubah_rekening_akun_hanya_baca.jpg
+  form Ubah: "Akun buku besar: 1-1100-01 · BCA Operasional KSC"
+── fase pd1 (2026-11-27T14:41:45.426Z)
+PD-1 Admin — Kas & Bank › Pindah Dana › + Pindah Dana: setor tunai Kas Toko → BCA, Rp 5.000.000, biaya Rp 6.500, terima besok
+  potret 21_pd_form_dua_tahap.jpg
+  ringkasan form: "Rp 5.000.000 dipindah dari Kas Toko KSC ke BCA Operasional KSC di Sukacita; biaya transfer Rp 6.500 dibebankan ke rekening asal. Dana dalam perjalanan sampai diterima 28 Nov 2026."
+  [API] KSC/PDN-00001: status dalam_perjalanan, nominal Rp 5.000.000, biaya Rp 6.500, kirim 2026-11-27, rencana terima 2026-11-28
+  potret 22_pd_daftar_dalam_perjalanan.jpg
+  baris: KSC/PDN-00001 27 Nov 2026 tiba 28 Nov 2026 Kas Toko KSC BCA Operasional KSC Setor tunai hasil penjualan toko ke BCA (setor sore, masuk besok) Rp 5.000.000 Rp 6.500 Dalam perjalanan Terima Batal
+  [API] sesudah KSC/PDN-00001 dikirim (dalam perjalanan: transit 1-1150 terisi)
+    BCA Operasional KSC: buku kas Rp 877.664.452,5 (4 transaksi) · akun 1-1100-01 Rp 877.664.452,5 → SAMA
+    Kas Toko KSC: buku kas Rp 27.993.500 (9 transaksi) · akun 1-1110-01 Rp 27.993.500 → SAMA
+    akun 1-1100: Rp 0
+    akun 1-1110: Rp 0
+    akun 1-1150: Rp -5.000.000
+PD-2 Admin — Terima KSC/PDN-00001: pop-up tanggal (dana sudah masuk hari ini → tanggal diganti 2026-11-27)
+  tanggal bawaan pop-up: "Sab, 28 Nov 2026"
+  potret 23_pd_terima_popup_tanggal.jpg
+  [API] KSC/PDN-00001: status selesai, diterima 2026-11-27, kas KSC/CASH-00012 out Rp 5.000.000, KSC/CASH-00013 out Rp 6.500, KSC/CASH-00014 in Rp 5.000.000
+  potret 24_pd_daftar_selesai.jpg
+  [API] sesudah KSC/PDN-00001 diterima
+    BCA Operasional KSC: buku kas Rp 882.664.452,5 (5 transaksi) · akun 1-1100-01 Rp 882.664.452,5 → SAMA
+    Kas Toko KSC: buku kas Rp 27.993.500 (9 transaksi) · akun 1-1110-01 Rp 27.993.500 → SAMA
+    akun 1-1100: Rp 0
+    akun 1-1110: Rp 0
+    akun 1-1150: Rp -10.000.000
+PD-3 Admin — Pengaturan › Persetujuan › Kontrol dua orang: "Pindah dana antar rekening" = Harus dua orang (Sukacita)
+  lapisan: "Sukacita Textile"
+  potret 25_pd_kontrol_dua_orang_pindah_dana.jpg
+  baris: "Pindah dana antar rekening Harus dua orang — Aturan PT ini"; pesan: "Aturan kontrol dua orang tersimpan."
+── fase pd2 (2026-11-27T14:42:30.975Z)
+PD-4 Finance — + Pindah Dana: isi kas kecil BCA → Kas Toko, Rp 2.000.000, sekali jalan (kontrol 2 orang)
+  ringkasan form: "Rp 2.000.000 dipindah dari BCA Operasional KSC ke Kas Toko KSC di Sukacita."
+  [API] KSC/PDN-00002: status menunggu_persetujuan, kas 0; kontrol untuk Finance {"dua_orang":true,"sendiri":true,"admin_sendiri":false,"ditolak":true,"pesan":"Pindah dana antar rekening harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."}
+  potret 26_pd_menunggu_setujui_mati_untuk_pembuat.jpg
+  tombol Setujui nonaktif: true; catatan: "Pindah dana antar rekening harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
+  tata letak catatan: span 201×96 px (white-space normal), tabel 1178 px dalam wadah 1178 px — muat
+── fase pd3 (2026-11-27T14:42:52.861Z)
+PD-5 Admin — Setujui KSC/PDN-00002 (dibuat Finance)
+  potret 27_pd_setujui_konfirmasi.jpg
+  konfirmasi: "Rp 2.000.000 dari BCA Operasional KSC ke Kas Toko KSC (Sukacita). Kas keluar dan kas masuk langsung tercatat."
+  [API] KSC/PDN-00002: status selesai, kas KSC/CASH-00015 out Rp 2.000.000, KSC/CASH-00016 in Rp 2.000.000
+  potret 28_pd_daftar_sesudah_disetujui.jpg
+  [API] sesudah KSC/PDN-00002 disetujui
+    BCA Operasional KSC: buku kas Rp 880.664.452,5 (6 transaksi) · akun 1-1100-01 Rp 880.664.452,5 → SAMA
+    Kas Toko KSC: buku kas Rp 29.993.500 (10 transaksi) · akun 1-1110-01 Rp 29.993.500 → SAMA
+    akun 1-1100: Rp 0
+    akun 1-1110: Rp 0
+    akun 1-1150: Rp -10.000.000
+PD-6 Admin — pratinjau dokumen KSC/PDN-00001 (klik nomor)
+  potret 29_pd_pratinjau_pdn.jpg
+  pratinjau: judul "Pindah Dana · KSC/PDN-00001", kas: KAS UNTUK REKENING TANGGAL NOMINAL KETERANGAN KSC/CASH-00012 Kas keluar rekening asal Kas Toko KSC 27 Nov 2026 −Rp 5.000.000 Jurnal KSC/JE-00025 KSC/CASH-00013 Biaya transfer Kas Toko KSC 27 Nov 2026 −Rp 6.500 Jurnal KSC/JE-00026 KSC/CASH-00014 Kas masuk rekening tujuan BCA Operasional KSC 27 Nov 20
+  riwayat: "Dibuat · Budi Santoso · 27 Nov 2026, 21.42 WIB Kas terbit · Budi Santoso · 27 Nov 2026, 21.42 WIB — dalam perjalanan Diterima rekening tujuan · Budi Santoso · 27 Nov 2026, 21.42 WIB — diterima 27 Nov 2026"
+  tombol kaki: Jejak 1, Buka layar penuh 1
+PD-7 Admin — Batal KSC/PDN-00002 beralasan
+  potret 30_pd_batal_alasan.jpg
+  pesan batal: "Rp 2.000.000 dari BCA Operasional KSC ke Kas Toko KSC. Semua kas dokumen ini dibalik dengan jurnal pembalik; ditolak bila salah satunya sudah dicocokkan dengan mutasi bank (lepas dulu di Rekonsiliasi)."
+  [API] KSC/PDN-00002: status batal, alasan "Kas kecil toko ternyata masih cukup minggu ini", kas KSC/CASH-00015 void, KSC/CASH-00016 void
+PD-8 Admin — Transaksi Kas › Catat Transaksi: kategori tanpa Transfer/Top-up + "Pakai Pindah Dana"
+  potret 31_kas_form_tanpa_transfer_pakai_pindah_dana.jpg
+  petunjuk: "Setor tunai, isi kas kecil, atau pindah antar rekening? Pakai Pindah Dana — biaya transfernya diisi di sana. Biaya administrasi bank dicatat dari Rekonsiliasi Bank (Catat biaya bank)."
+  potret 32_kas_form_daftar_kategori.jpg
+  kategori: Operasional · Pembelian · Gaji / Upah · Setoran Modal · Lain-lain — Transfer/Top-up tidak ada
+  potret 33_kas_daftar_kas_pindah_dana.jpg
+  sumber kas: Sumber: Pindah Dana KSC/PDN-00001 | Sumber: Pindah Dana KSC/PDN-00001 | Sumber: Pindah Dana KSC/PDN-00001
+  "Anulir lewat Pindah Dana": 3 baris — "Anulir lewat Pindah Dana KSC/PDN-00001"
+  tata letak "Anulir lewat …": span 132×32 px (white-space normal), tabel 1178 px dalam wadah 1178 px — muat
+  [API] akhir (sesudah Pindah Dana & pembatalan)
+    BCA Operasional KSC: buku kas Rp 882.664.452,5 (5 transaksi) · akun 1-1100-01 Rp 882.664.452,5 → SAMA
+    Kas Toko KSC: buku kas Rp 27.993.500 (9 transaksi) · akun 1-1110-01 Rp 27.993.500 → SAMA
+    akun 1-1100: Rp 0
+    akun 1-1110: Rp 0
+    akun 1-1150: Rp -10.000.000
+── fase cek (2026-11-27T14:43:43.146Z)
+CEK — jurnal & data di balik layar
+  pindah saldo psk_ent_ksc_001: disetujui, disiapkan Budi Santoso, disetujui Sri Mulyani, tanggal jurnal 2026-11-27, kas lama ditautkan 4; jurnal KSC/JE-00024 tgl 2026-11-27 [1-1100-01 D Rp 877.664.452,5 / 1-1100 K Rp 877.664.452,5 / 1-1110-01 D Rp 33.000.000 / 1-1110 K Rp 33.000.000]
+  kas lama tanpa rekening sesudah disetujui (number, account_id): [["CASH-00003", "bank_78251fa4230a"], ["CASH-00002", "bank_78251fa4230a"], ["CASH-00001", "bank_5d719ef0ad14"], ["CASH-00004", "bank_78251fa4230a"]]
+  KSC/PDN-00001 (selesai; transit 1-1150, beban bank 6-8000):
+    KSC/CASH-00012 Kas keluar rekening asal out Rp 5.000.000 Kas Toko KSC → KSC/JE-00025 tgl 2026-11-27 [1-1150 D Rp 5.000.000 / 1-1110-01 K Rp 5.000.000]
+    KSC/CASH-00013 Biaya transfer out Rp 6.500 Kas Toko KSC → KSC/JE-00026 tgl 2026-11-27 [6-8000 D Rp 6.500 / 1-1110-01 K Rp 6.500]
+    KSC/CASH-00014 Kas masuk rekening tujuan in Rp 5.000.000 BCA Operasional KSC → KSC/JE-00027 tgl 2026-11-27 [1-1100-01 D Rp 5.000.000 / 1-1150 K Rp 5.000.000]
+  KSC/PDN-00002 (batal; transit 1-1150, beban bank -):
+    KSC/CASH-00015 Kas keluar rekening asal out Rp 2.000.000 BCA Operasional KSC → KSC/JE-00028 tgl 2026-11-27 [1-1150 D Rp 2.000.000 / 1-1100-01 K Rp 2.000.000] · pembalik KSC/JE-00031 tgl 2026-11-27 [1-1150 K Rp 2.000.000 / 1-1100-01 D Rp 2.000.000]
+    KSC/CASH-00016 Kas masuk rekening tujuan in Rp 2.000.000 Kas Toko KSC → KSC/JE-00029 tgl 2026-11-27 [1-1110-01 D Rp 2.000.000 / 1-1150 K Rp 2.000.000] · pembalik KSC/JE-00030 tgl 2026-11-27 [1-1110-01 K Rp 2.000.000 / 1-1150 D Rp 2.000.000]
+  kas manual kategori "transfer" (D3): HTTP 400 "Pakai Pindah Dana untuk setor tunai, isi kas kecil, dan pindah antar rekening."
+── fase pulih (2026-11-27T14:43:44.245Z)
+PULIH — kontrol.pindah_dana.min_orang KSC dikembalikan ke bawaan: HTTP 200; sekarang min_orang "1" (sumber entity)

@@ -1,0 +1,44 @@
+{
+  "cbd": {
+    "id": "so_79d5eae5eee7",
+    "number": "KSC/SO-00004",
+    "term": "CBD",
+    "customer": "Toko Kain Sejahtera",
+    "customer_id": "cust_toko_kain",
+    "entity_id": "ent_ksc",
+    "product_id": "prod_1f9085dad8bc",
+    "sales_email": "sales@kainnusantara.id",
+    "grand_total": 291375.0,
+    "shortfall": 291375.0,
+    "pay_code": "KN-4X5AA",
+    "pay_code_amount": 291375.0,
+    "receiving_account_id": "",
+    "payment_method_code": ""
+  },
+  "dp": {
+    "id": "so_ad42551d026a",
+    "number": "KSC/SO-00005",
+    "term": "DP50",
+    "customer": "Toko Kain Sejahtera",
+    "customer_id": "cust_toko_kain",
+    "entity_id": "ent_ksc",
+    "product_id": "prod_7b58a18107ab",
+    "sales_email": "sales@kainnusantara.id",
+    "grand_total": 249750.0,
+    "shortfall": 124875.0,
+    "pay_code": "KN-QLYLP",
+    "pay_code_amount": 124875.0,
+    "receiving_account_id": "",
+    "payment_method_code": ""
+  },
+  "rekening": {
+    "id": "bank_5d719ef0ad14",
+    "name": "BCA Operasional KSC"
+  },
+  "mutasi": {
+    "tanggal": "27/11/2026",
+    "tepat": 291375.0,
+    "lebih": 374875,
+    "csv": "mutasi_uji_kb1.csv"
+  }
+}
