@@ -605,6 +605,55 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                   entity_id=lp.get("entity_id", "")) for lp in laporan],
             action_label="Putuskan", owner="finance"))
 
+    # 2d — F1 (spec kwitansi otomatis §5.4): mutasi bank berkode bayar yang tidak lolos "cocok sempurna" → kartu
+    # beralasan (`f1.status == "kartu"`, baris tetap `unmatched`). Hanya untuk yang boleh mencatat uang masuk
+    # (`cash.create` DAN `ar_receipt.create`). Bukan antrean keputusan: tidak ada pintu putusan baru (aksi = form
+    # "Catat kwitansi" → `POST /bank-reconciliation/lines/{id}/receipt`, pintu uang yang ada).
+    if await has_permission(actor, "cash", "create") and await has_permission(actor, "ar_receipt", "create"):
+        kartu = await db.bank_statement_lines.find(
+            {**_ent_q(scope), "status": "unmatched", "f1.status": "kartu"}, {"_id": 0}
+        ).sort("stmt_date", 1).to_list(500)
+        rek_nama: Dict[str, str] = {}
+        rids = list({k.get("bank_account_id") for k in kartu if k.get("bank_account_id")})
+        if rids:
+            rek_nama = {a["id"]: a.get("name") or a.get("bank_name") or a.get("account_number") or "" for a in
+                        await db.bank_accounts.find({"id": {"$in": rids}}, {"_id": 0, "id": 1, "name": 1,
+                                                                            "bank_name": 1, "account_number": 1}
+                                                    ).to_list(len(rids))}
+        cust_nama: Dict[str, str] = {}
+        cids = list({(k.get("pay_code_hits") or [{}])[0].get("customer_id") for k in kartu} - {None, ""})
+        if cids:
+            cust_nama = {c["id"]: c.get("name") or "" for c in await db.customers.find(
+                {"id": {"$in": cids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(cids))}
+        baris_kartu = []
+        for k in kartu:
+            hits = k.get("pay_code_hits") or []
+            hit = hits[0] if hits else {}
+            f1 = k.get("f1") or {}
+            kode = [h.get("code", "") for h in hits if h.get("code")]
+            kode_txt = ", ".join(kode)
+            nama = cust_nama.get(hit.get("customer_id") or "", "")
+            baris_kartu.append(_row(
+                ref_type="bank_statement_line", ref_id=k["id"], number=hit.get("order_number") or kode_txt,
+                title=nama or k.get("counterparty") or "—",
+                subtitle=" · ".join([str(k.get("stmt_date") or ""), rek_nama.get(k.get("bank_account_id") or "", ""),
+                                     kode_txt, f1.get("alasan") or ""]),
+                value=float(k.get("amount") or 0), age_days=_age_days(k.get("created_at")),
+                at=k.get("created_at"), badge=f1.get("alasan_kode", ""),
+                action="Catat kwitansi", action_kind="receipt_from_line",
+                extra={"line_id": k["id"], "order_id": hit.get("order_id") or f1.get("order_id") or "",
+                       "order_number": hit.get("order_number") or "", "customer_id": hit.get("customer_id") or "",
+                       "bank_account_id": k.get("bank_account_id") or "", "stmt_date": k.get("stmt_date") or "",
+                       "ref": k.get("ref") or "", "codes": kode, "alasan": f1.get("alasan") or "",
+                       "alasan_kode": f1.get("alasan_kode") or "", "report_id": f1.get("report_id") or "",
+                       "row_key": k["id"]},
+                entity_id=k.get("entity_id", "")))
+        queues.append(_queue(
+            "mutasi_berkode", "Mutasi berkode perlu dicek",
+            "Mutasi bank berkode bayar yang belum bisa menjadi kwitansi otomatis. Baca alasannya, lalu Catat kwitansi "
+            "dari mutasi atau buka Rekonsiliasi.",
+            baris_kartu, action_label="Catat kwitansi", owner="finance"))
+
     # 3 — selisih bayar (lebih/kurang bayar) dalam batas kewenangan Finance
     from services import payment_variance_service as pvs
     ent_scope: Any = scope.get("entity_id") if isinstance(scope, dict) else ""
