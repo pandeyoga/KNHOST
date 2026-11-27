@@ -1,6 +1,6 @@
 # Rancangan — F1 Kwitansi otomatis dari mutasi bank
 
-Tanggal: 27 Nov 2026 · Status: **keputusan pemilik F1 disetujui** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
+Tanggal: 27 Nov 2026 · Status: **keputusan pemilik F1 disetujui; builder check selesai (27 Nov, 4 pertanyaan → keputusan builder 10–14)** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
 §F1: *"Otomatis penuh untuk yang cocok sempurna, sisanya kartu"*; urutan G1: sesudah Lapor Bayar). Keputusan builder di
 §7 dikerjakan tanpa menunggu (perintah pemilik "langsung lanjut kerjakan saja semua") dan dilaporkan untuk diperiksa.
 Inventaris kode: dibuat 27 Nov (ringkasan di §2; rujukan baris di rencana).
@@ -72,6 +72,13 @@ Builder memilih **A** (pemilik menyerahkan cara; keputusan F1 hanya menetapkan h
 - **Saat "Cocokkan otomatis"** ditekan: mesin F1 juga memproses baris berkode yang masih `unmatched` di rekening itu yang
   belum pernah diproses atau yang statusnya kartu (keadaan pesanan bisa sudah berubah). Baris yang kwitansi otomatisnya
   pernah dibatalkan (§5.6) **tidak** diproses lagi.
+- **Hanya mutasi yang diimpor sesudah F1 aktif.** Saat backend pertama kali menyala dengan F1, waktu aktifnya dicatat
+  sekali (penanda sistem). Baris yang diimpor sebelum itu **tidak** diproses (bukan otomatis, bukan kartu) — riwayat lama
+  di VPS tetap di layar Rekonsiliasi seperti sekarang. Ini mencegah kwitansi mundur tanggal massal pada data nyata saat
+  "Cocokkan otomatis" pertama kali ditekan sesudah pembaruan.
+- **Baris yang pernah ditautkan mesin tidak pernah diproses otomatis lagi**, lewat jalan apa pun tautannya dilepas
+  (aksi §5.6, "Lepas" di Rekonsiliasi, pembatalan kwitansi biasa). Penandanya ditulis saat mesin menautkan dan tidak
+  dihapus oleh pelepasan. Baris berstatus kartu boleh dinilai ulang.
 - Urutan dalam satu batch: tanggal mutasi naik, lalu urutan baris berkas — dua transfer berkode sama diproses berurutan
   (yang kedua melihat sisa tagihan sesudah yang pertama).
 - Mesin hanya berjalan bila pengaturan PT baris itu menyala (§5.7). Bila mati: tidak ada kwitansi otomatis; baris berkode
@@ -100,6 +107,11 @@ Untuk satu baris mutasi:
    nominal sama (selisih < Rp 1) dan rekening sama → laporan itu yang diterima (§5.3 jalur B). Selain itu → kartu.
 9. **Tidak ada kwitansi terbuka** (belum terverifikasi) untuk pesanan itu dengan nominal sama — bila ada, mutasi
    **ditautkan ke kwitansi itu** (jalur A), bukan membuat kwitansi baru.
+10. Bila butir 8 **dan** 9 sama-sama menemukan calon (ada kwitansi terbuka bernominal sama **dan** laporan menunggu
+    bernominal sama) → **kartu** "Kwitansi {no} dan laporan {LB} sama-sama menunggu — putuskan", karena keduanya mungkin
+    uang yang sama.
+11. Laporan menunggu yang cocok tetapi **tanpa lampiran bukti** tetap boleh diterima lewat jalur B: mutasi bank adalah
+    buktinya (pengecualian R9 hanya untuk penerimaan yang membawa baris mutasi).
 
 ### 5.3 Tindakan otomatis (satu operasi server per baris)
 
@@ -161,13 +173,28 @@ referensi, catatan, keputusan selisih bila ada). Server: klaim baris → `create
 `source = mutasi_bank`, `bank_line_id`) → tautan. Satu permintaan; bila tautan gagal, kwitansi tidak tertinggal tanpa
 tautan (pemulihan seperti §5.3). Izin: `cash.create` + `ar_receipt.create`; pagar B3 berlaku normal untuk pengguna.
 
+**Laporan bayar menunggu pada pesanan tujuan** (supaya uang yang sama tidak tercatat dua kali):
+- Permintaan **ditolak (409 pemandu)** selama salah satu pesanan tujuan punya laporan `menunggu`/`memproses`: "Putuskan
+  dulu laporan bayar {LB}: Terima bila buktinya mutasi ini, Tolak bila bukan."
+- **Kecuali** permintaan menyebut laporan itu (`payment_report_id`): server menerima laporan itu (`terima`, jalur B)
+  dan menautkan mutasi ke kwitansinya; nominal laporan harus sama dengan nominal mutasi (selisih < Rp 1), rekening sama.
+- Pop-up kartu menampilkan laporan menunggu pesanan itu dengan tombol "Terima laporan ini dengan mutasi ini" dan
+  "Tolak" (alasan); keduanya memakai aturan Lapor Bayar yang sudah ada.
+- Celah lama di luar mutasi (Finance mencatat kwitansi manual biasa saat laporan menunggu, lalu laporan diterima
+  belakangan) **tidak** diubah F1 — dicatat sebagai catatan (§8).
+
 ### 5.6 Membatalkan kwitansi otomatis
 
 - Aksi **"Batalkan kwitansi dari mutasi"** di rincian kwitansi bersumber `mutasi_bank` dan di baris Rekonsiliasi:
   alasan wajib; server melepas tautan mutasi (`_unlink`) lalu membatalkan kwitansi (`void_receipt`, aturan yang sama),
   dalam satu permintaan; baris kembali `unmatched` dengan penanda **"kwitansi otomatis dibatalkan"** sehingga mesin tidak
   memprosesnya lagi (tetap bisa dicatat manual lewat kartu/Rekonsiliasi).
-- Izin: pembatalan kwitansi yang sudah ada (izin batal kwitansi) + `cash.create`.
+- Izin: **aturan batal kwitansi yang sudah ada** (`ar_receipt.void`, bawaan manajer & admin — Finance bawaan tidak
+  memegangnya) + `cash.create`. Tidak ada izin baru: membatalkan uang masuk tetap wewenang yang sama dengan kwitansi
+  manual. Finance yang melihat kwitansi otomatis keliru meminta manajer (dicatat untuk pemilik).
+- **Pesanan sudah dilepas ke gudang** oleh kwitansi itu: pembatalan tetap boleh, dengan peringatan di konfirmasi
+  "Pesanan {no} sudah dilepas ke gudang ({status}); membatalkan kwitansi tidak menahan barang — tahan pesanan atau hubungi
+  Gudang bila perlu." Sama dengan pembatalan kwitansi manual hari ini (tahan bayar tidak dipasang ulang).
 - Kwitansi dari jalur B (laporan diterima): pembatalan mengikuti aturan kwitansi laporan yang sudah ada (laporan tidak
   terkunci).
 
@@ -208,6 +235,13 @@ tautan (pemulihan seperti §5.3). Izin: `cash.create` + `ar_receipt.create`; pag
 7. **Pembatalan satu aksi** (lepas tautan + batal kwitansi) dan baris tidak diproses otomatis lagi.
 8. **Notifikasi sales hanya untuk pesanan yang tertahan bayar**; Finance satu ringkasan per impor.
 9. **Tombol "Catat sebagai kwitansi" lama diganti operasi atomik** (dua permintaan browser dihapus).
+10. **Hanya mutasi yang diimpor sesudah F1 aktif** diproses (otomatis maupun kartu); riwayat lama tidak disentuh.
+11. **Baris yang pernah ditautkan mesin tidak diproses otomatis lagi**, lewat jalan pelepasan apa pun.
+12. **Operasi "kwitansi dari mutasi" menolak selama ada laporan bayar menunggu** pada pesanan tujuan, kecuali Finance
+    memilih menerima laporan itu bersama mutasinya; kwitansi terbuka + laporan menunggu bernominal sama → kartu.
+13. **Laporan tanpa lampiran boleh diterima bila membawa baris mutasi** (mutasi = bukti bank).
+14. **Pembatalan memakai izin batal kwitansi yang ada** (manajer/admin); pesanan yang sudah dilepas tidak ditahan ulang,
+    hanya diperingatkan.
 
 ## 8. Di luar cakupan / catatan
 
@@ -215,3 +249,7 @@ tautan (pemulihan seperti §5.3). Izin: `cash.create` + `ar_receipt.create`; pag
   dihitung dari pesanan). Kode pesanan yang sudah lunas → kartu "sudah lunas".
 - Kasus R7 Lapor Bayar (dua instruksi bayar NET30 + K-27 + B6) tetap ditunda.
 - Mutasi `out` (bayar pemasok) — bukan F1.
+- Celah lama Lapor Bayar: kwitansi manual biasa (bukan dari mutasi) untuk pesanan yang laporannya masih menunggu tidak
+  menutup laporan itu, sehingga Terima belakangan bisa mencatat uang yang sama dua kali bila nominalnya masih di bawah
+  sisa tagihan. Tidak diubah F1; diusulkan sebagai perbaikan kecil terpisah.
+- Pembatalan kwitansi (manual maupun otomatis) tidak memasang ulang tahan bayar pada pesanan yang sudah dilepas.
