@@ -4,7 +4,7 @@ import DetailModal from "../../components/DetailModal";
 import FilterChips from "../../components/FilterChips";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { kpiValueParts } from "../finance/financeShared";
-import { CARD_STATUS_LABEL, StatusPill, TanyaActionCard } from "./TanyaActionCard";
+import { CARD_STATUS_LABEL, StatusPill, TanyaActionCard, statusKartu } from "./TanyaActionCard";
 import { fetchActions } from "./tanyaApi";
 
 /** Saringan tab "Tindakan" (AG-T3). "Menunggu orang lain" (AG-T5) = kartu yang menunggu persetujuan orang kedua di PT
@@ -66,7 +66,7 @@ export function TanyaActions({ refreshKey, initialBox = "mine" }) {
                   <td data-label={COLS[2]} className="tabular-nums"><span>{amount > 0 ? kpiValueParts(formatCurrency(amount)) : "—"}</span></td>
                   <td data-label={COLS[3]}>{formatDateTime(it.created_at)}</td>
                   <td data-label={COLS[4]}>{["pending", "awaiting_second"].includes(it.status) ? formatDateTime(it.expires_at) : "—"}</td>
-                  <td data-label={COLS[5]}><StatusPill status={it.status} labels={CARD_STATUS_LABEL} testId={`tanya-actions-pill-${it.id}`} /></td>
+                  <td data-label={COLS[5]}><StatusPill status={statusKartu(it)} labels={CARD_STATUS_LABEL} testId={`tanya-actions-pill-${it.id}`} /></td>
                 </tr>
               );
             })}

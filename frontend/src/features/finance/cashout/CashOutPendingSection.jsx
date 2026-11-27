@@ -116,7 +116,7 @@ export default function CashOutPendingSection({ currentUser, selectedEntity, ent
     const alasan = await askReason({
       title: `Batalkan pengajuan ${d.number}?`, danger: true,
       message: `${ringkas(d)} Kasnya belum tercatat, jadi pengajuan cukup ditandai dibatalkan.`,
-      reasonLabel: "Alasan pembatalan", reasonRequired: true, reasonMinLength: ALASAN_MIN, confirmLabel: "Batalkan",
+      reasonLabel: "Alasan pembatalan", reasonRequired: true, reasonMinLength: ALASAN_MIN, confirmLabel: "Batalkan", cancelLabel: "Tutup",
       testId: "cash-out-cancel-reason",
     });
     if (alasan === null || alasan === undefined) return;

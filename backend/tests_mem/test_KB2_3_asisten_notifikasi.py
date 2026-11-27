@@ -142,6 +142,9 @@ async def test_KB2_3_K1_kartu_di_atas_batas_menjadi_pengajuan(klien, db, akun, s
     assert (rows[0]["label"], rows[0]["after"]) == (
         "Persetujuan", "Di atas Rp 1.000.000 — akan diajukan untuk disetujui orang kedua."), rows
     assert rows[1]["label"].startswith("Saldo ") and rows[1]["label"].endswith(" (sesudah disetujui)"), rows
+    # kategori ditulis dengan label manusia ("Operasional"), bukan kode mentah "operasional"
+    assert [x["after"] for x in rows if x["label"] == "Kategori"] == ["Operasional"], rows
+    assert k["plan"]["summary"].endswith(" untuk Operasional."), k["plan"]["summary"]
     jurnal0 = await db.journal_entries.count_documents({"entity_id": pt["id"]})   # jurnal saldo awal rekening
     r = await _konfirmasi(klien, pg["h"], k, 3_000_000)
     assert r.status_code == 200, r.text

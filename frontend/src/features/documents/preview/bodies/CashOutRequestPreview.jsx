@@ -7,6 +7,7 @@
  * menunggu) atau baris kasnya di Transaksi Kas (pengajuan disetujui) — registri `cash_out_request`.
  */
 import StatusBadge from "../../../../components/StatusBadge";
+import { useAppNav } from "../../../../context/AppNavContext";
 import { useEntityScope } from "../../../../context/EntityScopeContext";
 import { entityShortById } from "../../../../utils/entityLabel";
 import { formatCurrency, formatDate, formatDateTime } from "../../../../utils/formatters";
@@ -14,12 +15,25 @@ import { JEJAK_LABEL, MENUNGGU, statusPengajuan } from "../../../finance/cashout
 import { categoryLabel } from "../../../purchasing/cashCategories";
 import { PreviewFacts, PreviewTotals } from "../previewParts";
 
-/** Keadaan kas yang terbit dalam kalimat: dibatalkan / jurnal gagal / jurnal terbit. */
+/** Keadaan jurnal kas yang terbit (isi baris "Jurnal"): dibatalkan / gagal / menunggu; nomor jurnal → tautan (`JurnalKas`). */
 export function keteranganKasPengajuan(k) {
   if (!k) return "";
   if (k.status === "void") return "Dibatalkan";
-  if (k.gl_status === "failed") return `Jurnal gagal${k.gl_error ? `: ${k.gl_error}` : ""}`;
-  return k.journal_number ? `Jurnal ${k.journal_number}` : "Jurnal menunggu";
+  if (k.gl_status === "failed") return `Gagal${k.gl_error ? `: ${k.gl_error}` : ""}`;
+  return k.journal_number ? k.journal_number : "Menunggu";
+}
+
+/** Nomor jurnal kas sebagai tautan ke Buku Besar (pola `JournalStatusBadge`); tanpa id jurnal → teks biasa. */
+function JurnalKas({ kas }) {
+  const { openDocument } = useAppNav();
+  const teks = keteranganKasPengajuan(kas);
+  if (kas.status === "void" || kas.gl_status === "failed" || !kas.journal_number || !kas.journal_entry_id) return teks;
+  return (
+    <button type="button" className="link-button font-mono" data-testid="doc-preview-cor-journal" title="Buka jurnalnya di Buku Besar"
+      onClick={() => openDocument({ view: "general-ledger", focus_type: "journal_entry", focus_id: kas.journal_entry_id })}>
+      {teks}
+    </button>
+  );
 }
 
 export default function CashOutRequestPreview({ doc }) {
@@ -58,7 +72,7 @@ export default function CashOutRequestPreview({ doc }) {
         <PreviewFacts testId="doc-preview-cor-cash" items={[
           { key: "number", label: "Kas", content: <span className="font-mono">{kas.number || "—"}</span> },
           { key: "date", label: "Tanggal", content: kas.txn_date ? formatDate(kas.txn_date) : "" },
-          { key: "state", label: "Keterangan", content: keteranganKasPengajuan(kas) },
+          { key: "journal", label: "Jurnal", content: <JurnalKas kas={kas} /> },
         ]} />
       ) : (
         <p className="text-fs-12 text-kn-text-2" data-testid="doc-preview-cor-cash-empty">

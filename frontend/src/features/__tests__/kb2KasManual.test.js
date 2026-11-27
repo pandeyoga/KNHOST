@@ -387,6 +387,7 @@ describe("Menunggu persetujuan", () => {
     mockPost.mockResolvedValue({ data: { ...PKK(), status: "dibatalkan" } });
     await click(q(host, "cash-out-cancel-pkk_1"));
     expect(mockAskReason).toHaveBeenCalledTimes(1);
+    expect(mockAskReason.mock.calls[0][0]).toMatchObject({ confirmLabel: "Batalkan", cancelLabel: "Tutup" });   // bukan "Batal" ganda
     expect(mockAskConfirm).not.toHaveBeenCalled();
     expect(posts("/cancel").at(-1).slice(0, 2)).toEqual(["/api/cash-out-requests/pkk_1/cancel", { alasan: "tidak jadi sewa" }]);
   });
@@ -448,7 +449,7 @@ describe("pratinjau cash_out_request", () => {
     const doc = PKK({ status: "disetujui", disetujui_oleh: REKAN.name, disetujui_pada: "2026-11-27T05:00:00+00:00",
       cash_id: "cash_9", cash_number: "KSC/CASH-00009",
       kas: { id: "cash_9", number: "KSC/CASH-00009", txn_date: "2026-11-27T03:00:00+00:00", amount: 3500000, status: "posted",
-        gl_status: "posted", journal_number: "KSC/JE-00012" },
+        gl_status: "posted", journal_number: "KSC/JE-00012", journal_entry_id: "je_12" },
       jejak: [PKK().jejak[0], { aksi: "setujui", oleh: REKAN.name, pada: "2026-11-27T05:00:00+00:00", catatan: "kas KSC/CASH-00009" }] });
     const host = await mount(<CashOutRequestPreview doc={doc} push={() => {}} canPush={() => false} currentUser={{ permissions: {} }} />);
     expect(txt(q(host, "doc-preview-status"))).toBe("Disetujui");
@@ -456,7 +457,10 @@ describe("pratinjau cash_out_request", () => {
     expect(txt(q(host, "doc-preview-cor-facts"))).toMatch(/Pengaju\s*Rina Pengaju/);
     expect(txt(q(host, "doc-preview-cor-facts"))).toMatch(/Disetujui\s*Dodi Penyetuju/);
     expect(txt(q(host, "doc-preview-cor-cash"))).toMatch(/KSC\/CASH-00009/);
-    expect(txt(q(host, "doc-preview-cor-cash"))).toMatch(/Jurnal KSC\/JE-00012/);
+    expect(txt(q(host, "doc-preview-cor-cash"))).toMatch(/JurnalKSC\/JE-00012/);   // label "Jurnal" (bukan "Keterangan" kedua)
+    expect(txt(q(host, "doc-preview-cor-cash"))).not.toMatch(/Keterangan/);
+    await click(q(host, "doc-preview-cor-journal"));   // nomor jurnal = tautan ke Buku Besar
+    expect(mockOpenDocument).toHaveBeenCalledWith({ view: "general-ledger", focus_type: "journal_entry", focus_id: "je_12" });
     expect(txt(q(host, "doc-preview-totals"))).toMatch(/Nominal kas keluar\s*Rp 3\.500\.000/);
     expect(txt(q(host, "doc-preview-cor-history"))).toMatch(/Diajukan · Rina Pengaju/);
     expect(txt(q(host, "doc-preview-cor-history"))).toMatch(/Disetujui · Dodi Penyetuju · .* — kas KSC\/CASH-00009/);

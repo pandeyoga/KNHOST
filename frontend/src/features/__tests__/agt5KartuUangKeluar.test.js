@@ -147,6 +147,16 @@ test("orang kedua: alasan pembuat, Tolak butuh alasan tertulis, Setujui → pop-
   expect(txt(q("tanya-card-first"))).toContain("orang kedua Mira");
 });
 
+test("kartu kas keluar di atas batas PT (hasil 202): status \"Diajukan\", bukan \"Berhasil\"", async () => {
+  mockFetch.mockResolvedValue(MENUNGGU({ status: "confirmed", result: { status_code: 202, gl_status: null,
+    message: "Diajukan — menunggu persetujuan kas keluar KSC/PKK-00005",
+    document: { type: "cash_out_request", label: "Pengajuan kas keluar", id: "pkk_1", number: "KSC/PKK-00005", link: {} } } }));
+  await mount(<TanyaActionCard proposalId="aiact_c1" />);
+  expect(txt(q("tanya-action-pill"))).toBe("Diajukan");
+  expect(q("tanya-card-success")).toBeNull();
+  expect(txt(q("tanya-card-message"))).toBe("Diajukan — menunggu persetujuan kas keluar KSC/PKK-00005");
+});
+
 test("orang kedua menolak dengan alasan", async () => {
   mockFetch.mockResolvedValue(MENUNGGU({ is_maker: false, can_second: true }));
   mockSecond.mockResolvedValue(MENUNGGU({ status: "dismissed" }));

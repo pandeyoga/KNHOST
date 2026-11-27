@@ -21,7 +21,12 @@ const STATUS_LABEL = {
 export const CARD_STATUS_LABEL = {
   pending: "Menunggu", running: "Sedang diproses", confirmed: "Berhasil", failed: "Gagal", dismissed: "Diabaikan",
   expired: "Kedaluwarsa", superseded: "Diganti", awaiting_second: "Menunggu orang kedua",   // AG-T5
+  submitted: "Diajukan",   // Kas & Bank 2 — kartu kas keluar di atas batas PT: jawaban 202 = pengajuan, bukan "Berhasil"
 };
+/** Kartu `confirmed` yang jawabannya 202 (pengajuan kas keluar menunggu orang kedua): uang belum keluar → "Diajukan". */
+export const kartuDiajukan = (doc) => doc?.status === "confirmed" && Number(doc?.result?.status_code) === 202
+  && doc?.result?.document?.type === "cash_out_request";
+export const statusKartu = (doc) => (kartuDiajukan(doc) ? "submitted" : doc?.status);
 const STATUS_TONE = {
   pending: { Icon: Clock3, tone: "bg-kn-warning-soft text-kn-warning-text" },
   running: { Icon: Loader2, tone: "bg-kn-action-soft text-kn-action", spin: true },
@@ -31,6 +36,7 @@ const STATUS_TONE = {
   expired: { Icon: Hourglass, tone: "bg-kn-neutral-soft text-kn-neutral" },
   superseded: { Icon: Repeat, tone: "bg-kn-neutral-soft text-kn-neutral" },
   awaiting_second: { Icon: UserCheck, tone: "bg-kn-warning-soft text-kn-warning-text" },   // AG-T5
+  submitted: { Icon: Clock3, tone: "bg-kn-warning-soft text-kn-warning-text" },
 };
 
 /** Pil status kartu: ikon + teks + warna (KN_37 §1 butir 3); kode tak dikenal tidak tampil mentah (`docStatusLabel`). */
@@ -147,7 +153,9 @@ function CardOutcome({ doc }) {
     const link = d?.link || {};
     return (
       <div className="tanya-action-outcome" data-testid="tanya-card-outcome" role="status">
-        <p data-testid="tanya-card-success">Berhasil — {[d?.label, d?.number].filter(Boolean).join(" ")}</p>
+        {!kartuDiajukan(doc) && (
+          <p data-testid="tanya-card-success">Berhasil — {[d?.label, d?.number].filter(Boolean).join(" ")}</p>
+        )}
         {res.message && <p data-testid="tanya-card-message">{res.message}</p>}
         {res.gl_status === "posted" && <p data-testid="tanya-card-gl">Jurnal: terposting</p>}
         {res.gl_status === "failed" && (
@@ -330,7 +338,7 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
     <section className={`tanya-action ${doc.status}`} data-testid={`tanya-action-${proposalId}`}>
       <div className="tanya-action-head">
         <div className="tanya-kicker"><Wand2 className="h-4 w-4" aria-hidden="true" /> Kartu tindakan · {doc.title}</div>
-        <StatusPill status={doc.status} labels={CARD_STATUS_LABEL} />
+        <StatusPill status={statusKartu(doc)} labels={CARD_STATUS_LABEL} />
       </div>
       <p className="tanya-action-meta" data-testid="tanya-action-meta">
         PT: {ptName}{(pending || doc.status === "awaiting_second") && doc.expires_at ? ` · berlaku sampai ${formatDateTime(doc.expires_at)}` : ""}

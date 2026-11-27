@@ -411,16 +411,28 @@ async def sc_makloon(c: Ctx) -> str:
 
 # ─── Kas ─────────────────────────────────────────────────────────────────────────────────────────────────
 async def sc_cash(c: Ctx) -> str:
-    fin = await c.u("finance")
-    n = 0
+    """Kas kecil di 3 PT. Kas keluar di atas batas PT (Kas & Bank 2) menjadi pengajuan `cash_out_requests` (202) — orang
+    kedua (Manajer, pemegang `cash.approve`, bukan pengaju) menyetujuinya lewat endpoint resmi, sehingga kas, jurnal, dan
+    saldo akhirnya sama seperti sebelum kontrol dua orang. Pengajuan demo yang masih menunggu (jalan sebelumnya putus
+    di tengah) ikut disetujui lebih dulu, jadi dijalankan ulang tidak menggandakan."""
+    fin, mgr = await c.u("finance"), await c.u("manager")
+    n = aju = 0
     for eid in (KSC, KANDA, c.cst):
+        for q in await db.cash_out_requests.find({"entity_id": eid, "status": "menunggu_persetujuan",
+                                                  "description": {"$regex": r"\(demo\)$"}}, {"_id": 0, "id": 1}).to_list(50):
+            await mgr.post(f"/cash-out-requests/{q['id']}/approve", {}, entity=eid)
+            aju += 1
         for direction, amt, cat, desc in (("out", 350_000, "operasional", "Bensin & tol pengiriman"),
                                           ("out", 1_250_000, "operasional", "Perbaikan forklift gudang"),
                                           ("in", 2_000_000, "lain", "Penjualan karung & kardus bekas")):
-            await fin.post("/cash-transactions", {"cash_type": "kas_kecil", "direction": direction, "amount": amt, "category": cat,
-                                                  "description": f"{desc} (demo)", "entity_id": eid}, entity=eid)
+            res = await fin.post("/cash-transactions", {"cash_type": "kas_kecil", "direction": direction, "amount": amt, "category": cat,
+                                                        "description": f"{desc} (demo)", "entity_id": eid}, entity=eid)
             n += 1
-    return f"{n} transaksi kas kecil di 3 entitas"
+            req = res.get("request") if isinstance(res, dict) else None
+            if req:   # 202 — di atas batas PT: disetujui orang kedua supaya kas & jurnalnya terbit
+                await mgr.post(f"/cash-out-requests/{req['id']}/approve", {}, entity=eid)
+                aju += 1
+    return f"{n} transaksi kas kecil di 3 entitas" + (f" ({aju} lewat pengajuan yang disetujui Manajer)" if aju else "")
 
 
 SCENARIOS = [("pembelian_lengkap", sc_purchase_full), ("pindah_gudang", sc_transfer), ("pembelian_parsial", sc_purchase_partial),

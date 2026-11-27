@@ -790,6 +790,13 @@ async def _prep_cb_pay(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 CASH_DIRECTION_LABEL = {"out": "Kas keluar", "in": "Kas masuk"}
+# Label kategori kas manual (sama dengan `frontend/src/features/purchasing/cashCategories.js`); kode lain → huruf awal besar.
+CASH_CATEGORY_LABEL = {"operasional": "Operasional", "modal": "Setoran Modal", "lain": "Lain-lain"}
+
+
+def _kategori_kas_label(code: str) -> str:
+    c = str(code or "").strip()
+    return CASH_CATEGORY_LABEL.get(c.lower()) or (c[:1].upper() + c[1:]).replace("_", " ")
 
 
 async def _prep_cash_manual(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -822,12 +829,12 @@ async def _prep_cash_manual(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any
     aju = await _catatan_kas_diajukan(api.entity_header, amount) if direction == "out" else ""
     rows = ([_row("Persetujuan", "—", aju)] if aju else []) + [
         _row(f"Saldo {_acc_label(acc)}" + (" (sesudah disetujui)" if aju else ""), saldo, after, "money"),
-        _row("Arah", "—", CASH_DIRECTION_LABEL[direction]), _row("Kategori", "—", category or "—"),
+        _row("Arah", "—", CASH_DIRECTION_LABEL[direction]), _row("Kategori", "—", _kategori_kas_label(category) if category else "—"),
         _row("Keterangan", "—", desc or "—"), _row("Tanggal transaksi", "—", tgl, "date")]
     return {"args": {"account_id": acc_id, "cash_type": account_cash_type(acc), "direction": direction,
                      "amount": amount, "category": category, "description": desc, "txn_date": tgl},
             "plan": {"summary": f"{CASH_DIRECTION_LABEL[direction]} {rupiah(amount)} di {_acc_label(acc)}"
-                                + (f" untuk {category}" if category else "") + ".",
+                                + (f" untuk {_kategori_kas_label(category)}" if category else "") + ".",
                      "rows": rows, "amount": amount, "confirm_text": confirm_text_of(amount), "note": NOTE_JURNAL,
                      "meta": {"account": _acc_label(acc)}},
             "fingerprint_source": [{"path": "/api/bank-accounts", "params": {},
