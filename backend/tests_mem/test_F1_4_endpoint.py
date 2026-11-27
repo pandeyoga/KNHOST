@@ -648,6 +648,92 @@ async def test_batal_gagal_mutasi_ditautkan_kembali(klien, db, siap, monkeypatch
     assert (rc["status"], rc["bank_verified"]) == ("posted", True)
 
 
+async def test_T4_M1_klaim_ulang_gagal_kwitansi_tidak_dibatalkan(klien, db, siap, monkeypatch):
+    """T4-M1 (gelombang akhir) — sesudah tautan dilepas, klaim ulang baris gagal (proses lain memegang baris): kwitansi
+    TIDAK dibatalkan, tautan dipasang kembali (penanda f1 seperti semula), 409 "sedang diproses pencocokan lain"."""
+    from services import bank_auto_receipt_service as f1
+    so = await _pesan(klien, db, siap)
+    r = await _impor_api(klien, siap["h_fin"], siap["A"], [{"nominal": 1_000_000,
+                                                           "berita": f"TRSF {await _kode(db, so['id'])} KLAIM KALAH"}])
+    [ln] = await _baris_batch(db, r.json()["import_batch"])
+    [kw] = await _kwitansi_baris(db, ln["id"])
+
+    async def _kalah(line_id):
+        return ""
+    monkeypatch.setattr(f1, "_klaim", _kalah)
+    r = await _batal(klien, siap["h_mgr"], ln["id"])
+    assert r.status_code == 409, r.text
+    assert _detail(r) == f1.PESAN_BATAL_DIKLAIM
+    assert r.headers.get("x-idempotency-retry") == "true"
+    rc = await db.ar_receipts.find_one({"id": kw["id"]}, {"_id": 0})
+    assert (rc["status"], rc["bank_verified"]) == ("posted", True)
+    cur = await _baris(db, ln["id"])
+    assert (cur["status"], cur["matched_txn_id"], cur["match_type"]) == ("matched", kw["cash_txn_id"], "auto_receipt")
+    assert "match_lock" not in cur and cur["f1"] == ln["f1"]
+    monkeypatch.undo()
+    r = await _batal(klien, siap["h_mgr"], ln["id"])                          # klaim tidak lagi kalah: batal berjalan
+    assert r.status_code == 200, r.text
+    assert (await _baris(db, ln["id"]))["f1"]["status"] == "dibatalkan"
+
+
+async def test_T4_M5_batal_kwitansi_jalur_B_laporan_tetap_diterima(klien, db, siap):
+    """T4-M5 — kwitansi jalur B (laporan bayar diterima otomatis bersama mutasi) dibatalkan lewat "Batalkan kwitansi
+    dari mutasi": aturan Lapor Bayar yang ada (§5.6) — laporan tetap `diterima` (tidak terkunci, tidak kembali
+    menunggu), pembayaran pesanan dibalik, baris `dibatalkan` dengan rujukan laporannya."""
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"])
+    r = await _impor_api(klien, siap["h_fin"], siap["A"], [{"nominal": 1_000_000,
+                                                           "berita": f"TRSF {await _kode(db, so['id'])} BATAL B"}])
+    assert r.json()["kwitansi_otomatis"] == 1, r.json()
+    [ln] = await _baris_batch(db, r.json()["import_batch"])
+    assert (ln["f1"]["status"], ln["f1"]["jalur"], ln["f1"]["report_id"]) == ("otomatis", "B", rep["id"])
+    [kw] = await _kwitansi_baris(db, ln["id"])
+    assert kw["payment_report_id"] == rep["id"]
+    r = await _batal(klien, siap["h_mgr"], ln["id"], "Bukti laporan keliru")
+    assert r.status_code == 200, r.text
+    assert (await db.ar_receipts.find_one({"id": kw["id"]}, {"_id": 0}))["status"] == "void"
+    lap = await db.payment_reports.find_one({"id": rep["id"]}, {"_id": 0})
+    assert (lap["status"], lap["receipt_id"]) == ("diterima", kw["id"])
+    cur = await _baris(db, ln["id"])
+    assert (cur["status"], cur["f1"]["status"], cur["f1"]["report_id"]) == ("unmatched", "dibatalkan", rep["id"])
+    assert float((await _so(db, so["id"])).get("paid_total") or 0) == 0
+    assert await _kwitansi_pesanan(db, so["id"]) == []
+
+
+async def test_laporan_manual_tautan_gagal_laporan_kembali_menunggu(klien, db, siap, monkeypatch):
+    """Gelombang akhir (Minor 1 tinjauan) — "Terima laporan ini dengan mutasi ini": Terima berhasil tetapi tautan
+    mutasi gagal → kwitansi dibatalkan DAN laporan kembali `menunggu` (dulu tertinggal `diterima` menunjuk kwitansi
+    batal, tidak bisa diulang). Percobaan berikutnya menerima laporan yang sama dengan kwitansi baru."""
+    from services import bank_auto_receipt_service as f1
+    from services import bank_recon_service as brs
+    so = await _pesan(klien, db, siap)
+    rep = await _lapor(klien, siap, so["id"])
+    ln = await _impor_svc(db, siap["A"], 1_000_000, f"TRSF {await _kode(db, so['id'])} LAPOR GAGAL TAUT")
+
+    async def _gagal(line, allocations, actor, match_type, match_kind, op=""):
+        await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op},   # perilaku `_link` gagal
+                                                 {"$unset": {"match_lock": "", "match_lock_at": ""}})
+        raise ValueError("Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda).")
+    monkeypatch.setattr(brs, "_link", _gagal)
+    r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(so, payment_report_id=rep["id"]))
+    assert r.status_code == 409, r.text
+    [kw] = await _kwitansi_baris(db, ln["id"])
+    assert (kw["status"], kw["voided_reason"]) == ("void", "tautan mutasi gagal")
+    assert _detail(r) == f1.PESAN_TAUTAN_GAGAL_LAPORAN.format(
+        nomor=kw["number"], galat="Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda)",
+        laporan=rep["number"])
+    lap = await db.payment_reports.find_one({"id": rep["id"]}, {"_id": 0})
+    assert lap["status"] == "menunggu" and not lap.get("receipt_id") and "claim" not in lap, lap
+    assert "tautan mutasi gagal" in lap["status_history"][-1]["note"]
+    assert (await _baris(db, ln["id"]))["status"] == "unmatched"
+    monkeypatch.undo()
+    r = await _dari_mutasi(klien, siap["h_fin"], ln["id"], _isi(so, payment_report_id=rep["id"]))
+    assert r.status_code == 200, r.text
+    lap = await db.payment_reports.find_one({"id": rep["id"]}, {"_id": 0})
+    assert (lap["status"], lap["receipt_id"]) == ("diterima", r.json()["receipt"]["id"])
+    assert [k["id"] for k in await _kwitansi_pesanan(db, so["id"])] == [r.json()["receipt"]["id"]]
+
+
 # ── R7 — Minor T3 dibawa ke T4 ───────────────────────────────────────────────────────────────────────────────────────
 async def test_R7_M1_pemenang_kembar_belum_tuntas(klien, db, siap, monkeypatch):
     """M1 — `DuplicateKeyError` dan kwitansi pemenang belum tuntas (`effects_done: False`) → tidak ditautkan: kartu

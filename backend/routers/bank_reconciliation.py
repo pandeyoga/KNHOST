@@ -400,10 +400,11 @@ async def _perm_batal_kwitansi_mutasi(request: Request) -> Dict[str, Any]:
 
 @router.post("/bank-reconciliation/lines/{line_id}/receipt")
 async def receipt_from_line(line_id: str, payload: LineReceiptInput, request: Request,
-                            ctx: EntityContext = Depends(entity_ctx),
                             actor: Dict[str, Any] = Depends(_perm_kwitansi_mutasi)) -> Dict[str, Any]:
     """F1 §5.5 — "Kwitansi dari mutasi" dalam SATU permintaan: klaim baris → kwitansi (atau Terima laporan bayar
-    bersama mutasi) → tautan. Tautan gagal → kwitansi dibatalkan + 409 (tidak ada kwitansi tanpa tautan)."""
+    bersama mutasi) → tautan. Tautan gagal → kwitansi dibatalkan + 409 (tidak ada kwitansi tanpa tautan).
+    Pola `POST /ar-receipts`: izin = dependency (403 sebelum 422), cakupan PT `entity_ctx(request)` di badan rute."""
+    ctx = await entity_ctx(request)
     body = payload.model_dump()
     if body.get("payment_report_id"):   # menerima laporan bayar = putusan Lapor Bayar (aturan yang ada)
         await require_permission(request, "payment_report", "decide")
@@ -435,10 +436,11 @@ async def receipt_from_line(line_id: str, payload: LineReceiptInput, request: Re
 
 @router.post("/bank-reconciliation/lines/{line_id}/void-receipt")
 async def void_line_receipt(line_id: str, payload: LineReceiptVoidInput, request: Request,
-                            ctx: EntityContext = Depends(entity_ctx),
                             actor: Dict[str, Any] = Depends(_perm_batal_kwitansi_mutasi)) -> Dict[str, Any]:
     """F1 §5.6 — "Batalkan kwitansi dari mutasi": lepas tautan + batal kwitansi dalam SATU permintaan; baris tidak
-    diproses mesin lagi. Pesanan yang sudah dilepas ke gudang hanya diperingatkan (`peringatan`)."""
+    diproses mesin lagi. Pesanan yang sudah dilepas ke gudang hanya diperingatkan (`peringatan`). Pola
+    `POST /ar-receipts`: izin = dependency (403 sebelum 422), cakupan PT `entity_ctx(request)` di badan rute."""
+    ctx = await entity_ctx(request)
     try:
         res = await f1.batal_kwitansi_mutasi(line_id, payload.reason or "", actor, _ids(ctx))
     except Exception as e:  # noqa: BLE001

@@ -8,6 +8,12 @@ berberita kode bayar, lalu dua `POST /api/bank-reconciliation/auto-match` bersam
 Harapan (spesifikasi U17): satu tautan; `reconciled_amount` kas kwitansi = 1.500.000 (bukan 3.000.000); kwitansi
 `bank_verified: true` sekali (satu `bank_line_ids`). Pembersihan: lepas pencocokan → batalkan kwitansi (pembalik lewat
 API) → hapus fixture. Tidak untuk data nyata.
+
+F1 (kwitansi otomatis dari mutasi, gelombang akhir T4-M4): uji ini satu-satunya bukti Mongo-asli klaim `_link` yang
+diperluas F1 (`op=`). Dengan F1 menyala mesin menautkan mutasi saat impor (jalur A) dan balapan tidak pernah terjadi.
+Jadi F1 dimatikan untuk `ent_ksc` selama uji (`PUT /api/config/values`, lapisan PT), lalu dipulihkan di `finally`
+(lapisan PT semula ditulis lagi, atau dicabut bila sebelumnya mewarisi grup); asersi balapan asli: tepat SATU `matched`
+dari dua "Cocokkan otomatis".
 """
 import datetime
 import os
@@ -31,6 +37,33 @@ def _login():
     r = requests.post(f"{BASE}/auth/login", json={"email": "admin@kainnusantara.id", "password": "demo12345"}, timeout=30)
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": "ent_ksc"}
+
+
+KUNCI_F1 = "bank.kwitansi_otomatis_mutasi"
+
+
+def _f1_ksc(h):
+    """Nilai efektif sakelar F1 untuk `ent_ksc` + lapisan asalnya (`source_layer`)."""
+    r = requests.get(f"{BASE}/config/effective", headers=h, params={"entity_id": "ent_ksc"}, timeout=30)
+    assert r.status_code == 200, r.text
+    return next(it for it in r.json()["items"] if it["key"] == KUNCI_F1)
+
+
+def _atur_f1(h, nilai, alasan):
+    r = requests.put(f"{BASE}/config/values", headers=h, timeout=30, json={"items": [{
+        "key": KUNCI_F1, "value": nilai, "scope_type": "entity", "scope_id": "ent_ksc", "reason": alasan,
+        "effective_from": ""}]})
+    assert r.status_code == 200, r.text
+
+
+def _pulihkan_f1(h, lama):
+    alasan = f"pulihkan sesudah uji PM-T3 U17 {TAG}"
+    if lama.get("source_layer") in ("entity", "legacy_entity"):
+        _atur_f1(h, lama.get("value"), alasan)
+    else:
+        r = requests.post(f"{BASE}/config/values/clear", headers=h, timeout=30, json={
+            "key": KUNCI_F1, "scope_type": "entity", "scope_id": "ent_ksc", "reason": alasan})
+        assert r.status_code == 200, r.text
 
 
 @pytest.fixture()
@@ -62,6 +95,17 @@ def siap():
 
 def test_PMT3_U17_dua_auto_match_bersamaan_satu_tautan(siap):
     h = _login()
+    f1_lama = _f1_ksc(h)
+    _atur_f1(h, False, f"uji PM-T3 U17 {TAG}: F1 mati supaya dua Cocokkan otomatis berlomba")
+    try:
+        assert _f1_ksc(h)["value"] is False
+        _balapan(h)
+    finally:
+        _pulihkan_f1(h, f1_lama)
+    assert _f1_ksc(h)["value"] == f1_lama.get("value")
+
+
+def _balapan(h):
     r = requests.post(f"{BASE}/ar-receipts", headers=h, timeout=60, json={
         "customer_id": CUS, "amount": 1_500_000, "method": "transfer", "account_id": ACC, "notes": f"uji PM-T3 {TAG}",
         "allocations": [{"order_id": SO, "amount": 1_500_000}]})
@@ -84,11 +128,10 @@ def test_PMT3_U17_dua_auto_match_bersamaan_satu_tautan(siap):
         with ThreadPoolExecutor(2) as ex:
             hasil = [f.result() for f in [ex.submit(cocok), ex.submit(cocok)]]
         assert any(x.status_code == 200 for x in hasil), [x.text for x in hasil]
-        # F1 (kwitansi otomatis dari mutasi): mutasi berkode yang sama persis dengan kwitansi terbuka bisa sudah
-        # ditautkan mesin saat impor (jalur A, `kwitansi_otomatis`). Tetap SATU tautan — dari impor atau salah satu
-        # "Cocokkan otomatis".
-        assert sum(x.json().get("matched", 0) for x in hasil if x.status_code == 200) \
-            + int(impor.get("kwitansi_otomatis") or 0) == 1, ([x.text for x in hasil], impor)
+        # F1 mati untuk PT ini: impor tidak menautkan apa pun (mutasi hanya jadi kartu `otomatis_mati`), jadi kedua
+        # "Cocokkan otomatis" sungguh berlomba atas satu baris — asersi asli U17: tepat SATU `matched`.
+        assert int(impor.get("kwitansi_otomatis") or 0) == 0, impor
+        assert sum(x.json().get("matched", 0) for x in hasil if x.status_code == 200) == 1, [x.text for x in hasil]
         ln = DB.bank_statement_lines.find_one({"id": ln["id"]})
         assert ln["status"] == "matched" and [a["txn_id"] for a in ln["allocations"]] == [kas["id"]]
         kas = DB.cash_transactions.find_one({"id": kas["id"]})

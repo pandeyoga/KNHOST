@@ -106,6 +106,35 @@ async def test_waktu_aktif_ditulis_sekali(db):
     assert await aktif_sejak() == a
 
 
+async def test_waktu_aktif_tidak_menggandakan_dokumen_migrasi(db):
+    """I1 (tinjauan akhir) — penanda dibaca dulu, ditulis hanya bila kuncinya belum ada, pada dokumen `__migrations__`
+    yang sudah ada: tiap nyala ulang backend tidak menyisipkan dokumen penanda kedua (dibaca migrasi sekali-jalan lain
+    lewat `find_one`)."""
+    from services.bank_auto_receipt_service import PENANDA_AKTIF, aktif_sejak, ensure_aktif_sejak
+
+    penanda = {"scope": "__migrations__"}
+    simpan = await db.system_settings.find(penanda).to_list(50)
+    try:
+        # (a) satu dokumen migrasi tanpa kunci F1 → kunci ditulis di dokumen itu; tiga kali nyala = tetap satu dokumen
+        await db.system_settings.delete_many(penanda)
+        await db.system_settings.insert_one({"scope": "__migrations__", "kft1_izin_pengaturan": "2026-01-01T00:00:00"})
+        a = await ensure_aktif_sejak()
+        for _ in range(2):
+            assert await ensure_aktif_sejak() == a != ""
+        assert await db.system_settings.count_documents(penanda) == 1
+        doc = await db.system_settings.find_one(penanda, {"_id": 0})
+        assert doc[PENANDA_AKTIF] == a and doc["kft1_izin_pengaturan"] == "2026-01-01T00:00:00"
+        # (b) belum ada dokumen migrasi sama sekali → dibuat sekali
+        await db.system_settings.delete_many(penanda)
+        b = await ensure_aktif_sejak()
+        assert b != "" and await ensure_aktif_sejak() == b == await aktif_sejak()
+        assert await db.system_settings.count_documents(penanda) == 1
+    finally:
+        await db.system_settings.delete_many(penanda)
+        if simpan:
+            await db.system_settings.insert_many(simpan)
+
+
 # ── Isian kwitansi ───────────────────────────────────────────────────────────────────────────────────────────────────
 async def test_kwitansi_menyimpan_sumber_dan_baris(klien, db, siap):
     from services import ar_receipt_service as ars

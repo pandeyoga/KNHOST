@@ -646,6 +646,10 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                        "bank_account_id": k.get("bank_account_id") or "", "stmt_date": k.get("stmt_date") or "",
                        "ref": k.get("ref") or "", "codes": kode, "alasan": f1.get("alasan") or "",
                        "alasan_kode": f1.get("alasan_kode") or "", "report_id": f1.get("report_id") or "",
+                       # kwitansi terbuka yang disebut kartu (calon jalur A beda rekening/pecahan, lunas oleh kwitansi
+                       # terbuka, mutasi serupa sudah dicatat): layar tidak menawarkan "Catat kwitansi" (uang mungkin
+                       # sama) — hanya Rekonsiliasi
+                       "receipt_id": f1.get("receipt_id") or "",
                        "row_key": k["id"]},
                 entity_id=k.get("entity_id", "")))
         queues.append(_queue(

@@ -451,9 +451,38 @@ async def test_dua_mutasi_kode_sama_satu_batch(klien, db, siap):
     assert (out["kwitansi_otomatis"], out["kartu"]) == (1, 1), out
     assert _hasil_baris(out, pertama["id"])["hasil"] == "otomatis"
     h2 = _hasil_baris(out, kedua["id"])
-    assert (h2["hasil"], h2["alasan_kode"]) == ("kartu", "sudah_lunas"), h2
+    # R11 (I5) — mutasi serupa (rekening, tanggal, nominal, kode sama) yang sudah dicatat → kartu kemungkinan ganda
+    [kw] = await _kwitansi_baris(db, pertama["id"])
+    assert (h2["hasil"], h2["alasan_kode"]) == ("kartu", "kemungkinan_ganda"), h2
+    assert kw["number"] in h2["alasan"] and "impor ganda" in h2["alasan"], h2
     assert len(await _kwitansi_pesanan(db, so["id"])) == 1
     assert (await _baris(db, kedua["id"]))["status"] == "unmatched"
+
+
+async def test_impor_ganda_dp_tidak_jadi_kwitansi_kedua(klien, db, siap):
+    """R11 (I5) — pesanan DP 50/50: sesudah DP tercatat, sisa tagihan = nominal DP, jadi mutasi kembar yang lolos dedupe
+    impor (berita/spasi berbeda) dulu "cocok sempurna" dengan sisa tagihan → kwitansi terverifikasi kedua tanpa klik.
+    Kini: kartu `kemungkinan_ganda` — dalam batch yang sama maupun impor berikutnya; tetap satu kwitansi."""
+    so = await _pesan(klien, db, siap, "DP50", prd=siap["prd_dp"], total=346_875)
+    kode = await _kode(db, so["id"])
+    res = await _impor_banyak(siap["A"], [{"nominal": 173_438, "berita": f"TRSF {kode} DP"},
+                                          {"nominal": 173_438, "berita": f"TRSF  {kode}  DP"}])
+    pertama, kedua = await _baris_batch(db, res["import_batch"])
+    out = await _proses_impor(res["import_batch"])
+    assert (_hasil_baris(out, pertama["id"])["hasil"], _hasil_baris(out, pertama["id"])["jalur"]) == ("otomatis", "C")
+    [kw] = await _kwitansi_baris(db, pertama["id"])
+    h2 = _hasil_baris(out, kedua["id"])
+    assert (h2["hasil"], h2["alasan_kode"]) == ("kartu", "kemungkinan_ganda"), h2
+    assert h2["alasan"] == (f"Mutasi serupa 24 November 2026 Rp 173.438 sudah dicatat sebagai kwitansi "
+                            f"{kw['number']} — periksa apakah impor ganda")
+    batch3, ketiga = await _impor(db, siap["A"], 173_438, f"TRSF {kode} DP (ULANG)")
+    h3 = _hasil_baris(await _proses_impor(batch3), ketiga["id"])
+    assert (h3["hasil"], h3["alasan_kode"]) == ("kartu", "kemungkinan_ganda"), h3
+    assert len(await _kwitansi_pesanan(db, so["id"])) == 1
+    for ln in (kedua, ketiga):
+        cur = await _baris(db, ln["id"])
+        assert (cur["status"], cur["f1"]["status"], cur["f1"]["alasan_kode"]) == ("unmatched", "kartu",
+                                                                                  "kemungkinan_ganda")
 
 
 async def test_urutan_tanggal_mutasi_naik(klien, db, siap):

@@ -118,9 +118,23 @@ async def test_antrean_muncul_untuk_finance_dan_baris_kartu(klien, db, siap):
     assert ln["f1"]["alasan"] in b["subtitle"] and "nominal" in b["subtitle"].lower()
     assert (b["line_id"], b["order_id"], b["order_number"], b["customer_id"], b["bank_account_id"]) == (
         ln["id"], so["id"], so["number"], siap["cus"], siap["A"])
-    assert (b["stmt_date"], b["ref"], b["codes"], b["alasan_kode"], b["report_id"]) == (
-        TGL, "TRF-F15", [kode], "nominal_beda", "")
+    assert (b["stmt_date"], b["ref"], b["codes"], b["alasan_kode"], b["report_id"], b["receipt_id"]) == (
+        TGL, "TRF-F15", [kode], "nominal_beda", "", "")
     assert b["alasan"] == ln["f1"]["alasan"] and b["entity_id"] == KSC
+
+
+async def test_baris_kartu_membawa_kwitansi_yang_disebut(klien, db, siap):
+    """Gelombang akhir (Minor 3 tinjauan) — kartu yang alasannya menyebut kwitansi terbuka (`f1.receipt_id`, mis.
+    `kemungkinan_ganda`) membawa `receipt_id`: layar tidak menawarkan "Catat kwitansi" untuk baris itu."""
+    so = await _pesan(klien, db, siap)
+    kode = await _kode(db, so["id"])
+    j = await _impor(klien, siap, [{"nominal": 1_000_000, "berita": f"TRSF {kode} ASLI"},
+                                   {"nominal": 1_000_000, "berita": f"TRSF  {kode}  ASLI"}])
+    asli, kembar = sorted(await db.bank_statement_lines.find({"import_batch": j["import_batch"]}, {"_id": 0})
+                          .to_list(5), key=lambda r: r["created_at"])
+    assert (asli["f1"]["status"], kembar["f1"]["alasan_kode"]) == ("otomatis", "kemungkinan_ganda")
+    b = next(x for x in (await _antrean(klien, siap["h_fin"]))["rows"] if x["ref_id"] == kembar["id"])
+    assert b["receipt_id"] == asli["f1"]["receipt_id"] != "" and b["badge"] == "kemungkinan_ganda"
 
 
 async def test_baris_otomatis_dan_pt_lain_tidak_tampil(klien, db, siap):
@@ -132,10 +146,19 @@ async def test_baris_otomatis_dan_pt_lain_tidak_tampil(klien, db, siap):
     # kartu yang sudah dilepas manusia (status bukan unmatched / f1 bukan kartu) juga tidak tampil
     _, _, manual = await _kartu(klien, db, siap)
     await db.bank_statement_lines.update_one({"id": manual["id"]}, {"$set": {"f1.status": "manual"}})   # FIXTURE
+    # T5-M2 (gelombang akhir) — kartu PT lain benar-benar ADA di DB: asersi PT tidak boleh lolos hampa
+    kanda = {**kartu, "id": _id("stmtline"), "entity_id": KANDA, "bank_account_id": _id("bank"),   # FIXTURE
+             "external_id": _id("ext"), "f1": {**kartu["f1"], "alasan": "Kartu PT Kanda F15"}}
+    await db.bank_statement_lines.insert_one(dict(kanda))
+    assert await db.bank_statement_lines.count_documents({"id": kanda["id"], "entity_id": KANDA, "status": "unmatched",
+                                                          "f1.status": "kartu"}) == 1
     ids = {x["ref_id"] for x in (await _antrean(klien, siap["h_fin"]))["rows"]}
     assert kartu["id"] in ids and otomatis["id"] not in ids and manual["id"] not in ids
+    assert kanda["id"] not in ids                                   # kartu PT Kanda tidak tampil bagi Finance KSC
     q_kanda = await _antrean(klien, siap["h_fin_kanda"])
-    assert q_kanda is None or all(x["ref_id"] != kartu["id"] for x in q_kanda["rows"])
+    assert q_kanda is not None                                      # Finance Kanda memang memegang antrean ini
+    ids_kanda = {x["ref_id"] for x in q_kanda["rows"]}
+    assert kanda["id"] in ids_kanda and kartu["id"] not in ids_kanda
 
 
 async def test_sales_admin_tidak_melihat_antrean(klien, db, siap):

@@ -435,6 +435,46 @@ def test_kode_kartu_tetap_dan_unik():
     """R5-M7 — daftar kode kartu tetap (dipakai layar), tanpa kembar; `galat` milik pelaksana ikut terdaftar."""
     from services.bank_auto_receipt_service import KODE_COCOK, KODE_KARTU
     assert len(KODE_KARTU) == len(set(KODE_KARTU)) and "galat" in KODE_KARTU and KODE_COCOK not in KODE_KARTU
+    assert "kemungkinan_ganda" in KODE_KARTU   # R11 (I5)
+
+
+# ── R11 (I5) — impor ganda yang lolos dedupe ─────────────────────────────────────────────────────────────────────────
+async def test_mutasi_serupa_tertaut_manual_kemungkinan_ganda(klien, db, siap):
+    """Baris lain di rekening sama, tanggal & nominal & kode sama, sudah tertaut (pencocokan manual biasa, tanpa penanda
+    F1) ke kas kwitansi pesanan kode itu → kartu `kemungkinan_ganda` yang menyebut kwitansinya — sebelum calon jalur A
+    dan sebelum harapan. Tanggal lain, rekening lain, atau kwitansinya sudah batal → bukan kartu ini."""
+    from services import ar_receipt_service as ars
+    from services import bank_recon_service as brs
+    so = await _pesanan_fixture(db, siap, 1_000_000)
+    kw = await _kwitansi(siap, so, 500_000)
+    asli = await _impor(db, siap["A"], 500_000, f"TRSF {so['kode']} TOKO")
+    await brs.manual_match(asli["id"], kw["cash_txn_id"], "Uji F1-2", [KSC])
+    assert (await db.bank_statement_lines.find_one({"id": asli["id"]}, {"_id": 0}))["status"] == "matched"
+    kembar = await _impor(db, siap["A"], 500_000, f"TRSF  {so['kode']}  TOKO")   # spasi lain: lolos dedupe impor
+    alasan = _kartu(await _nilai(kembar), "kemungkinan_ganda")
+    assert alasan == (f"Mutasi serupa 24 November 2026 Rp 500.000 sudah dicatat sebagai kwitansi {kw['number']} — "
+                      "periksa apakah impor ganda")
+    assert (await _nilai(await _impor(db, siap["A"], 500_000, f"TRSF {so['kode']} LAIN", tgl="2026-11-25"))
+            )["alasan_kode"] != "kemungkinan_ganda"
+    assert (await _nilai(await _impor(db, siap["B"], 500_000, f"TRSF {so['kode']} REK B"))
+            )["alasan_kode"] != "kemungkinan_ganda"
+    await brs.unmatch(asli["id"], "Uji F1-2", [KSC])
+    await ars.void_receipt(kw["id"], _aktor(siap["fin"]), reason="uji F1-2 batal")
+    assert (await _nilai(kembar))["alasan_kode"] != "kemungkinan_ganda"
+
+
+async def test_mutasi_serupa_berpenanda_f1_kemungkinan_ganda(klien, db, siap):
+    """Baris lain berpenanda `f1.status` otomatis/manual dengan kwitansi hidup → kartu; kwitansinya batal → bukan."""
+    so = await _pesanan_fixture(db, siap, 1_000_000)
+    kw = await _kwitansi(siap, so, 400_000)
+    for status in ("otomatis", "manual"):
+        asli = await _impor(db, siap["A"], 400_000, f"TRSF {so['kode']} {status.upper()}")
+        await db.bank_statement_lines.update_one({"id": asli["id"]}, {"$set": {   # FIXTURE — penanda F1 baris lain
+            "f1": {"status": status, "receipt_id": kw["id"], "order_id": so["id"]}}})
+        kembar = await _impor(db, siap["A"], 400_000, f"TRSF {so['kode']} {status.upper()} ULANG")
+        assert kw["number"] in _kartu(await _nilai(kembar), "kemungkinan_ganda")
+        await db.bank_statement_lines.update_one({"id": asli["id"]}, {"$set": {"f1.receipt_id": "arc_tidak_ada"}})
+        assert (await _nilai(kembar))["alasan_kode"] != "kemungkinan_ganda"
 
 
 # ── Tanpa tulisan ────────────────────────────────────────────────────────────────────────────────────────────────────
