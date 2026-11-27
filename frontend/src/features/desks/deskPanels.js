@@ -7,6 +7,8 @@
 // `DESK_DOC_OF` = satu tabel pemetaan kunci → dokumen yang dipratinjau (`docType`, `docId` dari baris). Kunci `customer`
 // SENGAJA tidak dipetakan (dua arti: pelanggan tanpa sales vs uang masuk) — antrean `pelanggan_tanpa_sales` punya
 // `CustomerQueuePanel` sendiri (Tugas 8). `queue:lapor_bayar` (LB-T8) memakai `PayReportQueuePanel`: laporan + pratinjau pesanan.
+// `queue:mutasi_berkode` (F1) memakai `BankLineQueuePanel`: alasan kartu mutasi + laporan bayar menunggu + pratinjau pesanan.
+import BankLineQueuePanel from "./BankLineQueuePanel";
 import CustomerQueuePanel from "./CustomerQueuePanel";
 import DeskDocPanel from "./DeskDocPanel";
 import PayReportQueuePanel from "./PayReportQueuePanel";
@@ -18,6 +20,7 @@ export const DESK_DOC_OF = {
   "queue:uang_masuk": dari("sales_order", "order_id"),          // baris ber-ref_type customer; dokumen = order_id
   "queue:bayar_sebelum_kirim": dari("sales_order", "order_id"),
   "queue:lapor_bayar": dari("sales_order", "order_id"),          // LB-T8 — baris ber-ref_type payment_report; dokumen = pesanan laporan
+  "queue:mutasi_berkode": dari("sales_order", "order_id"),       // F1 — baris ber-ref_type bank_statement_line; dokumen = pesanan kode bayar
   "queue:selisih_bayar": dari("ar_receipt", "ref_id"),
   "queue:denda_draft": (row) => (row?.doc_type === "sales_order" ? { docType: "sales_order", docId: row.doc_id } : null),
   vendor_bill: dari("vendor_bill", "ref_id"),                 // baris papan `vendor_bill`: ref_id = id tagihan
@@ -42,6 +45,7 @@ export const DESK_PANELS = {
   ...Object.fromEntries(Object.keys(DESK_DOC_OF).map((k) => [k, MappedDocPanel])),
   "queue:pelanggan_tanpa_sales": CustomerQueuePanel,
   "queue:lapor_bayar": PayReportQueuePanel,                    // LB-T8 — laporan + bukti + pratinjau pesanan + Terima/Tolak di tempat
+  "queue:mutasi_berkode": BankLineQueuePanel,                  // F1 — alasan kartu + laporan bayar bersama mutasi + pratinjau pesanan
 };
 
 const kunciCari = (row, queue) => [

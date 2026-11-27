@@ -9,6 +9,7 @@
  * impor"), galatnya ke bilah halaman. Kini `FormModal` baku: Pratinjau & Impor di kaki yang menempel, galat
  * pratinjau/impor tampil di DALAM pop-up (`recon-import-error`). Isian & testid tetap (`recon-import-panel` = kartu
  * pop-up, `recon-format-select`, `recon-file-input`, `recon-raw`, `recon-preview-btn`, `recon-import-submit`).
+ * F1 — pesan sukses impor menyebut jumlah kwitansi otomatis dari mutasi berkode dan yang perlu dicek (`ringkasF1`).
  */
 import { useMemo, useState } from "react";
 import { Upload, RefreshCw, Eye, AlertTriangle, FileUp } from "lucide-react";
@@ -18,6 +19,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
+import { ringkasF1 } from "./bankLineReceiptApi";
 
 // Tahun acuan baris mutasi tanpa tahun = tahun berjalan WIB (bukan zona perangkat — beda di malam tahun baru).
 const yearHint = () => Number(todayWib().slice(0, 4));
@@ -96,7 +98,7 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
           year_hint: yearHint(), file_name: fileName || "" });   // M38 — asal mutasi tercatat
       const d = r.data || {};
       onDone(`Impor ${d.format_name || ""}: ${d.imported} baris baru, ${d.skipped} dilewati `
-        + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.`);
+        + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.${ringkasF1(d)}`);
       setRaw(""); setPreview(null); setFileName(""); setFileB64("");
     } catch (e) { setErr(apiErrorText(e)); } finally { setBusy(""); }
   }

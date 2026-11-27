@@ -10,7 +10,10 @@ const nilai = (r) => Number(r?.value) || 0;
  * Meja Keuangan: pesanan lewat jatuh tempo ada di "Uang masuk" dan "Piutang lewat jatuh tempo" — tampilkan hanya di
  * Piutang; baris Piutang itu mendapat aksi tambahan "Terima pembayaran" (baris uang masuknya) di pop-up.
  * Dipanggil SETELAH penyaringan izin: tanpa salah satu kartu, tidak ada yang berubah. Masukan tidak diubah.
+ * F1 — baris mutasi bank (`ref_type` `bank_statement_line`, antrean `mutasi_berkode`) membawa `order_id` pesanan kode
+ * bayarnya, tetapi BUKAN baris "Terima pembayaran" pelanggan: tidak ikut dipindah ke Piutang.
  */
+const ikutDedupe = (r) => r?.ref_type !== "bank_statement_line";
 export function dedupeFinanceGroups(groups) {
   const list = Array.isArray(groups) ? groups : [];
   const piutang = list.find((g) => g.id === "piutang_lewat_tempo");
@@ -20,11 +23,11 @@ export function dedupeFinanceGroups(groups) {
   const idPiutang = new Set((piutang.rows || []).map((r) => r.order_id || r.ref_id).filter(Boolean));
   const kembar = new Map();   // order_id → baris uang masuk
   for (const r of masuk.rows || []) {
-    if (r.order_id && idPiutang.has(r.order_id) && !kembar.has(r.order_id)) kembar.set(r.order_id, r);
+    if (ikutDedupe(r) && r.order_id && idPiutang.has(r.order_id) && !kembar.has(r.order_id)) kembar.set(r.order_id, r);
   }
   if (kembar.size === 0) return list;
 
-  const sisa = (masuk.rows || []).filter((r) => !(r.order_id && idPiutang.has(r.order_id)));
+  const sisa = (masuk.rows || []).filter((r) => !(ikutDedupe(r) && r.order_id && idPiutang.has(r.order_id)));
   const terhapus = (masuk.rows || []).length - sisa.length;
   const masukBaru = {
     ...masuk, rows: sisa, shown: sisa.length,

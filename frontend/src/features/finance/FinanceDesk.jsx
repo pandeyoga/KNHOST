@@ -16,6 +16,10 @@
  * LB-T8 — kelompok "Uang masuk" juga memuat antrean `lapor_bayar` (laporan bayar sales; hanya pemegang `payment_report.decide`):
  * "Putuskan" membuka pop-up berisi bukti + pratinjau pesanan, Terima/Tolak di tempat (`PayReportQueuePanel`).
  * Uang muka pesanan belum dikirim (dulu antrean pantau di meja ini) = kolom di Piutang › Titipan & Saldo Kredit.
+ * F1 (kwitansi otomatis dari mutasi, §5.4) — kelompok yang sama memuat antrean `mutasi_berkode` (mutasi berkode bayar yang
+ * tidak cocok sempurna; hanya pemegang `cash.create` DAN `ar_receipt.create`): "Catat kwitansi" di tempat membuka form
+ * Terima pembayaran terisi dari mutasi (`bankLineId` → satu permintaan atomik); klik baris → pop-up `BankLineQueuePanel`
+ * (alasan, pratinjau pesanan, Terima/Tolak laporan bayar bersama mutasi); "Buka layar penuh" → Rekonsiliasi Bank.
  *
  * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
  * gulir). Meja ini SUDAH tab hub Beranda Keuangan, jadi tidak menggambar tab Antrean/Pantau sendiri (R4: tanpa tab
@@ -58,10 +62,12 @@ const POSTING_ROWS = 20;
  */
 export const PERLU_TINDAKAN = [
   { key: "uang_masuk", label: "Uang masuk perlu dicatat", izin: [["ar_receipt", "create"], ["payment_report", "decide"]],
-    queues: ["uang_masuk", "bayar_sebelum_kirim", "lapor_bayar"],
+    queues: ["uang_masuk", "bayar_sebelum_kirim", "lapor_bayar", "mutasi_berkode"],
     // LB-T8 — antrean yang butuh izin sendiri di dalam kelompok: laporan bayar hanya untuk pemutusnya (server pun hanya mengirimnya ke mereka).
-    queueIzin: { uang_masuk: ["ar_receipt", "create"], bayar_sebelum_kirim: ["ar_receipt", "create"], lapor_bayar: ["payment_report", "decide"] },
-    hint: "Catat kwitansi lalu alokasikan ke tagihan; termasuk pesanan CBD/DP yang tertahan menunggu bayar dan laporan bayar dari sales yang menunggu dicek." },
+    // F1 — mutasi berkode: SEMUA izin dalam daftar (kas + kwitansi), sama dengan server (`work_desk_service` 2d).
+    queueIzin: { uang_masuk: ["ar_receipt", "create"], bayar_sebelum_kirim: ["ar_receipt", "create"], lapor_bayar: ["payment_report", "decide"],
+      mutasi_berkode: [["cash", "create"], ["ar_receipt", "create"]] },
+    hint: "Catat kwitansi lalu alokasikan ke tagihan; termasuk pesanan CBD/DP yang tertahan menunggu bayar, laporan bayar dari sales yang menunggu dicek, dan mutasi bank berkode bayar yang belum bisa menjadi kwitansi otomatis." },
   { key: "selisih_bayar", label: "Selisih bayar perlu diputus", izin: [["payment_variance", "decide"]],
     queues: ["selisih_bayar"], hint: "Lebih/kurang bayar yang belum diputus. Di luar batas kewenangan → manajer." },
   { key: "faktur_pajak", label: "Faktur pajak perlu terbit", izin: [["tax_invoice", "create"]],
@@ -87,6 +93,8 @@ export const PERLU_TINDAKAN = [
 ];
 
 export const bolehKelompok = (perms, g) => g.izin.some(([r, a]) => can(perms, r, a));
+/** Izin satu antrean di dalam kelompok: `[modul, aksi]`, atau daftar `[[modul, aksi], …]` yang SEMUANYA wajib dipegang. */
+const bolehAntrean = (perms, izin) => (Array.isArray(izin[0]) ? izin.every(([r, a]) => can(perms, r, a)) : can(perms, ...izin));
 
 const boardRows = (b) => (b?.rows || []).map((r) => ({
   ref_type: b.key, ref_id: r.id, number: r.number || "—", title: r.title || "—", subtitle: r.note || b.label || "",
@@ -112,7 +120,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
     for (const id of g.queues || []) {
       const q = qmap[id];
       if (!q) continue;
-      if (g.queueIzin?.[id] && !can(perms, ...g.queueIzin[id])) continue;
+      if (g.queueIzin?.[id] && !bolehAntrean(perms, g.queueIzin[id])) continue;
       rows.push(...(q.rows || []).map((r) => ({ ...r, _queue: id })));
       count += Number(q.count) || 0;
       oldest = Math.max(oldest, Number(q.oldest_age_days) || 0);
@@ -139,8 +147,8 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
 
 const DESK_KEY = "finance";
 const P = "fin-desk";
-const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "supplier_card", "decide_variance", "issue_penalty", "approve_payment",
-  "mark_reminded"]);
+const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "receipt_from_line", "supplier_card", "decide_variance", "issue_penalty",
+  "approve_payment", "mark_reminded"]);
 const HELP = (
   <>
     Pekerjaan uang yang menunggu Anda, dikelompokkan per jenis. Kelompok hanya tampil bila Anda berhak atas modulnya
@@ -230,6 +238,12 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   /** Layar penanganan baris (aksi pindah layar & "Buka layar penuh"). */
   function navigate(row) {
     if (row._view) { markDeskReturn(DESK_KEY); go(row._view, { preset: { from: { view: "finance-desk" } } }); return; }
+    // F1 — mutasi berkode: pilihan lain (titipkan, abaikan, cocokkan manual) di Rekonsiliasi Bank, rekening mutasi terpilih.
+    if (row._queue === "mutasi_berkode") {
+      markDeskReturn(DESK_KEY);
+      go("bank-reconciliation", { preset: { bank_account_id: row.bank_account_id || "", from: { view: "finance-desk" } } });
+      return;
+    }
     if (row._link) { open(row._link); return; }
     open(rowLink(row, row._queue, DESK_KEY));
   }
@@ -249,6 +263,14 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     if (row.action_kind === "issue_tax") { setIssueRow({ row, qid }); return; }
     if (row.action_kind === "receipt") {
       setPayRow({ customer_id: row.ref_id, customer_name: row.title, order_id: row.order_id, qid });
+      return;
+    }
+    if (row.action_kind === "receipt_from_line") {
+      // F1 §5.4 — form terisi dari mutasi (nominal, tanggal, rekening, referensi, pesanan); tanpa pelanggan → langkah Pilih.
+      setPayRow({ customer_id: row.customer_id || "", customer_name: row.customer_id ? row.title : "", order_id: row.order_id,
+        bankLineId: row.line_id || row.ref_id, amount: row.value,
+        preset: { accountId: row.bank_account_id || "", date: row.stmt_date || "", reason: row.alasan || "",
+          reference: row.ref || (row.codes || [])[0] || "" }, qid });
       return;
     }
     if (row.action_kind === "supplier_card") { openSupplierCard(row.supplier_id); return; }
@@ -362,6 +384,9 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           customerId={payRow.customer_id}
           customerName={payRow.customer_name}
           preselectOrderId={payRow.order_id}
+          bankLineId={payRow.bankLineId || ""}
+          amountHint={payRow.bankLineId ? payRow.amount : undefined}
+          preset={payRow.preset || null}
           onClose={() => setPayRow(null)}
           onDone={(msg) => { const qid = payRow.qid; setPayRow(null); done(msg || "Kwitansi tercatat.", qid); }}
         />

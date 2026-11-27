@@ -17,8 +17,12 @@ import { openRnd } from "../rnd/rndDeepLink";
 // Notifikasi Lapor Bayar (LB-T3..T5) membawa `link = "/?view=orders&id=<id pesanan>"` — bukan id layar, jadi dibaca sebagai
 // dokumen pesanan (rincian pesanan tempat Lapor bayar / Terima / Tolak berada).
 const LINK_PESANAN = /^\/?\?(?:[^#]*&)?view=orders&(?:[^#]*&)?id=([^&#]+)/;
+// F1 — notifikasi tanpa dokumen yang menunjuk LAYAR (bukan id layar polos): ringkasan impor mutasi → Meja Keuangan
+// (antrean "Mutasi berkode perlu dicek"). `bayar_masuk_mutasi` membawa tautan pesanan (`LINK_PESANAN`) seperti Lapor Bayar.
+const LAYAR_JENIS = { ringkasan_mutasi_otomatis: "finance-desk" };
 
 export function notifDocTarget(n) {
+  if (!n?.doc && LAYAR_JENIS[n?.type]) return { link: { view: LAYAR_JENIS[n.type] } };
   let d = n?.doc;
   if (!d && typeof n?.link === "string") {
     const m = LINK_PESANAN.exec(n.link);

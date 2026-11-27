@@ -146,6 +146,12 @@ const BADGE_LABEL = {
   // Lapor Bayar (R21) — antrean `lapor_bayar` Meja Keuangan: laporan menunggu Finance, bukan manajer.
   "menunggu dicek": "Menunggu dicek", "sedang diproses": "Sedang diproses", "macet — ulangi": "Macet — ulangi",
   "menunggu acc": "Menunggu ACC", ditahan: "Ditahan", ditolak: "Harga ditolak",
+  // F1 (kwitansi otomatis dari mutasi) — kode alasan kartu antrean `mutasi_berkode` Meja Keuangan (`f1.alasan_kode`).
+  nominal_beda: "Nominal beda", kode_ganda: "Dua kode", rekening_beda: "Rekening beda",
+  rekening_tolak_cara: "Rekening tak menerima cara bayar", pesanan_mati: "Pesanan batal", sudah_lunas: "Sudah lunas",
+  laporan_beda: "Laporan bayar beda", laporan_diproses: "Laporan sedang diproses",
+  laporan_dan_kwitansi: "Kwitansi & laporan menunggu", periode_tutup: "Periode ditutup", pt_tidak_jelas: "PT tak jelas",
+  selisih_perlu_putusan: "Perlu putusan selisih", otomatis_mati: "Otomatis mati", galat: "Gagal otomatis",
   covered: "Barang masuk menutup",
   partial: "Tertutup sebagian",
   uncovered: "Belum ada penutup",
@@ -186,9 +192,13 @@ const BADGE_TONE = {
 
 const BADGE_GROUP = {
   danger: ["lewat", "terlambat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high",
-           "macet — ulangi"],
+           "macet — ulangi", "galat"],
   warn: ["segera", "partial", "menunggu", "menunggu acc", "menunggu dicek", "ditahan", "waiting_approval", "waiting_stock",
-         "pending_approval", "pending_process", "pending", "draft", "warning", "medium"],
+         "pending_approval", "pending_process", "pending", "draft", "warning", "medium",
+         // F1 — kartu mutasi berkode: perlu dicek Finance
+         "nominal_beda", "kode_ganda", "rekening_beda", "rekening_tolak_cara", "pesanan_mati", "sudah_lunas", "laporan_beda",
+         "laporan_diproses", "laporan_dan_kwitansi", "periode_tutup", "pt_tidak_jelas", "selisih_perlu_putusan",
+         "otomatis_mati"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],
   info: ["reserved", "submitted", "open", "partially_picked", "partially_shipped", "picking", "packing", "loading",
          "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban", "info", "low",

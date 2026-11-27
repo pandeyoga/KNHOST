@@ -18,6 +18,11 @@
  * kas kwitansi itu sehingga kwitansinya langsung "Terverifikasi bank".
  * MN-T3 — tombol itu kini "Catat sebagai kwitansi" di TIAP mutasi masuk belum cocok (satu form `ReceivePaymentModal`,
  * `bankLineId` → form yang menautkan); mutasi keluar → "Bayar pemasok" (`ReconPayablePicker` → `PaySupplierModal`).
+ * F1 (kwitansi otomatis dari mutasi) — form itu kini menyimpan lewat SATU permintaan atomik (`receiptFromLine`); baris
+ * berkode yang tidak cocok sempurna menampilkan alasan kartunya; kwitansi yang LAHIR dari mutasi (otomatis atau dicatat
+ * dari mutasi, R8) berlencana dan bisa dibatalkan pemegang `ar_receipt.void` (+ `cash.create`): alasan wajib →
+ * `voidLineReceipt` (lepas tautan + batal kwitansi, satu permintaan); peringatan pesanan yang sudah dilepas ke gudang
+ * tampil menempel. Pesan "Cocokkan otomatis" & impor menyebut jumlah kwitansi otomatis dan yang perlu dicek.
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,7 +50,8 @@ import { moneyPost } from "../../utils/moneyRequest";
 import ReceivePaymentModal from "./payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import { can } from "../../config/roles";
 import { useEntityScope } from "../../context/EntityScopeContext";
-import { askConfirm } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
+import { ALASAN_BATAL_MIN, ringkasF1, voidLineReceipt } from "./bank/bankLineReceiptApi";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
@@ -95,6 +101,10 @@ export default function BankReconciliationView({ user = null }) {
   // (routers/bank_reconciliation.py). Dulu tampil untuk pemegang lihat saja lalu 403. Tanpa data izin (uji lama) = boleh;
   // server tetap menegakkan (pola ChartOfAccounts `bolehUbah`).
   const canEditCash = !user?.permissions || can(user.permissions, "cash", "create");
+  // F1 §5.6 — batal kwitansi dari mutasi = aturan batal kwitansi yang ada (`ar_receipt.void`) + `cash.create` (server).
+  const canVoidLineReceipt = canEditCash && can(user?.permissions || {}, "ar_receipt", "void");
+  const voidIntent = useIntentKey("brvoidrc");
+  const [warn, setWarn] = useState("");   // peringatan sesudah batal (pesanan sudah dilepas ke gudang) — menempel
   const [acctId, setAcctId] = useState("");
   useViewPreset("bank-reconciliation", (p) => { if (p?.bank_account_id) setAcctId(p.bank_account_id); });   // PK-21
   const [tab, setTab] = useState("lines");
@@ -188,7 +198,7 @@ export default function BankReconciliationView({ user = null }) {
         { bank_account_id: acctId });
       const d = r.data || {};
       notify(`Pencocokan otomatis: ${d.matched} tertaut (skor ≥ ${d.auto_min}), `
-        + `${d.suggested} usulan (skor ≥ ${d.suggest_min}), ${d.unmatched_lines} baris tersisa.`);
+        + `${d.suggested} usulan (skor ≥ ${d.suggest_min}), ${d.unmatched_lines} baris tersisa.${ringkasF1(d)}`);
       await loadData();
     } catch (e) { fail(e); } finally { setBusy(""); }
   }
@@ -206,6 +216,31 @@ export default function BankReconciliationView({ user = null }) {
       return true;
     } catch (e) {
       // PK-21 — keadaan baris berubah di server (mis. lepas-cocok kalah klaim): muat ulang dulu, lalu tampilkan pesannya.
+      if (e?.response?.status === 409) await loadData();
+      fail(e);
+      return false;
+    } finally { setBusy(""); }
+  }
+
+  /** F1 §5.6 — "Batalkan kwitansi dari mutasi": alasan wajib → lepas tautan + batal kwitansi (satu permintaan). */
+  async function voidReceipt(line) {
+    const no = (line.matched_txns || []).map((t) => t.number).filter(Boolean).join(", ");
+    const reason = await askReason({
+      title: "Batalkan kwitansi dari mutasi ini?", danger: true, reasonLabel: "Alasan membatalkan",
+      message: `Kwitansi yang lahir dari mutasi ${formatDate(line.stmt_date)} ${formatCurrency(line.amount)}`
+        + `${no ? ` (kas ${no})` : ""} dibatalkan dan tautannya dilepas; mutasi kembali "Perlu keputusan" dan tidak `
+        + "diproses otomatis lagi. Bila pesanannya sudah dilepas ke gudang, barang tidak ditahan otomatis.",
+      reasonMinLength: ALASAN_BATAL_MIN, confirmLabel: "Batalkan kwitansi", testId: "recon-f1-void-reason",
+    });
+    if (reason === null) return false;
+    setBusy(line.id + "void-receipt"); setErr(""); setWarn("");
+    try {
+      const out = await voidIntent.send({ id: line.id, reason }, (k) => voidLineReceipt(line.id, reason, k));
+      notify(`Kwitansi ${out?.receipt?.number || ""} dibatalkan; mutasi kembali perlu keputusan.`);
+      if (out?.peringatan) setWarn(out.peringatan);
+      await loadData();
+      return true;
+    } catch (e) {
       if (e?.response?.status === 409) await loadData();
       fail(e);
       return false;
@@ -255,6 +290,14 @@ export default function BankReconciliationView({ user = null }) {
       {msg && (
         <div className="notice-bar success !mb-0" data-testid="recon-notice">
           <CheckCircle2 size={14} /> {msg}
+        </div>
+      )}
+      {warn && (
+        <div className="notice-bar warning !mb-0 flex items-start gap-2" data-testid="recon-f1-warning" role="alert">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 break-words">{warn}</span>
+          <button type="button" className="link-button shrink-0" data-testid="recon-f1-warning-close"
+            onClick={() => setWarn("")}>Tutup</button>
         </div>
       )}
 
@@ -398,6 +441,7 @@ export default function BankReconciliationView({ user = null }) {
               <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
                 onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
                 onNotify={notify} onRecordReceipt={canRecordReceipt ? (line, hit) => setReceiptFor({ line, hit }) : null}
+                onVoidReceipt={canVoidLineReceipt ? voidReceipt : null}
                 recordBlockReason={canWrite ? "" : writeBlockHint} perms={user?.permissions || {}} canEdit={canEditCash} />
             </>
           )}
@@ -415,13 +459,13 @@ export default function BankReconciliationView({ user = null }) {
       )}
 
       {receiptFor && (
-        /* MN-T3 — "Catat sebagai kwitansi": satu form Terima pembayaran dengan `bankLineId` (form menautkan kas kwitansi
-           ke mutasi ini sesudah tersimpan → kwitansi terverifikasi bank). Tanpa kode bayar → langkah Pilih pelanggan. */
+        /* MN-T3 — "Catat sebagai kwitansi": satu form Terima pembayaran dengan `bankLineId`. F1 — form menyimpan lewat SATU
+           permintaan atomik (kwitansi + tautan mutasi → terverifikasi bank). Tanpa kode bayar → langkah Pilih pelanggan. */
         <ReceivePaymentModal customerId={receiptFor.hit?.customer_id || ""} customerName={receiptFor.hit?.customer_name || ""}
           preselectOrderId={receiptFor.hit?.order_id} testId="recon-receipt-modal" bankLineId={receiptFor.line.id}
           amountHint={receiptFor.line.amount}
           preset={{ accountId: receiptFor.line.bank_account_id, reference: receiptFor.line.ref || receiptFor.hit?.code || "",
-            date: receiptFor.line.stmt_date }}
+            date: receiptFor.line.stmt_date, reason: receiptFor.line.f1?.status === "kartu" ? receiptFor.line.f1?.alasan || "" : "" }}
           onClose={() => setReceiptFor(null)} onError={() => {}}
           onDone={async (pesan) => { setReceiptFor(null); notify(pesan); await loadData(); }} />
       )}

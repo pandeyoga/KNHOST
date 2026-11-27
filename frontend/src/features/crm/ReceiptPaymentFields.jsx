@@ -10,6 +10,9 @@
  *
  * PM-T4 — `titipan` (tunai yang dicatat sebagai titipan di tangan pencatat sampai disetor): tanpa isian rekening (belum
  * ada kas); "Tidak sesuai instruksi" = pesanan berinstruksi rekening yang tidak menerima tunai di PT ini.
+ *
+ * F1 — `lockAccount` (kwitansi dari mutasi bank): rekening = rekening mutasi (server mengisinya dari baris mutasi), jadi
+ * pilihan terkunci dan tidak diisi otomatis; peringatan "tidak sesuai instruksi" + catatan wajib tetap berlaku.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Lock } from "lucide-react";
@@ -51,7 +54,7 @@ export function receiptBlockReason(state) {
 
 export default function ReceiptPaymentFields({
   entityId = "", method = "", methodRow = null, orders = [], refRequired = false, value, onChange, onState,
-  titipan = false,
+  titipan = false, lockAccount = false,
 }) {
   const v = value || {};
   // Cara bayar belum dikenal (daftar induk belum termuat) → tetap minta daftar rekening untuk kode itu (server memutus).
@@ -78,7 +81,7 @@ export default function ReceiptPaymentFields({
 
   // Isi otomatis rekening penerima (instruksi pesanan → bawaan PT → satu-satunya); pilihan pengguna tidak ditimpa.
   useEffect(() => {
-    if (titipan || !needsAccount || list.key !== key || list.loading) return;
+    if (lockAccount || titipan || !needsAccount || list.key !== key || list.loading) return;
     if (touched.current && rows.some((a) => a.id === v.accountId)) return;
     const instr = tujuan.length === 1 ? rows.find((a) => a.id === tujuan[0]) : null;
     const pick = instr || rows.find((a) => a.is_default) || (rows.length === 1 ? rows[0] : null);
@@ -103,7 +106,7 @@ export default function ReceiptPaymentFields({
 
   const set = (patch) => onChange({ ...v, ...patch });
   const refLabel = `No. referensi${refRequired && methodRow?.needs_reference ? " *" : ""}`;
-  const locked = rows.length === 1;
+  const locked = rows.length === 1 || lockAccount;
 
   return (
     <div className="grid gap-2" data-testid="ar-receipt-payment-fields">
@@ -129,7 +132,9 @@ export default function ReceiptPaymentFields({
                 options={rows.map((a) => ({ value: a.id, label: `${a.name} · ${accountText(a)}` }))} />
               {locked && (
                 <p className="mt-1 flex items-center gap-1 text-fs-12 text-kn-text-2" data-testid="ar-receipt-account-locked">
-                  <Lock size={12} aria-hidden="true" /> Satu-satunya rekening penerimaan PT ini untuk cara bayar ini.
+                  <Lock size={12} aria-hidden="true" />
+                  {lockAccount ? "Rekening mutasi bank — kwitansi masuk ke rekening ini."
+                    : "Satu-satunya rekening penerimaan PT ini untuk cara bayar ini."}
                 </p>
               )}
             </>

@@ -56,6 +56,9 @@ export const TYPE_LABEL = {
   lapor_bayar_ditolak: "Lapor bayar ditolak",
   lapor_bayar_lewat_batas: "Lapor bayar menunggu melewati batas",
   pay_due_soon: "Batas bayar pesanan segera habis",
+  // 2026-11 — F1 kwitansi otomatis dari mutasi bank: pesanan tertahan dibayar lewat mutasi → sales; ringkasan impor → Finance.
+  bayar_masuk_mutasi: "Pembayaran masuk (mutasi bank)",
+  ringkasan_mutasi_otomatis: "Kwitansi otomatis dari mutasi",
 };
 export const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 

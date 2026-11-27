@@ -3,11 +3,15 @@
  * Piutang, kartu pelanggan, detail pesanan, gerbang kirim, Rekonsiliasi Bank, HP sales). Dulu `crm/ARReceiptModal`
  * (EPIC3B · PK-19 · PM-T3 · PM-T4); berkas lama mengekspor ulang komponen ini sampai serah-terima (b).
  *
- * Tanda tangan: `{ customerId?, customerName?, preselectOrderId?, bankLineId?, amountHint?, onClose, onDone }`.
+ * Tanda tangan: `{ customerId?, customerName?, preselectOrderId?, bankLineId?, paymentReportId?, amountHint?, onClose,
+ * onDone }`.
  *  · Tanpa `customerId` form dibuka dengan langkah **Pilih pelanggan** (mis. mutasi bank tanpa kode bayar).
  *  · `preselectOrderId` → alokasi "Atur sendiri" terisi untuk pesanan itu (paling banyak sisa tagihannya).
- *  · `bankLineId` (+ `amountHint`, `preset.accountId/date/reference`) → sesudah kwitansi tersimpan, kas kwitansinya
- *    ditautkan ke baris mutasi itu (`POST /bank-reconciliation/lines/{id}/match`); kwitansi menjadi terverifikasi bank.
+ *  · `bankLineId` (+ `amountHint`, `preset.accountId/date/reference/reason`) — F1 §5.5 "kwitansi dari mutasi": disimpan
+ *    lewat SATU permintaan atomik `POST /bank-reconciliation/lines/{id}/receipt` (`receiptFromLine`: klaim baris →
+ *    kwitansi → tautan; dulu dua permintaan `/ar-receipts` lalu `/match`). Nominal = nominal mutasi (hanya-baca, R9),
+ *    tanggal & rekening = mutasi (hanya-baca/terkunci; server mengisinya dari baris), `preset.reason` = alasan kartu.
+ *    `paymentReportId` (opsional) diteruskan sebagai `payment_report_id` (laporan bayar diterima bersama mutasi).
  *  · Kompatibel dengan pemanggil lama: `preset`, `offline` (antrean HP), `testId`, `onError`.
  *
  * Isian: Pelanggan · Nominal diterima · Tanggal terima · Cara bayar · Rekening penerima (PM-T3 `ReceiptPaymentFields`)
@@ -19,7 +23,7 @@
  * dengan uji lapis B lewat `__tests__/fixtures/mnt3_isi_form.json`).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Building2, Scale, Wallet } from "lucide-react";
+import { Building2, Landmark, Scale, Wallet } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNDatePicker from "../../../components/KNDatePicker";
 import KNSelect from "../../../components/KNSelect";
@@ -27,12 +31,13 @@ import MoneyInput from "../../../components/MoneyInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import FilterChips from "../../../components/FilterChips";
-import { formatCurrency, todayWib } from "../../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
 import { heldMoney } from "../../../utils/parseMoney";
 import { apiErrorText } from "../../../utils/apiError";
 import { offlinePost } from "../../../utils/offlineQueue";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { receiptFromLine } from "../bank/bankLineReceiptApi";
 import PaymentVarianceDialog from "./PaymentVarianceDialog";
 import { assessVariance, directionMeta, varianceMeta } from "./paymentApi";
 import { usePaymentMethods } from "../../../config/paymentMethods";
@@ -98,12 +103,15 @@ function CustomerStep({ value, onPick }) {
 }
 
 export default function ReceivePaymentModal({ customerId: customerIdProp = "", customerName: customerNameProp = "",
-  preselectOrderId, bankLineId = "", amountHint, onClose, onDone, onError, offline = false,
+  preselectOrderId, bankLineId = "", paymentReportId = "", amountHint, onClose, onDone, onError, offline = false,
   testId = "ar-receipt-modal", preset = null, cashOnly = false }) {
+  // F1 — kwitansi dari mutasi bank: nominal kas = nominal mutasi (server menolak nominal lain, R9).
+  const fromLine = Boolean(bankLineId);
   const [picked, setPicked] = useState({ id: customerIdProp || "", name: customerNameProp || "" });
   const customerId = customerIdProp || picked.id;
   const customerName = customerNameProp || picked.name;
   const hintAmount = amountHint ?? preset?.amount;
+  const lineAmount = fromLine ? Math.round((Number(hintAmount) || 0) * 100) / 100 : 0;
   const [openOrders, setOpenOrders] = useState([]);
   const [loading, setLoading] = useState(Boolean(customerId));
   const [loadError, setLoadError] = useState("");
@@ -140,7 +148,6 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const intent = useIntentKey("arrc");
-  const matchIntent = useIntentKey("arrcbank");
   const [deposit, setDeposit] = useState(0);
   const [useDeposit, setUseDeposit] = useState(false);
   const [depositAmt, setDepositAmt] = useState("");
@@ -221,7 +228,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   // kembali utuh, dan kwitansi terbaca "lebih bayar" sebesar titipan. Kini titipan dipakai lebih dulu dan uang baru =
   // Σ alokasi − titipan. "Tertua dulu" tidak berubah: nominal = uang baru, titipan menambah dana.
   const depositUse = mode === "manual" ? Math.min(depositWanted, allocTotal) : depositWanted;
-  const effectiveAmount = mode === "manual"
+  // F1 — dari mutasi: uang baru = nominal mutasi apa pun modenya; alokasi "Atur sendiri" yang lebih kecil = selisih bayar.
+  const effectiveAmount = fromLine ? lineAmount : mode === "manual"
     ? Math.round(Math.max(allocTotal - depositUse, 0) * 100) / 100 : Math.round((heldMoney(amount) || 0) * 100) / 100;
   const totalFunds = effectiveAmount + depositUse;
   const allocatedOrders = useMemo(() => {
@@ -260,18 +268,6 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
     setAlloc((p) => ({ ...p, [orderId]: Math.min(Math.max(heldMoney(value) || 0, 0), max) }));
   }
 
-  async function linkBankLine(rc) {
-    if (!bankLineId || !rc?.cash_txn_id) return "";
-    try {
-      const b = { txn_id: rc.cash_txn_id };
-      await matchIntent.send({ line: bankLineId, ...b },
-        (k) => moneyPost(`${API}/bank-reconciliation/lines/${bankLineId}/match`, b, k));
-      return ` Mutasi ditautkan ke kwitansi ${rc.number || ""} — kwitansi terverifikasi bank.`;
-    } catch (e) {
-      return ` Mutasi bank belum tertaut: ${apiErrorText(e, "coba tautkan di Rekonsiliasi.")}`;
-    }
-  }
-
   async function submit(vpayload) {
     if (inFlight.current || busy) return;   // klik ganda: satu niat saja
     if (allPt) { setError(TEKS_PILIH_PT); return; }
@@ -299,7 +295,15 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
       if (!ok) return;
       setBusy(true); setError("");
       let data;
-      if (offline) {
+      let bank = "";
+      if (fromLine) {
+        // F1 §5.5 — SATU permintaan: klaim mutasi → kwitansi → tautan (tidak ada kwitansi tanpa tautan).
+        const lineBody = { ...body, ...(paymentReportId ? { payment_report_id: paymentReportId } : {}) };
+        const out = await intent.send({ line: bankLineId, ...lineBody }, (k) => receiptFromLine(bankLineId, lineBody, k));
+        data = out?.receipt || {};
+        const lepas = (out?.released_order_ids || []).length ? " Pesanan dilepas ke gudang." : "";
+        bank = ` Dari mutasi bank — kwitansi terverifikasi bank.${lepas}`;
+      } else if (offline) {
         const r = await offlinePost(`${API}/ar-receipts`, body,
           { idempotencyKey: intent.keyFor(body), label: `Kwitansi ${customerName} ${formatCurrency(totalFunds)}` });
         if (r.queued) {
@@ -317,7 +321,6 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
         : (v.needs_decision
           ? ` Selisihnya masuk antrean Selisih Bayar untuk diputus.${v.decision_error ? ` Catatan: ${v.decision_error}` : ""}`
           : "");
-      const bank = await linkBankLine(data);
       // Pelatihan 18 Nov (F04) — lebih bayar: dulu pesan hanya menyebut yang teralokasi (Rp 1.971.027) padahal uang yang
       // diterima Rp 2.000.000; kini nominal diterima + rinciannya (melunasi tagihan · jadi titipan pelanggan).
       const sisaTitipan = Number(data?.unapplied_amount || 0);
@@ -373,13 +376,24 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
             <>
               <ErrorNotice message={loadError} onRetry={load} onDismiss={() => setLoadError("")} testId="ar-receipt-error" />
               <p className="text-fs-13" data-testid="ar-receipt-customer-name"><span className="text-kn-text-2">Pelanggan: </span><b>{customerName || "—"}</b></p>
+              {fromLine && (
+                <div className="notice-bar info text-fs-12" data-testid="ar-receipt-line-note">
+                  <Landmark size={13} className="shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 break-words">
+                    Dari mutasi bank: nominal, tanggal, dan rekening mengikuti mutasi; kwitansi langsung terverifikasi bank.
+                    {preset?.reason ? <span className="block font-semibold">Perlu dicek: {preset.reason}</span> : null}
+                  </span>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div>
                   <label className="field-label">Nominal diterima</label>
-                  {mode === "auto"
+                  {fromLine
+                    ? <p className="field flex items-center tabular-nums" data-testid="ar-receipt-amount-line">{formatCurrency(lineAmount)}</p>
+                    : mode === "auto"
                     ? <MoneyInput testId="ar-receipt-amount" className="field" value={amount} onChange={ketikNominal} placeholder="0" />
                     : <p className="field flex items-center tabular-nums" data-testid="ar-receipt-amount-manual">{formatCurrency(effectiveAmount)}</p>}
-                  {mode === "manual" && depositUse > 0 && (
+                  {!fromLine && mode === "manual" && depositUse > 0 && (
                     <p className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-amount-manual-note">
                       Σ alokasi {formatCurrency(allocTotal)} − titipan {formatCurrency(depositUse)}
                     </p>
@@ -387,7 +401,9 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
                 </div>
                 <div>
                   <label className="field-label">Tanggal terima</label>
-                  <KNDatePicker data-testid="ar-receipt-date" value={date} onChange={setDate} clearable={false} />
+                  {fromLine
+                    ? <p className="field flex items-center tabular-nums" data-testid="ar-receipt-date-line">{formatDate(date)}</p>
+                    : <KNDatePicker data-testid="ar-receipt-date" value={date} onChange={setDate} clearable={false} />}
                 </div>
                 <div>
                   <label className="field-label">Cara bayar</label>
@@ -401,7 +417,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
               ) : <p className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-cash-hint">{cashHint}</p>}
               {(needsAccount || titipan) && (
                 <ReceiptPaymentFields entityId={selectedEntity} method={method} methodRow={methodRow} titipan={titipan}
-                  orders={allocatedOrders} refRequired={refRequired} value={pay} onChange={setPay} onState={setPayState} />
+                  orders={allocatedOrders} refRequired={refRequired} value={pay} onChange={setPay} onState={setPayState}
+                  lockAccount={fromLine && Boolean(preset?.accountId)} />
               )}
               {deposit > 0 && !cashOnly && (   // LB-T8 R16: pesanan tertahan bayar + non-pemutus = HANYA tunai baru tanpa titipan (server 409 bila titipan dipakai)
                 <div className="rounded-md border border-kn-divider bg-kn-success-soft px-3 py-2" data-testid="ar-receipt-deposit-box">

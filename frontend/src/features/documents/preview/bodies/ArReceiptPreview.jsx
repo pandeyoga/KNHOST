@@ -1,6 +1,8 @@
 /**
  * Isi pratinjau kwitansi: fakta + alokasi ke pesanan. Data dari `GET /ar-receipts/{id}` (sudah termuat).
  * Alokasi dengan `order_id` dan izin baca pesanan = tombol yang menumpuk pratinjau pesanan; selain itu teks biasa.
+ * F1 (§5.8) — kwitansi yang lahir dari satu baris mutasi bank (`source = "mutasi_bank"`, `bank_line_id`) menulis
+ * "Lahir dari mutasi bank {tanggal} · {rekening} · ref …" (tanggal & rekening kwitansi = tanggal & rekening mutasi).
  */
 import { useEntityScope } from "../../../../context/EntityScopeContext";
 import { entityShortById } from "../../../../utils/entityLabel";
@@ -13,6 +15,11 @@ export default function ArReceiptPreview({ doc, push, canPush, currentUser }) {
   const perms = currentUser?.permissions;
   const alokasi = (Array.isArray(doc.allocations) ? doc.allocations : []).map((a, i) => ({ ...a, idx: i }));
   const bisaBuka = canPush("sales_order");
+  const snap = doc.account_snapshot || {};
+  const rekening = snap.name || [snap.bank_name, snap.account_number].filter(Boolean).join(" ");
+  const asalMutasi = doc.source === "mutasi_bank" && doc.bank_line_id
+    ? [`Lahir dari mutasi bank${doc.receipt_date ? ` ${formatDate(doc.receipt_date)}` : ""}`, rekening,
+      doc.reference_no ? `ref ${doc.reference_no}` : ""].filter(Boolean).join(" · ") : "";
 
   const kolom = [
     { key: "order", label: "Pesanan", render: (a) => {
@@ -30,6 +37,7 @@ export default function ArReceiptPreview({ doc, push, canPush, currentUser }) {
 
   return (
     <div className="grid gap-3" data-testid="doc-preview-ar-receipt">
+      {asalMutasi && <p className="notice-bar info text-fs-12" data-testid="doc-preview-ar-receipt-source">{asalMutasi}</p>}
       <PreviewFacts items={[
         { key: "customer", label: "Pelanggan", content: doc.customer_name
           ? <CustomerCardLink id={doc.customer_id} name={doc.customer_name} perms={perms} testId="doc-preview-customer" /> : "" },

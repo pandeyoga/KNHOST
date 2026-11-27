@@ -12,16 +12,23 @@
  * PM-T3 — mutasi yang memuat kode bayar pesanan (`pay_code_hits`) diberi lencana "Kode bayar {kode}"; bila pesanan itu
  * belum punya kwitansi yang menunggu dicocokkan, tombol **Catat sebagai kwitansi** (MN-T3: semua mutasi masuk belum cocok; `onRecordReceipt`) membuka
  * form kwitansi terisi. Lencana & tombol ada di sel Keterangan (kolom Tindakan tidak melebar).
+ *
+ * F1 (kwitansi otomatis dari mutasi) — penanda `f1` baris: kartu → alasan berkalimat di sel Keterangan
+ * (`recon-f1-reason-{id}`); kwitansi dibatalkan → tanda "tidak diproses otomatis lagi" (`recon-f1-voided-{id}`); kwitansi
+ * otomatis jalur B/C (`match_type` `auto_receipt`) → lencana "Kwitansi otomatis" (`recon-f1-auto-{id}`), kwitansi dicatat
+ * dari mutasi → "Kwitansi dari mutasi". "Batalkan kwitansi" (`recon-f1-void-{id}`, `onVoidReceipt` — pemanggil hanya
+ * memberikannya kepada pemegang `ar_receipt.void` + `cash.create`) untuk kwitansi yang LAHIR dari mutasi (R8).
  */
 import { useMemo, useState } from "react";
 import {
   Link2, Unlink, EyeOff, Eye, ArrowDownLeft, ArrowUpRight, PiggyBank, Info, Layers,
-  Receipt, Percent, Hash, FilePlus2,
+  Receipt, Percent, Hash, FilePlus2, AlertTriangle, XCircle,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 import { AskKnButton } from "../../../components/AskKnButton";
 import ErrorNotice from "../../../components/ErrorNotice";
+import StatusBadge from "../../../components/StatusBadge";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
 import { askConfirm } from "../../../services/confirmService";
@@ -30,6 +37,8 @@ import { can } from "../../../config/roles";
 import useListSearch from "@/hooks/useListSearch";
 import { confirmMoney } from "../../../utils/moneyConfirm";   // pelatihan 18 Nov — `02` N5 (aksi uang berkonfirmasi)
 import { useEntityScope } from "../../../context/EntityScopeContext";
+import { badgeLabel } from "../../sales_admin/workDeskApi";
+import { kwitansiDariMutasi } from "./bankLineReceiptApi";
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
 const fmtDate = (s) => formatDate(s);
@@ -74,7 +83,7 @@ function ScoreBadge({ score, explain, testId }) {
 }
 
 export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, onReload,
-  onError, onNotify, onRecordReceipt = null, recordBlockReason = "", perms = {}, canEdit = true }) {
+  onError, onNotify, onRecordReceipt = null, recordBlockReason = "", perms = {}, canEdit = true, onVoidReceipt = null }) {
   // Uji peran kustom 18 Nov (agen A) — cocokkan/lepas/abaikan/titipkan/biaya & bunga bank = `cash.create` di server
   // (routers/bank_reconciliation.py). Pemegang lihat saja (`canEdit=false`) tidak lagi melihat tombol yang pasti 403.
   // MN-T3 — "Bayar pemasok" dari mutasi keluar hanya bagi pemegang izin bayar dokumennya.
@@ -204,6 +213,8 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
             ) : srch.pageRows.map((l) => {
               const [pill, plabel] = STATUS_PILL[l.status] || STATUS_PILL.unmatched;
               const sugs = l.suggestions || [];
+              const f1 = l.f1 || {};
+              const dariMutasi = kwitansiDariMutasi(l);
               return (
                 <tr key={l.id} data-testid={`recon-line-${l.id}`}
                   className="border-b border-[#F5F5F7] last:border-0 align-top">
@@ -231,6 +242,20 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                           </span>
                         ))}
                       </div>
+                    )}
+                    {/* F1 — mutasi berkode yang tidak cocok sempurna: alasan kartunya (antrean "Mutasi berkode perlu dicek"). */}
+                    {l.status === "unmatched" && f1.status === "kartu" && (
+                      <p className="mt-1 flex items-start gap-1 text-fs-12 text-kn-warning-text" data-testid={`recon-f1-reason-${l.id}`}>
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span className="min-w-0 break-words whitespace-normal">
+                          <b>{badgeLabel(f1.alasan_kode) || "Perlu dicek"}:</b> {f1.alasan || "belum bisa menjadi kwitansi otomatis."}
+                        </span>
+                      </p>
+                    )}
+                    {f1.status === "dibatalkan" && (
+                      <p className="mt-1 text-fs-12 text-kn-text-2 whitespace-normal break-words" data-testid={`recon-f1-voided-${l.id}`}>
+                        {f1.alasan || "Kwitansi dari mutasi ini dibatalkan."} Tidak diproses otomatis lagi.
+                      </p>
                     )}
                     {/* MN-T3 — tiap mutasi MASUK belum cocok: "Catat sebagai kwitansi" (form Terima pembayaran; pelanggan &
                         pesanan terisi dari kode bayar bila ada, selain itu langkah Pilih pelanggan). PM-T3 tetap: bila
@@ -286,6 +311,13 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                             l.match_type === "auto" ? " · otomatis" : ""}`}
                       </p>
                     )}
+                    {l.status === "matched" && dariMutasi && (
+                      <div className="mt-0.5">
+                        {l.match_type === "auto_receipt"
+                          ? <StatusBadge tone="success" icon="check" label="Kwitansi otomatis" testId={`recon-f1-auto-${l.id}`} />
+                          : <StatusBadge tone="info" icon="check" label="Kwitansi dari mutasi" testId={`recon-f1-manual-${l.id}`} />}
+                      </div>
+                    )}
                     {l.status === "holding" && (
                       <p className="mt-0.5 text-[10px] text-[#0058CC]">
                         Sisa {formatCurrency(l.holding_remaining || 0)}
@@ -319,6 +351,13 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                             : "Tautan dilepas.");
                         }}>
                         <Unlink size={12} /> Lepas
+                      </button>
+                    )}
+                    {/* F1 §5.6 — kwitansi yang lahir dari mutasi ini: lepas + batal dalam satu permintaan (alasan wajib). */}
+                    {onVoidReceipt && dariMutasi && (
+                      <button type="button" data-testid={`recon-f1-void-${l.id}`} className="link-button ml-2 text-kn-danger-text"
+                        disabled={busy === l.id + "void-receipt"} onClick={() => onVoidReceipt(l)}>
+                        <XCircle size={12} aria-hidden="true" /> Batalkan kwitansi
                       </button>
                     )}
                     {canEdit && l.status === "ignored" && (
