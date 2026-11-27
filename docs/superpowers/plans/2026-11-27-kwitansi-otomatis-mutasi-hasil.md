@@ -56,9 +56,12 @@ Temuan nyata yang tertangkap tinjauan sebelum gabung:
 ## 3. Uji (apa adanya)
 
 - **Backend `tests_mem` penuh** di `cd5ca87`: 3104 lulus, 2 gagal (`test_KFT1_izin_pengaturan`: hitungan kunci pengaturan
-  belum ditambah kunci F1) → diperbaiki di gelombang akhir. **Di pohon akhir:** ⟨SUITE⟩
+  belum ditambah kunci F1) → diperbaiki di gelombang akhir. **Di pohon akhir (`c76ba9a`):** 3114 lulus, 2 dilewati,
+  3 xfail, **0 gagal** (EXIT 0, 1340 dtk).
 - **Jest penuh** di `cd5ca87`: 2133/2134, 269/271 suite (`odItemCancel`, `phase4R2` = kendala lingkungan, sama dengan garis
-  dasar). **Di pohon akhir:** ⟨JEST⟩
+  dasar). **Di pohon akhir (`c76ba9a`):** 2138/2140 uji, 268/271 suite — `odItemCancel`, `phase4R2` (kendala lingkungan,
+  sama dengan garis dasar) dan `tzTanggalBawaan` (bergantung zona waktu proses; lulus bila dijalankan sendiri dan lulus di
+  run penuh sebelumnya; tidak menyentuh berkas F1).
 - **Uji F1 baru:** 115 uji backend (F1-1…5) + 24 uji jest (`f1KwitansiMutasi`) + uji di berkas terkait.
 - **MongoDB sungguhan:** uji balapan `test_bp_PMT3_cocok_bersamaan` (U17) lulus di salinan DB (backend terpisah :8031,
   salinan dibuang); indeks `uq_bank_line_receipt` ada; penanda `__migrations__` tetap satu dokumen sesudah beberapa kali
