@@ -6,7 +6,7 @@ bagian 2) · Pohon kode akhir: `82b9f02`.
 - **Rancangan:** `docs/superpowers/specs/2026-11-27-kas-bank-2-kas-manual-design.md` (keputusan pemilik C5 & C6 25 Nov;
   builder check §7.8).
 - **Rencana:** `docs/superpowers/plans/2026-11-27-kas-bank-2-kas-manual.md`, 5 tugas.
-- **Tangkapan layar (data acuan):** `2026-11-27-kas-bank-2-hasil/tangkapan/` — ⟨TANGKAPAN⟩.
+- **Tangkapan layar (data acuan):** `2026-11-27-kas-bank-2-hasil/tangkapan/` — 27 potret PT KSC (finance@ pengaju, manager@ penyetuju): kategori tanpa Pembelian/Gaji + penolakan server; Rp 1.000.000 langsung; Rp 2.500.000 → "Ajukan" → PKK menunggu (nol kas, saldo tetap); Setujui mati untuk pengaju; Pusat Persetujuan → Setujui → kas + jurnal; Tolak beralasan; Batal; kartu Asisten "Diajukan"; pemberitahuan. Skrip `tangkap_kb2.js`, log angka API `tangkap_kb2_log.txt`.
 
 **Status: selesai, belum digabung ke `main`.** Pembaruan VPS tidak menulis data.
 

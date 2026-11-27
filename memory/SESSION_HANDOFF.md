@@ -1,6 +1,13 @@
 # SESSION HANDOFF — Kain Nusantara (KN10)
 
-## ▶ MULAI DI SINI — 2026-11-27 — F1 + Kas & Bank bagian 1
+## ▶ MULAI DI SINI — 2026-11-27 — F1 + Kas & Bank bagian 1 & 2
+> **27 Nov 2026 — Kas & Bank bagian 2 (C5 + C6) selesai** di cabang yang sama (belum digabung): kas manual baru tidak
+> lagi berkategori Pembelian/Gaji; kas keluar manual di atas batas PT (bawaan Rp 1.000.000, `kontrol.kas_keluar_manual`)
+> menjadi pengajuan `PKK-` (`cash_out_requests`) yang terbit sebagai kas sesudah orang kedua menyetujui. Hasil & bukti:
+> `docs/superpowers/plans/2026-11-27-kas-bank-2-hasil.md` (tests_mem 3280 lulus; jest 2196/2197 — lingkungan; gate tanpa
+> pelanggaran baru; MongoDB sungguhan 3/3; 27 tangkapan). Seed demo kini menyetujui kas keluar 1.250.000 lewat manager@.
+> Berikutnya (G1): Kas & Bank bagian 3 (C1–C3), 4 (C7–C8); C4 menunggu pemilik; Meja gelombang 3; F2 → OCR → F3 → F4; G2.
+
 > **27 Nov 2026 — F1 Kwitansi otomatis dari mutasi + Kas & Bank bagian 1 selesai** di cabang `claude/nifty-carson-jjx3c8`
 > (belum digabung ke `main`; Lapor Bayar sudah di `main` `a6fb7f8`; F1 menunggu izin gabung sampai `b41e21f`).
 > **F1:** impor mutasi bank → mutasi berkode bayar yang cocok sempurna jadi kwitansi terverifikasi bank (jalur A/B/C),

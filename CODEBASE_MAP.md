@@ -145,6 +145,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash_account_cutover.py` | 5 | 94 | `/kas-per-rekening/usulan`, `/kas-per-rekening/{entity_id}/pratinjau`, `/kas-per-rekening/{entity_id}/siapkan`, `/kas-per-rekening/usulan/{id}/setujui`, `/kas-per-rekening/usulan/{id}/tolak` (Kas & Bank 1 — pindah saldo per PT) |
 | `cash_advances.py` | 25 | 233 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `cash_holdings.py` | 7 | 132 | `/cash-deposits`, `/cash-deposits/{dep_id}/cancel`, `/cash-deposits/{dep_id}/receive`, `/cash-deposits/{dep_id}/reject`, `/cash-holdings`, `/cash-holdings/me/summary` |
+| `cash_out_requests.py` | 6 | 108 | `/cash-out-requests`, `/cash-out-requests/batas`, `/cash-out-requests/{id}`, `/cash-out-requests/{id}/approve`, `/cash-out-requests/{id}/reject`, `/cash-out-requests/{id}/cancel` (Kas & Bank 2 — pengajuan kas keluar manual di atas batas) |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
 | `closing.py` | 7 | 199 | `/finance/closing`, `/finance/closing/checklist`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose` … |
@@ -370,6 +371,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 198 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_holding_service.py` | 672 | PM-T4 (PM-06, K-36) — tunai yang diterima sales dicatat sebagai TITIPAN di tangan pencatatnya sampai disetor. |
+| `cash_out_request_service.py` | 526 | Kas & Bank 2 (C6) — kas keluar manual di atas batas PT (`kontrol.kas_keluar_manual`) menjadi pengajuan `PKK-` (`cash_out_requests`): ajukan (202, idempoten per PT + sidik isi), setujui orang kedua berklaim → `create_cash(ref_type=manual, ref_id=id pengajuan)`, tolak beralasan, batal; pemberitahuan. |
 | `cash_ledger.py` | 282 | PK-20 (SL-11, `02_STANDAR.md` §1 P5) — SATU pembuat transaksi kas (`cash_transactions`). |
 | `cashflow_forecast_service.py` | 131 | FINANCE — Proyeksi Arus Kas (Cash Flow Forecast) (EPIC P1-3). |
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
