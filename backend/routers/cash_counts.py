@@ -3,7 +3,7 @@ Opname Kas (tab tersembunyi, Tugas 4).
 
 Izin (spesifikasi §5.3, §6 — tanpa izin baru): lihat `cash.view`, hitung `cash.create`, setujui/tolak selisih
 `cash.approve` (+ Aturan Persetujuan jenis `cash_count`, `approval_policy_service.guard_door`; penghitung ≠ penyetuju
-dijaga kontrol `kontrol.selisih_kas` di layanan). Cakupan PT: rekening yang dihitung harus milik PT dalam penugasan
+/ penolak dijaga kontrol `kontrol.selisih_kas` di layanan). Cakupan PT: rekening yang dihitung harus milik PT dalam penugasan
 (403); dokumen hanya bisa dibaca/diputus dalam cakupan PT pengguna (`guard_doc`, ketat untuk tulisan).
 
   GET  /api/cash-counts                    daftar (`entity_id`, `status`, `account_id`, `perlakuan`, `q`, `page`,
@@ -13,7 +13,8 @@ dijaga kontrol `kontrol.selisih_kas` di layanan). Cakupan PT: rekening yang dihi
   GET  /api/cash-counts/karyawan           karyawan HR PT (id, kode, nama) untuk perlakuan piutang karyawan
   GET  /api/cash-counts/{id}               opname + kas penyesuaian + penilaian kontrol dua orang untuk pengguna
   POST /api/cash-counts/{id}/approve       `{perlakuan, karyawan_id?}` — orang kedua; kas penyesuaian terbit
-  POST /api/cash-counts/{id}/reject        `{alasan}` (≥ 5 huruf) — tanpa kas; penghitung menghitung ulang
+  POST /api/cash-counts/{id}/reject        `{alasan}` (≥ 5 huruf), bukan penghitung — tanpa kas; penghitung menghitung
+                                           ulang
 """
 from typing import Any, Dict, List
 

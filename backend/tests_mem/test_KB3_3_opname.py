@@ -41,6 +41,9 @@ PESAN_PIUTANG_LEBIH = ("Piutang karyawan hanya untuk kekurangan kas (uang fisik 
 PESAN_KARYAWAN_WAJIB = "Pilih karyawan yang menanggung kekurangan kas."
 PESAN_PERLAKUAN = "Pilih perlakuan selisih: selisih kas atau piutang karyawan."
 PESAN_ALASAN = "Alasan penolakan wajib diisi (minimal 5 huruf)."
+PESAN_TOLAK_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin "
+                       "menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di "
+                       "Pengaturan › Persetujuan › Kontrol dua orang.")
 SETUJU1 = {"id": "usr_kb33_setuju1", "name": "Dodi Penyetuju KB33", "role": "finance"}
 SETUJU2 = {"id": "usr_kb33_setuju2", "name": "Sari Penyetuju KB33", "role": "finance"}
 _urut = itertools.count(1)
@@ -254,6 +257,9 @@ async def test_KB3_3_U5_penghitung_tidak_memutus_sendiri(klien, db, akun, sesi, 
     d = await _hitung(klien, pt, 1_010_000)
     rinci = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["hitung"]["h"])).json()
     assert rinci["kontrol"]["ditolak"] is True and rinci["kontrol"]["pesan"] == PESAN_ORANG_KEDUA
+    assert rinci["kontrol"]["tolak_pesan"] == PESAN_TOLAK_SENDIRI
+    rekan = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["setuju"]["h"])).json()
+    assert (rekan["kontrol"]["ditolak"], rekan["kontrol"]["tolak_pesan"]) == (False, "")
     r = await _putus(klien, pt, d["id"], siapa="hitung", status=403, perlakuan="selisih_kas")
     assert r["detail"] == PESAN_ORANG_KEDUA, r
     assert await _kas_opname(db, d["id"]) == []
@@ -264,6 +270,9 @@ async def test_KB3_3_U5_penghitung_tidak_memutus_sendiri(klien, db, akun, sesi, 
     da = r.json()
     r = await klien.post(f"{URL}/{da['id']}/approve", headers=ha, json={"perlakuan": "selisih_kas"})
     assert (r.status_code, r.json()["detail"]) == (403, PESAN_ORANG_KEDUA), r.text
+    r = await klien.post(f"{URL}/{da['id']}/reject", headers=ha, json={"alasan": "admin tarik sendiri"})
+    assert (r.status_code, r.json()["detail"]) == (403, PESAN_TOLAK_SENDIRI), r.text
+    assert (await db.cash_counts.find_one({"id": da["id"]}))["status"] == "menunggu_persetujuan"
     assert await _kas_opname(db, da["id"]) == []
     # Penghitung tanpa izin setujui → 403 izin
     await _hitung(klien, pt, 480_000, rek="KECIL", siapa="lihat", status=403)   # tanpa cash.create
@@ -331,10 +340,8 @@ async def test_KB3_3_U8_tolak_beralasan(klien, db, akun, sesi, peran_tanpa_acuan
     # Penghitung menghitung ulang (opname baru)
     d2 = await _hitung(klien, pt, 1_000_000)
     assert d2["status"] == "selesai"
-    # Penghitung boleh menolak hitungannya sendiri (tidak menggerakkan uang)
-    d3 = await _hitung(klien, pt, 480_000, rek="KECIL")
-    j = await _putus(klien, pt, d3["id"], "reject", siapa="hitung", alasan="salah hitung lembaran")
-    assert j["status"] == "ditolak"
+    # Perbaikan putaran 1 — penghitung TIDAK menolak hitungannya sendiri (selisih tidak bisa ditarik sebelum orang lain
+    # memutusnya): uji tersendiri U19.
 
 
 # ═══ 9. Rekening bank / tidak ada / nonaktif / isian salah → 400 ═══════════════════════════════════════════════════
@@ -589,10 +596,11 @@ def test_KB3_3_U17_kontrol_selisih_kas_terpasang():
     import config_registry as registry
     from config_catalog_kontrol import AKSI_BY_ID, _BELUM_DIPASANG
     assert "selisih_kas" not in _BELUM_DIPASANG
-    assert AKSI_BY_ID["selisih_kas"]["titik"] == ("services/cash_count_service.py:setujui",)
+    assert AKSI_BY_ID["selisih_kas"]["titik"] == ("services/cash_count_service.py:setujui",
+                                                  "services/cash_count_service.py:tolak")
     e = registry.require("kontrol.selisih_kas.min_orang")
     assert (e["status"], e["default"]) == ("active", "2")
-    assert "services/cash_count_service.py:setujui" in e["consumers"]
+    assert {"services/cash_count_service.py:setujui", "services/cash_count_service.py:tolak"} <= set(e["consumers"])
 
 
 # ═══ 18. Persetujuan terhenti sesudah kas tercatat → Setujui ulang memakai kas yang sama; rekening nonaktif → 409 ═══
@@ -622,3 +630,28 @@ async def test_KB3_3_U18_setujui_ulang_dan_rekening_nonaktif(klien, db, akun, se
     doc = await db.cash_counts.find_one({"id": e["id"]}, {"_id": 0})
     assert doc["status"] == "menunggu_persetujuan" and not doc.get("saga_lock")
     assert await _kas_opname(db, e["id"]) == []
+
+
+# ═══ 19. Penghitung tidak menolak (menarik) hitungannya sendiri — juga diputus orang kedua ════════════════════════
+async def test_KB3_3_U19_penghitung_tidak_menolak_sendiri(klien, db, akun, sesi, peran_tanpa_acuan):
+    from services import approval_backlog_service as abl, config_resolver as resolver
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    d = await _hitung(klien, pt, 940_000)                                  # kurang 60.000
+    r = await _putus(klien, pt, d["id"], "reject", siapa="hitung", status=403, alasan="salah hitung lembaran")
+    assert r["detail"] == PESAN_TOLAK_SENDIRI, r
+    doc = await db.cash_counts.find_one({"id": d["id"]}, {"_id": 0})
+    assert doc["status"] == "menunggu_persetujuan" and not doc.get("saga_lock") and doc["alasan_tolak"] == ""
+    assert {r["key"]: r for r in (await abl.backlog(pt["id"]))["all_items"]}["cash_count"]["count"] == 1
+    # Tidak bisa menghitung ulang (menimpa selisih) selama menunggu
+    await _hitung(klien, pt, 1_000_000, status=409)
+    # Orang kedua menolak beralasan → ditolak, tanpa kas; penghitung lalu menghitung ulang
+    j = await _putus(klien, pt, d["id"], "reject", siapa="setuju", alasan="salah hitung lembaran, hitung ulang")
+    assert (j["status"], j["ditolak_oleh"]) == ("ditolak", pt["o"]["setuju"]["u"]["name"])
+    assert await _kas_opname(db, d["id"]) == []
+    assert (await _hitung(klien, pt, 1_000_000))["status"] == "selesai"
+    # PT yang mengatur `kontrol.selisih_kas.min_orang` = 1 → penghitung boleh menolak sendiri (sama dengan Setujui)
+    await resolver.set_value("kontrol.selisih_kas.min_orang", "1", scope_type="entity", scope_id=pt["id"],
+                             reason="uji KB33 satu orang tolak", actor="uji")
+    e = await _hitung(klien, pt, 490_000, rek="KECIL")
+    j = await _putus(klien, pt, e["id"], "reject", siapa="hitung", alasan="salah hitung koin")
+    assert j["status"] == "ditolak"
