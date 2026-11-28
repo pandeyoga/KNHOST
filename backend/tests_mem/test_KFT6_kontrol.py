@@ -50,8 +50,8 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # Kas & Bank 2 (C6) — aksi ke-44 `kas_keluar_manual` (kas keluar manual di atas batas; bawaan satu orang, bernominal,
 # batas bawaan Rp 1.000.000) → 44 aksi, 27 bernominal, 73 kunci `kontrol.*`.
 # Kas & Bank 3 (Tugas 1) — aksi ke-45 `selisih_kas` (setujui selisih opname kas; bawaan DUA orang, TANPA nominal, juga
-# Admin) → 45 aksi, 27 bernominal, 74 kunci `kontrol.*`. Kuncinya bertanda tidak dipakai sampai titik pasangnya dibangun
-# (`config_catalog_kontrol._BELUM_DIPASANG`, Tugas 3): tidak bisa diubah, bawaan "2" tetap terbaca.
+# Admin) → 45 aksi, 27 bernominal, 74 kunci `kontrol.*`. Tugas 3 memasang titiknya (`cash_count_service.setujui`):
+# `config_catalog_kontrol._BELUM_DIPASANG` kini kosong, kuncinya aktif dan bisa diubah seperti aksi lain.
 N_AKSI = 45   # Kas & Bank 3 — aksi ke-45 `selisih_kas`
 N_KUNCI = 74   # Kas & Bank 3 — `kontrol.selisih_kas.min_orang`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),

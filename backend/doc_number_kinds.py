@@ -101,6 +101,8 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("pdn", "Pindah dana antar rekening", "Keuangan", "fund_transfers", "number", "PDN-"),
     # Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas (menunggu orang kedua), deret per PT.
     _k("pkk", "Pengajuan kas keluar manual", "Keuangan", "cash_out_requests", "number", "PKK-"),
+    # Kas & Bank 3 (C3) — opname kas (hitung fisik rekening tunai), deret per PT.
+    _k("opk", "Opname kas", "Keuangan", "cash_counts", "number", "OPK-"),
     # ── Gudang ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("trf", "Mutasi gudang", "Gudang", "warehouse_transfers", "code", "TRF-"),
     _k("grn", "Penerimaan barang", "Gudang", "goods_receipts", "number", "GRN-"),

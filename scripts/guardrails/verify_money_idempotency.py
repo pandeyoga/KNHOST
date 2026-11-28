@@ -42,6 +42,7 @@ MONEY_PREFIXES = (
     "/api/input-tax-invoices", "/api/tax-invoices", "/api/bank-reconciliation/lines/",
     "/api/bank-accounts", "/api/bank-account-changes",   # PM-T1 — rekening kas/bank & putusan perubahannya
     "/api/payment-reports",   # LB-T3 — lapor bayar CBD & DP: lampiran dan putusan terima/tolak
+    "/api/cash-counts",   # Kas & Bank 3 — opname kas: hitung dan putusan setujui/tolak selisih (kas penyesuaian)
     "/api/cash-out-requests",   # Kas & Bank 2 — putusan setujui/tolak/batal pengajuan kas keluar manual
 )
 # Daftar-izin (berkas relatif `frontend/src`, potongan URL) → alasan ≥ 20 huruf. Awal: kosong.

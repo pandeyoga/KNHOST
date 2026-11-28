@@ -28,6 +28,8 @@ LOCKED_COLLECTIONS = ["wms_tasks", "sales_orders", "warehouse_transfers", "cycle
                       "cash_out_requests", "fund_transfers", "cash_deposits", "cash_advances",
                       "cash_advance_settlements", "interco_transactions", "interco_returns", "contra_bons",
                       "master_cleanup_batches", "md_samples",
+                      # Kas & Bank 3 (C3) — opname kas: Setujui/Tolak selisih mengklaim dokumennya.
+                      "cash_counts",
                       # Pindah Saldo Kas per Rekening (Kas & Bank 1) memakai jatah waktu `memproses`
                       # (`lease_until`), bukan `saga_lock`; didaftarkan supaya tetap terlihat bila kelak memakai
                       # `atomic_claim`.

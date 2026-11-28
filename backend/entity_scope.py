@@ -297,6 +297,8 @@ SCOPED_COLLECTIONS = {
     "fund_transfers",
     # Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas: kas satu PT yang menunggu orang kedua.
     "cash_out_requests",
+    # Kas & Bank 3 (C3) — opname kas rekening tunai satu PT (saldo buku, selisih, piutang karyawan).
+    "cash_counts",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

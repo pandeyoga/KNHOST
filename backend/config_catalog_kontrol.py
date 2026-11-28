@@ -164,6 +164,8 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     # Kas & Bank 2 (C6) — rute kas manual memutuskan "jadi pengajuan" (`butuh_orang_kedua`); Setujui menolak pengaju.
     "kas_keluar_manual": ("routers/cash.py:create_cash_transaction",
                           "services/cash_out_request_service.py:setujui"),
+    # Kas & Bank 3 (C3, Tugas 3) — Setujui selisih opname kas menolak penghitungnya (juga Admin, bawaan admin-tetap).
+    "selisih_kas": ("services/cash_count_service.py:setujui",),
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -171,10 +173,8 @@ for _x in KONTROL_AKSI:
 #: Kas & Bank 3 (Tugas 1) — aksi yang kuncinya sudah terdaftar, tetapi titik pasangnya dibangun tugas berikutnya. Selama
 #: di daftar ini kunci `kontrol.<aksi>.*` bertanda tidak dipakai (alasan di bawah) supaya kesehatan pengaturan tetap
 #: jujur (tanpa titik pasang = belum ada pembaca). Tugas yang memasang titiknya (`_TITIK`) menghapus barisnya di sini.
-#: `selisih_kas` → `services/cash_count_service.py:setujui` (Kas & Bank 3 Tugas 3, opname kas).
-_BELUM_DIPASANG: Dict[str, str] = {
-    "selisih_kas": "Persetujuan selisih opname kas sedang dibangun; aturan ini berlaku begitu opname kas tersedia.",
-}
+#: Kas & Bank 3 Tugas 3 — `selisih_kas` dipasang (`services/cash_count_service.py:setujui`); daftar kini kosong.
+_BELUM_DIPASANG: Dict[str, str] = {}
 
 # KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {

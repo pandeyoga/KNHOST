@@ -76,6 +76,33 @@ class PindahSaldoTolak(BaseModel):
     alasan: str = ""
 
 
+class CashCountPecahan(BaseModel):
+    """Kas & Bank 3 (C3) — satu baris rincian pecahan opname kas: nilai pecahan (Rp) × jumlah lembar/keping."""
+    nilai: float = Field(0, ge=0)
+    lembar: int = Field(0, ge=0)
+
+
+class CashCountCreate(BaseModel):
+    """Kas & Bank 3 (C3) — opname kas rekening tunai. `jumlah_fisik` kosong = total `pecahan`; keduanya diisi = harus
+    sama (diperiksa layanan, 400 berkalimat). Saldo buku dipotret server saat dihitung."""
+    account_id: str = ""
+    jumlah_fisik: Optional[float] = Field(None, ge=0)
+    pecahan: List[CashCountPecahan] = Field(default_factory=list)
+    catatan: str = ""
+
+
+class CashCountApprove(BaseModel):
+    """Kas & Bank 3 (C3) — putusan selisih opname: `selisih_kas` | `piutang_karyawan` (kurang saja, `karyawan_id`
+    wajib — karyawan HR PT pemilik rekening)."""
+    perlakuan: str = ""
+    karyawan_id: str = ""
+
+
+class CashCountReject(BaseModel):
+    """Kas & Bank 3 (C3) — tolak opname (alasan wajib ≥ 5 huruf, diperiksa layanan); penghitung menghitung ulang."""
+    alasan: str = ""
+
+
 class FundTransferCreate(BaseModel):
     """Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT. Tanggal `YYYY-MM-DD` (kosong = hari ini);
     `tanggal_terima` kosong atau sama dengan `tanggal_kirim` = sekali jalan, lebih besar = dua tahap (dalam perjalanan).

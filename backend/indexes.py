@@ -261,6 +261,12 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "cash_out_requests": [
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    # Kas & Bank 3 (C3) — opname kas: daftar / antrean per PT (status, terbaru dulu) dan per rekening (opname terakhir
+    # untuk pengingat Meja Keuangan; satu opname menunggu per rekening). Unik `number`: UNIQUE_DOC_NUMBER_FIELDS.
+    "cash_counts": [
+        [("entity_id", A), ("status", A), ("dihitung_pada", D)],
+        [("account_id", A), ("status", A), ("dihitung_pada", D)],
+    ],
     "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
         [("entity_id", A), ("period", A), ("kind", A)],
     ],
@@ -548,6 +554,7 @@ UNIQUE_DOC_NUMBER_FIELDS = [
     ("interco_charges", "number"),    # KM-T4 — tagihan antar-PT (`ICC-` per PT penagih)
     ("fund_transfers", "number"),     # Kas & Bank 1 (Tugas 4) — Pindah Dana (`PDN-` per PT)
     ("cash_out_requests", "number"),  # Kas & Bank 2 (C6) — pengajuan kas keluar manual (`PKK-` per PT)
+    ("cash_counts", "number"),        # Kas & Bank 3 (C3) — opname kas (`OPK-` per PT)
 ]
 
 
@@ -621,6 +628,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     # Kas & Bank 2 (C6) — pengajuan kas keluar manual ber-id turunan (PT + Idempotency-Key, `$setOnInsert`): dua kiriman
     # bersamaan berkunci sama = satu pengajuan; kas yang terbit menunjuknya lewat `ref_id`.
     "cash_out_requests",
+    # Kas & Bank 3 (C3) — opname kas (dicari per `id` di setiap aksi; kas penyesuaian menunjuknya lewat `ref_id`).
+    "cash_counts",
 ]
 # FIX-7 (butir 7, FIX-5 §8.7) — koleksi bisnis/master lain yang dicari per `id` di jalur permintaan (sensus kode: ≥ 3
 # pemakaian `find_one/update_one({"id": …})`; sensus data acuan 10 Nov 2026: 0 `id` kembar di semua kandidat).

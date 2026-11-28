@@ -484,6 +484,53 @@ async def notify_kas_keluar_diputus(req: Dict[str, Any], *, hasil: str, oleh: Di
         entity_id=req.get("entity_id") or None)
 
 
+#: Kas & Bank 3 (C3) — opname kas (`cash_counts`). Dokumen: `cash_count`, id = awalan `ref` (menunggu: `ref = <id>#<penerima>`;
+#: diputus: `ref = <id>:<status>#<penerima>`).
+OPNAME_MENUNGGU_TYPE = "opname_kas_menunggu"
+OPNAME_DIPUTUS_TYPE = "opname_kas_diputus"
+OPNAME_LINK = "/?view=cash-counts"
+_OPNAME_HASIL = {"disetujui": "disetujui", "ditolak": "ditolak"}
+
+
+async def notify_opname_selisih_menunggu(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """KB-3 T3 (§5.3) — SATU penyusun `opname_kas_menunggu`: opname kas BERSELISIH → pemegang `cash.approve` di PT opname
+    (per orang; penghitung dikecualikan; tanpa siaran peran), sekali per opname per orang."""
+    penghitung = doc.get("penghitung") or {}
+    nomor = doc.get("number") or doc.get("id") or ""
+    arah = "lebih" if float(doc.get("selisih") or 0) > 0 else "kurang"
+    return await create_addressed(
+        permission=("cash", "approve"), exclude_users=(penghitung.get("id") or "",),
+        notif_type=OPNAME_MENUNGGU_TYPE, ref=str(doc.get("id") or ""), dedupe_scope="ever",
+        title=f"Selisih opname kas menunggu keputusan — {nomor}",
+        body=(f"{penghitung.get('name') or 'Seseorang'} menghitung {doc.get('account_name') or 'rekening tunai'}: uang "
+              f"fisik {arah} {_rupiah_aman(doc.get('selisih_nominal'))} dari saldo buku — {nomor}. Perlu diputuskan "
+              "orang lain (selisih kas atau piutang karyawan).")[:400],
+        severity="warning", link=OPNAME_LINK, entity_id=doc.get("entity_id") or None)
+
+
+async def notify_opname_diputus(doc: Dict[str, Any], *, hasil: str, oleh: Dict[str, Any], alasan: str = "",
+                                kas_number: str = "") -> List[Dict[str, Any]]:
+    """KB-3 T3 (§5.3) — SATU penyusun `opname_kas_diputus`: selisih opname disetujui / ditolak → penghitung (satu orang).
+    Putusan oleh penghitung sendiri tidak memberi tahu dirinya. Ditolak membawa alasannya (hitung ulang)."""
+    penghitung = doc.get("penghitung") or {}
+    uid = penghitung.get("id") or ""
+    kata = _OPNAME_HASIL.get(hasil)
+    if not uid or not kata or uid == (oleh or {}).get("id"):
+        return []
+    nomor = doc.get("number") or doc.get("id") or ""
+    body = (f"Selisih opname kas {nomor} ({_rupiah_aman(doc.get('selisih_nominal'))}) {kata} oleh "
+            f"{(oleh or {}).get('name') or '—'}.")
+    if hasil == "disetujui" and kas_number:
+        body += f" Kas penyesuaian {kas_number} tercatat."
+    if hasil == "ditolak":
+        body += (f" Alasan: {alasan.strip()}." if (alasan or "").strip() else "") + " Hitung ulang rekeningnya."
+    return await create_addressed(
+        also_users=(uid,), notif_type=OPNAME_DIPUTUS_TYPE, ref=f"{doc.get('id', '')}:{hasil}", dedupe_scope="ever",
+        title=f"Opname kas {kata} — {nomor}", body=body[:400],
+        severity="warning" if hasil == "ditolak" else "info", link=OPNAME_LINK,
+        entity_id=doc.get("entity_id") or None)
+
+
 #: Jenis notifikasi "PO custom menunggu keputusan". Hanya SATU fungsi di seluruh
 #: backend yang boleh menyusunnya (dijaga INV-NOTIF-02 aturan K3).
 SPECIAL_ORDER_WAITING_TYPE = "special_order_approval"

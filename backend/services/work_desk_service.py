@@ -841,6 +841,30 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               badge="selesai QC", action="Putuskan", action_kind="open", entity_id=r.get("entity_id", "")) for r in sr],
         action_label="Putuskan", owner="finance"))
 
+    # Kas & Bank 3 (C3, §5.3) — rekening tunai yang opnamenya jatuh tempo (`kas.opname_*_hari`), dihitung sejak fitur
+    # aktif dan hanya rekening yang punya kas sesudah itu (`cash_count_service.jatuh_tempo`).
+    from services import cash_count_service as _ccs
+    from services.cash_ledger import CASH_TYPE_LABEL as _LABEL_KAS
+    opk_rows = []
+    for j in await _ccs.jatuh_tempo(entity_ids):
+        acc, akhir = j["account"], j.get("opname_terakhir") or {}
+        jenis = {"kas_besar": "Kas besar"}.get(j["cash_type"]) or _LABEL_KAS.get(j["cash_type"], j["cash_type"])
+        opk_rows.append(_row(
+            ref_type="bank_account", ref_id=acc["id"], number=acc.get("name") or acc["id"], title=jenis,
+            subtitle=(f"opname terakhir {akhir.get('number') or ''} · tiap {j['jarak_hari']} hari" if akhir
+                      else f"belum pernah diopname · tiap {j['jarak_hari']} hari"),
+            value=j["saldo_buku"], age_days=j["hari_lewat"], at=j["jatuh_tempo"], age_kind="overdue",
+            badge="lewat", action="Opname", action_kind="open", entity_id=acc.get("entity_id", ""),
+            extra={"account_id": acc["id"], "cash_type": j["cash_type"], "jarak_hari": j["jarak_hari"],
+                   "jatuh_tempo": j["jatuh_tempo"], "opname_terakhir_id": akhir.get("id") or "",
+                   "opname_terakhir_nomor": akhir.get("number") or "",
+                   "opname_terakhir_pada": akhir.get("dihitung_pada") or ""}))
+    queues.append(_queue(
+        "opname_kas_jatuh_tempo", "Opname kas jatuh tempo",
+        "Rekening tunai yang sudah waktunya dihitung fisik: kasir tiap hari, kas kecil dan kas besar tunai tiap minggu "
+        "(jarak diatur di Pengaturan › Bank & uang yang nyangkut › Opname kas).",
+        opk_rows, action_label="Opname", owner="finance", value_label="Saldo buku"))
+
     return {"desk": "finance", "desk_label": "Meja Keuangan",
             "generated_at": now_iso(), "entity_ids": entity_ids,
             "queues": queues,

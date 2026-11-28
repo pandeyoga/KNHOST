@@ -135,6 +135,12 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
                            note="Pengajuan hanya ada bila kas keluar manual melewati batas kontrol dua orang PT itu.",
                            max_levels=1,
                            max_levels_message="Kas keluar manual diputus satu orang: satu jenjang persetujuan."),
+    # Kas & Bank 3 (C3) — selisih opname kas menunggu orang kedua (`POST /api/cash-counts/{id}/approve|reject` =
+    # `cash.approve`; penghitung ≠ penyetuju dijaga `kontrol.selisih_kas`). Nominal = besar selisih (lebih/kurang).
+    "cash_count": _k("Selisih opname kas", "Keuangan", "cash_count", ("cash.approve",),
+                     amount_field="selisih_nominal",
+                     note="Opname hanya menunggu bila uang fisik berbeda dari saldo buku rekening tunai.",
+                     max_levels=1, max_levels_message="Selisih opname kas diputus satu orang: satu jenjang persetujuan."),
     # AG-T5 — kartu tindakan asisten (uang keluar dan jurnal) menunggu orang kedua: pintu `POST /api/ai/actions/{id}/
     # second` = izin `ai_finance.approve` (+ izin pintu tindakannya); pembuat ≠ orang kedua dijaga kontrol dua orang.
     "ai_card_second": _k("Kartu asisten — uang keluar dan jurnal menunggu orang kedua", "Keuangan", "ai_card_second",

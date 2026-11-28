@@ -212,6 +212,10 @@ DOOR_QUEUE: Dict[str, str] = {
     # QUEUES "Kas keluar manual menunggu" (layar Kas & Bank › Transaksi Kas) + jenis `approval_kinds` + `guard_door`.
     "cash_out_requests.py::/api/cash-out-requests/{pengajuan_id}/approve": "cash_out_request",
     "cash_out_requests.py::/api/cash-out-requests/{pengajuan_id}/reject": "cash_out_request",
+    # Kas & Bank 3 (C3) — selisih opname kas menunggu orang kedua: baris QUEUES "Selisih opname kas menunggu keputusan"
+    # (layar Kas & Bank › Opname Kas `cash-counts`) + jenis `approval_kinds` `cash_count` + `guard_door`.
+    "cash_counts.py::/api/cash-counts/{count_id}/approve": "cash_count",
+    "cash_counts.py::/api/cash-counts/{count_id}/reject": "cash_count",
 }
 
 #: pintu yang SENGAJA tak punya antrean — alasannya WAJIB ditulis (dan diperiksa).

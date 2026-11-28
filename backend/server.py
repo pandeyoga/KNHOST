@@ -108,6 +108,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger("server").warning("[F1] waktu aktif kwitansi mutasi dilewati: %s", exc)
+    try:  # Kas & Bank 3 (§7.8.8) — catat waktu aktif pengingat opname kas (ditulis sekali; tidak ada yang langsung telat)
+        from services.cash_count_service import ensure_aktif_sejak as _kb3_opname_aktif
+        await _kb3_opname_aktif()
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("server").warning("[KB3] waktu aktif pengingat opname kas dilewati: %s", exc)
     # Sub-fase 1.7 — init object storage (best-effort; tak menggagalkan startup)
     try:
         from services.storage_service import init_storage
@@ -386,6 +392,8 @@ from routers import fund_transfers as _fund_transfers  # noqa: E402 — Kas & Ba
 app.include_router(_fund_transfers.router)
 from routers import cash_out_requests as _cash_out_requests  # noqa: E402 — Kas & Bank 2 pengajuan kas keluar manual
 app.include_router(_cash_out_requests.router)
+from routers import cash_counts as _cash_counts  # noqa: E402 — Kas & Bank 3 opname kas
+app.include_router(_cash_counts.router)
 
 
 @app.get("/api/")

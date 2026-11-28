@@ -41,6 +41,7 @@ REF_LABEL = {
     "statutory_remittance": "setoran kewajiban gaji",   # PK-22 — setoran BPJS / PPh 21
     "cash_deposit": "setoran titipan tunai sales",       # PM-T4 — tunai yang dipegang sales disetor ke kas/bank
     "fund_transfer": "Pindah Dana",                      # Kas & Bank 1 (Tugas 4) — pindah dana antar rekening satu PT
+    "cash_count": "opname kas",                          # Kas & Bank 3 (C3) — kas penyesuaian selisih opname
 }
 
 #: Kas & Bank 1 (Tugas 5) — kategori kas manual "Transfer / Top-up" ditutup untuk kas manual BARU: setor tunai, isi kas
