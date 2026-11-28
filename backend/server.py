@@ -394,6 +394,8 @@ from routers import cash_out_requests as _cash_out_requests  # noqa: E402 — Ka
 app.include_router(_cash_out_requests.router)
 from routers import cash_counts as _cash_counts  # noqa: E402 — Kas & Bank 3 opname kas
 app.include_router(_cash_counts.router)
+from routers import petty_float as _petty_float  # noqa: E402 — Kas & Bank 3 dana tetap kas kecil & isi ulang
+app.include_router(_petty_float.router)
 
 
 @app.get("/api/")

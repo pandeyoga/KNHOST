@@ -366,8 +366,9 @@ async def settle(cid: str, payload: Dict[str, Any], actor: Dict[str, Any], *,
             except cash_ledger.CashRejected as exc:
                 raise ChargeError(str(exc), 409) from exc
             if r["cash_type"] != "kas_besar":
-                raise ChargeError(f"Rekening {r['account'].get('name', '')} adalah Kas Kecil; uang antar-PT dibukukan "
-                                  "di Bank. Pilih rekening Bank.", 409)
+                raise ChargeError(f"Rekening {r['account'].get('name', '')} adalah "
+                                  f"{money.label_jenis_kas(r['cash_type'])}; uang antar-PT dibukukan di Bank. Pilih "
+                                  "rekening Bank.", 409)
             rek[ent] = r["account_id"]
         seq = len(doc.get("settlements") or []) + 1
         try:
