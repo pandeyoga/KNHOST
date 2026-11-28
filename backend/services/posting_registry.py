@@ -652,6 +652,13 @@ async def _retry_pindah_saldo_kas(doc: Dict[str, Any], actor: Dict[str, Any]) ->
     await lanjutkan(doc["id"], actor)
 
 
+async def _retry_pindah_uang_muka_pemasok(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Kas & Bank 4 (Tugas 3) — jurnal susulan pindah saldo uang muka pemasok gagal sesudah PT pindah: persetujuan yang
+    terhenti diteruskan (jurnal idempoten per usulan, lalu status `disetujui`)."""
+    from services.supplier_advance_cutover_service import lanjutkan
+    await lanjutkan(doc["id"], actor)
+
+
 async def _retry_fund_transfer_cancel(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """Kas & Bank 1 (Tugas 4) — Pindah Dana yang sudah dibatalkan tetapi jurnal pembalik salah satu kasnya gagal: kas
     yang belum dibalik diteruskan lewat pembalik kas yang sama (yang sudah dibalik tidak dibalik lagi)."""
@@ -909,6 +916,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
         "link": {"view": "kas-per-rekening", "tab": "", "focus_type": "cash_account_cutover"},
         "posters": ("post_pindah_saldo_kas",), "retry": _retry_pindah_saldo_kas},
+    # ── Kas & Bank 4 (Tugas 3) — jurnal SUSULAN pindah saldo uang muka pemasok yang gagal sesudah PT pindah (usulan
+    #    `memproses`; jurnal reklas yang gagal sebelum PT pindah mengembalikan usulan ke `menunggu`, bukan ke sini);
+    #    ulang = teruskan persetujuan. Layar pindah saldo uang muka pemasok menyusul (Tugas 4b). ──
+    "pindah_uang_muka_pemasok": {
+        "label": "Pindah Saldo Uang Muka Pemasok", "collection": "supplier_advance_cutovers",
+        "failed_query": {"susulan_gl_status": "failed", "status": "memproses"}, "entity_field": "entity_id",
+        "number_field": "label", "amount_field": "total", "status_field": "susulan_gl_status",
+        "error_field": "susulan_gl_error", "failed_at_field": "susulan_gl_failed_at", "doc_type": "",
+        "link": {"view": "uang-muka-pemasok", "tab": "", "focus_type": "supplier_advance_cutover"},
+        "posters": ("post_pindah_uang_muka_pemasok",), "retry": _retry_pindah_uang_muka_pemasok},
     # ── Kas & Bank 1 (Tugas 4) — Pindah Dana dibatalkan, jurnal pembalik salah satu kasnya gagal (dokumen `batal`,
     #    `batal_gl_status: failed`); ulang = teruskan pembalik kas yang tersisa. Jurnal kas Pindah Dana yang gagal saat
     #    terbit tampil sebagai Transaksi Kas biasa (`_retry_cash` ikut menyegarkan ringkasan dokumennya). Layar

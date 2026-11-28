@@ -293,6 +293,8 @@ SCOPED_COLLECTIONS = {
     "credit_gate_rejections",
     # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening: buku satu PT.
     "cash_account_cutovers",
+    # Kas & Bank 4 (Tugas 3) — usulan pindah saldo uang muka pemasok: buku satu PT.
+    "supplier_advance_cutovers",
     # Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT.
     "fund_transfers",
     # Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas: kas satu PT yang menunggu orang kedua.

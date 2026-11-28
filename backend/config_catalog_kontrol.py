@@ -163,6 +163,8 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "asisten_uang_keluar": ("services/ai_cards.py:decide", "services/ai_cards.py:second"),   # AG-T5
     "lembar_insentif": ("services/incentive_sheet_service.py:approve_sheet",),   # KM-T3
     "pindah_saldo_kas": ("services/cash_account_cutover_service.py:setujui",),   # Kas & Bank 1 (Tugas 3)
+    # Kas & Bank 4 (Tugas 3) — Setujui pindah saldo uang muka pemasok menolak penyiapnya (juga Admin, bawaan admin-tetap).
+    "pindah_uang_muka_pemasok": ("services/supplier_advance_cutover_service.py:setujui",),
     "pindah_dana": ("services/fund_transfer_service.py:buat",
                     "services/fund_transfer_service.py:setujui"),   # Kas & Bank 1 (Tugas 4)
     # Kas & Bank 2 (C6) — rute kas manual memutuskan "jadi pengajuan" (`butuh_orang_kedua`); Setujui menolak pengaju.
@@ -180,11 +182,8 @@ for _x in KONTROL_AKSI:
 #: di daftar ini kunci `kontrol.<aksi>.*` bertanda tidak dipakai (alasan di bawah) supaya kesehatan pengaturan tetap
 #: jujur (tanpa titik pasang = belum ada pembaca). Tugas yang memasang titiknya (`_TITIK`) menghapus barisnya di sini.
 #: Kas & Bank 3 Tugas 3 — `selisih_kas` dipasang (`services/cash_count_service.py:setujui`).
-#: Kas & Bank 4 (Tugas 1) — `pindah_uang_muka_pemasok` → setujui pindah saldo uang muka pemasok (Tugas 3).
-_BELUM_DIPASANG: Dict[str, str] = {
-    "pindah_uang_muka_pemasok": ("Persetujuan pindah saldo uang muka pemasok sedang dibangun; aturan ini berlaku begitu "
-                                 "pindah saldonya tersedia."),
-}
+#: Kas & Bank 4 Tugas 3 — `pindah_uang_muka_pemasok` dipasang (`services/supplier_advance_cutover_service.py:setujui`).
+_BELUM_DIPASANG: Dict[str, str] = {}
 
 # KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {

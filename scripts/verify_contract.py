@@ -66,6 +66,8 @@ CANONICAL_COLLECTIONS = {
     "payment_methods", "bank_account_changes",
     # ── Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas ke akun per rekening (per PT) ──
     "cash_account_cutovers",
+    # ── Kas & Bank 4 (Tugas 3) — usulan pindah saldo uang muka pemasok (per PT) ──
+    "supplier_advance_cutovers",
     # ── Kas & Bank 1 (Tugas 4) — Pindah Dana antar rekening satu PT ──
     "fund_transfers",
     # ── Kas & Bank 2 (C6) — pengajuan kas keluar manual di atas batas (menunggu orang kedua) ──

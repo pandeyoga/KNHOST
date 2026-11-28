@@ -1219,6 +1219,14 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
             raise ValueError(f"Jurnal {je.get('number') or je.get('id', '')} mencatat kas rekening "
                              f"{rek.get('name') or a['rekening']} yang saldonya sudah dipindah ke akun {a['akun']}; "
                              f"balik lewat pembatalan dokumen kasnya, bukan pembalikan manual.")
+        # Kas & Bank 4 (C8) — jurnal uang muka pemasok lama yang saldonya sudah dipindah ke akun uang muka pemasok (akun
+        # kontrol): pembaliknya akan masuk akun kontrol itu (`baris_uang_muka_pemasok`), padahal dokumennya tetap
+        # tercatat → ditolak, sama dengan jurnal yang langsung menyentuh akun kontrol (PK-36).
+        alih_um = await baris_uang_muka_pemasok(je)
+        if alih_um:
+            raise ValueError(f"Jurnal {je.get('number') or je.get('id', '')} mencatat uang muka pemasok yang saldonya "
+                             f"sudah dipindah ke akun {next(iter(alih_um.values()))} Uang Muka Pemasok; koreksi lewat "
+                             f"Kasus Keuangan atau Kontrabon, bukan pembalikan manual.")
         await _tolak_balik_saldo_awal_rekening(je)
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
     return await _reverse_once(
@@ -1320,8 +1328,11 @@ async def _reverse_once_ex(je: Dict[str, Any], *, source_type: str, source_id: s
         # Kas & Bank 1 (§5.1) — baris kas LAMA milik dokumen kas ber-rekening yang saldonya sudah dipindah ke akun
         # rekening (PT aktif sesudah jurnal & kasnya terbit) dibalik ke akun rekening itu, bukan ke akun lama.
         alih = await baris_kas_rekening(je)
+        # Kas & Bank 4 (C8) — baris 1-1400 uang muka pemasok yang saldonya sudah dipindah ke akun uang muka pemasok PT
+        # (jurnal terbit sebelum PT pindah) dibalik ke akun itu, bukan ke 1-1400.
+        alih_um = await baris_uang_muka_pemasok(je)
         rev = await _insert_entry(
-            lines=[{"account_code": (alih.get(i) or {}).get("akun") or ln["account_code"],
+            lines=[{"account_code": alih_um.get(i) or (alih.get(i) or {}).get("akun") or ln["account_code"],
                     "debit": float(ln.get("credit", 0) or 0), "credit": float(ln.get("debit", 0) or 0),
                     "description": line_desc or f"{line_prefix} {ln.get('description', '')}".strip()}
                    for i, ln in enumerate(je.get("lines", []))],
@@ -1460,6 +1471,60 @@ async def baris_kas_rekening(je: Dict[str, Any]) -> Dict[int, Dict[str, str]]:
             berakun.append(t)
     return {i: {"akun": akun[t["id"]], "rekening": t["account_id"]}
             for i, t in pasang_baris_kas(je.get("lines") or [], berakun, lama).items()}
+
+
+async def _aksi_kasus(case_id: str) -> str:
+    c = await db.finance_cases.find_one({"id": case_id or "__none__"},
+                                        {"_id": 0, "resolution_intent.action": 1, "resolution.action": 1}) or {}
+    return (c.get("resolution_intent") or {}).get("action") or (c.get("resolution") or {}).get("action") or ""
+
+
+async def jurnal_uang_muka_pemasok(je: Dict[str, Any]) -> bool:
+    """Kas & Bank 4 (C8) — jurnal `je` milik dokumen uang muka PEMASOK: kas `ap_advance` (kelebihan bayar tagihan &
+    keputusan selisih bayar "jadi uang muka"), kas masuk pengembalian dana kasus `terima_refund_supplier`, jurnal kasus
+    `uang_muka_supplier` (`finance_case`, `{kasus}:ap_adv…`), potongan kontrabon `supplier_advance`. Uang muka karyawan
+    (PD cair, LPJ, sisa PD), jurnal reklas pindah saldo, dan jurnal lain → False."""
+    st, sid = je.get("source_type") or "", je.get("source_id") or ""
+    if st == "cash_transaction":
+        t = await db.cash_transactions.find_one({"id": sid or "__none__"},
+                                                {"_id": 0, "ref_type": 1, "ref_id": 1, "direction": 1}) or {}
+        if t.get("ref_type") == "ap_advance":
+            return True
+        return (t.get("ref_type") == "finance_case" and t.get("direction") == "in"
+                and await _aksi_kasus(t.get("ref_id") or "") == "terima_refund_supplier")
+    if st == "finance_case":
+        case_id, _, sfx = sid.partition(":")
+        return sfx.split(":")[0] == "ap_adv" and await _aksi_kasus(case_id) == "uang_muka_supplier"
+    if st == "contra_bon_deduction":
+        cb_id, _, ded = sid.partition(":")
+        cb = await db.contra_bons.find_one({"id": cb_id or "__none__"}, {"_id": 0, "deductions": 1}) or {}
+        return any(d.get("id") == ded and d.get("kind") == "supplier_advance" for d in cb.get("deductions") or [])
+    return False
+
+
+async def baris_uang_muka_pemasok(je: Dict[str, Any]) -> Dict[int, str]:
+    """Kas & Bank 4 (C8) — baris akun uang muka 1-1400 jurnal uang muka pemasok `je` yang saldonya SUDAH dipindah ke akun
+    uang muka pemasok PT (pindah saldo uang muka pemasok, `supplier_advance_cutover_service`). → `{indeks baris: kode
+    akun uang muka pemasok PT}`; kosong = baris jurnal dipakai apa adanya. Pola `baris_kas_rekening` (Kas & Bank 1).
+
+    Syarat (semuanya): PT jurnal sudah memindah saldo uang muka pemasoknya (`supplier_advance_mode.aktif_sejak`); jurnal
+    terbit SEBELUM itu; jurnal milik dokumen uang muka pemasok (`jurnal_uang_muka_pemasok` — tidak pernah PD/LPJ/sisa
+    PD); baris berakun uang muka 1-1400 PT itu (`known_codes("kas_bank.uang_muka_karyawan")`: bawaan + pemetaan +
+    riwayat). Dipakai pembalik terpadu (`_reverse_once_ex`: batal kas, batal dokumen, `reverse_document`) supaya
+    pembalikan uang muka pemasok lama sesudah pindah membebani akun tempat saldonya kini berada, dan penolakan pembalikan
+    manual (`reverse_entry`)."""
+    eid = je.get("entity_id") or ""
+    from services import supplier_advance_mode as _mode
+    sejak = await _mode.aktif_sejak(eid)
+    if not sejak or not (je.get("created_at") or "") or je["created_at"] >= sejak:
+        return {}
+    from services import gl_mapping_service as _glm
+    akun = await akun_uang_muka_pemasok(eid)
+    lama = set(await _glm.known_codes("kas_bank.uang_muka_karyawan", eid)) - {akun}
+    idx = [i for i, ln in enumerate(je.get("lines") or []) if ln.get("account_code") in lama]
+    if not idx or not await jurnal_uang_muka_pemasok(je):
+        return {}
+    return {i: akun for i in idx}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -2985,6 +3050,44 @@ async def post_pindah_saldo_kas(*, usulan_id: str, entity_id: str, lines: List[D
         lines=[{**ln, "fixed_account": True} for ln in lines], description=label, date=date,
         source_type=SOURCE_PINDAH_SALDO_KAS, source_id=usulan_id, entity_id=entity_id, created_by=created_by,
         source_label=label, ref={"cash_account_cutover_id": usulan_id})
+
+
+SOURCE_PINDAH_UANG_MUKA_PEMASOK = "pindah_uang_muka_pemasok"
+
+
+async def post_pindah_uang_muka_pemasok(*, usulan_id: str, entity_id: str, amount: float, date: str, label: str,
+                                        bagian: str = "reklas",
+                                        created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """Kas & Bank 4 (C8) — jurnal reklas uang muka pemasok satu PT dari akun uang muka karyawan (pemetaan PT
+    `kas_bank.uang_muka_karyawan`, bawaan 1-1400) ke akun uang muka pemasok PT (pemetaan `hutang.uang_muka_pemasok`,
+    bawaan 1-1410): `amount` > 0 → Dr pemasok / Cr 1-1400, < 0 → kebalikannya, 0 → None (tanpa jurnal).
+
+    `bagian`: "reklas" (`source_id` = usulan) diposting SEBELUM penanda PT dinyalakan, saat `akun_uang_muka_pemasok`
+    masih 1-1400 — jadi kedua akun diambil LANGSUNG dari pemetaan (`account_for`) dan dipakai apa adanya
+    (`fixed_account`); "susulan" (`{usulan}:susulan`) sesudah penanda: uang muka pemasok yang terjurnal ke 1-1400 di sela
+    hitung dan penanda (`supplier_advance_cutover_service`). Posting sistem — akun kontrol uang muka pemasok tidak
+    menolaknya. Idempoten per (`source_type`, `source_id`). Dipanggil lewat `post_durable` (jenis Posting Gagal
+    `pindah_uang_muka_pemasok`)."""
+    src = usulan_id if bagian == "reklas" else f"{usulan_id}:{bagian}"
+    ada = await db.journal_entries.find_one(
+        {"source_type": SOURCE_PINDAH_UANG_MUKA_PEMASOK, "source_id": src, "status": {"$ne": "void"}}, {"_id": 0})
+    if ada:
+        return safe_doc(ada)
+    sen = to_cents(amount)
+    if not sen:
+        return None
+    pemasok = await account_for("hutang.uang_muka_pemasok", entity_id)
+    karyawan = await account_for("kas_bank.uang_muka_karyawan", entity_id)
+    dr, cr = (pemasok, karyawan) if sen > 0 else (karyawan, pemasok)
+    nominal = from_cents(abs(sen))
+    ket = f"{label} ({'susulan' if bagian != 'reklas' else 'reklas'})"
+    await seed_default_coa()
+    return await _insert_entry(
+        lines=[{"account_code": dr, "debit": nominal, "credit": 0.0, "description": ket, "fixed_account": True},
+               {"account_code": cr, "debit": 0.0, "credit": nominal, "description": ket, "fixed_account": True}],
+        description=label, date=date, source_type=SOURCE_PINDAH_UANG_MUKA_PEMASOK, source_id=src,
+        entity_id=entity_id, created_by=created_by, source_label=label,
+        ref={"supplier_advance_cutover_id": usulan_id})
 
 
 async def post_finance_case(*, case_id: str, entity_id: str, amount: float,
