@@ -14,9 +14,11 @@ notifikasi LAMA di DB ikut bertaut tanpa migrasi:
     `ref` = `<id>` / `<id>:<hasil>`): layar Transaksi Kas membuka pratinjau pengajuan itu;
   * Kas & Bank 3 (Tugas 4b) — selisih opname kas menunggu / diputus → **opnamenya** (`ref_type="cash_count"`, `ref` =
     `<id>` / `<id>:<hasil>`): layar Kas & Bank › Opname Kas membuka pratinjau opname itu.
+  * Kas & Bank 4 (Tugas 2) — tenggat LPJ uang muka (H-1 / lewat) → **PD-nya** (`ref_type="cash_advance"`, `ref` =
+    `<id>:<h-1|lewat>`).
 Bentuk `doc` sama dengan hasil `/documents/resolve`, jadi layar memakai peta tujuan yang sudah ada
-(`docLinkTarget` di `workDeskApi.js`). Lookup berkelompok (≤ 4 query per halaman: nota kredit, desain, pengajuan kas,
-opname). Tidak pernah melempar.
+(`docLinkTarget` di `workDeskApi.js`). Lookup berkelompok (≤ 5 query per halaman: nota kredit, desain, pengajuan kas,
+opname, PD). Tidak pernah melempar.
 """
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -29,6 +31,8 @@ DESIGN_TYPES = ("design_lifecycle", "design_claim_pending", "design_claim_decide
 KAS_KELUAR_TYPES = ("kas_keluar_diajukan", "kas_keluar_diputus")
 #: Kas & Bank 3 — `notification_service.OPNAME_MENUNGGU_TYPE` / `OPNAME_DIPUTUS_TYPE`.
 OPNAME_TYPES = ("opname_kas_menunggu", "opname_kas_diputus")
+#: Kas & Bank 4 — `notification_service.LPJ_TENGGAT_TYPE`.
+PD_TYPES = ("lpj_uang_muka_tenggat",)
 
 
 def _base_ref(n: Dict[str, Any]) -> str:
@@ -53,12 +57,15 @@ def _key_of(n: Dict[str, Any]) -> Optional[Tuple[str, str]]:
         return ("pkk", ref.split(":", 1)[0])
     if t in OPNAME_TYPES:
         return ("opk", ref.split(":", 1)[0])
+    if t in PD_TYPES:
+        return ("pd", ref.split(":", 1)[0])
     return None
 
 
 async def attach_doc_refs(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Tambahkan `doc` (dan perbaiki `link` lama) pada notifikasi yang ditangani. In-place, lalu balik list."""
-    keys: Dict[str, set] = {"cn": set(), "design": set(), "claim": set(), "file": set(), "pkk": set(), "opk": set()}
+    keys: Dict[str, set] = {"cn": set(), "design": set(), "claim": set(), "file": set(), "pkk": set(), "opk": set(),
+                            "pd": set()}
     for n in rows:
         if isinstance(n, dict):
             if n.get("link") in LEGACY_LINK:
@@ -106,6 +113,10 @@ async def attach_doc_refs(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             async for c in db.cash_counts.find({"id": {"$in": list(keys["opk"])}}, {"_id": 0, "id": 1, "number": 1}):
                 found[("opk", c["id"])] = {"ref_type": "cash_count", "ref_id": c["id"], "number": c.get("number") or "",
                                            "label": f"Opname kas {c.get('number') or ''}".strip()}
+        if keys["pd"]:
+            async for c in db.cash_advances.find({"id": {"$in": list(keys["pd"])}}, {"_id": 0, "id": 1, "number": 1}):
+                found[("pd", c["id"])] = {"ref_type": "cash_advance", "ref_id": c["id"], "number": c.get("number") or "",
+                                          "label": f"Pengajuan dana {c.get('number') or ''}".strip()}
     except Exception:  # noqa: BLE001 — tautan dokumen pelengkap; gagal → notifikasi tetap tampil dengan link layar
         return rows
     for n in rows:

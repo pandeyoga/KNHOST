@@ -30,6 +30,13 @@ class BankDetail(BaseModel):
     swift_iban: str = ""
 
 
+class PemegangIn(BaseModel):
+    """Kas & Bank 4 (§7.9.3) — pemegang uang PD: `pengguna` (pembuat PD sendiri) atau `karyawan` (id `hr_employees` PT
+    PD). Nama diambil server dari master."""
+    jenis: str = "pengguna"
+    id: str = ""
+
+
 class CashAdvanceCreate(BaseModel):
     entity_id: Optional[str] = None
     divisi: str = ""
@@ -42,6 +49,7 @@ class CashAdvanceCreate(BaseModel):
     bank_detail: Optional[BankDetail] = None
     lines: List[CashAdvanceLine] = []
     catatan: str = ""
+    pemegang: Optional[PemegangIn] = None   # kosong = pembuat PD
 
 
 class CashAdvanceUpdate(BaseModel):
@@ -55,10 +63,16 @@ class CashAdvanceUpdate(BaseModel):
     bank_detail: Optional[BankDetail] = None
     lines: Optional[List[CashAdvanceLine]] = None
     catatan: Optional[str] = None
+    pemegang: Optional[PemegangIn] = None
 
 
 class ApprovalDecision(BaseModel):
     note: str = ""
+
+
+class CashAdvanceCancel(BaseModel):
+    """Kas & Bank 4 (§7.9.4) — Batalkan PD belum cair; alasan wajib (≥ 5 huruf, diperiksa layanan)."""
+    alasan: str = ""
 
 
 class DisburseInput(BaseModel):

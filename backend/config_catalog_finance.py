@@ -102,11 +102,9 @@ E("finance.lpj_wajib_lampiran", group="keuangan-dasar", section="tutup-buku", ty
 
 # ── Kas & Bank 4 (C7) — batas uang muka karyawan terbuka per pemegang dan tenggat LPJ ────────────────────────────────
 # Spesifikasi `docs/superpowers/specs/2026-11-28-kas-bank-4-uang-muka-design.md` §5.1–§5.2 (keputusan pemilik C7: satu
-# PD terbuka per orang, LPJ dalam 7 hari). Tugas 1 hanya MENDAFTARKAN kuncinya; pembacanya (ajukan & cairkan PD,
-# `services/cash_advance_service.py`) dibangun Tugas 2 — selama itu bertanda tidak dipakai supaya kesehatan pengaturan
-# tetap jujur (tanpa pembaca = belum berlaku). Tugas 2 mengisi `consumers`, mengaktifkannya, dan menghapus `_KB4_BELUM`.
-_KB4_BELUM = ("Batas uang muka karyawan dan tenggat LPJ sedang dibangun; aturan ini berlaku begitu pengajuan dana "
-              "memeriksanya.")
+# PD terbuka per orang, LPJ dalam 7 hari). Didaftarkan Tugas 1; dibaca Tugas 2: batas saat ajukan & cairkan PD
+# (`cash_advance_service.batas_pd_terbuka`), tenggat dipotret saat cair dan dibaca daftar PD, Kas Kecil, Meja Keuangan,
+# serta penjadwal pengingat (`cash_advance_service.hari_tenggat_lpj`).
 E("kas.pd_terbuka_maks", group="bank-kasus", section="uang-muka-karyawan", type="int", default=1, min=0, max=20,
   step=1, unit="pengajuan", scopes=G,
   label="Uang muka terbuka per orang (paling banyak)",
@@ -114,7 +112,8 @@ E("kas.pd_terbuka_maks", group="bank-kasus", section="uang-muka-karyawan", type=
         "0 = tanpa batas: PD baru tetap bisa diajukan walau PD sebelumnya belum di-LPJ-kan."),
   impact="PD baru tertahan selama pemegangnya masih memegang PD terbuka sebanyak angka ini.",
   example="1 · Andi masih memegang PD yang belum di-LPJ-kan → PD baru untuk Andi tidak bisa diajukan",
-  risk="medium", permission=("accounting", "manage"), status="not_used", not_used_reason=_KB4_BELUM,
+  consumers=("services/cash_advance_service.py:batas_pd_terbuka",),
+  risk="medium", permission=("accounting", "manage"),
   related=("kas.lpj_tenggat_hari", "finance.lpj_wajib_lampiran"))
 E("kas.lpj_tenggat_hari", group="bank-kasus", section="uang-muka-karyawan", type="duration", default=7, min=1,
   max=90, step=1, unit="hari", scopes=G,
@@ -123,5 +122,6 @@ E("kas.lpj_tenggat_hari", group="bank-kasus", section="uang-muka-karyawan", type
         "cair, jadi mengubah angka ini tidak menggeser tenggat PD yang sudah cair."),
   impact="PD yang lewat tenggat muncul di Meja Keuangan dan pemohonnya diingatkan.",
   example="7 hari · PD cair 1 Desember → LPJ jatuh tempo 8 Desember; belum diajukan 9 Desember → lewat 1 hari",
-  risk="medium", permission=("accounting", "manage"), status="not_used", not_used_reason=_KB4_BELUM,
+  consumers=("services/cash_advance_service.py:hari_tenggat_lpj",),
+  risk="medium", permission=("accounting", "manage"),
   related=("kas.pd_terbuka_maks", "finance.lpj_wajib_lampiran"))

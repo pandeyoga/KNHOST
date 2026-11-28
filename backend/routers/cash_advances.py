@@ -12,9 +12,9 @@ from fastapi.responses import Response
 
 from dependencies import has_permission, require_any_permission, require_permission
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
-from entity_scope import entity_ctx
+from entity_scope import entity_ctx, resolve_requested_entity
 from schemas_cash_advance import (
-    CashAdvanceCreate, CashAdvanceUpdate, ApprovalDecision, DisburseInput,
+    CashAdvanceCreate, CashAdvanceUpdate, ApprovalDecision, CashAdvanceCancel, DisburseInput,
     SettlementCreate, SettlementUpdate, ExpenseCategoryUpdate, ReturnRemainderIn,
 )
 from services import cash_advance_service as svc
@@ -42,9 +42,21 @@ async def update_expense_category(code: str, payload: ExpenseCategoryUpdate, req
 @router.get("/cash-advances")
 async def list_cash_advances(request: Request, entity_id: str = Query(None),
                              status: str = Query(None)) -> List[Dict[str, Any]]:
-    await require_permission(request, "cash_advance", "view")
+    """Kas & Bank 4 — tiap baris membawa `pemegang`, `lpj_jatuh_tempo`, `tenggat_status`, `tenggat_hari_lewat`,
+    `bisa_ajukan`/`alasan_ajukan`."""
+    actor = await require_permission(request, "cash_advance", "view")
     ctx = await entity_ctx(request)
-    return await svc.list_cash_advances(ctx, entity_id=entity_id, status=status)
+    return await svc.list_cash_advances(ctx, entity_id=entity_id, status=status, actor=actor)
+
+
+@router.get("/cash-advances/karyawan")
+async def list_cash_advance_employees(request: Request, entity_id: str = Query(None),
+                                      q: str = Query("")) -> List[Dict[str, Any]]:
+    """Kas & Bank 4 (§7.9.3) — pilihan pemegang uang: karyawan HR aktif PT (id, kode, nama) bagi pemegang
+    `cash_advance.create` (pembuat PD tidak harus memegang izin SDM); PT di luar penugasan → 403."""
+    await require_permission(request, "cash_advance", "create")
+    eid = resolve_requested_entity(await entity_ctx(request), entity_id)
+    return await svc.karyawan_pemegang(eid, q)
 
 
 @router.post("/cash-advances")
@@ -56,9 +68,9 @@ async def create_cash_advance(payload: CashAdvanceCreate, request: Request) -> D
 
 @router.get("/cash-advances/{ca_id}")
 async def get_cash_advance(ca_id: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "cash_advance", "view")
+    actor = await require_permission(request, "cash_advance", "view")
     ctx = await entity_ctx(request)
-    return await svc.get_cash_advance(ca_id, ctx)
+    return await svc.rincian_cash_advance(ca_id, ctx, actor)
 
 
 @router.patch("/cash-advances/{ca_id}")
@@ -87,6 +99,15 @@ async def reject_cash_advance(ca_id: str, payload: ApprovalDecision, request: Re
     actor = await require_permission(request, "cash_advance", "reject")
     ctx = await entity_ctx(request)
     return await svc.reject_cash_advance(ca_id, payload.note, ctx, actor)
+
+
+@router.post("/cash-advances/{ca_id}/cancel")
+async def cancel_cash_advance(ca_id: str, payload: CashAdvanceCancel, request: Request) -> Dict[str, Any]:
+    """Kas & Bank 4 (§7.9.4) — Batalkan PD belum cair (draf/ditolak/dalam persetujuan/disetujui) beralasan. Pintu: izin
+    `cash_advance.create` (pembuat) atau `cash_advance.reject`; layanan memastikan pembuat PD atau pemegang izin tolak."""
+    actor = await require_any_permission(request, [("cash_advance", "create"), ("cash_advance", "reject")])
+    ctx = await entity_ctx(request)
+    return await svc.cancel_cash_advance(ca_id, payload.alasan, ctx, actor)
 
 
 @router.post("/cash-advances/{ca_id}/disburse")

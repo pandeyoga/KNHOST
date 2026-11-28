@@ -114,6 +114,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger("server").warning("[KB3] waktu aktif pengingat opname kas dilewati: %s", exc)
+    try:  # Kas & Bank 4 (C7) — catat waktu aktif tenggat LPJ (ditulis sekali; PD lama tidak langsung lewat tenggat)
+        from services.cash_advance_service import ensure_tenggat_aktif_sejak as _kb4_tenggat_aktif
+        await _kb4_tenggat_aktif()
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("server").warning("[KB4] waktu aktif tenggat LPJ uang muka dilewati: %s", exc)
     # Sub-fase 1.7 — init object storage (best-effort; tak menggagalkan startup)
     try:
         from services.storage_service import init_storage

@@ -49,6 +49,7 @@ GROUP_LABEL = {
     "ringkasan_mutasi_otomatis": "Kwitansi otomatis dari mutasi bank",  # F1
     "kas_keluar_diajukan": "Kas keluar manual menunggu persetujuan",   # KB-2 T3
     "kas_keluar_diputus": "Putusan pengajuan kas keluar manual",       # KB-2 T3
+    "lpj_uang_muka_tenggat": "Tenggat LPJ uang muka",                  # KB-4 T2
     "order_approval": "Order menunggu persetujuan",
     "po_approval": "PO menunggu persetujuan",
     "order_split": "Order split antar gudang",

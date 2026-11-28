@@ -87,6 +87,12 @@ async def _hr_compensation_effective_job():
     return await _hc.job_apply_effective()
 
 
+async def _lpj_tenggat_job():
+    """Kas & Bank 4 (C7) — pengingat tenggat LPJ uang muka (impor tunda: modul PD memuat layanan kas & buku besar)."""
+    from services.cash_advance_service import job_lpj_tenggat_reminder
+    return await job_lpj_tenggat_reminder()
+
+
 async def _tax_draft_backfill_job():
     from services import tax_invoice_service as _tis   # TX-T2 — pemulih draf faktur pajak (impor malas)
     return await _tis.job_tax_draft_backfill()
@@ -177,6 +183,14 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Ingatkan H-n sebelum jadwal tukar faktur tiap supplier, berisi jumlah penerimaan barang yang belum ditagih dan tagihan yang siap dikontrabon. Sekaligus menaikkan kontrabon yang menunggu verifikasi/persetujuan lebih lama dari batas waktunya. Idempotent: satu notifikasi per hari per supplier/kontrabon.",
      "kind": "daily", "hour": 7, "minute": 30, "fn": contrabon.job_contra_bon_reminder,
      "link": "contra-bons"},
+    # ── Kas & Bank 4 (C7) ────────────────────────────────────────────────
+    {"id": "lpj_tenggat_reminder", "label": "Pengingat Tenggat LPJ Uang Muka",
+     "description": "Ingatkan pembuat pengajuan dana (PD) yang uangnya sudah cair sehari sebelum LPJ jatuh tempo dan saat "
+                    "LPJ lewat tenggat tanpa diajukan. Tenggat dicatat saat PD cair (Pengaturan › Bank & uang yang "
+                    "nyangkut › Uang muka karyawan (PD) & LPJ). Idempotent: satu pemberitahuan per PD per jenis "
+                    "(H-1, lewat), jadi boleh dijalankan berkali-kali.",
+     "kind": "daily", "hour": 7, "minute": 50, "fn": _lpj_tenggat_job,
+     "link": "petty-cash"},
     # ── FASE G-6b ─────────────────────────────────────────────────────────
     {"id": "interco_settlement_reminder", "label": "Pengingat Settlement Antar-PT",
      "description": "Ingatkan Keuangan bila saldo satu pasangan PT tidak bergerak lebih lama dari batas di Pusat Pengaturan (antar_entitas.settlement_reminder_days). MENGINGATKAN, bukan memaksa — netting tetap dijalankan manual lewat tombol 'Buat Pelunasan' (keputusan pemilik). Umur saldo dihitung dari aktivitas NYATA (dokumen & settlement terakhir), bukan dari kapan barisnya terakhir dihitung ulang. Idempotent: satu notifikasi per hari per pasangan PT.",
@@ -406,6 +420,7 @@ JOB_THRESHOLDS: Dict[str, tuple] = {
     "return_supplier_deadline_reminder": ("returns.supplier_reminder_days",),
     "interco_payment_reminder": ("interco_payment.reminder_days",),
     "contra_bon_reminder": ("contra_bon.reminder_days_before",),
+    "lpj_tenggat_reminder": ("kas.lpj_tenggat_hari",),
 }
 
 
