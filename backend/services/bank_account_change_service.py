@@ -371,8 +371,9 @@ async def daftar_penerima(entity_id: str, method: str) -> List[Dict[str, Any]]:
         if not bs._aktif(a) or "penerimaan_pelanggan" not in e["purposes"] \
                 or kode not in e["payment_method_codes"]:   # noqa: SLF001
             continue
+        # `cash_type` (temuan tangkapan Kas & Bank 3): layar kwitansi menyebut jenis kas rekening penerima.
         out.append({"id": a["id"], "name": a.get("name", ""), "bank_name": a.get("bank_name", ""),
                     "account_number": a.get("account_number", ""), "holder_name": e["holder_name"],
-                    "is_default": kode in e["default_receiving_methods"]})
+                    "cash_type": bs.account_cash_type(a), "is_default": kode in e["default_receiving_methods"]})
     out.sort(key=lambda r: (not r["is_default"], r["name"]))
     return out

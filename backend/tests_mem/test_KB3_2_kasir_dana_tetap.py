@@ -779,3 +779,19 @@ async def test_KB3_2_U14_nominal_dilihat_berubah_409(klien, db, akun, sesi, pera
     await _kas_manual(pt, "KK", 40_000)
     doc = await pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT)
     assert doc["nominal"] == 40_000.0
+
+
+async def test_KB3_2_U20_rekening_penerima_membawa_jenis_kas(klien, db, sesi):
+    """Temuan tangkapan (kalimat tunai di form kwitansi): baris `GET /api/bank-accounts/receiving` membawa `cash_type`
+    rekening (= `bank_service.account_cash_type`) supaya layar menyebut jenis kas yang benar (Kas Kasir / Kas Kecil /
+    Kas Besar), bukan menebak dari baris tanpa jenis."""
+    pt = await _pt()
+    h = await sesi("admin@kainnusantara.id", entitas=pt["id"])
+    r = await klien.get("/api/bank-accounts/receiving", headers=h, params={"method": "cash", "entity_id": pt["id"]})
+    assert r.status_code == 200, r.text
+    jenis = {x["id"]: x.get("cash_type") for x in r.json()}
+    assert jenis.get(pt["rek"]["KS"]) == "kas_kasir", jenis
+    assert jenis.get(pt["rek"]["KK"]) == "kas_kecil", jenis
+    assert jenis.get(pt["rek"]["KB"]) == "kas_besar", jenis
+    r = await klien.get("/api/bank-accounts/receiving", headers=h, params={"method": "transfer", "entity_id": pt["id"]})
+    assert {x["id"]: x.get("cash_type") for x in r.json()}.get(pt["rek"]["BCA"]) == "kas_besar", r.text

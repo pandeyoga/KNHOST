@@ -276,4 +276,10 @@ test("kalimat cara bayar tunai mengikuti rekening penerima: kasir, kas kecil, be
   await buka();
   expect(q("ar-receipt-cash-hint").textContent).toBe("Tunai → masuk rekening tunai PT yang dipilih.");
   expect(q("ar-receipt-cash-hint").textContent).not.toMatch(/Kas (Kecil|Kasir)/);
+  for (const r of roots) await act(async () => { r.unmount(); });
+  roots = []; document.body.innerHTML = "";
+  // Baris rekening penerima tanpa jenis kas (bentuk lama `/bank-accounts/receiving`) → netral, tidak menebak "Kas Besar".
+  routeGet(ARR([{ id: "rek_ks", name: "Kas Kasir Toko KSC", is_default: true }]));
+  await buka();
+  expect(q("ar-receipt-cash-hint").textContent).toBe("Tunai → masuk rekening tunai PT yang dipilih.");
 });

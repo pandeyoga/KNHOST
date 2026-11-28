@@ -58,7 +58,7 @@ async def bank_cash_position(request: Request, entity_id: str = Query(None)) -> 
 async def receiving_bank_accounts(request: Request, entity_id: str = Query(None),
                                   method: str = Query("transfer")) -> List[Dict[str, Any]]:
     """PM-T1 — rekening penerima uang pelanggan untuk satu PT dan cara bayar (`[{id, name, bank_name, account_number,
-    holder_name, is_default}]`, tanpa saldo). Bahan instruksi bayar dan kwitansi ber-rekening."""
+    holder_name, cash_type, is_default}]`, tanpa saldo). Bahan instruksi bayar dan kwitansi ber-rekening."""
     await require_any_permission(request, [("order", "create"), ("ar_receipt", "create"), ("cash", "view")],
                                  detail=PESAN_REKENING_PENERIMA)
     ctx = await entity_ctx(request)

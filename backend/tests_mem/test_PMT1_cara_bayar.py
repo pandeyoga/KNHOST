@@ -180,7 +180,8 @@ async def test_PMT1_U7_satu_bawaan_per_pt_dan_cara_bayar(klien, orang):
     rows = {x["id"]: x for x in r.json()}
     assert rows[b]["is_default"] is True and rows[a]["is_default"] is False
     assert sum(1 for x in r.json() if x["is_default"]) == 1
-    assert set(rows[b]) == {"id", "name", "bank_name", "account_number", "holder_name", "is_default"}
+    # Kas & Bank 3 (temuan tangkapan): + `cash_type` untuk kalimat jenis kas di form kwitansi; tetap tanpa saldo.
+    assert set(rows[b]) == {"id", "name", "bank_name", "account_number", "holder_name", "cash_type", "is_default"}
     # bawaan untuk cara bayar yang tidak dilayani ditolak
     r = await klien.patch(f"/api/bank-accounts/{b}", headers=h, json={"default_receiving_methods": ["giro"]})
     assert (r.status_code, r.json().get("detail")) == (400, "Rekening ini tidak melayani cara bayar Giro / cek."), r.text
