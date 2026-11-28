@@ -5,6 +5,8 @@
  * `cash.approve` yang BUKAN pengajunya. Konfirmasi menyebut nama rekening, PT, dan nilai lama → baru (N5); Tolak
  * meminta alasan. Tidak ada yang menunggu → bagian ini tidak tampil (satu keadaan kosong saja di layar).
  * Sumber: `GET /api/bank-account-changes?status=menunggu` (berhalaman), `POST …/{id}/decision`.
+ * Kas & Bank 3 (Tugas 4a) — bidang mentah berlabel: jenis kas ("Kas kasir"), dana tetap & saldo awal (Rp), lokasi (nama
+ * lokasi kerja dari `GET /warehouse-sites`, dimuat hanya bila ada perubahan lokasi), jenis rekening ("Kas tunai").
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { Check, Clock3, Plus, X } from "lucide-react";
@@ -14,16 +16,43 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { apiErrorText } from "../../utils/apiError";
 import { askConfirm, askReason, REASON_MIN_LENGTH } from "../../services/confirmService";
-import { formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { usePaymentMethods } from "../../config/paymentMethods";
-import { purposeLabel } from "./BankAccountForm";
+import { ACCOUNT_KIND_OPTIONS, purposeLabel } from "./BankAccountForm";
+import { labelJenisKas } from "./jenisKas";
 
 const PAGE_SIZE = 50;
 
-export function useChangeValueText() {
+const UANG = new Set(["dana_tetap", "opening_balance"]);
+const kosong = (v) => v === null || v === undefined || v === "";
+
+/** Kas & Bank 3 — nama lokasi kerja untuk perubahan `location_id`: `null` = belum dimuat (atau tidak perlu),
+ *  `{ nama: {id: nama}, gagal }`. Dimuat sekali, hanya bila `perlu`. */
+function useNamaLokasi(perlu) {
+  const [lokasi, setLokasi] = useState(null);
+  useEffect(() => {
+    if (!perlu || lokasi) return undefined;
+    let hidup = true;
+    axios.get(`${API}/warehouse-sites`)
+      .then((r) => { if (hidup) setLokasi({ nama: Object.fromEntries((r.data?.sites || []).map((x) => [x.id, x.name])), gagal: false }); })
+      .catch(() => { if (hidup) setLokasi({ nama: {}, gagal: true }); });
+    return () => { hidup = false; };
+  }, [perlu, lokasi]);
+  return lokasi;
+}
+
+export function useChangeValueText(lokasi = null) {
   const pm = usePaymentMethods("");
   return useCallback((field, v) => {
-    if (v === null || v === undefined || v === "") return "—";
+    if (UANG.has(field) && !kosong(v) && Number.isFinite(Number(v))) return formatCurrency(Number(v));
+    if (kosong(v)) return "—";
+    if (field === "cash_type") return labelJenisKas(v);
+    if (field === "account_type") return ACCOUNT_KIND_OPTIONS.find((o) => o.value === v)?.label || String(v);
+    if (field === "location_id") {
+      if (!lokasi) return "memuat nama lokasi…";
+      if (lokasi.nama[v]) return lokasi.nama[v];
+      return lokasi.gagal ? "lokasi kerja (nama belum bisa dimuat)" : "lokasi tidak dikenal";
+    }
     if (typeof v === "boolean") return v ? "Ya" : "Tidak";
     if (Array.isArray(v)) {
       if (!v.length) return "—";
@@ -32,7 +61,7 @@ export function useChangeValueText() {
       return v.join(", ");
     }
     return String(v);
-  }, [pm]);
+  }, [pm, lokasi]);
 }
 
 function ChangeLines({ row, text }) {
@@ -54,7 +83,8 @@ export default function BankAccountChangesPanel({ entityParam = "", canApprove =
   const [err, setErr] = useState("");
   const [busyId, setBusyId] = useState("");
   const intent = useIntentKey("rekputus");
-  const text = useChangeValueText();
+  const perluLokasi = rows.some((r) => (r.label_changes || r.changes || []).some((c) => c.field === "location_id"));
+  const text = useChangeValueText(useNamaLokasi(perluLokasi));
 
   const load = useCallback(async () => {
     try {

@@ -12,6 +12,9 @@
  * Kas & Bank 1 (Tugas 6) — tiap kartu menulis "Akun buku besar" (kode + nama sub-akun rekening, hanya-baca; server
  * `gl_account_code` + `gl_account_name`) atau penanda "PT belum memakai akun per rekening" (`akun_per_rekening_aktif`);
  * pemegang `accounting.manage` mendapat tautan ke alat pindah saldo (Kas & Bank › Akun per rekening).
+ * Kas & Bank 3 (Tugas 4a) — kartu menulis jenis kas (Kas kasir / Kas kecil / Kas besar), dana tetap, dan lokasi
+ * (`RekeningKasParts`); kaki kartu memuat aksi per rekening di LUAR tombol kartu: "Isi ulang" (kas kecil berdana tetap,
+ * `cash.create`) membuka pop-up `IsiUlangModal` di tempat — hasilnya pemberitahuan dengan nomor Pindah Dana.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -33,6 +36,9 @@ import { entityShortById } from "../../utils/entityLabel";
 import { usePaymentMethods } from "../../config/paymentMethods";
 import BankAccountForm from "./BankAccountForm";
 import BankAccountChangesPanel from "./BankAccountChangesPanel";
+import { JenisKasPill, RekeningKartuAksi, RekeningKasInfo } from "./RekeningKasParts";   // Kas & Bank 3
+import IsiUlangModal from "../pettycash/IsiUlangModal";
+import { statusPindahDana } from "./fundtransfer/fundTransferShared";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -59,6 +65,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const [ledger, setLedger] = useState(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isiUlang, setIsiUlang] = useState(null);     // Kas & Bank 3 — rekening kas kecil yang sedang diisi ulang
 
   // Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank; kartu rekening =
   // rincian. Posisi buku besar dimuat terpisah: bila gagal (mis. izin), kartu rekening tetap tampil.
@@ -112,6 +119,15 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
     setChangesKey((k) => k + 1);
     await load();
     if (wasEdit && selected) openLedger(selected, true);
+  };
+
+  // Kas & Bank 3 — isi ulang dana tetap tercatat (Pindah Dana bertanda isi ulang): selesai, atau menunggu orang kedua.
+  const onIsiUlangSaved = async (doc) => {
+    setIsiUlang(null);
+    const menunggu = doc?.status === "menunggu_persetujuan";
+    setNotice(`Isi ulang ${doc?.number || ""} dicatat — ${statusPindahDana(doc?.status).label.toLowerCase()}.`
+      + (menunggu ? " Setujui di Kas & Bank › Pindah Dana." : ""));
+    await load();
   };
 
   const summary = useMemo(() => {
@@ -187,6 +203,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           {/* Audit UI 24 Okt (060): form inline + segmented ungu → FormModal standar. PM-T1 — satu form buat & ubah. */}
           <BankAccountForm open={showForm} account={editing} onClose={closeForm} onSaved={onFormSaved}
             entityId={selectedEntity && selectedEntity !== "all" ? selectedEntity : ""}
+            rekeningPt={accounts.filter((x) => x.entity_id === (editing?.entity_id || selectedEntity))}
             entityLabel={entityShortById(entities, editing?.entity_id || selectedEntity, "")} />
 
           {srch.toolbar}
@@ -210,12 +227,14 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-cards">
               {srch.pageRows.map((a) => (
+                // Kas & Bank 3 — kotak kartu = tombol kartu (buka buku rekening) + kaki aksi di luar tombol.
+                <div key={a.id} data-testid={`bank-card-box-${a.id}`}
+                  className={`flex flex-col rounded-xl border transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"} ${a.is_active === false ? "opacity-60" : ""}`}>
                 <button
-                  key={a.id}
                   type="button"
                   data-testid={`bank-card-${a.id}`}
                   onClick={() => openLedger(a.id)}
-                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"} ${a.is_active === false ? "opacity-60" : ""}`}
+                  className="flex-1 rounded-xl p-3.5 text-left"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${a.account_type === "bank" ? "bg-[#E7F0FF] text-[#0058CC]" : "bg-[#E6F6EC] text-[#1B7F4B]"}`}>
@@ -225,15 +244,12 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                       <p className="font-bold text-[13px] text-[#1C1C1E] truncate">{a.name}</p>
                       {/* G1-48 — bagian kosong tidak ditulis "-"; akun nonaktif diredupkan & berlabel. */}
                       <p className="text-[11px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? [a.bank_name || "Bank", a.account_number].filter(Boolean).join(" · ") : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
-                      {a.cash_type && (a.account_type !== "bank" || a.cash_type === "kas_kecil") && (
-                        <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[11px] font-semibold rounded-full px-1.5 py-0.5 bg-[#EFF4FF] text-[#0058CC]">
-                          {a.cash_type === "kas_kecil" ? "Kas kecil" : "Kas besar"}
-                        </span>
-                      )}
+                      <JenisKasPill a={a} />
                       {a.holder_name && (
                         <p className="text-fs-12 text-kn-text-2 truncate" data-testid={`bank-holder-${a.id}`}>a.n. {a.holder_name}</p>
                       )}
                       <AkunBukuBesar a={a} />
+                      <RekeningKasInfo a={a} />
                       {(a.default_receiving_methods || []).length > 0 && (
                         <span data-testid={`bank-default-${a.id}`} className="status-pill mt-0.5 bg-kn-success-soft text-kn-success-text">
                           <CheckCircle2 size={12} aria-hidden="true" />Bawaan: {(a.default_receiving_methods || []).map(pm.labelOf).join(", ")}
@@ -257,11 +273,18 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     <span className="ml-auto">{a.txn_count} transaksi{a.unreconciled_count > 0 ? ` · ${a.unreconciled_count} belum dicocokkan` : ""}</span>
                   </div>
                 </button>
+                <RekeningKartuAksi a={a} perms={currentUser?.permissions} onIsiUlang={setIsiUlang} />
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {isiUlang && (
+        <IsiUlangModal open accountId={isiUlang.id} accountName={isiUlang.name} onClose={() => setIsiUlang(null)}
+          onSaved={onIsiUlangSaved} />
+      )}
 
       {selected && (
         <DetailModal onClose={() => { setSelected(null); setLedger(null); }}

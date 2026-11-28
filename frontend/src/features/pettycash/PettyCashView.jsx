@@ -19,6 +19,12 @@
  * diperbarui; di < 1280 px + keperluan · pemohon) ±136 · Keperluan · Pemohon (≥ 1280 px saja) ±204 · Jumlah ±118 ·
  * Tahap ±203 · Pertanggungjawaban (nomor LPJ + status + sisa kembali / hutang reimburse, dua baris) ±172 · Aksi
  * (menempel kanan) ±88 → 1024: ±717 px · 1280: ±900 px.
+ *
+ * Kas & Bank 3 (Tugas 4a, rancangan §5.4, §7 butir 7) — chip bagian "Pengajuan dana" | **"Dana tetap"** (`FilterChips`
+ * sebagai pemilih bagian: layar ini sendiri tab hub Kas & Bank, jadi tingkat berikutnya = chip, bukan PageTabs —
+ * INV-UI-14 `verify_page_tabs`). Dana tetap = `DanaTetapView` (izin `cash.view`; dimuat saat chip dipilih). Hanya satu
+ * bagian berizin → tanpa chip. Preset `{ bagian: "dana-tetap" }` membuka Dana tetap; preset tahap / bagian lama membuka
+ * Pengajuan dana.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Banknote, CheckCheck, FileText, FolderOpen, HandCoins, Plus, ReceiptText, RefreshCw, Send, Wallet } from "lucide-react";
@@ -44,6 +50,8 @@ import CashAdvanceDetail from "./CashAdvanceDetail";
 import SettlementForm from "./SettlementForm";
 import SettlementDetail from "./SettlementDetail";
 import SettlementCashModal from "./SettlementCashModal";   // PK-24 — Bayar per baris (pop-up yang sama dengan rincian LPJ)
+import FilterChips from "../../components/FilterChips";
+import DanaTetapView from "./DanaTetapView";   // Kas & Bank 3 — chip Dana tetap
 
 export const PAGE_SIZE = 25;
 /** Tahap kas kecil (kunci = `stage` server). Status = ikon + teks + warna (`status-pill` dengan kelas yang ada). */
@@ -61,6 +69,8 @@ export const BAGIAN_KE_TAHAP = { pengajuan: "", pertanggungjawaban: "dipertanggu
 export const tahapAwal = (preset, bagianAwal = "") => (preset?.tahap !== undefined ? preset.tahap
   : BAGIAN_KE_TAHAP[preset?.bagian || bagianAwal] ?? "");
 export const TEKS_KOSONG = "Belum ada pengajuan dana.";
+/** Kas & Bank 3 — bagian Kas Kecil (chip). */
+export const BAGIAN_DANA_TETAP = "dana-tetap";
 const TEKS_TANPA_AKSES = "Anda belum punya akses untuk melihat kas kecil. Minta Admin menambahkan akses 'Kas Kecil "
   + "(pengajuan dana & pertanggungjawaban)'.";
 
@@ -101,13 +111,20 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
   const canCreate = can(perms, "cash_advance", "create");
   const canSettle = can(perms, "cash_settlement", "create");
   const canPay = can(perms, "cash_settlement", "pay");
+  const lihatDanaTetap = can(perms, "cash", "view");   // Kas & Bank 3 — rute dana tetap = `cash.view`
   const [pilihan, setPilihan] = useState(null);   // null = belum memilih chip → ikut preset / rute cadangan
+  const [bagianPilih, setBagianPilih] = useState(null);   // null = ikut preset
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
   const [page, setPage] = useState(1);
   const preset = useViewPreset("petty-cash", (p) => {
-    if (p.tahap !== undefined || p.bagian !== undefined) { setPilihan(tahapAwal(p)); setPage(1); }
+    if (p.bagian === BAGIAN_DANA_TETAP) { setBagianPilih(BAGIAN_DANA_TETAP); return; }
+    if (p.tahap !== undefined || p.bagian !== undefined) { setBagianPilih("pengajuan"); setPilihan(tahapAwal(p)); setPage(1); }
   });
+  const bagianTabs = [bolehLihat && { key: "pengajuan", label: "Pengajuan dana" },
+    lihatDanaTetap && { key: BAGIAN_DANA_TETAP, label: "Dana tetap" }].filter(Boolean);
+  const bagianMau = bagianPilih || (preset?.bagian === BAGIAN_DANA_TETAP ? BAGIAN_DANA_TETAP : "pengajuan");
+  const bagian = bagianTabs.some((t) => t.key === bagianMau) ? bagianMau : bagianTabs[0]?.key;
   const stage = pilihan !== null ? pilihan : tahapAwal(preset, bagianAwal);
   const setStage = setPilihan;
   const [data, setData] = useState(null);
@@ -122,7 +139,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
   useEffect(() => { const t = setTimeout(() => setQDebounced(q.trim()), 300); return () => clearTimeout(t); }, [q]);
 
   const load = useCallback(async () => {
-    if (!bolehLihat) return;
+    if (!bolehLihat || bagian !== "pengajuan") return;
     setState("loading");
     try {
       const params = { page, page_size: PAGE_SIZE };
@@ -134,7 +151,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
     } catch (e) {
       setError(apiErrorText(e, "Daftar kas kecil tidak bisa dimuat.")); setState("error");
     }
-  }, [bolehLihat, page, stage, qDebounced, selectedEntity]);
+  }, [bolehLihat, bagian, page, stage, qDebounced, selectedEntity]);
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
@@ -160,6 +177,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
 
   // PK-44 — tautan dokumen PD (Jejak Dokumen / rincian jurnal) membuka panelnya; LPJ membuka panel PD induknya.
   const fokus = useFocusDoc(focusDoc, ["cash_advance", "cash_settlement"], async (id, fd) => {
+    setBagianPilih("pengajuan");   // Kas & Bank 3 — panel PD/LPJ hidup di bagian Pengajuan dana
     if (fd.focus_type === "cash_settlement") {
       const stl = (await axios.get(`${API}/cash-advance-settlements/${id}`)).data;
       await openPanel(stl.cash_advance_id, stl.id);
@@ -168,8 +186,20 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
     }
   }, onClearFocus);
 
-  if (!bolehLihat) {
+  if (!bolehLihat && !lihatDanaTetap) {
     return <div className="empty-state" data-testid="petty-cash-no-access">{TEKS_TANPA_AKSES}</div>;
+  }
+  const tabBagian = bagianTabs.length > 1 ? (
+    <FilterChips testId="pc-bagian" ariaLabel="Bagian kas kecil" value={bagian} onChange={setBagianPilih} options={bagianTabs} />
+  ) : null;
+  if (bagian === BAGIAN_DANA_TETAP) {
+    return (
+      <div className="grid gap-3" data-testid="petty-cash-view">
+        {tabBagian}
+        <EntityScopeBanner testId="pc-scope" />
+        <DanaTetapView currentUser={currentUser} selectedEntity={selectedEntity} />
+      </div>
+    );
   }
 
   const counts = data?.stage_counts || {};
@@ -182,6 +212,7 @@ export default function PettyCashView({ currentUser, selectedEntity = "all", ent
 
   return (
     <div className="grid gap-3" data-testid="petty-cash-view">
+      {tabBagian}
       {toast && <div className="notice-bar success" data-testid="pc-toast"><span>{toast}</span><button type="button" onClick={() => setToast("")} aria-label="Tutup">×</button></div>}
       <FocusNotice {...fokus} testId="pc-focus-notice" />
       <EntityScopeBanner testId="pc-scope" />
