@@ -287,7 +287,9 @@ DATASETS: List[Dict[str, Any]] = [
                  C("jumlah_fisik", "Uang fisik", "money"), C("selisih", "Selisih (fisik − buku)", "money"),
                  C("status", "Status"), C("perlakuan", "Perlakuan"), C("karyawan_nama", "Karyawan"),
                  C("penghitung_name", "Penghitung", path="penghitung.name"), C("disetujui_oleh", "Disetujui oleh"),
-                 C("cash_number", "No. kas penyesuaian"), C("alasan_tolak", "Alasan tolak"), C("catatan", "Catatan"),
+                 C("cash_number", "No. kas penyesuaian"), C("alasan_tolak", "Alasan tolak"),
+                 # Tinjauan akhir KB3 Important 2 — Batal opname (kas penyesuaian dibalik).
+                 C("alasan_batal", "Alasan batal"), C("dibatalkan_oleh", "Dibatalkan oleh"), C("catatan", "Catatan"),
                  C("account_id", "ID rekening", default=False), C("entity_id", "ID badan usaha", default=False)],
      # = `cash_count_service.daftar` `q` (nomor / rekening / penghitung / karyawan / catatan)
      "search_fields": ["number", "account_name", "penghitung.name", "karyawan_nama", "catatan"],

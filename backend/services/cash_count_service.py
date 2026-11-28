@@ -26,6 +26,15 @@ Rancangan: `docs/superpowers/specs/2026-11-28-kas-bank-3-kasir-dana-tetap-opname
   Kontrol `kontrol.selisih_kas` yang sama dengan Setujui (perbaikan putaran 1, ketetapan pengendali): penghitung — Admin
   juga — tidak menolak hitungannya sendiri, supaya selisih yang ia temukan tidak hilang dari antrean sebelum orang lain
   memutusnya. Salah hitung → orang kedua menolak beralasan, lalu penghitung menghitung ulang.
+* **Batal** (`cash.approve` + Aturan Persetujuan `cash_count`, alasan ≥ 5 huruf; tinjauan akhir Important 2) — jalan
+  balik putusan yang keliru (karyawan / perlakuan salah) lewat dokumen opname itu sendiri, bukan Transaksi Kas (FN-07)
+  dan bukan jurnal manual. Hanya opname `disetujui`; kontrol `kontrol.selisih_kas` yang sama (penghitung — Admin juga —
+  tidak membatalkan putusan atas hitungannya sendiri). Klaim berprasyarat status yang diperiksa; kas penyesuaian dibalik
+  lewat pembalik kas yang ada (`gl_service.post_cash_void` di pintu tahan-gagal, tanggal
+  `posting_registry.tanggal_pembalik`, periode & akun diperiksa dulu) lalu `void`. Pembalik gagal → opname tetap `batal`,
+  `batal_gl_status: failed`, tampil di Posting Gagal (jenis `cash_count_cancel`); ulang (atau Batal lagi) meneruskannya.
+  Status `batal` bukan opname terhitung: rekening kembali jatuh tempo opname dan opname itu tidak menggantikan opname
+  lain. Penghitung diberi tahu.
 * **Pengingat** (`jatuh_tempo`, antrean Meja Keuangan `opname_kas_jatuh_tempo`) — rekening tunai yang opname
   terakhirnya (selesai/menunggu/disetujui) lebih lama dari `kas.opname_*_hari` (`bank_service.hari_opname`), dihitung
   sejak fitur aktif (penanda sekali tulis `PENANDA_AKTIF`, pola F1) dan hanya rekening yang punya kas sesudah itu.
@@ -50,9 +59,11 @@ logger = logging.getLogger(__name__)
 
 COLL = "cash_counts"
 REF_TYPE = "cash_count"
-SELESAI, MENUNGGU, DISETUJUI, DITOLAK = "selesai", "menunggu_persetujuan", "disetujui", "ditolak"
-STATUS_LABEL = {SELESAI: "Selesai", MENUNGGU: "Menunggu persetujuan", DISETUJUI: "Disetujui", DITOLAK: "Ditolak"}
-#: Opname yang dianggap "sudah dihitung" (pengingat, penggantian opname lama). Ditolak = harus dihitung ulang.
+SELESAI, MENUNGGU, DISETUJUI, DITOLAK, BATAL = "selesai", "menunggu_persetujuan", "disetujui", "ditolak", "batal"
+STATUS_LABEL = {SELESAI: "Selesai", MENUNGGU: "Menunggu persetujuan", DISETUJUI: "Disetujui", DITOLAK: "Ditolak",
+                BATAL: "Dibatalkan"}
+#: Opname yang dianggap "sudah dihitung" (pengingat, penggantian opname lama). Ditolak / dibatalkan = harus dihitung
+#: ulang (rekening kembali jatuh tempo).
 TERHITUNG = (SELESAI, MENUNGGU, DISETUJUI)
 P_SELISIH, P_PIUTANG = "selisih_kas", "piutang_karyawan"
 PERLAKUAN_LABEL = {P_SELISIH: "Selisih kas", P_PIUTANG: "Piutang karyawan"}
@@ -82,6 +93,11 @@ PESAN_ORANG_KEDUA = ("Selisih opname kas ini harus diputuskan orang lain: Anda y
 PESAN_TOLAK_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang "
                        "berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan "
                        "ini di Pengaturan › Persetujuan › Kontrol dua orang.")
+#: Tinjauan akhir Important 2 — Batal juga diputus orang lain (putusan dua orang tidak dibatalkan penghitungnya sendiri).
+PESAN_BATAL_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan "
+                       "yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di "
+                       "Pengaturan › Persetujuan › Kontrol dua orang.")
+PESAN_ALASAN_BATAL = f"Alasan pembatalan wajib diisi (minimal {ALASAN_MIN} huruf)."
 _KATA_AKSI = {"setujui": "disetujui", "tolak": "ditolak"}
 
 
@@ -152,6 +168,8 @@ def _bentuk(doc: Dict[str, Any]) -> Dict[str, Any]:
     d["perlakuan_label"] = PERLAKUAN_LABEL.get(d.get("perlakuan") or "", "")
     d["boleh_piutang"] = _f(d.get("selisih")) < -EPS
     d["dalam_proses"] = bool(doc.get("saga_lock"))
+    # Batal yang jurnal pembaliknya belum tuntas (Posting Gagal) → layar menawarkan "teruskan pembatalan".
+    d["batal_tertunda"] = d.get("status") == BATAL and d.get("batal_gl_status") in ("pending", "failed")
     return d
 
 
@@ -165,11 +183,21 @@ async def _kas(doc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                                                  "status": {"$ne": "void"}}, {"_id": 0})
     if not t:
         return None
-    je = await db.journal_entries.find_one({"id": t.get("journal_entry_id") or "__none__"}, {"_id": 0, "number": 1})
+    jids = [x for x in (t.get("journal_entry_id"), t.get("void_journal_entry_id")) if x]
+    nomor_je = {j["id"]: j.get("number", "") async for j in db.journal_entries.find(
+        {"id": {"$in": jids}}, {"_id": 0, "id": 1, "number": 1})} if jids else {}
     return {"id": t["id"], "number": t.get("number", ""), "txn_date": t.get("txn_date", ""),
             "direction": t.get("direction", ""), "amount": _f(t.get("amount")), "status": t.get("status", ""),
             "gl_status": t.get("gl_status", ""), "gl_error": t.get("gl_error", ""),
-            "journal_entry_id": t.get("journal_entry_id", ""), "journal_number": (je or {}).get("number", "")}
+            "journal_entry_id": t.get("journal_entry_id", ""),
+            "journal_number": nomor_je.get(t.get("journal_entry_id") or "", ""),
+            # Batal opname: kas dibalik (`status: void`) dengan jurnal pembalik ini.
+            "void_journal_entry_id": t.get("void_journal_entry_id", ""),
+            "void_journal_number": nomor_je.get(t.get("void_journal_entry_id") or "", "")}
+
+
+#: Status yang membawa penilaian kontrol dua orang di rincian/daftar: menunggu (Setujui/Tolak), disetujui (Batal).
+_BERKONTROL = (MENUNGGU, DISETUJUI)
 
 
 async def _kontrol(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -178,18 +206,19 @@ async def _kontrol(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
     out = await dual_control.periksa("selisih_kas", doc, actor, doc.get("entity_id") or "", pengaju=_penghitung(doc))
     if out.get("ditolak"):
         out["pesan"] = PESAN_ORANG_KEDUA
-    # Tombol Tolak nonaktif untuk penghitung dengan kalimat yang sama dengan penolakan server (`tolak`).
+    # Tombol Tolak / Batal nonaktif untuk penghitung dengan kalimat yang sama dengan penolakan server (`tolak`, `batal`).
     out["tolak_pesan"] = PESAN_TOLAK_SENDIRI if out.get("ditolak") else ""
+    out["batal_pesan"] = PESAN_BATAL_SENDIRI if out.get("ditolak") else ""
     return out
 
 
 async def rincian(count_id: str, actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Opname + kas penyesuaian (`kas`, None bila belum/tanpa kas) + penilaian kontrol dua orang untuk `actor` (bila
-    diberi dan opname masih menunggu)."""
+    diberi dan opname menunggu — Setujui/Tolak — atau disetujui — Batal)."""
     doc = await _ambil(count_id)
     out = _bentuk(doc)
     out["kas"] = await _kas(doc)
-    if actor is not None and doc.get("status") == MENUNGGU:
+    if actor is not None and doc.get("status") in _BERKONTROL:
         out["kontrol"] = await _kontrol(doc, actor)
     return out
 
@@ -198,7 +227,7 @@ async def daftar(entity_ids: List[str], *, status: str = "", account_id: str = "
                  page: int = 1, page_size: int = 25, actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """`GET /api/cash-counts` — opname PT dalam cakupan (terbaru dulu), berhalaman. `perlakuan=piutang_karyawan` = daftar
     piutang karyawan dari opname (§7.8.6). `q` = nomor / rekening / penghitung / karyawan / catatan. Baris menunggu
-    membawa penilaian kontrol untuk `actor`."""
+    dan disetujui membawa penilaian kontrol untuk `actor`."""
     query: Dict[str, Any] = {"entity_id": {"$in": list(entity_ids or [])}}
     if status:
         query["status"] = status
@@ -218,7 +247,7 @@ async def daftar(entity_ids: List[str], *, status: str = "", account_id: str = "
     items = []
     for r in rows:
         d = _bentuk(r)
-        if actor is not None and r.get("status") == MENUNGGU:
+        if actor is not None and r.get("status") in _BERKONTROL:
             d["kontrol"] = await _kontrol(r, actor)
         items.append(d)
     return {"items": items, "total": total, "page": page, "page_size": page_size,
@@ -434,7 +463,8 @@ async def _tolak_bila_kas_lain(doc: Dict[str, Any], perlakuan: str, emp: Optiona
         lama = PERLAKUAN_LABEL.get(kas.get("perlakuan") or "", kas.get("perlakuan") or "-").lower()
         raise _galat(409, f"Kas penyesuaian {kas.get('number', '')} dari opname {_nomor(doc)} sudah tercatat dengan "
                           f"perlakuan {lama}. Setujui ulang dengan perlakuan (dan karyawan) yang sama untuk menuntaskan "
-                          "opname ini, lalu batalkan kasnya dari Transaksi Kas bila perlu.")
+                          f"opname ini, lalu pakai Batalkan opname {_nomor(doc)} di Opname Kas bila perlakuannya "
+                          "keliru.")
 
 
 async def _tolak_bila_digantikan(doc: Dict[str, Any]) -> None:
@@ -453,7 +483,7 @@ async def _klaim(doc: Dict[str, Any], aksi: str, langkah: str, actor: Dict[str, 
                                  actor=(actor or {}).get("name") or "", detail=_pesan_berubah(doc))
     except HTTPException as exc:
         segar = await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}) or {}
-        if isinstance(exc.detail, str) and segar.get("status") in (DISETUJUI, DITOLAK, SELESAI):
+        if isinstance(exc.detail, str) and segar.get("status") in (DISETUJUI, DITOLAK, SELESAI, BATAL):
             raise _galat(409, _pesan_status(segar, aksi)) from exc
         raise
 
@@ -524,12 +554,13 @@ async def setujui(count_id: str, payload: Any, actor: Dict[str, Any]) -> Dict[st
 # ── Tolak ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def _tolak_bila_kas_terbit(doc: Dict[str, Any]) -> None:
     """Opname yang kas penyesuaiannya sudah ada (persetujuan terhenti sesudah kas tercatat) tidak ditolak: Setujui ulang
-    menuntaskannya (kas yang sama), lalu kasnya dibatalkan dari Transaksi Kas bila perlu."""
+    menuntaskannya (kas yang sama), lalu Batal opname membalik kasnya bila perlu (kas opname tidak dibatalkan dari
+    Transaksi Kas — FN-07)."""
     kas = await db.cash_transactions.find_one({"ref_type": REF_TYPE, "ref_id": doc["id"], "status": {"$ne": "void"}},
                                               {"_id": 0, "number": 1})
     if kas:
         raise _galat(409, f"Kas {kas.get('number', '')} dari opname {_nomor(doc)} sudah tercatat. Setujui ulang untuk "
-                          "menuntaskan opname ini, lalu batalkan kasnya dari Transaksi Kas bila perlu.")
+                          f"menuntaskan opname ini, lalu pakai Batalkan opname {_nomor(doc)} di Opname Kas bila perlu.")
 
 
 async def tolak(count_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -564,6 +595,185 @@ async def tolak(count_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, 
         await _saga.release(COLL, count_id, token)
     await _beritahu_diputus(doc, DITOLAK, actor, teks[:500])
     return await rincian(count_id)
+
+
+# ── Batal ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+def _pesan_batal_status(doc: Dict[str, Any]) -> str:
+    """Batal atas opname yang tidak `disetujui` (dan bukan batal yang pembaliknya tertunda)."""
+    nomor, st = _nomor(doc), doc.get("status")
+    if st == MENUNGGU:
+        return (f"Opname kas {nomor} masih menunggu keputusan selisih, jadi belum ada yang bisa dibatalkan. Tolak opname "
+                "ini dengan alasan bila hitungannya keliru.")
+    if st == SELESAI:
+        return (f"Opname kas {nomor} selesai tanpa selisih dan tanpa kas penyesuaian, jadi tidak ada yang "
+                "dibatalkan.")
+    if st == BATAL:
+        return f"Opname kas {nomor} sudah dibatalkan."
+    return f"Opname kas {nomor} sudah {STATUS_LABEL.get(st, st or '').lower()}, jadi tidak bisa dibatalkan."
+
+
+async def _kas_hidup(count_id: str) -> List[Dict[str, Any]]:
+    """Kas penyesuaian opname yang belum dibalik (tidak `void`)."""
+    return [t async for t in db.cash_transactions.find({"ref_type": REF_TYPE, "ref_id": count_id or "__none__",
+                                                        "status": {"$ne": "void"}}, {"_id": 0}).sort("created_at", 1)]
+
+
+def _tolak_bila_tercocok(kas: List[Dict[str, Any]], nomor: str) -> None:
+    """Kas yang sudah dicocokkan dengan mutasi bank (`reconciled_amount` > 0, PK-21) tidak dibalik dari sini."""
+    for t in kas:
+        if _f(t.get("reconciled_amount")) > 0:
+            raise _galat(409, f"Kas {t.get('number', '')} dari opname {nomor} sudah dicocokkan dengan mutasi bank — "
+                              "lepas dulu di Rekonsiliasi, lalu batalkan.")
+
+
+async def _periksa_pembalik(doc: Dict[str, Any], kas: List[Dict[str, Any]]) -> None:
+    """PERIKSA tanpa tulisan sebelum kas dibalik (pola `fund_transfer_service._periksa_pembalik`): belum tercocok mutasi
+    bank; periode tanggal pembalik terbuka; baris pembaliknya (akun kas dialihkan seperti `_reverse_once_ex`, akun lawan
+    aktif) lolos pemeriksa jurnal. Gagal → 409 berkalimat; opname tetap disetujui."""
+    from services import gl_service as gl
+    from services.book_date import tanggal_buku
+    from services.posting_registry import tanggal_pembalik
+    eid, nomor, tetap = doc.get("entity_id") or "", _nomor(doc), "Opname tetap disetujui."
+    _tolak_bila_tercocok(kas, nomor)
+    for t in kas:
+        tgl = tanggal_pembalik(t.get("txn_date"))
+        je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": t["id"],
+                                                "status": {"$ne": "void"}}, {"_id": 0})
+        try:
+            if not je:
+                await gl.preflight_posting(eid, tgl or now_iso())
+                continue
+            alih = await gl.baris_kas_rekening(je)
+            lines = [{"account_code": (alih.get(i) or {}).get("akun") or ln["account_code"],
+                      "debit": float(ln.get("credit") or 0), "credit": float(ln.get("debit") or 0),
+                      "description": ln.get("description", "")} for i, ln in enumerate(je.get("lines") or [])]
+            await gl.preflight_entry(lines=lines, entity_id=je.get("entity_id") or eid, date=tgl or now_iso(),
+                                     source_type="cash_transaction_void")
+        except gl.ClosedPeriodError as exc:
+            raise _galat(409, f"{exc} Kas penyesuaian {t.get('number', '')} dari opname {nomor} dibalik pada tanggal "
+                              f"{tgl or tanggal_buku()}; buka kembali periode itu lalu batalkan lagi. {tetap}") from exc
+        except ValueError as exc:   # JournalValidationError dkk. (mis. akun lawan nonaktif)
+            raise _galat(409, f"Jurnal pembalik kas {t.get('number', '')} dari opname {nomor} belum bisa diterbitkan: "
+                              f"{exc} {tetap}") from exc
+
+
+async def _balik_kas(doc: Dict[str, Any], kas: List[Dict[str, Any]], actor: Dict[str, Any]) -> List[str]:
+    """Balik tiap kas penyesuaian lewat pembalik kas yang ada (pintu tahan-gagal) lalu tandai `void`. Gagal →
+    `batal_gl_status: failed` di opname + 409 (kas yang sudah dibalik tetap dibalik; ulang meneruskan sisanya)."""
+    from services import cash_ledger
+    from services import gl_service as gl
+    from services.posting_registry import tanggal_pembalik
+    nama = (actor or {}).get("name") or "system"
+    alasan, nomor = doc.get("alasan_batal") or "", _nomor(doc)
+    label = f"batal opname {nomor}"
+    hasil: List[str] = []
+    for t in kas:
+        cid = t["id"]
+        try:
+            await cash_ledger.ensure_posted(cid)   # jurnal asal yang gagal (Posting Gagal) diterbitkan dulu, lalu dibalik
+            res = await gl.post_durable(
+                "cash_transactions", cid,
+                lambda cid=cid, tgl=tanggal_pembalik(t.get("txn_date")): gl.post_cash_void(
+                    cid, label=label, created_by=nama, date=tgl),
+                source_type="cash_transaction_void", source_id=cid, field="void_gl_status", raise_on_fail=True)
+            rev = res.get("journal") or ({"id": res["journal_entry_id"]} if res.get("journal_entry_id") else {})
+            await db.cash_transactions.update_one({"id": cid, "status": {"$ne": "void"}}, {"$set": {
+                "status": "void", "void_journal_entry_id": rev.get("id", ""), "void_reason": alasan,
+                "voided_by": nama, "voided_at": now_iso(), "updated_at": now_iso()}})
+            hasil.append(rev.get("id", ""))
+        except Exception as exc:  # noqa: BLE001 — jurnal pembalik gagal: opname tetap batal, sisa kas diteruskan nanti
+            pesan = getattr(exc, "error", None) or str(exc) or exc.__class__.__name__
+            await db[COLL].update_one({"id": doc["id"]}, {"$set": {
+                "batal_gl_status": "failed", "batal_gl_error": f"{t.get('number', '')}: {pesan}"[:300],
+                "batal_gl_failed_at": now_iso(), "updated_at": now_iso()}})
+            raise _galat(409, f"Opname kas {nomor} sudah dibatalkan, tetapi jurnal pembalik kas {t.get('number', '')} "
+                              f"gagal: {pesan}. Ulangi dari Keuangan › Posting Gagal.") from exc
+    return hasil
+
+
+async def batal(count_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """`POST /api/cash-counts/{id}/batal` — batalkan putusan opname `disetujui` beralasan: kas penyesuaiannya dibalik.
+    Opname batal yang pembaliknya belum tuntas → diteruskan (tanpa kontrol ulang: putusannya sudah tercatat).
+
+    Urutan (pola `fund_transfer_service.batal`): PERIKSA (alasan, status, kontrol `selisih_kas` — bukan penghitung —,
+    rekonsiliasi, periode & jurnal pembalik) → KLAIM berprasyarat status YANG DIPERIKSA (Batal bersamaan / putusan lain
+    di sela → 409 muat ulang) → kas dibaca ulang SESUDAH klaim (himpunan berbeda → 409) → NIAT `batal` (alasan, oleh,
+    `batal_gl_status: pending`) → EFEK pembalik tiap kas → SELESAI (`finish_set`, `batal_gl_status: posted`)."""
+    from services import atomic_claim as _saga
+    from services import dual_control
+    teks = (alasan or "").strip()
+    if len(teks) < ALASAN_MIN:
+        raise _galat(400, PESAN_ALASAN_BATAL)
+    doc = await _ambil(count_id)
+    eid = doc.get("entity_id") or ""
+    lanjut = doc.get("status") == BATAL and doc.get("batal_gl_status") in ("pending", "failed")
+    # ── PERIKSA ──
+    if doc.get("status") != DISETUJUI and not lanjut:
+        raise _galat(409, _pesan_batal_status(doc))
+    if not lanjut:
+        try:
+            await dual_control.tolak_bila_pelaku_sama("selisih_kas", doc, actor, eid, pengaju=_penghitung(doc))
+        except HTTPException as exc:
+            if exc.status_code == 403:
+                raise _galat(403, PESAN_BATAL_SENDIRI) from exc
+            raise
+    kas = await _kas_hidup(count_id)
+    await _periksa_pembalik(doc, kas)
+    # ── KLAIM (status persis seperti yang diperiksa) ──
+    nama, nama_id = (actor or {}).get("name") or "", (actor or {}).get("id") or ""
+    syarat = ({"status": BATAL, "batal_gl_status": doc.get("batal_gl_status")} if lanjut
+              else {"status": DISETUJUI})
+    try:
+        lk = await _saga.claim(COLL, count_id, "cash_count_cancel", precondition=syarat, actor=nama,
+                               detail=_pesan_berubah(doc))
+    except HTTPException as exc:
+        segar = await db[COLL].find_one({"id": count_id}, {"_id": 0}) or {}
+        if isinstance(exc.detail, str) and segar.get("status") == BATAL and not lanjut:
+            raise _galat(409, _pesan_batal_status(segar)) from exc   # batal lain menang lebih dulu
+        raise
+    token = (lk.get(_saga.LOCK) or {}).get("token", "")
+    gagal: Optional[HTTPException] = None
+    baru = False
+    try:
+        segar = await _kas_hidup(count_id)
+        if {t["id"] for t in segar} != {t["id"] for t in kas}:
+            raise _galat(409, _pesan_berubah(doc))   # kunci dilepas di `finally`; belum ada yang ditulis
+        _tolak_bila_tercocok(segar, _nomor(doc))
+        kas = segar
+        if not lanjut:
+            niat = {"status": BATAL, "status_sebelum_batal": lk.get("status"), "alasan_batal": teks[:500],
+                    "dibatalkan_oleh": nama, "dibatalkan_oleh_id": nama_id, "dibatalkan_pada": now_iso(),
+                    "batal_gl_status": "pending" if kas else "", "batal_gl_error": "", "updated_at": now_iso()}
+            await db[COLL].update_one({"id": count_id, f"{_saga.LOCK}.token": token},
+                                      {"$set": niat, "$push": {"jejak": _jejak("batal", actor, teks[:500])}})
+            lk = {**lk, **niat}
+            baru = True
+        try:
+            balik = await _balik_kas(lk, kas, actor)
+        except HTTPException as exc:
+            gagal = exc   # opname tetap batal, `batal_gl_status: failed` (Posting Gagal); kunci dilepas di `finally`
+        else:
+            upd = _saga.finish_set({"batal_gl_status": "posted" if (kas or lanjut) else "", "batal_gl_error": "",
+                                    "batal_selesai_pada": now_iso(), "updated_at": now_iso()})
+            if balik:
+                upd["$push"] = {"void_journal_entry_ids": {"$each": [j for j in balik if j]}}
+            if lanjut:
+                upd.setdefault("$push", {})["jejak"] = _jejak("batal_diteruskan", actor)
+            await db[COLL].update_one({"id": count_id}, upd)
+    finally:
+        await _saga.release(COLL, count_id, token)
+    if baru:   # putusan batal sudah tercatat (juga bila pembaliknya masih harus diulang)
+        await _beritahu_diputus(lk, "dibatalkan", actor, teks[:500],
+                                kas_number=", ".join(t.get("number") or "" for t in kas))
+    if gagal is not None:
+        raise gagal
+    return await rincian(count_id)
+
+
+async def lanjut_batal(count_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Panel Posting Gagal jenis `cash_count_cancel`: teruskan pembalik kas opname batal yang belum tuntas."""
+    doc = await _ambil(count_id)
+    return await batal(count_id, doc.get("alasan_batal") or "diteruskan dari Posting Gagal", actor)
 
 
 # ── Pemilih karyawan (piutang karyawan) ──────────────────────────────────────────────────────────────────────────────

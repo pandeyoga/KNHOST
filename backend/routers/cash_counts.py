@@ -15,15 +15,18 @@ Izin (spesifikasi §5.3, §6 — tanpa izin baru): lihat `cash.view`, hitung `ca
   POST /api/cash-counts/{id}/approve       `{perlakuan, karyawan_id?}` — orang kedua; kas penyesuaian terbit
   POST /api/cash-counts/{id}/reject        `{alasan}` (≥ 5 huruf), bukan penghitung — tanpa kas; penghitung menghitung
                                            ulang
+  POST /api/cash-counts/{id}/batal         `{alasan}` (≥ 5 huruf), bukan penghitung, opname `disetujui` — kas
+                                           penyesuaian dibalik (tinjauan akhir Important 2); juga meneruskan batal yang
+                                           pembaliknya tertunda
 """
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from dependencies import audit, require_permission
 from entity_scope import entity_ctx, guard_doc, resolve_requested_entity, resolve_scope_ids
 from pagination import MAX_PAGE_SIZE
-from schemas_finance import CashCountApprove, CashCountCreate, CashCountReject
+from schemas_finance import CashCountApprove, CashCountCancel, CashCountCreate, CashCountReject
 from services import approval_policy_service, cash_count_service as ccs
 
 router = APIRouter(prefix="/api/cash-counts")
@@ -38,7 +41,8 @@ async def _dokumen(request: Request, count_id: str, *, tulis: bool) -> Dict[str,
 
 def _jejak_audit(res: Dict[str, Any]) -> Dict[str, Any]:
     return {k: res.get(k) for k in ("number", "status", "account_id", "saldo_buku", "jumlah_fisik", "selisih",
-                                    "perlakuan", "karyawan_id", "cash_id", "cash_number", "tanggal")}
+                                    "perlakuan", "karyawan_id", "cash_id", "cash_number", "tanggal",
+                                    "batal_gl_status")}
 
 
 @router.get("")
@@ -105,5 +109,27 @@ async def reject_cash_count(count_id: str, payload: CashCountReject, request: Re
                                              amount=float(doc.get("selisih_nominal") or 0), action="reject")
     res = await ccs.tolak(count_id, payload.alasan, actor)
     await audit(actor["name"], "cash_count_rejected", "cash_count", count_id,
+                {**_jejak_audit(res), "alasan": payload.alasan}, scope_entity_id=res.get("entity_id", ""))
+    return res
+
+
+@router.post("/{count_id}/batal")
+async def cancel_cash_count(count_id: str, payload: CashCountCancel, request: Request) -> Dict[str, Any]:
+    """Tinjauan akhir Important 2 — batalkan putusan opname `disetujui` (kas penyesuaian dibalik). Izin `cash.approve` +
+    Aturan Persetujuan `cash_count` (sama dengan Setujui/Tolak); penghitung ≠ pembatal dijaga layanan."""
+    actor = await require_permission(request, "cash", "approve")
+    doc = await _dokumen(request, count_id, tulis=True)
+    await approval_policy_service.guard_door("cash_count", actor, doc=doc,
+                                             amount=float(doc.get("selisih_nominal") or 0))
+    try:
+        res = await ccs.batal(count_id, payload.alasan, actor)
+    except HTTPException:
+        # Putusan batal tercatat tetapi pembalik kas gagal (Posting Gagal) → jejak audit tetap ditulis.
+        segar = await ccs.rincian(count_id)
+        if doc.get("status") != segar.get("status") and segar.get("status") == ccs.BATAL:
+            await audit(actor["name"], "cash_count_cancelled", "cash_count", count_id,
+                        {**_jejak_audit(segar), "alasan": payload.alasan}, scope_entity_id=segar.get("entity_id", ""))
+        raise
+    await audit(actor["name"], "cash_count_cancelled", "cash_count", count_id,
                 {**_jejak_audit(res), "alasan": payload.alasan}, scope_entity_id=res.get("entity_id", ""))
     return res

@@ -715,3 +715,67 @@ async def test_KB3_2_U12_rute_izin_dan_bentuk(klien, db, akun, sesi, peran_tanpa
     r = await klien.get("/api/kas-kecil/dana-tetap", headers=lihat, params={"entity_id": lain["id"]})
     assert r.status_code == 403, r.text
     assert await db.fund_transfers.count_documents({"entity_id": lain["id"]}) == 0
+
+
+# ═══ Tinjauan akhir Minor 4 — isi ulang dikirim ulang dengan kunci idempotensi yang sama = satu Pindah Dana ═════════
+async def test_KB3_2_U13_isi_ulang_kirim_ulang_berkunci_satu_pindah_dana(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Jawaban hilang lalu layar mengirim ulang (`moneyPost` + kunci yang sama) → jawaban pertama diputar ulang
+    (bukan 400 "tidak perlu diisi ulang"); Pindah Dana tetap satu. Awalan `/api/kas-kecil/` terdaftar di server dan di
+    penjaga form uang."""
+    import sys
+    from pathlib import Path
+    import idempotency
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "guardrails"))
+    import verify_money_idempotency as penjaga
+    assert idempotency.is_idempotent_path("/api/kas-kecil/dana-tetap/rek_x/isi-ulang")
+    assert "/api/kas-kecil/" in penjaga.MONEY_PREFIXES and "/api/kas-kecil/" in penjaga.server_prefixes()
+    pt = await _pt("lama", "KB32I")
+    eid = pt["id"]
+    await _kas_manual(pt, "KK", 150_000)
+    buat = await sesi(await akun(await peran_tanpa_acuan({"cash": ["view", "create"]}, label="KB32 Buat Kas I"),
+                                 entitas=(eid,)), entitas=eid)
+    url = f"/api/kas-kecil/dana-tetap/{pt['rek']['KK']}/isi-ulang"
+    body = {"sumber_account_id": pt["rek"]["BCA"], "catatan": "uji kirim ulang", "nominal_dilihat": 150_000}
+    kunci = {**buat, "Idempotency-Key": f"isiulang-kb32-{uuid.uuid4().hex[:8]}", "X-Entity-Id": eid}
+    r1 = await klien.post(url, headers=kunci, json=body)
+    assert r1.status_code == 200 and r1.json()["nominal"] == 150_000.0, r1.text
+    r2 = await klien.post(url, headers=kunci, json=body)
+    assert (r2.status_code, r2.json()["id"], r2.headers.get("X-Idempotent-Replay")) == (200, r1.json()["id"], "true")
+    assert await db.fund_transfers.count_documents({"entity_id": eid, "jenis": JENIS}) == 1
+    assert await _buku(pt["rek"]["KK"]) == 2_000_000.0
+    # Tanpa kunci (klien lama) → keputusan bisnis biasa: sudah terisi, tidak perlu diisi ulang
+    r3 = await klien.post(url, headers=buat, json={"sumber_account_id": pt["rek"]["BCA"]})
+    assert r3.status_code == 400 and "tidak perlu diisi ulang" in r3.json()["detail"], r3.text
+
+
+# ═══ Tinjauan akhir Minor 5 — nominal yang dikonfirmasi = nominal yang dibukukan (`nominal_dilihat`) ═══════════════
+async def test_KB3_2_U14_nominal_dilihat_berubah_409(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Layar mengirim usulan yang DITAMPILKAN (`nominal_dilihat`); server menghitung ulang di dalam kunci rekening dan
+    menolak bila berbeda (kas tercatat di sela pop-up dibuka dan disimpan) — tanpa Pindah Dana. Sama → terbit dengan
+    nominal itu. Tidak dikirim (klien lama) → perilaku lama."""
+    from services import petty_float_service as pfs
+    pt = await _pt("lama", "KB32D")
+    eid = pt["id"]
+    await _kas_manual(pt, "KK", 100_000)
+    dilihat = (await pfs.posisi(pt["rek"]["KK"]))["usulan_isi_ulang"]
+    assert dilihat == 100_000.0
+    await _kas_manual(pt, "KK", 25_000)                                       # kas di sela: usulan kini 125.000
+    pesan = (f"Usulan berubah, muat ulang: usulan isi ulang rekening Kas Kecil {pt['kode']} kini Rp 125.000, bukan "
+             "Rp 100.000 seperti yang ditampilkan. Periksa angkanya lalu isi ulang lagi.")
+    await _ditolak(pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT, nominal_dilihat=dilihat), 409, pesan)
+    assert await db.fund_transfers.count_documents({"entity_id": eid}) == 0
+    assert await db.petty_float_locks.count_documents({"_id": pt["rek"]["KK"]}) == 0   # kunci dilepas
+    # Lewat rute: isian `nominal_dilihat` dikenal skema; negatif 422
+    buat = await sesi(await akun(await peran_tanpa_acuan({"cash": ["view", "create"]}, label="KB32 Buat Kas D"),
+                                 entitas=(eid,)), entitas=eid)
+    url = f"/api/kas-kecil/dana-tetap/{pt['rek']['KK']}/isi-ulang"
+    r = await klien.post(url, headers=buat, json={"sumber_account_id": pt["rek"]["BCA"], "nominal_dilihat": 100_000})
+    assert (r.status_code, r.json()["detail"]) == (409, pesan), r.text
+    r = await klien.post(url, headers=buat, json={"sumber_account_id": pt["rek"]["BCA"], "nominal_dilihat": -1})
+    assert r.status_code == 422, r.text
+    r = await klien.post(url, headers=buat, json={"sumber_account_id": pt["rek"]["BCA"], "nominal_dilihat": 125_000})
+    assert r.status_code == 200 and r.json()["nominal"] == 125_000.0, r.text
+    # Tanpa `nominal_dilihat` (klien lama): perilaku lama
+    await _kas_manual(pt, "KK", 40_000)
+    doc = await pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT)
+    assert doc["nominal"] == 40_000.0

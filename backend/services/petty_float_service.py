@@ -112,6 +112,12 @@ def pesan_nonaktif(nama: str) -> str:
     return f"Rekening {nama} tidak aktif. Aktifkan dulu di Rekening & Saldo."
 
 
+def pesan_usulan_berubah(nama: str, dilihat: float, usulan: float) -> str:
+    """Tinjauan akhir Minor 5 — usulan yang ditampilkan layar ≠ usulan yang dihitung ulang server saat disimpan."""
+    return (f"Usulan berubah, muat ulang: usulan isi ulang rekening {nama} kini {rupiah(usulan)}, bukan "
+            f"{rupiah(dilihat)} seperti yang ditampilkan. Periksa angkanya lalu isi ulang lagi.")
+
+
 # ── Rekening ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def rekening_kas_kecil(account_id: str) -> Dict[str, Any]:
     """Rekening `account_id` harus ada (404) dan berjenis kas kecil (400)."""
@@ -390,11 +396,16 @@ def _potret(pos: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def isi_ulang(account_id: str, sumber_account_id: str, actor: Dict[str, Any], *, catatan: str = "",
-                    tanggal: str = "", nominal: Optional[float] = None) -> Dict[str, Any]:
+                    tanggal: str = "", nominal: Optional[float] = None,
+                    nominal_dilihat: Optional[float] = None) -> Dict[str, Any]:
     """`POST /api/kas-kecil/dana-tetap/{account_id}/isi-ulang` — terbitkan Pindah Dana sekali jalan sebesar usulan
     (dihitung ulang server di dalam kunci rekening) dari rekening bank / kas besar PT yang sama. → dokumen Pindah Dana
     (`fund_transfer_service._bentuk`): `selesai`, atau `menunggu_persetujuan` bila `kontrol.pindah_dana` butuh orang
-    kedua."""
+    kedua.
+
+    `nominal_dilihat` (tinjauan akhir Minor 5, opsional) = usulan yang DITAMPILKAN layar saat dikonfirmasi; bukan nominal
+    klien — server tetap menghitung sendiri, dan bila hasilnya berbeda (kas tercatat di sela) → 409 "Usulan berubah, muat
+    ulang" tanpa Pindah Dana (pola `sidik` pindah saldo Kas & Bank 1). Kosong = tanpa pembanding (klien lama)."""
     from services import bank_service as bs
     from services import fund_transfer_service as fts
     # ── PERIKSA (tanpa tulisan) ──
@@ -419,6 +430,8 @@ async def isi_ulang(account_id: str, sumber_account_id: str, actor: Dict[str, An
         acc = await rekening_kas_kecil(acc["id"])
         pos = await _posisi(acc)
         _periksa_posisi(pos)
+        if nominal_dilihat is not None and to_cents(_f(nominal_dilihat)) != to_cents(pos["usulan_isi_ulang"]):
+            raise _galat(409, pesan_usulan_berubah(nama, _f(nominal_dilihat), pos["usulan_isi_ulang"]))
         isian = {"entity_id": eid, "rekening_asal_id": sid, "rekening_tujuan_id": acc["id"],
                  "nominal": pos["usulan_isi_ulang"], "biaya": 0, "tanggal_kirim": tanggal or "", "tanggal_terima": "",
                  "catatan": (catatan or "").strip() or f"Isi ulang dana tetap {nama}"}
