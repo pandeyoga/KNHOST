@@ -68,7 +68,7 @@ Temuan nyata yang tertangkap sebelum gabung:
 
 - **Backend `tests_mem` penuh** pada kode server akhir (`0c498fc`, sama dengan pohon akhir untuk `backend/`): 3367 lulus,
   2 dilewati, 3 xfail, **0 gagal**. Sebelumnya: `6cf2a7d` 3352 lulus · `4b7c043` 3342 lulus, 0 gagal.
-- **Jest penuh** di `6cf2a7d`: 2259/2260 uji, 273/275 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan
+- **Jest penuh** pada pohon akhir (sesudah perbaikan tangkapan): 2260/2261 uji, 273/275 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan
   garis dasar).
 - **Uji baru:** `test_KB3_1_fondasi`, `test_KB3_2_kasir_dana_tetap`, `test_KB3_3_opname`, `test_KB3_4_layar_server`
   (68 lulus di pohon gabungan), `test_KB3_5_kas_lama_rekening` (15: penetapan lewat semua jalur, pembukuan & pembatalan tidak
