@@ -5,7 +5,7 @@ terbuka per orang, LPJ wajib dalam 7 hari), **C8 "Ya"** (pisahkan akun uang muka
 satu akun 1-1400). Dasar temuan: `docs/audit/kas-bank-otomasi-2026-11-25/ANALISIS_TUNAI_BANK_OCR_OTOMASI.md` C7 (`:114`), C9
 (`:116`), keputusan terbuka 6–7 (`:135-136`); `docs/finance/AUDIT_KEUANGAN_2026-11-13.md` `:256` (tiga wadah "uang dipegang
 orang"). Keputusan builder di §7 dikerjakan tanpa menunggu (perintah pemilik "langsung lanjut kerjakan saja semua") dan
-dilaporkan. Dibangun di atas cabang Kas & Bank 3 (`2627f52`).
+dilaporkan; builder check 28 Nov selesai (enam jawaban, §7.9). Dibangun di atas cabang Kas & Bank 3 (`2627f52`).
 
 ## 1. Masalah
 
@@ -76,9 +76,9 @@ akun yang salah (saldo negatif di satu akun, lebih di akun lain); PT yang belum 
 
 ### 5.1 C7 — batas PD terbuka
 
-- **Orang** = pemohon PD (`created_by_id`), **lintas PT** (uang di tangan satu orang). Batas dari pengaturan PT dokumen
+- **Orang** = **pemegang** PD (§7.9.3: bawaan pembuat `created_by_id`, lintas PT; atau karyawan HR yang dipilih). Batas dari pengaturan PT dokumen
   `kas.pd_terbuka_maks` (bawaan **1**; 0 = tanpa batas).
-- **PD terbuka** = PD milik orang itu yang tidak draf, tidak ditolak/dibatalkan, dan belum tuntas: status diajukan / dalam
+- **PD terbuka** = PD milik orang itu yang tidak draf, tidak ditolak/dibatalkan (`cancelled`, §7.9.4), dan belum tuntas: status diajukan / dalam
   persetujuan / disetujui / dicairkan, **atau** `settled` yang sisa dikembalikannya masih open/returning (uang masih di
   tangan). PD yang sedang diperiksa tidak dihitung dirinya sendiri.
 - **Ajukan** PD baru saat PD terbuka orang itu ≥ batas → 409 berkalimat: "Anda masih memegang uang muka PD-… (Rp …, LPJ
@@ -154,3 +154,32 @@ migrasi data saat menyala (penanda aktif sekali tulis dikecualikan); urutan PERI
 7. Pindah per PT lewat pratinjau → siapkan → setujui orang kedua (kontrol baru bawaan 2); sumber sub-ledger yang tidak
    sepakat menahan siapkan.
 8. Daftar pencocokan + butir tutup buku peringatan.
+9. **Builder check 28 Nov — enam jawaban (keputusan builder, perintah tetap pemilik):**
+   1. *Sub-ledger uang muka pemasok per PT* dihitung dari **dokumen PT itu**: kas `ap_advance` PT itu − potongan kontrabon
+      `supplier_advance` yang **sudah terjurnal** + uang muka dari kasus "lebih bayar pemasok" PT itu − refund kasus PT itu,
+      per pemasok. `suppliers.advance_balance` (global per pemasok, tidak turun oleh potongan kontrabon) hanya ditampilkan
+      sebagai keterangan, **bukan** penahan. Penahan hanya: baris pemasok bernilai negatif (mis. refund kasus di PT lain
+      dari uang muka PT ini) → kalimat "periksa kasus". Membatasi refund kasus ke PT asal uang muka = pertanyaan pemilik.
+   2. *Urusan berjalan saat pindah*: siapkan **ditahan** selama PT itu punya kontrabon belum dibayar yang memuat potongan
+      uang muka pemasok, atau jurnal uang muka pemasok gagal/tertunda (pola `posting_tertunda` Kas & Bank 1); angka pindah
+      dari potongan yang sudah terjurnal saja; disetujui menghitung ulang semuanya.
+   3. *Pemegang uang*: PD diberi bidang **pemegang** — bawaan pembuat PD (pengguna); pembuat yang berizin buat PD boleh
+      memilih karyawan dari master karyawan HR PT itu (Finance/Admin mengetik PD untuk sopir, gudang). Batas dihitung per
+      pemegang (karyawan → per karyawan; pengguna → per pengguna lintas PT). PD lama tanpa bidang = pembuatnya.
+      Pemberitahuan ke pembuat PD (karyawan belum tentu pengguna); kalimat menyebut nama pemegang.
+   4. *Batalkan PD*: aksi baru untuk PD draf/dalam persetujuan/disetujui yang **belum cair** — oleh pembuat atau pemegang
+      izin `cash_advance.reject`, alasan wajib, status `cancelled`, jejak; PD batal tidak dihitung terbuka.
+   5. *Saat cair*: yang dihitung hanya PD lain pemegang itu yang sudah cair dan belum tuntas (atau `settled` dengan sisa di
+      tangan) — PD lain yang baru disetujui tidak saling mengunci; tanpa pengecualian PD lama (PD lama yang disetujui ikut
+      menunggu LPJ PD yang sedang dipegang). Saat ajukan, yang dihitung: PD lain yang diajukan s.d. belum tuntas.
+   6. *Akun kontrol*: 1-1410 menjadi akun kontrol (PK-36, `gl_mapping_registry` `control=`) dengan buku pembantu baru
+      `uang_muka_pemasok` (dokumen pengganti: Kasus Keuangan / Kontrabon) — jurnal manual ke 1-1410 ditolak; jurnal reklas
+      pindah saldo adalah posting sistem.
+
+## 8. Untuk pemilik
+
+- Kode akun `1-1410 Uang Muka Pemasok` — setuju atau penomoran akuntan sendiri?
+- Pindah saldo uang muka pemasok di PT nyata dilakukan Finance di layar (orang kedua menyetujui) — kapan, sesudah Bapak setuju.
+- Refund uang muka pemasok lewat kasus keuangan saat ini boleh dibukukan di PT mana pun; dibatasi ke PT asal uang muka?
+- Sesudah pembaruan, orang yang sedang memegang PD cair tidak bisa mengajukan PD baru sampai LPJ-nya selesai, dan PD lama
+  yang sudah disetujui tetapi belum cair ikut menunggu (bisa dibatalkan dengan aksi Batalkan PD).
