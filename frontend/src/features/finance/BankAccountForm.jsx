@@ -235,7 +235,10 @@ export default function BankAccountForm({ open, account = null, entityId = "", e
               <label className="field-label">Dana tetap</label>
               <MoneyInput testId="bank-form-dana-tetap" value={form.dana_tetap} onChange={(v) => set({ dana_tetap: v })} placeholder="0"
                 hint="0 = tidak memakai dana tetap" />
-              <p className="mt-1 text-fs-12 text-kn-text-2">Isi ulang diusulkan sebesar dana tetap − saldo buku − panjar yang belum di-LPJ.</p>
+              {/* Ketetapan R3 — makna sama dengan rumus di pop-up Isi ulang (`IsiUlangModal.TEKS_RUMUS`). */}
+              <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="bank-form-dana-tetap-hint">
+                Isi ulang diusulkan sebesar dana tetap − saldo buku − sisa panjar di tangan karyawan.
+              </p>
             </div>
           )}
           {tunai && JENIS_BERLOKASI.includes(form.cash_type) && (

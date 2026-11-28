@@ -30,6 +30,7 @@ import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "..
 import { CATEGORIES, categoryLabel } from "./cashCategories";
 import CashOutPendingSection from "../finance/cashout/CashOutPendingSection";   // Kas & Bank 2 — pengajuan menunggu
 import { bacaBatas, butuhPersetujuan } from "../finance/cashout/cashOutShared";
+import { jenisKasRekening, judulJenisKas } from "../finance/jenisKas";   // Kas & Bank 3 — label jenis kas (+ kas kasir)
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -52,6 +53,12 @@ import { bacaBatas, butuhPersetujuan } from "../finance/cashout/cashOutShared";
  * → toast + baris di bagian "Menunggu persetujuan" (`CashOutPendingSection`), tanpa kas. Server tetap penentu: 202 juga
  * ditangani bila batasnya belum termuat. Tautan masuk: Pusat Persetujuan (preset `{status}` → gulir ke bagian itu),
  * notifikasi & Jejak (`focusDoc` `cash_out_request` → pratinjau pengajuan).
+ *
+ * Kas & Bank 3 (tinjauan akhir Important #3) — jenis kas ketiga **Kas Kasir** (uang tunai pelanggan, server
+ * `summary.kas_kasir` / `cash_type=kas_kasir`): kartu ringkasan, tab saringan, pilihan form "Kas Kasir (tunai pelanggan)"
+ * (rekening kasir saja — `CashAccountField`), dan satu label (`jenisKas.judulJenisKas`) untuk baris, CSV, dan konfirmasi
+ * anulir. Hanya tampil bila PT punya rekening kas kasir (`GET /bank-accounts`) atau sudah ada kas kasir; PT lain melihat
+ * layar persis seperti dulu.
  */
 const EMPTY_FORM = {
   cash_type: "kas_kecil", direction: "out", amount: "",
@@ -62,12 +69,12 @@ const EMPTY_FORM = {
 export { CATEGORIES };
 
 // PK-42 — butir CSV di "Unduh ▾" = kolom yang terlihat di layar (INV-UI-07).
-const CASH_CSV_COLUMNS = [
+export const CASH_CSV_COLUMNS = [
   { key: "number", header: "Nomor" },
   { key: "txn_date", header: "Tanggal", type: "date" },
   { key: "description", header: "Keterangan" },
   { header: "Kategori", get: (t) => categoryLabel(t.category) },
-  { header: "Jenis kas", get: (t) => (t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil") },
+  { header: "Jenis kas", get: (t) => judulJenisKas(t.cash_type) },
   { header: "Arah", get: (t) => (t.direction === "in" ? "Masuk" : "Keluar") },
   { key: "amount", header: "Nominal", type: "num" },
 ];
@@ -111,12 +118,14 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const { go, canOpen } = nav;   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
+  // Kas & Bank 3 — rekening PT dalam cakupan (hanya untuk mengetahui ada/tidaknya rekening kas kasir).
+  const [rekening, setRekening] = useState([]);
   const [error, setError] = useState("");
   // Pelatihan 18 Nov (S4): galat MUAT terpisah dari galat AKSI. Dulu muat ulang ringkasan yang selesai belakangan
   // menghapus `error` → pesan penolakan anulir ("sudah dicocokkan — lepaskan dulu") hilang sebelum terbaca.
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
-  const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_besar
+  const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_kasir | kas_besar
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -179,17 +188,23 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   async function loadAll() {
     try {
       const params = scoped ? { entity_id: selectedEntity } : {};
-      const [sRes, eRes] = await Promise.all([
+      const [sRes, eRes, rekeningPt] = await Promise.all([
         axios.get(`${API}/cash-transactions/summary`, { params }),
         axios.get(`${API}/entities`).catch(() => ({ data: [] })),
+        // Kas & Bank 3 — gagal dimuat = dianggap tanpa rekening kasir (kartu/saringan kasir tetap tampil bila sudah ada kas
+        // kasir, dari `summary.counts`).
+        Promise.resolve().then(() => axios.get(`${API}/bank-accounts`, { params }))
+          .then((r) => (Array.isArray(r?.data) ? r.data : [])).catch(() => []),
       ]);
       setSummary(sRes.data || { kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
       setEntities(Array.isArray(eRes.data) ? eRes.data : []);
+      setRekening(rekeningPt);
       setLoadError("");
     } catch (e) {
       setLoadError(apiErrorText(e, "Gagal memuat data kas."));
       // PK-16 (RP-04) — saldo dari permintaan sebelumnya tidak boleh tertinggal di layar.
       setSummary({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
+      setRekening([]);
     }
   }
 
@@ -279,7 +294,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
     const reason = await askReason({
       danger: true,
       title: `Anulir ${t.number}?`,
-      message: `Kas ${dir} ${formatCurrency(t.amount)} (${t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}`
+      message: `Kas ${dir} ${formatCurrency(t.amount)} (${judulJenisKas(t.cash_type)}`
         + `${t.description ? ` · ${t.description}` : ""}) dibatalkan dan jurnal pembalik dibuat; saldo kas berubah. `
         + "Tindakan tidak dapat dibatalkan.",
       reasonLabel: "Alasan anulir",
@@ -308,6 +323,19 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const showPerEntity = Object.keys(summary.kas_kecil_per_entity || {}).length > 1;
   // PK-42 — lencana tab = jumlah di server (`summary.counts`); belum ada → tanpa angka (bukan 0 yang menyesatkan).
   const cashCount = (k) => summary.counts?.[k];
+  // Kas & Bank 3 — kas kasir tampil (kartu, saringan) hanya di PT yang memakainya: punya rekening kas kasir, atau sudah
+  // ada kas kasir (server mengirim `counts.kas_kasir` hanya bila > 0). Pilihan form hanya bila ada rekening kasir aktif.
+  const rekeningKasir = rekening.filter((a) => a?.account_type === "cash" && jenisKasRekening(a) === "kas_kasir");
+  const pakaiKasir = rekeningKasir.length > 0 || Number(cashCount("kas_kasir")) > 0;
+  const bisaCatatKasir = rekeningKasir.some((a) => a.is_active !== false && a.status !== "inactive");
+  const jumlahKartu = 2 + (pakaiKasir ? 1 : 0) + (showPerEntity ? 1 : 0);
+  const JENIS_FORM = [{ value: "kas_kecil", label: "Kas Kecil (tunai)" },
+    ...(bisaCatatKasir || form.cash_type === "kas_kasir" ? [{ value: "kas_kasir", label: "Kas Kasir (tunai pelanggan)" }] : []),
+    { value: "kas_besar", label: "Kas Besar / Bank (transfer)" }];
+  const TAB_JENIS = [{ k: "all", l: "Semua" }, { k: "kas_kecil", l: "Kas Kecil" },
+    ...(pakaiKasir ? [{ k: "kas_kasir", l: "Kas Kasir" }] : []), { k: "kas_besar", l: "Kas Besar" }];
+  // Pindah ke PT tanpa kas kasir saat tab Kas Kasir terpilih → kembali ke Semua (tab-nya tidak ada lagi).
+  useEffect(() => { if (!pakaiKasir && filter === "kas_kasir") setFilter("all"); }, [pakaiKasir, filter]);
   // PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026").
   const fmtDate = (s) => formatDate(s);
   const txns = paged.items;
@@ -367,11 +395,16 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
       </p>
       {/* Summary cards — Fase 3 · P4 (D-13 B): kartu "Kas Kecil per Entitas" hanya bila ADA lebih dari satu PT di
           datanya. Dengan satu PT (atau header memilih satu PT) isinya = kartu "Kas Kecil" → angka ganda, disembunyikan. */}
-      <div className={`grid gap-3 sm:grid-cols-2 mb-3 ${showPerEntity ? "lg:grid-cols-3" : ""}`.trim()}>
+      <div className={`grid gap-3 sm:grid-cols-2 mb-3 ${jumlahKartu >= 4 ? "lg:grid-cols-4" : jumlahKartu === 3 ? "lg:grid-cols-3" : ""}`.trim()}>
         <SummaryCard testId="cash-besar-card" title="Kas Besar / Bank"
           sub={scoped ? entityName(selectedEntity) : "Semua PT"}
           balance={summary.kas_besar?.balance} inAmt={summary.kas_besar?.in} outAmt={summary.kas_besar?.out} tone="rgba(0,88,204,.10)" />
         <SummaryCard testId="cash-kecil-card" title="Kas Kecil" sub={scoped ? entityName(selectedEntity) : "Semua PT"} balance={summary.kas_kecil?.balance} inAmt={summary.kas_kecil?.in} outAmt={summary.kas_kecil?.out} tone="rgba(107,33,154,.10)" />
+        {/* Kas & Bank 3 — uang tunai pelanggan di rekening kas kasir (terpisah dari sisa kas kecil, C1). */}
+        {pakaiKasir && (
+          <SummaryCard testId="cash-kasir-card" title="Kas Kasir" sub={scoped ? entityName(selectedEntity) : "Semua PT"}
+            balance={summary.kas_kasir?.balance} inAmt={summary.kas_kasir?.in} outAmt={summary.kas_kasir?.out} tone="rgba(27,127,75,.12)" />
+        )}
         {showPerEntity && <div data-testid="cash-per-entity-card" className="section-card">
           <div className="section-body">
             <p className="text-fs-12 font-bold uppercase text-kn-text-2 mb-1.5">Kas Kecil per PT</p>
@@ -412,7 +445,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         </div>
         <div className="section-body">
           <div className="tab-bar">
-            {[{ k: "all", l: "Semua" }, { k: "kas_kecil", l: "Kas Kecil" }, { k: "kas_besar", l: "Kas Besar" }].map((t) => (
+            {TAB_JENIS.map((t) => (
               <button key={t.k} data-testid={`cash-filter-${t.k}`} className={`tab-button ${filter === t.k ? "active" : ""}`} onClick={() => setFilter(t.k)}>
                 {t.l}{cashCount(t.k) != null && <span className="tab-badge" data-testid={`cash-filter-count-${t.k}`}>{cashCount(t.k)}</span>}
               </button>
@@ -429,7 +462,8 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         open={showForm && canCreate}
         onClose={() => setShowForm(false)}
         title="Catat Transaksi Kas"
-        subtitle="Kas kecil (tunai) atau kas besar/bank — masuk & keluar"
+        subtitle={bisaCatatKasir ? "Kas kecil, kas kasir (tunai) atau kas besar/bank — masuk & keluar"
+          : "Kas kecil (tunai) atau kas besar/bank — masuk & keluar"}
         icon={Wallet}
         size="md"
         testId="cash-form"
@@ -447,7 +481,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
             <div className="grid grid-cols-2 gap-3">
               <Field label="Jenis Kas">
                 <KNSelect data-testid="cash-type-select" value={form.cash_type} onValueChange={(v) => setForm({ ...form, cash_type: v })} className="field"
-                  options={[{ value: "kas_kecil", label: "Kas Kecil (tunai)" }, { value: "kas_besar", label: "Kas Besar / Bank (transfer)" }]} />
+                  options={JENIS_FORM} />
               </Field>
               <Field label="Arah">
                 <KNSelect data-testid="cash-direction-select" value={form.direction} onValueChange={(v) => setForm({ ...form, direction: v })} className="field"
@@ -543,7 +577,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
                       {sourceCell(t)}
                     </td>
                     <td className="whitespace-nowrap">
-                      <p>{t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}</p>
+                      <p>{judulJenisKas(t.cash_type)}</p>
                       <p className="text-fs-12 text-kn-text-2">{entityName(t.entity_id)}</p>
                     </td>
                     <td className="text-right whitespace-nowrap">

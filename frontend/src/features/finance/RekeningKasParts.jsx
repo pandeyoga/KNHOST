@@ -4,12 +4,16 @@
  * di rekening kas kecil berdana tetap").
  *
  * Aksi kartu berada di KAKI kartu, di luar tombol kartu (tombol di dalam tombol = HTML tidak sah; klik aksi tidak membuka
- * buku rekening). Izin, bukan nama peran: Isi ulang = `cash.create` (`jenisKas.bolehIsiUlang`); alasan server lain
- * (isi ulang terbuka, tidak perlu) tampil di pop-up Isi ulang yang menonaktifkan tombol kirimnya.
+ * buku rekening). SATU kaki per kartu untuk semua aksi (Isi ulang dari 4a + Opname dari 4b — tinjauan akhir Minor 1).
+ * Izin, bukan nama peran: Isi ulang = `cash.create` (`jenisKas.bolehIsiUlang`); alasan server lain (isi ulang terbuka,
+ * tidak perlu) tampil di pop-up Isi ulang yang menonaktifkan tombol kirimnya. Opname = `cash.create` + rekening tunai
+ * aktif + layar Opname Kas bisa dibuka (`cashcount/OpnameKartuAksi`).
  */
 import { RefreshCcw } from "lucide-react";
 import StatusBadge from "../../components/StatusBadge";
+import { useAppNav } from "../../context/AppNavContext";
 import { formatCurrency } from "../../utils/formatters";
+import OpnameKartuAksi, { tampilOpname } from "./cashcount/OpnameKartuAksi";
 import { bolehIsiUlang, jenisKasRekening, labelJenisKas, pakaiDanaTetap } from "./jenisKas";
 
 /** Lencana jenis kas: rekening tunai selalu (kas kasir / kas kecil / kas besar), rekening bank hanya bila berjenis kas
@@ -45,17 +49,23 @@ export function RekeningKasInfo({ a }) {
   );
 }
 
-/** Kaki kartu rekening: aksi per rekening. Tanpa aksi → tidak dirender (kartu tetap satu tombol). */
+/** Kaki kartu rekening: SEMUA aksi per rekening (Isi ulang, Opname) dalam satu kaki ber-testid unik. Tanpa aksi → tidak
+ *  dirender (kartu tetap satu tombol). Opname paling kanan supaya letaknya sama di setiap kartu tunai. */
 export function RekeningKartuAksi({ a, perms, onIsiUlang }) {
+  const { canOpen } = useAppNav();
   const isiUlang = bolehIsiUlang(a, perms) && typeof onIsiUlang === "function";
-  if (!isiUlang) return null;
+  const opname = tampilOpname(a, perms, canOpen);
+  if (!isiUlang && !opname) return null;
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 border-t border-kn-divider px-3.5 py-2"
       data-testid={`bank-card-actions-${a.id}`}>
-      <button type="button" className="secondary-button btn-sm" data-testid={`bank-refill-${a.id}`}
-        onClick={() => onIsiUlang(a)}>
-        <RefreshCcw size={13} aria-hidden="true" /> Isi ulang
-      </button>
+      {isiUlang && (
+        <button type="button" className="secondary-button btn-sm" data-testid={`bank-refill-${a.id}`}
+          onClick={() => onIsiUlang(a)}>
+          <RefreshCcw size={13} aria-hidden="true" /> Isi ulang
+        </button>
+      )}
+      {opname && <OpnameKartuAksi a={a} perms={perms} />}
     </div>
   );
 }

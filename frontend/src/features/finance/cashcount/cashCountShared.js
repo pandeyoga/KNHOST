@@ -5,21 +5,27 @@
  * (`CashCountApproveModal`), aksi kartu rekening (`OpnameKartuAksi`) dan pratinjau dokumen
  * (`documents/preview/bodies/CashCountPreview`). Aturan mengikuti server (`backend/services/cash_count_service.py`,
  * `routers/cash_counts.py`): hitung `cash.create`; Setujui/Tolak hanya untuk `menunggu_persetujuan` dan pemegang
- * `cash.approve` (Setujui nonaktif bagi penghitung dengan kalimat server `kontrol.pesan`; penghitung BOLEH menolak
- * hitungannya sendiri — tidak menggerakkan uang); piutang karyawan hanya untuk kekurangan kas. Izin, bukan nama peran.
- * Server tetap penentu (galat tampil di tempat aksi).
+ * `cash.approve` — keduanya nonaktif bagi penghitung dengan kalimat server (`kontrol.pesan` untuk Setujui,
+ * `kontrol.tolak_pesan` untuk Tolak; server menolak penghitung dengan 403 sejak perbaikan putaran 1 Tugas 3). Batal
+ * (gelombang perbaikan akhir, `POST /cash-counts/{id}/batal {alasan}`) hanya untuk opname `disetujui` dan pemegang
+ * `cash.approve`, bukan penghitungnya (kalimat server `kontrol.batal_pesan`; tanpa penilaian server → dibandingkan id
+ * penghitung). Piutang karyawan hanya untuk kekurangan kas. Izin, bukan nama peran. Server tetap penentu (galat tampil di
+ * tempat aksi).
  */
 import { can } from "../../../config/roles";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 import { PESAN_SEDANG_DIPROSES } from "../cashout/cashOutShared";
 
 export const MENUNGGU = "menunggu_persetujuan";
+export const DISETUJUI = "disetujui";
 
 export const STATUS_OPNAME = {
   menunggu_persetujuan: { label: "Menunggu persetujuan", tone: "warning", icon: "clock" },
   selesai: { label: "Selesai", tone: "success", icon: "check" },
   disetujui: { label: "Disetujui", tone: "success", icon: "check" },
   ditolak: { label: "Ditolak", tone: "danger", icon: "x" },
+  // Gelombang perbaikan akhir — kas penyesuaian dibalik; rekening kembali jatuh tempo opname (di luar `TERHITUNG` server).
+  batal: { label: "Dibatalkan", tone: "neutral", icon: "ban" },
 };
 export const statusOpname = (s) => STATUS_OPNAME[s] || { label: s || "—", tone: "neutral", icon: "circle" };
 
@@ -32,7 +38,18 @@ export const PILIHAN_STATUS = [
 /** Perlakuan selisih (server `cash_count_service.PERLAKUAN_LABEL`). */
 export const PERLAKUAN = { selisih_kas: "Selisih kas", piutang_karyawan: "Piutang karyawan" };
 
-export const JEJAK_LABEL = { hitung: "Dihitung", setujui: "Disetujui", tolak: "Ditolak" };
+/** Pilihan saringan perlakuan (dropdown; `perlakuan=piutang_karyawan` = daftar piutang karyawan dari opname, §7.8.6). */
+export const PILIHAN_PERLAKUAN = [
+  { value: "", label: "Semua perlakuan" },
+  ...Object.entries(PERLAKUAN).map(([value, label]) => ({ value, label })),
+];
+
+export const JEJAK_LABEL = { hitung: "Dihitung", setujui: "Disetujui", tolak: "Ditolak", batal: "Dibatalkan" };
+
+/** Cadangan bila server belum menilai Batal (`kontrol.batal_pesan` tidak dikirim) dan pembuka = penghitung. Kalimat
+ *  server selalu didahulukan (aturan kontrol dua orang bisa diubah Admin). */
+export const PESAN_BATAL_SENDIRI = "Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda batalkan sendiri. Minta rekan "
+  + "yang berizin menyetujui kas membatalkannya.";
 
 export const ALASAN_MIN = 5;   // sama dengan server (K-14: alasan minimum 5 huruf)
 
@@ -46,7 +63,8 @@ export const TEKS_BANTU = "Opname kas mencocokkan uang fisik di rekening tunai (
   + "dengan saldo bukunya. Hitung uangnya dulu: saldo buku dipotret sistem saat hitungan disimpan, lalu selisih = uang "
   + "fisik − saldo buku. Tanpa selisih, opname langsung selesai. Ada selisih → orang kedua yang berizin menyetujui kas "
   + "memutuskan: selisih kas (lebih atau kurang) atau piutang karyawan (kurang saja, atas nama karyawan yang menanggung). "
-  + "Ditolak → hitung ulang. Saldo rekening bank dicocokkan lewat Rekonsiliasi Bank.";
+  + "Ditolak → hitung ulang. Putusan yang keliru (karyawan atau perlakuan salah) dibatalkan orang kedua dengan Batal: "
+  + "kas penyesuaiannya dibalik, lalu rekening dihitung ulang. Saldo rekening bank dicocokkan lewat Rekonsiliasi Bank.";
 
 const angka = (v) => (v === "" || v === null || v === undefined ? NaN : Number(v));
 const lembarOf = (v) => {
@@ -129,19 +147,41 @@ export function ringkasanSetujui(d, perlakuan, karyawan) {
   return `Kas keluar ${nominal} dari ${rekening}${tgl}, dibebankan ke akun Selisih Kas (beban lain-lain).`;
 }
 
+/** Kalimat Batal bagi pengguna `user`: kalimat server bila dinilai (`kontrol.batal_pesan`, "" = boleh); tanpa penilaian
+ *  server → penghitung (id sama) tidak membatalkan putusan atas hitungannya sendiri. */
+function alasanBatal(d, user) {
+  if (typeof d?.kontrol?.batal_pesan === "string") return d.kontrol.batal_pesan;
+  const uid = user?.id || "";
+  return uid && d?.penghitung?.id === uid ? PESAN_BATAL_SENDIRI : "";
+}
+
 /**
- * Aksi baris untuk opname `d` dan izin `perms` → { setujui, tolak }.
+ * Aksi baris untuk opname `d`, izin `perms`, dan pengguna `user` → { setujui, tolak, batal }.
  * Tiap aksi: null (tidak ditawarkan) atau { label, alasan } (alasan terisi = tombol nonaktif dengan alasan tertulis —
- * Setujui memakai kalimat server `kontrol.pesan`; penghitung tetap boleh menolak hitungannya sendiri).
+ * kalimat server: `kontrol.pesan` untuk Setujui, `kontrol.tolak_pesan` untuk Tolak, `kontrol.batal_pesan` untuk Batal).
  */
-export function aksiOpname(d, perms) {
-  const out = { setujui: null, tolak: null };
-  if (!d || d.status !== MENUNGGU || !can(perms, "cash", "approve")) return out;
+export function aksiOpname(d, perms, user) {
+  const out = { setujui: null, tolak: null, batal: null };
+  if (!d || !can(perms, "cash", "approve")) return out;
   const sibuk = d.dalam_proses ? PESAN_SEDANG_DIPROSES : "";
-  const ditolak = d.kontrol?.ditolak ? (d.kontrol.pesan || "Selisih opname ini harus diputuskan orang lain.") : "";
-  out.setujui = { label: d.terbit_error ? "Setujui lagi" : "Setujui", alasan: sibuk || ditolak };
-  out.tolak = { label: "Tolak", alasan: sibuk };
+  if (d.status === MENUNGGU) {
+    const ditolak = d.kontrol?.ditolak ? (d.kontrol.pesan || "Selisih opname ini harus diputuskan orang lain.") : "";
+    out.setujui = { label: d.terbit_error ? "Setujui lagi" : "Setujui", alasan: sibuk || ditolak };
+    out.tolak = { label: "Tolak", alasan: sibuk || d.kontrol?.tolak_pesan || "" };
+  } else if (d.status === DISETUJUI) {
+    out.batal = { label: "Batal", alasan: sibuk || alasanBatal(d, user) };
+  }
   return out;
+}
+
+/** Kalimat konfirmasi Batal (pola N5: kas yang dibalik, rekening, perlakuan, akibat). */
+export function pesanBatal(d) {
+  if (!d) return "";
+  const kas = d.cash_number ? `Kas penyesuaian ${d.cash_number}` : "Kas penyesuaian opname ini";
+  const piutang = d.perlakuan === "piutang_karyawan" && d.karyawan_nama
+    ? ` Piutang karyawan atas nama ${d.karyawan_nama}${d.karyawan_kode ? ` (${d.karyawan_kode})` : ""} ikut batal.` : "";
+  return `${kas} (${selisihTeks(d)} di ${d.account_name || "rekening ini"}) dibalik dengan jurnal pembalik.${piutang} `
+    + "Rekening ini kembali perlu diopname (hitung ulang); penghitung diberi tahu.";
 }
 
 /** Rekening tunai (opname hanya untuk `account_type="cash"`; rekening bank → Rekonsiliasi Bank). */

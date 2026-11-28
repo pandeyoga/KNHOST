@@ -13,6 +13,9 @@
  * Label opsi "{nama rekening} · {bank} {nomor}". `cashType` kosong = semua jenis.
  * PK-24 — `onAccount` (opsional) menerima dokumen rekening terpilih (atau null) untuk kalimat konfirmasi
  * ("… ke {nama rekening} · {PT}?").
+ * Kas & Bank 3 — jenis kas rekening mengenal `kas_kasir` (uang tunai pelanggan): rekening kasir BUKAN kas kecil, jadi
+ * hanya ditawarkan di pemilih tanpa jenis atau berjenis `kas_kasir` (bukan di pencairan PD, sisa LPJ, kas manual kas
+ * kecil, refund kas kecil). Jenisnya dari bidang server `cash_type` (`jenisKas.jenisKasRekening`).
  */
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../services/apiClient";
@@ -20,14 +23,14 @@ import KNSelect from "./KNSelect";
 import { apiErrorText } from "../utils/apiError";
 import { useEntityScope } from "../context/EntityScopeContext";
 import { entityShort } from "../utils/entityLabel";
+import { JENIS_KAS_JUDUL, jenisKasRekening } from "../features/finance/jenisKas";
 
-export const CASH_TYPE_LABEL = { kas_kecil: "Kas Kecil", kas_besar: "Bank" };
+/** Label jenis untuk kalimat isian ("Satu-satunya rekening {jenis} …"); kas besar = rekening bank/transfer. */
+export const CASH_TYPE_LABEL = { kas_kasir: JENIS_KAS_JUDUL.kas_kasir, kas_kecil: JENIS_KAS_JUDUL.kas_kecil, kas_besar: "Bank" };
 
-/** Jenis kas rekening — sama dengan `bank_service.account_cash_type` (master rekening, bukan transaksi). */
-export function accountCashType(a) {
-  if (a?.cash_type === "kas_kecil" || a?.cash_type === "kas_besar") return a.cash_type;
-  return a?.account_type === "cash" ? "kas_kecil" : "kas_besar";
-}
+/** Jenis kas rekening — sama dengan `bank_service.account_cash_type` (master rekening, bukan transaksi): `kas_kasir`,
+ *  `kas_kecil`, atau `kas_besar` bila tersimpan; selain itu dari jenis rekening (tunai = kas kecil, bank = kas besar). */
+export const accountCashType = jenisKasRekening;
 
 export function cashAccountLabel(a) {
   const bank = [a?.bank_name, a?.account_number].filter(Boolean).join(" ");

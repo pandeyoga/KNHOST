@@ -7,8 +7,9 @@
  * dari klien, jadi kiriman tidak memuat `nominal`). Pengguna memilih rekening sumber (bank / kas besar PT yang sama,
  * daftar `sumber` dari server) dan catatan opsional. Isi ulang yang masih terbuka, rekening tanpa dana tetap, atau tidak
  * perlu diisi ulang → tombol kirim nonaktif dengan kalimat server `alasan_isi_ulang` (sama dengan penolakan rute).
- * Kirim `POST …/{id}/isi-ulang` lewat `moneyPost` + `useIntentKey`; galat server tampil di dalam pop-up dan posisi dimuat
- * ulang. Hasilnya Pindah Dana bertanda isi ulang: selesai, atau menunggu orang kedua (`kontrol.pindah_dana`) di Pindah Dana.
+ * Kirim `POST …/{id}/isi-ulang` `{sumber_account_id, catatan?, nominal_dilihat}` lewat `moneyPost` + `useIntentKey`
+ * (`nominal_dilihat` = angka yang ditampilkan; usulan berubah → 409 server); galat server tampil di dalam pop-up dan posisi
+ * dimuat ulang. Hasilnya Pindah Dana bertanda isi ulang: selesai, atau menunggu orang kedua (`kontrol.pindah_dana`) di Pindah Dana.
  * Izin: pemanggil hanya membuka pop-up ini untuk pemegang `cash.create`.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -86,7 +87,11 @@ export default function IsiUlangModal({ open, accountId, accountName = "", onClo
     if (busy || !bisa || !sumber) return;
     setBusy(true);
     setErr("");
-    const body = { sumber_account_id: sumber, ...(catatan.trim() ? { catatan: catatan.trim() } : {}) };
+    // `nominal_dilihat` = usulan yang DITAMPILKAN (bukan nominal klien — server tetap menghitung ulang): bila usulan
+    // berubah sejak dimuat (kas di sela), server menolak 409 "Usulan berubah, muat ulang" alih-alih menerbitkan nominal
+    // lain tanpa diberi tahu (tinjauan akhir Minor 5 / N5). Galat tampil di pop-up dan posisi dimuat ulang (`catch`).
+    const body = { sumber_account_id: sumber, ...(catatan.trim() ? { catatan: catatan.trim() } : {}),
+      nominal_dilihat: Number(pos?.usulan_isi_ulang) || 0 };
     try {
       const r = await intent.send(body, (k) => moneyPost(`${API}/kas-kecil/dana-tetap/${accountId}/isi-ulang`, body, k));
       onSaved?.(r.data);

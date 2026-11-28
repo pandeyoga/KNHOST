@@ -208,6 +208,9 @@ describe("Form rekening — jenis kas, dana tetap, lokasi", () => {
 
     await choose(q(host, "bank-form-cash-type"), "kas_kecil");
     expect(q(host, "bank-form-dana-tetap")).not.toBeNull();
+    // ketetapan R3: yang dikurangkan = sisa panjar di tangan karyawan (sama dengan pop-up Isi ulang), bukan "belum LPJ"
+    expect(teks(q(host, "bank-form-dana-tetap-hint"))).toBe(
+      "Isi ulang diusulkan sebesar dana tetap − saldo buku − sisa panjar di tangan karyawan.");
     const lokasi = [...q(host, "bank-form-location").options].map((o) => [o.value, o.textContent]);
     // "" = tanpa lokasi (KNSelect menyisipkan butir placeholder "Tanpa lokasi" untuk mengosongkan)
     expect(lokasi).toEqual([["", "-"], ["site_bdg", "Toko Bandung · Bandung"], ["site_jkt", "Gudang Jakarta · Jakarta"]]);
@@ -414,6 +417,17 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(q(host, "bank-refill-kk1")).not.toBeNull();
     expect(q(host, "bank-refill-ks1")).toBeNull();
     expect(q(host, "bank-refill-bca")).toBeNull();
+    // SATU kaki per kartu (Isi ulang + Opname di kaki yang sama, testid unik) — dulu dua kaki bertumpuk ber-testid kembar
+    expect(host.querySelectorAll('[data-testid="bank-card-actions-kk1"]')).toHaveLength(1);
+    const kaki = q(host, "bank-card-actions-kk1");
+    expect(q(kaki, "bank-refill-kk1")).not.toBeNull();
+    expect(q(kaki, "bank-opname-kk1")).not.toBeNull();
+    expect(host.querySelectorAll('[data-testid="bank-card-actions-ks1"]')).toHaveLength(1);   // kasir: Opname saja
+    expect(q(q(host, "bank-card-actions-ks1"), "bank-opname-ks1")).not.toBeNull();
+    expect(q(host, "bank-card-actions-bca")).toBeNull();                                      // bank: tanpa aksi kartu
+    const aksiTestid = [...host.querySelectorAll('[data-testid^="bank-card-actions-"], [data-testid^="bank-refill-"], '
+      + '[data-testid^="bank-opname-"]')].map((el) => el.getAttribute("data-testid"));
+    expect(aksiTestid.length).toBe(new Set(aksiTestid).size);
     // aksi kartu bukan tombol di dalam tombol kartu (HTML sah) dan tidak membuka buku rekening
     expect(q(host, "bank-refill-kk1").closest('[data-testid="bank-card-kk1"]')).toBeNull();
     await click(q(host, "bank-refill-kk1"));
@@ -449,7 +463,10 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(mockPost).toHaveBeenCalledTimes(1);
     const [url, body, cfg] = mockPost.mock.calls[0];
     expect(url).toBe("/api/kas-kecil/dana-tetap/kk1/isi-ulang");
-    expect(body).toEqual({ sumber_account_id: "bank_bca", catatan: "Isi ulang minggu ini" });
+    // tanpa `nominal` (server menghitung ulang); `nominal_dilihat` = angka yang DITAMPILKAN, supaya server menolak (409)
+    // bila usulannya berubah sejak pop-up dibuka (bukan nominal klien)
+    expect(body).toEqual({ sumber_account_id: "bank_bca", catatan: "Isi ulang minggu ini", nominal_dilihat: 500000 });
+    expect(body).not.toHaveProperty("nominal");
     expect(cfg.headers["Idempotency-Key"]).toBeTruthy();
     expect(q(host, "refill-form")).toBeNull();
     expect(teks(q(host, "bank-notice"))).toBe(
@@ -477,6 +494,31 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(teks(q(host, "refill-form-error"))).toBe(
       "Isi ulang rekening Kas Kecil Toko sedang diproses orang lain. Tunggu sebentar lalu muat ulang.");
     expect(gets("/kas-kecil/dana-tetap/kk1")).toHaveLength(2);
+  });
+
+  test("usulan berubah sejak dibuka: 409 server tampil di pop-up, nominal dimuat ulang dan dikirim lagi sebagai yang dilihat", async () => {
+    let posisi = POSISI;
+    routeGet({ "/kas-kecil/dana-tetap/kk1": () => posisi });
+    const kalimat = "Usulan isi ulang berubah dari Rp 500.000 menjadi Rp 650.000 sejak pop-up dibuka. Muat ulang lalu periksa lagi.";
+    mockPost.mockImplementationOnce(async () => {
+      posisi = { ...POSISI, saldo_buku: 1050000, usulan_isi_ulang: 650000 };   // kas keluar di sela
+      throw galat(409, kalimat);
+    });
+    mockPost.mockResolvedValueOnce({ data: { id: "pdn_13", number: "KSC/PDN-00013", status: "selesai", nominal: 650000 } });
+    const onSaved = jest.fn();
+    const host = await mount(<IsiUlangModal open accountId="kk1" accountName="Kas Kecil Toko" onClose={() => {}} onSaved={onSaved} />);
+    expect(teks(q(host, "refill-amount"))).toBe(rp(500000));
+    await choose(q(host, "refill-source"), "bank_bca");
+    await submit(host, "refill-form-submit");
+    expect(mockPost.mock.calls[0][1]).toMatchObject({ nominal_dilihat: 500000 });
+    expect(teks(q(host, "refill-form-error"))).toBe(kalimat);
+    expect(teks(q(host, "refill-amount"))).toBe(rp(650000));            // angka baru dimuat ulang di pop-up yang sama
+    expect(teks(q(host, "refill-summary"))).toContain(rp(650000));
+    expect(onSaved).not.toHaveBeenCalled();
+    await submit(host, "refill-form-submit");
+    expect(mockPost.mock.calls[1][1]).toMatchObject({ sumber_account_id: "bank_bca", nominal_dilihat: 650000 });
+    expect(mockPost.mock.calls[1][2].headers["Idempotency-Key"]).not.toBe(mockPost.mock.calls[0][2].headers["Idempotency-Key"]);
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ number: "KSC/PDN-00013" }));
   });
 
   test("posisi gagal dimuat: pesan di pop-up, tombol mati; PT tanpa rekening sumber: kalimat", async () => {

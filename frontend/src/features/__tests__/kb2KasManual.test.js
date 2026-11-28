@@ -5,7 +5,7 @@
 // Rancangan `docs/superpowers/specs/2026-11-27-kas-bank-2-kas-manual-design.md` §5.1–§5.3.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import CashManagementView, { CATEGORIES } from "../purchasing/CashManagementView";
+import CashManagementView, { CASH_CSV_COLUMNS, CATEGORIES } from "../purchasing/CashManagementView";
 import { PESAN_SEDANG_DIPROSES, aksiPengajuan, butuhPersetujuan, bacaBatas } from "../finance/cashout/cashOutShared";
 import CashOutRequestPreview from "../documents/preview/bodies/CashOutRequestPreview";
 import { canPreview, previewFor } from "../documents/preview/docPreviewRegistry";
@@ -506,5 +506,88 @@ describe("notifikasi & Pusat Persetujuan membuka pengajuan", () => {
       entityId: "ent_ksc" });
     await click(q(host, "approval-inbox-other-open-pkk_1"));
     expect(onNavigate.mock.calls.at(-1)[3]).toEqual({ preset: PRESET });
+  });
+});
+
+// ── 6. Kas & Bank 3 — kas kasir di Transaksi Kas (tinjauan akhir Important #3) ─────────────────────────────────────────
+describe("Transaksi Kas — kas kasir (Kas & Bank 3)", () => {
+  const KK = { id: "kk_1", name: "Kas Kecil Gudang", entity_id: "ent_ksc", account_type: "cash", cash_type: "kas_kecil", is_active: true };
+  const KS = { id: "ks_1", name: "Kasir Toko", entity_id: "ent_ksc", account_type: "cash", cash_type: "kas_kasir", is_active: true };
+  const KAS = [
+    { id: "t_ks", number: "KSC/CASH-00010", txn_date: "2026-11-28", description: "Setoran laci", category: "operasional",
+      cash_type: "kas_kasir", direction: "in", amount: 800000, entity_id: "ent_ksc", ref_type: "manual", status: "posted" },
+    { id: "t_kk", number: "KSC/CASH-00011", txn_date: "2026-11-28", description: "Parkir", category: "operasional",
+      cash_type: "kas_kecil", direction: "out", amount: 20000, entity_id: "ent_ksc", ref_type: "manual", status: "posted" },
+  ];
+  const RINGKAS = { kas_kecil: { balance: 480000, in: 500000, out: 20000 }, kas_besar: { balance: 9000000, in: 0, out: 0 },
+    kas_kasir: { opening: 0, balance: 800000, in: 800000, out: 0, count: 1 }, kas_kecil_per_entity: {},
+    counts: { all: 2, kas_besar: 0, kas_kecil: 1, kas_kasir: 1 } };
+  // PT tanpa kasir: jawaban server sama seperti dulu (`counts` tanpa kas_kasir; agregat kas_kasir nol).
+  const RINGKAS_TANPA = { ...RINGKAS, kas_kasir: { opening: 0, balance: 0, in: 0, out: 0, count: 0 },
+    counts: { all: 1, kas_besar: 0, kas_kecil: 1 } };
+  function pasangKasir({ rekening = [...REKENING, KK, KS], ringkas = RINGKAS, kas = KAS } = {}) {
+    mockGet.mockImplementation((url) => {
+      if (url.endsWith("/cash-transactions/summary")) return Promise.resolve({ data: ringkas });
+      if (url.endsWith("/cash-transactions")) return Promise.resolve({ data: { items: kas, total: kas.length, page: 1, page_size: 50 } });
+      if (url.endsWith("/bank-accounts")) return Promise.resolve({ data: rekening });
+      if (url.endsWith("/entities")) return Promise.resolve({ data: [{ id: "ent_ksc", short_name: "Sukacita" }] });
+      if (url.endsWith("/cash-out-requests/batas")) return Promise.resolve({ data: { min_orang: "1", batas_nominal: 0 } });
+      if (url.endsWith("/cash-out-requests")) return Promise.resolve({ data: { items: [], total: 0, page: 1, page_size: 10 } });
+      return Promise.resolve({ data: [] });
+    });
+  }
+  const IZIN = { cash: ["view", "create", "delete"], budget: [] };
+  const saringan = (host) => [...host.querySelectorAll('[data-testid^="cash-filter-"]')].map((el) => el.getAttribute("data-testid"))
+    .filter((id) => !id.startsWith("cash-filter-count-"));
+
+  test("PT berkasir: kartu Kas Kasir, saringan Kas Kasir → cash_type=kas_kasir; baris, CSV, anulir berlabel Kas Kasir", async () => {
+    pasangKasir();
+    const host = await layar(IZIN);
+    expect(txt(q(host, "cash-kasir-card"))).toContain("Kas Kasir");
+    expect(txt(q(host, "cash-kasir-card"))).toContain("Rp 800.000");
+    expect(txt(q(host, "cash-kecil-card"))).toContain("Rp 480.000");    // kas kecil tidak memuat uang kasir
+    expect(saringan(host)).toEqual(["cash-filter-all", "cash-filter-kas_kecil", "cash-filter-kas_kasir", "cash-filter-kas_besar"]);
+    expect(txt(q(host, "cash-filter-count-kas_kasir"))).toBe("1");
+    expect(txt(q(host, "cash-row-t_ks"))).toContain("Kas Kasir");
+    expect(txt(q(host, "cash-row-t_kk"))).toContain("Kas Kecil");
+    await click(q(host, "cash-filter-kas_kasir"));
+    expect(gets("/cash-transactions").at(-1)[1].params).toMatchObject({ entity_id: "ent_ksc", cash_type: "kas_kasir" });
+    expect(CASH_CSV_COLUMNS.find((c) => c.header === "Jenis kas").get({ cash_type: "kas_kasir" })).toBe("Kas Kasir");
+    expect(CASH_CSV_COLUMNS.find((c) => c.header === "Jenis kas").get({ cash_type: "kas_kecil" })).toBe("Kas Kecil");
+    mockAskReason.mockResolvedValue(null);
+    await click(q(host, "void-cash-t_ks"));
+    expect(mockAskReason.mock.calls[0][0].message).toContain("(Kas Kasir · Setoran laci)");
+  });
+
+  test("form: 'Kas Kasir (tunai pelanggan)' → hanya rekening kasir; kas kecil tidak menawarkan rekening kasir", async () => {
+    pasangKasir();
+    mockPost.mockResolvedValue({ status: 200, data: { number: "KSC/CASH-00012", direction: "in" } });
+    const host = await layar(IZIN);
+    await click(q(host, "create-cash-button"));
+    const opsi = [...q(host, "cash-type-select").options].filter((o) => o.value).map((o) => [o.value, o.textContent]);
+    expect(opsi).toEqual([["kas_kecil", "Kas Kecil (tunai)"], ["kas_kasir", "Kas Kasir (tunai pelanggan)"],
+      ["kas_besar", "Kas Besar / Bank (transfer)"]]);
+    // kas kecil: satu kas kecil + satu kasir → kas kecil tetap satu-satunya (terisi otomatis), kasir tidak ditawarkan
+    expect(q(host, "cash-account-select").value).toBe("kk_1");
+    expect([...q(host, "cash-account-select").options].map((o) => o.value)).not.toContain("ks_1");
+    await choose(q(host, "cash-type-select"), "kas_kasir");
+    expect(q(host, "cash-account-select").value).toBe("ks_1");
+    await choose(q(host, "cash-direction-select"), "in");
+    await type(q(host, "cash-amount-input"), "50000");
+    await submit(host, "submit-cash-button");
+    expect(posts("/cash-transactions").at(-1)[1]).toMatchObject({ cash_type: "kas_kasir", account_id: "ks_1", direction: "in",
+      amount: 50000 });
+  });
+
+  test("PT tanpa kasir: kartu, saringan, dan pilihan jenis kas di form sama persis seperti dulu", async () => {
+    pasangKasir({ rekening: [...REKENING, KK], ringkas: RINGKAS_TANPA, kas: [KAS[1]] });
+    const host = await layar(IZIN);
+    expect(q(host, "cash-kasir-card")).toBeNull();
+    expect(q(host, "cash-besar-card")).not.toBeNull();
+    expect(q(host, "cash-kecil-card")).not.toBeNull();
+    expect(saringan(host)).toEqual(["cash-filter-all", "cash-filter-kas_kecil", "cash-filter-kas_besar"]);
+    await click(q(host, "create-cash-button"));
+    const opsi = [...q(host, "cash-type-select").options].filter((o) => o.value).map((o) => o.value);
+    expect(opsi).toEqual(["kas_kecil", "kas_besar"]);
   });
 });
