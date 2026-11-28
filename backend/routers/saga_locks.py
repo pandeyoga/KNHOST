@@ -33,7 +33,9 @@ LOCKED_COLLECTIONS = ["wms_tasks", "sales_orders", "warehouse_transfers", "cycle
                       # Pindah Saldo Kas per Rekening (Kas & Bank 1) memakai jatah waktu `memproses`
                       # (`lease_until`), bukan `saga_lock`; didaftarkan supaya tetap terlihat bila kelak memakai
                       # `atomic_claim`.
-                      "cash_account_cutovers"]
+                      "cash_account_cutovers",
+                      # Kas & Bank 4 — pindah saldo uang muka pemasok, pola yang sama (`lease_until`).
+                      "supplier_advance_cutovers"]
 
 
 @router.get("/saga-locks")

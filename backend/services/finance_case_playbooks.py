@@ -216,11 +216,11 @@ PLAYBOOKS: List[Dict[str, Any]] = [
            "Kelebihan bayar berpindah dari utang menjadi uang muka supplier yang bisa "
            "dipotongkan pada tagihan/kontrabon berikutnya.",
            ["supplier_id", "amount"],
-           "Jurnal Dr 1-1400 Uang Muka / Cr 2-1100 Utang Usaha + saldo uang muka supplier"),
+           "Jurnal Dr akun Uang Muka Pemasok PT / Cr 2-1100 Utang Usaha + saldo uang muka supplier"),
         _A("terima_refund_supplier", "Catat pengembalian dana dari supplier",
            "Supplier mengembalikan uangnya; uang muka supplier berkurang.",
            ["supplier_id", "amount", "account_id"],
-           "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1400 Uang Muka")],
+           "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr akun Uang Muka Pemasok PT")],
        source_kinds=["vendor_bill", "manual"],
        reason_codes=["supplier_advance"]),
 ]

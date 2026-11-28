@@ -187,6 +187,26 @@ async def _dana_dalam_perjalanan(k: Konteks) -> Dict[str, Any]:
     return {**_hasil("warning", dok["jumlah"], teks_dok + teks_saldo), "rincian": rincian}
 
 
+# Kas & Bank 4 (Tugas 3, spesifikasi §5.5) — saldo akun uang muka (1-1400 uang muka karyawan; akun uang muka pemasok
+# bila PT sudah pindah) dibanding daftar uang muka terbuka (`supplier_advance_service.uang_muka_terbuka`). Peringatan
+# saja: 1-1400 juga memuat biaya dibayar dimuka, jadi selisihnya bisa wajar.
+@butir("uang_muka_cocok", "Saldo akun uang muka sama dengan daftar uang muka terbuka",
+       {"view": "petty-cash", "preset": {"chip": "uang-muka-terbuka"}})
+async def _uang_muka_cocok(k: Konteks) -> Dict[str, Any]:
+    from services import supplier_advance_service as sas
+    from services.nilai_pengaturan import nilai
+    tol = to_cents(float(await nilai("finance.rounding_tolerance_rupiah", k.entity_id)))   # KF-T7 — ambang sen
+    d = await sas.uang_muka_terbuka(k.entity_id)
+    beda = [a for a in d["akun"] if abs(to_cents(a["selisih"])) > tol]
+    rincian = {"akun": d["akun"], "pemasok_pindah": d["pemasok_pindah"]}
+    teks = " — ".join(f"{a['akun']} {a['nama']}: buku {rupiah(a['saldo'])} · daftar {rupiah(a['daftar'])} · selisih "
+                      f"{rupiah(a['selisih'])}" for a in d["akun"])
+    if not beda:
+        return {**_hasil("ok", 0, f"{teks} (keadaan hari ini)."), "rincian": rincian}
+    ket = " ".join(dict.fromkeys(a["keterangan"] for a in beda if a["keterangan"]))
+    return {**_hasil("warning", len(beda), f"{teks} (keadaan hari ini). {ket}".strip()), "rincian": rincian}
+
+
 async def _sisa_dokumen_antar_pt(entity_id: str) -> Dict[str, int]:
     """Σ sisa dokumen antar-PT TERBUKA (keadaan hari ini, sen) — rumus `interco_service`: dagang (sisa − refund yang
     belum dibayar), pinjaman (`outstanding`), pindah aset belum dibayar (`transfer.price`). Sisi piutang = PT ini

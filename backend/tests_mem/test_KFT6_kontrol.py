@@ -54,9 +54,8 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # Admin) → 45 aksi, 27 bernominal, 74 kunci `kontrol.*`. Tugas 3 memasang titiknya (`cash_count_service.setujui`):
 # `config_catalog_kontrol._BELUM_DIPASANG` kini kosong, kuncinya aktif dan bisa diubah seperti aksi lain.
 # Kas & Bank 4 (Tugas 1) — aksi ke-46 `pindah_uang_muka_pemasok` (setujui pindah saldo uang muka pemasok per PT; bawaan
-# DUA orang, TANPA nominal, juga Admin) → 46 aksi, 27 bernominal, 75 kunci `kontrol.*`. Kuncinya bertanda tidak dipakai
-# sampai titik pasangnya dibangun (`config_catalog_kontrol._BELUM_DIPASANG`, Tugas 3): tidak bisa diubah, bawaan "2"
-# tetap terbaca.
+# DUA orang, TANPA nominal, juga Admin) → 46 aksi, 27 bernominal, 75 kunci `kontrol.*`. Tugas 3 memasang titiknya
+# (`supplier_advance_cutover_service.setujui`): `_BELUM_DIPASANG` kosong lagi, kuncinya aktif.
 N_AKSI = 46   # Kas & Bank 4 — aksi ke-46 `pindah_uang_muka_pemasok`
 N_KUNCI = 75   # Kas & Bank 4 — `kontrol.pindah_uang_muka_pemasok.min_orang`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),

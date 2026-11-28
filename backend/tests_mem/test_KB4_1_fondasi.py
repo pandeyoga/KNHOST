@@ -478,9 +478,10 @@ async def test_KB4_1_U8_kontrol_pindah_uang_muka_pemasok(aplikasi):
     a = AKSI_BY_ID["pindah_uang_muka_pemasok"]
     assert (a["kelompok"], a["awal"], a["punya_nominal"]) == ("B", "2", False)
     e = registry.require("kontrol.pindah_uang_muka_pemasok.min_orang")
-    assert (e["default"], e["group"], e["status"]) == ("2", "persetujuan", "not_used")
+    # Kas & Bank 4 Tugas 3 — titik pasangnya (setujui pindah saldo uang muka pemasok) terpasang: kunci aktif.
+    assert (e["default"], e["group"], e["status"]) == ("2", "persetujuan", "active")
     assert registry.get("kontrol.pindah_uang_muka_pemasok.batas_nominal") is None
-    assert "pindah_uang_muka_pemasok" in _BELUM_DIPASANG   # titik pasangnya (setujui pindah saldo) dibangun Tugas 3
+    assert "pindah_uang_muka_pemasok" not in _BELUM_DIPASANG
     assert "pindah_uang_muka_pemasok" in ADMIN_TETAP_DUA_ORANG_AWAL
     assert "pindah_uang_muka_pemasok" in registry.require("kontrol.admin_tetap_dua_orang")["default"]
     assert await butuh_orang_kedua("pindah_uang_muka_pemasok", KSC) is True

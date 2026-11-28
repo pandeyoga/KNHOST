@@ -250,6 +250,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "cash_account_cutovers": [       # Kas & Bank 1 (Tugas 3) — usulan pindah saldo kas per PT (antrean per PT)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "supplier_advance_cutovers": [   # Kas & Bank 4 (Tugas 3) — usulan pindah saldo uang muka pemasok per PT
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     # Kas & Bank 1 (Tugas 4) — Pindah Dana: daftar per PT (status, tanggal kirim) dan butir tutup buku "dana dalam
     # perjalanan" (PT, dua tahap, tanggal kirim). Unik `number`: UNIQUE_DOC_NUMBER_FIELDS.
     "fund_transfers": [
@@ -623,6 +626,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     # Kas & Bank 1 (Tugas 3) — usulan pindah saldo ber-id per PT (`psk_{PT}_{urut}`): dua siapkan bersamaan = satu
     # usulan.
     "cash_account_cutovers",
+    # Kas & Bank 4 (Tugas 3) — usulan pindah saldo uang muka pemasok ber-id per PT (`pum_{PT}_{urut}`).
+    "supplier_advance_cutovers",
     # Kas & Bank 1 (Tugas 4) — Pindah Dana (dicari per `id` di setiap aksi; kas menunjuknya lewat `ref_id`).
     "fund_transfers",
     # Kas & Bank 2 (C6) — pengajuan kas keluar manual ber-id turunan (PT + Idempotency-Key, `$setOnInsert`): dua kiriman
