@@ -22,6 +22,7 @@
   "cash-holdings": {"izin": [["cash_holding", "view"]], "endpoint": "/api/cash-holdings"},
   "fund-transfers": {"izin": [["cash", "view"]], "endpoint": "/api/fund-transfers"},
   "kas-per-rekening": {"izin": [["accounting", "manage"]], "endpoint": "/api/kas-per-rekening/usulan"},
+  "cash-counts": {"izin": [["cash", "view"]], "endpoint": "/api/cash-counts"},
   "interco-transactions": {"izin": [["interco", "view"]], "endpoint": "/api/interco/transactions"},
   "general-ledger": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/summary"},
   "chart-of-accounts": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/accounts"},

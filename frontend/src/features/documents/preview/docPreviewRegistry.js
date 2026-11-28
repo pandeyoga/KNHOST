@@ -17,6 +17,7 @@ import { ROW_TARGET } from "../../sales_admin/workDeskApi";
 import {
   loadDoc, loadSalesOrder, loadVendorBill, loadPurchaseOrder, loadArReceipt, loadContraBon,
   loadSalesReturn, loadSpecialOrder, loadInternalRequest, loadFundTransfer, loadCashOutRequest,
+  loadCashCount,
 } from "./docLoaders";
 import SalesOrderPreview from "./bodies/SalesOrderPreview";
 import VendorBillPreview from "./bodies/VendorBillPreview";
@@ -28,6 +29,7 @@ import SpecialOrderPreview from "./bodies/SpecialOrderPreview";
 import InternalRequestPreview from "./bodies/InternalRequestPreview";
 import FundTransferPreview from "./bodies/FundTransferPreview";
 import CashOutRequestPreview from "./bodies/CashOutRequestPreview";
+import CashCountPreview from "./bodies/CashCountPreview";
 
 // Pemuat tinggal di `docLoaders.js` (bebas siklus); `loadDoc` tetap diekspor dari sini untuk pemakai lama.
 export { loadDoc };
@@ -120,6 +122,18 @@ export const DOC_PREVIEWS = {
       }
       return null;
     },
+  },
+  // Kas & Bank bagian 3 (Tugas 4b) — opname kas `OPK-` (`GET /cash-counts/{id}` = `cash.view`); label sama dengan
+  // `cash_ledger.REF_LABEL["cash_count"]`. Layar penuh = Kas & Bank › Opname Kas (tab tersembunyi; aksi Setujui / Tolak):
+  // menunggu → saringan "Menunggu persetujuan"; selain itu → riwayat opname rekening itu; barisnya disorot.
+  cash_count: {
+    label: "Opname kas",
+    perm: ["cash", "view"],
+    load: loadCashCount,
+    Body: CashCountPreview,
+    full: (doc) => ({ view: "cash-counts", nav_id: "cash-bank", preset: doc.status === "menunggu_persetujuan"
+      ? { status: "menunggu_persetujuan", sorot: doc.id }
+      : { status: "", account_id: doc.account_id || "", sorot: doc.id } }),
   },
 };
 

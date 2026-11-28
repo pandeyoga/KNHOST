@@ -212,3 +212,5 @@ export const CashHoldingsView = lazy(() => import("./features/finance/cashholdin
 // Kas & Bank 1 (Tugas 6) — Pindah Dana & Akun per rekening (alat pindah saldo).
 export const FundTransfersView = lazy(() => import("./features/finance/fundtransfer/FundTransfersView"));
 export const AkunPerRekeningView = lazy(() => import("./features/finance/cutover/AkunPerRekeningView"));
+// Kas & Bank 3 (Tugas 4b) — Opname Kas (tab tersembunyi Kas & Bank, dibuka dari Rekening & Saldo / Meja / Persetujuan).
+export const CashCountsView = lazy(() => import("./features/finance/cashcount/CashCountsView"));

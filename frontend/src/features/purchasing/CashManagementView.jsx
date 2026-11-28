@@ -80,6 +80,8 @@ export const REF_LABEL = {
   cash_advance_return: "pengembalian sisa uang muka", reimburse_payable: "bayar reimburse karyawan",
   // Kas & Bank 1 — label sama dengan backend `cash_ledger.REF_LABEL["fund_transfer"]`.
   fund_transfer: "Pindah Dana",
+  // Kas & Bank 3 (Tugas 4b) — kas penyesuaian opname (label sama dengan backend `cash_ledger.REF_LABEL["cash_count"]`).
+  cash_count: "opname kas",
   // S4 (pelatihan 18 Nov) — kas bayar gaji & setoran PPh 21/BPJS tidak membawa nomor dokumen: dulu "Anulir lewat dokumen lain".
   // Label pendek: kolom aksi tidak turun baris (teks panjang terpotong).
   payroll_run: "Proses Gaji", statutory_remittance: "Setoran gaji",
@@ -95,10 +97,14 @@ export const CASH_REF_DOC = {
   ar_receipt: "ar_receipt", vendor_bill: "vendor_bill", ap_advance: "vendor_bill", contra_bon: "contra_bon", sales_return: "sales_return",
   // Kas & Bank 1 (Tugas 6) — kas Pindah Dana (`fund_transfer_service`: `ref_id` = id dokumen, nomor di `fund_transfer_number`).
   fund_transfer: "fund_transfer",
+  // Kas & Bank 3 (Tugas 4b) — kas penyesuaian opname (`cash_count_service.setujui`: `ref_id` = id opname,
+  // nomor di `cash_count_number`).
+  cash_count: "cash_count",
 };
 
 /** Nomor dokumen asal yang dibawa kas tanpa `ref_number` (Pindah Dana: "Pindah Dana PDN-…"). */
-const refNomor = (t) => (t.ref_type === "fund_transfer" && t.fund_transfer_number ? `Pindah Dana ${t.fund_transfer_number}` : "");
+const refNomor = (t) => (t.ref_type === "fund_transfer" && t.fund_transfer_number ? `Pindah Dana ${t.fund_transfer_number}`
+  : t.ref_type === "cash_count" && t.cash_count_number ? `Opname ${t.cash_count_number}` : "");
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const nav = useAppNav();
@@ -254,7 +260,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
       <p className="text-fs-12 text-kn-text-2" data-testid={`cash-source-row-${t.id}`}>
         Sumber:{" "}
         {docType && previewFor(docType) ? (
-          <DocLink docType={docType} docId={t.ref_id} number={t.ref_number || t.fund_transfer_number || text}
+          <DocLink docType={docType} docId={t.ref_id} number={t.ref_number || t.fund_transfer_number || t.cash_count_number || text}
             entityId={t.source_entity_id ? t.source_entity_id : t.entity_id}
             perms={currentUser?.permissions} testId={`cash-source-${t.id}`}>{text}</DocLink>
         ) : <span data-testid={`cash-source-${t.id}-text`}>{text}</span>}

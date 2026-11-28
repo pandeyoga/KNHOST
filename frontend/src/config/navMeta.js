@@ -239,6 +239,8 @@ export const PAGE_META = {
   // Kas & Bank 1 (Tugas 6)
   "fund-transfers":       { kicker: "Keuangan \u00b7 Kas & Bank", title: "Pindah Dana \u00b7 Antar Rekening Satu PT" },
   "kas-per-rekening":     { kicker: "Keuangan \u00b7 Kas & Bank", title: "Akun per Rekening \u00b7 Pindah Saldo Kas" },
+  // Kas & Bank 3 (Tugas 4b)
+  "cash-counts":          { kicker: "Keuangan \u00b7 Kas & Bank", title: "Opname Kas \u00b7 Hitung Fisik Rekening Tunai" },
 };
 
 // ROLE-HOME REGISTRY (F5) — landing per role

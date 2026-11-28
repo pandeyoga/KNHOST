@@ -190,7 +190,8 @@ async def test_PK44_U05_ref_types_memuat_empat_jenis_baru(klien, kepala_admin):
     assert r.status_code == 200, r.text
     jenis = {t["doc_type"]: t for t in r.json()["types"]}
     # 39 jenis lama + 4 jenis baru + Pindah Dana (Kas & Bank 1, Tugas 6) + pengajuan kas keluar (Kas & Bank 2, Tugas 4)
-    assert len(jenis) == 45
+    # + opname kas (Kas & Bank 3, Tugas 4b)
+    assert len(jenis) == 46
     for dt, label in JENIS_BARU.items():
         assert jenis[dt]["label"] == label
     assert jenis["payroll_run"]["view"] == "hr-payroll-runs" and jenis["payment_plan"]["tab"] == "jadwal"

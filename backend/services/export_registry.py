@@ -278,6 +278,20 @@ DATASETS: List[Dict[str, Any]] = [
      # = `cash_out_request_service.daftar` `q` (nomor / keterangan / kategori / nama pengaju)
      "search_fields": ["number", "description", "category", "pengaju.name"],
      "joins": [ENTITY_JOIN()]},
+    # Kas & Bank 3 (Tugas 4b) — daftar Kas & Bank › Opname Kas (tombol baku Unduh Excel/CSV, G-UI-07).
+    {"id": "cash_counts", "label": "Opname Kas", "group": "Keuangan", "collection": "cash_counts",
+     "grain": "1 baris = 1 opname kas (hitungan fisik satu rekening tunai)", "key": "id", "perm": ("cash", "view"),
+     "date_fields": [C("dihitung_pada", "Dihitung pada", "datetime"), C("tanggal", "Tanggal kas", "date")],
+     "columns": [C("number", "No. opname"), C("dihitung_pada", "Dihitung pada", "datetime"),
+                 C("account_name", "Rekening"), C("cash_type", "Jenis kas"), C("saldo_buku", "Saldo buku", "money"),
+                 C("jumlah_fisik", "Uang fisik", "money"), C("selisih", "Selisih (fisik − buku)", "money"),
+                 C("status", "Status"), C("perlakuan", "Perlakuan"), C("karyawan_nama", "Karyawan"),
+                 C("penghitung_name", "Penghitung", path="penghitung.name"), C("disetujui_oleh", "Disetujui oleh"),
+                 C("cash_number", "No. kas penyesuaian"), C("alasan_tolak", "Alasan tolak"), C("catatan", "Catatan"),
+                 C("account_id", "ID rekening", default=False), C("entity_id", "ID badan usaha", default=False)],
+     # = `cash_count_service.daftar` `q` (nomor / rekening / penghitung / karyawan / catatan)
+     "search_fields": ["number", "account_name", "penghitung.name", "karyawan_nama", "catatan"],
+     "joins": [ENTITY_JOIN()]},
     {"id": "journal_entries", "label": "Jurnal Umum", "group": "Keuangan", "collection": "journal_entries",
      "grain": "1 baris = 1 jurnal (header)", "key": "id", "perm": ("accounting", "view"),
      "date_fields": [C("date", "Tanggal jurnal", "datetime")],

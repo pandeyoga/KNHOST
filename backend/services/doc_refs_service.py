@@ -238,6 +238,11 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     # `cash_out_request_number`). Dibuka di Transaksi Kas (pratinjau pengajuan).
     _T("cash_out_request", "cash_out_requests", "number", "Pengajuan kas keluar", "cash-management", order=62,
        needs_parent=False, perm=("cash", "view")),
+    # Kas & Bank 3 (Tugas 4b) — opname kas rekening tunai: induk kas penyesuaian yang terbit sesudah selisihnya
+    # disetujui (`cash_transactions.ref_type="cash_count"`, `ref_id` = id opname → simpul turunan & induk diturunkan
+    # `derived_refs`, tanpa `refs[]` tersimpan). Dibuka di Kas & Bank › Opname Kas (tab tersembunyi; pratinjau opname).
+    _T("cash_count", "cash_counts", "number", "Opname kas", "cash-counts", order=62, needs_parent=False,
+       perm=("cash", "view")),
     # FASE E-7 (E7d) — permintaan internal adalah HULU transaksi antar-PT: tanpa
     # terdaftar di sini, pertanyaan "transaksi antar-PT ini untuk siapa/kenapa"
     # berhenti di catatan bebas.

@@ -153,6 +153,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["keuangan", "finance-tower", "cash-bank", "bank-accounts", "cash-management",
              "bank-reconciliation", "finance-cases",
              "fund-transfers",   # Kas & Bank 1 (Tugas 6) — tab Kas & Bank › Pindah Dana (`cash.*`)
+             "cash-counts",      # Kas & Bank 3 (Tugas 4b) — tab tersembunyi Kas & Bank › Opname Kas (`cash.*`)
              "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan bank & periode
     {"id": "accounting", "group": "Keuangan", "label": "Akuntansi & Tutup Buku",
      "description": "Buku besar, laporan keuangan, anggaran, aset tetap, tutup buku & buka periode.",
@@ -870,6 +871,9 @@ del _v
 # Kas & Bank 1 (Tugas 6) — tab Kas & Bank › Pindah Dana dibuka izin `cash` (GET /api/fund-transfers = `cash.view`), bukan
 # seluruh modul "Kas, Bank & Kasus Keuangan" (pemegang izin kasus/amandemen saja tidak mendapat tab yang langsung menolak).
 VIEW_RESOURCE_OVERRIDES["fund-transfers"] = ["cash"]
+# Kas & Bank 3 (Tugas 4b) — tab tersembunyi Kas & Bank › Opname Kas dibuka izin `cash` (GET /api/cash-counts =
+# `cash.view`), alasan sama dengan Pindah Dana.
+VIEW_RESOURCE_OVERRIDES["cash-counts"] = ["cash"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

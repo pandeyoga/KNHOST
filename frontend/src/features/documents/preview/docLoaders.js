@@ -34,3 +34,5 @@ export const loadInternalRequest = loadDoc("/internal-requests");
 export const loadFundTransfer = loadDoc("/fund-transfers");
 // Kas & Bank bagian 2 (Tugas 4) — pengajuan kas keluar manual: pengajuan + kas yang terbit + penilaian kontrol pembuka.
 export const loadCashOutRequest = loadDoc("/cash-out-requests");
+// Kas & Bank bagian 3 (Tugas 4b) — opname kas: opname + kas penyesuaian + penilaian kontrol pembuka.
+export const loadCashCount = loadDoc("/cash-counts");

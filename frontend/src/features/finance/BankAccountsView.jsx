@@ -39,6 +39,7 @@ import BankAccountChangesPanel from "./BankAccountChangesPanel";
 import { JenisKasPill, RekeningKartuAksi, RekeningKasInfo } from "./RekeningKasParts";   // Kas & Bank 3
 import IsiUlangModal from "../pettycash/IsiUlangModal";
 import { statusPindahDana } from "./fundtransfer/fundTransferShared";
+import OpnameKartuAksi from "./cashcount/OpnameKartuAksi";   // Kas & Bank 3 (Tugas 4b) — aksi Opname kartu rekening tunai
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -274,6 +275,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                   </div>
                 </button>
                 <RekeningKartuAksi a={a} perms={currentUser?.permissions} onIsiUlang={setIsiUlang} />
+                <OpnameKartuAksi a={a} currentUser={currentUser} />
                 </div>
               ))}
             </div>
