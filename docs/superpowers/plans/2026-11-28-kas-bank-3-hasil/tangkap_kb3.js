@@ -229,8 +229,9 @@ async function r1(browser) {
 }
 
 // ═══ kw — kwitansi tunai ═════════════════════════════════════════════════════════════════════════════════════════
-const CUST = { id: "cust_76c5d24eb3d1", name: "Konveksi Maju Bersama" };
-const CUST_LAIN = { id: "cust_2efd90019d2a", name: "Toko Tekstil Pasar Baru" };
+// Id data acuan berubah setiap `dev_restore_demo.sh` → dicari dari nama saat skrip mulai (`siapkanId`).
+const CUST = { id: "", name: "Konveksi Maju Bersama" };
+const CUST_LAIN = { id: "", name: "Toko Tekstil Pasar Baru" };
 async function kw(browser) {
   const { kasir } = muat();
   const s0 = await saldoSemua();
@@ -322,7 +323,7 @@ async function dt1(browser) {
     log(`  kartu: "${await teks(box)}"`);
     log(`  kaki kartu: "${await teks(tid(p, `bank-card-actions-${id}`))}" — Isi ulang ${await tid(p, `bank-refill-${id}`).count() ? "ada" : "TIDAK ADA"}, ` +
       `Opname ${await tid(p, `bank-opname-${id}`).count() ? "ada" : "TIDAK ADA"}; kartu BCA berkaki ` +
-      `${await p.locator('[data-testid="bank-card-actions-bank_f01e86ea74c5"]').count() ? "ADA (salah)" : "tidak (bank tidak diopname)"}`);
+      `${await p.locator(`[data-testid="bank-card-actions-${BCA}"]`).count() ? "ADA (salah)" : "tidak (bank tidak diopname)"}`);
     await shotEl(tid(p, "bank-cards"), "07_kartu_kas_kecil_dana_tetap_lokasi_aksi");
     simpan({ kk: { id, name: r.body.name } });
   }
@@ -330,7 +331,7 @@ async function dt1(browser) {
 }
 
 // ═══ dt2 — data posisi dana tetap (API) ═════════════════════════════════════════════════════════════════════════
-const BCA = "bank_f01e86ea74c5", KAS_TOKO = "bank_bf4cb1b991a6";
+let BCA = "", KAS_TOKO = "";
 async function pdCair(nominal, kegiatan) {
   // Bisa dilanjutkan: PD dengan kegiatan yang sama di PT KSC dipakai lagi (status apa pun) — tanpa PD ganda.
   const ada = ((await api(FIN, "GET", `/cash-advances?entity_id=${ENT}`)).body || []).find((x) => x.kegiatan === kegiatan);
@@ -769,9 +770,18 @@ async function cek() {
   log(`  antrean Pusat Persetujuan opname (manager@): ${q.count ?? 0}`);
 }
 
+function siapkanId() {
+  const r = JSON.parse(py(`c=lambda n,e: (db.customers.find_one({"name":n,"entity_id":e},{"_id":0,"id":1}) or {}).get("id","")
+b=lambda n: (db.bank_accounts.find_one({"name":n,"entity_id":"${ENT}"},{"_id":0,"id":1}) or {}).get("id","")
+print(json.dumps({"cust":c("${CUST.name}","${ENT}"),"cust_lain":c("${CUST_LAIN.name}","${ENT_LAIN}"),"bca":b("BCA Operasional KSC"),"kas_toko":b("Kas Toko KSC")}))`));
+  if (!r.cust || !r.cust_lain || !r.bca || !r.kas_toko) throw new Error(`id data acuan tidak lengkap: ${JSON.stringify(r)}`);
+  CUST.id = r.cust; CUST_LAIN.id = r.cust_lain; BCA = r.bca; KAS_TOKO = r.kas_toko;
+  log(`[data acuan] ${CUST.name} ${CUST.id} · ${CUST_LAIN.name} ${CUST_LAIN.id} · BCA ${BCA} · Kas Toko KSC ${KAS_TOKO}`);
+}
 const FASE = { awal, r1, kw, dt1, dt2, dt3, op1, op2, op3, op4, op5, meja, cek };
 (async () => {
   const pilih = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(FASE);
+  siapkanId();
   const browser = await chromium.launch();
   for (const f of pilih) {
     log(`── fase ${f} (${new Date().toISOString()})`);
