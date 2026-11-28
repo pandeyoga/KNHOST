@@ -462,6 +462,49 @@ async def test_KB3_1_U10_dana_tetap_ikut_kontrol_dua_orang(klien, db, akun, sesi
                                  actor="uji", reason="pulihkan uji KB3")
 
 
+async def test_KB3_1_U10b_penyetuju_rekening_baru_melihat_jenis_kas(klien, db, akun, sesi, lama):
+    """Tinjauan akhir Important 4 — rekening baru yang menunggu orang kedua memuat JENIS KAS di daftar perubahan:
+    menyetujui satu kas kasir memindahkan bawaan penerimaan tunai PT (R4) dan jenisnya terkunci begitu ada kas, jadi
+    penyetuju harus melihatnya. Rekening tunai tanpa jenis = kas kecil (jenis yang akan berlaku); rekening bank tanpa
+    jenis tidak memuat baris jenis kas (seperti dulu)."""
+    from services import config_resolver as resolver
+    mgr = await akun("manager", entitas=(KSC,))
+    h_mgr = await sesi(mgr)
+    await resolver.set_value("kontrol.ubah_rekening.min_orang", "2", scope_type="entity", scope_id=KSC, actor="uji",
+                             reason="uji KB3 jenis kas rekening baru")
+    n0 = await db.bank_accounts.count_documents({})
+    diajukan = []
+    try:
+        r = await _rekening(klien, h_mgr, 202, name="Kas Kasir Diajukan KB3", account_type="cash",
+                            cash_type="kas_kasir", entity_id=KSC, location_id=LOKASI_A)
+        ch = r["change"]
+        diajukan.append(ch["id"])
+        bidang = {c["field"]: c for c in ch["changes"]}
+        assert bidang["cash_type"] == {"field": "cash_type", "from": None, "to": "kas_kasir"}, ch["changes"]
+        assert bidang["location_id"]["to"] == LOKASI_A
+        r = await klien.get("/api/bank-account-changes", headers=lama["h"], params={"status": "menunggu"})
+        row = next(x for x in r.json()["items"] if x["id"] == ch["id"])
+        assert {"field": "cash_type", "from": None, "to": "kas_kasir", "label": "Jenis kas"} in row["label_changes"]
+        # Tunai tanpa jenis → jenis yang akan berlaku (kas kecil) tetap terlihat; dana tetap ikut.
+        r = await _rekening(klien, h_mgr, 202, name="Kas Kecil Diajukan KB3", account_type="cash", entity_id=KSC,
+                            dana_tetap=750_000)
+        diajukan.append(r["change"]["id"])
+        bidang = {c["field"]: c["to"] for c in r["change"]["changes"]}
+        assert (bidang["cash_type"], bidang["dana_tetap"]) == ("kas_kecil", 750_000.0), r["change"]["changes"]
+        # Rekening bank tanpa jenis kas: tanpa baris jenis kas (perilaku lama).
+        r = await _rekening(klien, h_mgr, 202, name="BCA Diajukan KB3", account_number="950-1", entity_id=KSC,
+                            holder_name="PT Kain Suka Cita")
+        diajukan.append(r["change"]["id"])
+        assert "cash_type" not in {c["field"] for c in r["change"]["changes"]}, r["change"]["changes"]
+        assert await db.bank_accounts.count_documents({}) == n0   # belum ada rekening yang dibuat
+    finally:
+        for cid in diajukan:
+            await klien.post(f"/api/bank-account-changes/{cid}/decision", headers=lama["h"],
+                             json={"decision": "reject", "note": "uji KB3 selesai"})
+        await resolver.set_value("kontrol.ubah_rekening.min_orang", "1", scope_type="entity", scope_id=KSC,
+                                 actor="uji", reason="pulihkan uji KB3")
+
+
 # ═══ Pengaturan & kontrol ══════════════════════════════════════════════════════════════════════════════════════════
 async def test_KB3_1_U11_pengaturan_opname_dan_kontrol_selisih(db, lama):
     import config_registry as registry

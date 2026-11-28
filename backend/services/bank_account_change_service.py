@@ -155,8 +155,15 @@ async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
         raise _galat(400, str(exc))
     await _periksa_bawaan_tunai(eid, "", kas["cash_type"], bidang["default_receiving_methods"])
     dasar = {**_payload_buat(payload), "dana_tetap": kas["dana_tetap"], "location_id": kas["location_id"]}
-    changes = [{"field": f, "from": None, "to": v} for f, v in {**dasar, **bidang}.items()
-               if f not in ("entity_id", "currency", "cash_type") and v not in (None, "", [], False, 0, 0.0)]
+    # Tinjauan akhir KB3 (Important 4) — penyetuju melihat JENIS KAS rekening tunai baru (kas kasir memindahkan bawaan
+    # penerimaan tunai PT, R4; jenisnya terkunci begitu ada kas): jenis yang akan berlaku, termasuk kas kecil bila
+    # kosong. Rekening bank memakai isian apa adanya (kosong → tanpa baris, seperti dulu). `dasar` (yang diterapkan)
+    # tidak berubah.
+    tampil = {**dasar, **bidang}
+    if payload.account_type == "cash":
+        tampil["cash_type"] = kas["cash_type"]
+    changes = [{"field": f, "from": None, "to": v} for f, v in tampil.items()
+               if f not in ("entity_id", "currency") and v not in (None, "", [], False, 0, 0.0)]
     if await _dua_orang(eid):
         ch = await _catat(entity_id=eid, account_id="", account_name=dasar["name"], action="buat", changes=changes,
                           payload={**dasar, **bidang}, reason=getattr(payload, "reason", "") or "",

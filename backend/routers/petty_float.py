@@ -7,9 +7,11 @@ ulang dalam cakupan PT pengguna (`guard_doc`); `entity_id` daftar di luar penuga
 
   GET  /api/kas-kecil/dana-tetap                          daftar posisi rekening kas kecil berdana tetap (`entity_id`)
   GET  /api/kas-kecil/dana-tetap/{account_id}             posisi satu rekening kas kecil
-  POST /api/kas-kecil/dana-tetap/{account_id}/isi-ulang   `{sumber_account_id, catatan?, tanggal?}` → Pindah Dana
-                                                          sekali jalan bertanda `isi_ulang_kas_kecil` (nominal = usulan
-                                                          server; isian `nominal` ditolak 400)
+  POST /api/kas-kecil/dana-tetap/{account_id}/isi-ulang   `{sumber_account_id, catatan?, tanggal?, nominal_dilihat?}`
+                                                          → Pindah Dana sekali jalan bertanda `isi_ulang_kas_kecil`
+                                                          (nominal = usulan server; isian `nominal` ditolak 400;
+                                                          `nominal_dilihat` ≠ usulan server → 409). Di bawah awalan
+                                                          idempotensi `/api/kas-kecil/` (kirim `Idempotency-Key`)
 """
 from typing import Any, Dict, Optional
 
@@ -25,11 +27,14 @@ router = APIRouter(prefix="/api/kas-kecil/dana-tetap")
 
 class IsiUlangKasKecil(BaseModel):
     """Isi ulang dana tetap: rekening sumber (bank / kas besar PT yang sama), catatan, tanggal (`YYYY-MM-DD`, kosong =
-    hari ini). `nominal` TIDAK diisi klien — hanya diterima supaya kiriman yang memuatnya ditolak dengan kalimat."""
+    hari ini). `nominal` TIDAK diisi klien — hanya diterima supaya kiriman yang memuatnya ditolak dengan kalimat.
+    `nominal_dilihat` (opsional, tinjauan akhir Minor 5) = usulan yang ditampilkan layar saat dikonfirmasi; berbeda dari
+    hitungan ulang server → 409 "Usulan berubah, muat ulang"."""
     sumber_account_id: str = ""
     catatan: str = ""
     tanggal: str = ""
     nominal: Optional[float] = Field(None, ge=0)
+    nominal_dilihat: Optional[float] = Field(None, ge=0)
 
 
 async def _rekening(request: Request, account_id: str, *, tulis: bool) -> Dict[str, Any]:
@@ -57,7 +62,8 @@ async def isi_ulang_dana_tetap(account_id: str, payload: IsiUlangKasKecil, reque
     actor = await require_permission(request, "cash", "create")
     await _rekening(request, account_id, tulis=True)
     res = await pfs.isi_ulang(account_id, payload.sumber_account_id, actor, catatan=payload.catatan,
-                              tanggal=payload.tanggal, nominal=payload.nominal)
+                              tanggal=payload.tanggal, nominal=payload.nominal,
+                              nominal_dilihat=payload.nominal_dilihat)
     await audit(actor["name"], "petty_float_refilled", "fund_transfer", res["id"],
                 {k: res.get(k) for k in ("number", "status", "nominal", "rekening_asal_id", "rekening_tujuan_id",
                                          "tanggal_kirim", "kas_ids", "jenis")},

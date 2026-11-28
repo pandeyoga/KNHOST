@@ -55,9 +55,12 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/hr/compensation/", "/api/hr/assignments/",
                        # PM-T4 — setoran titipan tunai sales: ajukan/terima/tolak/batal dikirim ulang = satu tulisan.
                        "/api/cash-deposits",
-                       # Kas & Bank 3 (C3) — opname kas: hitung / setujui / tolak selisih dikirim ulang = satu tulisan
+                       # Kas & Bank 3 (C3) — opname kas: hitung / setujui / tolak / batal dikirim ulang = satu tulisan
                        # (kas penyesuaian juga ber-id tetap dari rujukan opname dan diklaim per status).
                        "/api/cash-counts",
+                       # Kas & Bank 3 (C2, tinjauan akhir Minor 4) — isi ulang dana tetap kas kecil: kirim ulang sesudah
+                       # jawaban hilang = jawaban pertama diputar (bukan 400 "tidak perlu diisi ulang").
+                       "/api/kas-kecil/",
                        # CR-T3 — putusan izin kredit dikirim ulang = satu putusan.
                        "/api/credit-overrides",
                        # KM-T3 (N4) — Meja Insentif: buat lembar, ubah baris, ajukan, sahkan dikirim ulang = satu tulisan.
