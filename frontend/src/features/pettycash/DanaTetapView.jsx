@@ -149,7 +149,7 @@ export default function DanaTetapView({ currentUser, selectedEntity = "all" }) {
                     disabled={!r.bisa_isi_ulang} onClick={(e) => { e.stopPropagation(); setIsi(r); }}>
                     <RefreshCcw size={13} aria-hidden="true" /> Isi ulang</button>
                   {!r.bisa_isi_ulang && r.alasan_isi_ulang && (
-                    <span className="max-w-[240px] text-right text-fs-12 text-kn-text-2" data-testid={`dt-refill-reason-${r.account_id}`}>
+                    <span className="max-w-[240px] whitespace-normal break-words text-left text-fs-12 text-kn-text-2" data-testid={`dt-refill-reason-${r.account_id}`}>
                       {r.alasan_isi_ulang}</span>
                   )}
                 </div>

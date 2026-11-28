@@ -600,6 +600,9 @@ describe("Kas Kecil — tab Dana tetap", () => {
     expect(q(host, "dt-refill-kk1").disabled).toBe(false);
     expect(q(host, "dt-refill-kk2").disabled).toBe(true);
     expect(teks(q(host, "dt-refill-reason-kk2"))).toBe(POSISI_TUNGGU.alasan_isi_ulang);
+    // Alasan membungkus (tidak mewarisi nowrap sel aksi) → tabel tidak melebar.
+    expect(q(host, "dt-refill-reason-kk2").className).toContain("whitespace-normal");
+    expect(q(host, "dt-refill-reason-kk2").className).toContain("break-words");
     expect(teks(q(host, "dt-pending-kk2"))).toBe("KSC/PDN-00011");
     await click(q(host, "dt-pending-kk2"));
     expect(mockPreview).toHaveBeenCalledWith({ docType: "fund_transfer", docId: "pdn_9", number: "KSC/PDN-00011",

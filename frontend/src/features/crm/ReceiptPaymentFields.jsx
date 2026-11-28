@@ -20,6 +20,7 @@ import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import axios, { API } from "../../services/apiClient";
 import { accountText } from "../pos/CheckoutPaymentDestination";
+import { jenisKasRekening } from "../finance/jenisKas";
 
 export const MISMATCH_NOTE_MIN = 5;
 export const PESAN_REKENING_KOSONG =
@@ -99,6 +100,7 @@ export default function ReceiptPaymentFields({
 
   useEffect(() => {
     onState?.({ status, accountId: v.accountId || "", accountLabel: chosen ? `${chosen.name} · ${accountText(chosen)}` : "",
+      accountName: chosen?.name || "", cashType: chosen ? jenisKasRekening(chosen) : "",
       needsReference: Boolean(methodRow?.needs_reference), refRequired, reference: v.reference || "",
       needsDueDate: Boolean(methodRow?.needs_due_date), giroDue: v.giroDue || "", mismatch: beda,
       mismatchNote: v.mismatchNote || "", methodName: methodRow?.name || "" });

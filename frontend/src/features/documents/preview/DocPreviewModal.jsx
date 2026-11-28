@@ -4,7 +4,7 @@
  *  · Tumpukan target internal: `push(target)` dari isi membuka dokumen lain DI DALAM pop-up yang sama (tidak menumpuk
  *    dua `DetailModal`); "‹ Kembali" muncul bila tumpukan > 1. Esc / klik latar menutup seluruhnya.
  *  · Galat muat (404, jaringan, 403 bila izin berubah) → `ErrorNotice` di dalam pop-up dengan "Coba lagi".
- *  · Kaki: "Jejak" (Jejak Dokumen) dan "Buka layar penuh" (pindah layar → ikon `ExternalLink`, pola `DeskRowDetail`).
+ *  · Kaki: "Jejak" (Jejak Dokumen; menutup pratinjau) dan "Buka layar penuh" (pindah layar → ikon `ExternalLink`, pola `DeskRowDetail`).
  *  · `DocPreviewHost` dipasang SEKALI di `AppViewRouter`, membaca `useAppNav().docPreview`.
  */
 import { ExternalLink } from "lucide-react";
@@ -38,7 +38,7 @@ export default function DocPreviewModal({ target, onClose, currentUser }) {
         <div className="flex flex-wrap items-center gap-2 border-t border-kn-divider pt-3">
           {top?.docId && (
             <button type="button" className="link-button" data-testid="doc-preview-trace"
-              onClick={() => openTrace({ docType: top.docType, docId: top.docId, number })}>Jejak</button>
+              onClick={() => { openTrace({ docType: top.docType, docId: top.docId, number }); onClose && onClose(); }}>Jejak</button>
           )}
           {full && (
             <button type="button" className="secondary-button btn-sm" data-testid="doc-preview-full"
