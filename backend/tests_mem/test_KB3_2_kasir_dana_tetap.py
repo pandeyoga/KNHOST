@@ -14,8 +14,9 @@ Hitung tangan (U5–U6), rekening Kas Kecil KK: saldo awal 2.000.000, dana tetap
   manual 200.000 dari KK. Saldo buku = 2.000.000 − 500.000 − 300.000 − 200.000 = 1.000.000; panjar belum LPJ = 500.000;
   usulan = 2.000.000 − 1.000.000 − 500.000 = 500.000 (= LPJ PD-B 300.000 + manual 200.000).
   Isi ulang dari BCA → Pindah Dana 500.000 sekali jalan → saldo KK 1.500.000 → usulan 0 (isi ulang kedua 400).
-  LPJ PD-A 450.000 → panjar 0 → usulan 2.000.000 − 1.500.000 − 0 = 500.000 (baris LPJ = panjar 500.000);
-  sisa 50.000 kembali ke KK → saldo 1.550.000 → usulan 450.000 (baris pengembalian −50.000).
+  "Panjar belum LPJ" = sisa uang muka di tangan karyawan (ketetapan R3: dicairkan − pengeluaran LPJ − sisa kembali).
+  LPJ PD-A 450.000 → sisa PD-A 50.000 → usulan 2.000.000 − 1.500.000 − 50.000 = 450.000 (baris LPJ = 450.000);
+  sisa 50.000 kembali ke KK → saldo 1.550.000, sisa 0 → usulan tetap 450.000 (baris pengembalian pengaruh 0).
   PD-C 100.000 dicairkan, LPJ 130.000 (reimburse 30.000), reimburse dibayar dari KK → saldo 1.420.000 → usulan
   580.000 (= 450.000 + LPJ PD-C 100.000 + reimburse 30.000).
 """
@@ -238,10 +239,25 @@ async def test_KB3_2_U2_pt_tanpa_kas_kasir_tetap_kas_kecil(klien, db, sesi):
     assert [x for x in await _jurnal_kas(db, kas["id"]) if x[1] > 0] == [("1-1110", 400_000.0, 0.0)]
 
 
-async def test_KB3_2_U3_dua_kas_kasir_tanpa_bawaan_dan_bawaan_eksplisit_menang(klien, db, sesi):
-    from services.bank_service import account_cash_type
+PESAN_BAWAAN_TUNAI = ("PT ini punya rekening kas kasir, jadi bawaan penerimaan tunai selalu rekening kas kasir. Hapus "
+                      "tunai dari bawaan penerimaan rekening ini.")
+
+
+async def _bawaan_rekening(klien, sesi, pt: dict) -> dict:
+    """`GET /api/bank-accounts` — bawaan penerimaan yang BERLAKU per rekening PT (layar Rekening & Saldo)."""
+    h = await sesi("admin@kainnusantara.id", entitas=pt["id"])
+    r = await klien.get("/api/bank-accounts", headers=h, params={"entity_id": pt["id"]})
+    assert r.status_code == 200, r.text
+    return {a["id"]: a["default_receiving_methods"] for a in r.json()}
+
+
+async def test_KB3_2_U3_bawaan_tunai_selalu_kas_kasir(klien, db, sesi):
+    """Ketetapan R4 — kas kasir tunggal SELALU bawaan tunai (juga atas bawaan tunai tersimpan di rekening bukan kasir);
+    dua kasir atau lebih → bawaan tersimpan di salah satu kasir, selain itu kasir memilih."""
     pt = await _pt(kasir=2)
-    # §7.8.5 — lebih dari satu kas kasir: tidak ada bawaan, kasir memilih rekening (tidak jatuh ke kas kecil).
+    # §7.8.5 — lebih dari satu kas kasir tanpa bawaan: kasir memilih rekening (tidak jatuh ke kas kecil), walau kas kecil
+    # menyimpan bawaan tunai lama (mis. tulisan isi awal PM-T1).
+    await db.bank_accounts.update_one({"id": pt["rek"]["KK"]}, {"$set": {"default_receiving_methods": ["cash"]}})
     assert not [rid for rid, bawaan in await _penerima(klien, sesi, pt) if bawaan]
     sebelum = await db.ar_receipts.count_documents({"entity_id": pt["id"]})
     r = await _kwitansi(klien, sesi, pt, 300_000)
@@ -251,16 +267,83 @@ async def test_KB3_2_U3_dua_kas_kasir_tanpa_bawaan_dan_bawaan_eksplisit_menang(k
     assert await db.ar_receipts.count_documents({"entity_id": pt["id"]}) == sebelum
     r = await _kwitansi(klien, sesi, pt, 300_000, account_id=pt["rek"]["KS2"])
     assert r.status_code == 200 and r.json()["account_id"] == pt["rek"]["KS2"], r.text
-    # Bawaan penerimaan tunai yang diatur Finance (PM-T1) di rekening kas kecil tetap menang atas kas kasir tunggal.
+    # Bawaan tunai diatur di salah satu kasir lewat layar (PATCH) → kasir itu bawaannya; bawaan lama kas kecil dicabut.
+    h = await sesi("admin@kainnusantara.id", entitas=pt["id"])
+    r = await klien.patch(f"/api/bank-accounts/{pt['rek']['KS2']}", headers=h,
+                          json={"default_receiving_methods": ["cash"]})
+    assert r.status_code == 200, r.text
+    assert {rid for rid, bawaan in await _penerima(klien, sesi, pt) if bawaan} == {pt["rek"]["KS2"]}
+    r = await _kwitansi(klien, sesi, pt, 150_000)
+    assert r.status_code == 200 and r.json()["account_id"] == pt["rek"]["KS2"], r.text
+    assert (await db.bank_accounts.find_one({"id": pt["rek"]["KK"]}, {"_id": 0}))["default_receiving_methods"] == []
+    # Satu kasir: bawaan tunai tersimpan di kas kecil TIDAK berlaku — kasir menang (layar penerima & daftar rekening).
     pt2 = await _pt()
-    from services import bank_service as bs
     await db.bank_accounts.update_one({"id": pt2["rek"]["KK"]}, {"$set": {"default_receiving_methods": ["cash"]}})
-    daftar = await _penerima(klien, sesi, pt2)
-    assert {rid for rid, bawaan in daftar if bawaan} == {pt2["rek"]["KK"]}, daftar
+    assert {rid for rid, bawaan in await _penerima(klien, sesi, pt2) if bawaan} == {pt2["rek"]["KS"]}
+    bawaan = await _bawaan_rekening(klien, sesi, pt2)
+    assert (bawaan[pt2["rek"]["KS"]], bawaan[pt2["rek"]["KK"]]) == (["cash"], []), bawaan
     r = await _kwitansi(klien, sesi, pt2, 200_000)
-    assert r.status_code == 200 and r.json()["account_id"] == pt2["rek"]["KK"], r.text
-    acc = await db.bank_accounts.find_one({"id": pt2["rek"]["KS"]}, {"_id": 0})
-    assert account_cash_type(acc) == "kas_kasir" and await bs.sole_account_id(pt2["id"], "kas_kasir") == acc["id"]
+    assert r.status_code == 200 and r.json()["account_id"] == pt2["rek"]["KS"], r.text
+    # Mencentang bawaan tunai di rekening bukan kasir ditolak berkalimat (tidak disimpan tanpa efek); kasir boleh.
+    h2 = await sesi("admin@kainnusantara.id", entitas=pt2["id"])
+    r = await klien.patch(f"/api/bank-accounts/{pt2['rek']['KB']}", headers=h2,
+                          json={"default_receiving_methods": ["cash"]})
+    assert r.status_code == 400 and r.json()["detail"] == PESAN_BAWAAN_TUNAI, r.text
+    r = await klien.post("/api/bank-accounts", headers=h2, json={
+        "name": f"Kas Kecil 2 {pt2['kode']}", "account_type": "cash", "cash_type": "kas_kecil", "entity_id": pt2["id"],
+        "default_receiving_methods": ["cash"]})
+    assert r.status_code == 400 and r.json()["detail"] == PESAN_BAWAAN_TUNAI, r.text
+    # Ubah bidang lain rekening kas kecil (form utuh dari layar, bawaan berlaku []) tetap boleh.
+    r = await klien.patch(f"/api/bank-accounts/{pt2['rek']['KK']}", headers=h2,
+                          json={"note": "uji R4", "default_receiving_methods": []})
+    assert r.status_code == 200, r.text
+    r = await klien.patch(f"/api/bank-accounts/{pt2['rek']['KS']}", headers=h2,
+                          json={"default_receiving_methods": ["cash"]})
+    assert r.status_code == 200, r.text
+    # PT tanpa kas kasir: bawaan tunai di kas kecil tetap seperti sekarang (diatur & berlaku).
+    pt3 = await _pt(kasir=0)
+    h3 = await sesi("admin@kainnusantara.id", entitas=pt3["id"])
+    r = await klien.patch(f"/api/bank-accounts/{pt3['rek']['KK']}", headers=h3,
+                          json={"default_receiving_methods": ["cash"]})
+    assert r.status_code == 200, r.text
+    assert await _penerima(klien, sesi, pt3) == [(pt3["rek"]["KK"], True), (pt3["rek"]["KB"], False)]
+
+
+async def test_KB3_2_U3b_kasir_dibuat_dari_layar_di_pt_kas_kecil_lama(klien, db, sesi):
+    """Temuan tinjauan T2 (Important) — PT lama: bank + SATU kas kecil lama tanpa bidang PM-T1. Kas kasir dibuat lewat
+    rute layar `POST /api/bank-accounts` (isi awal PM-T1 menulis bawaan tunai kas kecil tepat sebelum kasir lahir) →
+    kwitansi tunai berikutnya tetap ke kas kasir."""
+    from services.entity_lifecycle_service import invalidate_status_cache
+    kode = _kode("KB32S")
+    eid = await pt_uji(kode)
+    for rid, nama, jenis, kas in ((f"bank_kb32s_{kode.lower()}", f"BCA Lama {kode}", "bank", "kas_besar"),
+                                  (f"kk_kb32s_{kode.lower()}", f"Kas Kecil Lama {kode}", "cash", "kas_kecil")):
+        await db.bank_accounts.insert_one({"id": rid, "name": nama, "entity_id": eid, "account_type": jenis,
+                                           "cash_type": kas, "opening_balance": 0.0, "is_active": True,
+                                           "created_at": now_iso()})
+    kk = f"kk_kb32s_{kode.lower()}"
+    cus = f"cus_kb32s_{uuid.uuid4().hex[:8]}"
+    await db.customers.insert_one({"id": cus, "name": f"Toko {kode}", "entity_id": eid, "status": "active"})
+    invalidate_status_cache()
+    pt = {"id": eid, "kode": kode, "cus": cus, "rek": {"KK": kk}}
+    assert await _penerima(klien, sesi, pt) == [(kk, True)]   # kas kecil lama = satu-satunya → bawaan tunai berlaku
+    h = await sesi("admin@kainnusantara.id", entitas=eid)
+    r = await klien.post("/api/bank-accounts", headers=h, json={
+        "name": f"Kas Kasir Toko {kode}", "account_type": "cash", "cash_type": "kas_kasir", "entity_id": eid})
+    assert r.status_code == 200, r.text
+    ks = r.json()["id"]
+    # Isi awal PM-T1 sudah menyimpan bawaan tunai di kas kecil lama (bukti jalur layar) — tetapi tidak berlaku lagi.
+    assert (await db.bank_accounts.find_one({"id": kk}, {"_id": 0}))["default_receiving_methods"] == ["cash"]
+    assert await _penerima(klien, sesi, pt) == [(ks, True), (kk, False)]
+    bawaan = await _bawaan_rekening(klien, sesi, pt)
+    assert (bawaan[ks], bawaan[kk]) == (["cash"], []), bawaan
+    r = await _kwitansi(klien, sesi, pt, 640_000)
+    assert r.status_code == 200, r.text
+    assert r.json()["account_id"] == ks, r.text
+    kas = await db.cash_transactions.find_one({"ref_type": "ar_receipt", "ref_id": r.json()["id"]}, {"_id": 0})
+    assert (kas["account_id"], kas["cash_type"]) == (ks, "kas_kasir")
+    assert [x for x in await _jurnal_kas(db, kas["id"]) if x[1] > 0] == [("1-1105", 640_000.0, 0.0)]
+    assert await _buku(ks) == 640_000.0 and await _buku(kk) == 0.0
 
 
 async def test_KB3_2_U4_antar_pt_kas_kasir_ditolak(db):
@@ -354,22 +437,24 @@ async def test_KB3_2_U6_isi_ulang_pindah_dana_bertanda_lalu_rincian_sejak(db, mo
     assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"], p["rincian"]) == (
         1_500_000.0, 500_000.0, 0.0, [])
     assert p["sejak"]["id"] == doc["id"] and [x["id"] for x in p["riwayat"]] == [doc["id"]]
-    pesan_tidak_perlu = (f"Rekening Kas Kecil {pt['kode']} tidak perlu diisi ulang: saldo buku ditambah panjar yang "
-                         "belum di-LPJ sudah mencapai dana tetap Rp 2.000.000.")
+    pesan_tidak_perlu = (f"Rekening Kas Kecil {pt['kode']} tidak perlu diisi ulang: saldo buku ditambah sisa panjar "
+                         "di tangan karyawan sudah mencapai dana tetap Rp 2.000.000.")
     assert p["bisa_isi_ulang"] is False and p["alasan_isi_ulang"] == pesan_tidak_perlu
     await _ditolak(pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT), 400, pesan_tidak_perlu)
     assert await db.fund_transfers.count_documents({"entity_id": pt["id"]}) == 1
-    # LPJ PD-A 450.000 → baris LPJ = panjar 500.000; sisa 50.000 kembali → baris −50.000.
+    # LPJ PD-A 450.000 → sisa 50.000 masih di karyawan (tidak ikut diisi ulang); kembali → pengaruh 0, usulan tetap.
     lpj_a = await _lpj(pt, s["pd_a"], [("atk", 450_000)])
     p = await pfs.posisi(pt["rek"]["KK"])
-    assert (p["panjar_belum_lpj"], p["usulan_isi_ulang"]) == (0.0, 500_000.0)
-    assert [(x["jenis"], x["nominal"], x["pengaruh"], x.get("pengeluaran")) for x in p["rincian"]] == [
-        ("lpj", 500_000.0, 500_000.0, 450_000.0)]
+    assert (p["panjar_belum_lpj"], p["usulan_isi_ulang"]) == (50_000.0, 450_000.0)
+    assert [(x["jenis"], x["nominal"], x["pengaruh"], x["panjar"], x["pengeluaran"]) for x in p["rincian"]] == [
+        ("lpj", 450_000.0, 450_000.0, 500_000.0, 450_000.0)]
+    assert [(x["cash_advance_id"], x["sisa"], x["keadaan"]) for x in p["panjar"]] == [
+        (s["pd_a"], 50_000.0, "sisa_belum_kembali")]
     await _kembalikan(pt, lpj_a["id"])
     p = await pfs.posisi(pt["rek"]["KK"])
-    assert (p["saldo_buku"], p["usulan_isi_ulang"], p["total_rincian"]) == (1_550_000.0, 450_000.0, 450_000.0)
-    assert [(x["jenis"], x["pengaruh"]) for x in p["rincian"]] == [("lpj", 500_000.0),
-                                                                   ("pengembalian_panjar", -50_000.0)]
+    assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"], p["total_rincian"]) == (
+        1_550_000.0, 0.0, 450_000.0, 450_000.0)
+    assert [(x["jenis"], x["pengaruh"]) for x in p["rincian"]] == [("lpj", 450_000.0), ("pengembalian_panjar", 0.0)]
     # PD-C 100.000, LPJ 130.000 → reimburse 30.000 dibayar dari KK.
     pd_c = await _pd_cair(db, pt, 100_000)
     lpj_c = await _lpj(pt, pd_c, [("atk", 130_000)])
@@ -390,13 +475,63 @@ async def test_KB3_2_U6_isi_ulang_pindah_dana_bertanda_lalu_rincian_sejak(db, mo
     assert p["usulan_isi_ulang"] == 0.0 and [x["id"] for x in p["riwayat"]] == [dua["id"], doc["id"]]
 
 
+@pytest.mark.parametrize("mode", ["lama", "aktif"])
+async def test_KB3_2_U6b_sisa_panjar_di_tangan_karyawan_tidak_diisi_ulang(db, mode):
+    """Ketetapan R3 — dana tetap 2.000.000; panjar 500.000 dicairkan; LPJ 300.000 disetujui, sisa 200.000 belum kembali →
+    usulan 300.000; sesudah 200.000 kembali → usulan tetap 300.000; saldo + sisa panjar + usulan = dana tetap."""
+    from services import petty_float_service as pfs
+    pt = await _pt(mode)
+    pd = await _pd_cair(db, pt, 500_000)
+    p = await pfs.posisi(pt["rek"]["KK"])
+    assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"]) == (1_500_000.0, 500_000.0, 0.0)
+    assert [(x["sisa"], x["keadaan"], x["keadaan_label"]) for x in p["panjar"]] == [
+        (500_000.0, "belum_lpj", "Belum LPJ")]
+    lpj = await _lpj(pt, pd, [("atk", 300_000)])
+    assert lpj["sisa_dikembalikan"]["status"] == "open"
+
+    def seimbang(x: dict) -> bool:
+        return round(x["saldo_buku"] + x["panjar_belum_lpj"] + x["usulan_isi_ulang"], 2) == x["dana_tetap"]
+    p = await pfs.posisi(pt["rek"]["KK"])
+    assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"]) == (1_500_000.0, 200_000.0, 300_000.0)
+    assert seimbang(p)
+    assert [(x["cash_advance_id"], x["nominal"], x["pengeluaran_lpj"], x["dikembalikan"], x["sisa"], x["keadaan"],
+             x["lpj_nomor"]) for x in p["panjar"]] == [
+        (pd, 500_000.0, 300_000.0, 0.0, 200_000.0, "sisa_belum_kembali", lpj["number"])]
+    assert [(x["jenis"], x["pengaruh"]) for x in p["rincian"]] == [("lpj", 300_000.0)]
+    await _kembalikan(pt, lpj["id"])
+    p = await pfs.posisi(pt["rek"]["KK"])
+    assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"], p["total_rincian"]) == (
+        1_700_000.0, 0.0, 300_000.0, 300_000.0)
+    assert seimbang(p) and p["panjar"] == []
+    assert [(x["jenis"], x["label"], x["pengaruh"]) for x in p["rincian"]] == [
+        ("lpj", "LPJ disetujui", 300_000.0), ("pengembalian_panjar", "Pengembalian sisa panjar", 0.0)]
+    doc = await pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT)
+    assert doc["nominal"] == 300_000.0 and await _buku(pt["rek"]["KK"]) == 2_000_000.0
+    # Sisa panjar KK yang dikembalikan karyawan ke rekening LAIN (kas besar): uangnya keluar dari dana tetap → +.
+    pd2 = await _pd_cair(db, pt, 100_000)
+    lpj2 = await _lpj(pt, pd2, [("atk", 60_000)])
+    p = await pfs.posisi(pt["rek"]["KK"])
+    assert (p["panjar_belum_lpj"], p["usulan_isi_ulang"]) == (40_000.0, 60_000.0) and seimbang(p)
+    await _kembalikan(pt, lpj2["id"], rek="KB")
+    p = await pfs.posisi(pt["rek"]["KK"])
+    assert (p["saldo_buku"], p["panjar_belum_lpj"], p["usulan_isi_ulang"], p["total_rincian"]) == (
+        1_900_000.0, 0.0, 100_000.0, 100_000.0)
+    assert seimbang(p)
+    assert [(x["jenis"], x["pengaruh"]) for x in p["rincian"]] == [
+        ("lpj", 60_000.0), ("pengembalian_panjar_rekening_lain", 40_000.0)]
+    if mode == "aktif":
+        for nama in ("KK", "KB", "BCA"):
+            akun = await _akun_rek(db, pt["rek"][nama])
+            assert round(await saldo_akun(akun, pt["id"]), 2) == await _buku(pt["rek"][nama]), nama
+
+
 async def test_KB3_2_U7_nominal_dari_klien_ditolak(db):
     from services import petty_float_service as pfs
     pt = await _pt()
     await _kas_manual(pt, "KK", 100_000)
     await _ditolak(pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT, nominal=999_999), 400,
-                   "Nominal isi ulang dihitung sistem dari posisi dana tetap (dana tetap − saldo buku − panjar belum "
-                   "LPJ), jadi tidak bisa diisi.")
+                   "Nominal isi ulang dihitung sistem dari posisi dana tetap (dana tetap − saldo buku − sisa panjar di "
+                   "tangan karyawan), jadi tidak bisa diisi.")
     assert await db.fund_transfers.count_documents({"entity_id": pt["id"]}) == 0
     doc = await pfs.isi_ulang(pt["rek"]["KK"], pt["rek"]["BCA"], PEMBUAT)
     assert doc["nominal"] == 100_000.0

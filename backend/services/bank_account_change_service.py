@@ -27,8 +27,27 @@ KAS = ("cash_type", "dana_tetap", "location_id")
 DASAR = ("name", "bank_name", "account_number", "opening_balance", "is_active", "note")
 PESAN_DIPUTUS = "Perubahan rekening ini sudah diputus atau datanya sudah berubah. Ajukan ulang."
 PESAN_DOKUMEN = "Rekening yang tampil di dokumen wajib punya atas nama dan nomor rekening."
+#: Kas & Bank 3 (C1, ketetapan R4) — di PT berkas kasir bawaan tunai selalu rekening kas kasir (`bs._bawaan_tunai_kasir`).
+PESAN_BAWAAN_TUNAI_KASIR = ("PT ini punya rekening kas kasir, jadi bawaan penerimaan tunai selalu rekening kas kasir. "
+                            "Hapus tunai dari bawaan penerimaan rekening ini.")
 LABEL_PERUNTUKAN = {"penerimaan_pelanggan": "Penerimaan pelanggan", "pembayaran_pemasok": "Pembayaran pemasok",
                     "gaji": "Gaji", "operasional": "Operasional"}
+
+
+async def _periksa_bawaan_tunai(entity_id: str, account_id: str, cash_type: str, methods: List[str]) -> None:
+    """Kas & Bank 3 (ketetapan R4) — bawaan tunai di rekening BUKAN kas kasir tidak akan berlaku bila PT punya kas kasir
+    penerima cara bayar itu; ditolak berkalimat daripada disimpan tanpa efek. Rekening kas kasir & PT tanpa kasir: lolos."""
+    if cash_type == "kas_kasir" or not methods:
+        return
+    tunai = [m for m in methods if await pms.is_cash(entity_id, m)]
+    if not tunai:
+        return
+    for a in await bs.rekening_pt(entity_id):
+        e = a["_efektif"]
+        if a["id"] != account_id and bs._aktif(a) and bs.account_cash_type(a) == "kas_kasir" \
+                and "penerimaan_pelanggan" in e["purposes"] \
+                and any(m in e["payment_method_codes"] for m in tunai):   # noqa: SLF001
+            raise _galat(400, PESAN_BAWAAN_TUNAI_KASIR)
 
 
 def _galat(status: int, pesan: str) -> HTTPException:
@@ -134,6 +153,7 @@ async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
                                            "location_id": getattr(payload, "location_id", "") or ""})
     except ValueError as exc:
         raise _galat(400, str(exc))
+    await _periksa_bawaan_tunai(eid, "", kas["cash_type"], bidang["default_receiving_methods"])
     dasar = {**_payload_buat(payload), "dana_tetap": kas["dana_tetap"], "location_id": kas["location_id"]}
     changes = [{"field": f, "from": None, "to": v} for f, v in {**dasar, **bidang}.items()
                if f not in ("entity_id", "currency", "cash_type") and v not in (None, "", [], False, 0, 0.0)]
@@ -209,6 +229,9 @@ async def ubah(prev: Dict[str, Any], data: Dict[str, Any], actor: Dict[str, Any]
         except ValueError as exc:
             raise _galat(400, str(exc))
         baru.update({f: kas[f] for f in isian})
+    if "default_receiving_methods" in baru and baru["default_receiving_methods"] != lama["default_receiving_methods"]:
+        await _periksa_bawaan_tunai(eid, prev["id"], baru.get("cash_type") or lama["cash_type"],
+                                    baru["default_receiving_methods"])
     changes = [{"field": f, "from": lama.get(f), "to": v} for f, v in baru.items() if v != lama.get(f)]
     if not changes:
         txns = await bs._txns_for(prev["id"])   # noqa: SLF001
@@ -325,25 +348,19 @@ async def daftar_penerima(entity_id: str, method: str) -> List[Dict[str, Any]]:
     """GET /api/bank-accounts/receiving — rekening aktif PT yang dipakai menerima uang pelanggan dan melayani cara bayar
     itu. Tanpa saldo.
 
-    Kas & Bank 3 (C1, spesifikasi §5.1, §7.8 butir 5) — cara bayar tunai: bila tidak ada rekening bawaan tersimpan
-    (PM-T1) untuk cara bayar itu dan PT punya TEPAT SATU rekening kas kasir penerima, rekening kasir itu menjadi bawaan
-    (`is_default`, dihitung saat dibaca — tidak ditulis). Bawaan yang diatur Finance tetap menang; dua kas kasir atau
-    lebih = tanpa bawaan (kasir memilih); PT tanpa kas kasir = persis seperti sebelumnya."""
+    Kas & Bank 3 (C1, §5.1, §7.8 butir 5, ketetapan R4) — `is_default` dari bawaan yang BERLAKU (`bs.rekening_pt`):
+    di PT berkas kasir, kas kasir penerima tunggal selalu bawaan tunai (bawaan tunai tersimpan di rekening bukan kasir
+    tidak berlaku); dua kasir atau lebih → bawaan tersimpan di salah satu kasir, selain itu tanpa bawaan (kasir memilih).
+    PT tanpa kas kasir = persis seperti sebelumnya."""
     kode = await pms.kode_400(entity_id, method)
     out = []
-    kasir: List[Dict[str, Any]] = []
     for a in await bs.rekening_pt(entity_id):
         e = a["_efektif"]
         if not bs._aktif(a) or "penerimaan_pelanggan" not in e["purposes"] \
                 or kode not in e["payment_method_codes"]:   # noqa: SLF001
             continue
-        baris = {"id": a["id"], "name": a.get("name", ""), "bank_name": a.get("bank_name", ""),
-                 "account_number": a.get("account_number", ""), "holder_name": e["holder_name"],
-                 "is_default": kode in e["default_receiving_methods"]}
-        out.append(baris)
-        if bs.account_cash_type(a) == "kas_kasir":
-            kasir.append(baris)
-    if len(kasir) == 1 and not any(r["is_default"] for r in out) and await pms.is_cash(entity_id, kode):
-        kasir[0]["is_default"] = True
+        out.append({"id": a["id"], "name": a.get("name", ""), "bank_name": a.get("bank_name", ""),
+                    "account_number": a.get("account_number", ""), "holder_name": e["holder_name"],
+                    "is_default": kode in e["default_receiving_methods"]})
     out.sort(key=lambda r: (not r["is_default"], r["name"]))
     return out
