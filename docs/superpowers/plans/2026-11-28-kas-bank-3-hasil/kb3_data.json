@@ -1,0 +1,59 @@
+{
+  "saldo_awal": {
+    "1-1100": 877373077.5,
+    "1-1105": 0,
+    "1-1110": 33150000,
+    "1-1290": 0,
+    "6-9200": 0
+  },
+  "jurnal_awal": 21,
+  "kasir": {
+    "id": "bank_5e60858144f0",
+    "name": "Kas Kasir Toko KSC"
+  },
+  "kwitansi": {
+    "id": "arc_9312e8e31661",
+    "number": "KSC/AR-00003",
+    "amount": 1500000
+  },
+  "kwitansi_kanda": {
+    "id": "arc_28f99fe563b8",
+    "number": "KANDA/AR-00001"
+  },
+  "kk": {
+    "id": "bank_6ac73f8be59a",
+    "name": "Kas Kecil Gudang Soreang"
+  },
+  "isi1": {
+    "id": "pdn_ed3dfed6b5ba",
+    "number": "KSC/PDN-00001"
+  },
+  "pd1": {
+    "id": "ca_615c71950c6f",
+    "number": "KSC/PD-00001"
+  },
+  "pd2": {
+    "id": "ca_2ae4de3c57f7",
+    "number": "KSC/PD-00002"
+  },
+  "lpj1": {
+    "id": "stl_db80b228c82f",
+    "number": "KSC/STL-00001"
+  },
+  "isi2": {
+    "id": "pdn_577d6974f314",
+    "number": "KSC/PDN-00002"
+  },
+  "O1": {
+    "id": "opk_f4fe22c841fa",
+    "number": "KSC/OPK-00001"
+  },
+  "O2": {
+    "id": "opk_2638c15faf8d",
+    "number": "KSC/OPK-00002"
+  },
+  "O3": {
+    "id": "opk_d4ba0b911356",
+    "number": "KSC/OPK-00003"
+  }
+}
