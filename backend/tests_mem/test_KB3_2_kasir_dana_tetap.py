@@ -114,7 +114,8 @@ def _ctx(pt: dict, user: dict):
 
 
 async def _pd_cair(db, pt: dict, nilai: float, rek: str = "KK") -> str:
-    """PD berstatus `approved` disisip (FIXTURE) lalu DICAIRKAN dari rekening `rek` lewat layanan (ALUR)."""
+    """PD berstatus `approved` disisip (FIXTURE) lalu DICAIRKAN dari rekening `rek` lewat layanan (ALUR). Kas & Bank 4
+    (C7) — tiap PD dipegang pemohon ber-id sendiri (nama sama): satu orang hanya boleh memegang satu PD terbuka."""
     from schemas_cash_advance import DisburseInput
     from services import cash_advance_service as cas
     ca = f"ca_kb32_{uuid.uuid4().hex[:8]}"
@@ -122,7 +123,7 @@ async def _pd_cair(db, pt: dict, nilai: float, rek: str = "KK") -> str:
         "id": ca, "number": f"PD-{ca[-6:]}", "entity_id": pt["id"], "status": "approved", "kegiatan": "uji KB3-2",
         "divisi": "Umum", "lines": [{"description": "uang muka", "qty": 1, "unit_price": nilai, "amount": nilai}],
         "total_amount": float(nilai), "approvals": [], "payment_method": "cash",
-        "created_by": PEMOHON["name"], "created_by_id": PEMOHON["id"], "created_at": now_iso()})
+        "created_by": PEMOHON["name"], "created_by_id": f"{PEMOHON['id']}_{ca[-8:]}", "created_at": now_iso()})
     hasil = await cas.disburse_cash_advance(ca, DisburseInput(cash_type="kas_kecil", account_id=pt["rek"][rek],
                                                               note="uji"), _ctx(pt, PENYETUJU), PENYETUJU)
     assert hasil["status"] == "disbursed", hasil

@@ -16,18 +16,39 @@ Akuntansi (anti double-count, buku per-entitas seimbang):
 
 Rantai approval PD (default — ACC owner, configurable):
   Atasan Langsung=manager · Pimpinan=admin · Bagian Keuangan=admin(finance); admin override semua tahap.
+
+Kas & Bank 4 (C7) — `docs/superpowers/specs/2026-11-28-kas-bank-4-uang-muka-design.md` §5.1–§5.2, §7.9 (3–5):
+- **Pemegang** PD (`pemegang = {jenis: pengguna|karyawan, id, nama}`): bawaan pembuat PD; pembuat boleh memilih karyawan
+  HR aktif PT dokumen. PD lama tanpa bidang = pembuatnya (`created_by_id`/`created_by`), dibaca tanpa ditulis ulang.
+- **Batas PD terbuka** per pemegang (`kas.pd_terbuka_maks` PT dokumen, 0 = tanpa batas; pengguna dihitung lintas PT):
+  diperiksa saat **ajukan** (PD lain diajukan s.d. belum tuntas) dan saat **cairkan** (PD lain yang dipegang: cair belum
+  tuntas, atau `settled` dengan sisa masih di tangan) di dalam kunci per pemegang (`cash_advance_locks`).
+- **Batalkan PD** belum cair (draf/ditolak/dalam persetujuan/disetujui) → `cancelled`, oleh pembuat atau `cash_advance.reject`.
+- **Tenggat LPJ** dipotret saat cair (`lpj_jatuh_tempo` = tanggal buku cair + `kas.lpj_tenggat_hari`); PD cair tanpa potret
+  = max(tanggal cair, waktu fitur aktif) + N (penanda sekali tulis `kb4_lpj_tenggat_aktif_sejak`). Terpenuhi saat LPJ
+  diajukan; LPJ ditolak → dihitung lagi. Pembaca: daftar/rincian PD, Kas Kecil, Meja Keuangan, penjadwal pengingat.
 """
+import asyncio
+import logging
 import re
+import time
+from contextlib import asynccontextmanager
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
 from db import db
-from core_utils import new_id, now_iso, next_doc_number, safe_doc
-from dependencies import audit
+from core_utils import new_id, now_iso, next_doc_number, rupiah, safe_doc
+from dependencies import audit, has_permission
 from entity_scope import EntityContext, resolve_list_scope, assert_entity_access, assert_active_entity_access
 from services import gl_service
+from services.book_date import tanggal_buku, tanggal_panjang
+# Kas & Bank 4 — status karyawan HR yang tidak bisa memegang uang muka (sudah keluar): daftar pemilih opname kas.
+from services.cash_count_service import _KARYAWAN_KELUAR
+
+logger = logging.getLogger(__name__)
 
 CA_COLL = "cash_advances"
 STL_COLL = "cash_advance_settlements"
@@ -171,6 +192,9 @@ async def create_cash_advance(payload, ctx: EntityContext, actor: Dict[str, Any]
         raise HTTPException(status_code=400, detail="Minimal 1 baris rincian dana")
     if total <= 0:
         raise HTTPException(status_code=400, detail="Total pengajuan harus lebih dari 0")
+    # Kas & Bank 4 (§7.9.3) — pemegang uang: bawaan pembuat; karyawan HR aktif PT dokumen bila dipilih.
+    pemegang_uang = await _pemegang_isian(getattr(payload, "pemegang", None), entity_id,
+                                          {"id": actor.get("id", ""), "name": actor.get("name", "")})
     number = await next_doc_number(CA_COLL, "number", "PD-", entity_id=entity_id)
     bank = payload.bank_detail.model_dump() if payload.bank_detail else {}
     doc = {
@@ -194,12 +218,13 @@ async def create_cash_advance(payload, ctx: EntityContext, actor: Dict[str, Any]
         "catatan": (payload.catatan or "").strip(),
         "created_by": actor.get("name", ""),
         "created_by_id": actor.get("id", ""),   # KF-T6 — pemohon andal untuk kontrol dua orang
+        "pemegang": pemegang_uang,              # Kas & Bank 4 — orang yang batas PD terbukanya dihitung
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
     await db[CA_COLL].insert_one(doc)
     await audit(actor.get("name", ""), "cash_advance_created", "cash_advance", doc["id"],
-                {"number": number, "total": total, "entity_id": entity_id})
+                {"number": number, "total": total, "entity_id": entity_id, "pemegang": pemegang_uang})
     return safe_doc(doc)
 
 
@@ -213,10 +238,12 @@ def cash_advance_query(ctx: EntityContext, entity_id: Optional[str] = None,
 
 
 async def list_cash_advances(ctx: EntityContext, entity_id: Optional[str] = None,
-                             status: Optional[str] = None) -> List[Dict[str, Any]]:
+                             status: Optional[str] = None,
+                             actor: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Daftar PD + bidang turunan Kas & Bank 4 (`_hiasi`: pemegang, tenggat LPJ, boleh diajukan)."""
     q = cash_advance_query(ctx, entity_id, status)
     rows = await db[CA_COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    return rows
+    return await _hiasi(rows, actor)
 
 
 async def get_cash_advance(ca_id: str, ctx: EntityContext) -> Dict[str, Any]:
@@ -225,6 +252,11 @@ async def get_cash_advance(ca_id: str, ctx: EntityContext) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Pengajuan Dana tidak ditemukan")
     assert_active_entity_access(doc, CA_COLL, ctx)   # KN-B35 — penjaga KETAT (jalur tulis memakai loader ini)
     return safe_doc(doc)
+
+
+async def rincian_cash_advance(ca_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """`GET /api/cash-advances/{id}` — dokumen PD + bidang turunan Kas & Bank 4 (loader tulis tetap `get_cash_advance`)."""
+    return (await _hiasi([await get_cash_advance(ca_id, ctx)], actor))[0]
 
 
 async def update_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -247,6 +279,9 @@ async def update_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: Di
             raise HTTPException(status_code=400, detail="Rincian dana tidak valid")
         upd["lines"] = lines
         upd["total_amount"] = total
+    if getattr(payload, "pemegang", None) is not None:   # Kas & Bank 4 — "pengguna" = pembuat PD, bukan penyunting
+        upd["pemegang"] = await _pemegang_isian(payload.pemegang, doc.get("entity_id") or "",
+                                                {"id": doc.get("created_by_id") or "", "name": doc.get("created_by") or ""})
     upd["updated_at"] = now_iso()
     updated = await db[CA_COLL].find_one_and_update(
         {"id": ca_id}, {"$set": upd}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
@@ -257,12 +292,22 @@ async def update_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: Di
 async def submit_cash_advance(ca_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_cash_advance(ca_id, ctx)
     if doc["status"] not in EDITABLE_STATUSES:
-        raise HTTPException(status_code=409, detail="Hanya PD draft/ditolak yang bisa diajukan")
-    first = await _next_status(doc, 0)   # KP-T4 — jenjang wajib pertama menurut Aturan Persetujuan
-    updated = await db[CA_COLL].find_one_and_update(
-        {"id": ca_id},
-        {"$set": {"status": first, "rejected_reason": "", "updated_at": now_iso()}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        raise HTTPException(status_code=409, detail=PESAN_BUKAN_DRAF)
+    # Kas & Bank 4 (C7) — PERIKSA batas PD terbuka pemegang → KUNCI pemegang → PERIKSA ULANG → KLAIM status bersyarat.
+    batas = await batas_pd_terbuka(doc.get("entity_id") or "")
+    await _tolak_bila_tertahan(doc, actor, saat="ajukan", batas=batas)
+    async with _kunci_pemegang(doc, actor, aktif=batas > 0):
+        doc = await get_cash_advance(ca_id, ctx)
+        if doc["status"] not in EDITABLE_STATUSES:
+            raise HTTPException(status_code=409, detail=PESAN_BUKAN_DRAF)
+        await _tolak_bila_tertahan(doc, actor, saat="ajukan", batas=batas)
+        first = await _next_status(doc, 0)   # KP-T4 — jenjang wajib pertama menurut Aturan Persetujuan
+        updated = await db[CA_COLL].find_one_and_update(
+            {"id": ca_id, "status": {"$in": sorted(EDITABLE_STATUSES)}},
+            {"$set": {"status": first, "rejected_reason": "", "updated_at": now_iso()}},
+            projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        raise HTTPException(status_code=409, detail=f"PD {doc.get('number', '')} berubah saat diajukan. Muat ulang.")
     await audit(actor.get("name", ""), "cash_advance_submitted", "cash_advance", ca_id,
                 {"status": first})
     return safe_doc(updated)
@@ -341,14 +386,20 @@ async def disburse_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: 
     # PK-20 — rekening sumber (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu) diperiksa SEBELUM klaim.
     from services import cash_ledger
     rek = await cash_ledger.periksa_rekening(entity_id, getattr(payload, "account_id", "") or "", cash_type)
-    # CX-04 — klaim atomik (satu pencairan per PD) + resume: kas lama dari percobaan gagal DIPAKAI ULANG.
-    from services import atomic_claim as _saga
-    await _saga.claim(CA_COLL, ca_id, "cash_advance_disburse", precondition={"status": "approved"},
-                      actor=actor.get("name", ""))
-    try:
-        return await _disburse_locked(ca_id, doc, payload, rek["cash_type"], entity_id, actor, rek["account_id"])
-    finally:
-        await _saga.release(CA_COLL, ca_id)
+    # Kas & Bank 4 (§7.9.5) — pemegang yang masih memegang PD lain (cair belum tuntas / sisa di tangan) → 409; diperiksa
+    # ulang di dalam kunci pemegang yang dipegang sampai pencairan selesai (dua cairkan bersamaan = satu lolos).
+    batas = await batas_pd_terbuka(entity_id)
+    await _tolak_bila_tertahan(doc, actor, saat="cairkan", batas=batas)
+    async with _kunci_pemegang(doc, actor, aktif=batas > 0):
+        await _tolak_bila_tertahan(doc, actor, saat="cairkan", batas=batas)
+        # CX-04 — klaim atomik (satu pencairan per PD) + resume: kas lama dari percobaan gagal DIPAKAI ULANG.
+        from services import atomic_claim as _saga
+        await _saga.claim(CA_COLL, ca_id, "cash_advance_disburse", precondition={"status": "approved"},
+                          actor=actor.get("name", ""))
+        try:
+            return await _disburse_locked(ca_id, doc, payload, rek["cash_type"], entity_id, actor, rek["account_id"])
+        finally:
+            await _saga.release(CA_COLL, ca_id)
 
 
 async def _disburse_locked(ca_id: str, doc: Dict[str, Any], payload, cash_type: str, entity_id: str,
@@ -389,12 +440,423 @@ async def _finish_disburse(ca_id: str, doc: Dict[str, Any], txn: Dict[str, Any],
         "disbursed_by_id": actor.get("id", ""),    # PK-24 — id pelaku (bahan kontrol dua orang)
         "note": (payload.note or "").strip(),
     }
+    # Kas & Bank 4 (§5.2) — potret tenggat LPJ: tanggal buku kas pencairan + `kas.lpj_tenggat_hari` PT PD saat ini;
+    # pengaturan yang berubah sesudahnya tidak menggeser tenggat PD ini.
+    hari = await hari_tenggat_lpj(doc.get("entity_id") or "")
+    tgl_cair = _tanggal_aman(txn.get("txn_date") or getattr(payload, "txn_date", "") or "") or tanggal_buku()
+    jatuh_tempo = (date.fromisoformat(tgl_cair) + timedelta(days=hari)).isoformat()
     updated = await db[CA_COLL].find_one_and_update(
         {"id": ca_id, "status": "approved"},
         {"$set": {"status": "disbursed", "disbursement": disb, "disbursed_by_id": actor.get("id", ""),
-                  "updated_at": now_iso()}},
+                  "lpj_jatuh_tempo": jatuh_tempo, "lpj_tenggat_hari": hari, "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-    await audit(actor.get("name", ""), "cash_advance_disbursed", "cash_advance", ca_id, disb)
+    await audit(actor.get("name", ""), "cash_advance_disbursed", "cash_advance", ca_id,
+                {**disb, "lpj_jatuh_tempo": jatuh_tempo, "lpj_tenggat_hari": hari})
+    return safe_doc(updated)
+
+
+# ═══ Kas & Bank 4 (C7) — pemegang PD, batas PD terbuka, Batalkan PD, tenggat LPJ ═══════════════════════════════════
+K_PD_TERBUKA_MAKS = "kas.pd_terbuka_maks"
+K_LPJ_TENGGAT_HARI = "kas.lpj_tenggat_hari"
+#: Waktu fitur tenggat aktif (sekali tulis, dokumen `system_settings.__migrations__`, pola F1 / Kas & Bank 3): PD yang
+#: cair sebelum fitur ini (tanpa potret `lpj_jatuh_tempo`) bertenggat dari waktu ini, jadi tidak ada yang langsung lewat.
+PENANDA_TENGGAT_AKTIF = "kb4_lpj_tenggat_aktif_sejak"
+#: Kunci per pemegang (`_id` = `kunci_pemegang`, pola `petty_float_locks`): ajukan & cairkan pemegang yang sama berurutan.
+COLL_KUNCI = "cash_advance_locks"
+KUNCI_BASI_DETIK = 300      # proses yang mati meninggalkan kunci → diambil alih sesudah ini
+KUNCI_TUNGGU_DETIK = 3.0    # pemanggil kedua menunggu kunci sebentar, lalu memeriksa ulang dengan data terbaru
+KUNCI_JEDA_DETIK = 0.05
+#: LPJ yang memenuhi tenggat (diajukan, disetujui, terjurnal); draf & ditolak tidak.
+LPJ_MEMENUHI_TENGGAT = ("submitted", "approved", "posted_to_gl")
+#: PD yang punya tenggat LPJ (sudah cair).
+STATUS_BERTENGGAT = ("disbursed", "settled")
+#: Status sisa uang muka LPJ terjurnal yang berarti uangnya masih di tangan pemegang.
+SISA_DI_TANGAN = ("open", "returning")
+PESAN_BUKAN_DRAF = "Hanya PD draft/ditolak yang bisa diajukan"
+PESAN_ALASAN_BATAL = "Alasan pembatalan wajib diisi (minimal 5 huruf)."
+PESAN_PEMEGANG_JENIS = "Pemegang uang hanya pembuat PD sendiri atau karyawan PT ini."
+PESAN_PEMEGANG_PENGGUNA = "Pemegang uang pengguna hanya pembuat PD sendiri. Untuk orang lain, pilih karyawan."
+PESAN_PEMEGANG_KOSONG = "Pilih karyawan yang memegang uang."
+PESAN_PEMEGANG_TIDAK_ADA = "Karyawan pemegang uang tidak ditemukan."
+
+
+def _status_menunggu() -> List[str]:
+    """PD yang sudah diajukan tetapi belum cair: tiap jenjang persetujuan + disetujui."""
+    return [*_level_status().values(), "approved"]
+
+
+def _status_bisa_batal() -> List[str]:
+    """§7.9.4 — PD belum cair yang boleh dibatalkan: draf, ditolak, dalam persetujuan, disetujui."""
+    return [*sorted(EDITABLE_STATUSES), *_status_menunggu()]
+
+
+def pemegang(pd: Dict[str, Any]) -> Dict[str, str]:
+    """Pemegang uang PD → `{jenis, id, nama}`. PD lama tanpa bidang = pembuatnya (pengguna); tidak ditulis ulang."""
+    p = (pd or {}).get("pemegang") or {}
+    if p.get("jenis") in ("pengguna", "karyawan") and p.get("id"):
+        return {"jenis": p["jenis"], "id": str(p["id"]), "nama": str(p.get("nama") or "")}
+    return {"jenis": "pengguna", "id": str((pd or {}).get("created_by_id") or ""),
+            "nama": str((pd or {}).get("created_by") or "")}
+
+
+def kunci_pemegang(pd: Dict[str, Any]) -> str:
+    """Kunci orang yang batasnya dihitung: `"u:" + id pengguna` (lintas PT) atau `"k:" + id karyawan`."""
+    p = pemegang(pd)
+    return ("k:" if p["jenis"] == "karyawan" else "u:") + p["id"]
+
+
+def _saring_pemegang(kunci: str) -> Optional[Dict[str, Any]]:
+    """Saringan PD milik pemegang `kunci`; None bila pemegangnya tidak dikenal (PD sangat lama tanpa id pembuat)."""
+    jenis, _, pid = (kunci or "").partition(":")
+    if not pid:
+        return None
+    if jenis == "k":
+        return {"pemegang.jenis": "karyawan", "pemegang.id": pid}
+    if jenis == "u":
+        return {"$or": [{"pemegang.jenis": "pengguna", "pemegang.id": pid},
+                        {"pemegang": {"$exists": False}, "created_by_id": pid}]}
+    return None
+
+
+async def _pemegang_isian(isian: Any, entity_id: str, pembuat: Dict[str, Any]) -> Dict[str, str]:
+    """§7.9.3 — isian pemegang → `{jenis, id, nama}`. Kosong / "pengguna" = pembuat PD; "karyawan" = karyawan HR aktif PT
+    dokumen (nama diambil dari master, bukan dari klien). Selain itu 400 berkalimat."""
+    d = isian.model_dump() if hasattr(isian, "model_dump") else dict(isian or {})
+    jenis = str(d.get("jenis") or "pengguna").strip()
+    pid = str(d.get("id") or "").strip()
+    if jenis == "pengguna":
+        if pid and pid != (pembuat.get("id") or ""):
+            raise HTTPException(status_code=400, detail=PESAN_PEMEGANG_PENGGUNA)
+        return {"jenis": "pengguna", "id": pembuat.get("id") or "", "nama": pembuat.get("name") or ""}
+    if jenis != "karyawan":
+        raise HTTPException(status_code=400, detail=PESAN_PEMEGANG_JENIS)
+    if not pid:
+        raise HTTPException(status_code=400, detail=PESAN_PEMEGANG_KOSONG)
+    emp = await db.hr_employees.find_one({"id": pid}, {"_id": 0, "id": 1, "name": 1, "entity_id": 1, "status": 1})
+    if not emp:
+        raise HTTPException(status_code=400, detail=PESAN_PEMEGANG_TIDAK_ADA)
+    nama = emp.get("name") or pid
+    if (emp.get("entity_id") or "") != entity_id:
+        raise HTTPException(status_code=400, detail=f"{nama} bukan karyawan PT ini. Pilih karyawan PT pengajuan dana ini.")
+    if (emp.get("status") or "") in _KARYAWAN_KELUAR:
+        raise HTTPException(status_code=400, detail=(f"{nama} sudah tidak aktif sebagai karyawan, jadi tidak bisa "
+                                                     "memegang uang muka."))
+    return {"jenis": "karyawan", "id": emp["id"], "nama": nama}
+
+
+async def karyawan_pemegang(entity_id: str, q: str = "") -> List[Dict[str, Any]]:
+    """`GET /api/cash-advances/karyawan` — karyawan HR aktif PT (id, kode, nama) untuk pilihan pemegang uang; pemilih
+    yang sama dengan opname kas (tanpa data pribadi lain)."""
+    from services import cash_count_service as ccs
+    return await ccs.karyawan(entity_id, q)
+
+
+async def batas_pd_terbuka(entity_id: str) -> int:
+    """`kas.pd_terbuka_maks` PT dokumen: berapa PD terbuka yang boleh dipegang satu orang (0 = tanpa batas)."""
+    try:
+        return max(int(await _nilai_pengaturan(K_PD_TERBUKA_MAKS, entity_id)), 0)
+    except (TypeError, ValueError):
+        import config_registry as _reg
+        return int(_reg.default_of(K_PD_TERBUKA_MAKS))
+
+
+async def hari_tenggat_lpj(entity_id: str) -> int:
+    """`kas.lpj_tenggat_hari` PT dokumen: LPJ jatuh tempo sekian hari sesudah tanggal buku cair."""
+    try:
+        return int(await _nilai_pengaturan(K_LPJ_TENGGAT_HARI, entity_id))
+    except (TypeError, ValueError):
+        import config_registry as _reg
+        return int(_reg.default_of(K_LPJ_TENGGAT_HARI))
+
+
+async def pd_terbuka(kunci: str, *, kecuali_id: str = "", hanya_dipegang: bool = False) -> List[Dict[str, Any]]:
+    """PD terbuka milik pemegang `kunci` (selain `kecuali_id`), urut: yang uangnya dipegang dulu, lalu yang terlama.
+
+    `hanya_dipegang` False (ajukan) = diajukan / dalam persetujuan / disetujui / cair, atau `settled` yang sisanya masih
+    di tangan; True (cairkan, §7.9.5) = hanya cair belum tuntas atau `settled` bersisa di tangan. PD `settled` membawa
+    `sisa_di_tangan` (nominal sisa LPJ yang belum kembali)."""
+    siapa = _saring_pemegang(kunci)
+    if siapa is None:
+        return []
+    status = list(STATUS_BERTENGGAT) if hanya_dipegang else [*_status_menunggu(), *STATUS_BERTENGGAT]
+    q: Dict[str, Any] = {**siapa, "status": {"$in": status}}
+    if kecuali_id:
+        q["id"] = {"$ne": kecuali_id}
+    rows = await db[CA_COLL].find(q, {"_id": 0}).to_list(500)
+    selesai = [r["id"] for r in rows if r.get("status") == "settled"]
+    sisa: Dict[str, float] = {}
+    if selesai:
+        async for s in db[STL_COLL].find({"cash_advance_id": {"$in": selesai}, "status": "posted_to_gl",
+                                          "sisa_dikembalikan.status": {"$in": list(SISA_DI_TANGAN)}},
+                                         {"_id": 0, "cash_advance_id": 1, "sisa_dikembalikan": 1}):
+            sisa[s["cash_advance_id"]] = _r((s.get("sisa_dikembalikan") or {}).get("amount"))
+    out = []
+    for r in rows:
+        if r.get("status") == "settled":
+            if r["id"] not in sisa:
+                continue
+            r["sisa_di_tangan"] = sisa[r["id"]]
+        out.append(r)
+    out.sort(key=lambda r: (r.get("status") not in STATUS_BERTENGGAT, str(r.get("created_at") or ""),
+                            str(r.get("number") or "")))
+    return out
+
+
+async def _kalimat_tertahan(pd: Dict[str, Any], terbuka: List[Dict[str, Any]], actor: Optional[Dict[str, Any]],
+                            saat: str) -> str:
+    """Kalimat 409 (Global Constraints rencana): "<Anda|nama pemegang> masih memegang uang muka PD-… (Rp …, LPJ jatuh
+    tempo …). Selesaikan LPJ-nya dulu sebelum mengajukan uang muka baru." — rincian & suruhan mengikuti keadaan PD yang
+    disebut (belum cair / cair / sisa belum kembali); saat cairkan berakhir "sebelum <PD ini> dicairkan"."""
+    p = pemegang(pd)
+    if p["jenis"] == "pengguna" and p["id"] and p["id"] == (actor or {}).get("id"):
+        subjek = "Anda"
+    else:
+        subjek = p["nama"] or "Pemegang uang PD ini"
+    pertama = terbuka[0]
+    nominal = rupiah(_r(pertama.get("total_amount")))
+    st = pertama.get("status")
+    if st == "disbursed":
+        t = await tenggat(pertama) or {}
+        rincian = f"{nominal}, LPJ jatuh tempo {tanggal_panjang(t['jatuh_tempo'])}" if t.get("jatuh_tempo") else nominal
+        suruhan = "Selesaikan LPJ-nya dulu"
+    elif st == "settled":
+        rincian = f"{nominal}, sisa {rupiah(pertama.get('sisa_di_tangan') or 0)} belum dikembalikan"
+        suruhan = "Kembalikan sisanya dulu"
+    else:
+        rincian = f"{nominal}, disetujui, belum dicairkan" if st == "approved" else f"{nominal}, menunggu persetujuan"
+        suruhan = "Selesaikan atau batalkan PD itu dulu"
+    lain = f" dan {len(terbuka) - 1} PD lain" if len(terbuka) > 1 else ""
+    akhir = f"sebelum {pd.get('number', '')} dicairkan." if saat == "cairkan" else "sebelum mengajukan uang muka baru."
+    return f"{subjek} masih memegang uang muka {pertama.get('number', '')} ({rincian}){lain}. {suruhan} {akhir}"
+
+
+async def periksa_batas(pd: Dict[str, Any], actor: Optional[Dict[str, Any]], *, saat: str,
+                        batas: Optional[int] = None) -> str:
+    """"" = boleh; selain itu kalimat kenapa PD ini tertahan (`saat` "ajukan" | "cairkan"). Tanpa tulisan."""
+    if batas is None:
+        batas = await batas_pd_terbuka(pd.get("entity_id") or "")
+    if batas <= 0:
+        return ""
+    terbuka = await pd_terbuka(kunci_pemegang(pd), kecuali_id=pd.get("id") or "", hanya_dipegang=saat == "cairkan")
+    if len(terbuka) < batas:
+        return ""
+    return await _kalimat_tertahan(pd, terbuka, actor, saat)
+
+
+async def _tolak_bila_tertahan(pd: Dict[str, Any], actor: Dict[str, Any], *, saat: str, batas: int) -> None:
+    alasan = await periksa_batas(pd, actor, saat=saat, batas=batas)
+    if alasan:
+        raise HTTPException(status_code=409, detail=alasan)
+
+
+@asynccontextmanager
+async def _kunci_pemegang(pd: Dict[str, Any], actor: Dict[str, Any], *, aktif: bool = True):
+    """Kunci ajukan/cairkan satu pemegang (pola `petty_float_service._kunci`): satu dokumen ber-`_id` = kunci pemegang;
+    kunci basi diambil alih; pemanggil kedua menunggu sampai `KUNCI_TUNGGU_DETIK` lalu 409. `aktif` False (tanpa batas)
+    → tanpa kunci."""
+    kunci = kunci_pemegang(pd)
+    if not aktif or _saring_pemegang(kunci) is None:
+        yield
+        return
+    from pymongo.errors import DuplicateKeyError
+    token = new_id("lk")
+    tenggat_tunggu = time.monotonic() + KUNCI_TUNGGU_DETIK
+    while True:
+        sekarang = datetime.now(timezone.utc)
+        await db[COLL_KUNCI].delete_one({"_id": kunci,
+                                         "mulai": {"$lt": (sekarang - timedelta(seconds=KUNCI_BASI_DETIK)).isoformat()}})
+        try:
+            await db[COLL_KUNCI].insert_one({"_id": kunci, "token": token, "pd_id": pd.get("id") or "",
+                                             "oleh": (actor or {}).get("name") or "", "mulai": sekarang.isoformat()})
+            break
+        except DuplicateKeyError:
+            if time.monotonic() >= tenggat_tunggu:
+                nama = pemegang(pd)["nama"] or "pemegang ini"
+                raise HTTPException(status_code=409, detail=(
+                    f"Uang muka atas nama {nama} sedang diproses orang lain. Tunggu sebentar lalu ulangi.")) from None
+            await asyncio.sleep(KUNCI_JEDA_DETIK)
+    try:
+        yield
+    finally:
+        await db[COLL_KUNCI].delete_one({"_id": kunci, "token": token})
+
+
+# ── Tenggat LPJ ──────────────────────────────────────────────────────────────────────────────────────────────────────
+async def ensure_tenggat_aktif_sejak() -> str:
+    """Tulis waktu aktif tenggat LPJ SEKALI (saat backend pertama menyala); panggilan berikutnya tidak menimpa. Pola
+    `cash_count_service.ensure_aktif_sejak` (dibaca dulu, ditulis hanya bila kuncinya belum ada)."""
+    penanda = {"scope": "__migrations__"}
+    doc = await db.system_settings.find_one(penanda, {"_id": 0, PENANDA_TENGGAT_AKTIF: 1})
+    if doc is None:
+        await db.system_settings.update_one(penanda, {"$set": {PENANDA_TENGGAT_AKTIF: now_iso()}}, upsert=True)
+    elif not doc.get(PENANDA_TENGGAT_AKTIF):
+        await db.system_settings.update_one({**penanda, PENANDA_TENGGAT_AKTIF: {"$in": [None, ""]}},
+                                            {"$set": {PENANDA_TENGGAT_AKTIF: now_iso()}})
+    return await tenggat_aktif_sejak()
+
+
+async def tenggat_aktif_sejak() -> str:
+    """Waktu aktif tenggat LPJ (ISO); kosong bila belum pernah ditulis (PD tanpa potret lalu bertenggat dari hari ini)."""
+    doc = await db.system_settings.find_one({"scope": "__migrations__"}, {"_id": 0, PENANDA_TENGGAT_AKTIF: 1}) or {}
+    return doc.get(PENANDA_TENGGAT_AKTIF) or ""
+
+
+def _tanggal_aman(nilai: Any) -> str:
+    """Tanggal buku WIB dari tanggal/stempel waktu; "" bila kosong atau tidak terbaca."""
+    try:
+        return tanggal_buku(nilai) if nilai else ""
+    except ValueError:
+        return ""
+
+
+def _hitung_tenggat(pd: Dict[str, Any], status_lpj: set, aktif_iso: str, hari: Optional[int],
+                    hari_ini: str) -> Optional[Dict[str, Any]]:
+    """Tenggat satu PD cair → `{jatuh_tempo, status, hari_lewat}` (None bila belum cair). Potret `lpj_jatuh_tempo` menang;
+    tanpa potret = max(tanggal cair, tanggal fitur aktif) + `hari` (pengaturan PT saat ini)."""
+    if pd.get("status") not in STATUS_BERTENGGAT:
+        return None
+    jt = _tanggal_aman(pd.get("lpj_jatuh_tempo"))
+    if not jt:
+        cair = _tanggal_aman((pd.get("disbursement") or {}).get("disbursed_at")) or hari_ini
+        aktif = _tanggal_aman(aktif_iso) or hari_ini
+        jt = (date.fromisoformat(max(cair, aktif)) + timedelta(days=int(hari or 0))).isoformat()
+    if pd.get("status") == "settled" or status_lpj & set(LPJ_MEMENUHI_TENGGAT):
+        return {"jatuh_tempo": jt, "status": "terpenuhi", "hari_lewat": 0}
+    lewat = (date.fromisoformat(hari_ini) - date.fromisoformat(jt)).days
+    if lewat > 0:
+        return {"jatuh_tempo": jt, "status": "lewat", "hari_lewat": lewat}
+    return {"jatuh_tempo": jt, "status": "jatuh_tempo_besok" if lewat == -1 else "aman", "hari_lewat": 0}
+
+
+async def _tenggat_banyak(rows: List[Dict[str, Any]]) -> Dict[str, Optional[Dict[str, Any]]]:
+    """Tenggat banyak PD sekaligus (satu kueri LPJ, pengaturan per PT hanya untuk PD tanpa potret)."""
+    cair = [r for r in rows if r.get("status") in STATUS_BERTENGGAT and r.get("id")]
+    if not cair:
+        return {}
+    status_lpj: Dict[str, set] = {}
+    async for s in db[STL_COLL].find({"cash_advance_id": {"$in": [r["id"] for r in cair]}},
+                                     {"_id": 0, "cash_advance_id": 1, "status": 1}):
+        status_lpj.setdefault(s.get("cash_advance_id") or "", set()).add(s.get("status") or "")
+    hari: Dict[str, int] = {}
+    for eid in {r.get("entity_id") or "" for r in cair if not _tanggal_aman(r.get("lpj_jatuh_tempo"))}:
+        hari[eid] = await hari_tenggat_lpj(eid)
+    aktif, hari_ini = await tenggat_aktif_sejak(), tanggal_buku()
+    return {r["id"]: _hitung_tenggat(r, status_lpj.get(r["id"], set()), aktif, hari.get(r.get("entity_id") or ""),
+                                     hari_ini) for r in cair}
+
+
+async def tenggat(pd: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Tenggat LPJ satu PD → `{jatuh_tempo: YYYY-MM-DD, status: aman|jatuh_tempo_besok|lewat|terpenuhi, hari_lewat}`;
+    None bila PD belum cair."""
+    return (await _tenggat_banyak([pd])).get(pd.get("id") or "")
+
+
+async def jatuh_tempo_lpj(entity_ids: List[str]) -> List[Dict[str, Any]]:
+    """PD cair di PT dalam cakupan yang LPJ-nya lewat tenggat (antrean Meja Keuangan), urut jatuh tempo terlama.
+    → `[{pd, pemegang, jatuh_tempo, hari_lewat}]`."""
+    if not entity_ids:
+        return []
+    rows = [d async for d in db[CA_COLL].find({"entity_id": {"$in": list(entity_ids)}, "status": "disbursed"},
+                                              {"_id": 0})]
+    peta = await _tenggat_banyak(rows)
+    out = []
+    for pd in rows:
+        t = peta.get(pd["id"]) or {}
+        if t.get("status") == "lewat":
+            out.append({"pd": pd, "pemegang": pemegang(pd), "jatuh_tempo": t["jatuh_tempo"],
+                        "hari_lewat": t["hari_lewat"]})
+    return sorted(out, key=lambda x: (x["jatuh_tempo"], str(x["pd"].get("number") or "")))
+
+
+async def job_lpj_tenggat_reminder() -> Dict[str, Any]:
+    """Penjadwal `lpj_tenggat_reminder` — PD cair yang LPJ-nya jatuh tempo besok (H-1) atau sudah lewat → pemberitahuan ke
+    pembuat PD (`notification_service.notify_lpj_tenggat`), sekali per PD per jenis (aman dijalankan berulang). Gagal
+    memberi tahu satu PD → hanya log."""
+    from services import notification_service as ns
+    rows = [d async for d in db[CA_COLL].find({"status": "disbursed"}, {"_id": 0})]
+    peta = await _tenggat_banyak(rows)
+    dibuat = gagal = 0
+    for pd in rows:
+        t = peta.get(pd["id"]) or {}
+        jenis = {"jatuh_tempo_besok": "h-1", "lewat": "lewat"}.get(t.get("status") or "")
+        if not jenis:
+            continue
+        try:
+            dibuat += len(await ns.notify_lpj_tenggat(pd, jenis, tenggat=t))
+        except Exception as exc:  # noqa: BLE001 — satu pemberitahuan gagal tidak menghentikan yang lain
+            gagal += 1
+            logger.warning("[lpj_tenggat] pemberitahuan %s %s gagal: %s", pd.get("number"), jenis, exc)
+    detail = f"{dibuat} pemberitahuan tenggat LPJ" + (f", {gagal} gagal (lihat log)" if gagal else "")
+    return {"created": dibuat, "scanned": len(rows), "detail": detail}
+
+
+# ── Bidang turunan daftar & rincian ──────────────────────────────────────────────────────────────────────────────────
+async def _hiasi(rows: List[Dict[str, Any]], actor: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Tambah `pemegang`, `lpj_jatuh_tempo` + `tenggat_status` + `tenggat_hari_lewat` (None/0 bila belum cair), dan
+    `bisa_ajukan` + `alasan_ajukan` (kalimat server yang sama dengan 409 ajukan) — tanpa menulis dokumen."""
+    peta = await _tenggat_banyak(rows)
+    alasan_per: Dict[tuple, str] = {}
+    for r in rows:
+        r["pemegang"] = pemegang(r)
+        t = peta.get(r.get("id") or "")
+        r["lpj_jatuh_tempo"] = t["jatuh_tempo"] if t else None
+        r["tenggat_status"] = t["status"] if t else None
+        r["tenggat_hari_lewat"] = t["hari_lewat"] if t else 0
+        if r.get("status") in EDITABLE_STATUSES:
+            # draf/ditolak tidak pernah terhitung terbuka, jadi hasilnya sama untuk semua draf satu pemegang di satu PT
+            k = (kunci_pemegang(r), r.get("entity_id") or "")
+            if k not in alasan_per:
+                alasan_per[k] = await periksa_batas(r, actor, saat="ajukan")
+            alasan = alasan_per[k]
+        else:
+            alasan = PESAN_BUKAN_DRAF
+        r["bisa_ajukan"], r["alasan_ajukan"] = not alasan, alasan
+    return rows
+
+
+# ── Batalkan PD ──────────────────────────────────────────────────────────────────────────────────────────────────────
+async def cancel_cash_advance(ca_id: str, alasan: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """§7.9.4 — `POST /api/cash-advances/{id}/cancel {alasan}`: PD belum cair → `cancelled` (tidak lagi terhitung terbuka).
+    Oleh pembuat PD atau pemegang `cash_advance.reject`; alasan ≥ 5 huruf; PD cair / berkas pencairan → 409. Klaim
+    bersyarat status + tanpa `saga_lock` (pencairan yang sedang berjalan menang)."""
+    doc = await get_cash_advance(ca_id, ctx)
+    nomor, st = doc.get("number", ""), doc.get("status")
+    teks = (alasan or "").strip()
+    if st == "cancelled":
+        raise HTTPException(status_code=409, detail=f"PD {nomor} sudah dibatalkan.")
+    if st in STATUS_BERTENGGAT:
+        raise HTTPException(status_code=409, detail=(f"PD {nomor} sudah dicairkan, jadi tidak bisa dibatalkan. Selesaikan "
+                                                     "lewat LPJ dan kembalikan sisanya."))
+    bisa = _status_bisa_batal()
+    if st not in bisa:
+        raise HTTPException(status_code=409, detail=f"PD {nomor} tidak bisa dibatalkan pada status ini.")
+    if not _pembuat(doc, actor) and not await has_permission(actor, "cash_advance", "reject"):
+        raise HTTPException(status_code=403, detail=(
+            f"Hanya pembuat PD {nomor} ({doc.get('created_by') or 'pembuatnya'}) atau pemegang izin menolak pengajuan "
+            "dana yang bisa membatalkannya."))
+    if len(teks) < 5:
+        raise HTTPException(status_code=400, detail=PESAN_ALASAN_BATAL)
+    kas = await db.cash_transactions.find_one({"ref_type": "cash_advance", "ref_id": ca_id, "status": {"$ne": "void"}},
+                                              {"_id": 0, "number": 1})
+    if kas:
+        raise HTTPException(status_code=409, detail=(
+            f"PD {nomor} sudah punya kas pencairan {kas.get('number') or ''}, jadi tidak bisa dibatalkan. Ulangi "
+            "pencairannya, lalu selesaikan lewat LPJ."))
+    from services.atomic_claim import LOCK
+    updated = await db[CA_COLL].find_one_and_update(
+        {"id": ca_id, "status": {"$in": bisa}, LOCK: {"$exists": False}},
+        {"$set": {"status": "cancelled", "cancelled_reason": teks[:500], "cancelled_from": st,
+                  "cancelled_by": actor.get("name", ""), "cancelled_by_id": actor.get("id", ""),
+                  "cancelled_at": now_iso(), "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        cur = await db[CA_COLL].find_one({"id": ca_id}, {"_id": 0, LOCK: 1}) or {}
+        if cur.get(LOCK):
+            raise HTTPException(status_code=409, detail=(f"PD {nomor} sedang dicairkan, jadi tidak bisa dibatalkan. Muat "
+                                                         "ulang sebentar lagi."))
+        raise HTTPException(status_code=409, detail=f"PD {nomor} berubah saat dibatalkan. Muat ulang.")
+    await audit(actor.get("name", ""), "cash_advance_cancelled", "cash_advance", ca_id,
+                {"number": nomor, "alasan": teks[:500], "dari": st}, reason=teks[:500])
     return safe_doc(updated)
 
 
@@ -497,7 +959,8 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
         "periode": periode,
         # Pelatihan 18 Nov — karyawan penanggung jawab LPJ (yang mengembalikan sisa / menerima reimburse) bawaannya
         # PEMOHON PD, bukan pengetik LPJ: Finance yang mengetik LPJ atas nama karyawan dulu tercatat sebagai "karyawan".
-        "dibuat_oleh": (payload.dibuat_oleh or ca.get("created_by") or actor.get("name", "")).strip(),
+        # Kas & Bank 4 — pemohon = PEMEGANG uang PD (bawaan pembuatnya; karyawan HR bila Finance mengetik PD untuknya).
+        "dibuat_oleh": (payload.dibuat_oleh or pemegang(ca)["nama"] or actor.get("name", "")).strip(),
         "disetujui_oleh": "",
         "catatan": (payload.catatan or "").strip(),
         "status": "draft",
@@ -1042,7 +1505,7 @@ async def reject_settlement(stl_id: str, reason: str, ctx: EntityContext, actor:
 #:   dicairkan = PD dicairkan, LPJ belum diajukan (tanpa LPJ, draf, atau ditolak);
 #:   dipertanggungjawabkan = LPJ diajukan/disetujui (jurnal belum terbit), atau sudah dijurnal tetapi sisa uang muka
 #:     belum kembali / hutang reimburse belum dibayar;
-#:   selesai = LPJ dijurnal dan tidak ada sisa di kedua arah.
+#:   selesai = LPJ dijurnal dan tidak ada sisa di kedua arah, atau PD dibatalkan (Kas & Bank 4 — tidak lagi menunggu).
 WORKLIST_STAGES = ("diajukan", "dicairkan", "dipertanggungjawabkan", "selesai")
 _EPS = 0.005
 
@@ -1071,6 +1534,8 @@ def _sisa_lpj(stl: Dict[str, Any], advance: float) -> tuple:
 
 def worklist_stage(ca: Dict[str, Any], stl: Optional[Dict[str, Any]]) -> str:
     """Tahap Kas Kecil satu PD (lihat `WORKLIST_STAGES`)."""
+    if ca.get("status") == "cancelled":
+        return "selesai"
     if ca.get("status") not in ("disbursed", "settled"):
         return "diajukan"
     if not stl:
@@ -1084,7 +1549,8 @@ def worklist_stage(ca: Dict[str, Any], stl: Optional[Dict[str, Any]]) -> str:
     return "dipertanggungjawabkan" if kembali > _EPS or reimburse > _EPS else "selesai"
 
 
-def _baris_kerja(ca: Dict[str, Any], stl: Optional[Dict[str, Any]], lihat_reimburse: bool) -> Dict[str, Any]:
+def _baris_kerja(ca: Dict[str, Any], stl: Optional[Dict[str, Any]], lihat_reimburse: bool,
+                tenggat_pd: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     advance = _r(ca.get("total_amount"))
     lpj = None
     if stl:
@@ -1097,7 +1563,11 @@ def _baris_kerja(ca: Dict[str, Any], stl: Optional[Dict[str, Any]], lihat_reimbu
     return {"id": ca.get("id"), "number": ca.get("number", ""), "entity_id": ca.get("entity_id", ""),
             "requester": ca.get("created_by", ""), "purpose": ca.get("kegiatan", ""), "divisi": ca.get("divisi", ""),
             "amount": advance, "stage": worklist_stage(ca, stl), "status": ca.get("status", ""),
-            "settlement": lpj, "updated_at": terbaru}
+            "settlement": lpj, "updated_at": terbaru,
+            # Kas & Bank 4 — pemegang uang + lencana tenggat LPJ (None/0 bila PD belum cair)
+            "pemegang": pemegang(ca), "lpj_jatuh_tempo": (tenggat_pd or {}).get("jatuh_tempo"),
+            "tenggat_status": (tenggat_pd or {}).get("status"),
+            "tenggat_hari_lewat": (tenggat_pd or {}).get("hari_lewat", 0)}
 
 
 async def petty_cash_worklist(ctx: EntityContext, *, entity_id: Optional[str] = None, stage: str = "", q: str = "",
@@ -1116,15 +1586,19 @@ async def petty_cash_worklist(ctx: EntityContext, *, entity_id: Optional[str] = 
     async for d in db[STL_COLL].find(settlement_query(ctx, entity_id), {"_id": 0}):
         per_pd.setdefault(d.get("cash_advance_id") or "", []).append(d)
     cari = (q or "").strip().lower()
-    rows: List[Dict[str, Any]] = []
+    terpilih: List[tuple] = []
     async for ca in db[CA_COLL].find(cash_advance_query(ctx, entity_id), {"_id": 0}):
         stl = _lpj_terpilih(per_pd.get(ca.get("id") or "", []))
         if not lihat_pd and not stl:
             continue
         if cari and not any(cari in str(v or "").lower() for v in (
-                ca.get("number"), ca.get("kegiatan"), ca.get("divisi"), ca.get("created_by"), (stl or {}).get("number"))):
+                ca.get("number"), ca.get("kegiatan"), ca.get("divisi"), ca.get("created_by"), (stl or {}).get("number"),
+                pemegang(ca)["nama"])):
             continue
-        rows.append(_baris_kerja(ca, stl, lihat_reimburse))
+        terpilih.append((ca, stl))
+    peta = await _tenggat_banyak([ca for ca, _ in terpilih])
+    rows: List[Dict[str, Any]] = [_baris_kerja(ca, stl, lihat_reimburse, peta.get(ca.get("id") or ""))
+                                  for ca, stl in terpilih]
     counts = {s: 0 for s in WORKLIST_STAGES}
     for r in rows:
         counts[r["stage"]] += 1

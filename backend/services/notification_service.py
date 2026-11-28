@@ -540,6 +540,44 @@ async def notify_opname_diputus(doc: Dict[str, Any], *, hasil: str, oleh: Dict[s
         entity_id=doc.get("entity_id") or None)
 
 
+#: Kas & Bank 4 (C7) — tenggat LPJ uang muka karyawan (`cash_advances`). Dokumen: `cash_advance`, `ref = <id PD>:<h-1|lewat>`
+#: (+ `#<penerima>`): satu pemberitahuan per PD per jenis.
+LPJ_TENGGAT_TYPE = "lpj_uang_muka_tenggat"
+LPJ_TENGGAT_LINK = "/?view=petty-cash"
+LPJ_TENGGAT_JENIS = ("h-1", "lewat")
+
+
+async def notify_lpj_tenggat(pd: Dict[str, Any], jenis: str, *,
+                             tenggat: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """KB-4 T2 (§5.2) — SATU penyusun `lpj_uang_muka_tenggat`: LPJ PD cair jatuh tempo besok (`h-1`) atau sudah lewat
+    (`lewat`) → PEMBUAT PD (satu orang; pemegang karyawan belum tentu pengguna), kalimat menyebut nama pemegang. Sekali
+    per PD per jenis (`dedupe_scope="ever"`). `tenggat` = hasil `cash_advance_service.tenggat` (dihitung bila kosong)."""
+    if jenis not in LPJ_TENGGAT_JENIS:
+        raise ValueError(f"Jenis pengingat tenggat LPJ tidak dikenal: {jenis!r}")
+    uid = (pd or {}).get("created_by_id") or ""
+    if not uid:
+        return []
+    from services import cash_advance_service as cas
+    from services.book_date import tanggal_panjang
+    t = tenggat or await cas.tenggat(pd) or {}
+    if not t.get("jatuh_tempo"):
+        return []
+    nomor = pd.get("number") or pd.get("id") or ""
+    nama = cas.pemegang(pd)["nama"] or "pemegangnya"
+    awal = f"LPJ {nomor} ({_rupiah_aman(pd.get('total_amount'))}) untuk uang muka yang dipegang {nama}"
+    if jenis == "h-1":
+        title = f"LPJ uang muka jatuh tempo besok — {nomor}"
+        body = f"{awal} jatuh tempo besok, {tanggal_panjang(t['jatuh_tempo'])}. Ajukan LPJ-nya di Kas Kecil."
+    else:
+        title = f"LPJ uang muka lewat tenggat — {nomor}"
+        body = (f"{awal} lewat tenggat {int(t.get('hari_lewat') or 0)} hari (jatuh tempo "
+                f"{tanggal_panjang(t['jatuh_tempo'])}). Ajukan LPJ-nya segera di Kas Kecil.")
+    return await create_addressed(
+        also_users=(uid,), notif_type=LPJ_TENGGAT_TYPE, ref=f"{pd.get('id', '')}:{jenis}", dedupe_scope="ever",
+        title=title, body=body[:400], severity="info" if jenis == "h-1" else "warning", link=LPJ_TENGGAT_LINK,
+        entity_id=pd.get("entity_id") or None)
+
+
 #: Jenis notifikasi "PO custom menunggu keputusan". Hanya SATU fungsi di seluruh
 #: backend yang boleh menyusunnya (dijaga INV-NOTIF-02 aturan K3).
 SPECIAL_ORDER_WAITING_TYPE = "special_order_approval"

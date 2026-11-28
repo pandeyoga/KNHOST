@@ -56,9 +56,10 @@ def _id(awalan):
 
 
 async def _pd(db, nilai, *, entity=KSC, status="approved", pemohon=None):
-    """FIXTURE: PD berstatus `approved` (atau status lain) disisipkan langsung."""
+    """FIXTURE: PD berstatus `approved` (atau status lain) disisipkan langsung. Kas & Bank 4 (C7) — tiap PD dipegang staf
+    ber-id sendiri: satu orang hanya boleh memegang satu PD terbuka (`kas.pd_terbuka_maks`), uji ini bukan uji batas."""
     ca = _id("ca")
-    p = pemohon or {"id": "usr_staf_pk24", "name": "Staf PK24"}
+    p = pemohon or {"id": _id("usr_staf"), "name": "Staf PK24"}
     await db.cash_advances.insert_one({
         "id": ca, "number": f"PD-{ca[-8:]}", "entity_id": entity, "status": status, "kegiatan": "uji PK-24",
         "divisi": "Umum", "lines": [{"description": "uang muka", "qty": 1, "unit_price": nilai, "amount": nilai}],

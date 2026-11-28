@@ -461,8 +461,9 @@ async def test_KB4_1_U7_pengaturan_batas_dan_tenggat_uang_muka_karyawan(aplikasi
     for e in (maks, tenggat):
         assert (e["group"], e["section"], e["permission"]) == ("bank-kasus", "uang-muka-karyawan",
                                                                ["accounting", "manage"])
-        # Tugas 1 hanya mendaftarkan; pembacanya (pengajuan & pencairan PD) dibangun Tugas 2.
-        assert e["status"] == "not_used" and e["not_used_reason"], e
+        # Tugas 1 mendaftarkan; Tugas 2 memasang pembacanya (pengajuan & pencairan PD) → aktif berpembaca
+        # (`test_KB4_2_pd.py` U11 memeriksa kabelnya).
+        assert e["status"] == "active" and not e["not_used_reason"] and e["consumers"], e
     assert "0 = tanpa batas" in maks["help"]
     assert await resolver.value_of("kas.pd_terbuka_maks", {"entity_id": KSC}) == 1
     assert await resolver.value_of("kas.lpj_tenggat_hari", {"entity_id": KSC}) == 7

@@ -865,6 +865,28 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         "(jarak diatur di Pengaturan › Bank & uang yang nyangkut › Opname kas).",
         opk_rows, action_label="Opname", owner="finance", value_label="Saldo buku"))
 
+    # Kas & Bank 4 (C7, §5.2) — PD cair yang LPJ-nya belum diajukan sampai tenggat (`cash_advance_service.jatuh_tempo_lpj`):
+    # tenggat dipotret saat cair, PD lama dihitung dari waktu fitur aktif; LPJ diajukan = terpenuhi (baris hilang).
+    from services import cash_advance_service as _cas
+    from services.book_date import tanggal_panjang as _tgl_panjang
+    lpj_rows = []
+    for j in await _cas.jatuh_tempo_lpj(entity_ids):
+        pd, p = j["pd"], j["pemegang"]
+        pembuat = pd.get("created_by") or ""
+        lpj_rows.append(_row(
+            ref_type="cash_advance", ref_id=pd["id"], number=pd.get("number") or pd["id"], title=p["nama"] or "—",
+            subtitle=" · ".join(x for x in [pd.get("kegiatan") or "", f"jatuh tempo {_tgl_panjang(j['jatuh_tempo'])}",
+                                            (f"dibuat {pembuat}" if p["jenis"] == "karyawan" and pembuat else "")] if x),
+            value=float(pd.get("total_amount") or 0), age_days=j["hari_lewat"], at=j["jatuh_tempo"], age_kind="overdue",
+            badge="lewat", action="Buka", action_kind="open", entity_id=pd.get("entity_id", ""),
+            extra={"pemegang": p, "lpj_jatuh_tempo": j["jatuh_tempo"], "hari_lewat": j["hari_lewat"],
+                   "kegiatan": pd.get("kegiatan") or "", "pembuat": pembuat}))
+    queues.append(_queue(
+        "lpj_uang_muka_lewat_tenggat", "LPJ uang muka lewat tenggat",
+        "Uang muka karyawan yang sudah cair tetapi LPJ-nya belum diajukan sampai tenggat (diatur di Pengaturan › Bank & "
+        "uang yang nyangkut › Uang muka karyawan (PD) & LPJ). Ingatkan pemegangnya.",
+        lpj_rows, action_label="Buka", owner="finance", value_label="Nominal"))
+
     return {"desk": "finance", "desk_label": "Meja Keuangan",
             "generated_at": now_iso(), "entity_ids": entity_ids,
             "queues": queues,
