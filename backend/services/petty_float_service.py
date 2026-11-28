@@ -292,7 +292,9 @@ def _rincian(rid: str, txns: List[Dict[str, Any]], pencairan: List[Dict[str, Any
 
 
 # ── Posisi ───────────────────────────────────────────────────────────────────────────────────────────────────────────
-async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
+async def _posisi(acc: Dict[str, Any], belum_pasti: Optional[str] = None) -> Dict[str, Any]:
+    """`belum_pasti` = hasil `bank_service.pesan_saldo_belum_pasti(PT, "kas_kecil")` yang sudah dihitung pemanggil (satu
+    kali per PT di `daftar`); None = dihitung di sini."""
     from services import bank_service as bs
     from services import fund_transfer_service as fts
     rid, eid = acc["id"], acc.get("entity_id") or ""
@@ -309,15 +311,21 @@ async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
     panjar_sen = sum(_sisa_sen(b) for b in terbuka)
     usulan_sen = max(to_cents(dana) - to_cents(saldo) - panjar_sen, 0) if dana > 0 else 0
     rincian = _rincian(rid, txns, pencairan, (terakhir or {}).get("created_at") or "", {d["id"] for d in isi})
-    alasan = ""
+    # Temuan tangkapan A (R7) — kas lama tanpa rekening yang tidak ikut rekening mana pun (≥ 2 rekening kas kecil):
+    # saldo buku belum pasti → usulan bisa salah; posisi tetap tampil, isi ulang ditahan (409).
+    if belum_pasti is None:
+        belum_pasti = await bs.pesan_saldo_belum_pasti(eid, "kas_kecil")
+    kode, alasan = "", ""
     if not bs._aktif(acc):   # noqa: SLF001
-        alasan = pesan_nonaktif(nama)
+        kode, alasan = "nonaktif", pesan_nonaktif(nama)
     elif dana <= 0:
-        alasan = pesan_tanpa_dana_tetap(nama)
+        kode, alasan = "tanpa_dana_tetap", pesan_tanpa_dana_tetap(nama)
+    elif belum_pasti:
+        kode, alasan = "saldo_belum_pasti", belum_pasti
     elif menunggu:
-        alasan = pesan_menunggu(nama, menunggu)
+        kode, alasan = "isi_ulang_menunggu", pesan_menunggu(nama, menunggu)
     elif usulan_sen <= 0:
-        alasan = pesan_tidak_perlu(nama, dana)
+        kode, alasan = "tidak_perlu", pesan_tidak_perlu(nama, dana)
     return {
         "account_id": rid, "account_name": nama, "entity_id": eid, "is_active": bs._aktif(acc),   # noqa: SLF001
         "location_id": acc.get("location_id") or "", "dana_tetap": dana, "saldo_buku": saldo,
@@ -330,7 +338,7 @@ async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
         "riwayat": [_ringkas_isi_ulang(d) for d in isi[:RIWAYAT_MAKS]],
         "panjar_tanpa_rekening": await _panjar_tanpa_rekening(eid),
         "sumber": await _sumber_pilihan(eid),
-        "bisa_isi_ulang": not alasan, "alasan_isi_ulang": alasan,
+        "bisa_isi_ulang": not alasan, "alasan_isi_ulang": alasan, "alasan_kode": kode,
         "dihitung_pada": now_iso(),
     }
 
@@ -345,6 +353,7 @@ async def daftar(entity_ids: List[str]) -> Dict[str, Any]:
     waktu dibuat); `tanpa_dana_tetap` = jumlah rekening kas kecil aktif yang belum memakai dana tetap."""
     from services import bank_service as bs
     items, tanpa = [], 0
+    belum_pasti: Dict[str, str] = {}   # sekali per PT (jenis kas kecil), bukan per rekening
     async for acc in db.bank_accounts.find({"entity_id": {"$in": list(entity_ids or [])}}, {"_id": 0}) \
             .sort([("entity_id", 1), ("created_at", 1)]):
         if not bs._aktif(acc) or bs.account_cash_type(acc) != "kas_kecil":   # noqa: SLF001
@@ -352,7 +361,10 @@ async def daftar(entity_ids: List[str]) -> Dict[str, Any]:
         if _f(acc.get("dana_tetap")) <= 0:
             tanpa += 1
             continue
-        items.append(await _posisi(acc))
+        eid = acc.get("entity_id") or ""
+        if eid not in belum_pasti:
+            belum_pasti[eid] = await bs.pesan_saldo_belum_pasti(eid, "kas_kecil")
+        items.append(await _posisi(acc, belum_pasti[eid]))
     return {"items": items, "total": len(items), "tanpa_dana_tetap": tanpa}
 
 
@@ -382,7 +394,10 @@ def _periksa_posisi(pos: Dict[str, Any]) -> None:
     """Isi ulang boleh? Alasan yang sama dengan `alasan_isi_ulang` posisi (tombol layar jujur)."""
     if pos["bisa_isi_ulang"]:
         return
-    raise _galat(409 if pos["isi_ulang_menunggu"] else 400, pos["alasan_isi_ulang"])
+    # 409 = ada isi ulang yang masih berjalan (seperti dulu) atau saldo buku belum pasti (kode alasan, bukan kalimat);
+    # selain itu 400 (rekening tidak memenuhi syarat isi ulang).
+    tunda = bool(pos["isi_ulang_menunggu"]) or pos["alasan_kode"] == "saldo_belum_pasti"
+    raise _galat(409 if tunda else 400, pos["alasan_isi_ulang"])
 
 
 def _potret(pos: Dict[str, Any]) -> Dict[str, Any]:

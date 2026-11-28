@@ -229,9 +229,10 @@ def _sidik(rekening: List[Dict[str, Any]], tunggal: List[Dict[str, Any]]) -> str
 
 
 async def _kas_tanpa_rekening(entity_id: str, cash_type: str, sejak: str = "") -> List[Dict[str, Any]]:
-    """Kas lama tanpa rekening (tidak-void) jenis kas itu; `sejak` = hanya yang tercatat sebelum batas itu."""
-    q: Dict[str, Any] = {"entity_id": entity_id, "cash_type": cash_type, "status": {"$ne": "void"},
-                         "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]}
+    """Kas lama tanpa rekening (tidak-void) jenis kas itu; `sejak` = hanya yang tercatat sebelum batas itu. Saringan =
+    `bank_service.saring_kas_tanpa_rekening` (sama dengan saldo rekening tunggal dan penetapan kas lama)."""
+    from services import bank_service as bs
+    q: Dict[str, Any] = bs.saring_kas_tanpa_rekening(entity_id, cash_type)
     if sejak:
         q["created_at"] = {"$lt": sejak}
     return [t async for t in db.cash_transactions.find(q, {"_id": 0, "id": 1, "amount": 1, "direction": 1})]
@@ -736,10 +737,10 @@ async def _lepas_jatah(usulan_id: str, actor: Dict[str, Any], galat: str, *, kem
 async def _tautkan_tunggal(eid: str, uid: str, kelompok: List[Dict[str, Any]]) -> None:
     """Kas lama tanpa rekening (tidak-void) yang ikut rekening tunggal jenis kasnya → `account_id` rekening itu +
     `account_id_dari_pindah_saldo` (jurnal kasnya tidak diubah; buku kas rekening tunggal tetap sama)."""
+    from services import bank_service as bs
     for g in kelompok:
         await db.cash_transactions.update_many(
-            {"id": {"$in": g["kas_ids"]}, "entity_id": eid, "status": {"$ne": "void"},
-             "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]},
+            {"id": {"$in": g["kas_ids"]}, "entity_id": eid, "status": {"$ne": "void"}, "$or": list(bs.TANPA_REKENING)},
             {"$set": {"account_id": g["rekening_id"], "account_id_dari_pindah_saldo": uid, "updated_at": now_iso()}})
 
 

@@ -327,6 +327,11 @@ async def buat(payload: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
     fisik = _jumlah_fisik(p, pecahan)
     await _tolak_bila_masih_menunggu(acc)
     eid = acc.get("entity_id") or ""
+    # Temuan tangkapan A (R7) — PT punya ≥ 2 rekening jenis ini DAN kas lama tanpa rekening jenis ini: saldo buku belum
+    # pasti, potretnya akan salah → ditahan (Setujui memakai potret ini, jadi cukup di sini).
+    belum_pasti = await bs.pesan_saldo_belum_pasti(eid, bs.account_cash_type(acc))
+    if belum_pasti:
+        raise _galat(409, belum_pasti)
     buku = await saldo_buku(acc)            # POTRET saldo buku saat dihitung (§7.8.3)
     selisih = _f(fisik - buku)
     if abs(selisih) <= EPS:
