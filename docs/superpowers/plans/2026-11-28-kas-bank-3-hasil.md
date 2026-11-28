@@ -93,7 +93,7 @@ Temuan nyata yang tertangkap sebelum gabung:
 | Mode | FAIL (garis dasar) | Lebih merah | Pelanggaran baru (per pelanggaran) |
 |---|---|---|---|
 | `--ci` (`4b7c043`) | 37 (43) | — | 3 (antrean opname tanpa pasangan hitung-ulang Beranda; sapuan peran Sales/Admin Sales ke Kas Kecil) → **ditutup** di `81e695f` |
-| `--quick` (pohon akhir `c5ffef0`, data acuan) | __GATE__ | | |
+| `--quick` (pohon akhir `c5ffef0`, data acuan) | 9 gate merah (log garis dasar 15 Nov: 11) | 0 | **0** |
 
 ## 4. Keputusan pelaksanaan (periksa)
 
