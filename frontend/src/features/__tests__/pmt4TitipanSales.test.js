@@ -60,6 +60,8 @@ const MASUK = [M("transfer", "Transfer bank"), M("cash", "Tunai", "kas")];
 const ENT = [{ id: "ent_kanda", short_name: "Kanda", legal_name: "CV Kanda" }];
 const K = { id: "rek_k", name: "Kas Kecil Kanda", account_type: "cash", cash_type: "kas_kecil", entity_id: "ent_kanda",
   is_active: true };
+const KASIR = { id: "rek_ks", name: "Kas Kasir Toko KSC", account_type: "cash", cash_type: "kas_kasir", entity_id: "ent_kanda",
+  is_active: true, is_default: true };
 const S1 = { order_id: "so1", number: "KANDA/SO-0001", outstanding: 1000000, receiving_account_id: "", receiving_account: {} };
 
 const q = (id) => document.body.querySelector(`[data-testid="${id}"]`);
@@ -252,4 +254,26 @@ test("tab Titipan Sales: tanpa izin menerima → alasan tertulis", async () => {
   await mount(<CashHoldingsView currentUser={{ id: "u_x" }} />);
   expect(q("cth-receive-why").textContent).toBe("Menerima setoran butuh akses menerima setoran titipan.");
   expect(q("cth-receive-cdp_a").disabled).toBe(true);
+});
+
+test("kalimat cara bayar tunai mengikuti rekening penerima: kasir, kas kecil, belum terpilih", async () => {
+  const ARR = (rows) => ({ ...formDasar("kas_langsung"), "/bank-accounts/receiving": (cfg) => (cfg?.params?.method === "cash" ? rows : []) });
+  const buka = async () => {
+    await mount(<ARReceiptModal customerId="c1" customerName="Toko Kanda" preselectOrderId="so1" onClose={() => {}} onDone={() => {}} />);
+    await pick(q("ar-receipt-method"), "cash");
+  };
+  routeGet(ARR([KASIR]));
+  await buka();
+  expect(q("ar-receipt-cash-hint").textContent).toBe("Tunai → masuk Kas Kasir Toko KSC (Kas Kasir).");
+  for (const r of roots) await act(async () => { r.unmount(); });
+  roots = []; document.body.innerHTML = "";
+  routeGet(ARR([K]));
+  await buka();
+  expect(q("ar-receipt-cash-hint").textContent).toBe("Tunai → masuk Kas Kecil Kanda (Kas Kecil).");
+  for (const r of roots) await act(async () => { r.unmount(); });
+  roots = []; document.body.innerHTML = "";
+  routeGet(ARR([K, { ...K, id: "rek_k2", name: "Kas Kecil Dua" }]));   // dua rekening, tanpa bawaan → belum terpilih
+  await buka();
+  expect(q("ar-receipt-cash-hint").textContent).toBe("Tunai → masuk rekening tunai PT yang dipilih.");
+  expect(q("ar-receipt-cash-hint").textContent).not.toMatch(/Kas (Kecil|Kasir)/);
 });

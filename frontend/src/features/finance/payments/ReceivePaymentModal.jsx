@@ -46,6 +46,7 @@ import { useEntityScope } from "../../../context/EntityScopeContext";
 import { askConfirm } from "../../../services/confirmService";
 import { entityShortById } from "../../../utils/entityLabel";
 import { TEKS_TITIPAN } from "../cashholding/cashHoldingShared";
+import { judulJenisKas } from "../jenisKas";
 
 export const TEKS_PILIH_PT = "Pilih satu PT untuk mencatat pembayaran.";
 export const ALOKASI = [{ key: "auto", label: "Tertua dulu" }, { key: "manual", label: "Atur sendiri" }];
@@ -56,6 +57,13 @@ export const ALOKASI = [{ key: "auto", label: "Tertua dulu" }, { key: "manual", 
 const today = () => todayWib();
 
 /** Isi `POST /api/ar-receipts` dari keadaan form (satu pembentuk — dipakai form dan uji kontrak). */
+/** Kalimat cara bayar tunai: mengikuti rekening penerima yang berlaku (Kas Kasir bila PT punya, selain itu Kas Kecil);
+ *  rekening belum terpilih → netral, tanpa menyebut jenis kas. */
+export function kalimatTunai(label, st) {
+  if (st?.accountId && st?.accountName && st?.cashType) return `${label} → masuk ${st.accountName} (${judulJenisKas(st.cashType)}).`;
+  return `${label} → masuk rekening tunai PT yang dipilih.`;
+}
+
 export function receiptBody({ customerId, amount, method, date, notes = "", depositUse = 0, accountId = "",
   reference = "", giroDue = "", proofUrl = "", mismatchNote = "", mismatch = false, needsAccount = true,
   needsDueDate = false, allocations = null, variance = null }) {
@@ -339,7 +347,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   const reason = allPt ? TEKS_PILIH_PT : !customerId ? "Pilih pelanggan dulu." : (!loading && totalFunds < 0)
     ? "Nominal tidak boleh minus." : (!loading && totalFunds <= 0) ? "Isi nominal diterima." : blockReason;
   const cashHint = titipan ? TEKS_TITIPAN
-    : pm.isCash(method) ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).` : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
+    : pm.isCash(method) ? kalimatTunai(pm.labelOf(method), needsAccount ? payState : null)
+      : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
   const dir = assessment?.direction && assessment.direction !== "none" ? directionMeta(assessment.direction) : null;
 
   const footer = (

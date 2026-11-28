@@ -143,7 +143,9 @@ test("Buka layar penuh menavigasi lalu menutup; Jejak membuka jejak dokumen", as
   await klik(q("doc-preview-full"));
   expect(openDocument).toHaveBeenCalledWith(expect.objectContaining({ view: "orders", focus_id: "so1", number: "KSC/SO-00001" }));
   expect(onClose).toHaveBeenCalled();
+  onClose.mockClear();
   await klik(q("doc-preview-trace"));
+  expect(onClose).toHaveBeenCalledTimes(1);   // Jejak juga menutup pratinjau (tidak menumpuk di atas layar Jejak Dokumen)
   expect(onTrace.mock.calls[0][0].detail).toEqual({ docType: "sales_order", docId: "so1", number: "KSC/SO-00001" });
   window.removeEventListener("kn-open-trace", onTrace);
 });
