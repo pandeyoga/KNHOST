@@ -3,9 +3,9 @@
  * dihitung oleh/pada, catatan, perlakuan + karyawan, putusan + alasan), rincian pecahan bila ada, angka yang dipotret
  * (saldo buku, uang fisik, selisih), kas penyesuaian yang terbit sesudah disetujui (nomor, tanggal, arah, jurnal), kalimat
  * kontrol dua orang untuk pembuka, dan riwayat (`jejak`).
- * Data dari `GET /cash-counts/{id}` (opname + `kas` + `kontrol` bila menunggu). Hanya-baca: Hitung / Setujui / Tolak ada di
- * Kas & Bank › Opname Kas ("Buka layar penuh", registri `cash_count`). Kas penyesuaian tidak punya pratinjau sendiri → teks;
- * nomor jurnalnya membuka Buku Besar.
+ * Data dari `GET /cash-counts/{id}` (opname + `kas` + `kontrol` bila menunggu). Hanya-baca: Hitung / Setujui / Tolak /
+ * Batal ada di Kas & Bank › Opname Kas ("Buka layar penuh", registri `cash_count`). Kas penyesuaian tidak punya pratinjau
+ * sendiri → teks; nomor jurnalnya membuka Buku Besar.
  */
 import StatusBadge from "../../../../components/StatusBadge";
 import { useAppNav } from "../../../../context/AppNavContext";
@@ -66,6 +66,8 @@ export default function CashCountPreview({ doc }) {
         { key: "approver", label: "Disetujui", content: olehPada(doc.disetujui_oleh, doc.disetujui_pada) },
         { key: "rejecter", label: "Ditolak", content: olehPada(doc.ditolak_oleh, doc.ditolak_pada) },
         { key: "reject_reason", label: "Alasan tolak", content: doc.alasan_tolak },
+        // Gelombang perbaikan akhir — Batal opname disetujui (siapa/kapan juga di riwayat `jejak` aksi "batal").
+        { key: "cancel_reason", label: "Alasan batal", content: doc.status === "batal" ? doc.alasan_batal : "" },
       ]} />
       {tunggu && <p className="text-fs-12 text-kn-text-2" data-testid="doc-preview-opk-control">{tunggu}</p>}
       {pecahan.length > 0 && (

@@ -58,6 +58,7 @@ import SamplePaymentApproveDialog from "../samples/SamplePaymentApproveDialog";
 import { markReminded } from "../crm/collectionMark";
 import { CustomerCardLink } from "./cards/partyCards";
 import CashCountForm from "./cashcount/CashCountForm";   // Kas & Bank 3 (Tugas 4b) — opname kas jatuh tempo, di tempat
+import { labelJenisKas } from "./jenisKas";   // Kas & Bank 3 — label jenis kas di petunjuk jarak opname
 
 export const TEKS_KOSONG = "Tidak ada yang perlu ditindak hari ini.";
 const POSTING_ROWS = 20;
@@ -99,9 +100,23 @@ export const PERLU_TINDAKAN = [
   // Kas & Bank 3 (Tugas 4b) — penghitung = pemegang `cash.create` (pintu `POST /api/cash-counts`).
   { key: "opname_kas", label: "Opname kas jatuh tempo", izin: [["cash", "create"]], queues: ["opname_kas_jatuh_tempo"],
     valueLabel: "Saldo buku",   // nilai baris = saldo buku rekening (server `value_label`), bukan nominal dokumen
-    hint: "Rekening tunai yang sudah waktunya dihitung fisik: kas kasir tiap hari, kas kecil dan kas besar tunai tiap "
-      + "minggu (jaraknya diatur di Pengaturan). Selisih hitungan diputuskan orang kedua." },
+    // Tinjauan akhir Minor 2 — jarak opname TIDAK ditulis mati (`kas.opname_*_hari` bisa diubah, `02_STANDAR` §2): dibaca
+    // dari baris server (`cash_type` + `jarak_hari` = pengaturan yang berlaku untuk PT rekening itu).
+    hint: (rows) => petunjukOpname(rows) },
 ];
+
+/** Petunjuk kelompok "Opname kas jatuh tempo" dari baris server: jarak opname per jenis kas yang sedang jatuh tempo. */
+export function petunjukOpname(rows) {
+  const jarak = [];
+  for (const r of rows || []) {
+    const hari = Number(r?.jarak_hari);
+    if (!r?.cash_type || !Number.isFinite(hari) || hari <= 0) continue;
+    const teks = `${labelJenisKas(r.cash_type).toLowerCase()} tiap ${hari} hari`;
+    if (!jarak.includes(teks)) jarak.push(teks);
+  }
+  return "Rekening tunai yang sudah waktunya dihitung fisik, sesuai jarak opname di Pengaturan › Bank & uang yang "
+    + `nyangkut › Opname kas${jarak.length ? ` (${jarak.join(", ")})` : ""}. Selisih hitungan diputuskan orang kedua.`;
+}
 
 export const bolehKelompok = (perms, g) => g.izin.some(([r, a]) => can(perms, r, a));
 /** Izin satu antrean di dalam kelompok: `[modul, aksi]`, atau daftar `[[modul, aksi], …]` yang SEMUANYA wajib dipegang. */
@@ -149,7 +164,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
       count += Number(posting.total) || 0;
     }
     if (count <= 0 && rows.length === 0) continue;
-    out.push({ id: g.key, label: g.label, hint: g.hint, count, shown: rows.length,
+    out.push({ id: g.key, label: g.label, hint: typeof g.hint === "function" ? g.hint(rows) : g.hint, count, shown: rows.length,
       total_value: Math.round(rows.reduce((s, r) => s + (Number(r.value) || 0), 0) * 100) / 100,
       value_kind: "money", value_label: g.valueLabel || "Nilai", oldest_age_days: oldest, action_label: "Buka", rows });
   }

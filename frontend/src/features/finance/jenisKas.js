@@ -12,6 +12,11 @@ import { can } from "../../config/roles";
 export const JENIS_KAS_LABEL = { kas_kasir: "Kas kasir", kas_kecil: "Kas kecil", kas_besar: "Kas besar" };
 export const labelJenisKas = (ct) => JENIS_KAS_LABEL[ct] || ct || "";
 
+/** Label jenis kas berhuruf judul — kolom, kartu, saringan, CSV, dan konfirmasi di Transaksi Kas & pemilih rekening
+ *  (`CashAccountField`). Kas tanpa jenis dikenal = "Kas Kecil" (perilaku lama Transaksi Kas: selain kas besar = kas kecil). */
+export const JENIS_KAS_JUDUL = { kas_kasir: "Kas Kasir", kas_kecil: "Kas Kecil", kas_besar: "Kas Besar" };
+export const judulJenisKas = (ct) => JENIS_KAS_JUDUL[ct] || JENIS_KAS_JUDUL.kas_kecil;
+
 /** Pilihan jenis kas rekening tunai baru (§5.1: bank → kas besar seperti sekarang). */
 export const PILIHAN_JENIS_KAS_TUNAI = [
   { value: "kas_kasir", label: "Kas Kasir" },

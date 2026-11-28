@@ -113,6 +113,10 @@ EXPECT = {
     "pindah_saldo_kas": ("cash_account_cutovers", {"status": "menunggu"}),
     # Kas & Bank 2 (Tugas 4) — kas keluar manual di atas batas menunggu orang kedua.
     "cash_out_request": ("cash_out_requests", {"status": "menunggu_persetujuan"}),
+    # Kas & Bank 3 (C3) — opname kas berselisih menunggu keputusan orang kedua (`kontrol.selisih_kas`; termasuk yang kas
+    # penyesuaiannya gagal terbit dan diteruskan lewat Setujui — statusnya tetap menunggu). Selesai/disetujui/ditolak/
+    # dibatalkan tidak menunggu siapa pun.
+    "cash_count": ("cash_counts", {"status": "menunggu_persetujuan"}),
     "hr_leave": ("hr_leave_requests", {"status": "pending"}),
     "hr_overtime": ("hr_overtime", {"status": "pending"}),
     # ── UTANG ALUR F-6.7 DIBAYAR (2026-08-18) — opini kedua untuk 4 antrean baru.

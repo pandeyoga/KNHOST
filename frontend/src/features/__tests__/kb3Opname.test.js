@@ -3,8 +3,11 @@
 //  · Tab tersembunyi Kas & Bank › Opname Kas (`cash-counts`, menyorot Rekening & Saldo; hub tetap 6 tab tampak): daftar
 //    (saringan status & rekening), form Hitung (rekening tunai, jumlah fisik, rincian pecahan opsional yang menjumlah ke
 //    total, catatan; saldo buku & selisih tampil SESUDAH disimpan — hitung buta), Setujui = satu pop-up perlakuan selisih
-//    (selisih kas / piutang karyawan + pemilih karyawan; piutang hanya untuk kurang), Tolak beralasan; Setujui nonaktif
-//    untuk penghitung dengan kalimat server. Izin menyembunyikan aksi (bukan nama peran).
+//    (selisih kas / piutang karyawan + pemilih karyawan; piutang hanya untuk kurang), Tolak beralasan; Setujui DAN Tolak
+//    nonaktif untuk penghitung dengan kalimat server (`kontrol.pesan` / `kontrol.tolak_pesan`). Izin menyembunyikan aksi
+//    (bukan nama peran).
+//  · Gelombang perbaikan akhir: Batal opname disetujui (`POST …/batal {alasan}`, `cash.approve`, bukan penghitung; status
+//    "Dibatalkan"); saringan Perlakuan (daftar piutang karyawan §7.8.6) ke parameter `perlakuan` dan unduhan.
 //  · Aksi "Opname" di kartu rekening tunai Rekening & Saldo; kartu Meja Keuangan "Opname kas jatuh tempo" (baris membuka
 //    form terisi rekening, di tempat); pratinjau `OPK-` + Jejak; tujuan notifikasi; preset antrean Pusat Persetujuan.
 import React, { act } from "react";
@@ -13,7 +16,8 @@ import CashCountsView from "../finance/cashcount/CashCountsView";
 import CashCountForm from "../finance/cashcount/CashCountForm";
 import OpnameKartuAksi from "../finance/cashcount/OpnameKartuAksi";
 import {
-  PECAHAN_RUPIAH, aksiOpname, badanHitung, barisPecahan, opsiPerlakuan, selisihTeks, totalPecahan, validasiHitung,
+  PECAHAN_RUPIAH, PILIHAN_PERLAKUAN, PILIHAN_STATUS, aksiOpname, badanHitung, barisPecahan, opsiPerlakuan, selisihTeks,
+  statusOpname, totalPecahan, validasiHitung,
 } from "../finance/cashcount/cashCountShared";
 import CashCountPreview from "../documents/preview/bodies/CashCountPreview";
 import { canPreview, previewFor } from "../documents/preview/docPreviewRegistry";
@@ -89,7 +93,13 @@ jest.mock("../../hooks/useViewPreset", () => {
   };
   return { __esModule: true, default: pakai, useViewPreset: pakai };
 });
-jest.mock("../../components/AskKnButton", () => ({ __esModule: true, AskKnButton: () => null, PENDING_KEY: "x" }));
+// Bilah halaman asli tetap dirender; props-nya direkam supaya saringan unduhan (`exportSpec`) bisa diperiksa.
+const mockPagerProps = [];
+jest.mock("../../components/PaginationBar", () => {
+  const Asli = jest.requireActual("../../components/PaginationBar").default;
+  return { __esModule: true, default: (p) => { mockPagerProps.push(p); return <Asli {...p} />; } };
+});
+jest.mock("../../components/AskKnButton",() => ({ __esModule: true, AskKnButton: () => null, PENDING_KEY: "x" }));
 jest.mock("../sales_admin/SoTrackerCard", () => () => null);
 jest.mock("../finance/TaxIssueDialog", () => () => null);
 
@@ -146,6 +156,7 @@ afterEach(() => {
   galatKonsol.mockRestore();
   [mockGet, mockPost, mockAskConfirm, mockAskReason, mockGo, mockPreview, mockOpenDocument, mockToast].forEach((m) => m.mockReset());
   notifySuccess.mockReset();
+  mockPagerProps.length = 0;
   mockPreset = null;
   document.body.innerHTML = "";
   sessionStorage.clear();
@@ -156,7 +167,16 @@ afterEach(() => {
 // Kalimat server (`cash_count_service.PESAN_ORANG_KEDUA`) — dikirim di `kontrol.pesan`, ditampilkan apa adanya.
 const PESAN_ORANG_KEDUA = "Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang "
   + "berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.";
+// `cash_count_service.PESAN_TOLAK_SENDIRI` — dikirim di `kontrol.tolak_pesan` (perbaikan putaran 1 Tugas 3).
+const PESAN_TOLAK_SENDIRI = "Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang "
+  + "berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › "
+  + "Persetujuan › Kontrol dua orang.";
+// Kalimat server Batal bagi penghitung (`kontrol.batal_pesan`, gelombang perbaikan akhir) — ditampilkan apa adanya.
+const PESAN_BATAL_SENDIRI = "Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda batalkan sendiri. Minta rekan yang "
+  + "berizin menyetujui kas membatalkannya.";
 const AKU = { id: "usr_hitung", name: "Sari Kasir" };
+const KONTROL_SENDIRI = { dua_orang: true, sendiri: true, admin_sendiri: false, ditolak: true, pesan: PESAN_ORANG_KEDUA,
+  tolak_pesan: PESAN_TOLAK_SENDIRI };
 const OPK = (lain = {}) => ({
   id: "opk_1", number: "KSC/OPK-00001", entity_id: "ent_ksc", status: "menunggu_persetujuan", status_label: "Menunggu persetujuan",
   account_id: "kas_toko", account_name: "Kas Kasir Toko", cash_type: "kas_kasir", cash_type_label: "Kas kasir",
@@ -164,7 +184,7 @@ const OPK = (lain = {}) => ({
   selisih: -30000, selisih_nominal: 30000, arah_selisih: "kurang", boleh_piutang: true, catatan: "Hitung tutup toko",
   penghitung: AKU, perlakuan: "", perlakuan_label: "", karyawan_id: "", karyawan_nama: "", karyawan_kode: "",
   cash_id: "", cash_number: "", terbit_error: "", alasan_tolak: "", dalam_proses: false,
-  kontrol: { dua_orang: true, sendiri: false, admin_sendiri: false, ditolak: false, pesan: "" },
+  kontrol: { dua_orang: true, sendiri: false, admin_sendiri: false, ditolak: false, pesan: "", tolak_pesan: "" },
   jejak: [{ aksi: "hitung", oleh: AKU.name, oleh_id: AKU.id, pada: "2026-11-28T03:00:00+00:00",
     catatan: "selisih -Rp 30.000 menunggu persetujuan orang kedua" }],
   kas: null,
@@ -175,6 +195,13 @@ const LEBIH = OPK({ id: "opk_2", number: "KSC/OPK-00002", account_id: "kas_kecil
   selisih_nominal: 50000, arah_selisih: "lebih", boleh_piutang: false });
 const SELESAI = OPK({ id: "opk_3", number: "KSC/OPK-00003", status: "selesai", status_label: "Selesai", jumlah_fisik: 1000000,
   selisih: 0, selisih_nominal: 0, arah_selisih: "", boleh_piutang: false, kontrol: undefined });
+// Opname disetujui (kas penyesuaian sudah terbit) — satu-satunya keadaan yang bisa dibatalkan. Tanpa `kontrol` (server
+// sebelum perbaikan Batal tidak menilai keadaan ini) layar memakai id penghitung sebagai cadangan.
+const DISETUJUI = OPK({ id: "opk_4", number: "KSC/OPK-00004", status: "disetujui", status_label: "Disetujui",
+  perlakuan: "piutang_karyawan", perlakuan_label: "Piutang karyawan", karyawan_id: "emp_1", karyawan_nama: "Budi Santoso",
+  karyawan_kode: "KAR-001", cash_id: "cash_1", cash_number: "KSC/KK-00009", kontrol: undefined });
+const BATAL = OPK({ id: "opk_5", number: "KSC/OPK-00005", status: "batal", status_label: "Dibatalkan", kontrol: undefined,
+  perlakuan: "selisih_kas", perlakuan_label: "Selisih kas", cash_id: "cash_2", cash_number: "KSC/KK-00010" });
 const REKENING = [
   { id: "kas_toko", name: "Kas Kasir Toko", entity_id: "ent_ksc", account_type: "cash", cash_type: "kas_kasir", is_active: true,
     balance: 1000000, inflow: 0, outflow: 0, txn_count: 3 },
@@ -201,8 +228,8 @@ function pasang({ items = [OPK(), LEBIH, SELESAI], rekening = REKENING } = {}) {
     return Promise.resolve({ data: null });
   });
 }
-const daftar = (perms, props = {}) => mount(<CashCountsView currentUser={{ id: "usr_lain", permissions: perms }}
-  selectedEntity="ent_ksc" {...props} />);
+const daftar = (perms, props = {}, user = { id: "usr_lain" }) => mount(<CashCountsView
+  currentUser={{ ...user, permissions: perms }} selectedEntity="ent_ksc" {...props} />);
 
 // ── Tab, tautan, kosakata ────────────────────────────────────────────────────────────────────────────────────────────
 describe("Opname Kas — tab tersembunyi & tautan masuk", () => {
@@ -244,17 +271,39 @@ describe("Opname Kas — tab tersembunyi & tautan masuk", () => {
 });
 
 describe("Opname Kas — aturan layar (cashCountShared)", () => {
-  test("aksi: penghitung → Setujui nonaktif dengan kalimat server, Tolak tetap ada; tanpa cash.approve → tanpa aksi", () => {
-    const sendiri = OPK({ kontrol: { dua_orang: true, sendiri: true, ditolak: true, pesan: PESAN_ORANG_KEDUA } });
-    const a = aksiOpname(sendiri, izinPenuh);
+  test("aksi: penghitung → Setujui & Tolak nonaktif dengan kalimat server; rekan → keduanya; tanpa cash.approve → tanpa aksi", () => {
+    const a = aksiOpname(OPK({ kontrol: KONTROL_SENDIRI }), izinPenuh, AKU);
     expect(a.setujui).toEqual({ label: "Setujui", alasan: PESAN_ORANG_KEDUA });
-    expect(a.tolak).toEqual({ label: "Tolak", alasan: "" });
-    expect(aksiOpname(OPK(), izinHitung)).toEqual({ setujui: null, tolak: null });
-    expect(aksiOpname(SELESAI, izinPenuh)).toEqual({ setujui: null, tolak: null });
+    expect(a.tolak).toEqual({ label: "Tolak", alasan: PESAN_TOLAK_SENDIRI });
+    expect(a.batal).toBeNull();                                          // menunggu: diputus, bukan dibatalkan
+    const rekan = aksiOpname(OPK(), izinPenuh, { id: "usr_lain" });
+    expect(rekan.setujui).toEqual({ label: "Setujui", alasan: "" });
+    expect(rekan.tolak).toEqual({ label: "Tolak", alasan: "" });
+    expect(aksiOpname(OPK(), izinHitung)).toEqual({ setujui: null, tolak: null, batal: null });
+    expect(aksiOpname(SELESAI, izinPenuh)).toEqual({ setujui: null, tolak: null, batal: null });
     expect(aksiOpname(OPK({ terbit_error: "Periode tertutup" }), izinPenuh).setujui.label).toBe("Setujui lagi");
     const sibuk = aksiOpname(OPK({ dalam_proses: true }), izinPenuh);
     expect(sibuk.setujui.alasan).toMatch(/^Sedang diproses/);
     expect(sibuk.tolak.alasan).toMatch(/^Sedang diproses/);
+  });
+
+  test("aksi Batal: hanya opname disetujui + cash.approve; penghitung → nonaktif berkalimat (server, atau id penghitung)", () => {
+    expect(aksiOpname(DISETUJUI, izinPenuh, { id: "usr_lain" })).toEqual({ setujui: null, tolak: null,
+      batal: { label: "Batal", alasan: "" } });
+    expect(aksiOpname(DISETUJUI, izinHitung, { id: "usr_lain" }).batal).toBeNull();
+    expect(aksiOpname(BATAL, izinPenuh, { id: "usr_lain" }).batal).toBeNull();
+    // kalimat server bila dikirim — juga bila server mengizinkan penghitung (server penentu)
+    expect(aksiOpname({ ...DISETUJUI, kontrol: { batal_pesan: PESAN_BATAL_SENDIRI } }, izinPenuh, { id: "usr_lain" }).batal)
+      .toEqual({ label: "Batal", alasan: PESAN_BATAL_SENDIRI });
+    expect(aksiOpname({ ...DISETUJUI, kontrol: { batal_pesan: "" } }, izinPenuh, AKU).batal.alasan).toBe("");
+    // tanpa penilaian server: penghitung (id sama) tidak membatalkan putusan atas hitungannya sendiri
+    expect(aksiOpname(DISETUJUI, izinPenuh, AKU).batal.alasan).toMatch(/Anda hitung sendiri, jadi tidak bisa Anda batalkan/);
+    expect(aksiOpname({ ...DISETUJUI, dalam_proses: true }, izinPenuh, { id: "usr_lain" }).batal.alasan)
+      .toMatch(/^Sedang diproses/);
+    expect(statusOpname("batal")).toMatchObject({ label: "Dibatalkan" });
+    expect(PILIHAN_STATUS.map((o) => o.value)).toContain("batal");
+    expect(PILIHAN_PERLAKUAN).toEqual([{ value: "", label: "Semua perlakuan" },
+      { value: "selisih_kas", label: "Selisih kas" }, { value: "piutang_karyawan", label: "Piutang karyawan" }]);
   });
 
   test("perlakuan: kurang → selisih kas & piutang karyawan; lebih → selisih kas saja", () => {
@@ -324,13 +373,26 @@ describe("Opname Kas — daftar", () => {
     expect(q(host, "opk-approve-opk_3")).toBeNull();   // selesai: tidak ada yang diputus
   });
 
-  test("penghitung: Setujui nonaktif dengan kalimat server; Tolak beralasan → POST reject berkunci idempotensi", async () => {
-    pasang({ items: [OPK({ kontrol: { dua_orang: true, sendiri: true, ditolak: true, pesan: PESAN_ORANG_KEDUA } })] });
+  test("penghitung: Setujui & Tolak nonaktif dengan kalimat server (tanpa pop-up alasan, tanpa kiriman)", async () => {
+    pasang({ items: [OPK({ kontrol: KONTROL_SENDIRI })] });
+    const host = await daftar(izinPenuh, {}, AKU);
+    expect(q(host, "opk-approve-opk_1").disabled).toBe(true);
+    expect(q(host, "opk-reject-opk_1").disabled).toBe(true);
+    const catatan = txt(q(host, "opk-action-note-opk_1"));
+    expect(catatan).toContain(PESAN_ORANG_KEDUA);
+    expect(catatan).toContain(PESAN_TOLAK_SENDIRI);
+    await click(q(host, "opk-reject-opk_1"));
+    expect(mockAskReason).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  test("rekan: Tolak beralasan → POST reject berkunci idempotensi", async () => {
+    pasang({ items: [OPK()] });
     mockAskReason.mockResolvedValue("hitung ulang besok pagi");
     mockPost.mockResolvedValue({ data: OPK({ status: "ditolak", status_label: "Ditolak", alasan_tolak: "hitung ulang besok pagi" }) });
     const host = await daftar(izinPenuh);
-    expect(q(host, "opk-approve-opk_1").disabled).toBe(true);
-    expect(txt(q(host, "opk-action-note-opk_1"))).toBe(PESAN_ORANG_KEDUA);
+    expect(q(host, "opk-reject-opk_1").disabled).toBe(false);
+    expect(q(host, "opk-action-note-opk_1")).toBeNull();
     await click(q(host, "opk-reject-opk_1"));
     expect(mockAskReason).toHaveBeenCalledWith(expect.objectContaining({ reasonMinLength: 5 }));
     const [panggil] = posts("/cash-counts/opk_1/reject");
@@ -380,6 +442,59 @@ describe("Opname Kas — daftar", () => {
     expect(posts("/cash-counts/opk_2/approve")[0][1]).toEqual({ perlakuan: "selisih_kas", karyawan_id: "" });
     expect(txt(q(document.body, "opk-approve-form-error"))).toBe(kalimat);
     expect(q(document.body, "opk-approve-form")).not.toBeNull();
+  });
+
+  test("Batal opname disetujui: alasan ≥ 5 huruf → POST batal berkunci idempotensi; status Dibatalkan", async () => {
+    pasang({ items: [DISETUJUI, BATAL] });
+    mockAskReason.mockResolvedValue("karyawan salah dipilih");
+    mockPost.mockResolvedValue({ data: { ...DISETUJUI, status: "batal", status_label: "Dibatalkan" } });
+    const host = await daftar(izinPenuh);
+    expect(txt(q(host, "opk-status-opk_5"))).toBe("Dibatalkan");
+    expect(q(host, "opk-cancel-opk_5")).toBeNull();
+    expect(q(host, "opk-approve-opk_4")).toBeNull();
+    expect(q(host, "opk-reject-opk_4")).toBeNull();
+    await click(q(host, "opk-cancel-opk_4"));
+    const tanya = mockAskReason.mock.calls[0][0];
+    expect(tanya).toMatchObject({ reasonMinLength: 5, danger: true });
+    expect(tanya.title).toContain("KSC/OPK-00004");
+    expect(tanya.message).toContain("KSC/KK-00009");
+    expect(tanya.message).toContain("Budi Santoso");
+    const [panggil] = posts("/cash-counts/opk_4/batal");
+    expect(panggil[0]).toBe("/api/cash-counts/opk_4/batal");
+    expect(panggil[1]).toEqual({ alasan: "karyawan salah dipilih" });
+    expect(kunciIdem(panggil)).toBeTruthy();
+    expect(notifySuccess).toHaveBeenCalledWith(expect.stringContaining("KSC/OPK-00004"));
+  });
+
+  test("Batal: penghitung → nonaktif dengan kalimat server; tanpa cash.approve → tidak ada; pop-up dibatalkan → tanpa kiriman", async () => {
+    pasang({ items: [{ ...DISETUJUI, kontrol: { batal_pesan: PESAN_BATAL_SENDIRI } }] });
+    let host = await daftar(izinPenuh, {}, AKU);
+    expect(q(host, "opk-cancel-opk_4").disabled).toBe(true);
+    expect(txt(q(host, "opk-action-note-opk_4"))).toBe(PESAN_BATAL_SENDIRI);
+    document.body.innerHTML = "";
+    host = await daftar(izinHitung);
+    expect(q(host, "opk-cancel-opk_4")).toBeNull();
+    document.body.innerHTML = "";
+    pasang({ items: [DISETUJUI] });
+    mockAskReason.mockResolvedValue(null);
+    host = await daftar(izinPenuh);
+    await click(q(host, "opk-cancel-opk_4"));
+    expect(mockAskReason).toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  test("saringan Perlakuan (piutang karyawan, §7.8.6) → parameter `perlakuan` dan saringan unduhan", async () => {
+    pasang({ items: [DISETUJUI] });
+    const host = await daftar(izinLihat);
+    const opsi = [...q(host, "opk-treatment").querySelectorAll("option")].filter((o) => o.value)
+      .map((o) => [o.value, o.textContent]);
+    expect(opsi).toEqual([["selisih_kas", "Selisih kas"], ["piutang_karyawan", "Piutang karyawan"]]);
+    expect(gets("/cash-counts").at(-1)[1].params).not.toHaveProperty("perlakuan");
+    await choose(q(host, "opk-treatment"), "piutang_karyawan");
+    expect(gets("/cash-counts").at(-1)[1].params).toMatchObject({ entity_id: "ent_ksc", perlakuan: "piutang_karyawan" });
+    expect(mockPagerProps.at(-1).exportSpec.filters).toContainEqual(["perlakuan", "eq", "piutang_karyawan"]);
+    await choose(q(host, "opk-treatment"), "");
+    expect(gets("/cash-counts").at(-1)[1].params).not.toHaveProperty("perlakuan");
   });
 
   test("preset Pusat Persetujuan {status} dan kartu rekening {hitung} diterapkan", async () => {
@@ -519,6 +634,15 @@ describe("Opname Kas — pratinjau dokumen OPK-", () => {
     expect(txt(q(tunggu, "doc-preview-opk-control"))).toBe(PESAN_ORANG_KEDUA);
     expect(txt(q(tunggu, "doc-preview-opk-cash-empty"))).toMatch(/sesudah selisihnya disetujui/);
   });
+
+  test("opname dibatalkan: status Dibatalkan, riwayat Batal beralasan", async () => {
+    const doc = { ...BATAL, jejak: [...OPK().jejak,
+      { aksi: "batal", oleh: "Dodi Penyetuju", pada: "2026-11-29T05:00:00+00:00", catatan: "karyawan salah dipilih" }] };
+    const host = await mount(<CashCountPreview doc={doc} />);
+    expect(txt(q(host, "doc-preview-status"))).toBe("Dibatalkan");
+    expect(txt(q(host, "doc-preview-opk-history"))).toContain("Dibatalkan · Dodi Penyetuju");
+    expect(txt(q(host, "doc-preview-opk-history"))).toContain("karyawan salah dipilih");
+  });
 });
 
 // ── Rekening & Saldo ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -564,6 +688,17 @@ describe("Meja Keuangan — Opname kas jatuh tempo", () => {
     const kelompok = susunKelompok({ cash: ["create"] }, { desk: MEJA }).find((x) => x.id === "opname_kas");
     expect(kelompok).toMatchObject({ value_label: "Saldo buku", count: 1, total_value: 1000000 });
     expect(ada({ payment_variance: ["decide"], cash: ["view"] })).toBe(false);
+  });
+
+  test("petunjuk kelompok menyebut jarak opname dari data server (pengaturan `kas.opname_*_hari`), bukan tertulis mati", () => {
+    const kecil = { ...BARIS_MEJA, ref_id: "kas_kecil", account_id: "kas_kecil", number: "Kas Kecil Gudang",
+      title: "Kas kecil", cash_type: "kas_kecil", jarak_hari: 3 };
+    const meja = { ...MEJA, queues: [{ ...MEJA.queues[0], count: 2, rows: [BARIS_MEJA, kecil] }] };
+    const g = susunKelompok({ cash: ["create"] }, { desk: meja }).find((x) => x.id === "opname_kas");
+    expect(g.hint).toContain("kas kasir tiap 1 hari");
+    expect(g.hint).toContain("kas kecil tiap 3 hari");
+    expect(g.hint).toContain("Pengaturan");
+    expect(g.hint).not.toMatch(/tiap hari|tiap minggu/);
   });
 
   test("baris 'Opname' membuka form Hitung di tempat, terisi rekening; tersimpan → hasil di pop-up + kartu dimuat ulang", async () => {

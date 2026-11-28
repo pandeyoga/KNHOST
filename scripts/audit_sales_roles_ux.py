@@ -190,6 +190,16 @@ TERGATED_DI_KODE = {
         "modal pembayaran hanya dirender untuk peran yang boleh membayar",
     ("purchase-returns", "/gl/cash-accounts"):
         "features/purchasing/ReturnDetailPanel.jsx — fetch akun refund dipagari canApprove",
+    # ── Kas & Bank 3 (gate pohon akhir 28 Nov) — Kas Kecil dibuka peran ber-izin PD/LPJ tanpa `cash.view` (sales,
+    # sales_admin). Kedua rute menuntut `cash.view`; pemanggilnya di layar ini dipagari IZIN (uji jest
+    # `kb3DanaTetap` "peran PD/LPJ tanpa cash.view … tidak pernah memanggil", bukti-merah: gerbang dicabut → merah).
+    ("petty-cash", "/kas-kecil/dana-tetap"):
+        "features/pettycash/PettyCashView.jsx — bagian 'Dana tetap' (DanaTetapView → IsiUlangModal) hanya bila "
+        "lihatDanaTetap = can(perms,'cash','view') (= izin rute); preset bagian dana-tetap jatuh ke Pengajuan dana",
+    ("petty-cash", "/bank-accounts"):
+        "features/pettycash — CashAccountField hanya di aksi kas: pop-up Cairkan (CashAdvanceDetail, canDisburse = "
+        "can cash_advance.disburse) & SettlementCashModal (SettlementDetail/PettyCashView, canPay = can "
+        "cash_settlement.pay); peran bawaan pemegang disburse/pay semuanya memegang cash.view",
     # ── FASE D (2026-08-20) — layar Permintaan Desain dilihat 4 peran ────────────
     # Catatan penting soal DUA baris di bawah: keduanya pagar NYATA di layar yang
     # sama, dan sengaja TIDAK ditutup dengan melebarkan izin desainer. Dua tuduhan

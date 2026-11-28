@@ -28,7 +28,9 @@ jest.mock("../../components/KNSelect", () => {
 });
 
 // eslint-disable-next-line import/first
-import CashAccountField, { accountCashType, cashAccountBlocked, cashAccountLabel } from "../../components/CashAccountField";
+import CashAccountField, {
+  CASH_TYPE_LABEL, accountCashType, cashAccountBlocked, cashAccountLabel,
+} from "../../components/CashAccountField";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -123,4 +125,37 @@ test("pembantu: jenis kas dari master rekening & label", () => {
   expect(cashAccountLabel({ name: "Kas Toko" })).toBe("Kas Toko");
   expect(cashAccountBlocked("memuat", "")).toBe(true);
   expect(cashAccountBlocked("tanpa_pt", "")).toBe(false);
+});
+
+// Kas & Bank 3 — rekening kas kasir (uang pelanggan) BUKAN kas kecil: tidak ditawarkan di pemilih kas kecil (pencairan PD,
+// sisa LPJ, kas manual, refund), dan tidak menghapus isi otomatis "satu-satunya rekening" kas kecil.
+const KASIR = { id: "rek_ks", name: "Kasir Toko", entity_id: "ent_ksc", account_type: "cash", cash_type: "kas_kasir" };
+
+test("Kas & Bank 3: jenis kas kasir dari master rekening; label Kas Kasir", () => {
+  expect(accountCashType(KASIR)).toBe("kas_kasir");
+  expect(accountCashType({ account_type: "cash", cash_type: "aneh" })).toBe("kas_kecil");   // = server account_cash_type
+  expect(CASH_TYPE_LABEL).toEqual({ kas_kasir: "Kas Kasir", kas_kecil: "Kas Kecil", kas_besar: "Bank" });
+});
+
+test("Kas & Bank 3: pemilih kas kecil tanpa rekening kasir — satu kas kecil + satu kasir tetap terisi otomatis", async () => {
+  mockGet.mockResolvedValue({ data: [...REK, KASIR] });
+  await mount({ cashType: "kas_kecil" });
+  const opsi = [...q("rek-select").querySelectorAll("option")].filter((o) => o.value).map((o) => o.value);
+  expect(opsi).toEqual(["rek_k"]);
+  expect(last.state).toBe("tunggal");
+  expect(last.value).toBe("rek_k");
+});
+
+test("Kas & Bank 3: pemilih kas kasir hanya rekening kasir; pemilih tanpa jenis tetap memuat semua", async () => {
+  mockGet.mockResolvedValue({ data: [...REK, KASIR] });
+  await mount({ cashType: "kas_kasir" });
+  expect(last.state).toBe("tunggal");
+  expect(last.value).toBe("rek_ks");
+  expect(q("rek-sole").textContent).toContain("Satu-satunya rekening Kas Kasir");
+  roots.forEach((r) => act(() => r.unmount()));
+  roots = [];
+  document.body.innerHTML = "";
+  await mount({ cashType: "" });
+  const opsi = [...q("rek-select").querySelectorAll("option")].filter((o) => o.value).map((o) => o.value);
+  expect(opsi).toEqual(["rek_k", "rek_b1", "rek_b2", "rek_ks"]);
 });

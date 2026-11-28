@@ -15,6 +15,8 @@ import BankAccountChangesPanel from "../finance/BankAccountChangesPanel";
 import BankAccountsView from "../finance/BankAccountsView";
 import PettyCashView from "../pettycash/PettyCashView";
 import IsiUlangModal from "../pettycash/IsiUlangModal";
+import CashAdvanceDetail from "../pettycash/CashAdvanceDetail";
+import SettlementDetail from "../pettycash/SettlementDetail";
 import FundTransferPreview from "../documents/preview/bodies/FundTransferPreview";
 import { alasanJenisKasTerkunci, bolehIsiUlang, jenisKasRekening, labelJenisKas } from "../finance/jenisKas";
 import { ViewPresetProvider } from "../../context/ViewPresetContext";
@@ -208,6 +210,9 @@ describe("Form rekening — jenis kas, dana tetap, lokasi", () => {
 
     await choose(q(host, "bank-form-cash-type"), "kas_kecil");
     expect(q(host, "bank-form-dana-tetap")).not.toBeNull();
+    // ketetapan R3: yang dikurangkan = sisa panjar di tangan karyawan (sama dengan pop-up Isi ulang), bukan "belum LPJ"
+    expect(teks(q(host, "bank-form-dana-tetap-hint"))).toBe(
+      "Isi ulang diusulkan sebesar dana tetap − saldo buku − sisa panjar di tangan karyawan.");
     const lokasi = [...q(host, "bank-form-location").options].map((o) => [o.value, o.textContent]);
     // "" = tanpa lokasi (KNSelect menyisipkan butir placeholder "Tanpa lokasi" untuk mengosongkan)
     expect(lokasi).toEqual([["", "-"], ["site_bdg", "Toko Bandung · Bandung"], ["site_jkt", "Gudang Jakarta · Jakarta"]]);
@@ -414,6 +419,17 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(q(host, "bank-refill-kk1")).not.toBeNull();
     expect(q(host, "bank-refill-ks1")).toBeNull();
     expect(q(host, "bank-refill-bca")).toBeNull();
+    // SATU kaki per kartu (Isi ulang + Opname di kaki yang sama, testid unik) — dulu dua kaki bertumpuk ber-testid kembar
+    expect(host.querySelectorAll('[data-testid="bank-card-actions-kk1"]')).toHaveLength(1);
+    const kaki = q(host, "bank-card-actions-kk1");
+    expect(q(kaki, "bank-refill-kk1")).not.toBeNull();
+    expect(q(kaki, "bank-opname-kk1")).not.toBeNull();
+    expect(host.querySelectorAll('[data-testid="bank-card-actions-ks1"]')).toHaveLength(1);   // kasir: Opname saja
+    expect(q(q(host, "bank-card-actions-ks1"), "bank-opname-ks1")).not.toBeNull();
+    expect(q(host, "bank-card-actions-bca")).toBeNull();                                      // bank: tanpa aksi kartu
+    const aksiTestid = [...host.querySelectorAll('[data-testid^="bank-card-actions-"], [data-testid^="bank-refill-"], '
+      + '[data-testid^="bank-opname-"]')].map((el) => el.getAttribute("data-testid"));
+    expect(aksiTestid.length).toBe(new Set(aksiTestid).size);
     // aksi kartu bukan tombol di dalam tombol kartu (HTML sah) dan tidak membuka buku rekening
     expect(q(host, "bank-refill-kk1").closest('[data-testid="bank-card-kk1"]')).toBeNull();
     await click(q(host, "bank-refill-kk1"));
@@ -449,7 +465,10 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(mockPost).toHaveBeenCalledTimes(1);
     const [url, body, cfg] = mockPost.mock.calls[0];
     expect(url).toBe("/api/kas-kecil/dana-tetap/kk1/isi-ulang");
-    expect(body).toEqual({ sumber_account_id: "bank_bca", catatan: "Isi ulang minggu ini" });
+    // tanpa `nominal` (server menghitung ulang); `nominal_dilihat` = angka yang DITAMPILKAN, supaya server menolak (409)
+    // bila usulannya berubah sejak pop-up dibuka (bukan nominal klien)
+    expect(body).toEqual({ sumber_account_id: "bank_bca", catatan: "Isi ulang minggu ini", nominal_dilihat: 500000 });
+    expect(body).not.toHaveProperty("nominal");
     expect(cfg.headers["Idempotency-Key"]).toBeTruthy();
     expect(q(host, "refill-form")).toBeNull();
     expect(teks(q(host, "bank-notice"))).toBe(
@@ -479,6 +498,31 @@ describe("Rekening & Saldo — kartu rekening tunai", () => {
     expect(gets("/kas-kecil/dana-tetap/kk1")).toHaveLength(2);
   });
 
+  test("usulan berubah sejak dibuka: 409 server tampil di pop-up, nominal dimuat ulang dan dikirim lagi sebagai yang dilihat", async () => {
+    let posisi = POSISI;
+    routeGet({ "/kas-kecil/dana-tetap/kk1": () => posisi });
+    const kalimat = "Usulan isi ulang berubah dari Rp 500.000 menjadi Rp 650.000 sejak pop-up dibuka. Muat ulang lalu periksa lagi.";
+    mockPost.mockImplementationOnce(async () => {
+      posisi = { ...POSISI, saldo_buku: 1050000, usulan_isi_ulang: 650000 };   // kas keluar di sela
+      throw galat(409, kalimat);
+    });
+    mockPost.mockResolvedValueOnce({ data: { id: "pdn_13", number: "KSC/PDN-00013", status: "selesai", nominal: 650000 } });
+    const onSaved = jest.fn();
+    const host = await mount(<IsiUlangModal open accountId="kk1" accountName="Kas Kecil Toko" onClose={() => {}} onSaved={onSaved} />);
+    expect(teks(q(host, "refill-amount"))).toBe(rp(500000));
+    await choose(q(host, "refill-source"), "bank_bca");
+    await submit(host, "refill-form-submit");
+    expect(mockPost.mock.calls[0][1]).toMatchObject({ nominal_dilihat: 500000 });
+    expect(teks(q(host, "refill-form-error"))).toBe(kalimat);
+    expect(teks(q(host, "refill-amount"))).toBe(rp(650000));            // angka baru dimuat ulang di pop-up yang sama
+    expect(teks(q(host, "refill-summary"))).toContain(rp(650000));
+    expect(onSaved).not.toHaveBeenCalled();
+    await submit(host, "refill-form-submit");
+    expect(mockPost.mock.calls[1][1]).toMatchObject({ sumber_account_id: "bank_bca", nominal_dilihat: 650000 });
+    expect(mockPost.mock.calls[1][2].headers["Idempotency-Key"]).not.toBe(mockPost.mock.calls[0][2].headers["Idempotency-Key"]);
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ number: "KSC/PDN-00013" }));
+  });
+
   test("posisi gagal dimuat: pesan di pop-up, tombol mati; PT tanpa rekening sumber: kalimat", async () => {
     routeGet({ "/kas-kecil/dana-tetap/kk1": galat(403, "Anda tidak punya akses melihat kas.") });
     let host = await mount(<IsiUlangModal open accountId="kk1" accountName="Kas Kecil Toko" onClose={() => {}} onSaved={() => {}} />);
@@ -506,6 +550,38 @@ describe("Kas Kecil — tab Dana tetap", () => {
     expect(q(host, "pc-bagian")).toBeNull();
     expect(q(host, "pc-title")).not.toBeNull();
     expect(gets("/kas-kecil/dana-tetap")).toHaveLength(0);
+  });
+
+  // Gate pohon akhir (sapuan peran `audit_sales_roles_ux`, sales & sales_admin): Kas Kecil bisa dibuka peran ber-izin PD/LPJ
+  // TANPA `cash.view` — rute `/kas-kecil/dana-tetap` dan `/bank-accounts` sama-sama menuntut `cash.view`, jadi layar tidak
+  // boleh memanggilnya untuk peran itu (403 tanpa penjelasan = panel mati).
+  test("peran PD/LPJ tanpa cash.view (pola sales/sales_admin): tidak pernah memanggil /kas-kecil/dana-tetap atau /bank-accounts", async () => {
+    const SALES = { cash_advance: ["view", "create", "update", "submit"], cash_settlement: ["view", "create", "update", "submit"] };
+    const user = { id: "usr_sales", role: "sales", permissions: SALES };
+    routeGet({ "/petty-cash/worklist": WL, "/expense-categories": [], "/kas-kecil/dana-tetap": DAFTAR, "/bank-accounts": [] });
+    // tautan langsung ke bagian Dana tetap pun tetap membuka Pengajuan dana (tanpa chip Dana tetap)
+    let host = await mount(
+      <ViewPresetProvider preset={{ view: "petty-cash", bagian: "dana-tetap", nonce: 9 }}>
+        <PettyCashView currentUser={user} selectedEntity="ent_ksc" entities={[]} />
+      </ViewPresetProvider>);
+    expect(q(host, "pc-bagian")).toBeNull();
+    expect(q(host, "pc-title")).not.toBeNull();
+    expect(gets("/petty-cash/worklist").length).toBeGreaterThan(0);
+    // pemanggil /bank-accounts di layar ini = pemilih rekening di aksi kas (Cairkan PD: `cash_advance.disburse`; terima
+    // sisa / bayar reimburse LPJ: `cash_settlement.pay`) — tidak ditawarkan untuk peran ini
+    host = await mount(<CashAdvanceDetail ca={{ id: "ca9", number: "PD-0009", status: "approved", entity_id: "ent_ksc",
+      total_amount: 500000, lines: [], approvals: [], created_by: "Sari" }} currentUser={user} entities={[]}
+    onEdit={() => {}} onChanged={() => {}} flash={() => {}} />);
+    expect(q(host, "ca-disburse-btn")).toBeNull();
+    host = await mount(<SettlementDetail stl={{ id: "stl9", number: "LPJ-0009", status: "approved", entity_id: "ent_ksc",
+      lines: [], attachments: [], sisa_dikembalikan: { status: "open", amount: 50000 },
+      hutang_reimburse: { status: "open", amount: 20000 } }} currentUser={user} entities={[]} catLabels={{}}
+    onChanged={() => {}} onEdit={() => {}} flash={() => {}} />);
+    expect(q(host, "stl-remainder-bar")).not.toBeNull();
+    expect(q(host, "stl-return-btn")).toBeNull();
+    expect(q(host, "stl-pay-reimburse-btn")).toBeNull();
+    expect(gets("/kas-kecil/dana-tetap")).toHaveLength(0);
+    expect(gets("/bank-accounts")).toHaveLength(0);
   });
 
   test("posisi per rekening: dana tetap, saldo buku, panjar, usulan; isi ulang terbuka bertautan PDN; tombol mati beralasan", async () => {

@@ -2,21 +2,24 @@
  * CashCountsView — Kas & Bank bagian 3 (Tugas 4b) · Keuangan › Kas & Bank › **Opname Kas** (view `cash-counts`, tab
  * TERSEMBUNYI — hub tetap 6 tab tampak; bilah tab menyorot Rekening & Saldo). Spesifikasi §5.3, §5.4.
  *
- * Templat daftar (`04_POLA_UI` §2.A): judul satu baris (+ ?) · bilah daftar (cari · Status ▾ · Rekening ▾ · jumlah ·
- * + Hitung) · tabel nomor, dihitung, rekening, saldo buku, uang fisik, selisih, status · aksi baris di kolom kanan ·
- * halaman + Unduh CSV. Nomor = `DocLink` → pratinjau dokumen (registri `cash_count`, kaki: Jejak + Buka layar penuh).
+ * Templat daftar (`04_POLA_UI` §2.A): judul satu baris (+ ?) · bilah daftar (cari · Status ▾ · Perlakuan ▾ · Rekening ▾ ·
+ * jumlah · + Hitung) · tabel nomor, dihitung, rekening, saldo buku, uang fisik, selisih, status · aksi baris di kolom
+ * kanan · halaman + Unduh CSV. Nomor = `DocLink` → pratinjau dokumen (registri `cash_count`, kaki: Jejak + Buka layar
+ * penuh). Saringan Perlakuan "Piutang karyawan" = daftar piutang karyawan dari opname (§7.8.6; parameter server
+ * `perlakuan`, ikut ke unduhan).
  *
- * Sumber: `GET /api/cash-counts` (berhalaman; baris menunggu membawa `kontrol` untuk pengguna) dan `GET /api/bank-accounts`
+ * Sumber: `GET /api/cash-counts` (berhalaman; baris membawa `kontrol` untuk pengguna) dan `GET /api/bank-accounts`
  * (pilihan saringan rekening = rekening tunai). Aksi (izin, bukan peran — `cashCountShared.aksiOpname`): Hitung
- * `cash.create` (pop-up `CashCountForm`), Setujui `cash.approve` (pop-up `CashCountApproveModal`: perlakuan + karyawan;
- * nonaktif bagi penghitung dengan kalimat server), Tolak `cash.approve` (`askReason` ≥ 5 huruf; penghitung boleh menolak
- * hitungannya sendiri). Semua kirim lewat `moneyPost` + `useIntentKey`.
+ * `cash.create` (pop-up `CashCountForm`), Setujui `cash.approve` (pop-up `CashCountApproveModal`: perlakuan + karyawan),
+ * Tolak `cash.approve` (`askReason` ≥ 5 huruf) — keduanya nonaktif bagi penghitung dengan kalimat server; Batal opname
+ * disetujui `cash.approve` (`askReason` ≥ 5 huruf → `POST …/batal`; kas penyesuaian dibalik; bukan penghitungnya).
+ * Semua kirim lewat `moneyPost` + `useIntentKey`.
  * Tautan masuk: Pusat Persetujuan (preset `{status}`), kartu rekening Rekening & Saldo (preset `{hitung, account_id}` →
  * pop-up Hitung terisi), pratinjau "Buka layar penuh" (preset `{status, account_id, sorot}`), notifikasi & Jejak
  * (`focusDoc` `cash_count` → pratinjau), Meja Keuangan "Buka layar penuh" (`focusDoc` `bank_account` → saringan rekening).
  */
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Check, Plus, XCircle } from "lucide-react";
+import { Ban, Calculator, Check, Plus, XCircle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import EntityScopeBanner from "../../../components/EntityScopeBanner";
@@ -42,8 +45,8 @@ import DocLink from "../../documents/preview/DocLink";
 import CashCountApproveModal from "./CashCountApproveModal";
 import CashCountForm from "./CashCountForm";
 import {
-  ALASAN_MIN, PILIHAN_STATUS, TEKS_BANTU, aksiOpname, jenisKas, labelRekeningTunai, rekeningTunai, selisihNada,
-  selisihTeks, statusOpname,
+  ALASAN_MIN, PILIHAN_PERLAKUAN, PILIHAN_STATUS, TEKS_BANTU, aksiOpname, jenisKas, labelRekeningTunai, pesanBatal,
+  rekeningTunai, selisihNada, selisihTeks, statusOpname,
 } from "./cashCountShared";
 
 const CSV = [
@@ -67,6 +70,7 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
   const { entities = [] } = useEntityScope() || {};
   const scoped = Boolean(selectedEntity) && selectedEntity !== "all";
   const [status, setStatus] = useState("");
+  const [perlakuan, setPerlakuan] = useState("");   // "" | selisih_kas | piutang_karyawan (§7.8.6)
   const [rekeningId, setRekeningId] = useState("");
   const [cari, setCari] = useState("");
   const [sorot, setSorot] = useState("");
@@ -87,14 +91,16 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
 
   useViewPreset("cash-counts", (p) => {
     if (p.status !== undefined) setStatus(p.status || "");
+    if (p.perlakuan !== undefined) setPerlakuan(p.perlakuan || "");
     if (p.account_id !== undefined) setRekeningId(p.account_id || "");
     if (p.sorot) { setSorot(p.sorot); gulirKe(`opk-row-${p.sorot}`, 600); }
     if (p.hitung && can(perms, "cash", "create")) setHitung({ accountId: p.hitung });
   });
 
   const params = useMemo(() => ({
-    ...(scoped ? { entity_id: selectedEntity } : {}), ...(status ? { status } : {}), ...(rekeningId ? { account_id: rekeningId } : {}),
-  }), [scoped, selectedEntity, status, rekeningId]);
+    ...(scoped ? { entity_id: selectedEntity } : {}), ...(status ? { status } : {}), ...(perlakuan ? { perlakuan } : {}),
+    ...(rekeningId ? { account_id: rekeningId } : {}),
+  }), [scoped, selectedEntity, status, perlakuan, rekeningId]);
   const paged = usePagedList("/cash-counts", { pageSize: 25, params, search: cari });
   const rows = paged.items || [];
 
@@ -141,6 +147,18 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
     await kirim(d, "reject", { alasan }, (x) => `Opname ${x.number} ditolak — rekening ${x.account_name} perlu dihitung ulang.`);
   }
 
+  /** Batal opname disetujui — jalan balik putusan yang keliru (tinjauan akhir, butir terbuka): kas penyesuaian dibalik. */
+  async function batal(d) {
+    const alasan = await askReason({
+      title: `Batalkan opname ${d.number}?`, danger: true, message: pesanBatal(d),
+      reasonLabel: "Alasan pembatalan", reasonMinLength: ALASAN_MIN, confirmLabel: "Batalkan opname",
+      testId: "opk-cancel-reason",
+    });
+    if (alasan === null || alasan === undefined) return;
+    await kirim(d, "batal", { alasan }, (x) => `Opname ${x.number || d.number} dibatalkan — kas penyesuaiannya dibalik; `
+      + `hitung ulang rekening ${x.account_name || d.account_name}.`);
+  }
+
   return (
     <div className="space-y-3" data-testid="cash-counts-view">
       <PageHeader icon={Calculator} title="Opname Kas" help={TEKS_BANTU} testId="opk-header" />
@@ -159,6 +177,8 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
           className="min-w-[200px] flex-1 sm:max-w-[300px]" />
         <KNSelect data-testid="opk-status" aria-label="Status" className="field !w-auto min-w-[180px]" value={status}
           options={PILIHAN_STATUS} onValueChange={(v) => setStatus(v || "")} />
+        <KNSelect data-testid="opk-treatment" aria-label="Perlakuan" className="field !w-auto min-w-[170px]" value={perlakuan}
+          options={PILIHAN_PERLAKUAN} onValueChange={(v) => setPerlakuan(v || "")} />
         <KNSelect data-testid="opk-account" aria-label="Rekening" className="field !w-auto min-w-[200px]" value={rekeningId}
           options={opsiRekening} onValueChange={(v) => setRekeningId(v || "")} />
       </ListToolbar>
@@ -170,7 +190,7 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
           <div className="section-pad text-fs-13 text-kn-text-2" role="status" data-testid="opk-loading">Memuat opname kas…</div>
         ) : rows.length === 0 ? (
           <div className="section-pad text-center text-fs-13 text-kn-text-2" data-testid="opk-empty">
-            {cari.trim() || status || rekeningId ? "Tidak ada opname yang cocok dengan saringan." : "Belum ada opname kas."}
+            {cari.trim() || status || perlakuan || rekeningId ? "Tidak ada opname yang cocok dengan saringan." : "Belum ada opname kas."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -213,6 +233,11 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
                         {d.status === "ditolak" && d.alasan_tolak && (
                           <span className="mt-0.5 block max-w-[220px] text-fs-12 text-kn-text-2">{d.alasan_tolak}</span>
                         )}
+                        {d.status === "batal" && d.alasan_batal && (
+                          <span className="mt-0.5 block max-w-[220px] text-fs-12 text-kn-text-2" data-testid={`opk-cancel-note-${d.id}`}>
+                            {d.alasan_batal}
+                          </span>
+                        )}
                         {d.terbit_error && d.status === "menunggu_persetujuan" && (
                           <span className="mt-0.5 block max-w-[220px] text-fs-12 text-kn-danger-text" data-testid={`opk-publish-error-${d.id}`}>
                             Kas belum terbit: {d.terbit_error}
@@ -220,8 +245,8 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
                         )}
                       </td>
                       <td className="col-sticky-end text-right">
-                        <BarisAksi d={d} aksi={aksiOpname(d, perms)} mati={sibukId === d.id}
-                          onSetujui={() => setSetujui(d)} onTolak={() => tolak(d)} />
+                        <BarisAksi d={d} aksi={aksiOpname(d, perms, currentUser)} mati={sibukId === d.id}
+                          onSetujui={() => setSetujui(d)} onTolak={() => tolak(d)} onBatal={() => batal(d)} />
                       </td>
                     </tr>
                   );
@@ -236,7 +261,7 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
               loading={paged.loading} onPrev={paged.prev} onNext={paged.next} testId="opk-pager" label="opname"
               exportConfig={{ columns: CSV, rows, fetchAll: paged.fetchAll, filename: "opname-kas" }}
               exportSpec={{ dataset: "cash_counts", label: "opname-kas", search: cari,
-                filters: [["status", "eq", status], ["account_id", "eq", rekeningId]],
+                filters: [["status", "eq", status], ["perlakuan", "eq", perlakuan], ["account_id", "eq", rekeningId]],
                 sort: [{ key: "dihitung_pada", dir: "desc" }] }} />
           </div>
         )}
@@ -259,29 +284,36 @@ export default function CashCountsView({ currentUser, selectedEntity, focusDoc, 
   );
 }
 
-function BarisAksi({ d, aksi, mati, onSetujui, onTolak }) {
-  const alasan = [aksi.setujui, aksi.tolak].map((a) => a?.alasan).find(Boolean) || "";
-  if (!aksi.setujui && !aksi.tolak) return null;
+function BarisAksi({ d, aksi, mati, onSetujui, onTolak, onBatal }) {
+  // Kalimat alasan tiap tombol nonaktif, tanpa kembar (sedang diproses = satu kalimat untuk semua tombol).
+  const alasan = [...new Set([aksi.setujui, aksi.tolak, aksi.batal].map((a) => a?.alasan).filter(Boolean))];
+  if (!aksi.setujui && !aksi.tolak && !aksi.batal) return null;
   return (
     <div className="flex flex-col items-end gap-1" data-testid={`opk-actions-${d.id}`}>
       <div className="flex flex-wrap justify-end gap-1.5">
         {aksi.setujui && (
           <button type="button" className="primary-button btn-sm" data-testid={`opk-approve-${d.id}`}
-            disabled={mati || Boolean(aksi.setujui.alasan)} onClick={onSetujui}>
+            disabled={mati || Boolean(aksi.setujui.alasan)} title={aksi.setujui.alasan || undefined} onClick={onSetujui}>
             <Check size={13} aria-hidden="true" />{aksi.setujui.label}
           </button>
         )}
         {aksi.tolak && (
           <button type="button" className="secondary-button btn-sm text-kn-danger-text" data-testid={`opk-reject-${d.id}`}
-            disabled={mati || Boolean(aksi.tolak.alasan)} onClick={onTolak}>
+            disabled={mati || Boolean(aksi.tolak.alasan)} title={aksi.tolak.alasan || undefined} onClick={onTolak}>
             <XCircle size={13} aria-hidden="true" />{aksi.tolak.label}
           </button>
         )}
+        {aksi.batal && (
+          <button type="button" className="secondary-button btn-sm text-kn-danger-text" data-testid={`opk-cancel-${d.id}`}
+            disabled={mati || Boolean(aksi.batal.alasan)} title={aksi.batal.alasan || undefined} onClick={onBatal}>
+            <Ban size={13} aria-hidden="true" />{aksi.batal.label}
+          </button>
+        )}
       </div>
-      {alasan && (
+      {alasan.length > 0 && (
         // Sel aksi `text-right` mewarisi `white-space: nowrap` (kolom angka) — kalimat alasan dibungkus sendiri.
         <span className="max-w-[260px] whitespace-normal break-words text-left text-fs-12 text-kn-text-2" data-testid={`opk-action-note-${d.id}`}>
-          {alasan}
+          {alasan.map((t) => <span key={t} className="block">{t}</span>)}
         </span>
       )}
     </div>

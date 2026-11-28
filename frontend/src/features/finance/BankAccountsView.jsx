@@ -36,10 +36,10 @@ import { entityShortById } from "../../utils/entityLabel";
 import { usePaymentMethods } from "../../config/paymentMethods";
 import BankAccountForm from "./BankAccountForm";
 import BankAccountChangesPanel from "./BankAccountChangesPanel";
-import { JenisKasPill, RekeningKartuAksi, RekeningKasInfo } from "./RekeningKasParts";   // Kas & Bank 3
+// Kas & Bank 3 — kaki kartu `RekeningKartuAksi` memuat Isi ulang (4a) DAN Opname (4b, `cashcount/OpnameKartuAksi`).
+import { JenisKasPill, RekeningKartuAksi, RekeningKasInfo } from "./RekeningKasParts";
 import IsiUlangModal from "../pettycash/IsiUlangModal";
 import { statusPindahDana } from "./fundtransfer/fundTransferShared";
-import OpnameKartuAksi from "./cashcount/OpnameKartuAksi";   // Kas & Bank 3 (Tugas 4b) — aksi Opname kartu rekening tunai
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -274,8 +274,8 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     <span className="ml-auto">{a.txn_count} transaksi{a.unreconciled_count > 0 ? ` · ${a.unreconciled_count} belum dicocokkan` : ""}</span>
                   </div>
                 </button>
+                {/* Satu kaki kartu: Isi ulang (kas kecil berdana tetap) + Opname (rekening tunai) — tinjauan akhir Minor 1. */}
                 <RekeningKartuAksi a={a} perms={currentUser?.permissions} onIsiUlang={setIsiUlang} />
-                <OpnameKartuAksi a={a} currentUser={currentUser} />
                 </div>
               ))}
             </div>
