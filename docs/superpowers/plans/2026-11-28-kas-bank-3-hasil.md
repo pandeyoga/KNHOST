@@ -21,7 +21,7 @@ rancangan/rencana `8009eb1`, `fa711aa` · Pohon kode akhir: `__POHON__`.
 
 **Pengaman:** dua isi ulang bersamaan → satu Pindah Dana; dua Setujui bersamaan → satu kas penyesuaian + satu jurnal; dua
 Batal bersamaan → satu pembalik; penghitung tidak bisa menolak atau menyetujui selisih opnamenya sendiri; kiriman ulang
-berkunci sama kembali ke dokumen yang sama; kunci proses opname terlihat di Kunci Saga, kunci isi ulang lepas sendiri sesudah
+berkunci sama kembali ke dokumen yang sama; membuat rekening kas sejenis kedua tidak menggeser saldo rekening lama; kunci proses opname terlihat di Kunci Saga, kunci isi ulang lepas sendiri sesudah
 5 menit bila server mati di tengah proses.
 
 ## 2. Tugas → commit
@@ -35,7 +35,7 @@ berkunci sama kembali ke dokumen yang sama; kunci proses opname terlihat di Kunc
 | T4b Layar Opname Kas | `53bb922` (gabung `4b7c043`) |
 | Gelombang perbaikan akhir (server A, layar B, gate) | `758904c`, `42150ee`, `f93f08c`, `81e695f` (gabung `7b2715d`, `6cf2a7d`) |
 | T5 Uji MongoDB sungguhan | `79fa3b5` |
-| T5 Temuan tangkapan: kas lama tanpa rekening (server) | `c8283e0`, __FIX1__ (gabung __GABUNG_A__) |
+| T5 Temuan tangkapan: kas lama tanpa rekening (server) | `c8283e0`, `0c498fc` (gabung `ebe337f`) |
 | T5 Temuan tangkapan: kalimat tunai, alasan Isi ulang, Jejak (layar) | `aba200f` (gabung `83cd2d9`) |
 
 Alur: T1–T3 (jalur uang) ditinjau per tugas; T4 (layar) tanpa tinjauan tugas (perintah pemilik "ya percepat"); tinjauan
@@ -66,12 +66,13 @@ Temuan nyata yang tertangkap sebelum gabung:
 
 ## 3. Uji (apa adanya)
 
-- **Backend `tests_mem` penuh** di `6cf2a7d`: 3352 lulus, 2 dilewati, 3 xfail, **0 gagal** (EXIT 0, 1258 dtk). Sebelum
-  gelombang perbaikan akhir (`4b7c043`): 3342 lulus, 0 gagal.
+- **Backend `tests_mem` penuh** pada kode server akhir (`0c498fc`, sama dengan pohon akhir untuk `backend/`): 3367 lulus,
+  2 dilewati, 3 xfail, **0 gagal**. Sebelumnya: `6cf2a7d` 3352 lulus · `4b7c043` 3342 lulus, 0 gagal.
 - **Jest penuh** di `6cf2a7d`: 2259/2260 uji, 273/275 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan
   garis dasar).
 - **Uji baru:** `test_KB3_1_fondasi`, `test_KB3_2_kasir_dana_tetap`, `test_KB3_3_opname`, `test_KB3_4_layar_server`
-  (68 lulus di pohon gabungan) + `kb3DanaTetap.test.js`, `kb3Opname.test.js` (jest).
+  (68 lulus di pohon gabungan), `test_KB3_5_kas_lama_rekening` (15: penetapan lewat semua jalur, pembukuan & pembatalan tidak
+  berubah di mode lama dan mode akun per rekening, keadaan ambigu → 409, server menyala tidak menulis) + `kb3DanaTetap.test.js`, `kb3Opname.test.js` (jest).
 - **MongoDB sungguhan** (`backend/tests/test_bp_KB3_bersamaan.py`, salinan data acuan + backend terpisah :8033, salinan
   dibuang; tiap kasus 3 kali): (1) dua isi ulang bersamaan → selalu satu 200 + satu 409, satu Pindah Dana bertanda
   Rp 1.500.000 (dana tetap 2 juta − saldo 500 ribu) selesai; (2) dua Setujui opname selisih −Rp 20.000 bersamaan → satu 200 +
@@ -149,14 +150,23 @@ Keputusan builder rancangan §7 (1–8, termasuk delapan jawaban builder check �
 - Opname lama yang masih menunggu (hanya lewat balapan dua pembuatan) bisa disetujui lagi bila opname yang lebih baru
   dibatalkan; jurnal asal yang gagal lalu dibatalkan tampil dua baris di Posting Gagal.
 - Tolak sendiri Admin di bawah "admin boleh sendiri" tercatat "approve" di jejak persetujuan.
+- Kas lama tanpa rekening (perbaikan tangkapan): penetapan tidak dibatalkan bila pembuatan rekening gagal sesudahnya (saldo
+  aman, jejak menyebut rekening yang batal dibuat); pembantu penetapan menambah ±175 baris di `bank_service.py` (layak modul
+  sendiri); saringan "kas tanpa rekening" masih ditulis sendiri di `bank_recon_service` dan `ar_receipt_service` (setara);
+  kwitansi lama tidak mendapat potret rekening; rekening tunggal dinonaktifkan lalu rekening baru sejenis dibuat → rekening
+  baru menyerap kas lama (aturan lama); uji MongoDB sungguhan `backend/tests/test_g3_phase03.py` (memanggil isi jenis kas
+  saat menyala) tidak dijalankan ulang.
 
 ## 7. Catatan pembaruan VPS
 
-- **Tidak ada rekening atau saldo yang diubah.** Satu tulisan saat menyala: penanda waktu aktif opname
+- **Tidak ada rekening atau saldo yang diubah saat pembaruan.** Satu tulisan saat menyala: penanda waktu aktif opname
   (`system_settings.__migrations__.kb3_opname_kas_aktif_sejak`, sekali tulis) — pengingat opname dihitung sejak itu, jadi
   tidak ada rekening yang langsung "terlambat".
 - Tiga akun templat baru (1-1105, 1-1290, 6-9200) ditambahkan oleh pengisi bagan akun yang sudah ada saat pertama kali
   dipanggil (hanya menambah yang belum ada).
+- Sesudah pembaruan, saat Finance **membuat rekening kas sejenis kedua** (mis. kas kecil per lokasi), kas lama tanpa rekening
+  PT itu ditetapkan ke rekening yang sudah ada (hanya bidang rekening + jejak; tanpa jurnal) dan layar/API menyebutnya.
+  Kueri butir 6 menunjukkan kas mana yang akan ikut, dan PT yang sudah ambigu (perlu keputusan sebelum opname/isi ulang).
 - Koleksi & indeks baru: `cash_counts` (nomor `OPK-` unik per PT, id), kunci isi ulang dana tetap; dibuat saat backend
   menyala.
 - Pengaturan baru dengan bawaan registri: `kas.opname_kasir_hari` 1, `kas.opname_kas_kecil_hari` 7,
@@ -165,5 +175,6 @@ Keputusan builder rancangan §7 (1–8, termasuk delapan jawaban builder check �
   di bawah butir 3).
 - Kueri cek data sebelum memakai fitur (baca saja, `cek_kas3_vps.js`): (1) akun PT sendiri yang sudah berkode
   1-1105/1-1290/6-9200 — bila ada, atur Pemetaan Akun `kas_bank.kas_kasir` / `selisih_kas` / `piutang_kurang_kas` PT itu ke
-  akun lain dulu; (2) rekening tunai per PT dan jenisnya; (3) isian `kontrol.admin_tetap_dua_orang` tersimpan tanpa
-  `selisih_kas`.
+  akun lain dulu; (2) rekening tunai per PT dan jenisnya; (3) rekening tunai per PT; (4)–(5) isian `kontrol.admin_tetap_dua_orang` tanpa `selisih_kas` dan pengaturan opname yang
+  tersimpan; (6) kas lama tanpa rekening per PT & jenis + jumlah rekening aktif (baris ambigu ditandai). Di data acuan:
+  KSC kas kecil 3 kas (bersih Rp 7.750.000), KSC kas besar 1, KANDA kas kecil 1 — semua masih ikut rekening tunggal.
