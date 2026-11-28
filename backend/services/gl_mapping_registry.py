@@ -215,6 +215,12 @@ ENTRIES: List[Dict[str, Any]] = [
 ]
 
 BY_KEY: Dict[str, Dict[str, Any]] = {e["key"]: e for e in ENTRIES}
+
+#: Kas & Bank 4 (C8, putaran 1) — pasangan kebutuhan yang TIDAK boleh memakai akun yang sama (bawaan, pemetaan, atau
+#: riwayatnya): uang muka karyawan dan uang muka pemasok. Menyatu → pemisahan akun runtuh: jurnal satu jalur dialihkan
+#: (`remap_lines`) ke akun jalur lain, dan akun uang muka karyawan ikut menjadi akun kontrol lewat riwayat pemetaan.
+#: Ditegakkan `gl_mapping_service.set_mapping`.
+AKUN_TERPISAH: List[tuple] = [("kas_bank.uang_muka_karyawan", "hutang.uang_muka_pemasok")]
 REMAP_BY_DEFAULT: Dict[str, str] = {e["default"]: e["key"] for e in ENTRIES if e["remap"]}
 assert len(REMAP_BY_DEFAULT) == sum(1 for e in ENTRIES if e["remap"]), "default remap harus unik"
 

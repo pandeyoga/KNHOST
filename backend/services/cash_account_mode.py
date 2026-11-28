@@ -5,7 +5,8 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-de
 * **Mode per PT** — penanda di `system_settings{scope: "__kas_per_rekening__"}`: kunci = id PT, nilai =
   `{"sejak": <ISO>, "oleh": <nama>}`. Ditulis SEKALI (`nyalakan`) — oleh persetujuan pindah saldo PT itu (Tugas 3);
   tidak ada migrasi saat aplikasi menyala dan tidak ada jalan mematikannya. Selama PT belum aktif semua jurnal kasnya
-  persis seperti sebelumnya (`gl_service.akun_kas`).
+  persis seperti sebelumnya (`gl_service.akun_kas`). Penyimpanan & penggabungan penanda kembar: satu pembantu
+  `services/penanda_per_pt.py` (Kas & Bank 4 putaran 1 — dipakai juga `supplier_advance_mode`).
 * **Sub-akun rekening** — `buat_subakun`: akun khusus PT `{induk}-{NN}` (induk 1-1100 untuk bank/kas besar, 1-1110 untuk
   kas kecil, 1-1105 untuk kas kasir — Kas & Bank 3; NN = nomor dua digit terkecil yang belum dipakai di PT itu di bawah
   induk itu), nama = nama rekening,
@@ -24,11 +25,11 @@ from typing import Any, Dict, List, Optional
 
 from core_utils import new_id, now_iso
 from db import db
+from services import penanda_per_pt as _penanda
 
 SCOPE = "__kas_per_rekening__"
 #: Akun induk sub-akun per jenis kas rekening (`bank_service.account_cash_type`).
 INDUK = {"kas_besar": "1-1100", "kas_kecil": "1-1110", "kas_kasir": "1-1105"}   # Kas & Bank 3 — + kas kasir
-_KUNCI_SAH = re.compile(r"^[A-Za-z0-9_\-]+$")
 _COBA_NOMOR = 5
 #: Tanda akun rekening yang dipasang `buat_subakun(kode=…)` pada akun bagan PT pilihan Finance (dipotret sebelum
 #: dipasang dan dipulihkan persis bila usulan pindah saldo ditolak — `potret_akun_pilihan` / `pulihkan_akun_pilihan`).
@@ -39,11 +40,6 @@ class SubAkunError(ValueError):
     """Sub-akun rekening tidak bisa dibuat atau akun pilihan tidak layak — pesan siap tampil (router → 400)."""
 
 
-def _kunci_sah(entity_id: Any) -> str:
-    eid = str(entity_id or "").strip()
-    return eid if eid and _KUNCI_SAH.match(eid) else ""
-
-
 async def _nama_pt(entity_id: str) -> str:
     from services.cash_ledger import _nama_pt as nama
     return await nama(entity_id)
@@ -52,35 +48,19 @@ async def _nama_pt(entity_id: str) -> str:
 # ── Mode per PT ──────────────────────────────────────────────────────────────────────────────────────────────────────
 async def aktif_sejak(entity_id: Optional[str]) -> str:
     """Waktu PT `entity_id` mulai memakai akun per rekening (ISO), kosong bila belum. Dokumen penanda kembar (balapan
-    dua `nyalakan` pertama) digabung; yang paling awal berlaku."""
-    eid = _kunci_sah(entity_id)
-    if not eid:
-        return ""
-    sejak = [d[eid]["sejak"] async for d in db.system_settings.find({"scope": SCOPE}, {"_id": 0, eid: 1})
-             if isinstance(d.get(eid), dict) and d[eid].get("sejak")]
-    return min(sejak) if sejak else ""
+    dua `nyalakan` pertama) digabung; yang paling awal berlaku (`penanda_per_pt`)."""
+    return await _penanda.aktif_sejak(SCOPE, entity_id)
 
 
 async def aktif(entity_id: Optional[str]) -> bool:
     """Apakah jurnal kas PT `entity_id` memakai sub-akun rekening."""
-    return bool(await aktif_sejak(entity_id))
+    return await _penanda.aktif(SCOPE, entity_id)
 
 
 async def nyalakan(entity_id: str, by: Any) -> None:
     """Nyalakan akun per rekening untuk PT `entity_id` — SEKALI; panggilan berikutnya tidak menimpa waktu & pelakunya.
-    Dibaca dulu, lalu ditulis bersyarat kuncinya belum ada (pola `bank_auto_receipt_service.ensure_aktif_sejak`)."""
-    eid = _kunci_sah(entity_id)
-    if not eid:
-        raise ValueError(f"Id PT tidak sah untuk penanda akun per rekening: {entity_id!r}.")
-    if await aktif_sejak(eid):
-        return
-    oleh = (by.get("name") if isinstance(by, dict) else by) or "system"
-    nilai = {"sejak": now_iso(), "oleh": str(oleh)}
-    syarat = {"scope": SCOPE, eid: {"$exists": False}}
-    if await db.system_settings.find_one({"scope": SCOPE}, {"_id": 0, "scope": 1}) is None:
-        await db.system_settings.update_one(syarat, {"$set": {eid: nilai}}, upsert=True)
-    else:   # tanpa upsert: dokumen penanda tetap satu
-        await db.system_settings.update_one(syarat, {"$set": {eid: nilai}})
+    Dibaca dulu, lalu ditulis bersyarat kuncinya belum ada (`penanda_per_pt.nyalakan`)."""
+    await _penanda.nyalakan(SCOPE, entity_id, by, "akun per rekening")
 
 
 # ── Sub-akun rekening ────────────────────────────────────────────────────────────────────────────────────────────────

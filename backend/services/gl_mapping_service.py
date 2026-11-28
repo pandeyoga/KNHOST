@@ -166,6 +166,20 @@ async def _write_history(key: str, eid: str, before: str, after: str, reason: st
                                "by": actor.get("name", ""), "by_id": actor.get("id", ""), "at": now_iso()})
 
 
+async def _periksa_akun_terpisah(key: str, eid: str, code: str) -> None:
+    """Kas & Bank 4 (C8, putaran 1) — `code` tidak boleh akun pasangan terpisah `key` (`reg.AKUN_TERPISAH`): bawaan,
+    pemetaan, atau riwayat pasangan itu (`known_codes`; PT → lapisan PT itu + grup, grup → semua lapisan, karena
+    pemetaan grup berlaku di PT yang tidak menimpanya)."""
+    for a, b in reg.AKUN_TERPISAH:
+        if key not in (a, b):
+            continue
+        lain = b if key == a else a
+        if code in await known_codes(lain, eid or None):
+            raise ValueError(f"Akun {code} dipakai (atau pernah dipakai) untuk \"{reg.require(lain)['label']}\" "
+                             f"({lain}). Uang muka karyawan dan uang muka pemasok harus di akun berbeda supaya saldonya "
+                             f"bisa dicocokkan — pilih akun lain.")
+
+
 async def set_mapping(key: str, entity_id: Optional[str], account_code: str, reason: str,
                       actor: Dict[str, Any]) -> Dict[str, Any]:
     entry = reg.require(key)
@@ -188,6 +202,7 @@ async def set_mapping(key: str, entity_id: Optional[str], account_code: str, rea
     if reg.norm_type(a.get("type")) not in entry["allowed_types"]:
         allowed = ", ".join(reg.TYPE_LABEL[t] for t in entry["allowed_types"])
         raise ValueError(f"Akun {code} berjenis {reg.TYPE_LABEL.get(a.get('type'), a.get('type'))}; kebutuhan ini hanya menerima {allowed}.")
+    await _periksa_akun_terpisah(key, eid, code)
     before = await account_for(key, eid)
     cur = await db[COLL].find_one({"key": key, "entity_id": eid}, {"_id": 0}) or {}
     doc = {"id": cur.get("id") or new_id("glm"), "key": key, "scope_type": "entity" if eid else "global",

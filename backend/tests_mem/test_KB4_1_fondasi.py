@@ -136,6 +136,18 @@ async def pindah(dunia):
     return True
 
 
+@pytest.fixture(scope="module")
+async def pt_kb4m(aplikasi):
+    """FIXTURE: PT uji `ent_uji_kb4m` berpemetaan PT `kas_bank.uang_muka_karyawan` → akun PT 1-1401 (U1d, U3d)."""
+    from schemas_finance import GLAccountCreate
+    from services import gl_mapping_service as glm, gl_service as gl
+    pt = await pt_uji("KB4M")
+    await gl.create_account(GLAccountCreate(code="1-1401", name="Uang Muka KB4M", type="asset",
+                                            parent_code="1-1000"), entity_id=pt)
+    await glm.set_mapping("kas_bank.uang_muka_karyawan", pt, "1-1401", "uji KB4 pemetaan PT", AKTOR_UJI)
+    return pt
+
+
 # ── Jalur uang muka pemasok (sama untuk kedua PT) ─────────────────────────────────────────────────────────────────────
 async def _bayar_lebih(klien, db, kepala, eid: str) -> dict:
     """ALUR: T1 (keputusan `ap_advance`) dan T2 (lebih dalam toleransi → otomatis)."""
@@ -299,15 +311,11 @@ async def test_KB4_1_U1c_pt_belum_pindah_potongan_kontrabon(klien, db, kepala_ad
         _cocok(nama, _baris(hasil[nama]))
 
 
-async def test_KB4_1_U1d_pt_belum_pindah_pemetaan_pt_tetap_berlaku(db, dunia):
+async def test_KB4_1_U1d_pt_belum_pindah_pemetaan_pt_tetap_berlaku(db, pt_kb4m):
     """PT belum pindah yang memetakan `kas_bank.uang_muka_karyawan` ke akun PT (1-1401): potongan uang muka pemasok
     tetap dialihkan ke akun pemetaan itu seperti sebelum Tugas 1 (pembantu mengembalikan 1-1400, bukan akun pemetaan)."""
-    from schemas_finance import GLAccountCreate
-    from services import gl_mapping_service as glm, gl_service as gl
-    pt = await pt_uji("KB4M")
-    await gl.create_account(GLAccountCreate(code="1-1401", name="Uang Muka KB4M", type="asset",
-                                            parent_code="1-1000"), entity_id=pt)
-    await glm.set_mapping("kas_bank.uang_muka_karyawan", pt, "1-1401", "uji KB4 pemetaan PT", AKTOR_UJI)
+    from services import gl_service as gl
+    pt = pt_kb4m
     je = await gl.post_contra_bon_deduction(cb_id="cb_kb4m", deduction_id="d1", entity_id=pt,
                                             kind="supplier_advance", amount=250_000, label="KB4M d1", date=HARI_INI)
     assert _set(je) == {("2-1100", 250_000.0, 0.0), ("1-1401", 0.0, 250_000.0)}, je["lines"]
@@ -368,12 +376,12 @@ async def test_KB4_1_U3c_pt_pindah_potongan_kontrabon_ke_1_1410(klien, db, kepal
     assert await saldo_akun("1-1400", KSC) == 203_000.0
 
 
-async def test_KB4_1_U3d_pt_pindah_memakai_akun_pemetaan_pt(db, dunia):
+async def test_KB4_1_U3d_pt_pindah_memakai_akun_pemetaan_pt(db, pt_kb4m):
     """PT pindah: pembantu = akun pemetaan PT `hutang.uang_muka_pemasok` (bawaan 1-1410) — tidak ikut pemetaan uang muka
     karyawan PT itu (1-1401); dipetakan ke 1-1411 → potongan berikutnya ke 1-1411, uang muka karyawan tetap 1-1401."""
     from schemas_finance import GLAccountCreate
     from services import gl_mapping_service as glm, gl_service as gl, supplier_advance_mode as mode
-    pt = await pt_uji("KB4M")
+    pt = pt_kb4m
     assert await gl.akun_uang_muka_pemasok(pt) == "1-1400"
     await mode.nyalakan(pt, AKTOR_UJI)
     assert await gl.akun_uang_muka_pemasok(pt) == "1-1410"
@@ -495,11 +503,100 @@ def test_KB4_1_U9_penjaga_akun_uang_muka_pemasok():
     merah = {**bersih, "services/ap_payment_service.py": bersih["services/ap_payment_service.py"]
              + "def akun_lebih_bayar():\n    return '1-1400'\n"}
     assert any("ap_payment_service.py:akun_lebih_bayar" in v for v in g._mini(merah).violations)
+    # Putaran 1 (Minor 3) — konstanta lewat alias impor juga ditolak.
+    alias = {**bersih, "services/payment_variance_service.py": "from services.gl_service import ACC_UANG_MUKA as UM\n"
+             "def efek():\n    return {'account': UM}\n"}
+    assert any("payment_variance_service.py:<modul>" in v and "[2]" in v for v in g._mini(alias).violations)
     skrip = REPO / "scripts/guardrails/verify_akun_uang_muka_pemasok.py"
     swa = subprocess.run([sys.executable, str(skrip), "--self-test"], capture_output=True, text=True, cwd=REPO)
     assert swa.returncode == 0 and "SELF-TEST HIJAU" in swa.stdout, swa.stdout + swa.stderr
     nyata = subprocess.run([sys.executable, str(skrip)], capture_output=True, text=True, cwd=REPO)
     assert nyata.returncode == 0 and "0 pelanggaran" in nyata.stdout, nyata.stdout + nyata.stderr
+
+
+# ═══ Putaran 1 — kontrak lawan kas `ap_advance`, pemisahan pemetaan, satu pembantu penanda per PT ════════════════════
+async def test_KB4_1_U10_lawan_kas_ap_advance_wajib_lewat_pembantu(pindah):
+    """`_cash_out_contra` sinkron tidak menebak akun uang muka pemasok: tanpa akun → `ValueError` (pemanggil sinkron
+    `cash_contra_account` hanya kas manual); jurnal & PERIKSA kas lewat `_lawan_kas_keluar` (PT buku jurnal)."""
+    from services import gl_service as gl
+    txn = {"ref_type": "ap_advance", "direction": "out", "category": "uang muka supplier", "amount": 1000}
+    with pytest.raises(ValueError):
+        gl.cash_contra_account(txn)
+    with pytest.raises(ValueError):
+        gl._cash_out_contra(txn)
+    assert gl._cash_out_contra(txn, "1-1410") == "1-1410"
+    assert gl._cash_out_contra({**txn, "contra_account_code": "1-1900"}, "1-1410") == "1-1900"   # eksplisit menang
+    assert (await gl._lawan_kas_keluar(txn, KSC), await gl._lawan_kas_keluar(txn, KANDA)) == ("1-1400", "1-1410")
+    assert gl._cash_out_contra({"ref_type": "cash_advance"}) == "1-1400"   # PD = uang muka karyawan
+    assert await gl._lawan_kas_keluar({"ref_type": "cash_advance"}, KANDA) == "1-1400"
+    assert gl.cash_contra_account({"ref_type": "manual", "direction": "out", "category": "sewa"}) == "6-2000"
+
+
+async def test_KB4_1_U11_pemetaan_uang_muka_karyawan_dan_pemasok_tetap_terpisah(klien, db, kepala_admin):
+    """Pemetaan Akun tidak bisa menyatukan akun uang muka karyawan dan akun uang muka pemasok (bawaan, pemetaan PT itu /
+    lapisan grup, atau riwayatnya) — kalau menyatu, pemisahan akun runtuh dan 1-1400 ikut jadi akun kontrol."""
+    from schemas_finance import GLAccountCreate
+    from services import gl_mapping_service as glm, gl_service as gl
+    pt = await pt_uji("KB4S")
+    for kode in ("1-1402", "1-1403", "1-1412"):
+        await gl.create_account(GLAccountCreate(code=kode, name=f"Akun KB4S {kode}", type="asset",
+                                                parent_code="1-1000"), entity_id=pt)
+    await glm.set_mapping("kas_bank.uang_muka_karyawan", pt, "1-1402", "uji KB4 karyawan", AKTOR_UJI)
+    await glm.set_mapping("hutang.uang_muka_pemasok", pt, "1-1412", "uji KB4 pemasok", AKTOR_UJI)
+    await glm.set_mapping("kas_bank.uang_muka_karyawan", pt, "1-1403", "uji KB4 karyawan pindah", AKTOR_UJI)
+    karyawan = ("Uang muka & biaya dibayar dimuka", "kas_bank.uang_muka_karyawan")
+    pemasok = ("Uang muka pemasok", "hutang.uang_muka_pemasok")
+    n0 = await db.gl_account_mappings.count_documents({})
+    h0 = await db.gl_account_mapping_history.count_documents({})
+    for key, eid, kode, lain in (("hutang.uang_muka_pemasok", pt, "1-1400", karyawan),     # bawaan karyawan
+                                 ("hutang.uang_muka_pemasok", pt, "1-1403", karyawan),     # pemetaan karyawan PT itu
+                                 ("hutang.uang_muka_pemasok", pt, "1-1402", karyawan),     # riwayat karyawan PT itu
+                                 ("kas_bank.uang_muka_karyawan", pt, "1-1410", pemasok),   # bawaan pemasok
+                                 ("kas_bank.uang_muka_karyawan", pt, "1-1412", pemasok),   # pemetaan pemasok PT itu
+                                 ("hutang.uang_muka_pemasok", "", "1-1400", karyawan),     # lapisan grup
+                                 ("kas_bank.uang_muka_karyawan", "", "1-1410", pemasok)):
+        with pytest.raises(ValueError) as e:
+            await glm.set_mapping(key, eid, kode, "uji KB4 menyatukan", AKTOR_UJI)
+        assert str(e.value) == (
+            f"Akun {kode} dipakai (atau pernah dipakai) untuk \"{lain[0]}\" ({lain[1]}). Uang muka karyawan dan uang "
+            f"muka pemasok harus di akun berbeda supaya saldonya bisa dicocokkan — pilih akun lain."), (key, kode)
+    r = await klien.put("/api/gl/account-mappings/hutang.uang_muka_pemasok", headers=kepala_admin,
+                        json={"account_code": "1-1400", "entity_id": KSC, "reason": "uji KB4 menyatukan"})
+    assert r.status_code == 400 and "harus di akun berbeda" in r.json()["detail"], r.text
+    assert await db.gl_account_mappings.count_documents({}) == n0
+    assert await db.gl_account_mapping_history.count_documents({}) == h0
+    assert (await glm.account_for("hutang.uang_muka_pemasok", pt), await glm.account_for(
+        "kas_bank.uang_muka_karyawan", pt)) == ("1-1412", "1-1403")
+
+
+async def test_KB4_1_U12_penanda_per_pt_satu_pembantu(db, pindah):
+    """Putaran 1 (Important 1) — penanda per PT sekali tulis = SATU pembantu `penanda_per_pt`; `cash_account_mode` dan
+    `supplier_advance_mode` hanya meneruskan scope-nya (API publik tidak berubah). Penanda kembar dari balapan dua
+    `nyalakan` pertama dibaca sebagai satu: yang paling awal berlaku, dan `nyalakan` berikutnya tidak menulis apa pun."""
+    import inspect
+    from services import cash_account_mode as kas, penanda_per_pt as pp, supplier_advance_mode as um
+    for mod in (kas, um):
+        for fn in (mod.aktif_sejak, mod.aktif, mod.nyalakan):
+            assert "db." not in inspect.getsource(fn), (mod.__name__, fn.__name__)
+    assert (kas.SCOPE, um.SCOPE) == ("__kas_per_rekening__", "__uang_muka_pemasok_per_pt__")
+    assert await um.aktif_sejak(KANDA) == await pp.aktif_sejak(um.SCOPE, KANDA) == SIMPAN["sejak_kanda"]
+    assert await kas.aktif_sejak(KANDA) == "" and await pp.aktif(kas.SCOPE, KANDA) is False
+    sc = "__uji_kb4_penanda__"
+    await db.system_settings.insert_many([{"scope": sc, "ent_x": {"sejak": "2026-11-28T10:00:02", "oleh": "B"}},
+                                          {"scope": sc, "ent_x": {"sejak": "2026-11-28T10:00:01", "oleh": "A"}}])
+    assert await pp.aktif_sejak(sc, "ent_x") == "2026-11-28T10:00:01"
+    assert await pp.nyalakan(sc, "ent_x", "C", "uji") == "2026-11-28T10:00:01"
+    assert await db.system_settings.count_documents({"scope": sc}) == 2
+    with pytest.raises(ValueError) as e:
+        await pp.nyalakan(sc, "ent x", "C", "akun uji")
+    assert str(e.value) == "Id PT tidak sah untuk penanda akun uji: 'ent x'."
+    with pytest.raises(ValueError) as e:
+        await kas.nyalakan("ent.bertitik", "Uji")
+    assert str(e.value) == "Id PT tidak sah untuk penanda akun per rekening: 'ent.bertitik'."
+    pk = await pt_uji("KB4K")
+    assert await kas.nyalakan(pk, {"name": "Uji KB4"}) is None   # Kas & Bank 1: tetap tanpa nilai kembali
+    assert (await kas.aktif(pk), await um.aktif(pk)) == (True, False)
+    assert (await db.system_settings.find_one({"scope": kas.SCOPE}, {"_id": 0}))[pk]["oleh"] == "Uji KB4"
 
 
 #: Direkam dari kode SEBELUM Tugas 1 (730718e) dengan `KB4_REKAM` — jangan disunting tangan.

@@ -14,7 +14,9 @@ Statik (`ast`) atas `CAKUPAN` — jalur uang muka pemasok:
     `cash_advance` — memang uang muka karyawan 1-1400).
 MERAH bila di cakupan itu:
   [1] string harfiah TEPAT "1-1400" atau "1-1410" (teks panjang yang menyebut kode, mis. pesan / docstring, tidak);
-  [2] nama `ACC_UANG_MUKA` / `ACC_UANG_MUKA_PEMASOK` dibaca (`gl.ACC_UANG_MUKA`, nama polos);
+  [2] nama `ACC_UANG_MUKA` / `ACC_UANG_MUKA_PEMASOK` dibaca (`gl.ACC_UANG_MUKA`, nama polos), diimpor
+      (`from services.gl_service import ACC_UANG_MUKA as X` — alias tidak menyembunyikannya), atau disebut sebagai teks
+      TEPAT (`getattr(gl, "ACC_UANG_MUKA")`);
   [3] kunci pemetaan TEPAT "kas_bank.uang_muka_karyawan" / "hutang.uang_muka_pemasok" (`account_for` / `account_key`
       melewati penanda PT).
 Juga MERAH: lokasi `CAKUPAN` yang tidak ditemukan lagi (berkas/fungsi diganti nama, cabang `ap_advance` hilang) —
@@ -97,6 +99,10 @@ def _temuan(nodes: Iterable[ast.AST], awal: str) -> Dict[str, Dict[int, List[int
                 hit(fn, 1, node.lineno)
             elif node.value in KUNCI_UM:
                 hit(fn, 3, node.lineno)
+            elif node.value in NAMA_UM:
+                hit(fn, 2, node.lineno)
+        elif isinstance(node, ast.ImportFrom) and any(a.name in NAMA_UM for a in node.names):
+            hit(fn, 2, node.lineno)
         elif isinstance(node, ast.Name) and node.id in NAMA_UM and isinstance(node.ctx, ast.Load):
             hit(fn, 2, node.lineno)
         elif isinstance(node, ast.Attribute) and node.attr in NAMA_UM and isinstance(node.ctx, ast.Load):
@@ -285,6 +291,19 @@ def self_test() -> int:
     case("cabang `ap_advance` hilang dari `_cash_out_contra` → MERAH",
          _mini(ganti("services/gl_service.py", _GL.replace('ref_type == "ap_advance"', 'ref_type == "uang_muka"'))),
          True)
+    # Putaran 1 (Minor 3) — konstanta lewat alias impor / getattr tidak lolos.
+    case("`from services.gl_service import ACC_UANG_MUKA as UM` di selisih bayar → MERAH",
+         _mini(ganti("services/payment_variance_service.py", "from services.gl_service import ACC_UANG_MUKA as UM\n"
+                     "def efek():\n    return {'account': UM}\n")), True)
+    case("impor `ACC_UANG_MUKA_PEMASOK` di dalam fungsi kasus keuangan → MERAH",
+         _mini(ganti("services/finance_case_actions.py", "def j():\n    from services.gl_service import "
+                     "ACC_UANG_MUKA_PEMASOK\n    return ACC_UANG_MUKA_PEMASOK\n")), True)
+    case("`getattr(gl, \"ACC_UANG_MUKA\")` di kontrabon → MERAH",
+         _mini(ganti("services/contra_bon_service.py", _PAKAI + "def akun():\n    return getattr(gl, 'ACC_UANG_MUKA')\n")),
+         True)
+    case("impor nama lain dari gl_service (`ACC_HUTANG as H`) → hijau",
+         _mini(ganti("services/ap_party_service.py", "from services.gl_service import ACC_HUTANG as H\nX = H\n")),
+         False)
     case("modul cakupan tanpa uang muka sama sekali → hijau",
          _mini(ganti("services/ap_party_service.py", "def kosong():\n    return 0\n" + tambah)), False)
     real = check()

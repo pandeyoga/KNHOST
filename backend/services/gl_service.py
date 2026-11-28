@@ -3647,12 +3647,12 @@ async def post_store_credit_adjust(*, adjust_id: str, entity_id: str, amount_sig
         source_id=adjust_id, entity_id=entity_id or "", created_by="system", source_label=lbl)
 
 
-def _cash_out_contra(txn: Dict[str, Any], akun_uang_muka_pemasok: str = "") -> str:
+def _cash_out_contra(txn: Dict[str, Any], akun_um: str = "") -> str:
     """Lawan akun kas KELUAR menurut `ref_type` / kategori / akun eksplisit. Murni (dipakai juga `preflight_cash`).
 
-    Kas & Bank 4 (C8) — `ref_type="ap_advance"` memakai `akun_uang_muka_pemasok`: hasil pembantu `akun_uang_muka_pemasok`
-    untuk PT buku jurnal, diisi `_lawan_kas_keluar` (jurnal kas & PERIKSA). Tanpa akun itu → `ValueError`: pemanggil
-    sinkron (`cash_contra_account`) hanya untuk kas manual."""
+    Kas & Bank 4 (C8) — `ref_type="ap_advance"` memakai `akun_um`: hasil pembantu `akun_uang_muka_pemasok` untuk PT buku
+    jurnal, diisi `_lawan_kas_keluar` (jurnal kas & PERIKSA). Tanpa akun itu → `ValueError`: pemanggil sinkron
+    (`cash_contra_account`) hanya untuk kas manual."""
     ref_type = txn.get("ref_type") or ""
     if ref_type == "ar_refund":
         # FASE G-3 — pengembalian KELEBIHAN bayar pelanggan: uang itu tercatat sebagai
@@ -3669,9 +3669,9 @@ def _cash_out_contra(txn: Dict[str, Any], akun_uang_muka_pemasok: str = "") -> s
     elif ref_type == "ap_advance":
         # FASE G-3 — kelebihan bayar ke supplier menjadi UANG MUKA (aset), bukan beban. Kas & Bank 4 — akunnya dari
         # pembantu `akun_uang_muka_pemasok` (1-1400 sampai PT memindah saldo uang muka pemasoknya).
-        if not akun_uang_muka_pemasok:
+        if not akun_um:
             raise ValueError("Akun uang muka pemasok kas ap_advance belum ditentukan (pakai _lawan_kas_keluar).")
-        contra = akun_uang_muka_pemasok
+        contra = akun_um
     elif ref_type == "landed_cost":
         contra = ACC_HUTANG   # S#074 (LC-PAY): lunasi Hutang landed-cost (dikapitalisasi ke Persediaan), bukan Beban Angkut (double-count)
     elif ref_type == "reimburse_payable":
