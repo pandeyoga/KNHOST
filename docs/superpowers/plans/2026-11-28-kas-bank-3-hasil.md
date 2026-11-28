@@ -1,13 +1,20 @@
 # Hasil — Kas & Bank bagian 3: kas kasir (C1), dana tetap kas kecil (C2), opname kas (C3)
 
 Tanggal: 28 Nov 2026 · Cabang: `claude/nifty-carson-jjx3c8` · Garis dasar: `main` `50df890` (F1, Kas & Bank 1–2) +
-rancangan/rencana `8009eb1`, `fa711aa` · Pohon kode akhir: `__POHON__`.
+rancangan/rencana `8009eb1`, `fa711aa` · Pohon kode akhir: `c5ffef0`.
 
 - **Rancangan:** `docs/superpowers/specs/2026-11-28-kas-bank-3-kasir-dana-tetap-opname-design.md` (keputusan pemilik C1–C3
   25 Nov; builder check §7.8, delapan jawaban).
 - **Rencana:** `docs/superpowers/plans/2026-11-28-kas-bank-3-kasir-dana-tetap-opname.md`, 5 tugas (T2 ∥ T3 dan T4a ∥ T4b
   dikerjakan sejajar — perintah pemilik 28 Nov "ya dengan cepat, subagent lebih dari satu tidak apa-apa").
-- **Tangkapan layar (data acuan):** `2026-11-28-kas-bank-3-hasil/tangkapan/` — __TANGKAPAN__
+- **Tangkapan layar (data acuan):** `2026-11-28-kas-bank-3-hasil/tangkapan/` — 28 potret PT KSC
+  (finance@ pencatat/penghitung, manager@ penyetuju): jenis kas di form rekening; kartu Kas Kasir; kwitansi tunai → Kas Kasir
+  ("Tunai → masuk Kas Kasir Toko KSC (Kas Kasir)", jurnal 1-1105); kas kecil berdana tetap & berlokasi (kartu kas kecil lama
+  tetap Rp 33.150.000); posisi dana tetap + rincian + Isi ulang bernominal terkunci → Pindah Dana berlencana; opname per
+  pecahan (kurang), Setujui/Tolak mati untuk penghitung, antrean Pusat Persetujuan, piutang karyawan (pilih karyawan HR),
+  selisih kas (lebih), selisih nol tanpa jurnal, Batal beralasan → jurnal pembalik, saringan perlakuan, pratinjau OPK →
+  Jejak (pratinjau tertutup). Kartu Meja "Opname kas jatuh tempo" tidak bisa dipotret di data acuan (fitur aktif hari ini;
+  jarak 1/7 hari). Skrip `tangkap_kb3.js` (id dicari dari nama), log angka API `tangkap_kb3_log.txt`, data `kb3_data.json`.
 
 **Status: selesai, belum digabung ke `main`.** Pembaruan VPS tidak mengubah rekening atau saldo yang ada.
 
@@ -86,7 +93,7 @@ Temuan nyata yang tertangkap sebelum gabung:
 | Mode | FAIL (garis dasar) | Lebih merah | Pelanggaran baru (per pelanggaran) |
 |---|---|---|---|
 | `--ci` (`4b7c043`) | 37 (43) | — | 3 (antrean opname tanpa pasangan hitung-ulang Beranda; sapuan peran Sales/Admin Sales ke Kas Kecil) → **ditutup** di `81e695f` |
-| `--quick` (pohon akhir __POHON__, data acuan) | __GATE__ | | |
+| `--quick` (pohon akhir `c5ffef0`, data acuan) | __GATE__ | | |
 
 ## 4. Keputusan pelaksanaan (periksa)
 

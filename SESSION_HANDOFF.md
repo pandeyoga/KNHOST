@@ -1,5 +1,16 @@
 # SESSION HANDOFF — Kain Nusantara (WMS/ERP)
 
+> **28 Nov 2026 — Kas & Bank bagian 3 (C1–C3) selesai** di cabang yang sama (belum digabung; F1 + Kas & Bank 1–2 sudah di
+> `main` `50df890`): jenis kas **Kas Kasir** (akun `1-1105`, kwitansi tunai pelanggan otomatis ke kasir tunggal PT),
+> **dana tetap kas kecil** per rekening/lokasi dengan **Isi ulang** = Pindah Dana bernominal terkunci, **Opname Kas**
+> (`cash_counts`, `OPK-`; selisih disetujui orang kedua ke `6-9200 Selisih Kas` atau `1-1290 Piutang Karyawan`, Batal
+> membalik, pengingat Meja Keuangan). Temuan tangkapan yang ditutup: rekening kas sejenis kedua tidak lagi menggeser saldo
+> rekening lama (kas lama tanpa rekening ditetapkan ke rekening yang ada; keadaan ambigu → opname/isi ulang ditolak).
+> Hasil & bukti: `docs/superpowers/plans/2026-11-28-kas-bank-3-hasil.md` (tests_mem 3367 lulus; jest 2260/2261 —
+> lingkungan; MongoDB sungguhan 3/3; 28 tangkapan; kueri VPS `cek_kas3_vps.js`). Pertanyaan pemilik di laporan §5 (kode
+> akun, kapan rekening kasir PT nyata dibuat, kas lama tanpa rekening di PT ambigu). Berikutnya (G1): Kas & Bank bagian 4
+> (C7–C8); C4 menunggu pemilik; Meja gelombang 3; F2 → OCR → F3 → F4; G2.
+
 > **27 Nov 2026 — Kas & Bank bagian 2 (C5 + C6) selesai** di cabang yang sama (belum digabung): kas manual baru tidak
 > lagi berkategori Pembelian/Gaji; kas keluar manual di atas batas PT (bawaan Rp 1.000.000, `kontrol.kas_keluar_manual`)
 > menjadi pengajuan `PKK-` (`cash_out_requests`) yang terbit sebagai kas sesudah orang kedua menyetujui. Hasil & bukti:
