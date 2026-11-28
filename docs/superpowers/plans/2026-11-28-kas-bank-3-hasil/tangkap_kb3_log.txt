@@ -1,64 +1,55 @@
-── fase awal (2026-11-28T08:44:11.265Z)
-[API] PT KSC rekening awal: BCA Operasional KSC (bank_f01e86ea74c5, bank/kas_besar, saldo Rp 877.373.077,5, akun -, akun per rekening belum); Kas Toko KSC (bank_bf4cb1b991a6, cash/kas_kecil, saldo Rp 33.150.000, akun -, akun per rekening belum)
+[data acuan] Konveksi Maju Bersama cust_a0d58173db54 · Toko Tekstil Pasar Baru cust_e84199c04149 · BCA bank_3e9d6f577922 · Kas Toko KSC bank_b31661a2c545
+── fase awal (2026-11-28T10:31:39.476Z)
+[API] PT KSC rekening awal: BCA Operasional KSC (bank_3e9d6f577922, bank/kas_besar, saldo Rp 877.373.077,5, akun -, akun per rekening belum); Kas Toko KSC (bank_b31661a2c545, cash/kas_kecil, saldo Rp 33.150.000, akun -, akun per rekening belum)
 [API] saldo akun PT KSC awal: 1-1100 Rp 877.373.077,5, 1-1105 Rp 0, 1-1110 Rp 33.150.000, 1-1290 Rp 0, 6-9200 Rp 0; jurnal PT 21
 [API] opname PT KSC awal: 0; status Selesai/Menunggu persetujuan/Disetujui/Ditolak/Dibatalkan; perlakuan [{"value":"selisih_kas","label":"Selisih kas"},{"value":"piutang_karyawan","label":"Piutang karyawan"}]
-[API] penanda opname aktif sejak 2026-11-28T08:28:43.655381+00:00; config_values kontrol.*/kas.* tersimpan: [] (semua bawaan katalog)
+[API] penanda opname aktif sejak 2026-11-28T10:29:19.102725+00:00; config_values kontrol.*/kas.* tersimpan: [] (semua bawaan katalog)
 [API] rekening penerima tunai KSC awal: Kas Toko KSC
-── fase r1 (2026-11-28T08:44:19.213Z)
+── fase r1 (2026-11-28T10:31:42.971Z)
 R1 Finance (finance@) — Rekening & Saldo › Tambah Akun › Jenis Kas tunai › Jenis kas
   pilihan Jenis kas: Pilih jenis kas · Kas Kasir · Kas Kecil; kalimat bantu: "Kas Kasir untuk uang tunai dari pelanggan; Kas Kecil untuk dana operasional (panjar, LPJ, isi ulang)."
   potret 01_rekening_form_jenis_kas_pilihan.jpg
   sesudah pilih Kas Kasir: kalimat bantu "Kwitansi tunai pelanggan otomatis masuk ke kas kasir bila PT hanya punya satu kas kasir; dua kas kasir atau lebih → kasir memilih rekening."; isian Dana tetap tidak ada; Lokasi kerja ada
   cara bayar dilayani: cash ✓; bawaan penerimaan: cash
   potret 02_rekening_form_kas_kasir_terisi.jpg
-  [API] POST /bank-accounts: HTTP 200 bank_5e60858144f0 "Kas Kasir Toko KSC" account_type cash cash_type kas_kasir gl_account_code "" default_receiving_methods []
+  [API] POST /bank-accounts: HTTP 200 bank_ea9df8fce5c2 "Kas Kasir Toko KSC" account_type cash cash_type kas_kasir gl_account_code "" default_receiving_methods []
   bilah: "Akun kas/bank ditambahkan."
   kartu: "Kas Kasir Toko KSC Kas tunai Kas kasir a.n. Kasir toko PT belum memakai akun per rekening Bawaan: Tunai Rp 0 Rp 0 Rp 0 0 transaksi Opname"
   lencana jenis: "Kas kasir"; akun buku besar: "PT belum memakai akun per rekening"; kaki kartu: "Opname"
   potret 03_kartu_rekening_kas_kasir.jpg
   [API] GET /bank-accounts: Kas Kasir Toko KSC cash_type kas_kasir, akun_per_rekening_aktif false, gl_account_code "" (mode lama → akun kas bersama jenisnya), saldo Rp 0
   [API] rekening penerima tunai KSC sesudah: Kas Kasir Toko KSC (bawaan), Kas Toko KSC
-── fase kw (2026-11-28T08:44:56.005Z)
+── fase kw (2026-11-28T10:32:08.179Z)
 KW Finance — Piutang › Konveksi Maju Bersama › Terima pembayaran: Tunai Rp 1.500.000
-  rekening penerima terisi: "Kas Kasir Toko KSC · Kasir toko"; kalimat tunai: "Tunai → masuk Kas Kecil (per PT)."
+  rekening penerima terisi: "Kas Kasir Toko KSC · Kasir toko"; kalimat tunai: "Tunai → masuk Kas Kasir Toko KSC (Kas Kasir)."
   petunjuk selisih: "Kurang bayar Rp 12.927.691 dari sisa tagihan pesanan tujuan, belum jatuh tempo (Rp 14.427.691) — akan diminta keputusan saat disimpan. Putuskan"
   potret 04_kwitansi_tunai_rekening_kas_kasir.jpg
   pop-up selisih bayar: "Dibayar Rp 1.500.000, seharusnya Rp 14.427.691 (sisa tagihan pesanan tujuan, belum jatuh tempo). Kurang Rp 12.927.691 — mau bagaimana?" → pilih "outstanding" (sisa tetap piutang), alasan partial_payment_agreed
   konfirmasi: "Catat penerimaan Rp 1.500.000 dari Konveksi Maju Bersama ke Kas Kasir Toko KSC · Kasir toko untuk Sukacita?"
   potret 05_kwitansi_tunai_tercatat.jpg
-  toast: ""
-  [API] POST /ar-receipts: HTTP 200 KSC/AR-00003 Rp 1.500.000 method cash account_id bank_5e60858144f0 (= rekening Kas Kasir) "Kas Kasir Toko KSC", kas cash_2cdfd8bfd6cada52e0b892db
-  [API] kas kwitansi: {"account_code": "1-1105", "account_id": "bank_5e60858144f0", "amount": 1500000.0, "cash_type": "kas_kasir", "direction": "in", "number": "KSC/CASH-00010"}
+  bilah: "Kwitansi KSC/AR-00003 (Rp 1.500.000) dicatat untuk Konveksi Maju Bersama. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00001)."
+  [API] POST /ar-receipts: HTTP 200 KSC/AR-00003 Rp 1.500.000 method cash account_id bank_ea9df8fce5c2 (= rekening Kas Kasir) "Kas Kasir Toko KSC", kas cash_755a36f5e9303f4b94f4bc7d
+  [API] kas kwitansi: {"account_code": "1-1105", "account_id": "bank_ea9df8fce5c2", "amount": 1500000.0, "cash_type": "kas_kasir", "direction": "in", "number": "KSC/CASH-00010"}
   [API] jurnal kwitansi: KSC/JE-00022 (posted, cash_transaction) tgl 2026-11-28 [1-1105 D Rp 1.500.000 / 1-1200 K Rp 1.500.000]
   [API] saldo akun sesudah: 1-1100 Rp 877.373.077,5, 1-1105 Rp 1.500.000, 1-1110 Rp 33.150.000, 1-1290 Rp 0, 6-9200 Rp 0 — 1-1105 naik Rp 1.500.000, 1-1110 berubah Rp 0
   [API] buku rekening Kas Kasir: saldo Rp 1.500.000
 KW API — PT tanpa kas kasir (KANDA): kwitansi tunai Toko Tekstil Pasar Baru Rp 1.000.000
   [API] rekening KANDA: BCA Operasional KANDA bank/kas_besar, Kas Toko KANDA cash/kas_kecil — tanpa kas kasir
-  [API] POST /ar-receipts KANDA: HTTP 200 KANDA/AR-00001 account_id bank_bb4d3a54b62b = "Kas Toko KANDA" (kas_kecil), jurnal KANDA/JE-00011 (posted, cash_transaction) tgl 2026-11-28 [1-1110 D Rp 1.000.000 / 2-1400 K Rp 1.000.000]
+  [API] POST /ar-receipts KANDA: HTTP 200 KANDA/AR-00001 account_id bank_ce21822237f1 = "Kas Toko KANDA" (kas_kecil), jurnal KANDA/JE-00011 (posted, cash_transaction) tgl 2026-11-28 [1-1110 D Rp 1.000.000 / 2-1400 K Rp 1.000.000]
   [API] KANDA 1-1110 naik Rp 1.000.000, 1-1105 berubah Rp 0
-  (catatan susulan, dari potret 05: toast tidak terbaca karena layar Piutang memakai bilah — "Kwitansi KSC/AR-00003 (Rp 1.500.000) dicatat untuk Konveksi Maju Bersama. Selisih diputus: Bayar sebagian (disepakati) (KSC/SLB-00001)."; skrip kini membaca bilah `ar-aging-flash`)
-  (catatan: jurnal KANDA/AR-00001 berlawan 2-1400 — pesanan KANDA/SO-00004 belum dikirim, uang masuk sebagai uang muka pelanggan; di luar bagian 3. Inti pembanding: rekening = Kas Toko KANDA, cash_type kas_kecil, akun 1-1110.)
-── fase dt1 (2026-11-28T08:46:13.444Z)
+── fase dt1 (2026-11-28T10:32:40.863Z)
 DT1 Finance — Tambah Akun › Kas tunai › Kas Kecil, Dana tetap Rp 2.000.000, Lokasi Soreang
   jenis kas: "Kas Kecil"; dana tetap "2000000", kalimat "Isi ulang diusulkan sebesar dana tetap − saldo buku − sisa panjar di tangan karyawan."; lokasi "Soreang · Bandung"
   potret 06_rekening_form_kas_kecil_dana_tetap_lokasi.jpg
-  [API] POST /bank-accounts: HTTP 200 bank_6ac73f8be59a cash_type kas_kecil dana_tetap Rp 2.000.000 location_id site_68606a7562d5 ()
+  [API] POST /bank-accounts: HTTP 200 bank_455b2801c697 cash_type kas_kecil dana_tetap Rp 2.000.000 location_id site_d7dd4b9f93ea ()
   kartu: "Kas Kecil Gudang Soreang Kas tunai Kas kecil a.n. Kepala gudang Soreang PT belum memakai akun per rekening Dana tetap Rp 2.000.000 Lokasi Soreang Rp 0 Rp 0 Rp 0 0 transaksi Isi ulang Opname"
   kaki kartu: "Isi ulang Opname" — Isi ulang ada, Opname ada; kartu BCA berkaki tidak (bank tidak diopname)
   potret 07_kartu_kas_kecil_dana_tetap_lokasi_aksi.jpg
-  TEMUAN (dari potret 07, diperiksa API): sesudah rekening kas kecil KEDUA dibuat, kartu Kas Toko KSC turun dari Rp 33.150.000 (6 transaksi) ke Rp 25.400.000 (3 transaksi). Penyebab: kas lama data acuan TANPA rekening (CASH-00002 masuk Rp 10.000.000, CASH-00003 keluar Rp 1.500.000, CASH-00004 keluar Rp 750.000; bersih Rp 7.750.000, cash_type kas_kecil) hanya dihitung ke rekening bila rekening itu satu-satunya kas kecil PT (`bank_service._txns_for` / `sole_account_id`). Kini tidak dihitung ke rekening mana pun: GET /bank-accounts/position KSC → unlinked count 3, net Rp 7.750.000; akun 1-1110 tetap Rp 33.150.000. Rekening baru Kas Kecil Gudang Soreang Rp 0, 0 transaksi.
-── fase dt2 (2026-11-28T08:47:19.654Z)
+── fase dt2 (2026-11-28T10:33:05.942Z)
 DT2 API — isi ulang pertama, panjar & LPJ dari rekening Kas Kecil Gudang Soreang
   [API] posisi awal: dana tetap Rp 2.000.000, saldo buku Rp 0, sisa panjar Rp 0, usulan Rp 2.000.000 → saldo + sisa panjar + usulan = Rp 2.000.000 (= dana tetap); bisa isi ulang true
   [API] isi ulang pertama (finance@): HTTP 200 KSC/PDN-00001 Rp 2.000.000 status selesai jenis isi_ulang_kas_kecil "Isi ulang kas kecil"
-  catatan setujui PD oleh manager@kainnusantara.id: HTTP 403 "Uang muka (panjar) senilai Rp500.000 pada jenjang 3 diputus oleh Admin. Peran Anda belum tercantum di Aturan Persetujuan."
-  [API] KSC/PD-00001 Rp 500.000 "Perlengkapan bongkar muat gudang Soreang": pemohon Sri Mulyani, status "Hanya PD berstatus 'approved' yang bisa dicairkan" (HTTP 409), kas undefined dari rekening undefined, jurnal undefined
-  GALAT buat LPJ: HTTP 409 "Pertanggungjawaban hanya untuk PD berstatus dicairkan (belum selesai)"
-── fase dt2 (2026-11-28T08:47:51.849Z)
-DT2 API — isi ulang pertama, panjar & LPJ dari rekening Kas Kecil Gudang Soreang
-  [API] posisi awal: dana tetap Rp 2.000.000, saldo buku Rp 2.000.000, sisa panjar Rp 0, usulan Rp 0 → saldo + sisa panjar + usulan = Rp 2.000.000 (= dana tetap); bisa isi ulang false ("Rekening Kas Kecil Gudang Soreang tidak perlu diisi ulang: saldo buku ditambah sisa panjar di tangan karyawan sudah mencapai dana tetap Rp 2.000.000.")
-  [API] isi ulang pertama sudah ada: KSC/PDN-00001 Rp 2.000.000 selesai
-  [API] KSC/PD-00001 persetujuan: admin@ → approved (jenjang Admin menurut Aturan Persetujuan data acuan)
+  [API] KSC/PD-00001 persetujuan: manager@ → pending_pimpinan; admin@ → pending_finance (jenjang Admin menurut Aturan Persetujuan data acuan); admin@ → approved (jenjang Admin menurut Aturan Persetujuan data acuan)
   [API] KSC/PD-00001 Rp 500.000 "Perlengkapan bongkar muat gudang Soreang": pemohon Sri Mulyani, status disbursed, dicairkan manager@ kas KSC/CASH-00013 dari rekening Kas Kecil Gudang Soreang, jurnal KSC/JE-00025
   [API] LPJ KSC/STL-00001 untuk KSC/PD-00001: belanja Rp 450.000 (diajukan finance@, disetujui manager@), status posted_to_gl, sisa Rp 50.000 open
   [API] terima sisa panjar ke Kas Kecil Gudang Soreang (manager@): HTTP 200 returned kas KSC/CASH-00014
@@ -66,7 +57,7 @@ DT2 API — isi ulang pertama, panjar & LPJ dari rekening Kas Kecil Gudang Sorea
   [API] KSC/PD-00002 Rp 300.000 "Ongkos angkut kain retur ke Soreang": pemohon Sri Mulyani, status disbursed, dicairkan manager@ kas KSC/CASH-00015 dari rekening Kas Kecil Gudang Soreang, jurnal KSC/JE-00028
   [API] posisi sesudah: dana tetap Rp 2.000.000, saldo buku Rp 1.250.000, sisa panjar Rp 300.000, usulan Rp 450.000 → saldo + sisa panjar + usulan = Rp 2.000.000 (= dana tetap); bisa isi ulang true
   [API] rincian: LPJ disetujui KSC/STL-00001 pengaruh Rp 450.000; Pengembalian sisa panjar KSC/CASH-00014 pengaruh Rp 0 — jumlah Rp 450.000; panjar: KSC/PD-00002 Belum LPJ Rp 300.000; riwayat isi ulang: KSC/PDN-00001 Rp 2.000.000 selesai
-── fase dt3 (2026-11-28T08:47:58.825Z)
+── fase dt3 (2026-11-28T10:33:07.323Z)
 DT3 Finance — Kas & Bank › Kas Kecil › chip Dana tetap
   baris: "Kas Kecil Gudang Soreang Rp 2.000.000 Rp 1.250.000 Rp 300.000 Rp 450.000 Terakhir 28 Nov 2026 Isi ulang"
   catatan rekening tanpa dana tetap: "1 rekening kas kecil belum memakai dana tetap. Atur di Rekening & Saldo"
@@ -81,34 +72,33 @@ DT3 Finance — Isi ulang (pop-up)
   potret 10_isi_ulang_popup_sumber_nominal_terkunci.jpg
   potret 11_isi_ulang_tercatat.jpg
   toast: "Isi ulang KSC/PDN-00002 dicatat — selesai."
-  [API] POST isi-ulang: kiriman {"sumber_account_id":"bank_f01e86ea74c5","nominal_dilihat":450000}; HTTP 200 KSC/PDN-00002 Rp 450.000 status selesai jenis isi_ulang_kas_kecil "Isi ulang kas kecil" dari BCA Operasional KSC ke Kas Kecil Gudang Soreang; nominal = usulan sebelumnya Rp 450.000 (sama)
+  [API] POST isi-ulang: kiriman {"sumber_account_id":"bank_3e9d6f577922","nominal_dilihat":450000}; HTTP 200 KSC/PDN-00002 Rp 450.000 status selesai jenis isi_ulang_kas_kecil "Isi ulang kas kecil" dari BCA Operasional KSC ke Kas Kecil Gudang Soreang; nominal = usulan sebelumnya Rp 450.000 (sama)
   [API] posisi sesudah isi ulang: dana tetap Rp 2.000.000, saldo buku Rp 1.700.000, sisa panjar Rp 300.000, usulan Rp 0 → saldo + sisa panjar + usulan = Rp 2.000.000 (= dana tetap); bisa isi ulang false ("Rekening Kas Kecil Gudang Soreang tidak perlu diisi ulang: saldo buku ditambah sisa panjar di tangan karyawan sudah mencapai dana tetap Rp 2.000.000.")
   baris sesudah: "Kas Kecil Gudang Soreang Rp 2.000.000 Rp 1.700.000 Rp 300.000 Rp 0 Terakhir 28 Nov 2026 Isi ulang Rekening Kas Kecil Gudang Soreang tidak perlu diisi ulang: saldo buku ditambah sisa panjar di tangan karyawan sudah mencapai dana tetap Rp 2.000.000."
 DT3 Finance — Kas & Bank › Pindah Dana: lencana isi ulang
   baris KSC/PDN-00002: "KSC/PDN-00002 28 Nov 2026 BCA Operasional KSC Kas Kecil Gudang Soreang Isi ulang dana tetap Kas Kecil Gudang Soreang Isi ulang kas kecil Rp 450.000 — Selesai Batal"; lencana "Isi ulang kas kecil"
   baris KSC/PDN-00001: lencana "Isi ulang kas kecil"
   potret 12_pindah_dana_lencana_isi_ulang.jpg
-  TEMUAN (dari potret 11, diukur ulang dengan Playwright 1440×900): kalimat alasan di bawah tombol Isi ulang yang nonaktif (`dt-refill-reason-bank_6ac73f8be59a`, "Rekening Kas Kecil Gudang Soreang tidak perlu diisi ulang: … dana tetap Rp 2.000.000.") ber-white-space nowrap (warisan sel aksi), kotak 240×16 px satu baris; tabel melebar 1737 px dalam wadah 1148 px (gulir mendatar) → kalimat terpotong di tepi kanan layar.
-── fase op1 (2026-11-28T08:49:12.515Z)
+── fase op1 (2026-11-28T10:33:42.139Z)
 OP1 Finance (penghitung) — Rekening & Saldo: kaki kartu Kas Kasir › Opname
   kaki kartu kasir: "Opname"
-  label selisih buku besar ↔ rekening: "Selisih buku besar vs total saldo rekening: Rp 7.750.000. 3 transaksi kas belum tertaut ke rekening mana pun (bersih Rp 7.750.000) — tercatat di buku besar & Transaksi Kas, tidak di kartu rekening. Sisa selisih (bila ada) berasal dari jurnal kas manual atau saldo awal buku besar yang tidak tercatat sebagai mutasi rekening."; KPI Kas & Bank (buku besar) "Rp 911.273.078", Total Saldo Rekening "Rp 903.523.078"
+  label selisih buku besar ↔ rekening: ""; KPI Kas & Bank (buku besar) "Rp 911.273.078", Total Saldo Rekening "Rp 911.273.078"
   potret 13_kartu_kas_kasir_tombol_opname.jpg
   pindah ke /?view=cash-counts&entity=ent_ksc; rekening terisi "Kas Kasir Toko KSC · Kas kasir"; saldo buku di pop-up: kata 'saldo buku' ada (subjudul)
   rincian pecahan: 14 × Rp 100.000 + 1 × Rp 50.000 → "Jumlah uang fisik Rp 1.450.000"
   potret 14_opname_hitung_pecahan_sebelum_simpan.jpg
   potret 15_opname_hasil_selisih_kurang.jpg
-  hasil: "Saldo buku saat dihitung Rp 1.500.000 Uang fisik Rp 1.450.000 Selisih Kurang Rp 50.000 Opname KSC/OPK-00001 menunggu keputusan orang kedua yang berizin menyetujui kas: selisih kas atau piutang karyawan. Kas rekening belum berubah sampai diputuskan. Dihitung 28 Nov 2026, 15.49 WIB."
+  hasil: "Saldo buku saat dihitung Rp 1.500.000 Uang fisik Rp 1.450.000 Selisih Kurang Rp 50.000 Opname KSC/OPK-00001 menunggu keputusan orang kedua yang berizin menyetujui kas: selisih kas atau piutang karyawan. Kas rekening belum berubah sampai diputuskan. Dihitung 28 Nov 2026, 17.34 WIB."
   [API] POST /cash-counts: HTTP 200 KSC/OPK-00001 status menunggu_persetujuan saldo_buku Rp 1.500.000 fisik Rp 1.450.000 selisih Rp -50.000 pecahan [{"nilai":100000,"lembar":14,"subtotal":1400000},{"nilai":50000,"lembar":1,"subtotal":50000}] boleh_piutang true
-  baris: "KSC/OPK-00001 28 Nov 2026, 15.49 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Menunggu persetujuan Setujui Tolak Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang. Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
+  baris: "KSC/OPK-00001 28 Nov 2026, 17.34 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Menunggu persetujuan Setujui Tolak Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang. Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
   Setujui nonaktif true, Tolak nonaktif true
   kalimat: "Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang. Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
   potret 16_opname_penghitung_setujui_tolak_mati.jpg
-  [API] GET /cash-counts/opk_f4fe22c841fa (penghitung): kontrol {"dua_orang":true,"sendiri":true,"admin_sendiri":false,"ditolak":true,"pesan":"Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.","tolak_pesan":"Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.","batal_pesan":"Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."}
+  [API] GET /cash-counts/opk_ccac370b23ce (penghitung): kontrol {"dua_orang":true,"sendiri":true,"admin_sendiri":false,"ditolak":true,"pesan":"Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.","tolak_pesan":"Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.","batal_pesan":"Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."}
   [API] penghitung mencoba Setujui lewat API: HTTP 403 "Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
 OP1 API — opname kedua oleh finance@ di Kas Toko KSC: uang fisik lebih Rp 25.000
-  [API] POST /cash-counts: HTTP 200 KSC/OPK-00002 saldo buku Rp 25.400.000 fisik Rp 25.425.000 selisih Rp 25.000 status menunggu_persetujuan boleh_piutang false
-── fase op2 (2026-11-28T08:49:48.426Z)
+  [API] POST /cash-counts: HTTP 200 KSC/OPK-00002 saldo buku Rp 33.150.000 fisik Rp 33.175.000 selisih Rp 25.000 status menunggu_persetujuan boleh_piutang false
+── fase op2 (2026-11-28T10:34:11.948Z)
 OP2 Penyetuju (manager@) — Persetujuan › Pusat Persetujuan: antrean opname
   antrean: "Selisih opname kas menunggu keputusan 2", bisa diklik true, title "Buka Selisih opname kas menunggu keputusan"
   "Menunggu di layar lain" baris OPK: tidak tampil
@@ -124,56 +114,58 @@ OP2 Penyetuju — Setujui KSC/OPK-00001 (kurang) → Piutang karyawan
   ringkasan: "Kas keluar Rp 50.000 dari Kas Kasir Toko KSC bertanggal 28 Nov 2026, dicatat sebagai piutang karyawan atas nama Agus Setiawan (EMP-00006) (akun Piutang Karyawan – Kekurangan Kas)."
   potret 20_setujui_piutang_karyawan_ringkasan.jpg
   toast: "Selisih opname KSC/OPK-00001 disetujui — kas penyesuaian KSC/CASH-00018 tercatat."
-  [API] POST approve: HTTP 200 status disetujui perlakuan piutang_karyawan karyawan Agus Setiawan (emp_ca60b68e78ba) kas KSC/CASH-00018 disetujui_oleh Dewi Manager
-  [API] kas penyesuaian: {"account_id": "bank_5e60858144f0", "amount": 50000.0, "created_by": "Sri Mulyani", "description": "Kekurangan kas opname KSC/OPK-00001 (Kas Kasir Toko KSC) \u2014 piutang karyawan Agus Setiawan (EMP-00006)", "direction": "out", "journal_entry_id": "je_49edd239c83a", "karyawan_id": "emp_ca60b68e78ba", "karyawan_nama": "Agus Setiawan", "number": "KSC/CASH-00018", "ref_id": "opk_f4fe22c841fa", "ref_type": "cash_count"}
+  [API] POST approve: HTTP 200 status disetujui perlakuan piutang_karyawan karyawan Agus Setiawan (emp_fecda701941d) kas KSC/CASH-00018 disetujui_oleh Dewi Manager
+  [API] kas penyesuaian: {"account_id": "bank_ea9df8fce5c2", "amount": 50000.0, "created_by": "Sri Mulyani", "description": "Kekurangan kas opname KSC/OPK-00001 (Kas Kasir Toko KSC) \u2014 piutang karyawan Agus Setiawan (EMP-00006)", "direction": "out", "journal_entry_id": "je_d2a31bcf3e63", "karyawan_id": "emp_fecda701941d", "karyawan_nama": "Agus Setiawan", "number": "KSC/CASH-00018", "ref_id": "opk_ccac370b23ce", "ref_type": "cash_count"}
   [API] jurnal: KSC/JE-00031 (posted, cash_transaction) tgl 2026-11-28 [1-1290 D Rp 50.000 / 1-1105 K Rp 50.000]
-  baris: "KSC/OPK-00001 28 Nov 2026, 15.49 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Disetujui Piutang karyawan · Agus Setiawan Batal"
+  baris: "KSC/OPK-00001 28 Nov 2026, 17.34 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Disetujui Piutang karyawan · Agus Setiawan Batal"
   potret 21_opname_disetujui_piutang_karyawan.jpg
 OP2 Penyetuju — Setujui KSC/OPK-00002 (lebih) → hanya Selisih kas
   pilihan perlakuan (lebih): Selisih kas
-  isi pop-up: "Setujui selisih opname KSC/OPK-00002 Kas Toko KSC · dihitung Sri Mulyani, 28 Nov 2026, 15.49 WIB Saldo buku saat dihitung Rp 25.400.000 Uang fisik Rp 25.425.000 Selisih Lebih Rp 25.000 PERLAKUAN SELISIH * Selisih kas Selisih kas Kelebihan kas dibukukan sebagai selisih kas; piutang karyawan hanya untuk kekurangan. Kas masuk Rp 25.000 ke Kas Toko KSC bertanggal 28 Nov 2026, dibukukan ke akun Selisih Kas (pendapatan lain-lain). Batal Setujui"
+  isi pop-up: "Setujui selisih opname KSC/OPK-00002 Kas Toko KSC · dihitung Sri Mulyani, 28 Nov 2026, 17.34 WIB Saldo buku saat dihitung Rp 33.150.000 Uang fisik Rp 33.175.000 Selisih Lebih Rp 25.000 PERLAKUAN SELISIH * Selisih kas Selisih kas Kelebihan kas dibukukan sebagai selisih kas; piutang karyawan hanya untuk kekurangan. Kas masuk Rp 25.000 ke Kas Toko KSC bertanggal 28 Nov 2026, dibukukan ke akun Selisih Kas (pendapatan lain-lain). Batal Setujui"
   potret 22_setujui_lebih_selisih_kas_ringkasan.jpg
   toast: "Selisih opname KSC/OPK-00002 disetujui — kas penyesuaian KSC/CASH-00019 tercatat."
   [API] POST approve: HTTP 200 status disetujui perlakuan selisih_kas kas KSC/CASH-00019
-  [API] kas penyesuaian: {"account_id": "bank_bf4cb1b991a6", "amount": 25000.0, "direction": "in", "journal_entry_id": "je_1ed34c058ebe", "number": "KSC/CASH-00019"}; jurnal: KSC/JE-00032 (posted, cash_transaction) tgl 2026-11-28 [1-1110 D Rp 25.000 / 6-9200 K Rp 25.000]
+  [API] kas penyesuaian: {"account_id": "bank_b31661a2c545", "amount": 25000.0, "direction": "in", "journal_entry_id": "je_59cc7a6951f3", "number": "KSC/CASH-00019"}; jurnal: KSC/JE-00032 (posted, cash_transaction) tgl 2026-11-28 [1-1110 D Rp 25.000 / 6-9200 K Rp 25.000]
   [API] saldo akun sesudah: 1-1100 Rp 874.923.077,5, 1-1105 Rp 1.450.000, 1-1110 Rp 34.875.000, 1-1290 Rp 50.000, 6-9200 Rp -25.000 — 1-1290 naik Rp 50.000, 1-1105 turun Rp 50.000, 1-1110 naik Rp 25.000, 6-9200 Rp -25.000 (beban bersaldo debit; kredit = minus)
-  [API] buku rekening Kas Kasir: Rp 1.450.000; Kas Toko KSC: Rp 25.425.000
-── fase op3 (2026-11-28T08:50:35.412Z)
+  [API] buku rekening Kas Kasir: Rp 1.450.000; Kas Toko KSC: Rp 33.175.000
+── fase op3 (2026-11-28T10:34:50.450Z)
 OP3 Finance — Opname Kas › Hitung kas: Kas Kecil Gudang Soreang uang fisik Rp 1.700.000 (= saldo buku)
   potret 23_opname_selisih_nol_selesai.jpg
-  hasil: "Saldo buku saat dihitung Rp 1.700.000 Uang fisik Rp 1.700.000 Selisih Tanpa selisih Opname KSC/OPK-00003 selesai — uang fisik sama dengan saldo buku, tanpa jurnal. Dihitung 28 Nov 2026, 15.50 WIB."
+  hasil: "Saldo buku saat dihitung Rp 1.700.000 Uang fisik Rp 1.700.000 Selisih Tanpa selisih Opname KSC/OPK-00003 selesai — uang fisik sama dengan saldo buku, tanpa jurnal. Dihitung 28 Nov 2026, 17.35 WIB."
   [API] POST /cash-counts: HTTP 200 KSC/OPK-00003 status selesai selisih Rp 0 kas -; jurnal PT baru 0
   baris O2 (disetujui) untuk penghitung: Batal ada, nonaktif true; kalimat "Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
   [API] penghitung mencoba Batal lewat API: HTTP 403 "Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang."
-── fase op4 (2026-11-28T08:51:02.284Z)
+── fase op4 (2026-11-28T10:35:12.823Z)
 OP4 Penyetuju (manager@) — Batalkan opname KSC/OPK-00002
   pop-up: "Kas penyesuaian KSC/CASH-00019 (Lebih Rp 25.000 di Kas Toko KSC) dibalik dengan jurnal pembalik. Rekening ini kembali perlu diopname (hitung ulang); penghitung diberi tahu."; tombol nonaktif saat kosong true
   potret 24_batal_opname_popup_alasan.jpg
   toast: "Opname KSC/OPK-00002 dibatalkan — kas penyesuaiannya dibalik; hitung ulang rekening Kas Toko KSC."
   [API] POST batal: HTTP 200 status batal (Dibatalkan) alasan "Kelebihan ternyata uang titipan pelanggan yang belum dicatat" oleh Dewi Manager, batal_gl_status posted, kas KSC/CASH-00019 status void, pembalik KSC/JE-00033
   [API] jurnal pembalik: KSC/JE-00033 (posted, cash_transaction_void) tgl 2026-11-28 [1-1110 K Rp 25.000 / 6-9200 D Rp 25.000]
-  [API] saldo akun: 1-1110 berubah Rp -25.000, 6-9200 berubah Rp 25.000; buku Kas Toko KSC Rp 25.400.000
-  baris: "KSC/OPK-00002 28 Nov 2026, 15.49 WIB Sri Mulyani Kas Toko KSC Kas Kecil Rp 25.400.000 Rp 25.425.000 Lebih Rp 25.000 Dibatalkan Selisih kas Kelebihan ternyata uang titipan pelanggan yang belum dicatat"
+  [API] saldo akun: 1-1110 berubah Rp -25.000, 6-9200 berubah Rp 25.000; buku Kas Toko KSC Rp 33.150.000
+  baris: "KSC/OPK-00002 28 Nov 2026, 17.34 WIB Sri Mulyani Kas Toko KSC Kas Kecil Rp 33.150.000 Rp 33.175.000 Lebih Rp 25.000 Dibatalkan Selisih kas Kelebihan ternyata uang titipan pelanggan yang belum dicatat"
   potret 25_opname_dibatalkan.jpg
-── fase op5 (2026-11-28T08:51:26.224Z)
+── fase op5 (2026-11-28T10:35:31.357Z)
 OP5 Penyetuju — Opname Kas › Perlakuan: Piutang karyawan
-  baris tersaring (1): KSC/OPK-00001 28 Nov 2026, 15.49 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Disetujui Piutang karyawan · Agus Setiawan Batal
+  baris tersaring (1): KSC/OPK-00001 28 Nov 2026, 17.34 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Disetujui Piutang karyawan · Agus Setiawan Batal
   potret 26_saringan_perlakuan_piutang_karyawan.jpg
   [API] GET /cash-counts?perlakuan=piutang_karyawan: 1 — KSC/OPK-00001 Disetujui Agus Setiawan Rp -50.000
 OP5 Penyetuju — klik KSC/OPK-00001 → pratinjau
   pratinjau: judul "Opname kas · KSC/OPK-00001"; status "Disetujui"
-  fakta "PT Sukacita Status Disetujui Rekening Kas Kasir Toko KSC · Kas kasir Dihitung Sri Mulyani · 28 Nov 2026, 15.49 WIB Tanggal kas 28 Nov 2026 Catatan Hitung tutup toko, disaksikan kepala toko Perlakuan Piutang karyawan · Agus Setiawan (EMP-00006) Disetujui Dewi Manager · 28 Nov 2026, 15.50 WIB"
+  fakta "PT Sukacita Status Disetujui Rekening Kas Kasir Toko KSC · Kas kasir Dihitung Sri Mulyani · 28 Nov 2026, 17.34 WIB Tanggal kas 28 Nov 2026 Catatan Hitung tutup toko, disaksikan kepala toko Perlakuan Piutang karyawan · Agus Setiawan (EMP-00006) Disetujui Dewi Manager · 28 Nov 2026, 17.34 WIB"
   pecahan "PECAHAN LEMBAR JUMLAH Rp 100.000 14 Rp 1.400.000 Rp 50.000 1 Rp 50.000"; kas "Kas penyesuaian KSC/CASH-00018 Arah Kas keluar Tanggal 28 Nov 2026 Jurnal KSC/JE-00031"; jurnal "KSC/JE-00031"
-  riwayat "Dihitung · Sri Mulyani · 28 Nov 2026, 15.49 WIB — selisih -Rp 50.000 menunggu persetujuan orang kedua Disetujui · Dewi Manager · 28 Nov 2026, 15.50 WIB — piutang karyawan · kas KSC/CASH-00018"; kaki: Jejak 1, Buka layar penuh 1
+  riwayat "Dihitung · Sri Mulyani · 28 Nov 2026, 17.34 WIB — selisih -Rp 50.000 menunggu persetujuan orang kedua Disetujui · Dewi Manager · 28 Nov 2026, 17.34 WIB — piutang karyawan · kas KSC/CASH-00018"; kaki: Jejak 1, Buka layar penuh 1
   potret 27_pratinjau_opk_piutang_karyawan.jpg
   Jejak: /?view=doc-trace&entity=ent_ksc; jangkar "KSC/OPK-00001"
-  [API] GET /documents/trace/cash_count: HTTP 200 simpul cash_count:KSC/OPK-00001, cash_transaction:KSC/CASH-00018, journal_entry:KSC/JE-00031; sisi cash_count:opk_f4fe22c841fa→cash_transaction:cash_34bed749949da4b25a397322(child), cash_transaction:cash_34bed749949da4b25a397322→journal_entry:je_49edd239c83a(journaled_by)
+  [API] GET /documents/trace/cash_count: HTTP 200 simpul cash_count:KSC/OPK-00001, cash_transaction:KSC/CASH-00018, journal_entry:KSC/JE-00031; sisi cash_count:opk_ccac370b23ce→cash_transaction:cash_fea42352d584181cc2060ac5(child), cash_transaction:cash_fea42352d584181cc2060ac5→journal_entry:je_d2a31bcf3e63(journaled_by)
+  sesudah klik Jejak: pratinjau tertutup
+  layar Jejak: "OPNAME KAS KSC/OPK-00001 Sukacita Buka dokumen Salin tautan Cetak Jejak (PDF) DOKUMEN TERKAIT 3 RELASI 2 KEDALAMAN 4 STATUS DOKUMEN Disetujui NILAI DOKUMEN — Opname kas · 28 Nov 2026 KEDALAMAN Aturan admin 1 2 3 4 6 8 QR pada dokumen cetak mengarah ke halaman ini: /jejak-dokumen/cash_count/opk_ccac3"
   potret 28_jejak_opk_kas_jurnal.jpg
-── fase meja (2026-11-28T08:51:54.010Z)
+── fase meja (2026-11-28T10:35:58.646Z)
 MEJA API — Meja Keuangan antrean "Opname kas jatuh tempo"
-  [API] GET /home/finance: HTTP 200; antrean opname_kas_jatuh_tempo tidak ada di jawaban (kosong)
-  penanda fitur aktif 2026-11-28T08:28:43.655381+00:00; jarak bawaan kasir 1 hari, kas kecil 7 hari → paling cepat jatuh tempo besok. Tidak ada rekening jatuh tempo di data acuan → kartu tidak dipotret (sesuai brief: dicatat & dilewati; penanda tidak digeser).
-── fase cek (2026-11-28T08:51:55.034Z)
+  [API] GET /finance/desk (finance@): HTTP 200; antrean "Opname kas jatuh tempo" 0 baris
+  penanda fitur aktif 2026-11-28T10:29:19.102725+00:00; jarak bawaan kasir 1 hari, kas kecil 7 hari → paling cepat jatuh tempo besok. Tidak ada rekening jatuh tempo di data acuan → kartu tidak dipotret (sesuai brief: dicatat & dilewati; penanda tidak digeser).
+── fase cek (2026-11-28T10:35:59.461Z)
 CEK — ringkasan akhir PT KSC
   awal:  1-1100 Rp 877.373.077,5, 1-1105 Rp 0, 1-1110 Rp 33.150.000, 1-1290 Rp 0, 6-9200 Rp 0
   akhir: 1-1100 Rp 874.923.077,5, 1-1105 Rp 1.450.000, 1-1110 Rp 34.850.000, 1-1290 Rp 50.000, 6-9200 Rp 0; jurnal PT 21 → 33
@@ -182,28 +174,3 @@ CEK — ringkasan akhir PT KSC
   dana tetap: dana tetap Rp 2.000.000, saldo buku Rp 1.700.000, sisa panjar Rp 300.000, usulan Rp 0 → saldo + sisa panjar + usulan = Rp 2.000.000 (= dana tetap); bisa isi ulang false ("Rekening Kas Kecil Gudang Soreang tidak perlu diisi ulang: saldo buku ditambah sisa panjar di tangan karyawan sudah mencapai dana tetap Rp 2.000.000.")
   opname PT KSC: KSC/OPK-00003 Kas Kecil Gudang Soreang Selesai selisih Rp 0; KSC/OPK-00002 Kas Toko KSC Dibatalkan selisih Rp 25.000 Selisih kas → KSC/CASH-00019; KSC/OPK-00001 Kas Kasir Toko KSC Disetujui selisih Rp -50.000 Piutang karyawan (Agus Setiawan) → KSC/CASH-00018
   antrean Pusat Persetujuan opname (manager@): 0
-── fase meja (2026-11-28T08:52:13.931Z)
-MEJA API — Meja Keuangan antrean "Opname kas jatuh tempo"
-  [API] GET /finance/desk (finance@): HTTP 200; antrean TIDAK ADA di jawaban
-  penanda fitur aktif 2026-11-28T08:28:43.655381+00:00; jarak bawaan kasir 1 hari, kas kecil 7 hari → paling cepat jatuh tempo besok. Tidak ada rekening jatuh tempo di data acuan → kartu tidak dipotret (sesuai brief: dicatat & dilewati; penanda tidak digeser).
-── fase meja (2026-11-28T08:52:23.483Z)
-MEJA API — Meja Keuangan antrean "Opname kas jatuh tempo"
-  [API] GET /finance/desk (finance@): HTTP 200; antrean "Opname kas jatuh tempo" 0 baris
-  penanda fitur aktif 2026-11-28T08:28:43.655381+00:00; jarak bawaan kasir 1 hari, kas kecil 7 hari → paling cepat jatuh tempo besok. Tidak ada rekening jatuh tempo di data acuan → kartu tidak dipotret (sesuai brief: dicatat & dilewati; penanda tidak digeser).
-── fase op5 (2026-11-28T08:52:46.045Z)
-OP5 Penyetuju — Opname Kas › Perlakuan: Piutang karyawan
-  baris tersaring (1): KSC/OPK-00001 28 Nov 2026, 15.49 WIB Sri Mulyani Kas Kasir Toko KSC Kas kasir Rp 1.500.000 Rp 1.450.000 Kurang Rp 50.000 Disetujui Piutang karyawan · Agus Setiawan Batal
-  potret 26_saringan_perlakuan_piutang_karyawan.jpg
-  [API] GET /cash-counts?perlakuan=piutang_karyawan: 1 — KSC/OPK-00001 Disetujui Agus Setiawan Rp -50.000
-OP5 Penyetuju — klik KSC/OPK-00001 → pratinjau
-  pratinjau: judul "Opname kas · KSC/OPK-00001"; status "Disetujui"
-  fakta "PT Sukacita Status Disetujui Rekening Kas Kasir Toko KSC · Kas kasir Dihitung Sri Mulyani · 28 Nov 2026, 15.49 WIB Tanggal kas 28 Nov 2026 Catatan Hitung tutup toko, disaksikan kepala toko Perlakuan Piutang karyawan · Agus Setiawan (EMP-00006) Disetujui Dewi Manager · 28 Nov 2026, 15.50 WIB"
-  pecahan "PECAHAN LEMBAR JUMLAH Rp 100.000 14 Rp 1.400.000 Rp 50.000 1 Rp 50.000"; kas "Kas penyesuaian KSC/CASH-00018 Arah Kas keluar Tanggal 28 Nov 2026 Jurnal KSC/JE-00031"; jurnal "KSC/JE-00031"
-  riwayat "Dihitung · Sri Mulyani · 28 Nov 2026, 15.49 WIB — selisih -Rp 50.000 menunggu persetujuan orang kedua Disetujui · Dewi Manager · 28 Nov 2026, 15.50 WIB — piutang karyawan · kas KSC/CASH-00018"; kaki: Jejak 1, Buka layar penuh 1
-  potret 27_pratinjau_opk_piutang_karyawan.jpg
-  Jejak: /?view=doc-trace&entity=ent_ksc; jangkar "KSC/OPK-00001"
-  [API] GET /documents/trace/cash_count: HTTP 200 simpul cash_count:KSC/OPK-00001, cash_transaction:KSC/CASH-00018, journal_entry:KSC/JE-00031; sisi cash_count:opk_f4fe22c841fa→cash_transaction:cash_34bed749949da4b25a397322(child), cash_transaction:cash_34bed749949da4b25a397322→journal_entry:je_49edd239c83a(journaled_by)
-  sesudah klik Jejak: pratinjau MASIH TERBUKA menutupi layar Jejak Dokumen
-  potret 28b_jejak_pratinjau_masih_menutupi.jpg
-  layar Jejak: "OPNAME KAS KSC/OPK-00001 Sukacita Buka dokumen Salin tautan Cetak Jejak (PDF) DOKUMEN TERKAIT 3 RELASI 2 KEDALAMAN 4 STATUS DOKUMEN Disetujui NILAI DOKUMEN — Opname kas · 28 Nov 2026 KEDALAMAN Aturan admin 1 2 3 4 6 8 QR pada dokumen cetak mengarah ke halaman ini: /jejak-dokumen/cash_count/opk_f4fe2"
-  potret 28_jejak_opk_kas_jurnal.jpg
