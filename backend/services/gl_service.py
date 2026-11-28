@@ -273,6 +273,19 @@ async def akun_kas(entity_id: str, account_id: str, cash_type: str, *, akun_lama
     return {"kas_kecil": ACC_KAS_KECIL, "kas_kasir": ACC_KAS_KASIR}.get(cash_type, ACC_KAS_BESAR)
 
 
+async def akun_kas_kasir(entity_id: str = "") -> set:
+    """Kas & Bank 3 — akun kas kasir yang TIDAK boleh dipilih langsung di pemilih akun berbasis awalan `1-11` (pemilih
+    refund `/gl/cash-accounts`, akun bayar ongkir retur `return_logistics_service.pay_accounts`): templat 1-1105 ∪ semua
+    akun kebutuhan `kas_bank.kas_kasir` PT `entity_id` (bawaan, pemetaan global & PT itu, riwayatnya). Tanpa PT (pemilih
+    templat global) → templat + pemetaan global yang berlaku saja (pemetaan PT lain tidak menyembunyikan akun templat).
+    Kas kasir hanya diisi lewat pintu kas (`cash_ledger.create_cash`), jadi saldonya = buku kas rekening kasir; PT yang
+    tidak memakai kas kasir tidak melihat pilihan baru."""
+    from services import gl_mapping_service as _glm
+    if not entity_id:
+        return {ACC_KAS_KASIR, await _glm.account_for("kas_bank.kas_kasir", None)} - {""}
+    return {ACC_KAS_KASIR} | set(await _glm.known_codes("kas_bank.kas_kasir", entity_id))
+
+
 async def akun_kas_tanpa_dokumen(entity_id: str, cash_type: str) -> Dict[str, Any]:
     """Kas & Bank 1 — akun kas jurnal yang menyentuh kas TANPA dokumen kas / rekening (penjualan tunai tanpa surat
     jalan, hasil pelepasan aset): selalu akun lama (`akun_kas` tanpa rekening, dipetakan per PT seperti dulu).

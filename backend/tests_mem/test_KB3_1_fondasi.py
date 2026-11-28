@@ -253,6 +253,27 @@ async def test_KB3_1_U4_kas_kasir_dengan_pemetaan_pt(db):
     assert {"1-1105", "1-1106"} <= await rb.kode_kas(pt)
 
 
+async def test_KB3_1_U13_pemilih_bayar_ongkir_tanpa_kas_kasir(db, lama):
+    """Perbaikan putaran 1 (tinjauan T1, Important) — pemilih akun bayar ongkir retur (`pay_accounts`, berawalan 1-11)
+    tidak menawarkan akun kas kasir: jurnal ongkir menulis akun itu langsung tanpa dokumen kas. PT tanpa kas kasir →
+    daftar PERSIS sama dengan sebelum Tugas 1 (direkam dari fa711aa); PT dengan pemetaan `kas_bank.kas_kasir` → templat
+    1-1105 dan akun pemetaannya (1-1106, U4) tidak ditawarkan dan ditolak `save`."""
+    from services import gl_service as gl, return_logistics_service as rl
+    daftar = await rl.pay_accounts(await pt_uji("KB3N"))
+    _cocok("bayar_ongkir_pt_tanpa_kasir", daftar)
+    assert await gl.akun_kas_kasir() == {"1-1105"}
+    pm = await pt_uji("KB3M")
+    assert await gl.akun_kas_kasir(pm) == {"1-1105", "1-1106"}
+    assert await rl.pay_accounts(pm) == daftar
+    for kode in ("1-1105", "1-1106"):
+        ret = {"id": f"sr_kb3_ong_{kode}", "number": f"RJ/KB3/ONG/{kode}", "entity_id": pm, "customer_name": "Toko KB3"}
+        with pytest.raises(ValueError) as e:
+            await rl.save(ret, [{"type": "customer_return", "mode": "third_party", "bearer": "company",
+                                 "amount": 40_000, "pay_account_code": kode}], AKTOR_UJI, True)
+        assert str(e.value) == f"Akun pembayaran {kode} bukan akun kas/bank/hutang yang aktif", str(e.value)
+        assert not await db.journal_entries.find_one({"source_type": rl.SOURCE, "ref.return_id": ret["id"]})
+
+
 # ═══ C1 — rekening kas kasir di PT mode akun per rekening ══════════════════════════════════════════════════════════
 async def test_KB3_1_U5_kas_kasir_pt_aktif_ke_subakun(klien, db, lama):
     from services import bank_service as bs
@@ -587,3 +608,25 @@ BARIS_LAMA: dict = {'kas_keluar_kecil': [{'account_code': '6-2000',
                                                'credit': 250000.0,
                                                'debit': 0.0,
                                                'description': 'Saldo awal Kas Kecil KB3 Kanda'}]}
+
+
+#: Perbaikan putaran 1 — `return_logistics_service.pay_accounts` PT uji tanpa kas kasir, direkam dari fa711aa.
+BARIS_LAMA["bayar_ongkir_pt_tanpa_kasir"] = [
+    {'code': '1-1100', 'kind': 'kas_bank', 'name': 'Kas Besar / Bank'},
+    {'code': '1-1110', 'kind': 'kas_bank', 'name': 'Kas Kecil'},
+    {'code': '1-1150', 'kind': 'kas_bank', 'name': 'Kas & Bank Transit (Dana Dalam Perjalanan)'},
+    {'code': '2-1100', 'kind': 'hutang', 'name': 'Hutang Usaha'},
+    {'code': '2-1150', 'kind': 'hutang', 'name': 'Hutang Belum Ditagih (GR/IR)'},
+    {'code': '2-1200', 'kind': 'hutang', 'name': 'PPN Keluaran'},
+    {'code': '2-1250', 'kind': 'hutang', 'name': 'Utang Antar-Perusahaan (IC-AP)'},
+    {'code': '2-1300', 'kind': 'hutang', 'name': 'Hutang Pajak Lainnya'},
+    {'code': '2-1400', 'kind': 'hutang', 'name': 'Uang Muka Pelanggan'},
+    {'code': '2-1450', 'kind': 'hutang', 'name': 'Saldo Kredit Pelanggan (Store Credit)'},
+    {'code': '2-1500', 'kind': 'hutang', 'name': 'Hutang Insentif Penjualan'},
+    {'code': '2-1600', 'kind': 'hutang', 'name': 'Hutang Gaji'},
+    {'code': '2-1650', 'kind': 'hutang', 'name': 'Hutang Reimburse Karyawan'},
+    {'code': '2-1700', 'kind': 'hutang', 'name': 'Hutang BPJS'},
+    {'code': '2-1800', 'kind': 'hutang', 'name': 'Hutang PPh 21'},
+    {'code': '2-1900', 'kind': 'hutang', 'name': 'Kewajiban Lancar Lainnya'},
+    {'code': '2-1950', 'kind': 'hutang', 'name': 'Titipan Dana Belum Teridentifikasi'},
+]

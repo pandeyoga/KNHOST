@@ -60,8 +60,9 @@ PENGECUALIAN: Dict[str, str] = {
     "services/cash_flow_service.py:<modul>": "`CASH_CODES` — pembaca saldo kas (Arus Kas), bukan baris jurnal",
     "services/cash_ledger.py:<modul>": ("`KAS_KECIL_CODE`/`KAS_KASIR_CODE` — `cash_type_for` membaca JENIS kas dari "
                                         "kode pemilih"),
-    "routers/gl.py:list_cash_accounts": ("pemilih refund: daftar cadangan akun templat (dibaca sebagai jenis kas, R5) "
-                                         "dan akun kas kasir yang sengaja tidak ditawarkan"),
+    "routers/gl.py:list_cash_accounts": "pemilih refund: daftar cadangan akun templat (dibaca sebagai jenis kas, R5)",
+    "services/gl_service.py:akun_kas_kasir": ("pemilih: akun kas kasir yang DIKELUARKAN dari pemilih akun berawalan "
+                                              "1-11 (refund, bayar ongkir retur), bukan baris jurnal"),
     # bukan kode aplikasi
     "tools/ai_eval/build_questions_keuangan.py:<modul>": "teks pertanyaan uji asisten keuangan, bukan baris jurnal",
 }

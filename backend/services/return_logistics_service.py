@@ -35,11 +35,14 @@ async def pay_accounts(entity_id: str) -> List[Dict[str, Any]]:
     """Pilihan akun pembayaran ongkir: kas/bank (1-11xx) dan kewajiban (hutang ekspedisi dsb.). Kas & Bank 1 — akun
     rekening (ber-`bank_account_id`) TIDAK ditawarkan: jurnal ongkir menulis akun kas langsung tanpa dokumen kas,
     padahal akun rekening hanya diisi lewat pintu kas (`cash_ledger.create_cash`) — saldo akun = buku kas rekening.
-    `save` memeriksa kode terhadap daftar ini, jadi kode akun rekening dari API juga ditolak."""
+    `save` memeriksa kode terhadap daftar ini, jadi kode akun rekening dari API juga ditolak. Kas & Bank 3 — akun kas
+    kasir (`gl_service.akun_kas_kasir`: templat 1-1105 + pemetaan `kas_bank.kas_kasir` PT itu) juga tidak ditawarkan
+    dengan alasan yang sama (kas kasir hanya diisi lewat pintu kas)."""
     accs = await gl_service.effective_accounts(None, entity_id or None)
+    kasir = await gl_service.akun_kas_kasir(entity_id)
     out = [{"code": c, "name": a.get("name", ""), "kind": "kas_bank" if c.startswith("1-11") else "hutang"}
            for c, a in accs.items() if a.get("is_active") is not False and a.get("is_postable") is not False
-           and not a.get("bank_account_id")
+           and not a.get("bank_account_id") and c not in kasir
            and (c.startswith("1-11") or (a.get("type") == "liability" and c.startswith("2-1")))]
     return sorted(out, key=lambda x: x["code"])
 
