@@ -57,7 +57,8 @@ Temuan nyata yang tertangkap sebelum gabung:
 
 ## 3. Uji (apa adanya)
 
-- **Backend `tests_mem` penuh** di `6cf2a7d`: __BACKEND__ Sebelumnya di `4b7c043`: 3342 lulus, 0 gagal.
+- **Backend `tests_mem` penuh** di `6cf2a7d`: 3352 lulus, 2 dilewati, 3 xfail, **0 gagal** (EXIT 0, 1258 dtk). Sebelum
+  gelombang perbaikan akhir (`4b7c043`): 3342 lulus, 0 gagal.
 - **Jest penuh** di `6cf2a7d`: 2259/2260 uji, 273/275 suite — `odItemCancel`, `phase4R2` (kendala lingkungan, sama dengan
   garis dasar).
 - **Uji baru:** `test_KB3_1_fondasi`, `test_KB3_2_kasir_dana_tetap`, `test_KB3_3_opname`, `test_KB3_4_layar_server`
