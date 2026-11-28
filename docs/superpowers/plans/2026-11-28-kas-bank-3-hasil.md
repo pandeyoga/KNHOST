@@ -36,7 +36,8 @@ berkunci sama kembali ke dokumen yang sama; membuat rekening kas sejenis kedua t
 | Gelombang perbaikan akhir (server A, layar B, gate) | `758904c`, `42150ee`, `f93f08c`, `81e695f` (gabung `7b2715d`, `6cf2a7d`) |
 | T5 Uji MongoDB sungguhan | `79fa3b5` |
 | T5 Temuan tangkapan: kas lama tanpa rekening (server) | `c8283e0`, `0c498fc` (gabung `ebe337f`) |
-| T5 Temuan tangkapan: kalimat tunai, alasan Isi ulang, Jejak (layar) | `aba200f` (gabung `83cd2d9`) |
+| T5 Temuan tangkapan: kalimat tunai, alasan Isi ulang, Jejak (layar) | `aba200f` (gabung `83cd2d9`), `c5ffef0` |
+| T5 Skrip tangkapan mencari id dari nama | `df9a3bc` |
 
 Alur: T1–T3 (jalur uang) ditinjau per tugas; T4 (layar) tanpa tinjauan tugas (perintah pemilik "ya percepat"); tinjauan
 seluruh cabang → satu gelombang perbaikan (dua agen sejajar) → tinjauan ulang: semua tertangani, tanpa temuan berat baru.
@@ -58,7 +59,8 @@ Temuan nyata yang tertangkap sebelum gabung:
   "lebih Rp 7.750.000" → bila disetujui terbukukan dua kali) dan **isi ulang akan mengisi lebih Rp 7,75 juta**. Ditutup
   (R7): kas lama itu ditetapkan ke rekening yang sudah ada saat rekening sejenis kedua lahir; keadaan ambigu yang sudah
   terlanjur → opname & isi ulang ditolak berkalimat;
-- kalimat kwitansi tunai masih "masuk Kas Kecil" padahal masuk Kas Kasir; alasan tombol Isi ulang terpotong; Jejak dari
+- kalimat kwitansi tunai masih "masuk Kas Kecil" padahal masuk Kas Kasir (perbaikan pertama sempat menebak "Kas Besar"
+  karena daftar rekening penerima tidak membawa jenis kas — kini dibawa server); alasan tombol Isi ulang terpotong; Jejak dari
   pratinjau tidak menutup pratinjau — tangkapan, ditutup;
 - layar bersama (pemilih rekening, Transaksi Kas) belum mengenal kas kasir; penyetuju rekening baru tidak melihat jenis kas;
   daftar piutang karyawan tak bisa dibuka; nominal isi ulang bisa bergeser antara konfirmasi dan posting — tinjauan akhir,
