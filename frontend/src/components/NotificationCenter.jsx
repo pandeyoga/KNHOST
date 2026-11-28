@@ -59,6 +59,9 @@ export const TYPE_LABEL = {
   // 2026-11 — F1 kwitansi otomatis dari mutasi bank: pesanan tertahan dibayar lewat mutasi → sales; ringkasan impor → Finance.
   bayar_masuk_mutasi: "Pembayaran masuk (mutasi bank)",
   ringkasan_mutasi_otomatis: "Kwitansi otomatis dari mutasi",
+  // 2026-11 — Kas & Bank 3 (opname kas): selisih menunggu orang kedua → penyetuju kas; putusan → penghitung.
+  opname_kas_menunggu: "Selisih opname kas menunggu",
+  opname_kas_diputus: "Opname kas diputus",
 };
 export const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 

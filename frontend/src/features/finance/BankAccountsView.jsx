@@ -33,6 +33,7 @@ import { entityShortById } from "../../utils/entityLabel";
 import { usePaymentMethods } from "../../config/paymentMethods";
 import BankAccountForm from "./BankAccountForm";
 import BankAccountChangesPanel from "./BankAccountChangesPanel";
+import OpnameKartuAksi from "./cashcount/OpnameKartuAksi";   // Kas & Bank 3 (Tugas 4b) — aksi Opname kartu rekening tunai
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -210,12 +211,15 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-cards">
               {srch.pageRows.map((a) => (
+                // Kas & Bank 3 (Tugas 4b) — bingkai kartu pindah ke pembungkus supaya aksi kartu (Opname) tinggal di kaki
+                // kartu sebagai SAUDARA tombol kartu, bukan tombol di dalam tombol. Isi tombol kartu tidak berubah.
+                <div key={a.id} data-testid={`bank-card-box-${a.id}`}
+                  className={`flex flex-col rounded-xl border transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"} ${a.is_active === false ? "opacity-60" : ""}`}>
                 <button
-                  key={a.id}
                   type="button"
                   data-testid={`bank-card-${a.id}`}
                   onClick={() => openLedger(a.id)}
-                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"} ${a.is_active === false ? "opacity-60" : ""}`}
+                  className="flex-1 text-left rounded-xl p-3.5"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${a.account_type === "bank" ? "bg-[#E7F0FF] text-[#0058CC]" : "bg-[#E6F6EC] text-[#1B7F4B]"}`}>
@@ -257,6 +261,8 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     <span className="ml-auto">{a.txn_count} transaksi{a.unreconciled_count > 0 ? ` · ${a.unreconciled_count} belum dicocokkan` : ""}</span>
                   </div>
                 </button>
+                <OpnameKartuAksi a={a} currentUser={currentUser} />
+                </div>
               ))}
             </div>
           )}

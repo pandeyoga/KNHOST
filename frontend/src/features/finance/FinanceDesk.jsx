@@ -21,6 +21,10 @@
  * Terima pembayaran terisi dari mutasi (`bankLineId` → satu permintaan atomik); klik baris → pop-up `BankLineQueuePanel`
  * (alasan, pratinjau pesanan, Terima/Tolak laporan bayar menunggu pesanan itu bersama mutasi); satu tombol kaki
  * "Buka Rekonsiliasi" → Rekonsiliasi Bank. Kartu yang menyebut kwitansi terbuka (`receipt_id`) tanpa "Catat kwitansi".
+ * Kas & Bank 3 (Tugas 4b, §5.3) — kelompok "Opname kas jatuh tempo" (antrean `opname_kas_jatuh_tempo`; rekening tunai yang
+ * sudah waktunya dihitung fisik; hanya pemegang `cash.create` = penghitung): "Opname" membuka form Hitung DI TEMPAT terisi
+ * rekening baris itu (`CashCountForm`, hasil hitung tampil di pop-up yang sama); "Buka layar penuh" → Opname Kas tersaring
+ * ke rekening itu.
  *
  * Meja gelombang 1 (spek 2026-11-25 §5.1) — kerangka `DeskFrame` (judul halaman + ikon ?, muat ulang global, pemulihan
  * gulir). Meja ini SUDAH tab hub Beranda Keuangan, jadi tidak menggambar tab Antrean/Pantau sendiri (R4: tanpa tab
@@ -53,6 +57,7 @@ import useIssuePenalty from "./payments/penaltyIssue";
 import SamplePaymentApproveDialog from "../samples/SamplePaymentApproveDialog";
 import { markReminded } from "../crm/collectionMark";
 import { CustomerCardLink } from "./cards/partyCards";
+import CashCountForm from "./cashcount/CashCountForm";   // Kas & Bank 3 (Tugas 4b) — opname kas jatuh tempo, di tempat
 
 export const TEKS_KOSONG = "Tidak ada yang perlu ditindak hari ini.";
 const POSTING_ROWS = 20;
@@ -91,6 +96,11 @@ export const PERLU_TINDAKAN = [
     queues: ["sample_acc_bayar"], hint: "Pastikan pembayaran atau kesepakatan bayar ada, lalu setujui." },
   { key: "retur_nilai", label: "Retur selesai QC — putuskan nilai", izin: [["sales_return", "decide_compensation"]],
     queues: ["retur_putus_nilai"], hint: "Barang retur sudah diperiksa QC: putuskan kompensasi atau lanjutkan penyelesaian." },
+  // Kas & Bank 3 (Tugas 4b) — penghitung = pemegang `cash.create` (pintu `POST /api/cash-counts`).
+  { key: "opname_kas", label: "Opname kas jatuh tempo", izin: [["cash", "create"]], queues: ["opname_kas_jatuh_tempo"],
+    valueLabel: "Saldo buku",   // nilai baris = saldo buku rekening (server `value_label`), bukan nominal dokumen
+    hint: "Rekening tunai yang sudah waktunya dihitung fisik: kas kasir tiap hari, kas kecil dan kas besar tunai tiap "
+      + "minggu (jaraknya diatur di Pengaturan). Selisih hitungan diputuskan orang kedua." },
 ];
 
 export const bolehKelompok = (perms, g) => g.izin.some(([r, a]) => can(perms, r, a));
@@ -141,7 +151,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
     if (count <= 0 && rows.length === 0) continue;
     out.push({ id: g.key, label: g.label, hint: g.hint, count, shown: rows.length,
       total_value: Math.round(rows.reduce((s, r) => s + (Number(r.value) || 0), 0) * 100) / 100,
-      value_kind: "money", value_label: "Nilai", oldest_age_days: oldest, action_label: "Buka", rows });
+      value_kind: "money", value_label: g.valueLabel || "Nilai", oldest_age_days: oldest, action_label: "Buka", rows });
   }
   return out;
 }
@@ -149,7 +159,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
 const DESK_KEY = "finance";
 const P = "fin-desk";
 const IN_PLACE = inPlaceOf(["issue_tax", "receipt", "receipt_from_line", "supplier_card", "decide_variance", "issue_penalty",
-  "approve_payment", "mark_reminded"]);
+  "approve_payment", "mark_reminded", "hitung_opname"]);
 const HELP = (
   <>
     Pekerjaan uang yang menunggu Anda, dikelompokkan per jenis. Kelompok hanya tampil bila Anda berhak atas modulnya
@@ -176,6 +186,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const [sampleRow, setSampleRow] = useState(null); // pesanan sample untuk dialog setujui bayar
   const [payRow, setPayRow] = useState(null);
   const [issueRow, setIssueRow] = useState(null);   // { row, qid } — pop-up pratinjau terbit faktur pajak
+  const [opnameRow, setOpnameRow] = useState(null); // { accountId, qid } — form Hitung opname kas (Kas & Bank 3)
 
   // `quiet` — muat ulang sesudah aksi: halaman tidak dikosongkan, hanya kartu terkait bertanda (`refreshingId`).
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -219,6 +230,10 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
     if (r._queue === "mutasi_berkode") {
       return r.receipt_id ? { ...r, _openFullLabel: "Buka Rekonsiliasi", action: "Lihat", action_kind: "view" }
         : { ...r, _openFullLabel: "Buka Rekonsiliasi" };
+    }
+    // Kas & Bank 3 — "Opname" = form Hitung di tempat (kelompok sudah disaring `cash.create`); layar penuh = riwayat opname.
+    if (r._queue === "opname_kas_jatuh_tempo") {
+      return { ...r, action: "Opname", action_kind: "hitung_opname", _openFullLabel: "Buka Opname Kas" };
     }
     return r;
   }) })))
@@ -282,6 +297,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       return;
     }
     if (row.action_kind === "supplier_card") { openSupplierCard(row.supplier_id); return; }
+    if (row.action_kind === "hitung_opname") { setOpnameRow({ accountId: row.account_id || row.ref_id, qid }); return; }
     if (row.action_kind === "decide_variance") { setVariRow({ row, qid }); return; }
     if (row.action_kind === "approve_payment") {
       setSampleRow({ id: row.ref_id, number: row.number, title: row.title, sample_billing: row.sample_billing,
@@ -385,6 +401,12 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
               ? `${p.number}: tagihan baru disetujui — kiriman sample dilepas.`
               : `${p.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`, p.qid);
           }} />
+      )}
+
+      {/* Kas & Bank 3 — hitungan tersimpan: kartu dimuat ulang; hasil (saldo buku & selisih) tetap di pop-up sampai ditutup. */}
+      {opnameRow && (
+        <CashCountForm open accountId={opnameRow.accountId} entityId={selectedEntity}
+          onClose={() => setOpnameRow(null)} onSaved={() => reloadQueue(opnameRow.qid)} />
       )}
 
       {payRow && (

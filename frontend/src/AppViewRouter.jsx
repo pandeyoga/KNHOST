@@ -49,6 +49,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   SettingsGroupView, SettingsLinkCards, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
   CollectionWorklist, CustomerCreditView, PettyCashView,
   CashHoldingsView, CreditDeskView, FundTransfersView, AkunPerRekeningView,
+  CashCountsView,
 } from "./appViewImports";
 
 // KP-T9 — bagian layar Penjadwal & Notifikasi per tab hub (konstanta: `only` dibandingkan per render).
@@ -249,6 +250,8 @@ export default function AppViewRouter(props) {
       {activeView === "cash-holdings" && <CashHoldingsView currentUser={user} />}
       {activeView === "fund-transfers" && <FundTransfersView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "kas-per-rekening" && <AkunPerRekeningView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* Kas & Bank 3 (Tugas 4b) — Opname Kas (tab tersembunyi; menyorot Rekening & Saldo) */}
+      {activeView === "cash-counts" && <CashCountsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}

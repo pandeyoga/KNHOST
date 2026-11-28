@@ -23,6 +23,7 @@ const COLL_LABEL = {
   cash_deposits: "Setoran titipan tunai", cash_advances: "Pengajuan Dana (PD)", cash_advance_settlements: "Pertanggungjawaban Dana (LPJ)",
   interco_transactions: "Transaksi antar-PT", interco_returns: "Retur antar-PT", contra_bons: "Kontrabon",
   master_cleanup_batches: "Pembersihan data master", md_samples: "Permintaan sample R&D",
+  cash_counts: "Opname kas",   // Kas & Bank 3 — opname kas (diklaim saat selisih disetujui/ditolak)
 };
 
 export default function SagaLocksPanel() {

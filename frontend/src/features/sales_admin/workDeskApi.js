@@ -299,6 +299,9 @@ export const FINANCE_QUEUE_TARGET = {
   retur_putus_nilai: { view: "returns", nav_id: "returns-hub", focus_type: "sales_return" },
   // Cek UI UAT v3 (S12) — sample berbayar menunggu ACC bayar → detail di Pesanan Sample ([Setujui Pembayaran]).
   sample_acc_bayar: { view: "sample-orders", nav_id: "sample-orders", focus_type: "sample_order" },
+  // Kas & Bank 3 (Tugas 4b) — rekening tunai jatuh tempo opname: "Buka layar penuh" → Opname Kas tersaring ke rekening
+  // itu (riwayat opnamenya). Aksi baris "Opname" sendiri membuka form Hitung di tempat (FinanceDesk).
+  opname_kas_jatuh_tempo: { view: "cash-counts", nav_id: "cash-bank", focus_type: "bank_account", focus_key: "account_id" },
 };
 
 /** Sesi #087 — tujuan baris Meja MD & Meja Admin Gudang (per ref_type). */
@@ -340,6 +343,8 @@ const DOC_TARGET = {
   sample_order: { view: "sample-orders", nav_id: "sample-orders", focus_type: "sample_order" },
   // Kas & Bank 2 (Tugas 4) — pengajuan kas keluar (notifikasi diajukan/diputus): Transaksi Kas membuka pratinjaunya.
   cash_out_request: { view: "cash-management", nav_id: "cash-bank", focus_type: "cash_out_request" },
+  // Kas & Bank 3 (Tugas 4b) — opname kas (notifikasi menunggu/diputus, Jejak): Opname Kas membuka pratinjaunya.
+  cash_count: { view: "cash-counts", nav_id: "cash-bank", focus_type: "cash_count" },
 };
 export function docLinkTarget(doc) {
   const t = DOC_TARGET[doc?.ref_type] || ROLE_DESK_TARGET[doc?.ref_type] || ROW_TARGET[doc?.ref_type];

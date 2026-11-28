@@ -217,8 +217,10 @@ function routeCash() {
 
 test("Peta sumber kas: hanya rujukan yang id-nya terbukti id dokumen terdaftar", () => {
   // Kas & Bank 1 (Tugas 6) — + kas Pindah Dana (`fund_transfer_service`: `ref_id` = id dokumen `fund_transfers`).
+  // Kas & Bank 3 (Tugas 4b) — + kas penyesuaian opname (`cash_count_service.setujui`: `ref_id` = id dokumen `cash_counts`,
+  // diuji `backend/tests_mem/test_KB3_3_opname.py` `_kas_opname`).
   expect(CASH_REF_DOC).toEqual({ ar_receipt: "ar_receipt", vendor_bill: "vendor_bill", ap_advance: "vendor_bill",
-    contra_bon: "contra_bon", sales_return: "sales_return", fund_transfer: "fund_transfer" });
+    contra_bon: "contra_bon", sales_return: "sales_return", fund_transfer: "fund_transfer", cash_count: "cash_count" });
 });
 
 test("Transaksi Kas: kolom Sumber membuka pratinjau untuk jenis terpetakan; jenis lain & tanpa id teks biasa", async () => {

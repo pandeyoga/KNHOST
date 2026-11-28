@@ -184,6 +184,10 @@ export const HUB_TABS = {
     // Tab TERSEMBUNYI (batas enam tab L3; alat sekali pakai): dibuka dari Rekening & Saldo, antrean persetujuan, dan
     // Posting Gagal; bilah tab menyorot Rekening & Saldo.
     { view: "kas-per-rekening",  label: "Akun per rekening",     roles: ["admin", "manager", "finance"], hidden: true, aliasOf: "bank-accounts" },
+    // Kas & Bank 3 (Tugas 4b) — opname kas (hitung fisik rekening tunai, selisih disetujui orang kedua; `cash.*`). Tab
+    // TERSEMBUNYI (batas enam tab L3): dibuka dari kartu rekening tunai di Rekening & Saldo, Meja Keuangan ("Opname kas
+    // jatuh tempo"), Pusat Persetujuan, notifikasi; bilah tab menyorot Rekening & Saldo.
+    { view: "cash-counts",       label: "Opname Kas",            roles: ["admin", "manager", "finance"], hidden: true, aliasOf: "bank-accounts" },
   ],
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },

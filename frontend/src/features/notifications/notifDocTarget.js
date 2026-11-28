@@ -22,7 +22,9 @@ const LINK_PESANAN = /^\/?\?(?:[^#]*&)?view=orders&(?:[^#]*&)?id=([^&#]+)/;
 const LAYAR_JENIS = { ringkasan_mutasi_otomatis: "finance-desk" };
 // Kas & Bank 2 (Tugas 4) — pengajuan kas keluar diajukan/diputus. Server melampirkan `doc` (`notification_doc_ref`); bila
 // tidak (lookup gagal), id pengajuan diambil dari `ref` (`<id>` · `<id>:<hasil>`, tanpa akhiran `#<penerima>`).
-const JENIS_PENGAJUAN_KAS = { kas_keluar_diajukan: "cash_out_request", kas_keluar_diputus: "cash_out_request" };
+// Kas & Bank 3 (Tugas 4b) — opname kas menunggu keputusan / diputus → opnamenya (`ref` = `<id>#…` · `<id>:<hasil>#…`).
+const JENIS_PENGAJUAN_KAS = { kas_keluar_diajukan: "cash_out_request", kas_keluar_diputus: "cash_out_request",
+  opname_kas_menunggu: "cash_count", opname_kas_diputus: "cash_count" };
 const idDariRef = (ref) => String(ref || "").split("#", 1)[0].split(":", 1)[0];
 
 export function notifDocTarget(n) {

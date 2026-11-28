@@ -4034,6 +4034,9 @@
    "gl_mapping",
    "period"
   ],
+  "cash-counts": [
+   "cash"
+  ],
   "cash-holdings": [
    "cash_holding"
   ],
