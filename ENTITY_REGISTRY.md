@@ -3482,6 +3482,13 @@ INV-CASH-01 `scripts/guardrails/verify_cash_single_door.py`); nomor hanya dari `
   void_gl_status     string  hasil jurnal pembalik saat kas dibatalkan (batal kas manual, lepas biaya bank,
                              batal titipan) lewat `gl_service.post_durable`.
   Kas lama tanpa rekening / berkode akun di `account_id` TIDAK dimigrasi (paket perbaikan data, H3).
+  rekening_ditetapkan object Kas & Bank 3 (temuan tangkapan A, R7) — kas lama tanpa rekening yang diberi `account_id`
+                             rekening TUNGGAL jenis kasnya tepat sebelum rekening kedua sejenis aktif
+                             (`bank_service.tetapkan_kas_tanpa_rekening`: dibuat / disetujui / diaktifkan kembali / jenis
+                             kas diubah / diisi dari riwayat): {id, pada, oleh, oleh_id, alasan}. Tanpa jurnal; nominal,
+                             tanggal, status, `account_code` tetap. PT mode akun per rekening: kas sebelum PT menyala
+                             tidak ditetapkan (pembaliknya akan dialihkan ke sub-akun). ≥ 2 rekening + kas tanpa rekening
+                             = saldo belum pasti → opname & isi ulang jenis itu 409 (`pesan_saldo_belum_pasti`).
   counterparty_name  string  PM-T3 — kas kwitansi: nama pelanggan (bahan skor nama rekonsiliasi); `reference_no` =
                              nomor referensi kwitansi; `description` memuat nomor referensi dan kode bayar pesanan
                              yang dialokasi ("Penerimaan AR-… — {pelanggan} · Ref … · Kode KN-…").

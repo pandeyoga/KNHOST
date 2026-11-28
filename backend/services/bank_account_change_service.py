@@ -248,7 +248,7 @@ async def ubah(prev: Dict[str, Any], data: Dict[str, Any], actor: Dict[str, Any]
                           changes=changes, payload={c["field"]: c["to"] for c in changes}, reason=reason,
                           status="menunggu", actor=actor)
         return 202, {"change": ch}
-    hasil = await _terapkan_ubah(prev["id"], eid, changes, syarat_dari=None)
+    hasil = await _terapkan_ubah(prev["id"], eid, changes, syarat_dari=None, actor=actor)
     await _catat(entity_id=eid, account_id=prev["id"], account_name=hasil.get("name", lama["name"]), action="ubah",
                  changes=changes, payload={c["field"]: c["to"] for c in changes}, reason=reason,
                  status="diterapkan", actor=actor)
@@ -256,10 +256,12 @@ async def ubah(prev: Dict[str, Any], data: Dict[str, Any], actor: Dict[str, Any]
 
 
 async def _terapkan_ubah(account_id: str, entity_id: str, changes: List[Dict[str, Any]],
-                         syarat_dari: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+                         syarat_dari: Optional[Dict[str, Any]],
+                         actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     await bs.isi_awal_bidang_rekening(tulis=True, entity_id=entity_id)
     try:
-        acc = await bs.update_account(account_id, {c["field"]: c["to"] for c in changes}, syarat=syarat_dari)
+        acc = await bs.update_account(account_id, {c["field"]: c["to"] for c in changes}, syarat=syarat_dari,
+                                      actor=actor)
     except bs.RekeningBerubah:
         raise _galat(409, PESAN_DIPUTUS)
     except ValueError as exc:
@@ -338,7 +340,8 @@ async def putuskan(ch: Dict[str, Any], decision: str, note: str, actor: Dict[str
         raise _galat(409, PESAN_DIPUTUS)
     try:
         if ch.get("action") == "ubah":
-            hasil = await _terapkan_ubah(ch["account_id"], eid, ch.get("changes") or [], syarat_dari=syarat)
+            hasil = await _terapkan_ubah(ch["account_id"], eid, ch.get("changes") or [], syarat_dari=syarat,
+                                         actor=actor)
         else:
             hasil = await _terapkan_buat(dict(ch.get("payload") or {}), actor)
             await db[COLL].update_one({"id": ch["id"]}, {"$set": {"account_id": hasil["id"]}})
@@ -348,7 +351,9 @@ async def putuskan(ch: Dict[str, Any], decision: str, note: str, actor: Dict[str
                                   {"$set": {"status": "menunggu", "decided_by": "", "decided_by_id": "",
                                             "decision_note": "", "decided_at": ""}})
         raise
-    return {"change": safe_doc(klaim), "account": hasil}
+    # Temuan tangkapan A (R7) — penetapan kas lama yang dipicu perubahan ini ikut di jawaban (juga di `account`).
+    return {"change": safe_doc(klaim), "account": hasil,
+            **{k: hasil[k] for k in ("kas_lama_ditetapkan", "kas_lama_tertinggal") if k in hasil}}
 
 
 async def daftar_penerima(entity_id: str, method: str) -> List[Dict[str, Any]]:

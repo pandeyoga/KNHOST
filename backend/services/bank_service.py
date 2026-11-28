@@ -54,6 +54,10 @@ async def backfill_cash_type() -> int:
             src = "backfill_history"
         else:
             ct, src = account_cash_type(acc), "backfill_account_type"
+        if _aktif(acc) and ct != account_cash_type(acc):
+            # Temuan tangkapan A (R7) — jenis kas dari riwayat bisa membuat rekening aktif KEDUA jenis itu.
+            await tetapkan_kas_tanpa_rekening(acc.get("entity_id") or "", ct, None, rekening_baru=acc.get("name") or "",
+                                              peristiwa="terbentuk karena jenis kasnya diisi dari riwayat transaksi")
         res = await db.bank_accounts.update_one(
             {"id": acc["id"], "cash_type": {"$nin": list(CASH_TYPES)}},
             {"$set": {"cash_type": ct, "cash_type_source": src}})
@@ -169,17 +173,172 @@ def _posted(txn: Dict[str, Any]) -> bool:
     return txn.get("status") != "void"
 
 
-async def sole_account_id(entity_id: str, cash_type: str) -> str:
-    """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas kasir / kas besar-bank), atau "" bila 0 /
-    lebih dari 1."""
+async def _rekening_aktif_jenis(entity_id: str, cash_type: str) -> List[str]:
+    """Id rekening AKTIF PT `entity_id` berjenis kas `cash_type` (urutan tersimpan)."""
     if not entity_id or cash_type not in CASH_TYPES:
-        return ""
+        return []
     # PM-T1 — rekening dinonaktifkan lewat `is_active: False` (field `status` tidak pernah diisi layar ini).
     accs = [a async for a in db.bank_accounts.find({"entity_id": entity_id, "is_active": {"$ne": False},
                                                     "status": {"$ne": "inactive"}},
                                                     {"_id": 0, "id": 1, "cash_type": 1, "account_type": 1})]
-    ids = [a["id"] for a in accs if account_cash_type(a) == cash_type]
+    return [a["id"] for a in accs if account_cash_type(a) == cash_type]
+
+
+async def sole_account_id(entity_id: str, cash_type: str) -> str:
+    """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas kasir / kas besar-bank), atau "" bila 0 /
+    lebih dari 1."""
+    ids = await _rekening_aktif_jenis(entity_id, cash_type)
     return ids[0] if len(ids) == 1 else ""
+
+
+# ─── Kas & Bank 3 — temuan tangkapan A (ketetapan pengendali R7): kas lama tanpa rekening tidak bergeser ──────────────
+#: Label jenis kas di kalimat penetapan / saldo belum pasti.
+LABEL_JENIS_KAS = {"kas_kecil": "kas kecil", "kas_kasir": "kas kasir", "kas_besar": "kas besar"}
+#: Kas tanpa rekening: `account_id` tidak ada, None, atau kosong.
+_TANPA_REKENING = ({"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}})
+#: Pelaku penetapan dari proses awal (`backfill_cash_type`).
+AKTOR_SISTEM = {"id": "system", "name": "Sistem"}
+
+
+def _q_kas_tanpa_rekening(entity_id: str, cash_type: str) -> Dict[str, Any]:
+    return {"entity_id": entity_id, "cash_type": cash_type, "status": {"$ne": "void"}, "$or": list(_TANPA_REKENING)}
+
+
+async def kas_tanpa_rekening(entity_id: str, cash_type: str) -> List[Dict[str, Any]]:
+    """Kas tidak-batal tanpa rekening milik PT `entity_id` berjenis kas `cash_type` — kas lama sebelum PK-20 (kas manual
+    lama, kwitansi, refund); kas baru selalu ber-rekening (`cash_ledger.periksa_rekening`)."""
+    if not entity_id or cash_type not in CASH_TYPES:
+        return []
+    return [t async for t in db.cash_transactions.find(
+        _q_kas_tanpa_rekening(entity_id, cash_type),
+        {"_id": 0, "id": 1, "amount": 1, "direction": 1, "created_at": 1, "gl_posted": 1})]
+
+
+def _bersih(rows: List[Dict[str, Any]]) -> float:
+    """Σ masuk − Σ keluar (dihitung dalam sen)."""
+    from core_utils import from_cents, to_cents
+    return from_cents(sum(to_cents(t.get("amount")) * (1 if t.get("direction") == "in" else -1) for t in rows))
+
+
+async def _pembalik_tetap(entity_id: str, rows: List[Dict[str, Any]]) -> tuple:
+    """Pisahkan kas yang AMAN diberi rekening — pembatalannya membuat jurnal pembalik ke akun yang sama dengan sebelum
+    diberi rekening — dari yang tidak. PT mode lama: semuanya aman (pembalik = baris jurnal asal tertukar, akun kas
+    jurnal kas tanpa jurnal = akun jenis kas lama, `gl_service.akun_kas`). PT mode akun per rekening
+    (`cash_account_mode`): kas yang tercatat SEBELUM PT menyala dialihkan pembaliknya ke sub-akun rekening oleh
+    `gl_service.baris_kas_rekening` begitu ber-rekening (padahal saldonya tidak ikut pindah saldo — kas "tetap" di akun
+    lama), dan kas tanpa jurnal akan dijurnal ke sub-akun saat dibatalkan (`cash_ledger.ensure_posted`); keduanya tidak
+    diberi rekening. → (aman, tertinggal)."""
+    from services import cash_account_mode as _mode
+    sejak = await _mode.aktif_sejak(entity_id)
+    if not sejak:
+        return rows, []
+    aman, tinggal = [], []
+    for t in rows:
+        ok = (t.get("created_at") or "") >= sejak and (t.get("gl_posted") is True or bool(
+            await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": t["id"],
+                                               "status": {"$ne": "void"}, "created_at": {"$gte": sejak}},
+                                              {"_id": 0, "id": 1})))
+        (aman if ok else tinggal).append(t)
+    return aman, tinggal
+
+
+async def tetapkan_kas_tanpa_rekening(entity_id: str, cash_type: str, actor: Optional[Dict[str, Any]], *,
+                                      rekening_baru: str, peristiwa: str = "dibuat") -> Dict[str, Any]:
+    """Penetapan kas lama — dipanggil SEBELUM sebuah rekening menjadi rekening aktif KEDUA berjenis kas `cash_type` di PT
+    `entity_id` (rekening dibuat — langsung / lewat persetujuan dua orang; diaktifkan kembali; jenis kasnya diubah atau
+    diisi dari riwayat). Selama PT punya tepat satu rekening aktif R jenis itu, kas tidak-batal tanpa rekening jenis itu
+    ikut saldo R (`_txns_for`); begitu rekening kedua aktif, kas itu tidak ikut rekening mana pun dan kartu R bergeser.
+    Maka kas itu ditetapkan ke R: hanya `account_id` + jejak `rekening_ditetapkan` ({id, pada, oleh, oleh_id, alasan}).
+    TANPA jurnal, nominal/tanggal/status/kode akun tetap — saldo R, buku besar, dan pembatalan kas itu sama dengan
+    sebelumnya (kecuali kas yang tidak aman di PT mode akun per rekening — `_pembalik_tetap` — yang dibiarkan; keadaan
+    ambigu sesudahnya menahan opname & isi ulang: `pesan_saldo_belum_pasti`).
+
+    Idempoten & aman dua pembuatan berbalapan: tulisan bersyarat `account_id` masih kosong, keduanya menetapkan ke R yang
+    sama (pembuatan yang membaca dua rekening aktif tidak menulis apa pun). `peristiwa` = "dibuat" | "diaktifkan kembali"
+    | "terbentuk karena jenis kasnya diubah" | ….
+
+    → `{jumlah, bersih, account_id, rekening_nama, alasan, tertinggal: {jumlah, bersih}}`; jumlah 0 = tanpa tulisan."""
+    kosong = {"jumlah": 0, "bersih": 0.0, "account_id": "", "rekening_nama": "", "alasan": "",
+              "tertinggal": {"jumlah": 0, "bersih": 0.0}}
+    sole = await sole_account_id(entity_id, cash_type)
+    if not sole:
+        return kosong
+    rows = await kas_tanpa_rekening(entity_id, cash_type)
+    if not rows:
+        return {**kosong, "account_id": sole}
+    aman, tinggal = await _pembalik_tetap(entity_id, rows)
+    acc = await db.bank_accounts.find_one({"id": sole}, {"_id": 0, "name": 1}) or {}
+    nama = acc.get("name") or sole
+    jenis = LABEL_JENIS_KAS.get(cash_type, cash_type)
+    alasan = f"Rekening {jenis} kedua {rekening_baru} {peristiwa} — kas lama tanpa rekening tetap di {nama}"
+    oleh = actor or AKTOR_SISTEM
+    jejak = {"id": new_id("tkr"), "pada": now_iso(), "oleh": oleh.get("name") or "", "oleh_id": oleh.get("id") or "",
+             "alasan": alasan}
+    if aman:
+        await db.cash_transactions.update_many(
+            {**_q_kas_tanpa_rekening(entity_id, cash_type), "id": {"$in": [t["id"] for t in aman]}},
+            {"$set": {"account_id": sole, "rekening_ditetapkan": jejak, "updated_at": now_iso()}})
+    # Yang benar-benar ditulis panggilan INI (pembuatan bersamaan yang kalah menulis 0).
+    ditulis = [t async for t in db.cash_transactions.find(
+        {"entity_id": entity_id, "account_id": sole, "rekening_ditetapkan.id": jejak["id"]},
+        {"_id": 0, "id": 1, "amount": 1, "direction": 1})]
+    out = {"jumlah": len(ditulis), "bersih": _bersih(ditulis), "account_id": sole, "rekening_nama": nama,
+           "alasan": alasan, "tertinggal": {"jumlah": len(tinggal), "bersih": _bersih(tinggal)}}
+    if ditulis or tinggal:
+        from dependencies import audit
+        await audit(oleh.get("name") or "", "kas_lama_rekening_ditetapkan", "bank_account", sole,
+                    {"jumlah": out["jumlah"], "bersih": out["bersih"], "kas_ids": sorted(t["id"] for t in ditulis),
+                     "tertinggal_ids": sorted(t["id"] for t in tinggal), "cash_type": cash_type,
+                     "rekening_baru": rekening_baru, "alasan": alasan}, scope_entity_id=entity_id)
+    return out
+
+
+async def _nama_pt_kas(entity_id: str) -> str:
+    from services.cash_ledger import _nama_pt
+    return await _nama_pt(entity_id)
+
+
+async def jawaban_penetapan(hasil: Dict[str, Any], entity_id: str, cash_type: str) -> Dict[str, Any]:
+    """Bidang jawaban API pembuatan/perubahan rekening yang memicu penetapan: `kas_lama_ditetapkan` {jumlah, bersih,
+    rekening_id, rekening_nama, pesan} dan (PT mode akun per rekening) `kas_lama_tertinggal` {jumlah, bersih, pesan}.
+    Kosong bila tidak ada yang ditetapkan / tertinggal."""
+    from core_utils import rupiah
+    out: Dict[str, Any] = {}
+    nama = hasil.get("rekening_nama") or ""
+    if hasil.get("jumlah"):
+        out["kas_lama_ditetapkan"] = {
+            "jumlah": hasil["jumlah"], "bersih": hasil["bersih"], "rekening_id": hasil["account_id"],
+            "rekening_nama": nama,
+            "pesan": (f"{hasil['jumlah']} kas lama tanpa rekening (bersih {rupiah(hasil['bersih'])}) ditetapkan ke "
+                      f"{nama} supaya saldonya tidak bergeser.")}
+    t = hasil.get("tertinggal") or {}
+    if t.get("jumlah"):
+        pt = await _nama_pt_kas(entity_id)
+        out["kas_lama_tertinggal"] = {
+            "jumlah": t["jumlah"], "bersih": t["bersih"],
+            "pesan": (f"{t['jumlah']} kas lama tanpa rekening (bersih {rupiah(t['bersih'])}) tidak bisa ditetapkan "
+                      f"otomatis ke {nama}: {pt} sudah memakai akun buku besar per rekening, sedangkan jurnal kas itu "
+                      f"milik akun kas lama. Opname dan isi ulang rekening {LABEL_JENIS_KAS.get(cash_type, cash_type)} "
+                      f"{pt} ditahan sampai admin menetapkan rekening kas lama itu.")}
+    return out
+
+
+async def pesan_saldo_belum_pasti(entity_id: str, cash_type: str) -> str:
+    """Keadaan ambigu yang sudah terlanjur (data sebelum penetapan kas lama): PT punya ≥ 2 rekening aktif jenis kas
+    `cash_type` DAN kas tidak-batal tanpa rekening jenis itu — kas itu tidak ikut rekening mana pun, jadi saldo buku
+    rekening jenis itu belum pasti. → kalimat penolakan (opname `cash_count_service.buat`, isi ulang dana tetap
+    `petty_float_service`), atau "" bila pasti. Tidak ada perbaikan otomatis (pemilik memutuskan)."""
+    from core_utils import rupiah
+    ids = await _rekening_aktif_jenis(entity_id, cash_type)
+    if len(ids) < 2:
+        return ""
+    rows = await kas_tanpa_rekening(entity_id, cash_type)
+    if not rows:
+        return ""
+    jenis = LABEL_JENIS_KAS.get(cash_type, cash_type)
+    return (f"Saldo buku rekening {jenis} {await _nama_pt_kas(entity_id)} belum pasti: {len(rows)} kas lama tanpa "
+            f"rekening (bersih {rupiah(_bersih(rows))}) tidak ikut rekening mana pun karena PT punya {len(ids)} rekening "
+            f"{jenis}. Minta admin menetapkan rekening kas lama itu dulu.")
 
 
 async def _txns_for(account_id: str) -> List[Dict[str, Any]]:
@@ -494,6 +653,9 @@ async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[s
     await periksa_akun_rekening_baru(doc["entity_id"], kode_pilih, doc["id"])   # PERIKSA sebelum rekening tertulis
     if doc["opening_balance"]:
         await _gl.preflight_posting(doc["entity_id"], now_iso())
+    # Temuan tangkapan A (R7) — rekening ini bisa menjadi rekening aktif KEDUA jenis kasnya: kas lama tanpa rekening
+    # ditetapkan ke rekening tunggal yang lama SEBELUM rekening ini tertulis (sesudah semua pemeriksaan).
+    tetap = await tetapkan_kas_tanpa_rekening(doc["entity_id"], doc["cash_type"], actor, rekening_baru=doc["name"])
     await _tulis_bawaan(doc["entity_id"], doc["id"], doc.get("default_receiving_methods") or [],
                         lambda: db.bank_accounts.insert_one(dict(doc)))
     try:
@@ -508,7 +670,7 @@ async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[s
     if je:
         await db.bank_accounts.update_one({"id": doc["id"]}, {"$set": {"opening_je_id": je["id"]}})
         doc["opening_je_id"] = je["id"]
-    return _enrich(safe_doc(doc), [])
+    return {**_enrich(safe_doc(doc), []), **await jawaban_penetapan(tetap, doc["entity_id"], doc["cash_type"])}
 
 
 OPENING_EQUITY_ACC = "3-2900"
@@ -541,9 +703,10 @@ class RekeningBerubah(ValueError):
     """PM-T1 — nilai yang diajukan sudah tidak sama dengan isi rekening sekarang (409)."""
 
 
-async def update_account(account_id: str, patch: Dict[str, Any],
-                         syarat: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    """`syarat` (PM-T1) = nilai lama yang harus masih tersimpan (persetujuan perubahan) — beda → `RekeningBerubah`."""
+async def update_account(account_id: str, patch: Dict[str, Any], syarat: Optional[Dict[str, Any]] = None,
+                         actor: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """`syarat` (PM-T1) = nilai lama yang harus masih tersimpan (persetujuan perubahan) — beda → `RekeningBerubah`.
+    `actor` = pelaku penetapan kas lama (temuan tangkapan A) bila perubahan ini membuat rekening aktif kedua sejenis."""
     acc = await db.bank_accounts.find_one({"id": account_id, **(syarat or {})}, {"_id": 0})
     if not acc:
         if syarat and await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "id": 1}):
@@ -582,6 +745,15 @@ async def update_account(account_id: str, patch: Dict[str, Any],
         upd["name"] = str(upd["name"]).strip()
     upd["updated_at"] = now_iso()
     flt = {"id": account_id, **(syarat or {})}
+    # Temuan tangkapan A (R7) — diaktifkan kembali / jenis kasnya diubah → rekening ini bisa menjadi rekening aktif KEDUA
+    # jenis kasnya: kas lama tanpa rekening ditetapkan ke rekening tunggal yang lama SEBELUM perubahan tertulis.
+    sesudah = {**acc, **upd}
+    jenis_baru = account_cash_type(sesudah)
+    tetap: Dict[str, Any] = {}
+    if _aktif(sesudah) and (not _aktif(acc) or account_cash_type(acc) != jenis_baru):
+        tetap = await tetapkan_kas_tanpa_rekening(
+            acc.get("entity_id") or "", jenis_baru, actor, rekening_baru=sesudah.get("name") or account_id,
+            peristiwa="diaktifkan kembali" if not _aktif(acc) else "terbentuk karena jenis kasnya diubah")
 
     async def _tulis():
         res = await db.bank_accounts.update_one(flt, {"$set": upd})
@@ -594,7 +766,10 @@ async def update_account(account_id: str, patch: Dict[str, Any],
         from services import cash_account_mode as _mode
         await _mode.ikut_nama_rekening(acc, upd["name"])
     txns = await _txns_for(account_id)
-    return {**_enrich(acc, txns), **bidang_efektif(acc)}
+    out = {**_enrich(acc, txns), **bidang_efektif(acc)}
+    if tetap:
+        out.update(await jawaban_penetapan(tetap, acc.get("entity_id") or "", jenis_baru))
+    return out
 
 
 async def account_ledger(account_id: str) -> Optional[Dict[str, Any]]:

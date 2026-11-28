@@ -262,8 +262,12 @@ async def test_PMT3_contoh_angka_U1_ke_U7(db, siap):
 
     Hitung tangan: kas U1 Rp 1.500.000 di A (Dr 1-1100 Bank 1.500.000; Cr 1.500.000 ke pelanggan — pesanan fixture belum
     dikirim → uang muka 2-1400 / piutang 1-1200 menurut ruang piutang pesanan, total kredit = 1.500.000). Saldo rekening A
-    sebelum U8 = saldo awal 0 + U1 1.500.000 + U4 1.234.000 = 2.734.000; saldo terekonsiliasi = 1.500.000 (hanya U1
-    yang cocok dengan mutasi)."""
+    sebelum U8 = saldo awal 0 + kas lama seed CASH-00001 100.000.000 + U1 1.500.000 + U4 1.234.000 = 102.734.000; saldo
+    terekonsiliasi = 1.500.000 (hanya U1 yang cocok dengan mutasi).
+
+    Kas & Bank 3, temuan tangkapan A (R7): kas lama seed CASH-00001 (`bootstrap`, kas besar +100.000.000, tanpa
+    rekening) ikut saldo A selama A rekening kas besar tunggal `ent_ksc`, lalu DITETAPKAN ke A saat A2 dibuat — dulu ia
+    keluar dari saldo A begitu A2 ada (angka lama 2.734.000 = saldo yang bergeser)."""
     from services import bank_service
     kas = await db.cash_transactions.find_one({"id": SIMPAN["kas_u1"]}, {"_id": 0})
     je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": kas["id"],
@@ -272,7 +276,9 @@ async def test_PMT3_contoh_angka_U1_ke_U7(db, siap):
     assert ("1-1100", 1_500_000, 0) in baris
     assert round(sum(c for _, _, c in baris), 2) == 1_500_000 and je["entity_id"] == KSC
     led = await bank_service.account_ledger(siap["A"])
-    assert led["balance"] == 2_734_000 and led["reconciled_balance"] == 1_500_000
+    seed = await db.cash_transactions.find_one({"entity_id": KSC, "number": "CASH-00001"}, {"_id": 0})
+    assert (seed["amount"], seed["account_id"], bool(seed.get("rekening_ditetapkan"))) == (100_000_000, siap["A"], True)
+    assert led["balance"] == 102_734_000 and led["reconciled_balance"] == 1_500_000
     SIMPAN["contoh"] = {"jurnal": baris, "saldo": led["balance"], "terekonsiliasi": led["reconciled_balance"]}
     print("CONTOH", SIMPAN["contoh"])
 

@@ -309,11 +309,16 @@ async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
     panjar_sen = sum(_sisa_sen(b) for b in terbuka)
     usulan_sen = max(to_cents(dana) - to_cents(saldo) - panjar_sen, 0) if dana > 0 else 0
     rincian = _rincian(rid, txns, pencairan, (terakhir or {}).get("created_at") or "", {d["id"] for d in isi})
+    # Temuan tangkapan A (R7) — kas lama tanpa rekening yang tidak ikut rekening mana pun (≥ 2 rekening kas kecil):
+    # saldo buku belum pasti → usulan bisa salah; posisi tetap tampil, isi ulang ditahan (409).
+    belum_pasti = await bs.pesan_saldo_belum_pasti(eid, "kas_kecil")
     alasan = ""
     if not bs._aktif(acc):   # noqa: SLF001
         alasan = pesan_nonaktif(nama)
     elif dana <= 0:
         alasan = pesan_tanpa_dana_tetap(nama)
+    elif belum_pasti:
+        alasan = belum_pasti
     elif menunggu:
         alasan = pesan_menunggu(nama, menunggu)
     elif usulan_sen <= 0:
@@ -330,7 +335,7 @@ async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
         "riwayat": [_ringkas_isi_ulang(d) for d in isi[:RIWAYAT_MAKS]],
         "panjar_tanpa_rekening": await _panjar_tanpa_rekening(eid),
         "sumber": await _sumber_pilihan(eid),
-        "bisa_isi_ulang": not alasan, "alasan_isi_ulang": alasan,
+        "bisa_isi_ulang": not alasan, "alasan_isi_ulang": alasan, "saldo_belum_pasti": belum_pasti,
         "dihitung_pada": now_iso(),
     }
 
@@ -382,7 +387,9 @@ def _periksa_posisi(pos: Dict[str, Any]) -> None:
     """Isi ulang boleh? Alasan yang sama dengan `alasan_isi_ulang` posisi (tombol layar jujur)."""
     if pos["bisa_isi_ulang"]:
         return
-    raise _galat(409 if pos["isi_ulang_menunggu"] else 400, pos["alasan_isi_ulang"])
+    belum_pasti = pos["saldo_belum_pasti"]
+    tunda = pos["isi_ulang_menunggu"] or (belum_pasti and pos["alasan_isi_ulang"] == belum_pasti)
+    raise _galat(409 if tunda else 400, pos["alasan_isi_ulang"])
 
 
 def _potret(pos: Dict[str, Any]) -> Dict[str, Any]:
