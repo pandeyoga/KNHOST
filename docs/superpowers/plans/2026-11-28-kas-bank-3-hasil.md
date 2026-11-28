@@ -35,7 +35,8 @@ berkunci sama kembali ke dokumen yang sama; kunci proses opname terlihat di Kunc
 | T4b Layar Opname Kas | `53bb922` (gabung `4b7c043`) |
 | Gelombang perbaikan akhir (server A, layar B, gate) | `758904c`, `42150ee`, `f93f08c`, `81e695f` (gabung `7b2715d`, `6cf2a7d`) |
 | T5 Uji MongoDB sungguhan | `79fa3b5` |
-| T5 Temuan tangkapan | __TEMUAN_TANGKAPAN__ |
+| T5 Temuan tangkapan: kas lama tanpa rekening (server) | `c8283e0`, __FIX1__ (gabung __GABUNG_A__) |
+| T5 Temuan tangkapan: kalimat tunai, alasan Isi ulang, Jejak (layar) | `aba200f` (gabung `83cd2d9`) |
 
 Alur: T1–T3 (jalur uang) ditinjau per tugas; T4 (layar) tanpa tinjauan tugas (perintah pemilik "ya percepat"); tinjauan
 seluruh cabang → satu gelombang perbaikan (dua agen sejajar) → tinjauan ulang: semua tertangani, tanpa temuan berat baru.
@@ -51,6 +52,14 @@ Temuan nyata yang tertangkap sebelum gabung:
   kembali dan kas melebihi dana tetap — T2, ditutup (R3);
 - kas penyesuaian opname tidak bisa dibalik di mana pun (Transaksi Kas menolak, opname tidak punya Batal) — tinjauan akhir,
   ditutup dengan **Batal** di dokumen opname;
+- **rekening kas kecil kedua menggeser saldo kas kecil lama** (tangkapan, data acuan KSC): kas lama tanpa rekening
+  (bersih Rp 7.750.000) dihitung ke rekening TUNGGAL jenisnya; begitu kas kecil kedua dibuat (fitur lokasi), saldo Kas Toko
+  KSC turun 33.150.000 → 25.400.000 sementara buku besar tetap. Opname memotret saldo tergeser (hitungan jujur tampil
+  "lebih Rp 7.750.000" → bila disetujui terbukukan dua kali) dan **isi ulang akan mengisi lebih Rp 7,75 juta**. Ditutup
+  (R7): kas lama itu ditetapkan ke rekening yang sudah ada saat rekening sejenis kedua lahir; keadaan ambigu yang sudah
+  terlanjur → opname & isi ulang ditolak berkalimat;
+- kalimat kwitansi tunai masih "masuk Kas Kecil" padahal masuk Kas Kasir; alasan tombol Isi ulang terpotong; Jejak dari
+  pratinjau tidak menutup pratinjau — tangkapan, ditutup;
 - layar bersama (pemilih rekening, Transaksi Kas) belum mengenal kas kasir; penyetuju rekening baru tidak melihat jenis kas;
   daftar piutang karyawan tak bisa dibuka; nominal isi ulang bisa bergeser antara konfirmasi dan posting — tinjauan akhir,
   ditutup.
@@ -96,7 +105,17 @@ Keputusan builder rancangan §7 (1–8, termasuk delapan jawaban builder check �
 7. **Karyawan piutang** = karyawan HR PT yang sama; pemilih menyaring karyawan keluar; status tidak diperiksa ulang saat
    disetujui.
 8. **Sales/Admin Sales tanpa izin lihat kas** tidak lagi diarahkan ke Kas Kecil › Dana tetap (pagar layar sesuai izin).
-9. Diparkir (tinjauan akhir, R6, tidak memblokir): status "batal tertunda/gagal jurnal" belum tampil di layar opname;
+9. **R7 — kas lama tanpa rekening ditetapkan saat rekening sejenis kedua lahir** (buat langsung, lewat persetujuan dua
+   orang, aktifkan kembali, ubah jenis kas): hanya bidang rekening + jejak penetapan + jejak audit; tanpa jurnal, nominal,
+   tanggal, atau kode akun berubah; jawaban API memuat kalimat "N kas lama tanpa rekening (bersih Rp …) ditetapkan ke …".
+   Tidak dijalankan saat server menyala. Keadaan ambigu yang sudah ada (≥ 2 rekening sejenis + kas tanpa rekening) →
+   opname & isi ulang jenis itu ditolak: "Saldo buku rekening … belum pasti … Minta admin menetapkan rekening kas lama
+   itu dulu." Kas batal tidak disentuh.
+10. **R9 — PT mode akun per rekening:** kas lama dari sebelum akun per rekening menyala TIDAK ditetapkan (pembatalannya
+   akan pindah ke sub-akun rekening); yang lain ditetapkan; sisanya ditahan penjaga di atas (lihat §5).
+11. Panjar lama tanpa rekening yang ikut ditetapkan kini dihitung sebagai panjar rekening itu → usulan isi ulang turun sebesar
+   sisa panjar itu (benar: uangnya keluar dari kas itu).
+12. Diparkir (tinjauan akhir, R6, tidak memblokir): status "batal tertunda/gagal jurnal" belum tampil di layar opname;
    kalimat cadangan Batal di layar beda dengan server; tombol "Batal" vs kalimat "Batalkan opname"; daftar/ekspor piutang
    karyawan ikut memuat opname yang dibatalkan; cek kontrol per baris yang sudah disetujui; teks selang pengingat di
    server.
@@ -111,7 +130,12 @@ Keputusan builder rancangan §7 (1–8, termasuk delapan jawaban builder check �
    menawarkan 1-1105 agar PT lain tidak melihat pilihan baru). PT mode per rekening tidak terpengaruh. Perlu dibuka?
 4. **Daftar piutang karyawan** saat ini ikut memuat opname yang sudah dibatalkan, jadi jumlah di daftar bisa lebih besar
    dari yang masih terutang — dirapikan di tindak lanjut (butir 4.9).
-5. **Selisih opname selalu butuh orang kedua**, termasuk Admin. Di PT dengan satu pemegang izin setujui kas, opname berselisih
+5. **Kas lama tanpa rekening di VPS** (kueri `cek_kas3_vps.js` butir 6): PT yang SUDAH punya dua rekening sejenis dan kas
+   lama tanpa rekening tidak bisa opname/isi ulang jenis itu sampai kas lama ditetapkan — belum ada layar untuk itu; mau
+   ditetapkan ke rekening mana (per PT) perlu keputusan Bapak. Hal yang sama untuk PT yang kelak memakai akun per rekening
+   (kas lama dari sebelum nyala) — penetapannya butuh jurnal pindah akun. Juga: bila rekening tunggal dinonaktifkan lalu
+   rekening baru sejenis dibuat, rekening baru menyerap kas lama (aturan lama, tidak diubah).
+6. **Selisih opname selalu butuh orang kedua**, termasuk Admin. Di PT dengan satu pemegang izin setujui kas, opname berselisih
    menunggu sampai ada orang kedua.
 
 ## 6. Catatan kecil yang ditunda (tidak memblokir)
