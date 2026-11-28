@@ -3,6 +3,7 @@
 Koleksi kanonik: `cash_transactions` (prefix cash_).
 - kas_kecil : kas operasional per ENTITAS (entity_id spesifik)
 - kas_besar : kas gabungan grup (entity_id = "all")
+- kas_kasir : kas tunai uang pelanggan per ENTITAS (Kas & Bank 3, rekening kas kasir, akun 1-1105)
 direction: in (masuk) | out (keluar). Saldo = Σ(in) − Σ(out).
 """
 from typing import Any, Dict, List, Optional
@@ -19,7 +20,7 @@ from role_registry import CROSS_ENTITY_ROLES   # PR-T6 — lintas PT dari pengat
 
 router = APIRouter(prefix="/api")
 
-VALID_TYPES = {"kas_kecil", "kas_besar"}
+VALID_TYPES = {"kas_kecil", "kas_besar", "kas_kasir"}   # Kas & Bank 3 — + kas kasir
 VALID_DIRECTIONS = {"in", "out"}
 
 
@@ -99,6 +100,8 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
                and r.get("entity_id") in entities]
     besar_q = [r for r in all_rows if r.get("cash_type") == "kas_besar"
                and r.get("entity_id") in entities]
+    kasir_q = [r for r in all_rows if r.get("cash_type") == "kas_kasir"   # Kas & Bank 3
+               and r.get("entity_id") in entities]
 
     # breakdown kas kecil per entitas (untuk konteks "all")
     per_entity: Dict[str, Dict[str, float]] = {}
@@ -124,6 +127,7 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
     kecil_accs = [a for a in accounts if account_cash_type(a) == "kas_kecil"]
     open_kecil = sum(float(a.get("opening_balance") or 0) for a in kecil_accs)
     open_besar = sum(float(a.get("opening_balance") or 0) for a in accounts if account_cash_type(a) == "kas_besar")
+    open_kasir = sum(float(a.get("opening_balance") or 0) for a in accounts if account_cash_type(a) == "kas_kasir")
     for a in kecil_accs:
         ob = float(a.get("opening_balance") or 0)
         if abs(ob) > 0.005:
@@ -133,6 +137,7 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
         "scope": entity_id or ("all" if ctx.view_all else ctx.active_entity_id),
         "kas_kecil": _agg(kecil_q, open_kecil),
         "kas_besar": _agg(besar_q, open_besar),
+        "kas_kasir": _agg(kasir_q, open_kasir),   # Kas & Bank 3 — rekening kas kasir (nol bila PT tidak memakainya)
         "kas_kecil_per_entity": per_entity,
         # E7.4 — sisa data kas tingkat grup (harus nol setelah migrasi dijalankan).
         "group_cash_pending": await cash_entity_service.group_cash_pending(db),
@@ -146,7 +151,9 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
 async def _cash_counts(query: Dict[str, Any]) -> Dict[str, int]:
     out = {"all": await db.cash_transactions.count_documents(query)}
     for t in sorted(VALID_TYPES):
-        out[t] = await db.cash_transactions.count_documents({**query, "cash_type": t})
+        n = await db.cash_transactions.count_documents({**query, "cash_type": t})
+        if n or t != "kas_kasir":   # Kas & Bank 3 — kas kasir hanya muncul bila ada (PT lain: jawaban sama seperti dulu)
+            out[t] = n
     return out
 
 
@@ -158,7 +165,7 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     actor = await require_permission(request, "cash", "create")
     ctx = await entity_ctx(request)
     if payload.cash_type not in VALID_TYPES:
-        raise HTTPException(status_code=400, detail="cash_type harus kas_kecil atau kas_besar")
+        raise HTTPException(status_code=400, detail="Jenis kas harus kas kecil, kas kasir, atau kas besar.")
     if payload.direction not in VALID_DIRECTIONS:
         raise HTTPException(status_code=400, detail="direction harus in atau out")
     if float(payload.amount or 0) <= 0:

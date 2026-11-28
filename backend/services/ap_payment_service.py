@@ -442,7 +442,8 @@ async def _catatan_bayar(intent: Dict[str, Any], amt: float) -> str:
     alasan pembayaran dibatalkan."""
     acc = await db.bank_accounts.find_one({"id": intent.get("bank_account_id") or "__none__"}, {"_id": 0, "name": 1}) or {}
     cara = _CARA_BAYAR.get(str(intent.get("method") or "").lower(), intent.get("method") or "")
-    rek = acc.get("name") or {"kas_kecil": "kas kecil", "kas_besar": "kas besar/bank"}.get(intent.get("cash_type") or "", "")
+    rek = acc.get("name") or {"kas_kecil": "kas kecil", "kas_besar": "kas besar/bank",
+                               "kas_kasir": "kas kasir"}.get(intent.get("cash_type") or "", "")
     return (f"{rupiah(amt)}" + (f" · {cara}" if cara else "") + (f" dari {rek}" if rek else "")
             + (f" · kas {intent['cash_txn_number']}" if intent.get("cash_txn_number") else ""))
 

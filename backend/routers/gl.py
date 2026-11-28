@@ -67,10 +67,13 @@ async def list_cash_accounts(request: Request) -> List[Dict[str, Any]]:
     # saringan `bank_account_id` hanya penjaga). Kode pilihan ini dibaca sebagai JENIS kas (`cash_ledger.cash_type_for`
     # membandingkan persis dengan 1-1110), bukan akun jurnal: akun jurnal refund = `cash_ledger.akun_refund` — sub-akun
     # rekening penerima bila PT sudah memakai akun per rekening, selain itu kode pilihan ini (seperti dulu).
+    # Kas & Bank 3 — 1-1105 Kas Kasir SENGAJA tidak ditawarkan: PT tanpa rekening kas kasir tidak melihat pilihan baru
+    # (perilaku sama dengan sebelumnya); di PT mode per rekening akun refund tetap dari rekening penerima.
     out = [
         {"code": a.get("code"), "name": a.get("name")}
         for a in accts
         if str(a.get("code", "")).startswith("1-11") and a.get("is_postable", True) and not a.get("bank_account_id")
+        and a.get("code") != gl_service.ACC_KAS_KASIR
     ]
     return out or [{"code": "1-1100", "name": "Kas Besar / Bank"}, {"code": "1-1110", "name": "Kas Kecil"}]
 

@@ -19,7 +19,10 @@ from services import payment_method_service as pms
 COLL = "bank_account_changes"
 AKSI = "ubah_rekening"
 PEKA = ("account_number", "bank_name", "holder_name", "purposes", "payment_method_codes",
-        "default_receiving_methods", "show_on_documents", "is_active")
+        "default_receiving_methods", "show_on_documents", "is_active",
+        "cash_type", "dana_tetap", "location_id")   # Kas & Bank 3 — jenis kas, dana tetap, lokasi rekening
+#: Kas & Bank 3 — field kas rekening (diperiksa `bank_service.periksa_bidang_kas`; jenis kas terkunci sesudah ada kas).
+KAS = ("cash_type", "dana_tetap", "location_id")
 #: Field dasar yang ikut dicatat (bukan peka: berlaku langsung walau dua orang).
 DASAR = ("name", "bank_name", "account_number", "opening_balance", "is_active", "note")
 PESAN_DIPUTUS = "Perubahan rekening ini sudah diputus atau datanya sudah berubah. Ajukan ulang."
@@ -105,7 +108,8 @@ async def _dua_orang(entity_id: str) -> bool:
 def _payload_buat(payload) -> Dict[str, Any]:
     d = payload.model_dump() if hasattr(payload, "model_dump") else dict(payload)
     return {k: d.get(k) for k in ("name", "account_type", "cash_type", "bank_name", "account_number", "entity_id",
-                                  "opening_balance", "currency", "note", "gl_account_code")}
+                                  "opening_balance", "currency", "note", "gl_account_code",
+                                  "dana_tetap", "location_id")}   # Kas & Bank 3
 
 
 async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
@@ -123,9 +127,14 @@ async def buat(payload, actor: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
         "show_on_documents": payload.show_on_documents}, account_number=payload.account_number)
     try:   # Kas & Bank 1 — akun buku besar pilihan diperiksa saat diajukan (dan sekali lagi saat diterapkan)
         await bs.periksa_akun_rekening_baru(eid, getattr(payload, "gl_account_code", "") or "")
+        # Kas & Bank 3 — jenis kas, dana tetap, lokasi diperiksa saat diajukan (dan sekali lagi saat diterapkan).
+        kas = await bs.periksa_bidang_kas({"entity_id": eid, "account_type": payload.account_type, "is_active": True,
+                                           "cash_type": getattr(payload, "cash_type", "") or "",
+                                           "dana_tetap": getattr(payload, "dana_tetap", 0) or 0,
+                                           "location_id": getattr(payload, "location_id", "") or ""})
     except ValueError as exc:
         raise _galat(400, str(exc))
-    dasar = _payload_buat(payload)
+    dasar = {**_payload_buat(payload), "dana_tetap": kas["dana_tetap"], "location_id": kas["location_id"]}
     changes = [{"field": f, "from": None, "to": v} for f, v in {**dasar, **bidang}.items()
                if f not in ("entity_id", "currency", "cash_type") and v not in (None, "", [], False, 0, 0.0)]
     if await _dua_orang(eid):
@@ -162,7 +171,10 @@ async def _nilai_sekarang(account_id: str, entity_id: str) -> Tuple[Dict[str, An
     nilai = {"name": acc.get("name", ""), "bank_name": acc.get("bank_name", ""),
              "account_number": acc.get("account_number", ""),
              "opening_balance": round(float(acc.get("opening_balance") or 0), 2),
-             "is_active": acc.get("is_active") is not False, "note": acc.get("note", ""), **acc["_efektif"]}
+             "is_active": acc.get("is_active") is not False, "note": acc.get("note", ""), **acc["_efektif"],
+             # Kas & Bank 3 — rekening lama tanpa bidang: jenis kas dari `account_type`, dana tetap 0, tanpa lokasi.
+             "cash_type": bs.account_cash_type(acc), "dana_tetap": round(float(acc.get("dana_tetap") or 0), 2),
+             "location_id": acc.get("location_id") or ""}
     acc.pop("_efektif", None)
     return acc, nilai
 
@@ -184,6 +196,19 @@ async def ubah(prev: Dict[str, Any], data: Dict[str, Any], actor: Dict[str, Any]
     for f in bs.BIDANG_PM:
         if data.get(f) is not None:
             baru[f] = bersih[f]
+    if any(data.get(f) is not None for f in (*KAS, "is_active")):
+        # Kas & Bank 3 — jenis kas / dana tetap / lokasi: diperiksa pada nilai sesudah perubahan saat diajukan (dan
+        # sekali lagi saat diterapkan, `bank_service.update_account`). Jenis kas terkunci bila rekening sudah punya kas.
+        isian = {f: data[f] for f in KAS if data.get(f) is not None}
+        try:
+            kas = await bs.periksa_bidang_kas({**acc, **lama, **baru, **isian})
+            if "cash_type" in isian and kas["cash_type"] != lama["cash_type"]:
+                alasan = await bs.alasan_jenis_kas_terkunci(acc)
+                if alasan:
+                    raise ValueError(alasan)
+        except ValueError as exc:
+            raise _galat(400, str(exc))
+        baru.update({f: kas[f] for f in isian})
     changes = [{"field": f, "from": lama.get(f), "to": v} for f, v in baru.items() if v != lama.get(f)]
     if not changes:
         txns = await bs._txns_for(prev["id"])   # noqa: SLF001
@@ -240,7 +265,8 @@ LABEL_BIDANG = {"name": "Nama akun", "bank_name": "Bank", "account_number": "Nom
                 "holder_name": "Atas nama", "purposes": "Dipakai untuk", "payment_method_codes": "Cara bayar dilayani",
                 "default_receiving_methods": "Bawaan penerimaan", "show_on_documents": "Tampil di dokumen pelanggan",
                 "account_type": "Jenis", "cash_type": "Jenis kas",
-                "gl_account_code": "Akun buku besar"}   # Kas & Bank 1 — akun bagan PT pilihan saat rekening dibuat
+                "gl_account_code": "Akun buku besar",   # Kas & Bank 1 — akun bagan PT pilihan saat rekening dibuat
+                "dana_tetap": "Dana tetap", "location_id": "Lokasi"}   # Kas & Bank 3
 
 
 async def putuskan(ch: Dict[str, Any], decision: str, note: str, actor: Dict[str, Any]) -> Dict[str, Any]:

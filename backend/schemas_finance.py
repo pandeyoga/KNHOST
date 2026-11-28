@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class BankAccountCreate(BaseModel):
     name: str                          # nama tampilan, mis. "BCA Operasional"
     account_type: str = "bank"         # bank | cash
-    cash_type: str = ""                # kas_kecil | kas_besar (kosong = dari account_type)
+    cash_type: str = ""                # kas_kecil | kas_kasir (tunai) | kas_besar (kosong = dari account_type)
     bank_name: str = ""                # nama bank (kosong utk cash)
     account_number: str = ""           # no rekening
     entity_id: str = ""                # pemilik akun; kosong = DEFAULT
@@ -27,6 +27,10 @@ class BankAccountCreate(BaseModel):
     # Kas & Bank 1 (D1) — akun bagan PT yang sudah ada untuk rekening baru di PT yang memakai akun per rekening.
     # Kosong = sistem membuat sub-akun `{induk}-{NN}`. PT belum aktif → harus kosong. Tidak bisa diubah sesudahnya.
     gl_account_code: str = ""
+    # Kas & Bank 3 (C2) — dana tetap rekening kas kecil (0 = tidak memakai dana tetap) dan lokasi kerja opsional
+    # (`warehouse_sites.id`, untuk kas kasir & kas kecil). Diperiksa `bank_service.periksa_bidang_kas`.
+    dana_tetap: float = Field(0.0, ge=0)
+    location_id: str = ""
 
 
 class BankAccountUpdate(BaseModel):
@@ -42,6 +46,10 @@ class BankAccountUpdate(BaseModel):
     default_receiving_methods: Optional[List[str]] = None
     show_on_documents: Optional[bool] = None
     reason: Optional[str] = None
+    # Kas & Bank 3 — jenis kas (terkunci sesudah rekening punya kas), dana tetap kas kecil, lokasi kerja ("" = hapus).
+    cash_type: Optional[str] = None
+    dana_tetap: Optional[float] = Field(None, ge=0)
+    location_id: Optional[str] = None
 
 
 class BankAccountChangeDecision(BaseModel):

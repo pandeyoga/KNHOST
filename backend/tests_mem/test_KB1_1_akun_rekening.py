@@ -341,19 +341,20 @@ async def test_KB1_1_U9_rekening_baru_pt_aktif_dapat_subakun_dan_saldo_awal(klie
                             payment_method_codes=["cash"], entity_id=KANDA, opening_balance=100_000)
     assert tunai["gl_account_code"] == "1-1110-01"
 
+    # Kas & Bank 3 — akun PT pilihan Finance memakai 1-1108 (dulu 1-1105; 1-1105 kini akun bawaan Kas Kasir).
     r = await klien.post("/api/gl/accounts", headers=h, params={"entity_id": KANDA}, json={
-        "code": "1-1105", "name": "Bank Lama Kanda", "type": "asset", "parent_code": "1-1000"})
+        "code": "1-1108", "name": "Bank Lama Kanda", "type": "asset", "parent_code": "1-1000"})
     assert r.status_code == 200, r.text
     pilih = await _rekening(klien, h, name="Mandiri KB1 Kanda", account_number="700-2", entity_id=KANDA,
-                            gl_account_code="1-1105", opening_balance=500_000)
-    assert pilih["gl_account_code"] == "1-1105"
+                            gl_account_code="1-1108", opening_balance=500_000)
+    assert pilih["gl_account_code"] == "1-1108"
     je = await _jurnal_sumber(db, "bank_opening_balance", pilih["id"])
-    assert ("1-1105", 500_000.0, 0.0) in {(ln["account_code"], ln["debit"], ln["credit"]) for ln in je["lines"]}
+    assert ("1-1108", 500_000.0, 0.0) in {(ln["account_code"], ln["debit"], ln["credit"]) for ln in je["lines"]}
 
     n1 = await db.bank_accounts.count_documents({})
     r = await klien.post("/api/bank-accounts", headers=h, json={
         "name": "BRI Tolak", "account_type": "bank", "bank_name": "BRI", "entity_id": KANDA,
-        "gl_account_code": "1-1105"})
+        "gl_account_code": "1-1108"})
     assert r.status_code == 400 and "sudah dipakai rekening Mandiri KB1 Kanda" in r.json()["detail"], r.text
     assert await db.bank_accounts.count_documents({}) == n1
 
@@ -371,7 +372,7 @@ SIMPAN: dict = {}
 
 async def test_KB1_1_U10_jurnal_manual_ke_subakun_ditolak(klien, db):
     h = SIMPAN["h_kanda"]
-    for kode, nama in (("1-1100-01", "BCA KB1 Kanda"), ("1-1105", "Mandiri KB1 Kanda")):
+    for kode, nama in (("1-1100-01", "BCA KB1 Kanda"), ("1-1108", "Mandiri KB1 Kanda")):
         r = await klien.post("/api/gl/journal", headers=h, json={
             "date": tanggal_buku(), "description": "Coba manual", "entity_id": KANDA,
             "lines": [{"account_code": kode, "debit": 50_000, "credit": 0},
@@ -389,12 +390,12 @@ async def test_KB1_1_U11_posisi_kas_dan_arus_kas_menjumlah_subakun(db):
     from services import bank_service, cash_flow_service, cashflow_forecast_service, finance_tower_service
     from services import report_basis as rb
     kas = await rb.kode_kas(KANDA)
-    assert {"1-1100", "1-1110", "1-1100-01", "1-1110-01", "1-1105"} <= kas
+    assert {"1-1100", "1-1110", "1-1100-01", "1-1110-01", "1-1108"} <= kas
     assert kas == await rb.kode_kas({"entity_id": KANDA})
     pos = await bank_service.cash_position([KANDA])
     saldo = {g["code"]: g["balance"] for g in pos["gl_accounts"]}
-    # 1-1100-01: saldo awal 2.000.000 − sewa 150.000 = 1.850.000; 1-1110-01: 100.000; 1-1105: 500.000
-    assert (saldo["1-1100-01"], saldo["1-1110-01"], saldo["1-1105"]) == (1_850_000.0, 100_000.0, 500_000.0)
+    # 1-1100-01: saldo awal 2.000.000 − sewa 150.000 = 1.850.000; 1-1110-01: 100.000; 1-1108: 500.000
+    assert (saldo["1-1100-01"], saldo["1-1110-01"], saldo["1-1108"]) == (1_850_000.0, 100_000.0, 500_000.0)
     assert {"1-1100", "1-1110"} <= set(saldo)
     assert pos["gl_total"] == round(sum(saldo.values()), 2)
     nama = {g["code"]: g["name"] for g in pos["gl_accounts"]}
@@ -411,7 +412,7 @@ async def test_KB1_1_U12_pemilih_refund_tanpa_subakun_rekening(klien):
     assert r.status_code == 200, r.text
     kode = [a["code"] for a in r.json()]
     assert {"1-1100", "1-1110"} <= set(kode)
-    assert not {"1-1100-01", "1-1110-01", "1-1105"} & set(kode)
+    assert not {"1-1100-01", "1-1110-01", "1-1108"} & set(kode)
 
 
 async def test_KB1_1_U13_nama_subakun_ikut_nama_rekening(db, pt):

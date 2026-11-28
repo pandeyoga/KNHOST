@@ -160,3 +160,23 @@ E("bank.kwitansi_otomatis_mutasi", group="bank-kasus", section="kwitansi-bank", 
   example="Menyala · pelanggan transfer Rp 1.000.000 dengan kode bayar pesanan CBD Rp 1.000.000 → kwitansi terbit "
           "otomatis saat mutasi diimpor",
   consumers=("services/bank_auto_receipt_service.py:menyala",), risk="medium")
+
+# Kas & Bank 3 (C3, spesifikasi §5.3) — jarak opname kas (hitung uang fisik) per jenis kas rekening tunai. Satu pembaca:
+# `services/bank_service.py:hari_opname` (peta jenis kas → kunci `KUNCI_OPNAME_HARI`); dipakai pengingat "Opname kas
+# jatuh tempo" di Meja Keuangan. Rekening tanpa transaksi kas tidak diingatkan.
+_OPNAME_TERKAIT = ("kas.opname_kasir_hari", "kas.opname_kas_kecil_hari", "kas.opname_kas_besar_hari")
+for _kunci, _awal, _jenis, _contoh in (
+        ("kas.opname_kasir_hari", 1, "kas kasir",
+         "1 hari · kas kasir Toko terakhir dihitung kemarin pagi → hari ini muncul di Meja Keuangan"),
+        ("kas.opname_kas_kecil_hari", 7, "kas kecil",
+         "7 hari · kas kecil Soreang terakhir dihitung Senin lalu → Senin ini muncul di Meja Keuangan"),
+        ("kas.opname_kas_besar_hari", 7, "kas besar tunai",
+         "7 hari · brankas kas besar terakhir dihitung 8 hari lalu → muncul di Meja Keuangan")):
+    E(_kunci, group="bank-kasus", section="opname-kas", type="duration", default=_awal, min=1, max=90, step=1,
+      unit="hari", scopes=G,
+      label=f"Jarak opname {_jenis} (hari)",
+      help=(f"Rekening {_jenis} yang terakhir dihitung uang fisiknya lebih lama dari sekian hari muncul sebagai "
+            f"“Opname kas jatuh tempo” di Meja Keuangan. Rekening yang belum punya transaksi kas tidak diingatkan."),
+      impact=f"Makin kecil angkanya, makin sering uang fisik {_jenis} dihitung dan dicocokkan dengan buku kas.",
+      example=_contoh, consumers=("services/bank_service.py:hari_opname",), risk="medium",
+      related=tuple(k for k in _OPNAME_TERKAIT if k != _kunci))

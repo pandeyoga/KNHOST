@@ -59,6 +59,7 @@ DEFAULT_COA: List = [
     ("1-0000", "ASET", "asset", "", False),
     ("1-1000", "Aset Lancar", "asset", "1-0000", False),
     ("1-1100", "Kas Besar / Bank", "asset", "1-1000", True),
+    ("1-1105", "Kas Kasir", "asset", "1-1000", True),  # Kas & Bank 3 (C1) — uang tunai pelanggan di rekening kas kasir
     ("1-1110", "Kas Kecil", "asset", "1-1000", True),
     ("1-1150", "Kas & Bank Transit (Dana Dalam Perjalanan)", "asset", "1-1000", True),  # FASE G-9 — pindah-buku antar rekening sendiri
     ("1-1200", "Piutang Usaha", "asset", "1-1000", True),
@@ -66,6 +67,7 @@ DEFAULT_COA: List = [
     ("1-1260", "Piutang Klaim Mitra (Makloon)", "asset", "1-1000", True),  # Fase D — D-09 (ganti rugi mitra)
     ("1-1270", "Piutang Denda Pelanggan", "asset", "1-1000", True),  # FASE G-2 — denda keterlambatan
     ("1-1280", "Piutang Titipan Karyawan", "asset", "1-1000", True),  # FASE G-9 — uang perusahaan yang dipegang karyawan
+    ("1-1290", "Piutang Karyawan – Kekurangan Kas", "asset", "1-1000", True),  # Kas & Bank 3 (C3) — kurang opname
     ("1-1300", "Persediaan Barang", "asset", "1-1000", True),
     # FASE G-6 — barang antar-PT yang SUDAH dibeli (dokumen & utang lahir) tetapi
     # BELUM diterima gudang pembeli. Tanpa akun ini, persediaan pembeli membengkak
@@ -146,12 +148,14 @@ DEFAULT_COA: List = [
     ("6-8000", "Beban Administrasi Bank", "expense", "6-0000", True),  # FASE G-8 — biaya adm/transfer yang dipotong bank
     ("6-9000", "Beban Lain-lain", "expense", "6-0000", True),
     ("6-9100", "Beban Selisih Pembayaran Pelanggan", "expense", "6-0000", True),  # FASE G-3 — kurang bayar dihapus/pembulatan
+    ("6-9200", "Selisih Kas", "expense", "6-0000", True),  # Kas & Bank 3 (C3) — selisih opname kas, satu akun dua arah
     ("6-9500", "Rugi Pelepasan Aset Tetap", "expense", "6-0000", True),  # R6.2 — loss on disposal
 ]
 
 # Akun kunci untuk auto-posting
 ACC_KAS_BESAR = "1-1100"
 ACC_KAS_KECIL = "1-1110"
+ACC_KAS_KASIR = "1-1105"       # Kas & Bank 3 (C1) — Kas Kasir (`cash_type` `kas_kasir`, kunci `kas_bank.kas_kasir`)
 ACC_PIUTANG = "1-1200"
 ACC_UANG_MUKA_PELANGGAN = "2-1400"  # KN-076-AR-GL-DRIFT — Uang Muka Pelanggan (deposit/kelebihan bayar)
 ACC_IC_AR = "1-1250"           # M-3 — Piutang Antar-Perusahaan (inter-company)
@@ -159,6 +163,7 @@ ACC_PIUTANG_KLAIM = "1-1260"   # Fase D (D-09) — Piutang Klaim Mitra Makloon (
 ACC_PIUTANG_DENDA = "1-1270"   # FASE G-2 — Piutang Denda Pelanggan (keterlambatan)
 ACC_KAS_TRANSIT = "1-1150"     # FASE G-9 — Kas/Bank Transit (pindah-buku antar rekening sendiri)
 ACC_PIUTANG_KARYAWAN = "1-1280"  # FASE G-9 — Piutang Titipan Karyawan (uang KN dipegang karyawan)
+ACC_PIUTANG_KURANG_KAS = "1-1290"  # Kas & Bank 3 (C3) — Piutang Karyawan – Kekurangan Kas (kurang opname karena orang)
 ACC_PERSEDIAAN = "1-1300"     # F3 — Persediaan Barang (Inventory)
 ACC_PERSEDIAAN_TRANSIT = "1-1310"  # FASE G-6 — Persediaan Dalam Perjalanan (antar-PT)
 ACC_WIP_SUBCON = "1-1350"     # M2 — Persediaan Dalam Proses (Makloon/WIP-at-vendor)
@@ -196,6 +201,7 @@ ACC_FA_GAIN = "4-9100"          # Laba Pelepasan Aset Tetap (gain on disposal)
 ACC_KLAIM_MAKLOON = "4-9200"    # Fase D (D-09) — Pendapatan Klaim Makloon (potong bon / ganti rugi)
 ACC_PENDAPATAN_DENDA = "4-9300"  # FASE G-2 — Pendapatan Denda Keterlambatan
 ACC_SELISIH_BAYAR = "6-9100"     # FASE G-3 — Beban Selisih Pembayaran (kurang bayar dihapus)
+ACC_SELISIH_KAS = "6-9200"       # Kas & Bank 3 (C3) — Selisih Kas (lebih: Dr kas/Cr; kurang: Dr/Cr kas)
 ACC_BEBAN_RND = "6-7000"         # FASE F — Beban Sample & Pengembangan (bahan sample keluar gudang)
 ACC_BEBAN_BANK = "6-8000"        # FASE G-8 — Beban Administrasi Bank (biaya adm/transfer dipotong bank)
 ACC_FA_LOSS = "6-9500"          # Rugi Pelepasan Aset Tetap (loss on disposal)
@@ -255,14 +261,16 @@ async def akun_kas(entity_id: str, account_id: str, cash_type: str, *, akun_lama
     PT `entity_id` sudah memakai akun per rekening DAN rekening `account_id` milik PT itu ber-`gl_account_code` → kode
     akun rekening itu (`akun_rekening`; akun khusus PT, bukan kode bawaan, jadi `remap_lines` tidak memetakannya ulang).
     Selain itu → akun lama: `akun_lama` bila pemanggil sudah memegang akun kas pilihan (mis. kode pemilih refund retur,
-    akun sumber dana aset yang tersimpan), kalau kosong akun jenis kas: 1-1110 kas kecil, 1-1100 kas besar/bank —
-    dipetakan per PT di `_insert_entry` seperti sebelumnya, sehingga PT yang belum aktif menghasilkan jurnal yang persis
-    sama. Penjaga statik `scripts/guardrails/verify_akun_kas_satu_pintu.py` (INV-CASH-02) menolak kode kas harfiah di
-    baris jurnal di luar fungsi ini."""
+    akun sumber dana aset yang tersimpan), kalau kosong akun jenis kas: 1-1110 kas kecil, 1-1105 kas kasir (Kas & Bank
+    3), 1-1100 kas besar/bank — dipetakan per PT di `_insert_entry` seperti sebelumnya, sehingga PT yang belum aktif
+    menghasilkan jurnal yang persis sama. Penjaga statik `scripts/guardrails/verify_akun_kas_satu_pintu.py`
+    (INV-CASH-02) menolak kode kas harfiah di baris jurnal di luar fungsi ini."""
     kode = await akun_rekening(entity_id, account_id)
     if kode:
         return kode
-    return akun_lama or (ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR)
+    if akun_lama:
+        return akun_lama
+    return {"kas_kecil": ACC_KAS_KECIL, "kas_kasir": ACC_KAS_KASIR}.get(cash_type, ACC_KAS_BESAR)
 
 
 async def akun_kas_tanpa_dokumen(entity_id: str, cash_type: str) -> Dict[str, Any]:

@@ -7,7 +7,8 @@ Rancangan: `docs/superpowers/specs/2026-11-27-kas-bank-1-rekening-pindah-dana-de
   tidak ada migrasi saat aplikasi menyala dan tidak ada jalan mematikannya. Selama PT belum aktif semua jurnal kasnya
   persis seperti sebelumnya (`gl_service.akun_kas`).
 * **Sub-akun rekening** — `buat_subakun`: akun khusus PT `{induk}-{NN}` (induk 1-1100 untuk bank/kas besar, 1-1110 untuk
-  kas kecil; NN = nomor dua digit terkecil yang belum dipakai di PT itu di bawah induk itu), nama = nama rekening,
+  kas kecil, 1-1105 untuk kas kasir — Kas & Bank 3; NN = nomor dua digit terkecil yang belum dipakai di PT itu di bawah
+  induk itu), nama = nama rekening,
   `is_cash`, `bank_account_id`, `dibuat_dari_rekening`; atau akun bagan PT yang sudah ada pilihan Finance (diperiksa
   `periksa_akun_pilihan`; tandanya dipotret sebelum dipasang dan dipulihkan persis bila usulan pindah saldo ditolak —
   `potret_akun_pilihan` / `pulihkan_akun_pilihan`). Kodenya ditulis ke `bank_accounts.gl_account_code` dan tidak
@@ -26,7 +27,7 @@ from db import db
 
 SCOPE = "__kas_per_rekening__"
 #: Akun induk sub-akun per jenis kas rekening (`bank_service.account_cash_type`).
-INDUK = {"kas_besar": "1-1100", "kas_kecil": "1-1110"}
+INDUK = {"kas_besar": "1-1100", "kas_kecil": "1-1110", "kas_kasir": "1-1105"}   # Kas & Bank 3 — + kas kasir
 _KUNCI_SAH = re.compile(r"^[A-Za-z0-9_\-]+$")
 _COBA_NOMOR = 5
 #: Tanda akun rekening yang dipasang `buat_subakun(kode=…)` pada akun bagan PT pilihan Finance (dipotret sebelum

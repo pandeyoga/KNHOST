@@ -108,6 +108,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # baru terbit sesudah disetujui orang kedua; pembanding = PENGAJU; bernominal = nominal kas. Kelompok C, bawaan SATU
     # orang dengan batas Rp 1.000.000 ("di atas" = lebih dari, `_BATAS_KHUSUS`); "2" = semua kas keluar manual.
     _a("kas_keluar_manual", "Kas keluar manual", "C", "1", True, _BB),
+    # Kas & Bank 3 (C3, spesifikasi §5.3 / §7 butir 5) — menyetujui selisih opname kas (dibukukan ke selisih kas atau
+    # piutang karyawan); pembanding = PENGHITUNG opname; tanpa nominal. Kelompok B, bawaan DUA orang: selisih opname
+    # selalu butuh orang kedua (juga Admin — `ADMIN_TETAP_DUA_ORANG_AWAL`).
+    _a("selisih_kas", "Selisih opname kas", "B", "2", False, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -164,11 +168,21 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
 
+#: Kas & Bank 3 (Tugas 1) — aksi yang kuncinya sudah terdaftar, tetapi titik pasangnya dibangun tugas berikutnya. Selama
+#: di daftar ini kunci `kontrol.<aksi>.*` bertanda tidak dipakai (alasan di bawah) supaya kesehatan pengaturan tetap
+#: jujur (tanpa titik pasang = belum ada pembaca). Tugas yang memasang titiknya (`_TITIK`) menghapus barisnya di sini.
+#: `selisih_kas` → `services/cash_count_service.py:setujui` (Kas & Bank 3 Tugas 3, opname kas).
+_BELUM_DIPASANG: Dict[str, str] = {
+    "selisih_kas": "Persetujuan selisih opname kas sedang dibangun; aturan ini berlaku begitu opname kas tersedia.",
+}
+
 # KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {
     "dua-orang-pembelian": ("permintaan_pembelian", "setujui_po", "po_tingkat_berikut", "retur_pembelian"),
     "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye", "bayar_hutang"),
     "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit", "ubah_profil_kredit"),   # CR-T1 + 1
+    # Kas & Bank 3 — sub-judul "Dua orang: pembukuan" sudah 14 kunci (batas sub-judul biasa, KF-T4).
+    "dua-orang-kas": ("selisih_kas",),
 }
 _SUB_BAGIAN = {_PJ: "dua-orang-penjualan", _GD: "dua-orang-gudang", _SDM: "dua-orang-sdm", _BB: "dua-orang-buku"}
 #: KF-T4 (T1) — nama pendek untuk label Pengaturan (≤ 45 huruf); nama panjang tetap dipakai tab Kontrol dua orang.
@@ -197,8 +211,10 @@ AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 #: Kas & Bank 2 (spesifikasi §7 butir 4) — `kas_keluar_manual`: Admin pun tidak menyetujui kas keluar manualnya sendiri
 #: (jalur kas manual berisiko terbesar, alasan pemilik di C6). Bawaan baru hanya berlaku bila tidak ada isian tersimpan
 #: (§7.8.6).
+#: Kas & Bank 3 (spesifikasi §7 butir 5) — `selisih_kas`: penghitung opname tidak menyetujui selisihnya sendiri, juga
+#: Admin.
 ADMIN_TETAP_DUA_ORANG_AWAL = ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-                              "pindah_saldo_kas", "kas_keluar_manual"]
+                              "pindah_saldo_kas", "kas_keluar_manual", "selisih_kas"]
 
 K_ADMIN_BOLEH = "kontrol.admin_boleh_sendiri"
 K_ADMIN_TETAP = "kontrol.admin_tetap_dua_orang"
@@ -253,7 +269,9 @@ for _x in KONTROL_AKSI:
       example=(_CONTOH[_x["aksi"]][0] if _x["aksi"] in _CONTOH else
                f"Rina mengajukan “{_x['label']}” lalu memutuskannya sendiri → ditolak bila 2, lolos bila 1"),
       consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
-      related=((kunci_batas(_x["aksi"]),) if _x["punya_nominal"] else ()) + (K_ADMIN_BOLEH,))
+      related=((kunci_batas(_x["aksi"]),) if _x["punya_nominal"] else ()) + (K_ADMIN_BOLEH,),
+      status="not_used" if _x["aksi"] in _BELUM_DIPASANG else "active",
+      not_used_reason=_BELUM_DIPASANG.get(_x["aksi"], ""))
     if _x["punya_nominal"] and _x["aksi"] in _BATAS_KHUSUS:
         E(kunci_batas(_x["aksi"]), group="persetujuan", section=_x["sub_judul"], type="money", scopes=G,
           risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,

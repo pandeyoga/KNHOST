@@ -259,7 +259,7 @@ async def _hitung(entity_id: str, *, sejak: str = "") -> Dict[str, Any]:
     tunggal_kas: Dict[str, str] = {}
     tunggal: List[Dict[str, Any]] = []
     tetap: List[Dict[str, Any]] = []
-    for ct in ("kas_besar", "kas_kecil"):
+    for ct in ("kas_besar", "kas_kecil", "kas_kasir"):   # Kas & Bank 3 — + kas kasir
         rows = await _kas_tanpa_rekening(entity_id, ct, sejak)
         if not rows:
             continue
@@ -419,7 +419,7 @@ async def _keadaan_aktif(entity_id: str) -> Dict[str, Any]:
             akun_lama.append({"akun": c, "nama": (akun_ef.get(c) or {}).get("name", ""), "saldo": _rp(saldo),
                               "dipindah": _rp(pindah), "sisa": _rp(saldo)})
     tetap = []
-    for ct in ("kas_besar", "kas_kecil"):
+    for ct in ("kas_besar", "kas_kecil", "kas_kasir"):   # Kas & Bank 3 — + kas kasir
         rows = await _kas_tanpa_rekening(entity_id, ct)
         if rows:
             n_rek = sum(1 for r in reks if bs._aktif(r) and bs.account_cash_type(r) == ct)

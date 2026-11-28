@@ -373,8 +373,17 @@ def test_U15_statik():
     # Empat tahap matriks (ACC desain/sample, PO custom, PR) dipasang lewat `approval_matrix_service.guard` dengan peta
     # `STAGE_AKSI` (literal aksi ada di sana); sisanya `tolak_bila_pelaku_sama("<aksi>"` langsung.
     matriks = _kode((BACKEND / "services/approval_matrix_service.py").read_text(encoding="utf-8"))
+    # Kas & Bank 3 — aksi yang kuncinya sudah terdaftar tetapi titik pasangnya dibangun tugas berikutnya
+    # (`_BELUM_DIPASANG`, kunci bertanda tidak dipakai). Daftar itu hanya bisa menyempit: aksi yang sudah punya titik
+    # atau sudah dipasang di kode tetapi masih di daftar = merah.
+    from config_catalog_kontrol import _BELUM_DIPASANG
+    import config_registry as registry
     tanpa = [a["aksi"] for a in KONTROL_AKSI if f'tolak_bila_pelaku_sama("{a["aksi"]}"' not in semua
              and f'"{a["aksi"]}"' not in matriks]
-    assert tanpa == []
+    assert tanpa == sorted(_BELUM_DIPASANG, key=[a["aksi"] for a in KONTROL_AKSI].index)
     for a in KONTROL_AKSI:
+        if a["aksi"] in _BELUM_DIPASANG:
+            assert not a["titik"], a["aksi"]   # sudah punya titik → hapus dari `_BELUM_DIPASANG`
+            assert registry.require(f"kontrol.{a['aksi']}.min_orang")["status"] == "not_used", a["aksi"]
+            continue
         assert a["titik"], a["aksi"]          # katalog menyebut titik pasangnya (consumers registry)

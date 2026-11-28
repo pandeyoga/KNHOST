@@ -513,15 +513,16 @@ async def test_KB1_3_U8_tolak_lalu_pilih_akun_yang_ada(db):
         await cut.setujui(u["id"], (await cut.pratinjau(eid))["sidik"], PENYETUJU)
     assert e.value.status_code == 409
     # Siapkan ulang: Finance memilih akun bagan PT yang sudah ada (berjurnal manual — boleh, butir 4)
-    await gl.create_account(GLAccountCreate(code="1-1105", name="Bank BCA (akun Finance)", type="asset",
+    # (Kas & Bank 3 — akun PT pilihan memakai 1-1108; 1-1105 kini akun bawaan Kas Kasir.)
+    await gl.create_account(GLAccountCreate(code="1-1108", name="Bank BCA (akun Finance)", type="asset",
                                             parent_code="1-1000"), entity_id=eid)
     from pembantu import jurnal
-    await jurnal(eid, now_iso(), [("1-1105", 5_000.0, 0.0), ("3-1000", 0.0, 5_000.0)], "Saldo manual", _uid("m"))
-    u2 = await cut.siapkan(eid, {bank: "1-1105"}, PENYIAP)
+    await jurnal(eid, now_iso(), [("1-1108", 5_000.0, 0.0), ("3-1000", 0.0, 5_000.0)], "Saldo manual", _uid("m"))
+    u2 = await cut.siapkan(eid, {bank: "1-1108"}, PENYIAP)
     assert not await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1100-01"})   # sub-akun kosong dilepas
     x = _rek(await cut.pratinjau(eid), bank)
     assert (x["akun_tujuan"], x["akun_tujuan_baru"], x["saldo_akun_tujuan"], x["saldo_sesudah"], x["selisih"]) == (
-        "1-1105", False, 5_000.0, 205_000.0, 5_000.0)
+        "1-1108", False, 5_000.0, 205_000.0, 5_000.0)
     # Ketetapan R10 — rekening berselisih dengan buku kasnya: setujui wajib membawa `selisih_diperiksa`
     sidik2 = (await cut.pratinjau(eid))["sidik"]
     with pytest.raises(HTTPException) as e:
@@ -534,7 +535,7 @@ async def test_KB1_3_U8_tolak_lalu_pilih_akun_yang_ada(db):
     assert hasil["status"] == "disetujui"
     assert (hasil["selisih_diperiksa"], hasil["selisih_disetujui"]) == (
         True, [{"rekening_id": bank, "nama": "BCA KB3I", "selisih": 5_000.0}])
-    assert (await _saldo("1-1105", eid), await _saldo("1-1100", eid)) == (205_000.0, 0.0)
+    assert (await _saldo("1-1108", eid), await _saldo("1-1100", eid)) == (205_000.0, 0.0)
     # Pilihan tak layak → 400, tanpa tulisan
     eid2 = await pt_uji("KB3I2")
     bank2 = await _rekening(eid2, "BCA KB3I2")
@@ -542,7 +543,7 @@ async def test_KB1_3_U8_tolak_lalu_pilih_akun_yang_ada(db):
         await cut.siapkan(eid2, {bank2: "1-1100"}, PENYIAP)
     assert e.value.status_code == 400 and "akun bawaan bersama" in e.value.detail
     with pytest.raises(HTTPException) as e:
-        await cut.siapkan(eid2, {"rek_bukan_milik": "1-1105"}, PENYIAP)
+        await cut.siapkan(eid2, {"rek_bukan_milik": "1-1108"}, PENYIAP)
     assert e.value.status_code == 400
     assert not await db.gl_accounts.find_one({"entity_id": eid2, "bank_account_id": bank2})
     assert not await db.cash_account_cutovers.find_one({"entity_id": eid2})
@@ -719,35 +720,35 @@ async def test_KB1_3_U15_tolak_melepas_akun_pilihan(db, klien, kepala_admin):
     from pembantu import jurnal
     eid = await pt_uji("KB3O")
     bank = await _rekening(eid, "BCA KB3O", awal=200_000)
-    await gl.create_account(GLAccountCreate(code="1-1105", name="Bank BCA (akun Finance)", type="asset",
+    await gl.create_account(GLAccountCreate(code="1-1108", name="Bank BCA (akun Finance)", type="asset",
                                             parent_code="1-1000"), entity_id=eid)
-    je = await jurnal(eid, now_iso(), [("1-1105", 5_000.0, 0.0), ("3-1000", 0.0, 5_000.0)], "Saldo manual", _uid("m"))
+    je = await jurnal(eid, now_iso(), [("1-1108", 5_000.0, 0.0), ("3-1000", 0.0, 5_000.0)], "Saldo manual", _uid("m"))
     tanda = ("is_cash", "bank_account_id", "is_cash_dari_rekening")
-    akun0 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    akun0 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     kode_kas0 = sorted(await rb.kode_kas(eid))
-    u = await cut.siapkan(eid, {bank: "1-1105"}, PENYIAP)
-    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    u = await cut.siapkan(eid, {bank: "1-1108"}, PENYIAP)
+    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     assert (a["is_cash"], a["bank_account_id"]) == (True, bank)   # selama menunggu: akun rekening usulan
     await cut.tolak(u["id"], "tidak jadi dulu", PENYETUJU)
     assert not await mode.aktif(eid)
-    akun1 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    akun1 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     assert {f: (f in akun1, akun1.get(f)) for f in tanda} == {f: (f in akun0, akun0.get(f)) for f in tanda}
     assert sorted(await rb.kode_kas(eid)) == kode_kas0                 # Arus Kas / posisi kas seperti dulu
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == ""
     # Jurnal manual dan pembalikan manual ke akun itu lolos lagi (PT belum aktif — persis seperti dulu)
     manual = await gl.create_manual_entry(JournalEntryCreate(
         date=tanggal_buku(), description="Koreksi manual KB3O", entity_id=eid,
-        lines=[{"account_code": "1-1105", "debit": 1_000.0, "credit": 0.0},
+        lines=[{"account_code": "1-1108", "debit": 1_000.0, "credit": 0.0},
                {"account_code": "3-1000", "debit": 0.0, "credit": 1_000.0}]), AKTOR_UJI, entity_id=eid)
     assert manual and manual["entity_id"] == eid
     rev = await gl.reverse_entry(je["id"], tanggal_buku(), "uji balik KB3O", AKTOR_UJI)
     assert rev and rev["source_type"] == "reversal"
-    # Rekening kembali ke sub-akun buatan sistem; Siapkan ulang tanpa pilihan → sub-akun baru, 1-1105 tidak disentuh
+    # Rekening kembali ke sub-akun buatan sistem; Siapkan ulang tanpa pilihan → sub-akun baru, 1-1108 tidak disentuh
     x = _rek(await cut.pratinjau(eid), bank)
     assert (x["akun_tujuan"], x["akun_tujuan_baru"], x["akun_tujuan_buatan_sistem"]) == ("1-1100-01", True, True)
     u2 = await cut.siapkan(eid, {}, PENYIAP)
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == "1-1100-01"
-    akun2 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    akun2 = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     assert {f: (f in akun2, akun2.get(f)) for f in tanda} == {f: (f in akun0, akun0.get(f)) for f in tanda}
     await cut.tolak(u2["id"], "uji sub-akun tetap", PENYETUJU)
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == "1-1100-01"   # sub-akun kosong tetap
@@ -768,16 +769,16 @@ async def test_KB1_3_U16_kembali_ke_subakun_buatan_sistem(db):
     from services import cash_account_mode as mode, cash_account_cutover_service as cut, gl_service as gl
     eid = await pt_uji("KB3P")
     bank = await _rekening(eid, "BCA KB3P", awal=50_000)
-    await gl.create_account(GLAccountCreate(code="1-1105", name="Bank Finance KB3P", type="asset",
+    await gl.create_account(GLAccountCreate(code="1-1108", name="Bank Finance KB3P", type="asset",
                                             parent_code="1-1000"), entity_id=eid)
     # Keadaan lama (sebelum perbaikan I2): rekening masih memakai akun pilihan Finance tanpa usulan hidup.
-    assert await mode.buat_subakun({"id": bank}, kode="1-1105") == "1-1105"
+    assert await mode.buat_subakun({"id": bank}, kode="1-1108") == "1-1108"
     x = _rek(await cut.pratinjau(eid), bank)
-    assert (x["akun_tujuan"], x["akun_tujuan_baru"], x["akun_tujuan_buatan_sistem"]) == ("1-1105", False, False)
+    assert (x["akun_tujuan"], x["akun_tujuan_baru"], x["akun_tujuan_buatan_sistem"]) == ("1-1108", False, False)
     u = await cut.siapkan(eid, {bank: ""}, PENYIAP)                     # "" = sub-akun buatan sistem
     assert u["pilihan_akun"] == {bank: ""}
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == "1-1100-01"
-    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     assert (a.get("bank_account_id"), a.get("is_cash")) == (None, None)  # akun Finance dilepas
     x = _rek(await cut.pratinjau(eid), bank)
     assert (x["akun_tujuan"], x["akun_tujuan_buatan_sistem"]) == ("1-1100-01", True)
@@ -848,16 +849,16 @@ async def test_KB1_3_U19_siapkan_gagal_akun_pilihan_dikembalikan(db, monkeypatch
     eid = await pt_uji("KB3W")
     bank = await _rekening(eid, "BCA KB3W", awal=10_000)
     await _rekening(eid, "Mandiri KB3W", awal=20_000)
-    await gl.create_account(GLAccountCreate(code="1-1105", name="Bank Finance KB3W", type="asset",
+    await gl.create_account(GLAccountCreate(code="1-1108", name="Bank Finance KB3W", type="asset",
                                             parent_code="1-1000"), entity_id=eid)
 
     async def _habis(acc):
         raise mode.SubAkunError("Nomor sub-akun 1-1100 di Uji KB3W sudah habis (99).")
     monkeypatch.setattr(mode, "_sisip_subakun", _habis)
     with pytest.raises(HTTPException) as e:
-        await cut.siapkan(eid, {bank: "1-1105"}, PENYIAP)
+        await cut.siapkan(eid, {bank: "1-1108"}, PENYIAP)
     assert (e.value.status_code, e.value.detail) == (400, "Nomor sub-akun 1-1100 di Uji KB3W sudah habis (99).")
-    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1105"}, {"_id": 0})
+    a = await db.gl_accounts.find_one({"entity_id": eid, "code": "1-1108"}, {"_id": 0})
     assert ("is_cash" in a, "bank_account_id" in a, "is_cash_dari_rekening" in a) == (False, False, False), a
     assert (await db.bank_accounts.find_one({"id": bank}))["gl_account_code"] == ""
     assert not await db.cash_account_cutovers.find_one({"entity_id": eid})

@@ -18,7 +18,8 @@ PESAN_PO = ("Persetujuan PO harus diputuskan orang lain: Anda yang mengajukannya
 AWAL_DUA = {"acc_desain", "acc_sample", "po_custom", "permintaan_pembelian", "harga_khusus", "amandemen",
             "setujui_po", "po_tingkat_berikut", "tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye",
             "retur_antar_pt", "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-            "pindah_saldo_kas"}   # Kas & Bank 1 (Tugas 3) — aksi baru, rancangan mewajibkan orang kedua
+            "pindah_saldo_kas",   # Kas & Bank 1 (Tugas 3) — aksi baru, rancangan mewajibkan orang kedua
+            "selisih_kas"}   # Kas & Bank 3 (Tugas 1) — selisih opname selalu orang kedua
 BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "tagihan_pemasok", "biaya_masuk",
               "kontrabon", "tagihan_kampanye", "retur_antar_pt", "susut_makloon", "retur_penjualan",
               "retur_pembelian", "proses_gaji", "uang_muka", "lpj_uang_muka", "pengurang_piutang",
@@ -48,8 +49,11 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # → 43 aksi, 26 bernominal, 71 kunci `kontrol.*`.
 # Kas & Bank 2 (C6) — aksi ke-44 `kas_keluar_manual` (kas keluar manual di atas batas; bawaan satu orang, bernominal,
 # batas bawaan Rp 1.000.000) → 44 aksi, 27 bernominal, 73 kunci `kontrol.*`.
-N_AKSI = 44   # Kas & Bank 2 — aksi ke-44 `kas_keluar_manual` (bernominal)
-N_KUNCI = 73   # Kas & Bank 2 — `kontrol.kas_keluar_manual.{min_orang,batas_nominal}`
+# Kas & Bank 3 (Tugas 1) — aksi ke-45 `selisih_kas` (setujui selisih opname kas; bawaan DUA orang, TANPA nominal, juga
+# Admin) → 45 aksi, 27 bernominal, 74 kunci `kontrol.*`. Kuncinya bertanda tidak dipakai sampai titik pasangnya dibangun
+# (`config_catalog_kontrol._BELUM_DIPASANG`, Tugas 3): tidak bisa diubah, bawaan "2" tetap terbaca.
+N_AKSI = 45   # Kas & Bank 3 — aksi ke-45 `selisih_kas`
+N_KUNCI = 74   # Kas & Bank 3 — `kontrol.selisih_kas.min_orang`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),
                 "kas_keluar_manual": (1000000, 1000000000000)}   # Kas & Bank 2 (C6) — batas bawaan Rp 1.000.000
 
@@ -57,6 +61,12 @@ BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),
 def _kontrol():
     from config_catalog_kontrol import KONTROL_AKSI
     return KONTROL_AKSI
+
+
+def _belum_dipasang() -> set:
+    """Kas & Bank 3 — aksi terdaftar yang titik pasangnya belum dibangun (kunci tidak dipakai, tidak bisa diubah)."""
+    from config_catalog_kontrol import _BELUM_DIPASANG
+    return set(_BELUM_DIPASANG)
 
 
 def _item(key, value, scope_type="entity", scope_id="ent_ksc", reason="uji KF-T6"):
@@ -90,7 +100,8 @@ async def test_katalog_35_aksi_20_bernominal():
     assert registry.require("kontrol.admin_tetap_dua_orang")["default"] == [
         "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
         "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
-        "kas_keluar_manual"]   # Kas & Bank 2 (spesifikasi §7 butir 4)
+        "kas_keluar_manual",   # Kas & Bank 2 (spesifikasi §7 butir 4)
+        "selisih_kas"]   # Kas & Bank 3 (spesifikasi §7 butir 5)
     assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == N_KUNCI
 
 
@@ -166,7 +177,8 @@ async def test_aturan_endpoint(klien, kepala_admin):
     assert j["admin_boleh_sendiri"] is True
     assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
                                           "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
-                                          "kas_keluar_manual"]   # Kas & Bank 2 (spesifikasi §7 butir 4)
+                                          "kas_keluar_manual",   # Kas & Bank 2 (spesifikasi §7 butir 4)
+                                          "selisih_kas"]   # Kas & Bank 3 (spesifikasi §7 butir 5)
     po = next(x for x in j["rows"] if x["aksi"] == "setujui_po")
     assert {k: po[k] for k in ("label", "kelompok", "punya_nominal", "min_orang", "batas_nominal", "sumber")} == {
         "label": "Persetujuan PO", "kelompok": "B", "punya_nominal": True, "min_orang": "2", "batas_nominal": 0.0,
@@ -179,21 +191,25 @@ async def test_aturan_endpoint(klien, kepala_admin):
 
 async def test_U11_tim_kecil_satu_pt(klien, kepala_admin):
     from services.dual_control import butuh_orang_kedua
+    dipasang = [a for a in _kontrol() if a["aksi"] not in _belum_dipasang()]
     items = [_item(f"kontrol.{a['aksi']}.min_orang", "1", reason="Tim kecil — semua cukup satu orang")
-             for a in _kontrol()]
+             for a in dipasang]
     r = await klien.put("/api/config/values", headers=kepala_admin, json={"items": items})
     assert r.status_code == 200, r.text
-    assert r.json()["count"] == N_AKSI
+    assert r.json()["count"] == N_AKSI - len(_belum_dipasang())
     try:
-        for a in _kontrol():
+        for a in dipasang:
             assert await butuh_orang_kedua(a["aksi"], "ent_ksc") is False, a["aksi"]
+        for aksi in _belum_dipasang():   # Kas & Bank 3 — bawaannya tetap terbaca (selisih opname: dua orang)
+            assert await butuh_orang_kedua(aksi, "ent_ksc") is True, aksi
         assert await butuh_orang_kedua("setujui_po", "ent_kanda") is True
         j = (await klien.get("/api/kontrol/aturan", headers=kepala_admin, params={"entity_id": "ent_ksc"})).json()
-        assert {(x["min_orang"], x["sumber"]) for x in j["rows"]} == {("1", "entity")}
+        assert {(x["min_orang"], x["sumber"]) for x in j["rows"] if x["aksi"] not in _belum_dipasang()} == {
+            ("1", "entity")}
         j2 = (await klien.get("/api/kontrol/aturan", headers=kepala_admin, params={"entity_id": "ent_kanda"})).json()
         assert next(x for x in j2["rows"] if x["aksi"] == "setujui_po")["min_orang"] == "2"
     finally:
-        for a in _kontrol():
+        for a in dipasang:
             await _cabut(klien, kepala_admin, f"kontrol.{a['aksi']}.min_orang", "ent_ksc")
     assert await butuh_orang_kedua("setujui_po", "ent_ksc") is True
 
@@ -235,7 +251,12 @@ _TAK_SAH = {"enum": "3", "money": -1, "bool": "bukan-bool", "list": "bukan-dafta
 async def test_U17_putaran_semua_kunci_kontrol(klien, kepala_admin):
     kunci = [k for k in registry.keys() if k.startswith("kontrol.")]
     assert len(kunci) == N_KUNCI
-    for key in kunci:
+    belum = {k for k in kunci if registry.require(k)["status"] == "not_used"}
+    assert belum == {f"kontrol.{a}.min_orang" for a in _belum_dipasang()}   # Kas & Bank 3 — tanpa nominal
+    for key in sorted(belum):   # terdaftar, tetapi tidak bisa diubah sampai titik pasangnya dibangun
+        r = await klien.put("/api/config/values", headers=kepala_admin, json={"items": [_item(key, "1", "global", "")]})
+        assert r.status_code == 400 and "tidak dipakai sistem saat ini" in r.json()["detail"], (key, r.text)
+    for key in [k for k in kunci if k not in belum]:
         e = registry.require(key)
         awal = await resolver.value_of(key)
         v1 = _lain(e, awal)

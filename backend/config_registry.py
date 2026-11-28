@@ -163,6 +163,10 @@ _sisip_sub_kft7("persetujuan", _S("tanda-tangan", "Tanda tangan elektronik"), se
 # dengan mutasi bank. Sub-judul "Mencocokkan mutasi bank" sudah 14 kunci (batas sub-judul biasa, KF-T4).
 _sisip_sub_kft7("pembayaran-pelanggan", _S("kwitansi", "Kwitansi pelanggan"), sesudah="syarat-bayar")
 _sisip_sub_kft7("bank-kasus", _S("kwitansi-bank", "Kwitansi menunggu cocok bank"), sesudah="bank")
+# Kas & Bank 3 — jarak opname kas per jenis kas (`kas.opname_*_hari`) dan kontrol dua orang selisih opname kas
+# (`kontrol.selisih_kas.*`; sub-judul "Dua orang: pembukuan" sudah 14 kunci).
+_sisip_sub_kft7("bank-kasus", _S("opname-kas", "Opname kas (hitung uang fisik)"), sesudah="kwitansi-bank")
+_sisip_sub_kft7("persetujuan", _S("dua-orang-kas", "Dua orang: opname kas"), sesudah="dua-orang-buku")
 GROUPS.append({"id": "keamanan", "label": "Keamanan akun & sesi", "order": 14,
                "question": "Berapa kali salah sandi sebelum akun dikunci, dan berapa lama sesi masuk berlaku?",
                "sections": [_S("masuk", "Salah sandi & lama sesi")]})

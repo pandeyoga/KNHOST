@@ -243,6 +243,11 @@
      "advanced": false
     },
     {
+     "id": "dua-orang-kas",
+     "label": "Dua orang: opname kas",
+     "advanced": false
+    },
+    {
      "id": "dua-orang-admin",
      "label": "Dua orang: pengecualian Admin",
      "advanced": false
@@ -282,6 +287,11 @@
     {
      "id": "kwitansi-bank",
      "label": "Kwitansi menunggu cocok bank",
+     "advanced": false
+    },
+    {
+     "id": "opname-kas",
+     "label": "Opname kas (hitung uang fisik)",
      "advanced": false
     },
     {
@@ -1635,6 +1645,18 @@
    "bank-kasus",
    "kwitansi-bank"
   ],
+  "kas.opname_kasir_hari": [
+   "bank-kasus",
+   "opname-kas"
+  ],
+  "kas.opname_kas_kecil_hari": [
+   "bank-kasus",
+   "opname-kas"
+  ],
+  "kas.opname_kas_besar_hari": [
+   "bank-kasus",
+   "opname-kas"
+  ],
   "case.sla_hours": [
    "bank-kasus",
    "kasus"
@@ -2366,6 +2388,10 @@
   "kontrol.kas_keluar_manual.batas_nominal": [
    "persetujuan",
    "dua-orang-buku"
+  ],
+  "kontrol.selisih_kas.min_orang": [
+   "persetujuan",
+   "dua-orang-kas"
   ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",

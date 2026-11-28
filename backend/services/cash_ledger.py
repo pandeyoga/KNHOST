@@ -21,12 +21,13 @@ from fastapi import HTTPException
 from db import db
 from core_utils import now_iso, rupiah
 
-# Akun GL yang dianggap "kas kecil" — sisanya diperlakukan kas_besar/bank.
+# Akun GL templat yang dianggap "kas kecil" / "kas kasir" (Kas & Bank 3) — sisanya diperlakukan kas_besar/bank.
 KAS_KECIL_CODE = "1-1110"
+KAS_KASIR_CODE = "1-1105"
 EPS = 0.005
 
-#: Label jenis kas di pesan ("{n} rekening Kas Kecil" / "{n} rekening Bank").
-CASH_TYPE_LABEL = {"kas_kecil": "Kas Kecil", "kas_besar": "Bank"}
+#: Label jenis kas di pesan ("{n} rekening Kas Kecil" / "{n} rekening Bank" / "{n} rekening Kas kasir").
+CASH_TYPE_LABEL = {"kas_kecil": "Kas Kecil", "kas_besar": "Bank", "kas_kasir": "Kas kasir"}
 
 #: Label rujukan kas di pesan (kode mentah tidak boleh tampil — `02` §4 L1).
 REF_LABEL = {
@@ -100,8 +101,9 @@ class CashPostingError(HTTPException):
 
 def cash_type_for(account_code: str) -> str:
     """Jenis kas dari kode akun TEMPLAT (pemilih refund `/gl/cash-accounts`, akun kas lama): persis 1-1110 = kas kecil,
-    lainnya kas besar. Jangan dipakai untuk akun rekening (`1-1110-01` terbaca kas besar) — pakai `jenis_kas_akun`."""
-    return "kas_kecil" if (account_code or "") == KAS_KECIL_CODE else "kas_besar"
+    persis 1-1105 = kas kasir (Kas & Bank 3), lainnya kas besar. Jangan dipakai untuk akun rekening (`1-1110-01`
+    terbaca kas besar) — pakai `jenis_kas_akun`."""
+    return {KAS_KECIL_CODE: "kas_kecil", KAS_KASIR_CODE: "kas_kasir"}.get(account_code or "", "kas_besar")
 
 
 async def jenis_kas_akun(entity_id: str, kode: str) -> str:

@@ -49,6 +49,10 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Kas besar", "Piutang"), ["Kas & Bank", "Kwitansi AR", "Pembayaran supplier"]),
     _e("kas_bank.kas_kecil", "1-1110", "Kas kecil", "transaksi kas kecil",
        ("Beban", "Kas kecil"), ["Kas kecil", "PD/LPJ"]),
+    # Kas & Bank 3 (C1) — jenis kas ketiga `kas_kasir`: uang tunai yang diterima kasir dari pelanggan, akun sendiri
+    # (dipisah dari kas kecil). Dipetakan per PT seperti kas kecil (`gl_service.akun_kas` mode lama).
+    _e("kas_bank.kas_kasir", "1-1105", "Kas kasir", "transaksi rekening kas kasir (tunai dari pelanggan)",
+       ("Kas kasir", "Piutang"), ["Kas & Bank", "Kwitansi AR"]),
     _e("kas_bank.kas_transit", "1-1150", "Dana dalam perjalanan", "pindah-buku antar rekening sendiri",
        ("Dana transit", "Bank asal"), ["Pindah buku bank"]),
     _e("kas_bank.beban_bank", "6-8000", "Beban administrasi bank", "biaya admin/transfer dipotong bank",
@@ -66,6 +70,13 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Beban", "Hutang reimburse"), ["PD/LPJ"]),
     _e("kas_bank.piutang_karyawan", "1-1280", "Piutang titipan karyawan", "uang perusahaan dipegang karyawan",
        ("Piutang karyawan", "Kas"), ["Kas & Bank"]),
+    # Kas & Bank 3 (C3) — opname kas: selisih yang disetujui orang kedua. Satu akun dua arah (lebih: Dr kas / Cr
+    # selisih; kurang: Dr selisih / Cr kas), boleh dipetakan ke akun beban atau pendapatan lain-lain. Kekurangan karena
+    # orang = piutang karyawan sendiri (terpisah dari 1-1280 titipan).
+    _e("kas_bank.selisih_kas", "6-9200", "Selisih kas", "selisih opname kas disetujui (lebih atau kurang)",
+       ("Kas", "Selisih kas"), ["Opname kas"], types=["expense", "income"]),
+    _e("kas_bank.piutang_kurang_kas", "1-1290", "Piutang karyawan kekurangan kas",
+       "kekurangan opname kas dibebankan ke karyawan", ("Piutang karyawan", "Kas"), ["Opname kas"]),
     _e("penjualan.piutang", "1-1200", "Piutang usaha", "penjualan kredit & penagihan",
        ("Piutang", "Pendapatan"), ["Penjualan", "Kwitansi AR", "Aging"], control="piutang"),
     _e("penjualan.pendapatan", "4-1000", "Pendapatan penjualan", "barang dikirim ke pelanggan",

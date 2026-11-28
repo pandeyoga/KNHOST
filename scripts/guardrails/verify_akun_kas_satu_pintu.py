@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """INV-CASH-02 (Kas & Bank bagian 1, §5.1) — akun kas di baris jurnal hanya dari SATU pembantu `gl_service.akun_kas`.
 
-Sejak PT bisa memakai akun buku besar per rekening (sub-akun `1-1100-NN` / `1-1110-NN`), kode kas `1-1100` / `1-1110`
-yang ditulis langsung di baris jurnal membuat kas rekening masuk akun lama: saldo sub-akun ≠ buku kas rekening. Semua
+Sejak PT bisa memakai akun buku besar per rekening (sub-akun `1-1100-NN` / `1-1110-NN` / `1-1105-NN`), kode kas `1-1100`
+/ `1-1110` / `1-1105` (Kas Kasir, Kas & Bank 3) yang ditulis langsung di baris jurnal membuat kas rekening masuk akun
+lama: saldo sub-akun ≠ buku kas rekening. Semua
 jalur jurnal yang menyentuh kas memakai `gl_service.akun_kas` (atau pembungkusnya: `akun_kas_tanpa_dokumen`,
 `cash_ledger.akun_refund`, `interco_money_service.akun_kas_bank`).
 
 Statik (`ast`) atas `backend/` kecuali `tests/`, `tests_mem/`, `scripts/`, `bootstrap.py`, `seed_*.py` dan berkas
 uji/POC di akar `backend/` (`test_*.py`) — sama dengan INV-CASH-01. MERAH bila, di luar `PENGECUALIAN`:
 
-  [1] string harfiah TEPAT "1-1100" atau "1-1110" (teks panjang yang menyebut kode, mis. pesan / docstring, tidak);
-  [2] nama `ACC_KAS_BESAR` / `ACC_KAS_KECIL` dibaca (`gl_service.ACC_KAS_BESAR`, `gl.ACC_KAS_KECIL`, nama polos);
-  [3] kunci pemetaan kas TEPAT "kas_bank.kas_besar" / "kas_bank.kas_kecil" (baris `account_key` / `account_for` akan
-      menulis akun kas lama tanpa melihat rekening).
+  [1] string harfiah TEPAT "1-1100", "1-1110", atau "1-1105" (teks panjang yang menyebut kode, mis. pesan / docstring,
+      tidak);
+  [2] nama `ACC_KAS_BESAR` / `ACC_KAS_KECIL` / `ACC_KAS_KASIR` dibaca (`gl_service.ACC_KAS_BESAR`, `gl.ACC_KAS_KECIL`,
+      nama polos);
+  [3] kunci pemetaan kas TEPAT "kas_bank.kas_besar" / "kas_bank.kas_kecil" / "kas_bank.kas_kasir" (baris
+      `account_key` / `account_for` akan menulis akun kas lama tanpa melihat rekening).
 
 `PENGECUALIAN` = {"berkas:fungsi": alasan satu baris mengapa itu BUKAN baris jurnal}. Pengecualian yang tidak lagi
 punya temuan = MERAH juga (basi — hapus barisnya), supaya daftar hanya bisa menyempit.
@@ -36,16 +39,17 @@ from _common import Guard, ROOT, G, R, X  # noqa: E402
 
 INV = "INV-CASH-02"
 SKIP_DIRS = ("tests", "tests_mem", "scripts", "__pycache__", "node_modules")
-KODE_KAS = {"1-1100", "1-1110"}
-NAMA_KAS = {"ACC_KAS_BESAR", "ACC_KAS_KECIL"}
-KUNCI_KAS = {"kas_bank.kas_besar", "kas_bank.kas_kecil"}
+KODE_KAS = {"1-1100", "1-1110", "1-1105"}   # Kas & Bank 3 — + 1-1105 Kas Kasir
+NAMA_KAS = {"ACC_KAS_BESAR", "ACC_KAS_KECIL", "ACC_KAS_KASIR"}
+KUNCI_KAS = {"kas_bank.kas_besar", "kas_bank.kas_kecil", "kas_bank.kas_kasir"}
 
 #: Lokasi yang BOLEH memuat kode kas — masing-masing BUKAN baris jurnal (alasan satu baris).
 PENGECUALIAN: Dict[str, str] = {
     # satu pembantu itu sendiri
     "services/gl_service.py:akun_kas": "SATU pembantu akun kas jurnal (akun jenis kas lama bila tanpa sub-akun)",
     # bagan akun & konstanta
-    "services/gl_service.py:<modul>": "bagan akun bawaan `DEFAULT_COA` + konstanta `ACC_KAS_BESAR`/`ACC_KAS_KECIL`",
+    "services/gl_service.py:<modul>": ("bagan akun bawaan `DEFAULT_COA` + konstanta `ACC_KAS_BESAR`/`ACC_KAS_KECIL`/"
+                                       "`ACC_KAS_KASIR`"),
     "services/cash_account_mode.py:<modul>": "`INDUK` — akun induk (`parent_code`) sub-akun rekening",
     # katalog pemetaan
     "services/gl_mapping_registry.py:<modul>": "katalog Pemetaan Akun: kode bawaan kebutuhan (`kas_bank.*`, ongkir)",
@@ -54,15 +58,20 @@ PENGECUALIAN: Dict[str, str] = {
     # pembaca & pemilih
     "services/gl_service.py:order_revenue_recognized": "pembaca: Σ Dr kas besar jurnal penjualan tunai (piutang lahir)",
     "services/cash_flow_service.py:<modul>": "`CASH_CODES` — pembaca saldo kas (Arus Kas), bukan baris jurnal",
-    "services/cash_ledger.py:<modul>": "`KAS_KECIL_CODE` — `cash_type_for` membaca JENIS kas dari kode pemilih",
-    "routers/gl.py:list_cash_accounts": "pemilih refund: daftar cadangan akun templat (dibaca sebagai jenis kas, R5)",
+    "services/cash_ledger.py:<modul>": ("`KAS_KECIL_CODE`/`KAS_KASIR_CODE` — `cash_type_for` membaca JENIS kas dari "
+                                        "kode pemilih"),
+    "routers/gl.py:list_cash_accounts": ("pemilih refund: daftar cadangan akun templat (dibaca sebagai jenis kas, R5) "
+                                         "dan akun kas kasir yang sengaja tidak ditawarkan"),
     # bukan kode aplikasi
     "tools/ai_eval/build_questions_keuangan.py:<modul>": "teks pertanyaan uji asisten keuangan, bukan baris jurnal",
 }
 RULE_TEXT = {
-    1: "kode kas harfiah \"1-1100\"/\"1-1110\" — akun kas jurnal lewat `gl_service.akun_kas` (sub-akun rekening)",
-    2: "`ACC_KAS_BESAR`/`ACC_KAS_KECIL` dipakai — akun kas jurnal lewat `gl_service.akun_kas` (sub-akun rekening)",
-    3: "kunci pemetaan `kas_bank.kas_besar`/`kas_bank.kas_kecil` dipakai — akun kas jurnal lewat `gl_service.akun_kas`",
+    1: "kode kas harfiah \"1-1100\"/\"1-1110\"/\"1-1105\" — akun kas jurnal lewat `gl_service.akun_kas` (sub-akun "
+       "rekening)",
+    2: "`ACC_KAS_BESAR`/`ACC_KAS_KECIL`/`ACC_KAS_KASIR` dipakai — akun kas jurnal lewat `gl_service.akun_kas` "
+       "(sub-akun rekening)",
+    3: "kunci pemetaan `kas_bank.kas_besar`/`kas_bank.kas_kecil`/`kas_bank.kas_kasir` dipakai — akun kas jurnal lewat "
+       "`gl_service.akun_kas`",
 }
 
 
@@ -138,9 +147,10 @@ def lapor(root: Path = ROOT) -> List[Dict[str, Any]]:
 _GL = '''
 ACC_KAS_BESAR = "1-1100"
 ACC_KAS_KECIL = "1-1110"
-DEFAULT_COA = [("1-1100", "Kas Besar / Bank"), ("1-1110", "Kas Kecil")]
+ACC_KAS_KASIR = "1-1105"
+DEFAULT_COA = [("1-1100", "Kas Besar / Bank"), ("1-1105", "Kas Kasir"), ("1-1110", "Kas Kecil")]
 async def akun_kas(entity_id, account_id, cash_type, *, akun_lama=""):
-    return akun_lama or (ACC_KAS_KECIL if cash_type == "kas_kecil" else ACC_KAS_BESAR)
+    return akun_lama or {"kas_kecil": ACC_KAS_KECIL, "kas_kasir": ACC_KAS_KASIR}.get(cash_type, ACC_KAS_BESAR)
 '''
 _BERSIH = '''
 from services import gl_service
@@ -184,6 +194,19 @@ def self_test() -> int:
          True)
     case("\"1-1110\" harfiah sebagai cadangan (`kode or \"1-1110\"`) → MERAH",
          _mini({**ok_files, "services/a.py": "def akun(k):\n    return k or \"1-1110\"\n"}), True)
+    # Kas & Bank 3 — kas kasir 1-1105 dijaga sama dengan dua akun kas lama.
+    case("baris jurnal kas kasir ber-\"1-1105\" harfiah di layanan → MERAH",
+         _mini({**ok_files, "services/a.py": "def baris(n):\n    return [{'account_code': '1-1105', 'credit': n}]\n"}),
+         True)
+    case("`gl.ACC_KAS_KASIR` di baris jurnal → MERAH",
+         _mini({**ok_files, "services/a.py": "from services import gl_service as gl\n"
+                "def sisi(n):\n    return pair_line(gl.ACC_KAS_KASIR, gl.ACC_SELISIH_KAS, n, 'x')\n"}), True)
+    case("`account_for(\"kas_bank.kas_kasir\")` → MERAH",
+         _mini({**ok_files, "services/a.py": "async def akun(gl, e):\n    return await gl.account_for("
+                "'kas_bank.kas_kasir', e)\n"}), True)
+    case("sub-akun kas kasir 1-1105-01 dan pesan yang menyebut 1-1105 → hijau",
+         _mini({**ok_files, "services/b.py": "def pesan():\n    return 'Kas kasir dibukukan di 1-1105 (sub-akun "
+                "1-1105-01).'\nKODE = '1-1105-01'\n"}), False)
     case("`gl_service.ACC_KAS_BESAR` di baris jurnal kembar → MERAH",
          _mini({**ok_files, "services/a.py": "from services import gl_service\n"
                 "def sisi(n):\n    return pair_line(gl_service.ACC_IC_AR, gl_service.ACC_KAS_BESAR, n, 'x')\n"}), True)

@@ -16,11 +16,25 @@ from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from services.bank_recon_service import txn_reconciled
 
 VALID_ACCOUNT_TYPES = {"bank", "cash"}
-CASH_TYPES = {"kas_kecil", "kas_besar"}
+#: Jenis kas rekening. Kas & Bank 3 (C1) — `kas_kasir` jenis ketiga (rekening tunai uang pelanggan, akun 1-1105);
+#: rekening lama tidak dikonversi.
+CASH_TYPES = {"kas_kecil", "kas_besar", "kas_kasir"}
+#: Dua jenis kas sebelum Kas & Bank 3 — dasar pengisian `cash_type` rekening lama (`backfill_cash_type`).
+_JENIS_LAMA = ("kas_kecil", "kas_besar")
+
+PESAN_JENIS_KAS = "Jenis kas harus kas kecil, kas kasir, atau kas besar."
+PESAN_KASIR_TUNAI = "Kas kasir hanya untuk rekening kas tunai, bukan rekening bank."
+PESAN_DANA_TETAP_NEGATIF = "Dana tetap tidak boleh negatif."
+PESAN_DANA_TETAP_KAS_KECIL = "Dana tetap hanya untuk rekening kas kecil."
+PESAN_LOKASI_JENIS = "Lokasi hanya untuk rekening kas kasir dan kas kecil."
+PESAN_LOKASI_TIDAK_ADA = "Lokasi kerja yang dipilih tidak ditemukan."
+#: Kas & Bank 3 (§7.8 butir 5) — jenis kas rekening yang boleh berlokasi kerja.
+JENIS_BERLOKASI = ("kas_kasir", "kas_kecil")
 
 
 def account_cash_type(acc: Dict[str, Any]) -> str:
-    """G3 D4-CASH-01 — jenis kas TETAP dari master rekening (bukan dari transaksi aktif)."""
+    """G3 D4-CASH-01 — jenis kas TETAP dari master rekening (bukan dari transaksi aktif): `kas_besar`, `kas_kecil`, atau
+    `kas_kasir` (Kas & Bank 3). Tanpa `cash_type` tersimpan → dari `account_type` seperti dulu (tunai = kas kecil)."""
     ct = acc.get("cash_type")
     if ct in CASH_TYPES:
         return ct
@@ -29,11 +43,12 @@ def account_cash_type(acc: Dict[str, Any]) -> str:
 
 async def backfill_cash_type() -> int:
     """Isi `cash_type` rekening lama SEKALI (hanya yang belum punya): mayoritas jenis kas riwayat
-    transaksinya (termasuk void), bila tak ada riwayat → dari `account_type`."""
+    transaksinya (termasuk void), bila tak ada riwayat → dari `account_type`. Rekening lama hanya mengenal dua jenis
+    kas lama (`_JENIS_LAMA`); kas kasir selalu dipilih eksplisit saat rekening dibuat."""
     n = 0
     async for acc in db.bank_accounts.find({"cash_type": {"$nin": list(CASH_TYPES)}}, {"_id": 0}):
         counts = {ct: await db.cash_transactions.count_documents({"account_id": acc["id"], "cash_type": ct})
-                  for ct in CASH_TYPES}
+                  for ct in _JENIS_LAMA}
         if counts["kas_kecil"] or counts["kas_besar"]:
             ct = "kas_kecil" if counts["kas_kecil"] > counts["kas_besar"] else "kas_besar"
             src = "backfill_history"
@@ -125,7 +140,8 @@ def _posted(txn: Dict[str, Any]) -> bool:
 
 
 async def sole_account_id(entity_id: str, cash_type: str) -> str:
-    """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas besar-bank), atau "" bila 0 / lebih dari 1."""
+    """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas kasir / kas besar-bank), atau "" bila 0 /
+    lebih dari 1."""
     if not entity_id or cash_type not in CASH_TYPES:
         return ""
     # PM-T1 — rekening dinonaktifkan lewat `is_active: False` (field `status` tidak pernah diisi layar ini).
@@ -188,11 +204,112 @@ async def list_accounts(entity_id: Optional[str] = None,
         for a in await rekening_pt(eid):
             efektif[a["id"]] = a["_efektif"]
     akun = await _akun_buku_besar(accounts)
+    kas = await _bidang_kas(accounts)
     out = []
     for acc in accounts:
         txns = await _txns_for(acc["id"])
-        out.append({**_enrich(acc, txns), **efektif.get(acc["id"], bidang_efektif(acc)), **akun(acc)})
+        out.append({**_enrich(acc, txns), **efektif.get(acc["id"], bidang_efektif(acc)), **akun(acc),
+                    **await kas(acc, txns)})
     return out
+
+
+# ─── Kas & Bank 3 (Tugas 1) — jenis kas terkunci, dana tetap & lokasi rekening, jarak opname ───────────────────────
+async def _bidang_kas(accounts: List[Dict[str, Any]]):
+    """Kolom layar Rekening (Kas & Bank 3): `dana_tetap` (0 = tidak memakai dana tetap; rekening lama tanpa bidang = 0),
+    `location_id` + `location_name` (lokasi kerja `warehouse_sites`), `jenis_kas_terkunci` (jenis kas tidak bisa
+    diubah lagi — `alasan_jenis_kas_terkunci`). Dokumen rekening lama tidak ditulis."""
+    ids = sorted({a.get("location_id") for a in accounts if a.get("location_id")})
+    nama = {s["id"]: s.get("name") or "" async for s in db.warehouse_sites.find({"id": {"$in": ids}},
+                                                                                 {"_id": 0, "id": 1, "name": 1})}
+
+    async def bidang(acc: Dict[str, Any], txns: List[Dict[str, Any]]) -> Dict[str, Any]:
+        lokasi = acc.get("location_id") or ""
+        return {"dana_tetap": round(float(acc.get("dana_tetap") or 0), 2), "location_id": lokasi,
+                "location_name": nama.get(lokasi, ""),
+                "jenis_kas_terkunci": bool(await alasan_jenis_kas_terkunci(acc, txns))}
+    return bidang
+
+
+async def punya_kas(acc: Dict[str, Any], txns: Optional[List[Dict[str, Any]]] = None) -> bool:
+    """Rekening sudah punya transaksi kas: saldo awal (terjurnal), dokumen kas ber-`account_id` rekening ini (termasuk
+    yang dibatalkan — jurnal dan pembaliknya tetap di akun jenis kas lama), atau kas tanpa rekening yang ikut buku kas
+    rekening tunggal jenisnya (`_txns_for`). `txns` = hasil `_txns_for` yang sudah dibaca pemanggil (hemat kueri)."""
+    if abs(float(acc.get("opening_balance") or 0)) > 0.005 or acc.get("opening_je_id"):
+        return True
+    if await db.cash_transactions.find_one({"account_id": acc.get("id") or "__none__"}, {"_id": 0, "id": 1}):
+        return True
+    return bool(txns if txns is not None else await _txns_for(acc.get("id") or ""))
+
+
+async def alasan_jenis_kas_terkunci(acc: Dict[str, Any], txns: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Kas & Bank 3 (spesifikasi §5.1) — kalimat alasan jenis kas rekening tidak bisa diubah; "" = boleh diubah.
+
+    * Akun buku besar rekening sudah ada (PT mode per rekening): sub-akunnya dibuat di bawah induk jenis kas itu
+      (`cash_account_mode.INDUK`) dan kodenya tidak pernah berubah — mengganti jenis membuat akun di induk yang salah.
+    * Rekening sudah punya transaksi kas (`punya_kas`): jurnal lamanya ada di akun jenis kas lama — mengganti jenis
+      membuat buku kas rekening ≠ buku besar. Saldo dipindah lewat Pindah Dana ke rekening baru."""
+    nama = acc.get("name") or ""
+    kode = acc.get("gl_account_code") or ""
+    if kode:
+        return (f"Jenis kas rekening {nama} tidak bisa diubah karena akun buku besarnya ({kode}) dibuat untuk jenis "
+                f"kas itu. Nonaktifkan rekening ini lalu buat rekening baru dengan jenis kas yang benar.")
+    if await punya_kas(acc, txns):
+        return (f"Jenis kas rekening {nama} tidak bisa diubah karena rekening ini sudah punya transaksi kas. "
+                f"Pindahkan saldonya lewat Pindah Dana ke rekening baru dengan jenis kas yang benar.")
+    return ""
+
+
+async def periksa_bidang_kas(acc: Dict[str, Any]) -> Dict[str, Any]:
+    """Kas & Bank 3 — PERIKSA (tanpa tulisan) jenis kas, dana tetap, dan lokasi rekening `acc` (nilai SESUDAH perubahan,
+    digabung dengan isi rekening). → `{cash_type, dana_tetap, location_id}` bersih. Gagal → `ValueError` berkalimat.
+
+    * `cash_type` ∈ `CASH_TYPES`; kosong = dari `account_type` (seperti dulu). Kas kasir hanya untuk rekening tunai.
+    * `dana_tetap` ≥ 0; > 0 hanya untuk rekening kas kecil (0 = tidak memakai dana tetap).
+    * `location_id` opsional: lokasi kerja yang ada (`warehouse_sites`), hanya untuk kas kasir & kas kecil; satu
+      rekening kas kecil aktif per lokasi per PT."""
+    ct = (acc.get("cash_type") or "").strip()
+    if ct and ct not in CASH_TYPES:
+        raise ValueError(PESAN_JENIS_KAS)
+    ct = ct or account_cash_type({"account_type": acc.get("account_type")})
+    if ct == "kas_kasir" and acc.get("account_type") != "cash":
+        raise ValueError(PESAN_KASIR_TUNAI)
+    try:
+        dana = round(float(acc.get("dana_tetap") or 0), 2)
+    except (TypeError, ValueError):
+        raise ValueError(PESAN_DANA_TETAP_NEGATIF)
+    if dana < 0:
+        raise ValueError(PESAN_DANA_TETAP_NEGATIF)
+    if dana > 0 and ct != "kas_kecil":
+        raise ValueError(PESAN_DANA_TETAP_KAS_KECIL)
+    lokasi = str(acc.get("location_id") or "").strip()
+    if lokasi:
+        if ct not in JENIS_BERLOKASI:
+            raise ValueError(PESAN_LOKASI_JENIS)
+        site = await db.warehouse_sites.find_one({"id": lokasi}, {"_id": 0, "name": 1})
+        if not site:
+            raise ValueError(PESAN_LOKASI_TIDAK_ADA)
+        if ct == "kas_kecil" and _aktif(acc):
+            eid = acc.get("entity_id") or ""
+            async for lain in db.bank_accounts.find({"entity_id": eid, "location_id": lokasi,
+                                                     "id": {"$ne": acc.get("id") or ""}}, {"_id": 0}):
+                if _aktif(lain) and account_cash_type(lain) == "kas_kecil":
+                    from services.cash_ledger import _nama_pt
+                    raise ValueError(f"Lokasi {site.get('name') or lokasi} sudah punya rekening kas kecil "
+                                     f"{lain.get('name', '')} di {await _nama_pt(eid)}. Satu lokasi hanya untuk satu "
+                                     f"rekening kas kecil.")
+    return {"cash_type": ct, "dana_tetap": dana, "location_id": lokasi}
+
+
+#: Kas & Bank 3 (C3) — pengaturan jarak opname per jenis kas rekening tunai (`config_catalog_bank.py`).
+KUNCI_OPNAME_HARI = {"kas_kasir": "kas.opname_kasir_hari", "kas_kecil": "kas.opname_kas_kecil_hari",
+                     "kas_besar": "kas.opname_kas_besar_hari"}
+
+
+async def hari_opname(entity_id: str, cash_type: str) -> int:
+    """Kas & Bank 3 — jarak opname (hari) rekening berjenis kas `cash_type` di PT `entity_id`: rekening tunai yang
+    opname terakhirnya lebih lama dari ini = jatuh tempo (pengingat Meja Keuangan). Jenis tak dikenal → `KeyError`."""
+    from services.config_resolver import value_of
+    return int(await value_of(KUNCI_OPNAME_HARI[cash_type], {"entity_id": entity_id}))
 
 
 async def _akun_buku_besar(accounts: List[Dict[str, Any]]):
@@ -311,7 +428,10 @@ async def periksa_akun_rekening_baru(entity_id: str, kode: str, account_id: str 
 
 
 async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """`bidang` = field PM-T1 yang sudah diperiksa (`bank_account_change_service.periksa_isian`)."""
+    """`bidang` = field PM-T1 yang sudah diperiksa (`bank_account_change_service.periksa_isian`).
+
+    Kas & Bank 3 — jenis kas (`kas_kecil` / `kas_kasir` / `kas_besar`), dana tetap, dan lokasi diperiksa
+    `periksa_bidang_kas` (sekali lagi saat diterapkan; pengajuan bisa diputus lama sesudah diajukan)."""
     if payload.account_type not in VALID_ACCOUNT_TYPES:
         raise ValueError("account_type harus 'bank' atau 'cash'")
     doc = {
@@ -330,10 +450,10 @@ async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[s
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
-    ct = getattr(payload, "cash_type", "") or ""
-    if ct and ct not in CASH_TYPES:
-        raise ValueError("cash_type harus 'kas_kecil' atau 'kas_besar'")
-    doc["cash_type"] = ct or account_cash_type(doc)
+    kas = await periksa_bidang_kas({**doc, "cash_type": getattr(payload, "cash_type", "") or "",
+                                    "dana_tetap": getattr(payload, "dana_tetap", 0) or 0,
+                                    "location_id": getattr(payload, "location_id", "") or ""})
+    doc.update(kas)
     doc.update(bidang or bidang_efektif(doc))
     from services import cash_account_mode as _mode
     from services import gl_service as _gl
@@ -367,13 +487,16 @@ OPENING_EQUITY_ACC = "3-2900"
 async def _post_opening(acc: Dict[str, Any], amount: float, source_type: str, source_id: str):
     """FN-08 — saldo awal rekening terikat GL: Dr Kas/Bank ↔ Cr Ekuitas Saldo Awal (tanda dibalik bila negatif).
     Kas & Bank 1 — akun kas lewat `gl_service.akun_kas`: sub-akun rekening di PT yang sudah memakai akun per rekening,
-    selain itu akun menurut JENIS REKENING seperti dulu (tunai → 1-1110, bank → 1-1100)."""
+    selain itu akun menurut JENIS REKENING seperti dulu (tunai → 1-1110, bank → 1-1100); rekening kas kasir → 1-1105
+    (Kas & Bank 3)."""
     from services import gl_service as _gl
     amt = round(float(amount or 0), 2)
     if abs(amt) <= 0.005:
         return None
-    cash_acc = await _gl.akun_kas(acc.get("entity_id") or DEFAULT_ENTITY_ID, acc.get("id") or "",
-                                  "kas_kecil" if acc.get("account_type") == "cash" else "kas_besar")
+    # Kas & Bank 3 — rekening kas kasir → akun kas kasir; selain itu menurut `account_type` persis seperti dulu.
+    jenis = ("kas_kasir" if account_cash_type(acc) == "kas_kasir"
+             else "kas_kecil" if acc.get("account_type") == "cash" else "kas_besar")
+    cash_acc = await _gl.akun_kas(acc.get("entity_id") or DEFAULT_ENTITY_ID, acc.get("id") or "", jenis)
     dr, cr = (cash_acc, OPENING_EQUITY_ACC) if amt > 0 else (OPENING_EQUITY_ACC, cash_acc)
     await _gl.seed_default_coa()
     return await _gl._insert_entry(
@@ -397,6 +520,17 @@ async def update_account(account_id: str, patch: Dict[str, Any],
             raise RekeningBerubah("Perubahan rekening ini sudah diputus atau datanya sudah berubah. Ajukan ulang.")
         return None
     upd = {k: v for k, v in patch.items() if v is not None}
+    if {"cash_type", "dana_tetap", "location_id", "is_active"} & set(upd):
+        # Kas & Bank 3 — jenis kas / dana tetap / lokasi diperiksa pada nilai SESUDAH perubahan; jenis kas terkunci
+        # sesudah rekening punya kas (diperiksa lagi saat diterapkan: kas bisa tercatat di sela pengajuan).
+        kas = await periksa_bidang_kas({**acc, **upd})
+        if "cash_type" in upd and kas["cash_type"] != account_cash_type(acc):
+            alasan = await alasan_jenis_kas_terkunci(acc)
+            if alasan:
+                raise ValueError(alasan)
+        upd.update({f: kas[f] for f in ("cash_type", "dana_tetap", "location_id") if f in upd})
+        if "cash_type" in upd:
+            upd["cash_type_source"] = "explicit"
     if "opening_balance" in upd:
         upd["opening_balance"] = round(float(upd["opening_balance"]), 2)
         delta = round(upd["opening_balance"] - float(acc.get("opening_balance") or 0), 2)
