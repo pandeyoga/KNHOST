@@ -1,7 +1,7 @@
 # Rancangan — Kas & Bank bagian 3: kas kasir (C1), dana tetap kas kecil (C2), opname kas (C3)
 
 Tanggal: 28 Nov 2026 · Status: **keputusan pemilik C1–C3 disetujui 25 Nov** (`docs/keputusan/2026-11-25_DAFTAR_KEPUTUSAN_TERBUKA.md`
-§C). Keputusan builder di §7 dikerjakan tanpa menunggu (perintah pemilik "langsung lanjut kerjakan saja semua"; 28 Nov
+§C); builder check selesai 28 Nov (8 jawaban, §7.8). Keputusan builder di §7 dikerjakan tanpa menunggu (perintah pemilik "langsung lanjut kerjakan saja semua"; 28 Nov
 "ya dengan cepat, subagent lebih dari satu tidak apa-apa") dan dilaporkan. Dibangun di atas `main` `50df890` (F1, Kas &
 Bank 1–2). Recon 28 Nov (pemetaan kode) di ledger SDD.
 
@@ -115,6 +115,23 @@ satu pintu kas `create_cash`; satu pembantu akun kas `akun_kas`; tanpa migrasi d
 5. Selisih opname selalu butuh orang kedua (`kontrol.selisih_kas` bawaan "2", masuk bawaan admin-tetap-dua-orang).
 6. Kekurangan karena orang menjadi piutang karyawan yang tercatat; penagihan/potong gaji di luar bagian ini.
 7. Hub Kas & Bank tetap 6 tab: Opname tab tersembunyi; Dana tetap chip di Kas Kecil.
+8. **Builder check 28 Nov — delapan jawaban (keputusan builder):**
+   1. *Panjar per rekening* dibaca dari dokumen kas pencairan panjar (`cash_transactions` ref panjar, `account_id` = rekening
+      ini) yang panjarnya belum di-LPJ — tanpa bidang baru, tanpa isi-ulang data; pencairan lama tanpa rekening tidak dihitung
+      ke rekening mana pun (disebut di rincian).
+   2. *Opname berlaku untuk semua rekening `account_type=cash`* (kas kasir, kas kecil, kas besar tunai bila ada);
+      `kas.opname_kas_besar_hari` untuk yang terakhir. Rekening bank tidak diopname.
+   3. *Selisih dipotret saat dihitung dan dibukukan apa adanya* (transaksi sesudahnya menggeser fisik dan buku sama besar);
+      tanggal kas penyesuaian = tanggal hitung; periode tertutup saat disetujui → 409 berkalimat. Kas tidak diblok.
+   4. *Isi ulang = Pindah Dana itu sendiri* (bertanda `isi_ulang_kas_kecil`), nominal dibekukan saat dibuat; satu isi ulang
+      terbuka per rekening = Pindah Dana bertanda yang masih menunggu/dalam perjalanan; lepas saat Pindah Dana selesai/batal.
+   5. *PT dengan lebih dari satu rekening kas kasir* → tidak ada bawaan, kasir memilih rekening (perilaku "pilih rekening"
+      yang ada). Lokasi opsional berlaku untuk rekening kas kasir dan kas kecil.
+   6. *Karyawan* dipilih dari master karyawan HR yang ada; piutang = akun 1-1290 dengan karyawan di rujukan jurnal & dokumen
+      kas (tanpa buku pembantu baru); daftar piutang dari opname berperlakuan piutang karyawan.
+   7. Kode akun baru tidak bertabrakan dengan bagan bawaan; dipakai lewat konstanta/kunci pemetaan.
+   8. *Pengingat opname dihitung sejak fitur aktif* (penanda waktu aktif sekali tulis, pola F1) dan hanya untuk rekening yang
+      punya transaksi kas sesudah itu — tidak ada rekening yang langsung "terlambat" pada hari pembaruan.
 
 ## 8. Untuk pemilik
 
