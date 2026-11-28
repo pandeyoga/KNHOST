@@ -3,6 +3,8 @@
  * transfer, kas masuk rekening tujuan — nomor kas, rekening, tanggal, nominal, jurnal), ringkasan uang, dan riwayat.
  * Data dari `GET /fund-transfers/{id}` (dokumen + `kas` + `kontrol` untuk pembuka). Hanya-baca: aksi Setujui / Terima /
  * Batal ada di layar Kas & Bank › Pindah Dana ("Buka layar penuh"). Kas dokumen tidak punya pratinjau sendiri → teks.
+ * Kas & Bank 3 (Tugas 4a) — Pindah Dana bertanda isi ulang kas kecil: fakta "Jenis" (`jenis_label`) + potret posisi dana
+ * tetap saat dibuat (`isi_ulang`: dana tetap, saldo buku, panjar belum LPJ, nominal = usulan, isi ulang sebelumnya).
  */
 import StatusBadge from "../../../../components/StatusBadge";
 import { useEntityScope } from "../../../../context/EntityScopeContext";
@@ -30,6 +32,28 @@ export function keteranganKas(k) {
   const bagian = [k.journal_number ? `Jurnal ${k.journal_number}` : "Jurnal menunggu"];
   if (Number(k.reconciled_amount) > 0) bagian.push("dicocokkan mutasi bank");
   return bagian.join(" · ");
+}
+
+/** Kas & Bank 3 — potret posisi dana tetap saat isi ulang dibuat (tidak dihitung ulang). */
+function PotretIsiUlang({ p }) {
+  const n = (p.rincian || []).length;
+  return (
+    <div className="grid gap-1 rounded-md border border-kn-divider px-3 py-2" data-testid="doc-preview-ft-refill">
+      <p className="text-fs-12 font-semibold text-kn-text">
+        Posisi dana tetap saat dibuat{p.dihitung_pada ? ` · ${formatDateTime(p.dihitung_pada)}` : ""}
+      </p>
+      <PreviewTotals testId="doc-preview-ft-refill-totals" rows={[
+        { label: "Dana tetap", value: formatCurrency(p.dana_tetap) },
+        { label: "Saldo buku", value: formatCurrency(p.saldo_buku) },
+        { label: "Sisa panjar", value: formatCurrency(p.panjar_belum_lpj) },
+        { label: "Nominal isi ulang", value: formatCurrency(p.usulan), strong: true },
+      ]} />
+      <p className="text-fs-12 text-kn-text-2">
+        {p.sejak_nomor ? `Sejak isi ulang ${p.sejak_nomor}` : "Isi ulang pertama"}
+        {n ? ` · ${n} dokumen kas & LPJ, jumlah ${formatCurrency(p.total_rincian)}` : ""}.
+      </p>
+    </div>
+  );
 }
 
 export default function FundTransferPreview({ doc }) {
@@ -60,10 +84,12 @@ export default function FundTransferPreview({ doc }) {
         { key: "send", label: "Tanggal kirim", content: doc.tanggal_kirim ? formatDate(doc.tanggal_kirim) : "" },
         { key: "receive", label: doc.tanggal_diterima ? "Diterima" : "Rencana tiba",
           content: doc.tanggal_diterima ? formatDate(doc.tanggal_diterima) : (doc.dua_tahap ? formatDate(doc.tanggal_terima) : "") },
+        { key: "jenis", label: "Jenis", content: doc.jenis_label },
         { key: "note", label: "Catatan", content: doc.catatan },
         { key: "reason", label: "Alasan batal", content: doc.alasan_batal },
       ]} />
       {tunggu && <p className="text-fs-12 text-kn-text-2" data-testid="doc-preview-ft-control">{tunggu}</p>}
+      {doc.isi_ulang && <PotretIsiUlang p={doc.isi_ulang} />}
       <PreviewLines columns={KOLOM_KAS} rows={kas} testId="doc-preview-ft-cash"
         empty={doc.status === "menunggu_persetujuan" ? "Kas terbit sesudah disetujui." : "Belum ada kas."} />
       <PreviewTotals rows={[

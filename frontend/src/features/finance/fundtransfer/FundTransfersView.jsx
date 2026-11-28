@@ -203,6 +203,10 @@ export default function FundTransfersView({ currentUser, selectedEntity, focusDo
                           {d.rekening_asal}<ArrowRight size={12} aria-label="ke" className="text-kn-text-2" />{d.rekening_tujuan}
                         </span>
                         {d.catatan && <span className="block text-fs-12 text-kn-text-2">{d.catatan}</span>}
+                        {/* Kas & Bank 3 — isi ulang kas kecil: nominal dihitung sistem dari posisi dana tetap */}
+                        {d.jenis_label && (
+                          <span className="mt-0.5 block"><StatusBadge tone="special" icon="tag" label={d.jenis_label} testId={`ft-kind-${d.id}`} /></span>
+                        )}
                       </td>
                       <td className="text-right tabular-nums font-semibold">{formatCurrency(d.nominal)}</td>
                       <td className="text-right tabular-nums">{Number(d.biaya) > 0 ? formatCurrency(d.biaya) : "—"}</td>
