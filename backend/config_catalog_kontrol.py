@@ -164,8 +164,9 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     # Kas & Bank 2 (C6) — rute kas manual memutuskan "jadi pengajuan" (`butuh_orang_kedua`); Setujui menolak pengaju.
     "kas_keluar_manual": ("routers/cash.py:create_cash_transaction",
                           "services/cash_out_request_service.py:setujui"),
-    # Kas & Bank 3 (C3, Tugas 3) — Setujui selisih opname kas menolak penghitungnya (juga Admin, bawaan admin-tetap).
-    "selisih_kas": ("services/cash_count_service.py:setujui",),
+    # Kas & Bank 3 (C3, Tugas 3) — Setujui dan Tolak selisih opname kas menolak penghitungnya (juga Admin, bawaan
+    # admin-tetap).
+    "selisih_kas": ("services/cash_count_service.py:setujui", "services/cash_count_service.py:tolak"),
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())

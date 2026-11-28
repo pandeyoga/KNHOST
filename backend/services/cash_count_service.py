@@ -23,7 +23,9 @@ Rancangan: `docs/superpowers/specs/2026-11-28-kas-bank-3-kasir-dana-tetap-opname
   (rekening sama, dihitung sesudahnya, belum ditolak) tidak bisa disetujui — selisih rekening diputus dari opname terbaru.
   Pembuat kas = penghitung, penyetuju di `disetujui_oleh`.
 * **Tolak** (`cash.approve`, alasan ≥ 5 huruf) → `ditolak`, tanpa kas; penghitung menghitung ulang (opname baru).
-  Penghitung boleh menolak hitungannya sendiri (tidak menggerakkan uang).
+  Kontrol `kontrol.selisih_kas` yang sama dengan Setujui (perbaikan putaran 1, ketetapan pengendali): penghitung — Admin
+  juga — tidak menolak hitungannya sendiri, supaya selisih yang ia temukan tidak hilang dari antrean sebelum orang lain
+  memutusnya. Salah hitung → orang kedua menolak beralasan, lalu penghitung menghitung ulang.
 * **Pengingat** (`jatuh_tempo`, antrean Meja Keuangan `opname_kas_jatuh_tempo`) — rekening tunai yang opname
   terakhirnya (selesai/menunggu/disetujui) lebih lama dari `kas.opname_*_hari` (`bank_service.hari_opname`), dihitung
   sejak fitur aktif (penanda sekali tulis `PENANDA_AKTIF`, pola F1) dan hanya rekening yang punya kas sesudah itu.
@@ -76,6 +78,10 @@ PESAN_ALASAN_TOLAK = f"Alasan penolakan wajib diisi (minimal {ALASAN_MIN} huruf)
 PESAN_ORANG_KEDUA = ("Selisih opname kas ini harus diputuskan orang lain: Anda yang menghitungnya. Minta rekan yang "
                      "berizin menyetujui kas memutuskannya. Admin dapat mengubah aturan ini di Pengaturan › "
                      "Persetujuan › Kontrol dua orang.")
+#: Perbaikan putaran 1 — Tolak juga diputus orang lain (selisih tidak bisa ditarik penghitungnya sendiri).
+PESAN_TOLAK_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang "
+                       "berizin menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan "
+                       "ini di Pengaturan › Persetujuan › Kontrol dua orang.")
 _KATA_AKSI = {"setujui": "disetujui", "tolak": "ditolak"}
 
 
@@ -172,6 +178,8 @@ async def _kontrol(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]
     out = await dual_control.periksa("selisih_kas", doc, actor, doc.get("entity_id") or "", pengaju=_penghitung(doc))
     if out.get("ditolak"):
         out["pesan"] = PESAN_ORANG_KEDUA
+    # Tombol Tolak nonaktif untuk penghitung dengan kalimat yang sama dengan penolakan server (`tolak`).
+    out["tolak_pesan"] = PESAN_TOLAK_SENDIRI if out.get("ditolak") else ""
     return out
 
 
@@ -525,15 +533,23 @@ async def _tolak_bila_kas_terbit(doc: Dict[str, Any]) -> None:
 
 
 async def tolak(count_id: str, alasan: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    """`POST /api/cash-counts/{id}/reject` — alasan ≥ 5 huruf; tanpa kas. PERIKSA (belum ada kas) → KLAIM status
-    menunggu → kas dibaca ulang SESUDAH klaim → selesai."""
+    """`POST /api/cash-counts/{id}/reject` — alasan ≥ 5 huruf; tanpa kas; bukan penghitung (kontrol `selisih_kas`, sama
+    dengan Setujui). PERIKSA (belum ada kas) → KLAIM status menunggu → kas dibaca ulang SESUDAH klaim → selesai."""
     from services import atomic_claim as _saga
+    from services import dual_control
     teks = (alasan or "").strip()
     if len(teks) < ALASAN_MIN:
         raise _galat(400, PESAN_ALASAN_TOLAK)
     doc = await _ambil(count_id)
     if doc.get("status") != MENUNGGU:
         raise _galat(409, _pesan_status(doc, "tolak"))
+    try:
+        await dual_control.tolak_bila_pelaku_sama("selisih_kas", doc, actor, doc.get("entity_id") or "",
+                                                  pengaju=_penghitung(doc))
+    except HTTPException as exc:
+        if exc.status_code == 403:
+            raise _galat(403, PESAN_TOLAK_SENDIRI) from exc
+        raise
     await _tolak_bila_kas_terbit(doc)
     lk = await _klaim(doc, "tolak", "cash_count_reject", actor)
     token = (lk.get(_saga.LOCK) or {}).get("token", "")
