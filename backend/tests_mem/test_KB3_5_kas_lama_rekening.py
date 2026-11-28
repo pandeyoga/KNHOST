@@ -5,10 +5,11 @@ Masalah (data acuan PT KSC): kas lama tanpa `account_id` dihitung ke rekening ya
 untuk jenis kasnya (`bank_service._txns_for` + `sole_account_id`). Begitu rekening kas kecil kedua dibuat, kartu Kas Toko
 turun Rp 7.750.000 (akun 1-1110 tetap), opname memotret saldo tergeser, usulan isi ulang dana tetap naik.
 
-Perbaikan: sebelum rekening kedua sejenis aktif (dibuat langsung / lewat persetujuan dua orang, diaktifkan kembali, jenis
-kasnya diubah, jenis kas diisi dari riwayat), kas lama itu DITETAPKAN ke rekening tunggal yang lama
-(`bank_service.tetapkan_kas_tanpa_rekening`) — tanpa jurnal. Keadaan ambigu yang sudah terlanjur (≥ 2 rekening + kas tanpa
-rekening) menahan opname & isi ulang dana tetap rekening jenis itu dengan 409 berkalimat.
+Perbaikan: sebelum rekening kedua sejenis aktif karena tindakan pengguna (dibuat langsung / lewat persetujuan dua orang,
+diaktifkan kembali, jenis kasnya diubah), kas lama itu DITETAPKAN ke rekening tunggal yang lama
+(`bank_service.tetapkan_kas_tanpa_rekening`) — tanpa jurnal. Tidak ada tulisan saat aplikasi menyala (pengisian jenis kas
+dari riwayat `backfill_cash_type` tidak menetapkan apa pun). Keadaan ambigu (≥ 2 rekening + kas tanpa rekening) menahan
+opname & isi ulang dana tetap rekening jenis itu dengan 409 berkalimat.
 
 Persiapan (FIXTURE kecuali disebut ALUR): PT uji per uji (`pt_uji`), pengguna Admin/Manajer PT itu (`akun` + `sesi`).
 Rekening lewat ALUR `POST /api/bank-accounts`; kas ber-rekening lewat pintu kas `cash_ledger.create_cash` (ALUR layanan);
@@ -117,7 +118,7 @@ async def _acuan(klien, db, akun, sesi, awal: str, *, kas_besar: bool = True) ->
                                         opening_balance=100_000_000))["id"]
     pt["rek"]["TOKO"] = (await _rekening(klien, pt["h"], eid, f"Kas Toko {pt['kode']}", opening_balance=AWAL_TOKO,
                                          dana_tetap=DANA))["id"]
-    await _kas_berekening(eid, pt["rek"]["TOKO"], "in", 400_000)
+    pt["berekening"] = await _kas(db, (await _kas_berekening(eid, pt["rek"]["TOKO"], "in", 400_000))["id"])
     pt["lama"] = await _kas_lama_toko(db, eid)
     pt["batal"] = await _kas_lama(db, eid, KK, "in", 999_000, status="void", jurnal=False)
     if kas_besar:
@@ -206,7 +207,9 @@ async def test_KB3_5_U1_rekening_kedua_dibuat_langsung_kas_lama_tetap(klien, db,
     assert (sesudah[toko], sesudah[baru["id"]], sesudah[pt["rek"]["BCA"]]) == (KAS_TOKO, 0.0, 200_000_000.0)
     await _periksa_ditetapkan(db, pt, pt["lama"], alasan=(
         f"Rekening kas kecil kedua Kas Kecil Gudang {pt['kode']} dibuat — kas lama tanpa rekening tetap di {nama_toko}"))
-    # Kendali: kas batal, kas jenis lain, kas PT lain tidak tersentuh.
+    # Kendali: kas yang SUDAH ber-rekening (+400.000 Kas Toko), kas batal, kas jenis lain, kas PT lain tidak tersentuh.
+    assert await _kas(db, pt["berekening"]["id"]) == pt["berekening"] and pt["berekening"]["account_id"] == toko
+    assert "rekening_ditetapkan" not in pt["berekening"]
     assert await _kas(db, pt["batal"]["id"]) == pt["batal"]
     assert await _kas(db, pt["lama_kb"]["id"]) == pt["lama_kb"]
     assert await _kas(db, kas_lain["id"]) == kas_lain
@@ -321,6 +324,34 @@ async def test_KB3_5_U4_jenis_kas_diubah_ke_kas_kecil(klien, db, akun, sesi):
         f"rekening tetap di {nama_toko}"))
 
 
+async def test_KB3_5_U4b_jenis_kas_diubah_lewat_persetujuan(klien, db, akun, sesi):
+    pt = await _pt(akun, sesi, "KB35JP")
+    eid = pt["id"]
+    pt["rek"]["TOKO"] = (await _rekening(klien, pt["h"], eid, f"Kas Toko {pt['kode']}", opening_balance=AWAL_TOKO))["id"]
+    besar = await _rekening(klien, pt["h"], eid, f"Kas Besar Toko {pt['kode']}", "kas_besar")
+    await _kas_berekening(eid, pt["rek"]["TOKO"], "in", 400_000)
+    pt["lama"] = await _kas_lama_toko(db, eid)
+    toko, nama_toko = pt["rek"]["TOKO"], f"Kas Toko {pt['kode']}"
+    await _dua_orang(eid, "2")
+    r = await klien.patch(f"/api/bank-accounts/{besar['id']}", headers=pt["hm"], json={"cash_type": KK})
+    assert r.status_code == 202, r.text
+    for lama in pt["lama"]:                                                    # diajukan saja: belum ada tulisan
+        assert await _kas(db, lama["id"]) == lama
+    r = await klien.post(f"/api/bank-account-changes/{r.json()['change']['id']}/decision", headers=pt["h"],
+                         json={"decision": "approve", "note": "uji KB3-5"})
+    assert r.status_code == 200, r.text
+    assert r.json()["kas_lama_ditetapkan"] == {
+        "jumlah": 3, "bersih": BERSIH, "rekening_id": toko, "rekening_nama": nama_toko,
+        "pesan": _pesan_ditetapkan(3, "Rp 7.750.000", nama_toko)}, r.text
+    assert r.json()["account"]["cash_type"] == KK
+    sesudah = await _saldo(klien, pt)
+    assert (sesudah[toko], sesudah[besar["id"]]) == (KAS_TOKO, 0.0)
+    await _periksa_ditetapkan(db, pt, pt["lama"], alasan=(
+        f"Rekening kas kecil kedua Kas Besar Toko {pt['kode']} terbentuk karena jenis kasnya diubah — kas lama tanpa "
+        f"rekening tetap di {nama_toko}"))
+    await _dua_orang(eid, "1")
+
+
 # ═══ U5 — tanpa kas lama: tidak ada tulisan; rekening pertama sejenis tidak menetapkan apa pun ══════════════════════
 async def test_KB3_5_U5_tanpa_kas_lama_tidak_ada_tulisan(klien, db, akun, sesi):
     pt = await _pt(akun, sesi, "KB35T")
@@ -398,7 +429,7 @@ async def test_KB3_5_U7_mode_per_rekening_kas_pra_penanda_tidak_ditetapkan(klien
     nama_toko = f"Kas Toko {pt['kode']}"
     assert kedua["kas_lama_ditetapkan"] == {
         "jumlah": 1, "bersih": -300_000.0, "rekening_id": toko, "rekening_nama": nama_toko,
-        "pesan": _pesan_ditetapkan(1, "-Rp 300.000", nama_toko)}, kedua
+        "pesan": _pesan_ditetapkan(1, "keluar Rp 300.000", nama_toko)}, kedua
     assert kedua["kas_lama_tertinggal"] == {
         "jumlah": 2, "bersih": 1_500_000.0,
         "pesan": (f"2 kas lama tanpa rekening (bersih Rp 1.500.000) tidak bisa ditetapkan otomatis ke {nama_toko}: "
@@ -441,7 +472,8 @@ async def test_KB3_5_U8_keadaan_ambigu_opname_dan_isi_ulang_ditahan(klien, db, a
     r = await klien.get(f"/api/kas-kecil/dana-tetap/{toko}", headers=pt["h"])
     assert r.status_code == 200, r.text
     pos = r.json()
-    assert (pos["bisa_isi_ulang"], pos["alasan_isi_ulang"], pos["saldo_buku"]) == (False, pesan, 25_000_000.0), pos
+    assert (pos["bisa_isi_ulang"], pos["alasan_isi_ulang"], pos["alasan_kode"], pos["saldo_buku"]) == (
+        False, pesan, "saldo_belum_pasti", 25_000_000.0), pos
     r = await klien.post(f"/api/kas-kecil/dana-tetap/{toko}/isi-ulang", headers=pt["h"],
                          json={"sumber_account_id": bca})
     assert r.status_code == 409 and r.json()["detail"] == pesan, r.text
@@ -500,13 +532,18 @@ async def test_KB3_5_U11_rekening_bank_kedua(klien, db, akun, sesi):
         assert await _kas(db, lama["id"]) == lama
 
 
-# ═══ U12 — jenis kas rekening lama diisi dari riwayat (proses awal) membentuk rekening kas besar kedua ═══════════════
-async def test_KB3_5_U12_isi_jenis_kas_dari_riwayat(klien, db, akun, sesi):
+# ═══ U12 — jenis kas rekening lama diisi dari riwayat (proses awal): TIDAK menulis kas; keadaan ambigu → opname 409 ════
+async def test_KB3_5_U12_isi_jenis_kas_dari_riwayat_tanpa_tulisan(klien, db, akun, sesi):
+    """Tinjauan putaran 1 (Important 1) — `backfill_cash_type` berjalan saat aplikasi menyala; penetapan kas lama hanya
+    saat pengguna membuat / mengaktifkan / mengubah rekening. Bila pengisian jenis kas membentuk rekening kas besar kedua,
+    kas lama kas besar tanpa rekening dibiarkan dan penjaga saldo belum pasti menahan opname rekening tunai kas besar.
+    Hitung tangan: BCA saldo awal 1.000.000; kas lama kas besar −3.000.000 → sebelum: BCA tunggal = −2.000.000; sesudah:
+    BCA 1.000.000, kas lama tidak ikut rekening mana pun (bersih keluar Rp 3.000.000)."""
     from services import bank_service as bs
     pt = await _pt(akun, sesi, "KB35H")
     eid = pt["id"]
     bca = (await _rekening(klien, pt["h"], eid, f"BCA {pt['kode']}", "bank", opening_balance=1_000_000))["id"]
-    lama_kb = await _kas_lama(db, eid, "kas_besar", "in", 3_000_000)
+    lama_kb = await _kas_lama(db, eid, "kas_besar", "out", 3_000_000)
     rid = f"bank_lama_{uuid.uuid4().hex[:8]}"                                  # rekening tunai lama tanpa jenis kas
     await db.bank_accounts.insert_one({"id": rid, "name": f"Kas Lama {pt['kode']}", "account_type": "cash",
                                        "entity_id": eid, "opening_balance": 0, "is_active": True,
@@ -516,12 +553,18 @@ async def test_KB3_5_U12_isi_jenis_kas_dari_riwayat(klien, db, akun, sesi):
                                                "account_id": rid, "cash_type": "kas_besar", "direction": "in",
                                                "amount": 1.0, "status": "posted", "created_at": now_iso()})
     pt["rek"]["BCA"] = bca
-    assert (await _saldo(klien, pt))[bca] == 4_000_000.0
+    assert (await _saldo(klien, pt))[bca] == -2_000_000.0
+    kas_sebelum = await db.cash_transactions.find({"entity_id": eid}, {"_id": 0}).sort("id", 1).to_list(None)
+    jejak = await db.audit_logs.count_documents({"action": "kas_lama_rekening_ditetapkan"})
     assert await bs.backfill_cash_type() >= 1
     assert (await db.bank_accounts.find_one({"id": rid}))["cash_type"] == "kas_besar"
-    t = await _kas(db, lama_kb["id"])
-    assert t["account_id"] == bca and t["rekening_ditetapkan"]["oleh"] == "Sistem", t
-    assert (await _saldo(klien, pt))[bca] == 4_000_000.0
+    assert await db.cash_transactions.find({"entity_id": eid}, {"_id": 0}).sort("id", 1).to_list(None) == kas_sebelum
+    assert await db.audit_logs.count_documents({"action": "kas_lama_rekening_ditetapkan"}) == jejak
+    assert await _kas(db, lama_kb["id"]) == lama_kb
+    assert (await _saldo(klien, pt))[bca] == 1_000_000.0
+    r = await klien.post("/api/cash-counts", headers=pt["h"], json={"account_id": rid, "jumlah_fisik": 2})
+    assert r.status_code == 409 and r.json()["detail"] == _pesan_belum_pasti(
+        "kas besar", pt["nama"], 1, "keluar Rp 3.000.000", 2), r.text
 
 
 # ═══ U13 — pencairan panjar lama tanpa rekening yang masih terbuka ikut ditetapkan: saldo tetap, panjar ikut rekening ══

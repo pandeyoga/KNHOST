@@ -54,10 +54,10 @@ async def backfill_cash_type() -> int:
             src = "backfill_history"
         else:
             ct, src = account_cash_type(acc), "backfill_account_type"
-        if _aktif(acc) and ct != account_cash_type(acc):
-            # Temuan tangkapan A (R7) — jenis kas dari riwayat bisa membuat rekening aktif KEDUA jenis itu.
-            await tetapkan_kas_tanpa_rekening(acc.get("entity_id") or "", ct, None, rekening_baru=acc.get("name") or "",
-                                              peristiwa="terbentuk karena jenis kasnya diisi dari riwayat transaksi")
+        # Temuan tangkapan A (putaran 1, Important 1): proses awal TIDAK menetapkan kas lama tanpa rekening
+        # (penetapan hanya saat pengguna membuat / mengaktifkan / mengubah rekening). Bila jenis kas dari riwayat
+        # membentuk rekening aktif kedua sejenis, `pesan_saldo_belum_pasti` menahan opname & isi ulang jenis itu
+        # (kueri VPS butir 6).
         res = await db.bank_accounts.update_one(
             {"id": acc["id"], "cash_type": {"$nin": list(CASH_TYPES)}},
             {"$set": {"cash_type": ct, "cash_type_source": src}})
@@ -194,14 +194,17 @@ async def sole_account_id(entity_id: str, cash_type: str) -> str:
 # ─── Kas & Bank 3 — temuan tangkapan A (ketetapan pengendali R7): kas lama tanpa rekening tidak bergeser ──────────────
 #: Label jenis kas di kalimat penetapan / saldo belum pasti.
 LABEL_JENIS_KAS = {"kas_kecil": "kas kecil", "kas_kasir": "kas kasir", "kas_besar": "kas besar"}
-#: Kas tanpa rekening: `account_id` tidak ada, None, atau kosong.
-_TANPA_REKENING = ({"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}})
-#: Pelaku penetapan dari proses awal (`backfill_cash_type`).
+#: Kas tanpa rekening: `account_id` tidak ada, None, atau kosong. SATU ejaan untuk saldo rekening tunggal (`_txns_for`),
+#: penetapan, penjelas selisih posisi (`unlinked_transactions`), dan pindah saldo (`cash_account_cutover_service`).
+TANPA_REKENING = ({"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}})
+#: Pelaku penetapan bila pemanggil tidak memberi aktor (pemanggil layanan langsung).
 AKTOR_SISTEM = {"id": "system", "name": "Sistem"}
 
 
-def _q_kas_tanpa_rekening(entity_id: str, cash_type: str) -> Dict[str, Any]:
-    return {"entity_id": entity_id, "cash_type": cash_type, "status": {"$ne": "void"}, "$or": list(_TANPA_REKENING)}
+def saring_kas_tanpa_rekening(entity_id: str, cash_type: str) -> Dict[str, Any]:
+    """Saringan kas tidak-batal tanpa rekening milik PT `entity_id` berjenis kas `cash_type` — kas yang ikut saldo
+    rekening tunggal jenis itu (`_txns_for`) dan yang ditetapkan `tetapkan_kas_tanpa_rekening` (harus sama persis)."""
+    return {"entity_id": entity_id, "cash_type": cash_type, "status": {"$ne": "void"}, "$or": list(TANPA_REKENING)}
 
 
 async def kas_tanpa_rekening(entity_id: str, cash_type: str) -> List[Dict[str, Any]]:
@@ -210,7 +213,7 @@ async def kas_tanpa_rekening(entity_id: str, cash_type: str) -> List[Dict[str, A
     if not entity_id or cash_type not in CASH_TYPES:
         return []
     return [t async for t in db.cash_transactions.find(
-        _q_kas_tanpa_rekening(entity_id, cash_type),
+        saring_kas_tanpa_rekening(entity_id, cash_type),
         {"_id": 0, "id": 1, "amount": 1, "direction": 1, "created_at": 1, "gl_posted": 1})]
 
 
@@ -218,6 +221,12 @@ def _bersih(rows: List[Dict[str, Any]]) -> float:
     """Σ masuk − Σ keluar (dihitung dalam sen)."""
     from core_utils import from_cents, to_cents
     return from_cents(sum(to_cents(t.get("amount")) * (1 if t.get("direction") == "in" else -1) for t in rows))
+
+
+def _frasa_bersih(nilai: float) -> str:
+    """Kalimat awam nilai bersih: "bersih Rp 7.750.000"; negatif → "bersih keluar Rp 300.000" (bukan "-Rp")."""
+    from core_utils import rupiah
+    return f"bersih keluar {rupiah(-nilai)}" if nilai < 0 else f"bersih {rupiah(nilai)}"
 
 
 async def _pembalik_tetap(entity_id: str, rows: List[Dict[str, Any]]) -> tuple:
@@ -232,22 +241,22 @@ async def _pembalik_tetap(entity_id: str, rows: List[Dict[str, Any]]) -> tuple:
     sejak = await _mode.aktif_sejak(entity_id)
     if not sejak:
         return rows, []
-    aman, tinggal = [], []
-    for t in rows:
-        ok = (t.get("created_at") or "") >= sejak and (t.get("gl_posted") is True or bool(
-            await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": t["id"],
-                                               "status": {"$ne": "void"}, "created_at": {"$gte": sejak}},
-                                              {"_id": 0, "id": 1})))
-        (aman if ok else tinggal).append(t)
-    return aman, tinggal
+    pasca = [t for t in rows if (t.get("created_at") or "") >= sejak]
+    cari = [t["id"] for t in pasca if t.get("gl_posted") is not True]
+    berjurnal = {j["source_id"] async for j in db.journal_entries.find(
+        {"source_type": "cash_transaction", "source_id": {"$in": cari}, "status": {"$ne": "void"},
+         "created_at": {"$gte": sejak}}, {"_id": 0, "source_id": 1})} if cari else set()
+    aman_ids = {t["id"] for t in pasca if t.get("gl_posted") is True or t["id"] in berjurnal}
+    return [t for t in rows if t["id"] in aman_ids], [t for t in rows if t["id"] not in aman_ids]
 
 
 async def tetapkan_kas_tanpa_rekening(entity_id: str, cash_type: str, actor: Optional[Dict[str, Any]], *,
                                       rekening_baru: str, peristiwa: str = "dibuat") -> Dict[str, Any]:
     """Penetapan kas lama — dipanggil SEBELUM sebuah rekening menjadi rekening aktif KEDUA berjenis kas `cash_type` di PT
-    `entity_id` (rekening dibuat — langsung / lewat persetujuan dua orang; diaktifkan kembali; jenis kasnya diubah atau
-    diisi dari riwayat). Selama PT punya tepat satu rekening aktif R jenis itu, kas tidak-batal tanpa rekening jenis itu
-    ikut saldo R (`_txns_for`); begitu rekening kedua aktif, kas itu tidak ikut rekening mana pun dan kartu R bergeser.
+    `entity_id` karena tindakan pengguna (rekening dibuat — langsung / lewat persetujuan dua orang; diaktifkan kembali;
+    jenis kasnya diubah). Tidak pernah dari proses awal (`backfill_cash_type`). Selama PT punya tepat satu rekening aktif
+    R jenis itu, kas tidak-batal tanpa rekening jenis itu ikut saldo R (`_txns_for`); begitu rekening kedua aktif, kas
+    itu tidak ikut rekening mana pun dan kartu R bergeser.
     Maka kas itu ditetapkan ke R: hanya `account_id` + jejak `rekening_ditetapkan` ({id, pada, oleh, oleh_id, alasan}).
     TANPA jurnal, nominal/tanggal/status/kode akun tetap — saldo R, buku besar, dan pembatalan kas itu sama dengan
     sebelumnya (kecuali kas yang tidak aman di PT mode akun per rekening — `_pembalik_tetap` — yang dibiarkan; keadaan
@@ -276,7 +285,7 @@ async def tetapkan_kas_tanpa_rekening(entity_id: str, cash_type: str, actor: Opt
              "alasan": alasan}
     if aman:
         await db.cash_transactions.update_many(
-            {**_q_kas_tanpa_rekening(entity_id, cash_type), "id": {"$in": [t["id"] for t in aman]}},
+            {**saring_kas_tanpa_rekening(entity_id, cash_type), "id": {"$in": [t["id"] for t in aman]}},
             {"$set": {"account_id": sole, "rekening_ditetapkan": jejak, "updated_at": now_iso()}})
     # Yang benar-benar ditulis panggilan INI (pembuatan bersamaan yang kalah menulis 0).
     ditulis = [t async for t in db.cash_transactions.find(
@@ -302,21 +311,20 @@ async def jawaban_penetapan(hasil: Dict[str, Any], entity_id: str, cash_type: st
     """Bidang jawaban API pembuatan/perubahan rekening yang memicu penetapan: `kas_lama_ditetapkan` {jumlah, bersih,
     rekening_id, rekening_nama, pesan} dan (PT mode akun per rekening) `kas_lama_tertinggal` {jumlah, bersih, pesan}.
     Kosong bila tidak ada yang ditetapkan / tertinggal."""
-    from core_utils import rupiah
     out: Dict[str, Any] = {}
     nama = hasil.get("rekening_nama") or ""
     if hasil.get("jumlah"):
         out["kas_lama_ditetapkan"] = {
             "jumlah": hasil["jumlah"], "bersih": hasil["bersih"], "rekening_id": hasil["account_id"],
             "rekening_nama": nama,
-            "pesan": (f"{hasil['jumlah']} kas lama tanpa rekening (bersih {rupiah(hasil['bersih'])}) ditetapkan ke "
+            "pesan": (f"{hasil['jumlah']} kas lama tanpa rekening ({_frasa_bersih(hasil['bersih'])}) ditetapkan ke "
                       f"{nama} supaya saldonya tidak bergeser.")}
     t = hasil.get("tertinggal") or {}
     if t.get("jumlah"):
         pt = await _nama_pt_kas(entity_id)
         out["kas_lama_tertinggal"] = {
             "jumlah": t["jumlah"], "bersih": t["bersih"],
-            "pesan": (f"{t['jumlah']} kas lama tanpa rekening (bersih {rupiah(t['bersih'])}) tidak bisa ditetapkan "
+            "pesan": (f"{t['jumlah']} kas lama tanpa rekening ({_frasa_bersih(t['bersih'])}) tidak bisa ditetapkan "
                       f"otomatis ke {nama}: {pt} sudah memakai akun buku besar per rekening, sedangkan jurnal kas itu "
                       f"milik akun kas lama. Opname dan isi ulang rekening {LABEL_JENIS_KAS.get(cash_type, cash_type)} "
                       f"{pt} ditahan sampai admin menetapkan rekening kas lama itu.")}
@@ -328,7 +336,6 @@ async def pesan_saldo_belum_pasti(entity_id: str, cash_type: str) -> str:
     `cash_type` DAN kas tidak-batal tanpa rekening jenis itu — kas itu tidak ikut rekening mana pun, jadi saldo buku
     rekening jenis itu belum pasti. → kalimat penolakan (opname `cash_count_service.buat`, isi ulang dana tetap
     `petty_float_service`), atau "" bila pasti. Tidak ada perbaikan otomatis (pemilik memutuskan)."""
-    from core_utils import rupiah
     ids = await _rekening_aktif_jenis(entity_id, cash_type)
     if len(ids) < 2:
         return ""
@@ -337,8 +344,8 @@ async def pesan_saldo_belum_pasti(entity_id: str, cash_type: str) -> str:
         return ""
     jenis = LABEL_JENIS_KAS.get(cash_type, cash_type)
     return (f"Saldo buku rekening {jenis} {await _nama_pt_kas(entity_id)} belum pasti: {len(rows)} kas lama tanpa "
-            f"rekening (bersih {rupiah(_bersih(rows))}) tidak ikut rekening mana pun karena PT punya {len(ids)} rekening "
-            f"{jenis}. Minta admin menetapkan rekening kas lama itu dulu.")
+            f"rekening ({_frasa_bersih(_bersih(rows))}) tidak ikut rekening mana pun karena PT punya {len(ids)} "
+            f"rekening {jenis}. Minta admin menetapkan rekening kas lama itu dulu.")
 
 
 async def _txns_for(account_id: str) -> List[Dict[str, Any]]:
@@ -350,9 +357,9 @@ async def _txns_for(account_id: str) -> List[Dict[str, Any]]:
     q: Dict[str, Any] = {"account_id": account_id, "status": {"$ne": "void"}}
     ct = account_cash_type(acc) if acc else ""
     if acc and await sole_account_id(acc.get("entity_id") or "", ct) == account_id:
+        # Saringan kas tanpa rekening = saringan penetapan (`saring_kas_tanpa_rekening`) — tidak boleh menyimpang.
         q = {"status": {"$ne": "void"}, "$or": [
-            {"account_id": account_id},
-            {"account_id": {"$in": [None, ""]}, "entity_id": acc.get("entity_id"), "cash_type": ct}]}
+            {"account_id": account_id}, saring_kas_tanpa_rekening(acc.get("entity_id") or "", ct)]}
     return await db.cash_transactions.find(q, {"_id": 0}).sort("txn_date", -1).to_list(None)   # W2-021 — SELURUH mutasi
 
 
@@ -528,8 +535,7 @@ async def unlinked_transactions(entity_ids: List[str]) -> Dict[str, Any]:
     if not entity_ids:
         return out
     sole: Dict[Any, str] = {}
-    q = {"entity_id": {"$in": list(entity_ids)}, "status": {"$ne": "void"},
-         "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]}
+    q = {"entity_id": {"$in": list(entity_ids)}, "status": {"$ne": "void"}, "$or": list(TANPA_REKENING)}
     async for t in db.cash_transactions.find(q, {"_id": 0, "entity_id": 1, "cash_type": 1, "amount": 1,
                                                  "direction": 1}):
         key = (t.get("entity_id") or "", t.get("cash_type") or "")
