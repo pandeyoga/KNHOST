@@ -58,7 +58,7 @@ Temuan nyata yang tertangkap sebelum gabung:
 | Mode | FAIL (garis dasar) | Lebih merah | Pelanggaran baru (per pelanggaran) |
 |---|---|---|---|
 | `--ci` (`ddb962b`) | 36 (43) | 2 POC bawaan (sama dengan Kas & Bank 1, F1) | **0** |
-| `--quick` (pohon akhir) | ⟨GQ⟩ | ⟨GQ2⟩ | ⟨GQ3⟩ |
+| `--quick` (pohon akhir `82b9f02`, data acuan) | 10 (16) | 0 | **0** |
 
 ## 4. Keputusan pelaksanaan (periksa)
 
