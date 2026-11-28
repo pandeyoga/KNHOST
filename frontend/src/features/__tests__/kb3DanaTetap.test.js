@@ -15,6 +15,8 @@ import BankAccountChangesPanel from "../finance/BankAccountChangesPanel";
 import BankAccountsView from "../finance/BankAccountsView";
 import PettyCashView from "../pettycash/PettyCashView";
 import IsiUlangModal from "../pettycash/IsiUlangModal";
+import CashAdvanceDetail from "../pettycash/CashAdvanceDetail";
+import SettlementDetail from "../pettycash/SettlementDetail";
 import FundTransferPreview from "../documents/preview/bodies/FundTransferPreview";
 import { alasanJenisKasTerkunci, bolehIsiUlang, jenisKasRekening, labelJenisKas } from "../finance/jenisKas";
 import { ViewPresetProvider } from "../../context/ViewPresetContext";
@@ -548,6 +550,38 @@ describe("Kas Kecil — tab Dana tetap", () => {
     expect(q(host, "pc-bagian")).toBeNull();
     expect(q(host, "pc-title")).not.toBeNull();
     expect(gets("/kas-kecil/dana-tetap")).toHaveLength(0);
+  });
+
+  // Gate pohon akhir (sapuan peran `audit_sales_roles_ux`, sales & sales_admin): Kas Kecil bisa dibuka peran ber-izin PD/LPJ
+  // TANPA `cash.view` — rute `/kas-kecil/dana-tetap` dan `/bank-accounts` sama-sama menuntut `cash.view`, jadi layar tidak
+  // boleh memanggilnya untuk peran itu (403 tanpa penjelasan = panel mati).
+  test("peran PD/LPJ tanpa cash.view (pola sales/sales_admin): tidak pernah memanggil /kas-kecil/dana-tetap atau /bank-accounts", async () => {
+    const SALES = { cash_advance: ["view", "create", "update", "submit"], cash_settlement: ["view", "create", "update", "submit"] };
+    const user = { id: "usr_sales", role: "sales", permissions: SALES };
+    routeGet({ "/petty-cash/worklist": WL, "/expense-categories": [], "/kas-kecil/dana-tetap": DAFTAR, "/bank-accounts": [] });
+    // tautan langsung ke bagian Dana tetap pun tetap membuka Pengajuan dana (tanpa chip Dana tetap)
+    let host = await mount(
+      <ViewPresetProvider preset={{ view: "petty-cash", bagian: "dana-tetap", nonce: 9 }}>
+        <PettyCashView currentUser={user} selectedEntity="ent_ksc" entities={[]} />
+      </ViewPresetProvider>);
+    expect(q(host, "pc-bagian")).toBeNull();
+    expect(q(host, "pc-title")).not.toBeNull();
+    expect(gets("/petty-cash/worklist").length).toBeGreaterThan(0);
+    // pemanggil /bank-accounts di layar ini = pemilih rekening di aksi kas (Cairkan PD: `cash_advance.disburse`; terima
+    // sisa / bayar reimburse LPJ: `cash_settlement.pay`) — tidak ditawarkan untuk peran ini
+    host = await mount(<CashAdvanceDetail ca={{ id: "ca9", number: "PD-0009", status: "approved", entity_id: "ent_ksc",
+      total_amount: 500000, lines: [], approvals: [], created_by: "Sari" }} currentUser={user} entities={[]}
+    onEdit={() => {}} onChanged={() => {}} flash={() => {}} />);
+    expect(q(host, "ca-disburse-btn")).toBeNull();
+    host = await mount(<SettlementDetail stl={{ id: "stl9", number: "LPJ-0009", status: "approved", entity_id: "ent_ksc",
+      lines: [], attachments: [], sisa_dikembalikan: { status: "open", amount: 50000 },
+      hutang_reimburse: { status: "open", amount: 20000 } }} currentUser={user} entities={[]} catLabels={{}}
+    onChanged={() => {}} onEdit={() => {}} flash={() => {}} />);
+    expect(q(host, "stl-remainder-bar")).not.toBeNull();
+    expect(q(host, "stl-return-btn")).toBeNull();
+    expect(q(host, "stl-pay-reimburse-btn")).toBeNull();
+    expect(gets("/kas-kecil/dana-tetap")).toHaveLength(0);
+    expect(gets("/bank-accounts")).toHaveLength(0);
   });
 
   test("posisi per rekening: dana tetap, saldo buku, panjar, usulan; isi ulang terbuka bertautan PDN; tombol mati beralasan", async () => {
