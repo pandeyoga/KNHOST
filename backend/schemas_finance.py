@@ -103,6 +103,12 @@ class CashCountReject(BaseModel):
     alasan: str = ""
 
 
+class CashCountCancel(BaseModel):
+    """Kas & Bank 3 (tinjauan akhir Important 2) — batalkan opname `disetujui` (alasan wajib ≥ 5 huruf, diperiksa
+    layanan): kas penyesuaiannya dibalik; rekening dihitung ulang."""
+    alasan: str = ""
+
+
 class FundTransferCreate(BaseModel):
     """Kas & Bank 1 (Tugas 4) — Pindah Dana antar dua rekening satu PT. Tanggal `YYYY-MM-DD` (kosong = hari ini);
     `tanggal_terima` kosong atau sama dengan `tanggal_kirim` = sekali jalan, lebih besar = dua tahap (dalam perjalanan).

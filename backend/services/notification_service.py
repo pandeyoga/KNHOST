@@ -485,11 +485,12 @@ async def notify_kas_keluar_diputus(req: Dict[str, Any], *, hasil: str, oleh: Di
 
 
 #: Kas & Bank 3 (C3) — opname kas (`cash_counts`). Dokumen: `cash_count`, id = awalan `ref` (menunggu: `ref = <id>#<penerima>`;
-#: diputus: `ref = <id>:<status>#<penerima>`).
+#: diputus: `ref = <id>:<disetujui|ditolak|dibatalkan>#<penerima>`).
 OPNAME_MENUNGGU_TYPE = "opname_kas_menunggu"
 OPNAME_DIPUTUS_TYPE = "opname_kas_diputus"
 OPNAME_LINK = "/?view=cash-counts"
-_OPNAME_HASIL = {"disetujui": "disetujui", "ditolak": "ditolak"}
+#: Tinjauan akhir KB3 Important 2 — putusan yang dibatalkan (Batal opname) juga diberitahukan ke penghitung.
+_OPNAME_HASIL = {"disetujui": "disetujui", "ditolak": "ditolak", "dibatalkan": "dibatalkan"}
 
 
 async def notify_opname_selisih_menunggu(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -510,24 +511,32 @@ async def notify_opname_selisih_menunggu(doc: Dict[str, Any]) -> List[Dict[str, 
 
 async def notify_opname_diputus(doc: Dict[str, Any], *, hasil: str, oleh: Dict[str, Any], alasan: str = "",
                                 kas_number: str = "") -> List[Dict[str, Any]]:
-    """KB-3 T3 (§5.3) — SATU penyusun `opname_kas_diputus`: selisih opname disetujui / ditolak → penghitung (satu orang).
-    Putusan oleh penghitung sendiri tidak memberi tahu dirinya. Ditolak membawa alasannya (hitung ulang)."""
+    """KB-3 T3 (§5.3) — SATU penyusun `opname_kas_diputus`: selisih opname disetujui / ditolak / dibatalkan (Batal
+    opname, tinjauan akhir) → penghitung (satu orang). Putusan oleh penghitung sendiri tidak memberi tahu dirinya.
+    Ditolak dan dibatalkan membawa alasannya (hitung ulang)."""
     penghitung = doc.get("penghitung") or {}
     uid = penghitung.get("id") or ""
     kata = _OPNAME_HASIL.get(hasil)
     if not uid or not kata or uid == (oleh or {}).get("id"):
         return []
     nomor = doc.get("number") or doc.get("id") or ""
-    body = (f"Selisih opname kas {nomor} ({_rupiah_aman(doc.get('selisih_nominal'))}) {kata} oleh "
-            f"{(oleh or {}).get('name') or '—'}.")
+    oleh_nama = (oleh or {}).get("name") or "—"
+    teks = (alasan or "").strip()
+    if hasil == "dibatalkan":
+        body = (f"Putusan selisih opname kas {nomor} ({_rupiah_aman(doc.get('selisih_nominal'))}) dibatalkan oleh "
+                f"{oleh_nama}." + (f" Alasan: {teks}." if teks else "")
+                + (f" Kas penyesuaian {kas_number} ikut dibatalkan." if kas_number else "")
+                + f" Hitung ulang {doc.get('account_name') or 'rekeningnya'}.")
+    else:
+        body = f"Selisih opname kas {nomor} ({_rupiah_aman(doc.get('selisih_nominal'))}) {kata} oleh {oleh_nama}."
     if hasil == "disetujui" and kas_number:
         body += f" Kas penyesuaian {kas_number} tercatat."
     if hasil == "ditolak":
-        body += (f" Alasan: {alasan.strip()}." if (alasan or "").strip() else "") + " Hitung ulang rekeningnya."
+        body += (f" Alasan: {teks}." if teks else "") + " Hitung ulang rekeningnya."
     return await create_addressed(
         also_users=(uid,), notif_type=OPNAME_DIPUTUS_TYPE, ref=f"{doc.get('id', '')}:{hasil}", dedupe_scope="ever",
         title=f"Opname kas {kata} — {nomor}", body=body[:400],
-        severity="warning" if hasil == "ditolak" else "info", link=OPNAME_LINK,
+        severity="info" if hasil == "disetujui" else "warning", link=OPNAME_LINK,
         entity_id=doc.get("entity_id") or None)
 
 

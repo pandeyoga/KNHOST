@@ -44,6 +44,10 @@ PESAN_ALASAN = "Alasan penolakan wajib diisi (minimal 5 huruf)."
 PESAN_TOLAK_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi tidak bisa Anda tolak sendiri. Minta rekan yang berizin "
                        "menyetujui kas menolaknya dengan alasan, lalu hitung ulang. Admin dapat mengubah aturan ini di "
                        "Pengaturan › Persetujuan › Kontrol dua orang.")
+PESAN_BATAL_SENDIRI = ("Opname kas ini Anda hitung sendiri, jadi pembatalannya harus dilakukan orang lain. Minta rekan "
+                       "yang berizin menyetujui kas membatalkannya dengan alasan. Admin dapat mengubah aturan ini di "
+                       "Pengaturan › Persetujuan › Kontrol dua orang.")
+PESAN_ALASAN_BATAL = "Alasan pembatalan wajib diisi (minimal 5 huruf)."
 SETUJU1 = {"id": "usr_kb33_setuju1", "name": "Dodi Penyetuju KB33", "role": "finance"}
 SETUJU2 = {"id": "usr_kb33_setuju2", "name": "Sari Penyetuju KB33", "role": "finance"}
 _urut = itertools.count(1)
@@ -572,7 +576,7 @@ async def test_KB3_3_U16_izin_daftar_dan_pemilih_karyawan(klien, db, akun, sesi,
     assert r.status_code == 200, r.text
     j = r.json()
     assert [x["id"] for x in j["items"]] == [d["id"]] and j["total"] == 1
-    assert {s["value"] for s in j["statuses"]} == {"selesai", "menunggu_persetujuan", "disetujui", "ditolak"}
+    assert {s["value"] for s in j["statuses"]} == {"selesai", "menunggu_persetujuan", "disetujui", "ditolak", "batal"}
     r = await klien.get(URL, headers=pt["o"]["lihat"]["h"], params={"account_id": pt["rek"]["KECIL"]})
     assert r.json()["items"] == []
     rinci = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["setuju"]["h"])).json()
@@ -597,10 +601,12 @@ def test_KB3_3_U17_kontrol_selisih_kas_terpasang():
     from config_catalog_kontrol import AKSI_BY_ID, _BELUM_DIPASANG
     assert "selisih_kas" not in _BELUM_DIPASANG
     assert AKSI_BY_ID["selisih_kas"]["titik"] == ("services/cash_count_service.py:setujui",
-                                                  "services/cash_count_service.py:tolak")
+                                                  "services/cash_count_service.py:tolak",
+                                                  "services/cash_count_service.py:batal")
     e = registry.require("kontrol.selisih_kas.min_orang")
     assert (e["status"], e["default"]) == ("active", "2")
-    assert {"services/cash_count_service.py:setujui", "services/cash_count_service.py:tolak"} <= set(e["consumers"])
+    assert {"services/cash_count_service.py:setujui", "services/cash_count_service.py:tolak",
+            "services/cash_count_service.py:batal"} <= set(e["consumers"])
 
 
 # ═══ 18. Persetujuan terhenti sesudah kas tercatat → Setujui ulang memakai kas yang sama; rekening nonaktif → 409 ═══
@@ -616,8 +622,14 @@ async def test_KB3_3_U18_setujui_ulang_dan_rekening_nonaktif(klien, db, akun, se
     r = await _putus(klien, pt, d["id"], status=409, perlakuan="piutang_karyawan", karyawan_id=pt["emp"]["id"])
     assert r["detail"].startswith(f"Kas penyesuaian {lama['number']} dari opname {d['number']} sudah tercatat dengan "
                                   "perlakuan selisih kas."), r
+    # Tinjauan akhir Important 2 — kalimatnya menunjuk aksi yang ADA (Batalkan opname), bukan Transaksi Kas (FN-07).
+    assert r["detail"].endswith(f"lalu pakai Batalkan opname {d['number']} di Opname Kas bila perlakuannya "
+                                "keliru."), r
+    assert "Transaksi Kas" not in r["detail"], r
     r = await _putus(klien, pt, d["id"], "reject", status=409, alasan="tolak saja")
-    assert "sudah tercatat" in r["detail"], r
+    assert r["detail"] == (f"Kas {lama['number']} dari opname {d['number']} sudah tercatat. Setujui ulang untuk "
+                           f"menuntaskan opname ini, lalu pakai Batalkan opname {d['number']} di Opname Kas bila "
+                           "perlu."), r
     j = await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
     assert (j["status"], j["cash_id"]) == ("disetujui", lama["id"])
     assert [t["id"] for t in await _kas_opname(db, d["id"])] == [lama["id"]]
@@ -655,3 +667,298 @@ async def test_KB3_3_U19_penghitung_tidak_menolak_sendiri(klien, db, akun, sesi,
     e = await _hitung(klien, pt, 490_000, rek="KECIL")
     j = await _putus(klien, pt, e["id"], "reject", siapa="hitung", alasan="salah hitung koin")
     assert j["status"] == "ditolak"
+
+
+# ═══ Tinjauan akhir Important 6 — uji wajib posting (`02_STANDAR` §1) untuk Setujui opname ═════════════════════════
+async def test_KB3_3_U20_akun_lawan_nonaktif_409_tanpa_kas(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Akun lawan `6-9200` (selisih kas) / `1-1290` (piutang karyawan) dinonaktifkan → 409 berkalimat dari PERIKSA
+    (`_periksa_terbit`), opname tetap menunggu tanpa kunci, tanpa kas dan tanpa jurnal. Diaktifkan lagi → Setujui
+    menerbitkan satu kas."""
+    from pembantu import aktifkan_akun, nonaktifkan_akun
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    a = await _hitung(klien, pt, 1_020_000)                                   # lebih 20.000
+    b = await _hitung(klien, pt, 480_000, rek="KECIL")                        # kurang 20.000
+    jurnal0 = await db.journal_entries.count_documents({"entity_id": pt["id"]})
+    for doc, kode, isi in ((a, SELISIH, {"perlakuan": "selisih_kas"}),
+                           (b, PIUTANG, {"perlakuan": "piutang_karyawan", "karyawan_id": pt["emp"]["id"]})):
+        await nonaktifkan_akun(pt["id"], kode)
+        try:
+            r = await _putus(klien, pt, doc["id"], status=409, **isi)
+        finally:
+            await aktifkan_akun(pt["id"], kode)
+        assert r["detail"].startswith(f"Jurnal selisih opname {doc['number']} belum bisa diterbitkan: "), r
+        assert kode in r["detail"] and r["detail"].endswith("Opname tetap menunggu."), r
+        segar = await db.cash_counts.find_one({"id": doc["id"]}, {"_id": 0})
+        assert (segar["status"], segar["terbit_error"], segar.get("saga_lock")) == ("menunggu_persetujuan", "", None)
+        assert await _kas_opname(db, doc["id"]) == []
+    assert await db.journal_entries.count_documents({"entity_id": pt["id"]}) == jurnal0
+    # Akun aktif lagi → kas terbit sekali
+    assert (await _putus(klien, pt, a["id"], perlakuan="selisih_kas"))["status"] == "disetujui"
+    j = await _putus(klien, pt, b["id"], perlakuan="piutang_karyawan", karyawan_id=pt["emp"]["id"])
+    assert j["status"] == "disetujui" and len(await _kas_opname(db, b["id"])) == 1
+
+
+async def test_KB3_3_U21_jurnal_gagal_posting_gagal_tanpa_kas_ganda(klien, db, akun, sesi, peran_tanpa_acuan,
+                                                                     paksa_jurnal_gagal, kepala_admin):
+    """Cabang `CashPostingError`: jurnal kas penyesuaian dipaksa gagal → kas TETAP tercatat (`gl_status: failed`,
+    tampil di Posting Gagal), opname `disetujui`; Setujui lagi 409 (tanpa kas ganda); ulang dari Posting Gagal → tepat
+    satu jurnal Dr 6-9200 / Cr kas kasir; ulang kedua tidak menjurnal lagi."""
+    from services import posting_registry as reg
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    d = await _hitung(klien, pt, 965_000)                                     # kurang 35.000
+    async with paksa_jurnal_gagal("sisip", entity_id=pt["id"], source_type="cash_transaction", kali=1) as gagal:
+        j = await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
+    assert len(gagal) == 1
+    assert (j["status"], j["kas"]["gl_status"], j["kas"]["journal_entry_id"]) == ("disetujui", "failed", ""), j
+    assert j["kas"]["gl_error"] and j["cash_id"] == j["kas"]["id"]
+    kas = await _kas_opname(db, d["id"])
+    assert len(kas) == 1 and kas[0]["gl_status"] == "failed"
+    assert await db.journal_entries.count_documents({"source_type": "cash_transaction",
+                                                     "source_id": kas[0]["id"]}) == 0
+    spec = reg.KINDS["cash_transaction"]
+    assert await db[spec["collection"]].count_documents({**spec["failed_query"], "id": kas[0]["id"]}) == 1
+    assert await _buku(pt["rek"]["KASIR"]) == 965_000.0                        # buku kas rekening sudah bergerak
+    r = await _putus(klien, pt, d["id"], siapa="setuju2", status=409, perlakuan="selisih_kas")
+    assert r["detail"] == f"Opname kas {d['number']} sudah disetujui, jadi tidak bisa disetujui lagi.", r
+    # Ulang dari Keuangan › Posting Gagal (rute) → satu jurnal yang benar
+    admin = {**kepala_admin, "X-Entity-Id": pt["id"]}
+    r = await klien.post(f"/api/finance/posting-failures/cash_transaction/{kas[0]['id']}/retry", headers=admin)
+    assert r.status_code == 200 and r.json()["gl_status"] == "posted", r.text
+    assert _set(await _jurnal(db, kas[0]["id"])) == {(SELISIH, 35_000.0, 0.0), (KAS_KASIR, 0.0, 35_000.0)}
+    rinci = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["lihat"]["h"])).json()
+    assert (rinci["kas"]["gl_status"], bool(rinci["kas"]["journal_number"])) == ("posted", True), rinci["kas"]
+    r = await klien.post(f"/api/finance/posting-failures/cash_transaction/{kas[0]['id']}/retry", headers=admin)
+    assert r.status_code == 404, r.text                                       # sudah terposting: bukan baris gagal
+    await spec["retry"](kas[0], AKTOR_UJI)                                     # ulang paksa: tetap satu jurnal
+    assert len(await _kas_opname(db, d["id"])) == 1
+    await _jurnal(db, kas[0]["id"])
+    assert await _buku(pt["rek"]["KASIR"]) == 965_000.0
+
+
+# ═══ Tinjauan akhir Important 2 — Batal opname: kas penyesuaian dibalik lewat dokumen opname itu sendiri ═══════════
+async def _batal(klien, pt: dict, cid: str, siapa: str = "setuju2", status: int = 200,
+                 alasan: str = "perlakuan selisih keliru"):
+    r = await klien.post(f"{URL}/{cid}/batal", headers=pt["o"][siapa]["h"], json={"alasan": alasan})
+    assert r.status_code == status, r.text
+    return r.json()
+
+
+async def _pembalik(db, kas_id: str) -> list:
+    return await db.journal_entries.find({"source_type": "cash_transaction_void", "source_id": kas_id,
+                                          "status": {"$ne": "void"}}, {"_id": 0}).to_list(5)
+
+
+async def test_KB3_3_U22_batal_opname_disetujui_selisih_kas(klien, db, akun, sesi, peran_tanpa_acuan):
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    selisih0, kasir0 = await saldo_akun(SELISIH, pt["id"]), await saldo_akun(KAS_KASIR, pt["id"])
+    d = await _hitung(klien, pt, 1_050_000)                                   # lebih 50.000
+    # Masih menunggu → tidak ada yang dibatalkan (tolak saja)
+    r = await _batal(klien, pt, d["id"], status=409)
+    assert r["detail"] == (f"Opname kas {d['number']} masih menunggu keputusan selisih, jadi belum ada yang bisa "
+                           "dibatalkan. Tolak opname ini dengan alasan bila hitungannya keliru."), r
+    await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
+    kas = (await _kas_opname(db, d["id"]))[0]
+    # Tombol Batal jujur: penghitung melihat kalimat penolakan server, rekan tidak
+    rinci = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["hitung"]["h"])).json()
+    assert rinci["kontrol"]["batal_pesan"] == PESAN_BATAL_SENDIRI, rinci.get("kontrol")
+    rekan = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["setuju2"]["h"])).json()
+    assert rekan["kontrol"]["batal_pesan"] == "" and rekan["batal_tertunda"] is False, rekan.get("kontrol")
+    baris = (await klien.get(URL, headers=pt["o"]["hitung"]["h"], params={"status": "disetujui"})).json()["items"]
+    assert [x["kontrol"]["batal_pesan"] for x in baris if x["id"] == d["id"]] == [PESAN_BATAL_SENDIRI]
+    # Alasan pendek 400; penghitung 403 (kontrol `selisih_kas`); tanpa cash.approve 403 (izin)
+    assert (await _batal(klien, pt, d["id"], status=400, alasan="no"))["detail"] == PESAN_ALASAN_BATAL
+    assert (await _batal(klien, pt, d["id"], siapa="hitung", status=403))["detail"] == PESAN_BATAL_SENDIRI
+    await _batal(klien, pt, d["id"], siapa="hitung2", status=403)
+    await _batal(klien, pt, d["id"], siapa="lihat", status=403)
+    assert (await db.cash_transactions.find_one({"id": kas["id"]}))["status"] == "posted"
+    # Rekan membatalkan beralasan → kas dibalik (jurnal pembalik) lalu void; opname `batal`
+    b = await _batal(klien, pt, d["id"], alasan="uang lebih ternyata kembalian pelanggan yang belum diambil")
+    assert (b["status"], b["status_label"], b["status_sebelum_batal"], b["batal_gl_status"], b["batal_tertunda"]) == (
+        "batal", "Dibatalkan", "disetujui", "posted", False), b
+    assert (b["alasan_batal"], b["dibatalkan_oleh"], b["dibatalkan_oleh_id"]) == (
+        "uang lebih ternyata kembalian pelanggan yang belum diambil", pt["o"]["setuju2"]["u"]["name"],
+        pt["o"]["setuju2"]["u"]["id"])
+    assert b["dibatalkan_pada"] and not b["dalam_proses"]
+    assert [x["aksi"] for x in b["jejak"]] == ["hitung", "setujui", "batal"]
+    k = await db.cash_transactions.find_one({"id": kas["id"]}, {"_id": 0})
+    assert (k["status"], k["void_reason"], k["voided_by"]) == (
+        "void", b["alasan_batal"], pt["o"]["setuju2"]["u"]["name"]), k
+    rev = await _pembalik(db, kas["id"])
+    assert len(rev) == 1 and _set(rev[0]) == {(SELISIH, 50_000.0, 0.0), (KAS_KASIR, 0.0, 50_000.0)}
+    assert k["void_journal_entry_id"] == rev[0]["id"] and b["void_journal_entry_ids"] == [rev[0]["id"]]
+    assert (b["kas"]["status"], b["kas"]["void_journal_number"]) == ("void", rev[0]["number"]), b["kas"]
+    assert await saldo_akun(SELISIH, pt["id"]) == selisih0 and await saldo_akun(KAS_KASIR, pt["id"]) == kasir0
+    assert await _buku(pt["rek"]["KASIR"]) == 1_000_000.0
+    # Penghitung diberi tahu (dengan alasannya)
+    n = await db.notifications.find({"type": "opname_kas_diputus", "ref": {"$regex": f"^{d['id']}:dibatalkan"}},
+                                    {"_id": 0}).to_list(5)
+    assert [x["recipient_user"] for x in n] == [pt["o"]["hitung"]["u"]["id"]], n
+    assert "dibatalkan" in n[0]["title"].lower() and b["alasan_batal"] in n[0]["body"] and kas["number"] in n[0]["body"]
+    # Terminal: batal / setujui / tolak lagi → 409
+    assert (await _batal(klien, pt, d["id"], status=409))["detail"] == f"Opname kas {d['number']} sudah dibatalkan."
+    r = await _putus(klien, pt, d["id"], status=409, perlakuan="selisih_kas")
+    assert r["detail"] == f"Opname kas {d['number']} sudah dibatalkan, jadi tidak bisa disetujui.", r
+    r = await _putus(klien, pt, d["id"], "reject", status=409, alasan="tolak sesudah batal")
+    assert r["detail"] == f"Opname kas {d['number']} sudah dibatalkan, jadi tidak bisa ditolak.", r
+    assert len(await _pembalik(db, kas["id"])) == 1
+    # Opname batal tidak dihitung "sudah diopname": rekening dihitung ulang; daftar mengenal status batal
+    assert (await _hitung(klien, pt, 1_000_000))["status"] == "selesai"
+    j = (await klien.get(URL, headers=pt["o"]["lihat"]["h"], params={"status": "batal"})).json()
+    assert [x["id"] for x in j["items"]] == [d["id"]] and {"value": "batal", "label": "Dibatalkan"} in j["statuses"]
+    # Selesai (tanpa kas) dan ditolak tidak dibatalkan
+    s = await _hitung(klien, pt, 500_000, rek="KECIL")
+    r = await _batal(klien, pt, s["id"], status=409)
+    assert r["detail"] == (f"Opname kas {s['number']} selesai tanpa selisih dan tanpa kas penyesuaian, jadi tidak ada "
+                           "yang dibatalkan."), r
+    t = await _hitung(klien, pt, 490_000, rek="KECIL")
+    await _putus(klien, pt, t["id"], "reject", alasan="hitung ulang laci")
+    r = await _batal(klien, pt, t["id"], status=409)
+    assert r["detail"] == f"Opname kas {t['number']} sudah ditolak, jadi tidak bisa dibatalkan.", r
+
+
+async def test_KB3_3_U23_batal_piutang_karyawan_aturan_dan_admin(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Karyawan salah dibebani piutang → Batal mengembalikan 1-1290 dan buku kas; opname baru diputus dengan karyawan
+    yang benar. Aturan Persetujuan `cash_count` berlaku di pintu Batal; Admin yang menghitung tidak membatalkan
+    sendiri (bawaan admin-tetap); PT `min_orang` 1 → penghitung boleh."""
+    from services import config_resolver as resolver
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    piutang0 = await saldo_akun(PIUTANG, pt["id"])
+    d = await _hitung(klien, pt, 455_000, rek="KECIL")                        # kurang 45.000
+    await _putus(klien, pt, d["id"], perlakuan="piutang_karyawan", karyawan_id=pt["emp"]["id"])
+    assert round(await saldo_akun(PIUTANG, pt["id"]) - piutang0, 2) == 45_000.0
+    kas = (await _kas_opname(db, d["id"]))[0]
+    await db.approval_policies.insert_one({
+        "id": "apl_kb33_batal", "doc_kind": "cash_count", "entity_id": pt["id"], "level": 1, "label": "Persetujuan",
+        "min_amount": 0, "max_amount": None, "roles": ["admin"], "any_holder": False, "sort": 1, "active": True,
+        "source": "uji"})
+    try:
+        r = await _batal(klien, pt, d["id"], status=403)
+        assert "Aturan Persetujuan" in r["detail"], r
+    finally:
+        await db.approval_policies.delete_one({"id": "apl_kb33_batal"})
+    b = await _batal(klien, pt, d["id"], alasan="karyawan salah: Rina sedang cuti hari itu")
+    assert (b["status"], b["perlakuan"], b["karyawan_id"]) == ("batal", "piutang_karyawan", pt["emp"]["id"])
+    rev = await _pembalik(db, kas["id"])
+    assert len(rev) == 1 and _set(rev[0]) == {(KAS_KECIL, 45_000.0, 0.0), (PIUTANG, 0.0, 45_000.0)}
+    assert await saldo_akun(PIUTANG, pt["id"]) == piutang0 and await _buku(pt["rek"]["KECIL"]) == 500_000.0
+    # Opname baru, diputus dengan karyawan yang benar (opname batal tidak menggantikan / tidak menunggu)
+    lain = {"id": f"emp_{pt['kode'].lower()}_2", "code": f"{pt['kode']}-K02", "name": f"Asep Kasir {pt['kode']}",
+            "entity_id": pt["id"], "status": "active", "created_at": now_iso()}
+    await db.hr_employees.insert_one(dict(lain))
+    e = await _hitung(klien, pt, 455_000, rek="KECIL")
+    j = await _putus(klien, pt, e["id"], perlakuan="piutang_karyawan", karyawan_id=lain["id"])
+    assert (j["status"], j["karyawan_id"]) == ("disetujui", lain["id"])
+    # Admin menghitung → orang lain menyetujui → Admin tidak membatalkan sendiri
+    ha = await sesi("admin@kainnusantara.id", entitas=pt["id"])
+    r = await klien.post(URL, headers=ha, json={"account_id": pt["rek"]["KASIR"], "jumlah_fisik": 1_010_000})
+    assert r.status_code == 200, r.text
+    da = r.json()
+    await _putus(klien, pt, da["id"], perlakuan="selisih_kas")
+    r = await klien.post(f"{URL}/{da['id']}/batal", headers=ha, json={"alasan": "admin batal sendiri"})
+    assert (r.status_code, r.json()["detail"]) == (403, PESAN_BATAL_SENDIRI), r.text
+    assert (await db.cash_counts.find_one({"id": da["id"]}))["status"] == "disetujui"
+    # PT ber-`min_orang` 1 → penghitung boleh membatalkan sendiri (sama dengan Setujui / Tolak)
+    await resolver.set_value("kontrol.selisih_kas.min_orang", "1", scope_type="entity", scope_id=pt["id"],
+                             reason="uji KB33 satu orang batal", actor="uji")
+    assert (await _batal(klien, pt, e["id"], siapa="hitung", alasan="salah karyawan lagi"))["status"] == "batal"
+
+
+async def test_KB3_3_U24_batal_periode_tertutup_dan_pembalik_gagal(klien, db, akun, sesi, peran_tanpa_acuan,
+                                                                    paksa_jurnal_gagal, kepala_admin):
+    """Periode tanggal pembalik tertutup → 409 berkalimat, opname tetap disetujui, kas tidak dibalik. Jurnal pembalik
+    dipaksa gagal → opname `batal`, `batal_gl_status: failed`, tampil di Posting Gagal jenis `cash_count_cancel`
+    (penghitung tetap diberi tahu); ulang dari Posting Gagal → tuntas, tepat satu pembalik."""
+    from services import posting_registry as reg
+    from services.book_date import tanggal_buku
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    d = await _hitung(klien, pt, 970_000)                                     # kurang 30.000
+    await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
+    kas = (await _kas_opname(db, d["id"]))[0]
+    rec = await tutup_periode(pt["id"], tanggal_buku()[:7])
+    try:
+        r = await _batal(klien, pt, d["id"], status=409)
+        assert d["number"] in r["detail"] and kas["number"] in r["detail"], r
+        assert r["detail"].endswith("Opname tetap disetujui."), r
+    finally:
+        await db.period_closings.delete_one({"id": rec["id"]})
+    segar = await db.cash_counts.find_one({"id": d["id"]}, {"_id": 0})
+    assert (segar["status"], segar.get("saga_lock"), segar.get("batal_gl_status", "")) == ("disetujui", None, "")
+    assert (await db.cash_transactions.find_one({"id": kas["id"]}))["status"] == "posted"
+    # Jurnal pembalik dipaksa gagal
+    async with paksa_jurnal_gagal("sisip", entity_id=pt["id"], source_type="cash_transaction_void", kali=1):
+        r = await _batal(klien, pt, d["id"], status=409, alasan="perlakuan keliru, harus piutang")
+    assert r["detail"].startswith(f"Opname kas {d['number']} sudah dibatalkan, tetapi jurnal pembalik kas "
+                                  f"{kas['number']} gagal: "), r
+    assert r["detail"].endswith("Ulangi dari Keuangan › Posting Gagal."), r
+    segar = await db.cash_counts.find_one({"id": d["id"]}, {"_id": 0})
+    assert (segar["status"], segar["batal_gl_status"], segar.get("saga_lock")) == ("batal", "failed", None), segar
+    assert segar["batal_gl_error"].startswith(kas["number"]) and segar["batal_gl_failed_at"]
+    assert (await db.cash_transactions.find_one({"id": kas["id"]}))["status"] == "posted"   # belum dibalik
+    rinci = (await klien.get(f"{URL}/{d['id']}", headers=pt["o"]["lihat"]["h"])).json()
+    assert (rinci["status"], rinci["batal_tertunda"]) == ("batal", True)
+    n = await db.notifications.count_documents({"type": "opname_kas_diputus",
+                                                "ref": {"$regex": f"^{d['id']}:dibatalkan"}})
+    assert n == 1
+    spec = reg.KINDS["cash_count_cancel"]
+    assert (spec["collection"], spec["label"]) == ("cash_counts", "Pembatalan Opname Kas")
+    assert await db[spec["collection"]].count_documents({**spec["failed_query"], "id": d["id"]}) == 1
+    baris = reg.rows_of("cash_count_cancel", segar)[0]
+    assert (baris["number"], baris["amount"], baris["link"]["view"], baris["link"]["focus_id"]) == (
+        d["number"], 30_000.0, "cash-counts", d["id"]), baris
+    r = await klien.get("/api/finance/posting-failures", headers={**kepala_admin, "X-Entity-Id": pt["id"]},
+                        params={"kind": "cash_count_cancel"})
+    assert r.status_code == 200 and d["id"] in [x["id"] for x in r.json()["items"]], r.text
+    await _putus(klien, pt, d["id"], status=409, perlakuan="selisih_kas")
+    # Ulang dari Posting Gagal (rute) → tuntas
+    r = await klien.post(f"/api/finance/posting-failures/cash_count_cancel/{d['id']}/retry",
+                         headers={**kepala_admin, "X-Entity-Id": pt["id"]})
+    assert r.status_code == 200 and r.json()["gl_status"] == "posted", r.text
+    segar = await db.cash_counts.find_one({"id": d["id"]}, {"_id": 0})
+    assert (segar["status"], segar["batal_gl_status"], segar["batal_gl_error"]) == ("batal", "posted", "")
+    assert [x["aksi"] for x in segar["jejak"]] == ["hitung", "setujui", "batal", "batal_diteruskan"]
+    assert (await db.cash_transactions.find_one({"id": kas["id"]}))["status"] == "void"
+    rev = await _pembalik(db, kas["id"])
+    assert len(rev) == 1 and _set(rev[0]) == {(KAS_KASIR, 30_000.0, 0.0), (SELISIH, 0.0, 30_000.0)}
+    assert await _buku(pt["rek"]["KASIR"]) == 1_000_000.0
+    assert (await _batal(klien, pt, d["id"], status=409))["detail"] == f"Opname kas {d['number']} sudah dibatalkan."
+    assert await db.notifications.count_documents({"type": "opname_kas_diputus",
+                                                   "ref": {"$regex": f"^{d['id']}:dibatalkan"}}) == 1
+
+
+async def test_KB3_3_U25_batal_bersamaan_satu_pembalik(klien, db, akun, sesi, peran_tanpa_acuan):
+    from services import cash_count_service as ccs
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    d = await _hitung(klien, pt, 1_040_000)
+    await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
+    kas = (await _kas_opname(db, d["id"]))[0]
+    hasil = await asyncio.gather(ccs.batal(d["id"], "klik ganda batal", SETUJU1),
+                                 ccs.batal(d["id"], "klik ganda batal", SETUJU2), return_exceptions=True)
+    assert len([h for h in hasil if isinstance(h, dict)]) == 1, hasil
+    assert all(isinstance(h, HTTPException) and h.status_code == 409 for h in hasil if not isinstance(h, dict)), hasil
+    assert len(await _pembalik(db, kas["id"])) == 1
+    doc = await db.cash_counts.find_one({"id": d["id"]}, {"_id": 0})
+    assert (doc["status"], doc["batal_gl_status"], doc.get("saga_lock")) == ("batal", "posted", None)
+    assert await _buku(pt["rek"]["KASIR"]) == 1_000_000.0
+
+
+async def test_KB3_3_U26_batal_rekening_jatuh_tempo_lagi(klien, db, akun, sesi, peran_tanpa_acuan):
+    """Opname batal bukan opname terhitung: rekening yang opname terakhirnya dibatalkan kembali jatuh tempo."""
+    from services import cash_count_service as ccs
+    pt = await _pt(akun, sesi, peran_tanpa_acuan)
+    r = await klien.post("/api/cash-transactions", headers=pt["o"]["hitung"]["h"], json={
+        "cash_type": "kas_kasir", "direction": "in", "amount": 10_000, "category": "penjualan tunai",
+        "description": "tunai KB33 U26", "account_id": pt["rek"]["KASIR"], "entity_id": pt["id"]})
+    assert r.status_code == 200, r.text
+    await ccs.ensure_aktif_sejak()
+    sepuluh = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    await db.system_settings.update_one({"scope": "__migrations__"}, {"$set": {ccs.PENANDA_AKTIF: sepuluh}})
+
+    async def _tempo() -> set:
+        return {x["account"]["id"] for x in await ccs.jatuh_tempo([pt["id"]])}
+
+    assert pt["rek"]["KASIR"] in await _tempo()
+    d = await _hitung(klien, pt, 1_020_000)                                   # lebih 10.000
+    await _putus(klien, pt, d["id"], perlakuan="selisih_kas")
+    assert pt["rek"]["KASIR"] not in await _tempo()
+    await _batal(klien, pt, d["id"], alasan="hitungan keliru, hitung ulang")
+    assert pt["rek"]["KASIR"] in await _tempo()

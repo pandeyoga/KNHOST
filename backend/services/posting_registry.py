@@ -659,6 +659,13 @@ async def _retry_fund_transfer_cancel(doc: Dict[str, Any], actor: Dict[str, Any]
     await lanjut_batal(doc["id"], actor)
 
 
+async def _retry_cash_count_cancel(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Kas & Bank 3 (tinjauan akhir Important 2) — opname kas yang sudah dibatalkan tetapi jurnal pembalik kas
+    penyesuaiannya gagal: kas yang belum dibalik diteruskan lewat pembalik kas yang sama."""
+    from services.cash_count_service import lanjut_batal
+    await lanjut_batal(doc["id"], actor)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
@@ -913,6 +920,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "error_field": "batal_gl_error", "failed_at_field": "batal_gl_failed_at", "doc_type": "",
         "link": {"view": "fund-transfers", "tab": "", "focus_type": "fund_transfer"},
         "posters": (), "retry": _retry_fund_transfer_cancel},
+    # ── Kas & Bank 3 (tinjauan akhir Important 2) — opname kas dibatalkan, jurnal pembalik kas penyesuaiannya gagal
+    #    (opname `batal`, `batal_gl_status: failed`); ulang = teruskan pembalik kas yang tersisa. Jurnal kas penyesuaian
+    #    yang gagal saat Setujui tampil sebagai Transaksi Kas biasa (`cash_transaction`). Tautan = Jejak Dokumen
+    #    `cash_count` (layar Kas & Bank › Opname Kas). ──
+    "cash_count_cancel": {
+        "label": "Pembatalan Opname Kas", "collection": "cash_counts",
+        "failed_query": {"status": "batal", "batal_gl_status": "failed"}, "entity_field": "entity_id",
+        "number_field": "number", "amount_field": "selisih_nominal", "status_field": "batal_gl_status",
+        "error_field": "batal_gl_error", "failed_at_field": "batal_gl_failed_at", "doc_type": "cash_count",
+        "posters": (), "retry": _retry_cash_count_cancel},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}
