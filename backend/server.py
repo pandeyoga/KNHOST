@@ -386,6 +386,8 @@ from routers import fund_transfers as _fund_transfers  # noqa: E402 — Kas & Ba
 app.include_router(_fund_transfers.router)
 from routers import cash_out_requests as _cash_out_requests  # noqa: E402 — Kas & Bank 2 pengajuan kas keluar manual
 app.include_router(_cash_out_requests.router)
+from routers import petty_float as _petty_float  # noqa: E402 — Kas & Bank 3 dana tetap kas kecil & isi ulang
+app.include_router(_petty_float.router)
 
 
 @app.get("/api/")

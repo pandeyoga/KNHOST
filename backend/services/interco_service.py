@@ -1309,8 +1309,9 @@ async def _settle_account(entity_id: str, account_id: str) -> str:
             raise IntercoError(f"Rekening itu bukan milik {nama} atau sudah nonaktif.")
         from services.bank_service import account_cash_type
         if account_cash_type(acc) != "kas_besar":   # PK-20 — jurnal pelunasan antar-PT memakai akun Bank 1-1100
-            raise IntercoError(f"Rekening {acc.get('name', '')} adalah Kas Kecil; pelunasan antar-PT dibukukan di "
-                               "Bank (1-1100). Pilih rekening Bank.")
+            from services.interco_money_service import label_jenis_kas   # Kas & Bank 3 — kas kasir disebut benar
+            raise IntercoError(f"Rekening {acc.get('name', '')} adalah {label_jenis_kas(account_cash_type(acc))}; "
+                               "pelunasan antar-PT dibukukan di Bank (1-1100). Pilih rekening Bank.")
         return account_id
     aid = await default_cash_account(entity_id)
     if not aid:

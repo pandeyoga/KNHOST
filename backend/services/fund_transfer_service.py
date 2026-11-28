@@ -21,6 +21,10 @@ ini tidak pernah menulis kode akun kas dan tidak memposting jurnal sendiri.
 * **Kontrol** `kontrol.pindah_dana` (jumlah orang + batas nominal per PT, bawaan satu orang): bila butuh orang kedua,
   dokumen `menunggu_persetujuan` dan kas baru terbit saat disetujui orang lain (`dual_control.tolak_bila_pelaku_sama`,
   pembanding = pembuat).
+* **Isi ulang kas kecil** (Kas & Bank 3, C2 — `petty_float_service.isi_ulang`): Pindah Dana sekali jalan bertanda
+  `jenis: "isi_ulang_kas_kecil"` + potret posisi dana tetap saat dibuat (`isi_ulang`). Tanda hanya dari layanan dana
+  tetap (rute Pindah Dana tidak menerimanya); nominal = usulan server, dibekukan saat dibuat (tidak ada rute ubah;
+  Setujui memakai nominal dokumen). Kontrol, Setujui, Batal sama dengan Pindah Dana lain.
 * **Batal** (alasan ≥ 5 huruf): ditolak bila salah satu kas dokumen sudah dicocokkan dengan mutasi bank ("lepas dulu di
   Rekonsiliasi"); semua kas tidak-batal dibalik lewat pembalik kas yang ada (`gl_service.post_cash_void` di pintu
   tahan-gagal, tanggal `posting_registry.tanggal_pembalik`), terakhir-terbit dulu. Dokumen yang masih menunggu (tanpa
@@ -53,6 +57,9 @@ PERAN_KAS = {SEQ_KIRIM: "Kas keluar rekening asal", SEQ_BIAYA: "Biaya transfer",
              SEQ_TERIMA: "Kas masuk rekening tujuan"}
 ALASAN_MIN = 5   # K-14 (26 Okt) — alasan minimum seragam 5 huruf
 EPS = 0.005
+#: Kas & Bank 3 (C2, §7.8 butir 4) — tanda Pindah Dana isi ulang dana tetap kas kecil.
+JENIS_ISI_ULANG = "isi_ulang_kas_kecil"
+JENIS_LABEL = {JENIS_ISI_ULANG: "Isi ulang kas kecil"}
 
 PESAN_TIDAK_ADA = "Pindah Dana tidak ditemukan."
 PESAN_PILIH = "Pilih rekening asal dan rekening tujuan."
@@ -63,6 +70,7 @@ PESAN_NOMINAL = "Nominal pindah dana harus lebih dari 0."
 PESAN_BIAYA = "Biaya transfer tidak boleh negatif."
 PESAN_TANGGAL = "Tanggal terima tidak boleh sebelum tanggal kirim."
 PESAN_ALASAN = f"Alasan pembatalan wajib diisi (minimal {ALASAN_MIN} huruf)."
+PESAN_ISI_ULANG_SEKALI = "Isi ulang kas kecil dicatat sekali jalan: tanggal terima sama dengan tanggal kirim."
 
 
 def _galat(status: int, pesan: str) -> HTTPException:
@@ -257,6 +265,8 @@ def _bentuk(doc: Dict[str, Any]) -> Dict[str, Any]:
     d["rekening_tujuan"] = d.get("rekening_tujuan_nama") or ""
     d["dalam_proses"] = bool(doc.get("saga_lock"))
     d["batal_tertunda"] = d.get("status") == BATAL and d.get("batal_gl_status") in ("pending", "failed")
+    d["jenis"] = doc.get("jenis") or ""   # Kas & Bank 3 — "" = Pindah Dana biasa (dokumen lama tanpa bidang)
+    d["jenis_label"] = JENIS_LABEL.get(d["jenis"], "")
     return d
 
 
@@ -325,12 +335,18 @@ async def daftar(entity_ids: List[str], *, status: str = "", q: str = "", page: 
 
 
 # ── Buat ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-async def buat(payload: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
+async def buat(payload: Any, actor: Dict[str, Any], *, jenis: str = "",
+               isi_ulang: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """`POST /api/fund-transfers`. PT = `entity_id` isian (router sudah memastikan PT dalam penugasan). Kontrol dua
-    orang → `menunggu_persetujuan` tanpa kas; selain itu kas langsung terbit (`dalam_perjalanan` / `selesai`)."""
+    orang → `menunggu_persetujuan` tanpa kas; selain itu kas langsung terbit (`dalam_perjalanan` / `selesai`).
+
+    Kas & Bank 3 — `jenis` (`JENIS_ISI_ULANG`) + `isi_ulang` (potret posisi dana tetap) hanya dari pemanggil layanan
+    (`petty_float_service.isi_ulang`), tidak pernah dari isian rute; isi ulang wajib sekali jalan."""
     from services import dual_control
     from services.cash_entity_service import assert_owned
     from core_utils import next_doc_number
+    if jenis and jenis not in JENIS_LABEL:
+        raise ValueError(f"Jenis Pindah Dana tidak dikenal: {jenis}")
     p = _isi(payload)
     eid = assert_owned((p.get("entity_id") or "").strip(), what="Pindah Dana")
     # ── PERIKSA ──
@@ -344,6 +360,8 @@ async def buat(payload: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
     terima = _tanggal(p.get("tanggal_terima"), "terima") if str(p.get("tanggal_terima") or "").strip() else kirim
     if terima < kirim:
         raise _galat(400, PESAN_TANGGAL)
+    if jenis == JENIS_ISI_ULANG and terima != kirim:
+        raise _galat(400, PESAN_ISI_ULANG_SEKALI)
     now = now_iso()
     doc: Dict[str, Any] = {
         "id": new_id("pdn"), "number": "", "entity_id": eid, "status": MENUNGGU,
@@ -356,11 +374,15 @@ async def buat(payload: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
         "created_by": (actor or {}).get("name") or "", "created_by_id": (actor or {}).get("id") or "",
         "created_at": now, "updated_at": now,
     }
+    if jenis:
+        doc.update({"jenis": jenis, "isi_ulang": dict(isi_ulang or {})})
     await _periksa_jurnal(eid, _rencana(doc, "terbit", await _akun_lawan(eid)))
     doc["butuh_persetujuan"] = await dual_control.butuh_orang_kedua("pindah_dana", eid, nominal)
     # ── NIAT ──
     doc["number"] = await next_doc_number(COLL, "number", "PDN-", entity_id=eid)
-    doc["jejak"] = [_jejak("buat", actor, "menunggu persetujuan orang kedua" if doc["butuh_persetujuan"] else "")]
+    catatan_buat = "; ".join(c for c in (JENIS_LABEL.get(jenis, "").lower(),
+                                          "menunggu persetujuan orang kedua" if doc["butuh_persetujuan"] else "") if c)
+    doc["jejak"] = [_jejak("buat", actor, catatan_buat)]
     await db[COLL].insert_one(dict(doc))
     if doc["butuh_persetujuan"]:
         return _bentuk(doc)

@@ -150,6 +150,10 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
     dikirim = str(payload.get("account_id") or "").strip()
     penerima = await bacs.daftar_penerima(owner, kode) if perlu in ("bank", "kas") else []
     ids_penerima = {r["id"] for r in penerima}
+    if perlu == "kas" and await _ada_kasir_penerima(owner, ids_penerima):
+        # Kas & Bank 3 (C1, §7.8 butir 5) — PT berkas kasir: tunai tanpa rekening terpilih & tanpa bawaan (kas kasir
+        # tunggal sudah menjadi bawaan lewat `daftar_penerima`) = kasir memilih rekening; tidak jatuh ke kas kecil.
+        cash_type = "kas_kasir"
     if dikirim:
         acc = await db.bank_accounts.find_one({"id": dikirim}, {"_id": 0, "id": 1, "entity_id": 1})
         if acc and (acc.get("entity_id") or "") != owner:
@@ -172,6 +176,18 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
         reference_no=payload.get("reference_no") or "", giro_due_date=payload.get("giro_due_date") or "",
         mismatch_note=payload.get("mismatch_note") or ""))
     return out
+
+
+async def _ada_kasir_penerima(entity_id: str, ids_penerima: set) -> bool:
+    """Kas & Bank 3 (C1) — PT punya rekening kas kasir aktif yang menerima tunai pelanggan (di antara `ids_penerima`)."""
+    if not ids_penerima:
+        return False
+    from services.bank_service import account_cash_type
+    async for acc in db.bank_accounts.find({"entity_id": entity_id, "id": {"$in": sorted(ids_penerima)}},
+                                           {"_id": 0, "id": 1, "cash_type": 1, "account_type": 1}):
+        if account_cash_type(acc) == "kas_kasir":
+            return True
+    return False
 
 
 async def syarat_uang_masuk(*, entity_id: str, cara: Dict[str, Any], account_id: str, orders: List[Dict[str, Any]],

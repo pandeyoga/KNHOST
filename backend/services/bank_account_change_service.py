@@ -323,16 +323,27 @@ async def putuskan(ch: Dict[str, Any], decision: str, note: str, actor: Dict[str
 
 async def daftar_penerima(entity_id: str, method: str) -> List[Dict[str, Any]]:
     """GET /api/bank-accounts/receiving — rekening aktif PT yang dipakai menerima uang pelanggan dan melayani cara bayar
-    itu. Tanpa saldo."""
+    itu. Tanpa saldo.
+
+    Kas & Bank 3 (C1, spesifikasi §5.1, §7.8 butir 5) — cara bayar tunai: bila tidak ada rekening bawaan tersimpan
+    (PM-T1) untuk cara bayar itu dan PT punya TEPAT SATU rekening kas kasir penerima, rekening kasir itu menjadi bawaan
+    (`is_default`, dihitung saat dibaca — tidak ditulis). Bawaan yang diatur Finance tetap menang; dua kas kasir atau
+    lebih = tanpa bawaan (kasir memilih); PT tanpa kas kasir = persis seperti sebelumnya."""
     kode = await pms.kode_400(entity_id, method)
     out = []
+    kasir: List[Dict[str, Any]] = []
     for a in await bs.rekening_pt(entity_id):
         e = a["_efektif"]
         if not bs._aktif(a) or "penerimaan_pelanggan" not in e["purposes"] \
                 or kode not in e["payment_method_codes"]:   # noqa: SLF001
             continue
-        out.append({"id": a["id"], "name": a.get("name", ""), "bank_name": a.get("bank_name", ""),
-                    "account_number": a.get("account_number", ""), "holder_name": e["holder_name"],
-                    "is_default": kode in e["default_receiving_methods"]})
+        baris = {"id": a["id"], "name": a.get("name", ""), "bank_name": a.get("bank_name", ""),
+                 "account_number": a.get("account_number", ""), "holder_name": e["holder_name"],
+                 "is_default": kode in e["default_receiving_methods"]}
+        out.append(baris)
+        if bs.account_cash_type(a) == "kas_kasir":
+            kasir.append(baris)
+    if len(kasir) == 1 and not any(r["is_default"] for r in out) and await pms.is_cash(entity_id, kode):
+        kasir[0]["is_default"] = True
     out.sort(key=lambda r: (not r["is_default"], r["name"]))
     return out
