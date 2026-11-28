@@ -58,6 +58,8 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Pindah Saldo Kas per Rekening *(Kas & Bank 1, Tugas 3)* | `cash_account_cutovers` | `routers/cash_account_cutover.py` (`GET /kas-per-rekening/usulan`, `GET /kas-per-rekening/{entity_id}/pratinjau`, `POST …/{entity_id}/siapkan`, `POST /kas-per-rekening/usulan/{id}/setujui`, `…/tolak` — `accounting.manage`), `services/cash_account_cutover_service.py` | `PindahSaldoSiapkan`, `PindahSaldoSetujui`, `PindahSaldoTolak` | (layar Kas & Bank › Akun per rekening — Tugas 6) |
 | Pindah Dana *(Kas & Bank 1, Tugas 4)* | `fund_transfers` (+ kas `cash_transactions` ber-`ref_type: fund_transfer`, `seq` kirim/biaya/terima) | `routers/fund_transfers.py` (`GET/POST /fund-transfers`, `GET /fund-transfers/{id}`, `POST …/{id}/receive` — `cash.create`, `…/approve` — `cash.approve`, `…/cancel` — `cash.delete`), `services/fund_transfer_service.py` (`buat`, `setujui`, `terima`, `batal`, `lanjut_batal`, `daftar`, `rincian`, `dalam_perjalanan` — butir tutup buku) | `FundTransferCreate`, `FundTransferReceive`, `FundTransferCancel` | (layar Kas & Bank › Pindah Dana — Tugas 6) |
 | Pengajuan Kas Keluar Manual *(Kas & Bank 2, C6)* | `cash_out_requests` (+ kas `cash_transactions` ber-`ref_type: manual`, `ref_id` = id pengajuan, terbit saat disetujui) | `routers/cash.py` (`POST /cash-transactions` → 202 `{request}` bila kas keluar di atas batas `kontrol.kas_keluar_manual`), `routers/cash_out_requests.py` (`GET /cash-out-requests`, `GET /cash-out-requests/batas`, `GET /cash-out-requests/{id}` — `cash.view`, `POST …/{id}/approve` & `…/reject` — `cash.approve` + Aturan Persetujuan `cash_out_request`, `…/cancel` — pengaju `cash.create` atau `cash.delete`), `services/cash_out_request_service.py` (`ajukan`, `kiriman_ulang`, `setujui`, `tolak`, `batal`, `daftar`, `rincian`, `batas_pt`) | `CashTransactionCreate`, `CashOutRequestReject`, `CashOutRequestCancel` | `features/purchasing/CashManagementView.jsx` (form: catatan + "Ajukan"), `features/finance/cashout/CashOutPendingSection.jsx` (bagian Menunggu persetujuan), pratinjau `documents/preview/bodies/CashOutRequestPreview.jsx` |
+| Opname Kas *(Kas & Bank 3, C3)* | `cash_counts` (+ kas `cash_transactions` ber-`ref_type: cash_count`, `ref_id` = id opname, terbit saat selisih disetujui) | `routers/cash_counts.py` (`GET /cash-counts`, `GET /cash-counts/karyawan`, `GET /cash-counts/{id}` — `cash.view`, `POST /cash-counts` — `cash.create`, `POST …/{id}/approve` · `…/reject` · `…/batal` — `cash.approve` + Aturan Persetujuan `cash_count`), `services/cash_count_service.py` (`buat`, `setujui`, `tolak`, `batal`, `daftar`, `rincian`, `karyawan`, `jatuh_tempo`, `ensure_aktif_sejak`) | `CashCountCreate`, `CashCountPecahan`, `CashCountApprove`, `CashCountReject`, `CashCountCancel` | `features/finance/cashcount/CashCountsView.jsx` (tab tersembunyi Kas & Bank › Opname Kas), `CashCountForm`, `CashCountApproveModal`, `OpnameKartuAksi` (aksi Opname di kartu rekening), pratinjau `documents/preview/bodies/CashCountPreview.jsx` |
+| Dana Tetap Kas Kecil & Isi Ulang *(Kas & Bank 3, C2)* | bidang `bank_accounts.dana_tetap` / `location_id` (rekening kas kecil); isi ulang = `fund_transfers` ber-`jenis: isi_ulang_kas_kecil` + potret posisi; kunci `petty_float_locks` | `routers/petty_float.py` (`GET /kas-kecil/dana-tetap`, `GET /kas-kecil/dana-tetap/{account_id}` — `cash.view`, `POST …/{account_id}/isi-ulang` — `cash.create`), `services/petty_float_service.py` (`posisi`, `daftar`, `isi_ulang`) | `IsiUlangKasKecil` (`sumber_account_id`, `catatan`, `tanggal`, `nominal_dilihat`; `nominal` dari klien ditolak) | `features/pettycash/DanaTetapView.jsx` (Kas Kecil › chip Dana tetap), `IsiUlangModal.jsx`, aksi Isi ulang di kartu rekening |
 | Jadwal Tagihan & Saldo Piutang *(CR-T2)* | `payment_plans` (`origin: term` = jadwal tagihan mesin per surat jalan / uang muka / nota debit; `manual` = rencana cicilan), `customer_balances` (saldo turunan per pelanggan × PT) | `services/billing_schedule_service.py` (kait `on_order_confirmed` dari `confirm_core`, `on_shipment_posted` sesudah jurnal surat jalan, `on_order_changed` dari `so_transition` status mati, `on_debit_note`; `open_lines` = satu-satunya pembaca jatuh tempo), `services/customer_balance_service.py` (`compute`, `refresh`, `get`, `rebuild_all`, `job_refresh_overdue`), `routers/customer_balances.py` (`GET /customers/{id}/billing-schedule`, `GET /customers/{id}/balance`, `POST /ar/balances/rebuild`), `scripts/build_billing_schedule.py` | — | `ARAgingDetail` (rincian pelanggan: baris jadwal tersimpan) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Meja Insentif — data dasar *(KM-T1)* | `sales_targets` (kunci baru PT × sales × jenis periode × periode), `incentive_components`, `incentive_definitions`, `fact_shipment_sales`, `fact_collections` (turunan) | `routers/incentive.py` (`GET/PUT /api/incentive/targets`, `POST …/targets/copy`, `GET/POST/PATCH /api/incentive/components`, `GET …/definitions/current`, `GET …/reconciliation`, `POST …/facts/rebuild`; KM-T2 hanya baca: `GET …/achievement`, `GET …/achievement/sources`, `GET …/achievement/export`), `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`, `incentive_achievement.py` (KM-T2) | `IncentiveTargetSave`, `IncentiveTargetCopy`, `IncentiveComponentCreate`, `IncentiveComponentUpdate`, `IncentiveFactRebuild` (`schemas_incentive.py`) | `IncentiveSetupView` (SDM › Kinerja & Insentif › Target & Aturan), `CapaianView` + `CapaianSourcesPanel` (… › Capaian, KM-T2) |
@@ -2299,6 +2301,58 @@ Antrean (Tugas 4): `approval_backlog_service.QUEUES` "Kas keluar manual menunggu
 tunggu dari `created_at`, layar `cash-management` + preset) · jenis Aturan Persetujuan `cash_out_request` (satu jenjang;
 `guard_door` di Setujui & Tolak) · Jejak Dokumen `doc_refs_service.DOC_TYPES["cash_out_request"]` (kas yang terbit =
 turunan) · notifikasi `kas_keluar_diajukan|diputus` membawa `doc` · dataset Pusat Export `cash_out_requests`.
+```
+
+### cash_counts  [Kas & Bank 3, C3 — opname kas: hitung fisik rekening tunai, selisih diputus orang kedua]
+```
+Collection:  cash_counts        Prefix: opk_ (acak)   Nomor: {KODE PT}/OPK-NNNNN (deret per PT, `doc_number_kinds` `opk`)
+Router:      routers/cash_counts.py (lihat `cash.view`, hitung `cash.create`, setujui/tolak/batal `cash.approve` +
+             Aturan Persetujuan `cash_count` — `guard_door`)
+Service:     services/cash_count_service.py
+Index:       uq_id (unik) · uq_number (unik) · (entity_id, status, dihitung_pada) · (account_id, status, dihitung_pada)
+**SCOPED** (`entity_id` = PT rekening). Hanya rekening `account_type="cash"` (kas kasir, kas kecil, kas besar tunai).
+
+  id · number · entity_id · account_id · account_name · cash_type
+  status            selesai (selisih 0, tanpa kas) | menunggu_persetujuan | disetujui (kas terbit) | ditolak | batal
+  tanggal (tanggal buku saat dihitung = tanggal kas penyesuaian) · dihitung_pada
+  saldo_buku (DIPOTRET saat dihitung) · jumlah_fisik · pecahan[] (opsional) · selisih (= fisik − buku) ·
+  selisih_nominal (|selisih|, `amount_field` Aturan Persetujuan) · arah_selisih (lebih | kurang | "") · catatan
+  penghitung {id, name} · created_by(_id) (= penghitung)
+  perlakuan (selisih_kas | piutang_karyawan — piutang hanya untuk kurang) · karyawan_id · karyawan_nama · karyawan_kode
+  (karyawan HR PT yang sama) · cash_id · cash_number · terbit_error
+  disetujui_oleh(_id) · disetujui_pada · alasan_tolak · ditolak_oleh(_id) · ditolak_pada
+  alasan_batal · dibatalkan_oleh(_id) · dibatalkan_pada · batal_gl_status (pending | posted | failed — Posting Gagal
+  jenis `cash_count_cancel`) · batal_gl_error · batal_gl_failed_at · batal_selesai_pada
+  jejak[{aksi (hitung | setujui | tolak | batal), oleh, oleh_id, pada, catatan}] · saga_lock (selama aksi berjalan)
+  created_at · updated_at
+  (jawaban API menambah status_label, perlakuan_label, boleh_piutang, batal_tertunda, kontrol penghitung ≠ penyetuju)
+Kontrol: `kontrol.selisih_kas.min_orang` (bawaan "2"; masuk bawaan `kontrol.admin_tetap_dua_orang`) di Setujui, Tolak,
+Batal — penghitung (Admin juga) tidak memutus hitungannya sendiri. Satu opname menunggu per rekening; opname yang sudah
+digantikan opname lebih baru tidak bisa disetujui.
+Kas: `create_cash(ref_type="cash_count", ref_id=id, txn_date=tanggal)` berlawan eksplisit — selisih kas `6-9200`
+(lebih: kas masuk; kurang: kas keluar) / piutang karyawan `1-1290` (kas keluar); pemetaan `kas_bank.selisih_kas`,
+`kas_bank.piutang_kurang_kas`. Batal → `post_cash_void` di pintu tahan-gagal, kas `void`. Kas ini tidak bisa dibatalkan
+dari Transaksi Kas (FN-07) — jalan baliknya Batal opname.
+Pengingat: antrean Meja Keuangan `opname_kas_jatuh_tempo` (`kas.opname_kasir_hari` 1, `kas.opname_kas_kecil_hari` 7,
+`kas.opname_kas_besar_hari` 7; dihitung sejak penanda sekali tulis `system_settings.__migrations__`
+`kb3_opname_kas_aktif_sejak`, hanya rekening yang punya kas sesudahnya). Antrean persetujuan `approval_backlog_service.QUEUES`
+`cash_count` (layar `cash-counts` + preset) · Jejak Dokumen & pemberitahuan `opname_kas_menunggu|diputus` · dataset
+Pusat Export · `saga_locks.LOCKED_COLLECTIONS`.
+```
+
+### petty_float_locks  [Kas & Bank 3, C2 — kunci isi ulang dana tetap per rekening kas kecil]
+```
+Collection:  petty_float_locks  `_id` = id rekening kas kecil (satu kunci per rekening)
+Service:     services/petty_float_service.py (`isi_ulang`)
+  _id · token · oleh · mulai — kunci basi > 300 dtk (`KUNCI_BASI_DETIK`) diambil alih; kunci hidup → 409; dilepas
+  dengan token. Bukan `saga_lock` (tidak tampil di Kunci Saga; lepas sendiri sesudah 300 dtk).
+Bukan dokumen bisnis. Isi ulang = Pindah Dana (`fund_transfers`, `jenis: isi_ulang_kas_kecil`, potret posisi dana tetap,
+nominal = usulan dihitung server dan dibekukan; `nominal_dilihat` dari layar harus sama) lewat `fund_transfer_service.buat`.
+Satu isi ulang terbuka per rekening = Pindah Dana bertanda yang masih menunggu / dalam perjalanan.
+Rekening (`bank_accounts`): `cash_type` kini kas_besar | kas_kecil | **kas_kasir** (induk akun `1-1105`, kunci
+`kas_bank.kas_kasir`); `dana_tetap` (≥ 0, > 0 hanya kas kecil; tanpa bidang = 0) · `location_id` / `location_name`
+(lokasi kerja `warehouse_sites`, kas kasir & kas kecil; satu kas kecil per lokasi — ditegakkan layanan, tanpa indeks) ·
+jenis kas terkunci sesudah rekening punya kas / sub-akun.
 ```
 
 ### payment_plans — jadwal tagihan  [CR-T2 — tambahan field; satu jadwal hidup per pesanan]

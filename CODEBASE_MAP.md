@@ -144,6 +144,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash.py` | 4 | 296 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
 | `cash_account_cutover.py` | 5 | 94 | `/kas-per-rekening/usulan`, `/kas-per-rekening/{entity_id}/pratinjau`, `/kas-per-rekening/{entity_id}/siapkan`, `/kas-per-rekening/usulan/{id}/setujui`, `/kas-per-rekening/usulan/{id}/tolak` (Kas & Bank 1 — pindah saldo per PT) |
 | `cash_advances.py` | 25 | 233 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
+| `cash_counts.py` | 7 | 135 | `/cash-counts`, `/cash-counts/karyawan`, `/cash-counts/{count_id}`, `/cash-counts/{count_id}/approve`, `/cash-counts/{count_id}/reject`, `/cash-counts/{count_id}/batal` (Kas & Bank 3 — opname kas) |
 | `cash_holdings.py` | 7 | 132 | `/cash-deposits`, `/cash-deposits/{dep_id}/cancel`, `/cash-deposits/{dep_id}/receive`, `/cash-deposits/{dep_id}/reject`, `/cash-holdings`, `/cash-holdings/me/summary` |
 | `cash_out_requests.py` | 6 | 108 | `/cash-out-requests`, `/cash-out-requests/batas`, `/cash-out-requests/{id}`, `/cash-out-requests/{id}/approve`, `/cash-out-requests/{id}/reject`, `/cash-out-requests/{id}/cancel` (Kas & Bank 2 — pengajuan kas keluar manual di atas batas) |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
@@ -238,6 +239,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pdf.py` | 13 | 373 | `/branding/{entity_id}`, `/branding/{entity_id}/identity`, `/doc-types`, `/documents/{doc_type}`, `/preview`, `/render/{doc_type}/{source_id}` … |
 | `pegging.py` | 3 | 120 | `/inventory/rolls/{roll_id}/earmark`, `/pegging/rolls` |
 | `period_unlocks.py` | 6 | 130 | `/finance/period-unlocks`, `/finance/period-unlocks/active`, `/finance/period-unlocks/reclose-expired`, `/finance/period-unlocks/{plu_id}/approve`, `/finance/period-unlocks/{plu_id}/reject` |
+| `petty_float.py` | 3 | 71 | `/kas-kecil/dana-tetap`, `/kas-kecil/dana-tetap/{account_id}`, `/kas-kecil/dana-tetap/{account_id}/isi-ulang` (Kas & Bank 3 — dana tetap kas kecil & isi ulang) |
 | `po_board.py` | 2 | 90 | `/purchase-orders/board`, `/purchase-orders/{po_id}/stage` |
 | `pos.py` | 8 | 136 | `/pos/best-sellers`, `/pos/featured`, `/pos/featured/{product_id}`, `/pos/frequently-bought-together`, `/pos/highlights-config`, `/pos/recommendations` … |
 | `posting_failures.py` | 3 | 100 | `/finance/posting-failures`, `/finance/posting-failures/count`, `/finance/posting-failures/{kind}/{doc_id}/retry` |
@@ -368,6 +370,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash_advance_service.py` | 1136 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_account_cutover_service.py` | 825 | Kas & Bank 1 (T3) — pindah saldo kas lama ke akun buku besar per rekening per PT: pratinjau (baris jurnal per rekening per akun asal, sidik), siapkan, setujui orang kedua (hitung ulang, klaim, jurnal `pindah_saldo_kas`, menyalakan mode), tolak (melepas akun pilihan), keadaan sesudah aktif. |
 | `cash_account_mode.py` | 300 | Kas & Bank 1 (T1) — mode akun per rekening per PT (`aktif`, `aktif_sejak`, `nyalakan` sekali tulis) dan sub-akun rekening `{induk}-{NN}` / akun pilihan Finance (`buat_subakun`, `lepas_subakun`, `periksa_akun_pilihan`). Pembantu akun kas jurnal: `gl_service.akun_kas`. |
+| `cash_count_service.py` | 857 | Kas & Bank 3 (C3) — opname kas (`cash_counts`, `OPK-`): hitung fisik rekening tunai, potret saldo buku, selisih ≠ 0 menunggu orang kedua (`kontrol.selisih_kas`) → `create_cash(ref_type=cash_count)` berlawan `6-9200 Selisih Kas` atau `1-1290 Piutang Karyawan – Kekurangan Kas`; tolak beralasan; batal membalik kas penyesuaian (Posting Gagal `cash_count_cancel`); pengingat Meja Keuangan sejak penanda aktif. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 198 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_holding_service.py` | 672 | PM-T4 (PM-06, K-36) — tunai yang diterima sales dicatat sebagai TITIPAN di tangan pencatatnya sampai disetor. |
@@ -602,6 +605,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `penalty_service.py` | 858 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
 | `period_unlock_service.py` | 293 | FASE G-5 — UNLOCK PERIODE BEROTORITAS ("wajib dua orang & menutup sendiri"). |
 | `periodic_posting.py` | 64 | PK-22 (FY-02, keputusan K-13) — tanggal buku jurnal PERIODIK: gaji, penyusutan aset, dan akrual insentif. |
+| `petty_float_service.py` | 440 | Kas & Bank 3 (C2) — dana tetap kas kecil: posisi per rekening (dana tetap, saldo, sisa panjar, usulan isi ulang + rincian sejak isi ulang terakhir) dan isi ulang = Pindah Dana bertanda `isi_ulang_kas_kecil` bernominal dihitung server, dikunci per rekening (`petty_float_locks`). |
 | `placement_rules.py` | 304 | P02 (IMP-22/24/25) — evaluator penempatan BERSAMA untuk semua jalur (putaway manual, scan |
 | `po_amendment_service.py` | 386 | Phase 7.2 — PO Amendment / Version History (logic extracted from router). |
 | `po_board_service.py` | 640 | FASE P — **PAPAN PO PER LINI** (progres tahap seperti kertas kerja MD). |

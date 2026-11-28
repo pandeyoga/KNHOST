@@ -13,8 +13,10 @@ print("3) Akun bertanda kas / setara kas di bagan akun:");
 db.gl_accounts.find({$or: [{is_cash: true}, {cash_equivalent: true}]}, {_id: 0, code: 1, entity_id: 1, name: 1})
   .forEach((a) => print("   " + JSON.stringify(a)));
 print("4) Isian tersimpan kontrol.admin_tetap_dua_orang (kosong = memakai bawaan baru):");
-db.system_settings.find({"kontrol.admin_tetap_dua_orang": {$exists: true}},
-  {_id: 0, scope: 1, entity_id: 1, "kontrol.admin_tetap_dua_orang": 1}).forEach((s) => print("   " + JSON.stringify(s)));
+// Pengaturan Pusat Pengaturan disimpan di `config_values` (yang berlaku: effective_to kosong) — diperbaiki 28 Nov
+// (versi pertama butir ini membaca `system_settings`, yang tidak memuat kunci kontrol.*).
+db.config_values.find({key: "kontrol.admin_tetap_dua_orang", effective_to: {$in: ["", null]}},
+  {_id: 0, scope_type: 1, scope_id: 1, value: 1, changed_at: 1}).forEach((s) => print("   " + JSON.stringify(s)));
 print("5) Kas yang posting jurnalnya gagal/tertunda per PT (pindah saldo PT itu akan ditolak sampai nol):");
 db.cash_transactions.aggregate([{$match: {gl_status: {$in: ["failed", "pending"]}}},
   {$group: {_id: {pt: "$entity_id", status: "$gl_status"}, jumlah: {$sum: 1}}}]).forEach((r) => print("   " + JSON.stringify(r)));
