@@ -46,7 +46,8 @@ JALUR AP (bayar ke supplier)
 ----------------------------
 Pola yang sama dipakai saat KITA membayar tagihan supplier: kurang bayar → sisa tetap
 hutang / ditutup (potongan supplier, Dr 2-1100 · Cr 4-9000), lebih bayar → **uang muka
-supplier** (Dr 1-1400 · Cr Kas) yang bisa dipotongkan pada kontrabon berikutnya (G-7).
+supplier** (Dr 1-1400 · Cr Kas) yang bisa dipotongkan pada kontrabon berikutnya (G-7). Kas & Bank 4 (C8) — akun
+uang muka pemasok dari `gl_service.akun_uang_muka_pemasok`: 1-1400 sampai PT memindah saldonya, sesudahnya 1-1410.
 
 INVARIAN
 --------
@@ -1281,11 +1282,13 @@ async def assess_bill(bill: Dict[str, Any], amount: float) -> Dict[str, Any]:
              "requires_role": policy["writeoff_approver_role"] if policy["writeoff_requires_approval"] else ""},
         ]
     elif direction == DIR_OVER:
+        # Kas & Bank 4 (C8) — akun uang muka pemasok dari satu pembantu (1-1400 sampai PT memindah saldonya).
+        akun_um = await gl_service.akun_uang_muka_pemasok(entity_id)
         options = [
             {"value": "ap_advance", "label": KIND_LABEL["ap_advance"],
              "help": (f"Kelebihan {_rp(delta)} dicatat sebagai uang muka ke supplier dan bisa "
                       "dipotongkan pada tagihan / kontrabon berikutnya."),
-             "impact": "Uang Muka (1-1400) +" + _rp(delta) + " · kas keluar lebih besar.",
+             "impact": f"Uang Muka ({akun_um}) +" + _rp(delta) + " · kas keluar lebih besar.",
              "available": True, "default": True, "requires_reason": True, "requires_role": ""},
         ]
     return {
@@ -1344,7 +1347,7 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
     elif kind in ("ap_advance", "ap_rounding_advance"):
         effect = {"advance_amount": gap,
                   "cash_txn_number": (advance_cash or {}).get("number", ""),
-                  "account": gl_service.ACC_UANG_MUKA}
+                  "account": await gl_service.akun_uang_muka_pemasok(entity_id)}   # Kas & Bank 4 (C8)
     else:  # ap_outstanding
         effect = {"note": "Sisa tetap hutang supplier — tidak ada perubahan pembukuan."}
 

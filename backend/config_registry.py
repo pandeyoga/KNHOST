@@ -167,6 +167,9 @@ _sisip_sub_kft7("bank-kasus", _S("kwitansi-bank", "Kwitansi menunggu cocok bank"
 # (`kontrol.selisih_kas.*`; sub-judul "Dua orang: pembukuan" sudah 14 kunci).
 _sisip_sub_kft7("bank-kasus", _S("opname-kas", "Opname kas (hitung uang fisik)"), sesudah="kwitansi-bank")
 _sisip_sub_kft7("persetujuan", _S("dua-orang-kas", "Dua orang: opname kas"), sesudah="dua-orang-buku")
+# Kas & Bank 4 (C7) — batas uang muka karyawan (PD) terbuka per pemegang dan tenggat LPJ (`kas.pd_terbuka_maks`,
+# `kas.lpj_tenggat_hari`; sub-judul "Mata uang & tutup buku" tempat `finance.lpj_wajib_lampiran` sudah 14 kunci).
+_sisip_sub_kft7("bank-kasus", _S("uang-muka-karyawan", "Uang muka karyawan (PD) & LPJ"), sesudah="opname-kas")
 GROUPS.append({"id": "keamanan", "label": "Keamanan akun & sesi", "order": 14,
                "question": "Berapa kali salah sandi sebelum akun dikunci, dan berapa lama sesi masuk berlaku?",
                "sections": [_S("masuk", "Salah sandi & lama sesi")]})

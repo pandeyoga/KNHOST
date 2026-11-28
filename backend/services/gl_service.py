@@ -75,6 +75,9 @@ DEFAULT_COA: List = [
     ("1-1310", "Persediaan Dalam Perjalanan (Antar-PT)", "asset", "1-1000", True),
     ("1-1350", "Persediaan Dalam Proses (Makloon/WIP)", "asset", "1-1000", True),
     ("1-1400", "Uang Muka & Biaya Dibayar Dimuka", "asset", "1-1000", True),
+    # Kas & Bank 4 (C8) — uang muka ke pemasok, akun sendiri (dulu satu akun 1-1400 bersama uang muka karyawan). Diisi
+    # hanya lewat `akun_uang_muka_pemasok` sesudah PT memindah saldonya; akun kontrol buku pembantu uang muka pemasok.
+    ("1-1410", "Uang Muka Pemasok", "asset", "1-1000", True),
     ("1-1500", "PPN Masukan", "asset", "1-1000", True),
     ("1-1900", "Aset Lancar Lainnya", "asset", "1-1000", True),
     ("1-9999", "Akun Sementara (Suspense)", "asset", "1-1000", True),
@@ -171,6 +174,7 @@ ACC_HUTANG = "2-1100"
 ACC_GRIR = "2-1150"            # Gelombang 1 F-3/F-5 — GR/IR (barang diterima belum ditagih)
 ACC_IC_AP = "2-1250"           # M-3 — Utang Antar-Perusahaan (inter-company)
 ACC_UANG_MUKA = "1-1400"       # Uang Muka & Biaya Dibayar Dimuka (cash advance / petty cash)
+ACC_UANG_MUKA_PEMASOK = "1-1410"  # Kas & Bank 4 (C8) — Uang Muka Pemasok (bawaan `hutang.uang_muka_pemasok`)
 ACC_HUTANG_REIMBURSE = "2-1650"  # CX-05 — kelebihan pengeluaran LPJ di atas uang muka
 ACC_PPN_IN = "1-1500"          # Gelombang 1 F-5 — PPN Masukan
 ACC_EKUITAS_AWAL = "3-2900"    # Gelombang 1 F-3 — saldo awal persediaan
@@ -295,6 +299,22 @@ async def akun_kas_tanpa_dokumen(entity_id: str, cash_type: str) -> Dict[str, An
     from services import cash_account_mode as _mode
     return {"account_code": await akun_kas(entity_id, "", cash_type),
             "belum_tertaut": bool(entity_id) and await _mode.aktif(entity_id)}
+
+
+async def akun_uang_muka_pemasok(entity_id: Optional[str]) -> str:
+    """Kas & Bank bagian 4 (C8) — SATU pembantu akun uang muka pemasok untuk semua jalur pemasok: kelebihan bayar tagihan
+    (kas `ap_advance`), keputusan selisih bayar, kasus "lebih bayar pemasok" (uang muka & pengembalian dana), potongan
+    kontrabon `supplier_advance`.
+
+    PT `entity_id` belum memindah saldo uang muka pemasoknya (`supplier_advance_mode.aktif` salah) → `ACC_UANG_MUKA`
+    1-1400 persis seperti sebelumnya (dipetakan per PT di `_insert_entry` lewat `kas_bank.uang_muka_karyawan`, jadi
+    jurnalnya sama). Sudah pindah → akun pemetaan PT `hutang.uang_muka_pemasok` (bawaan `ACC_UANG_MUKA_PEMASOK` 1-1410).
+    Uang muka karyawan (PD cair, LPJ, sisa dikembalikan) TIDAK lewat sini — tetap 1-1400. Penjaga statik
+    `scripts/guardrails/verify_akun_uang_muka_pemasok.py` (INV-UMP-01) menolak akun uang muka harfiah di jalur pemasok."""
+    from services import supplier_advance_mode as _mode
+    if entity_id and await _mode.aktif(entity_id):
+        return await account_for("hutang.uang_muka_pemasok", entity_id)
+    return ACC_UANG_MUKA
 
 
 async def menyentuh_kas_lama(entity_id: str, codes: List[str]) -> bool:
@@ -2452,7 +2472,8 @@ async def post_contra_bon_deduction(*, cb_id: str, deduction_id: str, entity_id:
     """FASE G-7 — jurnal POTONGAN kontrabon. Idempotent per (kontrabon, potongan).
 
     Lawan akun per jenis potongan:
-      * `supplier_advance` → Dr 2-1100 Hutang / Cr 1-1400 Uang Muka (aset dipakai)
+      * `supplier_advance` → Dr 2-1100 Hutang / Cr uang muka pemasok (aset dipakai; `akun_uang_muka_pemasok`: 1-1400
+        sampai PT memindah saldonya, sesudahnya akun pemetaan PT bawaan 1-1410 — Kas & Bank 4)
       * `supplier_penalty` → Dr 2-1100 Hutang / Cr 4-9300 Pendapatan Denda
       * `match_variance`   → Dr 2-1100 Hutang / Cr 2-1150 GR/IR (barangnya memang tak diterima)
       * `other_agreed`     → Dr 2-1100 Hutang / Cr 4-9000 Pendapatan Lain-lain
@@ -2463,12 +2484,12 @@ async def post_contra_bon_deduction(*, cb_id: str, deduction_id: str, entity_id:
     non-kas pada subledger `vendor_bills` — justru itu yang menutup drift GL↔subledger.
     """
     credit_by_kind = {
-        "supplier_advance": ACC_UANG_MUKA,
         "supplier_penalty": ACC_PENDAPATAN_DENDA,
         "match_variance": ACC_GRIR,
         "other_agreed": ACC_PENDAPATAN_LAIN,
     }
-    credit = credit_by_kind.get(kind)
+    credit = (await akun_uang_muka_pemasok(entity_id) if kind == "supplier_advance"
+              else credit_by_kind.get(kind))
     amount = round(float(amount or 0), 2)
     src = f"{cb_id}:{deduction_id}"
     if not credit or amount <= EPS or await _already_posted("contra_bon_deduction", src):
@@ -3626,8 +3647,12 @@ async def post_store_credit_adjust(*, adjust_id: str, entity_id: str, amount_sig
         source_id=adjust_id, entity_id=entity_id or "", created_by="system", source_label=lbl)
 
 
-def _cash_out_contra(txn: Dict[str, Any]) -> str:
-    """Lawan akun kas KELUAR menurut `ref_type` / kategori / akun eksplisit. Murni (dipakai juga `preflight_cash`)."""
+def _cash_out_contra(txn: Dict[str, Any], akun_uang_muka_pemasok: str = "") -> str:
+    """Lawan akun kas KELUAR menurut `ref_type` / kategori / akun eksplisit. Murni (dipakai juga `preflight_cash`).
+
+    Kas & Bank 4 (C8) — `ref_type="ap_advance"` memakai `akun_uang_muka_pemasok`: hasil pembantu `akun_uang_muka_pemasok`
+    untuk PT buku jurnal, diisi `_lawan_kas_keluar` (jurnal kas & PERIKSA). Tanpa akun itu → `ValueError`: pemanggil
+    sinkron (`cash_contra_account`) hanya untuk kas manual."""
     ref_type = txn.get("ref_type") or ""
     if ref_type == "ar_refund":
         # FASE G-3 — pengembalian KELEBIHAN bayar pelanggan: uang itu tercatat sebagai
@@ -3642,8 +3667,11 @@ def _cash_out_contra(txn: Dict[str, Any]) -> str:
         # (borongan, bukan per faktur), bukan sifat kewajibannya.
         contra = ACC_HUTANG
     elif ref_type == "ap_advance":
-        # FASE G-3 — kelebihan bayar ke supplier menjadi UANG MUKA (aset), bukan beban.
-        contra = ACC_UANG_MUKA
+        # FASE G-3 — kelebihan bayar ke supplier menjadi UANG MUKA (aset), bukan beban. Kas & Bank 4 — akunnya dari
+        # pembantu `akun_uang_muka_pemasok` (1-1400 sampai PT memindah saldo uang muka pemasoknya).
+        if not akun_uang_muka_pemasok:
+            raise ValueError("Akun uang muka pemasok kas ap_advance belum ditentukan (pakai _lawan_kas_keluar).")
+        contra = akun_uang_muka_pemasok
     elif ref_type == "landed_cost":
         contra = ACC_HUTANG   # S#074 (LC-PAY): lunasi Hutang landed-cost (dikapitalisasi ke Persediaan), bukan Beban Angkut (double-count)
     elif ref_type == "reimburse_payable":
@@ -3662,9 +3690,17 @@ def _cash_out_contra(txn: Dict[str, Any]) -> str:
     return (txn.get("contra_account_code") or "").strip() or contra
 
 
+async def _lawan_kas_keluar(txn: Dict[str, Any], entity_id: str) -> str:
+    """Lawan akun kas KELUAR untuk jurnal dan PERIKSA kas (`_cash_out_contra`). Kas & Bank 4 (C8) — kelebihan bayar ke
+    pemasok (`ap_advance`) memakai pembantu `akun_uang_muka_pemasok` PT buku jurnal `entity_id`."""
+    um = await akun_uang_muka_pemasok(entity_id) if (txn.get("ref_type") or "") == "ap_advance" else ""
+    return _cash_out_contra(txn, um)
+
+
 def cash_contra_account(txn: Dict[str, Any]) -> str:
     """PK-39 — lawan akun kas KELUAR yang akan dijurnal `_post_cash_transaction` (publik: pemeriksaan anggaran kas keluar
-    membaca akun yang sama dengan jurnalnya). Logikanya tetap satu: `_cash_out_contra`."""
+    membaca akun yang sama dengan jurnalnya). Logikanya tetap satu: `_cash_out_contra`. Hanya untuk kas manual (anggaran,
+    kategori kas manual); kas uang muka pemasok `ap_advance` hanya lewat `_lawan_kas_keluar` (Kas & Bank 4)."""
     return _cash_out_contra(txn)
 
 
@@ -3677,8 +3713,8 @@ async def preflight_cash(txn: Dict[str, Any]) -> None:
     if amount <= EPS or txn.get("direction") != "out":
         return
     ent = txn.get("owner_entity_id") or txn.get("entity_id") or ""
-    await preflight_entry(lines=_balanced_pair(_cash_out_contra(txn), await _cash_account(txn, ent), amount,
-                                               "preflight"),
+    lawan = await _lawan_kas_keluar(txn, ent)
+    await preflight_entry(lines=_balanced_pair(lawan, await _cash_account(txn, ent), amount, "preflight"),
                           entity_id=ent, date=txn.get("txn_date") or now_iso(), source_type="cash_transaction")
 
 
@@ -3834,7 +3870,7 @@ async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]
             contra = (txn.get("contra_account_code") or "").strip() or contra
             lines = _balanced_pair(cash_acc, contra, amount, f"{number} · {desc}")
     else:  # out
-        lines = _balanced_pair(_cash_out_contra(txn), cash_acc, amount, f"{number} · {desc}")
+        lines = _balanced_pair(await _lawan_kas_keluar(txn, je_entity), cash_acc, amount, f"{number} · {desc}")
 
     je = await _insert_entry(
         lines=lines, description=f"Kas {({'in': 'masuk', 'out': 'keluar'}).get(direction, direction)} · {desc}", date=txn.get("txn_date") or now_iso(),

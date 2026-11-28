@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 MODULES = [
     ("kas_bank", "Kas & Bank"), ("penjualan", "Penjualan"), ("persediaan", "Persediaan"),
-    ("pembelian", "Pembelian"), ("retur", "Retur"), ("makloon", "Makloon"),
+    ("pembelian", "Pembelian"), ("hutang", "Hutang & uang muka pemasok"), ("retur", "Retur"), ("makloon", "Makloon"),
     ("antar_pt", "Antar-PT"), ("sdm", "SDM & Payroll"), ("aset", "Aset Tetap"), ("lain", "Lain-lain"),
 ]
 # UAT 24 Okt (audit UI tahap 2) — G1-08: bagan akun (gl_service.ACCOUNT_TYPES) memakai `income` untuk akun 4-xxxx;
@@ -33,6 +33,9 @@ CONTROL_LEDGERS: Dict[str, Dict[str, str]] = {
     "persediaan": {"label": "persediaan",
                    "dokumen": "Penyesuaian Stok, Stock Opname, atau Biaya Masuk (Landed Cost)"},
     "antar_pt": {"label": "antar-PT", "dokumen": "dokumen Antar-PT (transaksi, pelunasan, atau retur)"},
+    # Kas & Bank 4 (C8, §7.9.6) — uang muka ke pemasok: lahir dari kelebihan bayar / kasus "lebih bayar pemasok", turun
+    # lewat potongan kontrabon atau pengembalian dana kasus; reklas pindah saldo per PT adalah posting sistem.
+    "uang_muka_pemasok": {"label": "uang muka pemasok", "dokumen": "Kasus Keuangan atau Kontrabon"},
 }
 
 
@@ -115,6 +118,13 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Beban R&D", "Persediaan"), ["R&D Sample"]),
     _e("pembelian.hutang", "2-1100", "Hutang usaha", "tagihan supplier",
        ("Barang diterima belum ditagih", "Hutang"), ["Tagihan supplier", "Pembayaran supplier"], control="hutang"),
+    # Kas & Bank 4 (C8) — uang muka ke pemasok, akun sendiri (dulu satu akun 1-1400 bersama uang muka karyawan). Dibaca
+    # hanya lewat pembantu `gl_service.akun_uang_muka_pemasok`, dan baru dipakai sesudah PT memindah saldo uang muka
+    # pemasoknya (penanda `supplier_advance_mode`); sebelum itu jalur pemasok PT tetap 1-1400. Akun kontrol (PK-36).
+    _e("hutang.uang_muka_pemasok", "1-1410", "Uang muka pemasok",
+       "kelebihan bayar / uang muka ke pemasok, sesudah PT memindah saldo uang muka pemasoknya",
+       ("Uang muka pemasok", "Kas"), ["Pembayaran supplier", "Selisih bayar", "Kasus keuangan", "Kontrabon"],
+       control="uang_muka_pemasok"),
     _e("pembelian.gr_ir", "2-1150", "Barang diterima belum ditagih (GR/IR)", "barang PO diterima gudang",
        ("Persediaan", "Barang diterima belum ditagih"), ["Penerimaan PO", "Tagihan supplier"]),
     _e("pembelian.ppn_masukan", "1-1500", "PPN masukan", "tagihan supplier ber-PPN",

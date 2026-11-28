@@ -112,6 +112,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # piutang karyawan); pembanding = PENGHITUNG opname; tanpa nominal. Kelompok B, bawaan DUA orang: selisih opname
     # selalu butuh orang kedua (juga Admin — `ADMIN_TETAP_DUA_ORANG_AWAL`).
     _a("selisih_kas", "Selisih opname kas", "B", "2", False, _BB),
+    # Kas & Bank 4 (C8, spesifikasi §5.4 / §7 butir 7) — menyetujui pindah saldo uang muka pemasok satu PT ke akunnya
+    # sendiri (sekali per PT, menyalakan akun uang muka pemasok); pembanding = PENYIAP usulan; tanpa nominal. Kelompok B,
+    # bawaan DUA orang (juga Admin — `ADMIN_TETAP_DUA_ORANG_AWAL`), pola `pindah_saldo_kas`.
+    _a("pindah_uang_muka_pemasok", "Pindah saldo uang muka pemasok ke akun sendiri", "B", "2", False, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -175,13 +179,19 @@ for _x in KONTROL_AKSI:
 #: Kas & Bank 3 (Tugas 1) — aksi yang kuncinya sudah terdaftar, tetapi titik pasangnya dibangun tugas berikutnya. Selama
 #: di daftar ini kunci `kontrol.<aksi>.*` bertanda tidak dipakai (alasan di bawah) supaya kesehatan pengaturan tetap
 #: jujur (tanpa titik pasang = belum ada pembaca). Tugas yang memasang titiknya (`_TITIK`) menghapus barisnya di sini.
-#: Kas & Bank 3 Tugas 3 — `selisih_kas` dipasang (`services/cash_count_service.py:setujui`); daftar kini kosong.
-_BELUM_DIPASANG: Dict[str, str] = {}
+#: Kas & Bank 3 Tugas 3 — `selisih_kas` dipasang (`services/cash_count_service.py:setujui`).
+#: Kas & Bank 4 (Tugas 1) — `pindah_uang_muka_pemasok` → setujui pindah saldo uang muka pemasok (Tugas 3).
+_BELUM_DIPASANG: Dict[str, str] = {
+    "pindah_uang_muka_pemasok": ("Persetujuan pindah saldo uang muka pemasok sedang dibangun; aturan ini berlaku begitu "
+                                 "pindah saldonya tersedia."),
+}
 
 # KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {
     "dua-orang-pembelian": ("permintaan_pembelian", "setujui_po", "po_tingkat_berikut", "retur_pembelian"),
-    "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye", "bayar_hutang"),
+    # Kas & Bank 4 — + pindah saldo uang muka pemasok ("Dua orang: pembukuan" sudah 14 kunci).
+    "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye", "bayar_hutang",
+                         "pindah_uang_muka_pemasok"),
     "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit", "ubah_profil_kredit"),   # CR-T1 + 1
     # Kas & Bank 3 — sub-judul "Dua orang: pembukuan" sudah 14 kunci (batas sub-judul biasa, KF-T4).
     "dua-orang-kas": ("selisih_kas",),
@@ -198,6 +208,7 @@ _PENDEK: Dict[str, str] = {
     "asisten_uang_keluar": "Kartu asisten uang keluar",   # AG-T5
     "lembar_insentif": "Lembar insentif",   # KM-T3
     "pindah_saldo_kas": "Pindah saldo kas per rekening",   # Kas & Bank 1
+    "pindah_uang_muka_pemasok": "Pindah saldo uang muka pemasok",   # Kas & Bank 4
 }
 #: AG-T5 — contoh khusus (`example`) untuk kunci min_orang / batas_nominal satu aksi (spesifikasi unit).
 _CONTOH: Dict[str, Tuple[str, str]] = {
@@ -215,8 +226,10 @@ AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 #: (§7.8.6).
 #: Kas & Bank 3 (spesifikasi §7 butir 5) — `selisih_kas`: penghitung opname tidak menyetujui selisihnya sendiri, juga
 #: Admin.
+#: Kas & Bank 4 (spesifikasi §5.4) — `pindah_uang_muka_pemasok`: penyiap pindah saldo uang muka pemasok PT tidak
+#: menyetujuinya sendiri, juga Admin (pola `pindah_saldo_kas`).
 ADMIN_TETAP_DUA_ORANG_AWAL = ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
-                              "pindah_saldo_kas", "kas_keluar_manual", "selisih_kas"]
+                              "pindah_saldo_kas", "kas_keluar_manual", "selisih_kas", "pindah_uang_muka_pemasok"]
 
 K_ADMIN_BOLEH = "kontrol.admin_boleh_sendiri"
 K_ADMIN_TETAP = "kontrol.admin_tetap_dua_orang"

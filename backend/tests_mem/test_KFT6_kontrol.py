@@ -19,7 +19,8 @@ AWAL_DUA = {"acc_desain", "acc_sample", "po_custom", "permintaan_pembelian", "ha
             "setujui_po", "po_tingkat_berikut", "tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye",
             "retur_antar_pt", "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
             "pindah_saldo_kas",   # Kas & Bank 1 (Tugas 3) — aksi baru, rancangan mewajibkan orang kedua
-            "selisih_kas"}   # Kas & Bank 3 (Tugas 1) — selisih opname selalu orang kedua
+            "selisih_kas",   # Kas & Bank 3 (Tugas 1) — selisih opname selalu orang kedua
+            "pindah_uang_muka_pemasok"}   # Kas & Bank 4 (Tugas 1) — pindah saldo uang muka pemasok, orang kedua
 BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "tagihan_pemasok", "biaya_masuk",
               "kontrabon", "tagihan_kampanye", "retur_antar_pt", "susut_makloon", "retur_penjualan",
               "retur_pembelian", "proses_gaji", "uang_muka", "lpj_uang_muka", "pengurang_piutang",
@@ -52,8 +53,12 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
 # Kas & Bank 3 (Tugas 1) — aksi ke-45 `selisih_kas` (setujui selisih opname kas; bawaan DUA orang, TANPA nominal, juga
 # Admin) → 45 aksi, 27 bernominal, 74 kunci `kontrol.*`. Tugas 3 memasang titiknya (`cash_count_service.setujui`):
 # `config_catalog_kontrol._BELUM_DIPASANG` kini kosong, kuncinya aktif dan bisa diubah seperti aksi lain.
-N_AKSI = 45   # Kas & Bank 3 — aksi ke-45 `selisih_kas`
-N_KUNCI = 74   # Kas & Bank 3 — `kontrol.selisih_kas.min_orang`
+# Kas & Bank 4 (Tugas 1) — aksi ke-46 `pindah_uang_muka_pemasok` (setujui pindah saldo uang muka pemasok per PT; bawaan
+# DUA orang, TANPA nominal, juga Admin) → 46 aksi, 27 bernominal, 75 kunci `kontrol.*`. Kuncinya bertanda tidak dipakai
+# sampai titik pasangnya dibangun (`config_catalog_kontrol._BELUM_DIPASANG`, Tugas 3): tidak bisa diubah, bawaan "2"
+# tetap terbaca.
+N_AKSI = 46   # Kas & Bank 4 — aksi ke-46 `pindah_uang_muka_pemasok`
+N_KUNCI = 75   # Kas & Bank 4 — `kontrol.pindah_uang_muka_pemasok.min_orang`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000),
                 "kas_keluar_manual": (1000000, 1000000000000)}   # Kas & Bank 2 (C6) — batas bawaan Rp 1.000.000
 
@@ -101,7 +106,8 @@ async def test_katalog_35_aksi_20_bernominal():
         "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
         "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
         "kas_keluar_manual",   # Kas & Bank 2 (spesifikasi §7 butir 4)
-        "selisih_kas"]   # Kas & Bank 3 (spesifikasi §7 butir 5)
+        "selisih_kas",   # Kas & Bank 3 (spesifikasi §7 butir 5)
+        "pindah_uang_muka_pemasok"]   # Kas & Bank 4 (spesifikasi §5.4)
     assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == N_KUNCI
 
 
@@ -178,7 +184,8 @@ async def test_aturan_endpoint(klien, kepala_admin):
     assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal",
                                           "pindah_saldo_kas",   # Kas & Bank 1 (ketetapan R9)
                                           "kas_keluar_manual",   # Kas & Bank 2 (spesifikasi §7 butir 4)
-                                          "selisih_kas"]   # Kas & Bank 3 (spesifikasi §7 butir 5)
+                                          "selisih_kas",   # Kas & Bank 3 (spesifikasi §7 butir 5)
+                                          "pindah_uang_muka_pemasok"]   # Kas & Bank 4 (spesifikasi §5.4)
     po = next(x for x in j["rows"] if x["aksi"] == "setujui_po")
     assert {k: po[k] for k in ("label", "kelompok", "punya_nominal", "min_orang", "batas_nominal", "sumber")} == {
         "label": "Persetujuan PO", "kelompok": "B", "punya_nominal": True, "min_orang": "2", "batas_nominal": 0.0,

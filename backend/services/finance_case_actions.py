@@ -577,7 +577,7 @@ async def _cek_uang_muka_supplier(case, p):
     await _supplier(case, p)
     ent = case.get("entity_id") or ""
     plan = _rencana([ent])
-    plan["journals"] = [_j(ent, gl.ACC_UANG_MUKA, gl.ACC_HUTANG, amount, "ap_adv")]
+    plan["journals"] = [_j(ent, await gl.akun_uang_muka_pemasok(ent), gl.ACC_HUTANG, amount, "ap_adv")]
     return plan
 
 
@@ -591,7 +591,7 @@ async def _cek_terima_refund_supplier(case, p):
     rek = await _rekening(ent, p.get("account_id", ""), p.get("cash_type") or "kas_besar")
     plan = _rencana([ent])
     plan["cash"] = [{"entity_id": ent, "direction": "in", "amount": amount, "account_id": rek["account_id"]}]
-    plan["journals"] = [_j(ent, rek["account_code"], gl.ACC_UANG_MUKA, amount, via="kas")]
+    plan["journals"] = [_j(ent, rek["account_code"], await gl.akun_uang_muka_pemasok(ent), amount, via="kas")]
     return plan
 
 
@@ -1056,18 +1056,20 @@ async def act_settlement_antar_entitas(case: Dict[str, Any], p: Dict[str, Any],
 
 async def act_uang_muka_supplier(case: Dict[str, Any], p: Dict[str, Any],
                                  actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Kelebihan bayar supplier → uang muka (Dr 1-1400 / Cr 2-1100)."""
+    """Kelebihan bayar supplier → uang muka (Dr uang muka pemasok / Cr 2-1100). Kas & Bank 4 (C8) — akun uang muka dari
+    `gl_service.akun_uang_muka_pemasok` (1-1400 sampai PT memindah saldonya, sesudahnya 1-1410)."""
     amount = round(float(p.get("amount") or 0), 2)
     sup_id = p.get("supplier_id") or case.get("supplier_id") or ""
     sup = await db.suppliers.find_one({"id": sup_id}, {"_id": 0})
     if not sup:
         raise CaseActionError("Supplier tidak ditemukan")
+    akun_um = await gl.akun_uang_muka_pemasok(case.get("entity_id", ""))
     await _sekali("uang_muka_pemasok", lambda: _inc_uang_muka(sup_id, amount))
     je = await _jurnal(case, entity_id=case.get("entity_id", ""), amount=amount,
-                       debit_acc=gl.ACC_UANG_MUKA, credit_acc=gl.ACC_HUTANG,
+                       debit_acc=akun_um, credit_acc=gl.ACC_HUTANG,
                        label=f"{case['number']} · uang muka supplier {sup.get('name', '')}",
                        suffix="ap_adv", actor=actor)
-    docs = _je_doc(je, "Jurnal Dr 1-1400 Uang Muka / Cr 2-1100 Utang Usaha")
+    docs = _je_doc(je, f"Jurnal Dr {akun_um} Uang Muka / Cr 2-1100 Utang Usaha")
     docs.append(_doc("supplier_advance", sup_id, sup.get("code", ""),
                      f"Saldo uang muka {sup.get('name', '')} +{_rp(amount)}"))
     return {"documents": docs, "amount": amount}
@@ -1087,7 +1089,7 @@ async def _inc_uang_muka(sup_id: str, delta: float) -> Dict[str, Any]:
 
 async def act_terima_refund_supplier(case: Dict[str, Any], p: Dict[str, Any],
                                      actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Supplier mengembalikan uang → Dr Kas-Bank / Cr 1-1400 Uang Muka."""
+    """Supplier mengembalikan uang → Dr Kas-Bank / Cr uang muka pemasok (Kas & Bank 4 — `akun_uang_muka_pemasok`)."""
     amount = round(float(p.get("amount") or 0), 2)
     sup_id = p.get("supplier_id") or case.get("supplier_id") or ""
     sup = await db.suppliers.find_one({"id": sup_id}, {"_id": 0})
@@ -1098,7 +1100,7 @@ async def act_terima_refund_supplier(case: Dict[str, Any], p: Dict[str, Any],
         description=f"Pengembalian dana dari {sup.get('name', '')} · {case['number']}",
         entity_id=case.get("entity_id", ""), account_id=p.get("account_id", ""),
         cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
-        ref_id=case["id"], contra=gl.ACC_UANG_MUKA,
+        ref_id=case["id"], contra=await gl.akun_uang_muka_pemasok(case.get("entity_id", "")),
         owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
     await _sekali("uang_muka_pemasok", lambda: _inc_uang_muka(sup_id, -amount))
     return {"documents": res["documents"], "amount": amount}

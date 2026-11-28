@@ -308,6 +308,12 @@ STATIK=(
   # di luar daftar pengecualian berkomentar (bagan akun, katalog pemetaan, pembaca) = MERAH; pengecualian basi = MERAH.
   "guard:akun_kas_satu_pintu SELF-TEST (bukti-merah dua arah, 13 kasus)|python scripts/guardrails/verify_akun_kas_satu_pintu.py --self-test"
   "guard:akun_kas_satu_pintu (INV-CASH-02, akun kas jurnal lewat satu pembantu)|python scripts/guardrails/verify_akun_kas_satu_pintu.py"
+  # Kas & Bank 4 (C8, §5.3) — INV-UMP-01. Akun uang muka pemasok di jalur pemasok (bayar hutang, selisih bayar, kasus
+  # lebih bayar & pengembalian dana, potongan kontrabon, lawan kas `ap_advance`) hanya dari `gl_service.akun_uang_muka_
+  # pemasok` (1-1400 sampai PT pindah saldo, sesudahnya 1-1410); 1-1400/1-1410 harfiah, ACC_UANG_MUKA(_PEMASOK), dan
+  # kunci pemetaannya di cakupan itu = MERAH; lokasi cakupan yang hilang = MERAH.
+  "guard:akun_uang_muka_pemasok SELF-TEST (bukti-merah dua arah, 15 kasus)|python scripts/guardrails/verify_akun_uang_muka_pemasok.py --self-test"
+  "guard:akun_uang_muka_pemasok (INV-UMP-01, uang muka pemasok lewat satu pembantu)|python scripts/guardrails/verify_akun_uang_muka_pemasok.py"
   # FIX-10 (audit 2026-11-09 B3a SSOT-1) — INV-ROLL-02. Status roll dulu ditulis 63+ panggilan di 18 berkas tanpa
   # tabel transisi; kini satu pintu `services/roll_state.transition()` (daftar-izin + CAS + jejak + saldo). Ratchet:
   # penulis `status` inventory_rolls di luar roll_state hanya boleh turun (baseline 0); berkas baru = MERAH.

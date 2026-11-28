@@ -98,3 +98,30 @@ E("finance.lpj_wajib_lampiran", group="keuangan-dasar", section="tutup-buku", ty
   example="Menyala untuk PT A → LPJ PT A tanpa lampiran ditolak saat diajukan; PT B tidak terpengaruh",
   consumers=("services/cash_advance_service.py:submit_settlement",),
   risk="medium", permission=("accounting", "manage"))
+
+
+# ── Kas & Bank 4 (C7) — batas uang muka karyawan terbuka per pemegang dan tenggat LPJ ────────────────────────────────
+# Spesifikasi `docs/superpowers/specs/2026-11-28-kas-bank-4-uang-muka-design.md` §5.1–§5.2 (keputusan pemilik C7: satu
+# PD terbuka per orang, LPJ dalam 7 hari). Tugas 1 hanya MENDAFTARKAN kuncinya; pembacanya (ajukan & cairkan PD,
+# `services/cash_advance_service.py`) dibangun Tugas 2 — selama itu bertanda tidak dipakai supaya kesehatan pengaturan
+# tetap jujur (tanpa pembaca = belum berlaku). Tugas 2 mengisi `consumers`, mengaktifkannya, dan menghapus `_KB4_BELUM`.
+_KB4_BELUM = ("Batas uang muka karyawan dan tenggat LPJ sedang dibangun; aturan ini berlaku begitu pengajuan dana "
+              "memeriksanya.")
+E("kas.pd_terbuka_maks", group="bank-kasus", section="uang-muka-karyawan", type="int", default=1, min=0, max=20,
+  step=1, unit="pengajuan", scopes=G,
+  label="Uang muka terbuka per orang (paling banyak)",
+  help=("Berapa pengajuan dana (PD) yang boleh dipegang satu orang sekaligus selama LPJ-nya belum selesai. "
+        "0 = tanpa batas: PD baru tetap bisa diajukan walau PD sebelumnya belum di-LPJ-kan."),
+  impact="PD baru tertahan selama pemegangnya masih memegang PD terbuka sebanyak angka ini.",
+  example="1 · Andi masih memegang PD yang belum di-LPJ-kan → PD baru untuk Andi tidak bisa diajukan",
+  risk="medium", permission=("accounting", "manage"), status="not_used", not_used_reason=_KB4_BELUM,
+  related=("kas.lpj_tenggat_hari", "finance.lpj_wajib_lampiran"))
+E("kas.lpj_tenggat_hari", group="bank-kasus", section="uang-muka-karyawan", type="duration", default=7, min=1,
+  max=90, step=1, unit="hari", scopes=G,
+  label="Tenggat LPJ uang muka (hari sesudah cair)",
+  help=("LPJ pengajuan dana (PD) diajukan paling lambat sekian hari sesudah uangnya dicairkan. Tenggat dicatat saat PD "
+        "cair, jadi mengubah angka ini tidak menggeser tenggat PD yang sudah cair."),
+  impact="PD yang lewat tenggat muncul di Meja Keuangan dan pemohonnya diingatkan.",
+  example="7 hari · PD cair 1 Desember → LPJ jatuh tempo 8 Desember; belum diajukan 9 Desember → lewat 1 hari",
+  risk="medium", permission=("accounting", "manage"), status="not_used", not_used_reason=_KB4_BELUM,
+  related=("kas.pd_terbuka_maks", "finance.lpj_wajib_lampiran"))

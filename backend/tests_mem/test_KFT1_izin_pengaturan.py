@@ -193,6 +193,11 @@ KB31_KUNCI = 3
 # Kas & Bank 3 (Tugas 3) — kontrol dua orang `kontrol.selisih_kas.min_orang` (izin `settings.manage`) kini terpasang
 # (`cash_count_service.setujui`, dulu bertanda tidak dipakai sejak Tugas 1 — U04 saja): U02 dan U04.
 KB33_KUNCI_KONTROL = 1
+# Kas & Bank 4 (Tugas 1) — dua kunci uang muka karyawan `kas.pd_terbuka_maks`, `kas.lpj_tenggat_hari` (izin
+# `accounting.manage`) dan kontrol dua orang `kontrol.pindah_uang_muka_pemasok.min_orang` (izin `settings.manage`)
+# terdaftar tetapi bertanda tidak dipakai sampai pembaca / titik pasangnya dibangun (Tugas 2 / Tugas 3): U04 saja.
+KB41_KUNCI_BELUM = 2
+KB41_KUNCI_KONTROL_BELUM = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -274,7 +279,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
         + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI + PYT5_KUNCI + KMT3_KUNCI_KONTROL \
         + R0_FIX7_KUNCI + MPT1_KUNCI + MPT5_KUNCI + MPT5B_KUNCI + MPT4B_KUNCI + KA1_KUNCI + BTP_KUNCI + LBT1_KUNCI \
         + LB_R18_KUNCI + F1_KUNCI + KB13_KUNCI_KONTROL + KB14_KUNCI_KONTROL + KB22_KUNCI_KONTROL + KB31_KUNCI \
-        + KB33_KUNCI_KONTROL
+        + KB33_KUNCI_KONTROL + KB41_KUNCI_BELUM + KB41_KUNCI_KONTROL_BELUM
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

@@ -295,6 +295,11 @@
      "advanced": false
     },
     {
+     "id": "uang-muka-karyawan",
+     "label": "Uang muka karyawan (PD) & LPJ",
+     "advanced": false
+    },
+    {
      "id": "kasus",
      "label": "Kasus keuangan",
      "advanced": false
@@ -1449,6 +1454,14 @@
    "pajak-pembukuan",
    "tutup-buku"
   ],
+  "kas.pd_terbuka_maks": [
+   "bank-kasus",
+   "uang-muka-karyawan"
+  ],
+  "kas.lpj_tenggat_hari": [
+   "bank-kasus",
+   "uang-muka-karyawan"
+  ],
   "docref.autolink_enabled": [
    "persetujuan",
    "rujukan-dokumen"
@@ -2392,6 +2405,10 @@
   "kontrol.selisih_kas.min_orang": [
    "persetujuan",
    "dua-orang-kas"
+  ],
+  "kontrol.pindah_uang_muka_pemasok.min_orang": [
+   "persetujuan",
+   "dua-orang-hutang"
   ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
