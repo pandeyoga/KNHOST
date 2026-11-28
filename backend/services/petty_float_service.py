@@ -6,14 +6,18 @@ Rancangan: `docs/superpowers/specs/2026-11-28-kas-bank-3-kasir-dana-tetap-opname
 * **Dana tetap** = bidang rekening kas kecil `dana_tetap` (Tugas 1; 0 = tidak memakai dana tetap, rekening lama tanpa
   bidang = 0). Modul ini tidak menulis rekening.
 * **Posisi** (`posisi`): dana tetap, saldo buku rekening (aturan buku kas rekening yang sama dengan Rekening & Saldo,
-  `bank_service._txns_for`), **panjar belum LPJ** = pencairan uang muka (kas `ref_type="cash_advance"`, `account_id` =
-  rekening ini, tidak batal) yang PD-nya belum ber-LPJ disetujui (§7.8.1 — tanpa bidang baru; pencairan lama tanpa
-  rekening tidak dihitung ke rekening mana pun dan disebut di `panjar_tanpa_rekening`), dan
-  **usulan isi ulang = dana tetap − saldo buku − panjar belum LPJ** (≤ 0 → 0).
+  `bank_service._txns_for`), **panjar belum LPJ** (`panjar_belum_lpj`) = SISA uang muka yang masih di tangan karyawan,
+  per pencairan dari rekening ini (kas `ref_type="cash_advance"`, `account_id` = rekening ini, tidak batal; ketetapan
+  pengendali R3): dicairkan − pengeluaran LPJ disetujui (paling besar nilai panjar) − sisa yang sudah dikembalikan (kas
+  `cash_advance_return` LPJ itu, rekening mana pun). PD tanpa LPJ disetujui = penuh. Tanpa bidang baru (§7.8.1);
+  pencairan lama tanpa rekening tidak dihitung ke rekening mana pun dan disebut di `panjar_tanpa_rekening`.
+  **usulan isi ulang = dana tetap − saldo buku − panjar belum LPJ** (≤ 0 → 0) = pengeluaran yang sudah
+  dipertanggungjawabkan; saldo buku + panjar belum LPJ + usulan = dana tetap (selama tidak lebih).
   Rincian = dokumen sejak isi ulang terakhir (Pindah Dana bertanda yang tidak batal, dihitung dari waktu dibuat):
-  LPJ disetujui (pengaruh = panjar yang ditutup LPJ itu), kas keluar manual, reimburse dibayar, pengembalian sisa panjar
-  (pengaruh negatif), dan kas lain di rekening ini. Pencairan panjar tidak masuk rincian (lihat `panjar`). `pengaruh` =
-  besar perubahan usulan karena baris itu; jumlahnya = `total_rincian`.
+  LPJ disetujui (pengaruh = pengeluaran LPJ, paling besar panjar), kas keluar manual, reimburse dibayar, kas lain di
+  rekening ini (masuk −, keluar +); pengembalian sisa panjar rekening ini = pengaruh 0 (uang pindah dari tangan karyawan
+  ke kas), sisa panjar rekening ini yang dikembalikan ke rekening LAIN = +. Pencairan panjar tidak masuk rincian (lihat
+  `panjar`). `pengaruh` = perubahan usulan karena baris itu; jumlahnya = `total_rincian`.
 * **Isi ulang** (`isi_ulang`): PERIKSA (rekening kas kecil berdana tetap, tidak ada isi ulang yang masih berjalan,
   usulan > 0, rekening sumber = bank / kas besar PT yang sama) → **kunci per rekening** (dokumen `petty_float_locks`
   ber-`_id` = id rekening, pola kunci tutup buku PK-11: kunci basi > `KUNCI_BASI_DETIK` diambil alih, dilepas dengan
@@ -45,8 +49,8 @@ LPJ_DISETUJUI = ("approved", "posted_to_gl")
 PESAN_TIDAK_ADA = "Rekening tidak ditemukan."
 PESAN_SUMBER_TIDAK_ADA = "Rekening sumber tidak ditemukan."
 PESAN_SUMBER = "Pilih rekening sumber isi ulang: rekening bank atau kas besar PT yang sama."
-PESAN_NOMINAL = ("Nominal isi ulang dihitung sistem dari posisi dana tetap (dana tetap − saldo buku − panjar belum "
-                 "LPJ), jadi tidak bisa diisi.")
+PESAN_NOMINAL = ("Nominal isi ulang dihitung sistem dari posisi dana tetap (dana tetap − saldo buku − sisa panjar "
+                 "di tangan karyawan), jadi tidak bisa diisi.")
 
 #: Jenis baris rincian kas menurut rujukan kas (`ref_type`) — label tampil (`02` §4 L1: kode mentah tidak tampil).
 _JENIS_KAS = {
@@ -84,8 +88,8 @@ def pesan_tanpa_dana_tetap(nama: str) -> str:
 
 
 def pesan_tidak_perlu(nama: str, dana: float) -> str:
-    return (f"Rekening {nama} tidak perlu diisi ulang: saldo buku ditambah panjar yang belum di-LPJ sudah mencapai "
-            f"dana tetap {rupiah(dana)}.")
+    return (f"Rekening {nama} tidak perlu diisi ulang: saldo buku ditambah sisa panjar di tangan karyawan sudah "
+            f"mencapai dana tetap {rupiah(dana)}.")
 
 
 def pesan_menunggu(nama: str, doc: Dict[str, Any]) -> str:
@@ -158,34 +162,65 @@ async def _lpj_disetujui(ca_ids: Iterable[str]) -> Dict[str, Dict[str, Any]]:
 
 
 async def _pencairan(query: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Kas pencairan panjar (tidak batal) + PD-nya + LPJ disetujui-nya (bila ada)."""
+    """Kas pencairan panjar (tidak batal) + PD-nya + LPJ disetujui-nya (bila ada) + kas pengembalian sisa LPJ itu
+    (tidak batal, rekening mana pun)."""
     kas = await db.cash_transactions.find({"ref_type": "cash_advance", "direction": "out", "status": {"$ne": "void"},
                                            **query}, {"_id": 0}).sort("created_at", 1).to_list(None)
     ids = [t.get("ref_id") for t in kas if t.get("ref_id")]
     pd = {d["id"]: d async for d in db.cash_advances.find({"id": {"$in": ids}}, {"_id": 0})} if ids else {}
     lpj = await _lpj_disetujui(ids)
-    return [{"kas": t, "pd": pd.get(t.get("ref_id")), "lpj": lpj.get(t.get("ref_id"))} for t in kas]
+    kembali: Dict[str, List[Dict[str, Any]]] = {}
+    stl_ids = sorted(s["id"] for s in lpj.values() if s.get("id"))
+    if stl_ids:
+        async for t in db.cash_transactions.find({"ref_type": "cash_advance_return", "ref_id": {"$in": stl_ids},
+                                                  "direction": "in", "status": {"$ne": "void"}}, {"_id": 0}):
+            kembali.setdefault(t["ref_id"], []).append(t)
+    out = []
+    for t in kas:
+        s = lpj.get(t.get("ref_id"))
+        out.append({"kas": t, "pd": pd.get(t.get("ref_id")), "lpj": s,
+                    "kembali": kembali.get((s or {}).get("id") or "", [])})
+    return out
 
 
-def _terbuka(baris: Dict[str, Any]) -> bool:
-    """Panjar belum di-LPJ: PD masih `disbursed` dan belum punya LPJ disetujui."""
-    pd = baris["pd"] or {}
-    return pd.get("status") == "disbursed" and not baris["lpj"]
+def _pakai_sen(b: Dict[str, Any]) -> int:
+    """Bagian panjar yang sudah dipertanggungjawabkan LPJ disetujui (pengeluaran, paling besar nilai panjar; kelebihan =
+    hutang reimburse, dibayar lewat kasnya sendiri)."""
+    if not b["lpj"]:
+        return 0
+    return min(to_cents(_f(b["lpj"].get("total_pengeluaran"))), to_cents(_f(b["kas"].get("amount"))))
+
+
+def _kembali_sen(b: Dict[str, Any]) -> int:
+    return sum(to_cents(_f(k.get("amount"))) for k in b["kembali"])
+
+
+def _sisa_sen(b: Dict[str, Any]) -> int:
+    """Sisa panjar di tangan karyawan (sen) — ketetapan R3: dicairkan − pengeluaran LPJ disetujui − sisa yang sudah
+    dikembalikan. PD tanpa LPJ disetujui: penuh selama PD masih `disbursed`."""
+    cair = to_cents(_f(b["kas"].get("amount")))
+    if not b["lpj"]:
+        return cair if (b["pd"] or {}).get("status") == "disbursed" else 0
+    return max(cair - _pakai_sen(b) - _kembali_sen(b), 0)
 
 
 def _baris_panjar(b: Dict[str, Any]) -> Dict[str, Any]:
-    t, pd = b["kas"], b["pd"] or {}
+    t, pd, s = b["kas"], b["pd"] or {}, b["lpj"] or {}
     return {"cash_advance_id": t.get("ref_id") or "", "nomor": pd.get("number") or "",
             "kegiatan": pd.get("kegiatan") or "", "pemohon": pd.get("created_by") or "", "nominal": _f(t.get("amount")),
+            "pengeluaran_lpj": from_cents(_pakai_sen(b)), "dikembalikan": from_cents(_kembali_sen(b)),
+            "sisa": from_cents(_sisa_sen(b)), "lpj_id": s.get("id") or "", "lpj_nomor": s.get("number") or "",
+            "keadaan": "sisa_belum_kembali" if s else "belum_lpj",
+            "keadaan_label": "Sisa belum dikembalikan" if s else "Belum LPJ",
             "tanggal": _tgl(t.get("txn_date")), "kas_id": t.get("id") or "", "kas_nomor": t.get("number") or ""}
 
 
 async def _panjar_tanpa_rekening(entity_id: str) -> Dict[str, Any]:
-    """§7.8.1 — pencairan lama tanpa rekening (kas kecil, PT ini) yang panjarnya belum di-LPJ: tidak dihitung ke rekening
-    mana pun, disebut supaya Finance tahu ada uang muka di luar hitungan."""
+    """§7.8.1 — pencairan lama tanpa rekening (kas kecil, PT ini) yang sisanya masih di tangan karyawan: tidak dihitung ke
+    rekening mana pun, disebut supaya Finance tahu ada uang muka di luar hitungan."""
     rows = [b for b in await _pencairan({"entity_id": entity_id, "account_id": {"$in": [None, ""]},
-                                         "cash_type": "kas_kecil"}) if _terbuka(b)]
-    return {"jumlah": len(rows), "total": from_cents(sum(to_cents(_f(b["kas"].get("amount"))) for b in rows)),
+                                         "cash_type": "kas_kecil"}) if _sisa_sen(b) > 0]
+    return {"jumlah": len(rows), "total": from_cents(sum(_sisa_sen(b) for b in rows)),
             "nomor": [(b["pd"] or {}).get("number") or "" for b in rows][:5]}
 
 
@@ -206,31 +241,46 @@ def _baris_kas(t: Dict[str, Any]) -> Dict[str, Any]:
 
 def _baris_lpj(b: Dict[str, Any]) -> Dict[str, Any]:
     t, pd, s = b["kas"], b["pd"] or {}, b["lpj"] or {}
-    panjar = _f(t.get("amount"))
+    pakai = from_cents(_pakai_sen(b))
     return {"jenis": "lpj", "label": "LPJ disetujui", "tanggal": _tgl(s.get("approved_at")),
             "nomor": s.get("number") or "", "dokumen": pd.get("number") or "",
             "keterangan": f"{pd.get('number') or ''} — {pd.get('kegiatan') or ''}".strip(" —"),
             "ref_type": "cash_advance_settlement", "ref_id": s.get("id") or "", "kas_id": t.get("id") or "",
-            "arah": "", "nominal": panjar, "pengeluaran": _f(s.get("total_pengeluaran")), "pengaruh": panjar,
-            "dicatat_pada": s.get("approved_at") or ""}
+            "arah": "", "nominal": pakai, "panjar": _f(t.get("amount")), "pengeluaran": _f(s.get("total_pengeluaran")),
+            "pengaruh": pakai, "dicatat_pada": s.get("approved_at") or ""}
 
 
-def _rincian(txns: List[Dict[str, Any]], pencairan: List[Dict[str, Any]], sejak: str,
+def _baris_kembali_lain(b: Dict[str, Any], k: Dict[str, Any]) -> Dict[str, Any]:
+    """Sisa panjar rekening ini yang dikembalikan karyawan ke rekening LAIN: uang keluar dari hitungan dana tetap."""
+    row = _baris_kas(k)
+    row.update({"jenis": "pengembalian_panjar_rekening_lain", "label": "Sisa panjar dikembalikan ke rekening lain",
+                "dokumen": (b["pd"] or {}).get("number") or "", "pengaruh": _f(k.get("amount"))})
+    return row
+
+
+def _rincian(rid: str, txns: List[Dict[str, Any]], pencairan: List[Dict[str, Any]], sejak: str,
              isi_ulang_ids: set) -> List[Dict[str, Any]]:
     """Baris sejak `sejak` (waktu dibuat isi ulang terakhir; "" = belum pernah diisi ulang → seluruh riwayat, termasuk
     dokumen lama tanpa cap waktu)."""
     def baru(waktu: Any) -> bool:
         return not sejak or (waktu or "") > sejak
+    lpj_rekening = {b["lpj"]["id"] for b in pencairan if b["lpj"] and b["lpj"].get("id")}
     rows = []
     for t in txns:
         if not baru(t.get("created_at")) or t.get("ref_type") == "cash_advance":
             continue
         if t.get("ref_type") == "fund_transfer" and t.get("ref_id") in isi_ulang_ids:
             continue
-        rows.append(_baris_kas(t))
+        row = _baris_kas(t)
+        if t.get("ref_type") == "cash_advance_return" and t.get("ref_id") in lpj_rekening:
+            row["pengaruh"] = 0.0   # sisa panjar rekening ini kembali: dari tangan karyawan ke kas, usulan tetap
+        rows.append(row)
     for b in pencairan:
         if b["lpj"] and baru(b["lpj"].get("approved_at")):
             rows.append(_baris_lpj(b))
+        for k in b["kembali"]:
+            if (k.get("account_id") or "") != rid and baru(k.get("created_at")):
+                rows.append(_baris_kembali_lain(b, k))
     rows.sort(key=lambda r: (r["dicatat_pada"], r["nomor"]))
     return rows
 
@@ -249,10 +299,10 @@ async def _posisi(acc: Dict[str, Any]) -> Dict[str, Any]:
     terakhir = hidup[0] if hidup else None
     menunggu = next((d for d in hidup if d.get("status") in (fts.MENUNGGU, fts.PERJALANAN)), None)
     pencairan = await _pencairan({"account_id": rid})
-    terbuka = [b for b in pencairan if _terbuka(b)]
-    panjar_sen = sum(to_cents(_f(b["kas"].get("amount"))) for b in terbuka)
+    terbuka = [b for b in pencairan if _sisa_sen(b) > 0]
+    panjar_sen = sum(_sisa_sen(b) for b in terbuka)
     usulan_sen = max(to_cents(dana) - to_cents(saldo) - panjar_sen, 0) if dana > 0 else 0
-    rincian = _rincian(txns, pencairan, (terakhir or {}).get("created_at") or "", {d["id"] for d in isi})
+    rincian = _rincian(rid, txns, pencairan, (terakhir or {}).get("created_at") or "", {d["id"] for d in isi})
     alasan = ""
     if not bs._aktif(acc):   # noqa: SLF001
         alasan = pesan_nonaktif(nama)

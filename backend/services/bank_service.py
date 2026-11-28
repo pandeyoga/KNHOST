@@ -100,7 +100,37 @@ async def rekening_pt(entity_id: str) -> List[Dict[str, Any]]:
             hitung[_jenis(a)] = hitung.get(_jenis(a), 0) + 1
     for a in accs:
         a["_efektif"] = bidang_efektif(a, tunggal=hitung.get(_jenis(a), 0) == 1)
+    await _bawaan_tunai_kasir(entity_id, accs)
     return accs
+
+
+async def _bawaan_tunai_kasir(entity_id: str, accs: List[Dict[str, Any]]) -> None:
+    """Kas & Bank 3 (C1, keputusan pemilik: uang tunai pelanggan masuk kas kasir; ketetapan pengendali R4) — bawaan
+    penerimaan TUNAI yang BERLAKU (`_efektif`, tidak ditulis) di PT yang punya rekening kas kasir aktif penerima:
+
+    * bawaan tunai yang tersimpan di rekening BUKAN kas kasir tidak berlaku (juga yang ditulis isi awal PM-T1 saat kas
+      kecil lama masih satu-satunya rekening tunai — mis. tepat sebelum rekening kasir pertama dibuat dari layar);
+    * tepat satu kas kasir penerima cara bayar itu → kasir itu bawaannya;
+    * dua kas kasir penerima atau lebih → bawaan tersimpan di salah satu kasir berlaku, selain itu tanpa bawaan (kasir
+      memilih rekening).
+    PT tanpa kas kasir aktif: tidak berubah sama sekali."""
+    kasir = [a for a in accs if _aktif(a) and account_cash_type(a) == "kas_kasir"]
+    if not kasir:
+        return
+    from services import payment_method_service as pms
+    for kode in sorted({k for a in kasir for k in a["_efektif"]["payment_method_codes"]}):
+        if not await pms.is_cash(entity_id, kode):
+            continue
+        penerima = [a for a in kasir if "penerimaan_pelanggan" in a["_efektif"]["purposes"]
+                    and kode in a["_efektif"]["payment_method_codes"]]
+        if not penerima:
+            continue
+        for a in accs:
+            e = a["_efektif"]
+            if account_cash_type(a) != "kas_kasir" and kode in e["default_receiving_methods"]:
+                e["default_receiving_methods"] = [m for m in e["default_receiving_methods"] if m != kode]
+        if len(penerima) == 1 and kode not in penerima[0]["_efektif"]["default_receiving_methods"]:
+            penerima[0]["_efektif"]["default_receiving_methods"].append(kode)
 
 
 async def isi_awal_bidang_rekening(tulis: bool = False, entity_id: str = "") -> Dict[str, Any]:

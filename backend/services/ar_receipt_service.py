@@ -151,8 +151,10 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
     penerima = await bacs.daftar_penerima(owner, kode) if perlu in ("bank", "kas") else []
     ids_penerima = {r["id"] for r in penerima}
     if perlu == "kas" and await _ada_kasir_penerima(owner, ids_penerima):
-        # Kas & Bank 3 (C1, §7.8 butir 5) — PT berkas kasir: tunai tanpa rekening terpilih & tanpa bawaan (kas kasir
-        # tunggal sudah menjadi bawaan lewat `daftar_penerima`) = kasir memilih rekening; tidak jatuh ke kas kecil.
+        # Kas & Bank 3 (C1, §7.8 butir 5, ketetapan R4) — PT berkas kasir: rekening tunai cadangan berjenis kas kasir.
+        # Kasir tunggal sudah menjadi bawaan lewat `daftar_penerima` (bawaan tunai di rekening bukan kasir tidak
+        # berlaku); dua kasir atau lebih tanpa bawaan kasir dan tanpa pilihan → 409 "pilih rekening", tidak jatuh ke
+        # kas kecil.
         cash_type = "kas_kasir"
     if dikirim:
         acc = await db.bank_accounts.find_one({"id": dikirim}, {"_id": 0, "id": 1, "entity_id": 1})
